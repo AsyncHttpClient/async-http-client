@@ -186,7 +186,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if ("host" .equalsIgnoreCase(p.getFirst())) {
                     continue;
                 }
-                nettyRequest.setHeader(p.getKey(), p.getValue());
+                String key = p.getKey() == null ? "": p.getKey();
+                String value = p.getValue() == null ? "": p.getValue();
+
+                nettyRequest.setHeader(key, value);
             }
         }
 

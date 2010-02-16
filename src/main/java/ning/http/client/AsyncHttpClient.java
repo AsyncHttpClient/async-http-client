@@ -16,15 +16,8 @@
  */
 package ning.http.client;
 
-import ning.http.client.providers.NettyAsyncHttpProvider;
-import ning.http.client.Cookie;
-import ning.http.client.Headers;
-import ning.http.client.Part;
-import ning.http.client.ProxyServer;
-import ning.http.client.Request;
 import ning.http.client.Request.EntityWriter;
-import ning.http.client.RequestType;
-import ning.http.client.Response;
+import ning.http.client.providers.NettyAsyncHttpProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +33,7 @@ import java.util.concurrent.Future;
  * To execute synchronous HTTP request, you just need to do
  * <p><pre><code>
  *    AsyncHttpClient c = new AsyncHttpClient();
- *    Future<Response> f = c.doGet(TARGET_URL).get()
+ *    Future<Response> f = c.doGet("http://www.ning.com/").get()
  * </code></pre></p>
  *
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
@@ -48,7 +41,7 @@ import java.util.concurrent.Future;
  *
  * <p><pre><code>
  *       AsyncHttpClient c = new AsyncHttpClient();
- *       Future<Response> f = c.doGet(TARGET_URL, new AsyncHandler() {
+ *       Future<Response> f = c.doGet("http://www.ning.com/", new AsyncHandler<Response>() {
 
             @Override
             public Response onCompleted(Response response) throws IOException {
@@ -61,6 +54,22 @@ import java.util.concurrent.Future;
             }
         });
         Response response = f.get();
+
+        // JWe are just interested to retrieve the status code.
+ *     Future<Integer> f = c.doGet("http://www.ning.com/", new AsyncHandler<Integer>() {
+
+            @Override
+            public Integer onCompleted(Response response) throws IOException {
+                 // Do something
+                return response.getStatusCode();
+            }
+
+            @Override
+            public void onThrowable(Throwable t){
+            }
+        });
+        Integer statusCode = f.get();
+
  * </code></pre></p><p>
  * The {@link AsyncHandler#onCompleted(ning.http.client.Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
@@ -68,7 +77,7 @@ import java.util.concurrent.Future;
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncStreamingHandler}
  * <p><pre><code>
         AsyncHttpClient c = new AsyncHttpClient();
-        Future<Response> f = c.doGet(TARGET_URL, new AsyncStreamingHandler() {
+        Future<Response> f = c.doGet("http://www.ning.com/", new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) throws ResponseComplete {

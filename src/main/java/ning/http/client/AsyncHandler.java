@@ -34,7 +34,7 @@ public interface AsyncHandler<T> {
      * Invoked once the HTTP response has been fully processed
      *
      * @param response The {@link ning.http.client.Response}
-     * #return T 
+     * return T 
      */
      T onCompleted(Response response) throws IOException;
 }
