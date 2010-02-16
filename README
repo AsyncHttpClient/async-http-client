@@ -1,0 +1,72 @@
+Async Http Client
+Copyright 2010 Ning Inc
+
+DESCRIPTION
+-----------
+Async Http Client is a Java based set of APIs that can be used to accomplish asynchronous http request and receive asynchronous response. The API is as simple as:
+
+    AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+    Future<Response> f = asyncHttpClient.doGet("http://www.ning.com/");
+    // Wait for the response
+    Response r = f.get();
+
+You can also accomplish asynchronous operation without using a Future to block for the response:
+
+    AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+    asyncHttpClient.doGet("http://www.ning.com/", new AsyncHandler<Response>(){
+        
+        @Override
+        public Response onCompleted(Response response){
+            // Do something with the Response
+            // ...
+            return response;
+        }
+        
+        @Override
+        public void onThrowable(Throwable t){
+            // Something wrong happened.
+        }
+    });
+
+You can also mix Future with AsyncHandler
+
+    AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+    Future<Integer> f = asyncHttpClient.doGet("http://www.ning.com/", new AsyncHandler<Integer>(){
+        
+        @Override
+        public int onCompleted(Response response){
+            // Do something with the Response
+            return 
+        }
+        
+        @Override
+        public void onThrowable(Throwable t){
+            // Something wrong happened.
+            return response.getStatusCode();
+        }
+    });
+    
+    int statuѕCode = f.get();
+
+You can also have full control on the Response life cycle by deciding at any moment to stop processing what the server is sending back:
+
+    AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+    Future<Response> f = asyncHttpClient.doGet("http://www.ning.com/", new AsyncStreamingHandler(){
+        
+        @Override
+        public Response onContentReceived(HttpContent content) {
+            if (content instanceof HttpResponseHeaders) {
+                // The Response HTTP headers has been received.   
+                ..
+                // If we aren't interested by the response body, we just have to:
+                throw new ResponseComplete();
+            } else if (content instance HttpResponseBody){
+                // As soon as the response's bytes arrive, we get notified
+                if ( ((HttpResponseBody)content).isComplete()){
+                    // The response has been fully read
+                }
+            }
+        }
+    }
+    // The response may be incomplete if the AsyncStreamingHandler decided to only read the headers or part of the body
+    Response response = f.get();
