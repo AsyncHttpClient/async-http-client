@@ -8,45 +8,14 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description/>
-    <build>
-        <defaultGoal>install</defaultGoal>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                    <encoding>UTF-8</encoding>
-                    <maxmem>1024m</maxmem>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>junit:junit</exclude>
-                                </excludes>
-                            </artifactSet>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <scm>
+        <connection>scm:git:git@github.com:ning/async-http-client.git</connection>
+        <url>scm:git:git@github.com:ning/async-http-client.git</url>
+        <developerConnection>scm:git:git@github.com:ning/async-http-client.git</developerConnection>  
+    </scm>
+    <prerequisites>
+        <maven>2.0.9</maven>
+    </prerequisites>
     <dependencies>
         <dependency>
             <groupId>commons-httpclient</groupId>
@@ -69,27 +38,6 @@
             <version>1.2</version>
         </dependency>
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>6.1.22</version>
-            <scope>test</scope>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.3</version>
-            <scope>test</scope>
-        </dependency>
-        -->
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>5.8</version>
-            <scope>test</scope>
-            <classifier>jdk15</classifier>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
             <version>3.2.0.ALPHA3</version>
@@ -109,7 +57,129 @@
             <artifactId>log4j</artifactId>
             <version>1.2.13</version>
         </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>5.8</version>
+            <scope>test</scope>
+            <classifier>jdk15</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>jetty</artifactId>
+            <version>6.1.22</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <defaultGoal>install</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>2.0.9</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>1.6</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                    <maxmem>1024m</maxmem>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.0-beta-9</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                    <maxmemory>1g</maxmemory>
+                    <links>
+                        <link>http://java.sun.com/javase/6/docs/api/</link>
+                    </links>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>selfcontained</shadedClassifierName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <repositories>
         <repository>
@@ -124,45 +194,5 @@
             </snapshots>
         </repository>
     </repositories>
-    <profiles>
-        <profile>
-            <id>dev-repo</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-                <property>
-                    <name>env</name>
-                    <value>pulse-build</value>
-                </property>
-            </activation>
-            <distributionManagement>
-                <!-- use the following if you're not using a snapshot version. -->
-                <repository>
-                    <id>dev-repo</id>
-                    <name>Ning Internal Repo</name>
-                    <url>http://mavenrepo.ningops.net/nexus/content/repositories/libs-releases-local</url>
-                </repository>
-                <!-- use the following if you ARE using a snapshot version. -->
-                <snapshotRepository>
-                    <id>dev-repo</id>
-                    <name>Ning Internal Snapshot Repo</name>
-                    <url>http://mavenrepo.ningops.net/nexus/content/repositories/libs-snapshots-local</url>
-                </snapshotRepository>
-                <!-- for now we don't deploy the site anywhere -->
-                <site>
-                    <id>local-site-repo</id>
-                    <url>${site.html.dir}</url>
-                </site>
-            </distributionManagement>
-        </profile>
-        <profile>
-            <id>reporting</id>
-            <distributionManagement>
-                <site>
-                    <id>nexus-site</id>
-                    <url>dav:http://mavenrepo.ningops.net:8081/nexus/content/sites/site-snapshots</url>
-                </site>
-            </distributionManagement>
-        </profile>
-    </profiles>
 </project>
 
