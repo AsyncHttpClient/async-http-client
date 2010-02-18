@@ -22,7 +22,7 @@ import ning.http.client.providers.NettyAsyncResponse;
  */
 public class HttpResponseHeaders extends HttpContent {
 
-    public HttpResponseHeaders(NettyAsyncResponse response) {
+    public HttpResponseHeaders(NettyAsyncResponse<?> response) {
         super(response);
     }
 

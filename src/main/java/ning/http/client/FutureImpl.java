@@ -17,7 +17,7 @@ package ning.http.client;
 
 import java.util.concurrent.Future;
 
-public interface FutureImpl<V> extends Future {
+public interface FutureImpl<V> extends Future<V> {
 
     /**
      * Notify listener of this class of a unexpected {@link Throwable}

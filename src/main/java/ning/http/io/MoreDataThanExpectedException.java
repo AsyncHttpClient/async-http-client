@@ -23,6 +23,8 @@ import java.io.IOException;
  * {@link Stream#copy(java.io.InputStream, java.io.OutputStream, long)}.
  */
 public class MoreDataThanExpectedException extends IOException {
+    private static final long serialVersionUID = -1362956521248345385L;
+
     public MoreDataThanExpectedException() {
         super();
     }

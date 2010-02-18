@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Headers implements Iterable<Pair<String, String>> {
-    public final static String AUTH_HEADER = "XN-Auth";
-    public static final String AUTH = AUTH_HEADER;
-    public static final String VISIT_TRACKING = "X-Ning-VisitTracking";
     public static final String CONTENT_TYPE = "Content-type";
 
     public static interface Filter {
@@ -78,7 +75,7 @@ public class Headers implements Iterable<Pair<String, String>> {
      * @return This object
      */
     public Headers add(Pair<String, String> header) {
-        headers.add(new Pair<String, String>(header.getName(), header.getValue()));
+        headers.add(new Pair<String, String>(header.getFirst(), header.getSecond()));
         return this;
     }
 
@@ -93,16 +90,6 @@ public class Headers implements Iterable<Pair<String, String>> {
             headers.add(new Pair<String, String>(entry.getFirst(), entry.getSecond()));
         }
         return this;
-    }
-
-    /**
-     * Adds the X-Ning-VisitTracking header.
-     *
-     * @param enabled Whether visit-tracking shall be enabled
-     * @return This object
-     */
-    public Headers addVisitTracking(boolean enabled) {
-        return add(VISIT_TRACKING, enabled ? "yes" : "no");
     }
 
     /**
@@ -223,11 +210,6 @@ public class Headers implements Iterable<Pair<String, String>> {
 
         @Override
         public Headers addContentTypeHeader(String contentType) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers addVisitTracking(boolean enabled) {
             throw new UnsupportedOperationException();
         }
 

@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
  * Gets thrown when a request is redirected.
  */
 public class RedirectedException extends RuntimeException {
+    private static final long serialVersionUID = -9054164427229522327L;
 
     private final int statusCode;
     private final String url;

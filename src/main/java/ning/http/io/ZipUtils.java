@@ -66,7 +66,7 @@ public class ZipUtils {
         ZipInputStream z = null;
         try {
             z = new ZipInputStream(new ByteArrayInputStream(input));
-            ZipEntry ze = z.getNextEntry();
+            z.getNextEntry();
             int read = 0;
             while ((read = z.read(b)) > 0) {
                 o.write(b, 0, read);

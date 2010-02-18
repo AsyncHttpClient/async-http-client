@@ -24,12 +24,9 @@ import ning.http.client.Response;
  * content.
  */
 public class HttpContent {
+    private final NettyAsyncResponse<?> response;
 
-    private boolean isCompleted = false;
-
-    private final NettyAsyncResponse response;
-
-    protected HttpContent(NettyAsyncResponse response) {
+    protected HttpContent(NettyAsyncResponse<?> response) {
         this.response = response;
     }
 

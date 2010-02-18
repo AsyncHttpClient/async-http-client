@@ -16,13 +16,9 @@
 package ning.http.client.providers;
 
 import ning.http.client.AsyncHandler;
-import ning.http.client.AsyncHttpClient;
 import ning.http.client.FutureImpl;
 import ning.http.client.Request;
-import ning.http.client.Response;
 import ning.http.url.Url;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 
 import java.util.concurrent.CountDownLatch;
@@ -37,26 +33,25 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @param <V>
  */
-public final class NettyResponseFuture<V> implements FutureImpl {
+public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
-    private final static Logger log = LogManager.getLogger(AsyncHttpClient.class);
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-    private final NettyAsyncResponse asyncResponse;
+    private final NettyAsyncResponse<V> asyncResponse;
     private final AsyncHandler<V> asyncHandler;
     private final long responseTimeoutInMs;
     private final Request request;
     private final HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
 
-    public NettyResponseFuture(Url  url,Request request, AsyncHandler asyncHandler,
+    public NettyResponseFuture(Url  url,Request request, AsyncHandler<V> asyncHandler,
                                HttpRequest nettyRequest,long responseTimeoutInMs) {
 
         this.asyncResponse = new NettyAsyncResponse<V>(url);
         asyncResponse.setFuture(this);
 
-        this.asyncHandler = (AsyncHandler) asyncHandler;
+        this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
@@ -116,7 +111,7 @@ public final class NettyResponseFuture<V> implements FutureImpl {
      * {@inheritDoc}
      */
     @Override
-    public Response get(long l, TimeUnit tu) throws InterruptedException, TimeoutException {
+    public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException {
         if (!isDone() && !isCancelled()) {
             if (!latch.await(l, tu)) {
                 isCancelled.set(true);
@@ -126,7 +121,7 @@ public final class NettyResponseFuture<V> implements FutureImpl {
             }
         }
 
-        return (Response) getContent();
+        return (V) getContent();
     }
 
     public void onThrowable(Throwable t) {
@@ -154,7 +149,7 @@ public final class NettyResponseFuture<V> implements FutureImpl {
         return request;
     }
 
-    public NettyAsyncResponse getAsyncResponse() {
+    public NettyAsyncResponse<V> getAsyncResponse() {
         return asyncResponse;
     }
 

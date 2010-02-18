@@ -46,7 +46,7 @@ public class AbstractBasicTest {
                            int dispatch) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
-            Enumeration e = httpRequest.getHeaderNames();
+            Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {
                 param = e.nextElement().toString();
@@ -62,7 +62,7 @@ public class AbstractBasicTest {
                 httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
             }
 
-            Enumeration i = httpRequest.getParameterNames();
+            Enumeration<?> i = httpRequest.getParameterNames();
 
             StringBuilder requestBody = new StringBuilder();
             while (i.hasMoreElements()) {

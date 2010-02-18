@@ -40,11 +40,6 @@ public class ImmutableHeaders extends Headers {
     }
 
     @Override
-    public Headers addVisitTracking(boolean enabled) {
-        throw new UnsupportedOperationException("Headers are immutable");
-    }
-
-    @Override
     public Iterator<Pair<String, String>> iterator() {
         final Iterator<Pair<String, String>> iter = super.iterator();
         return new Iterator<Pair<String, String>>() {

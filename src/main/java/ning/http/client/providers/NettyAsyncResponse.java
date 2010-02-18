@@ -44,6 +44,7 @@ public class NettyAsyncResponse<V> implements Response {
 
     private HttpResponse r;
     private FutureImpl<V> rf;
+    @SuppressWarnings("unused")
     private V content;
     private HttpChunkTrailer trailingHeaders;
     private ChannelBuffer buffer;
@@ -100,12 +101,6 @@ public class NettyAsyncResponse<V> implements Response {
 
     void setContent(V content) {
         this.content = content;
-    }
-
-    @Override
-    @Deprecated
-    public String getResponseBodyAsText(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength);
     }
 
     @Override

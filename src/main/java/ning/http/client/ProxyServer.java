@@ -105,7 +105,7 @@ public class ProxyServer {
 
     @Override
     public String toString() {
-        return protocol.toString() + "://" + host + ":" + port;
+        return String.format("%s://%s:%d", protocol.toString(), host, port);
     }
 }
 

@@ -35,26 +35,6 @@ public class Pair<FirstType, SecondType> implements Serializable {
         return secondValue;
     }
 
-    public FirstType car() {
-        return getFirst();
-    }
-
-    public SecondType cdr() {
-        return getSecond();
-    }
-
-    public FirstType getName() {
-        return firstValue;
-    }
-
-    public FirstType getKey() {
-        return firstValue;
-    }
-
-    public SecondType getValue() {
-        return secondValue;
-    }
-
     public String toString() {
         return "Pair(" + firstValue + ", " + secondValue + ")";
     }
@@ -63,7 +43,7 @@ public class Pair<FirstType, SecondType> implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final Pair pair = (Pair) o;
+        final Pair<?,?> pair = (Pair<?,?>) o;
 
         return (firstValue != null ? firstValue.equals(pair.firstValue) : pair.firstValue == null)
                 && (secondValue != null ? secondValue.equals(pair.secondValue) : pair.secondValue == null);

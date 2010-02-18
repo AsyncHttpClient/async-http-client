@@ -51,18 +51,6 @@ public interface Response {
     public InputStream getResponseBodyAsStream() throws IOException;
 
     /**
-     * Returns the response body as a string. Note that this does not check whether the content type
-     * is actually a textual one, but it will use the charset if present in the content type header.
-     * This method will throw a {@link MoreDataThanExpectedException} exception if there is more
-     * data in the response than maxLength.
-     *
-     * @param maxLength The expected maximum number of bytes
-     * @return The response body
-     */
-    @Deprecated
-    public String getResponseBodyAsText(int maxLength) throws IOException;
-
-    /**
      * Returns the first maxLength bytes of the response body as a string. Note that this does not check
      * whether the content type is actually a textual one, but it will use the charset if present in the content
      * type header.
@@ -93,7 +81,9 @@ public interface Response {
     boolean isRedirected();
 
 
-    // subclasses SHOULD implement toString() in a way that identifies the request for logging
-
+    /**
+     * Subclasses SHOULD implement toString() in a way that identifies the request for logging.
+     * @return The textual representation
+     */
     public String toString();
 }

@@ -47,7 +47,6 @@ import java.util.concurrent.TimeoutException;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
-
     static class VoidListener implements AsyncHandler<Response> {
 
         @Override
@@ -245,7 +244,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoGetTransferEncodingTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
         
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
 
         c.doGet(TARGET_URL, new VoidListener() {
@@ -270,7 +269,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoGetHeadersTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Test1", "Test1");
@@ -638,7 +637,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoPostDelayCancelTest() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         h.add("LockThread", "true");
@@ -683,7 +681,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoPostNullBytesTest() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         StringBuilder sb = new StringBuilder();
@@ -707,7 +704,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncDoPostListenerBytesTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         StringBuilder sb = new StringBuilder();
@@ -722,8 +718,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Future<Response> future = c.doPost(TARGET_URL, h, sb.toString().getBytes(),
-
+        c.doPost(TARGET_URL, h, sb.toString().getBytes(),
                 new VoidListener() {
 
                     @Override
@@ -743,7 +738,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidPortFuture() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         StringBuilder sb = new StringBuilder();
@@ -758,7 +752,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         IOException expected = null;
         try {
-            Future<Response> future = c.doPost("http://127.0.0.1:9999/", h, sb.toString().getBytes(), new VoidListener());
+            c.doPost("http://127.0.0.1:9999/", h, sb.toString().getBytes(), new VoidListener());
         } catch (IOException ex) {
             expected = ex;
         }
@@ -773,7 +767,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncConnectInvalidPort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         StringBuilder sb = new StringBuilder();
@@ -786,10 +779,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-
         try{
-            Future<Response> future = c.doPost("http://127.0.0.1:9999/", h, sb.toString().getBytes(), new VoidListener());
+            c.doPost("http://127.0.0.1:9999/", h, sb.toString().getBytes(), new VoidListener());
             Assert.assertTrue(false);          
         } catch (ConnectException ex){
             Assert.assertTrue(true);
@@ -799,7 +790,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncConnectInvalidFuturePort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        final CountDownLatch l = new CountDownLatch(1);
 
         try {
             c.doGet("http://127.0.0.1:9999/", new VoidListener());

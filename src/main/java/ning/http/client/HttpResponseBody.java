@@ -24,7 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpChunk;
 public class HttpResponseBody extends HttpContent {
     private final HttpChunk chunk;
 
-    public HttpResponseBody(NettyAsyncResponse response, HttpChunk chunk) {
+    public HttpResponseBody(NettyAsyncResponse<?> response, HttpChunk chunk) {
         super(response);
         this.chunk = chunk;
     }

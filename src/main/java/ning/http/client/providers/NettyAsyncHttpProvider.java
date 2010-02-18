@@ -95,9 +95,12 @@ import static org.jboss.netty.channel.Channels.pipeline;
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
+    @SuppressWarnings("unused")
     private int maxConnectionsTotal = 250;
+    @SuppressWarnings("unused")
     private int maxConnectionsPerHost = 250;
     private long connectionTimeout;
+    @SuppressWarnings("unused")
     private long idleConnectionTimeout;
     private long requestTimeout = 30 * 1000;
     private boolean followRedirects;
@@ -108,7 +111,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private boolean keepAlive = true;
 
     private final ClientBootstrap bootstrap;
-    private final static long DEFAULT_TIMEOUT = 30 * 1000L;
     private final static int MAX_BUFFERRED_BYTES = 8192;
 
     private volatile int redirectCount = 0;
@@ -166,6 +168,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return channel;
     }
 
+    @SuppressWarnings("deprecation")
     HttpRequest construct(Request request, HttpMethod m, Url url) throws IOException {
         String host = url.getHost();
 
@@ -186,15 +189,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if ("host" .equalsIgnoreCase(p.getFirst())) {
                     continue;
                 }
-                String key = p.getKey() == null ? "": p.getKey();
-                String value = p.getValue() == null ? "": p.getValue();
+                String key = p.getFirst() == null ? "": p.getFirst();
+                String value = p.getSecond() == null ? "": p.getSecond();
 
                 nettyRequest.setHeader(key, value);
             }
         }
-
-        HttpMethodBase mb = reverseMap(nettyRequest.getMethod());
-
 
         String ka = keepAlive ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
@@ -350,13 +350,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         log.debug("Executing the handle operation: " + handler);
 
 
-        final NettyResponseFuture f = new NettyResponseFuture(url, request, handler, nettyRequest, requestTimeout);
+        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, requestTimeout);
 
         channel.getConfig().setConnectTimeoutMillis((int) connectionTimeout);
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
         final ChannelFuture cf = channel.write(nettyRequest);
-        reaper.schedule(new Callable() {
+        reaper.schedule(new Callable<Object>() {
             public Object call() {
                 if (!cf.isDone() || !cf.isCancelled()) {
                     cf.cancel();
@@ -384,7 +384,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Request request = future.getRequest();
         NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
         HttpRequest nettyRequest = future.getNettyRequest();
-        AsyncHandler handler = future.getAsyncHandler();
+        AsyncHandler<?> handler = future.getAsyncHandler();
         ChannelBuffer buf = asyncResponse.getBuffer();
 
         if (e.getMessage() instanceof HttpResponse) {
@@ -457,7 +457,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private final boolean update(AsyncHandler handler, HttpContent c, ChannelHandlerContext ctx) {
+    private final boolean update(AsyncHandler<?> handler, HttpContent c, ChannelHandlerContext ctx) {
         boolean isComplete = false;
         if (handler instanceof AsyncStreamingHandler) {
             try {
@@ -545,7 +545,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
 
         log.debug("I/O Exception during read or handle: ", e.getCause());
-        if (ctx.getAttachment() instanceof NettyResponseFuture) {
+        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
 

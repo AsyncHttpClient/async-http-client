@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Url implements Cloneable, Serializable {
+    private static final long serialVersionUID = 2187287725357847401L;
 
     public enum Protocol {
         HTTP(80),
@@ -226,9 +227,6 @@ public class Url implements Cloneable, Serializable {
         }
         catch (Exception e) {
             throw new IllegalStateException("Unable to fetch protocol", e);
-//			log.error(e, "Unable to fetch protocol, abort abort abort! This was happening on IE sometimes" +
-//					  "and results in a really cryptic error for the user and user cannot even see the" +
-//					  " front page, much less any apps. It is BAD.");
         }
 
         if (port != defaultPort) {

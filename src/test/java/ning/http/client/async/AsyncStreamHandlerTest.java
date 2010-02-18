@@ -38,7 +38,6 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     private final static String RESPONSE = "param_4=value_4&param_0=value_0&param_1=value_1&param_2=value_2&param_3=value_3";
 
-
     @Test
     public void asyncStreamGETTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
@@ -182,7 +181,6 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         for (int i = 0; i < 5; i++) {
             m.put("param_" + i, "value_" + i);
         }
-        final AtomicBoolean a = new AtomicBoolean(true);
         AsyncHttpClient c = new AsyncHttpClient();
 
         Future<Response> f = c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
@@ -261,7 +259,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Future<Response> f = c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {

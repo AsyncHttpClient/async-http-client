@@ -23,8 +23,9 @@ import java.util.Collections;
 /**
  *
  */
-public class IllegalRequestException
-        extends RuntimeException {
+public class IllegalRequestException extends RuntimeException {
+    private static final long serialVersionUID = -2952073672138053678L;
+
     private final int responseCode;
     private final Collection<RequestError> errors = new ArrayList<RequestError>();
 
@@ -64,7 +65,7 @@ public class IllegalRequestException
 
     @Override
     public String toString() {
-        return String.format("IllegalRequestException { errorCode => %d , explanation => %s  }",
+        return String.format("IllegalRequestException { errorCode => %d , explanation => %s }",
                 responseCode,
                 getMessage());
     }
