@@ -16,13 +16,9 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -40,7 +36,7 @@ import java.util.concurrent.Future;
  *
  * {@code
  *       AsyncHttpClient c = new AsyncHttpClient();
- *       Future<Response> f = c.doGet("http://www.ning.com/", new AsyncHandler<Response>() &#123;
+ *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Response>() &#123;
  *
  *          @Override
  *          public Response onCompleted(Response response) throws IOException &#123;
@@ -55,7 +51,7 @@ import java.util.concurrent.Future;
  *      Response response = f.get();
  *
  *      // We are just interested to retrieve the status code.
- *     Future<Integer> f = c.doGet("http://www.ning.com/", new AsyncHandler<Integer>() &#123;
+ *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Integer>() &#123;
  *
  *          @Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
@@ -75,7 +71,7 @@ import java.util.concurrent.Future;
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncStreamingHandler}
  * {@code
  *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<Response> f = c.doGet("http://www.ning.com/", new AsyncStreamingHandler() &#123;
+ *      Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncStreamingHandler() &#123;
  *
  *          @Override
  *          public Response onContentReceived(HttpContent content) throws ResponseComplete &#123;
@@ -104,10 +100,10 @@ import java.util.concurrent.Future;
  * {@link Response} will be incomplete until {@link HttpResponseBody#isComplete()} return true, which means the
  * response has been fully read and buffered in memory.
  *
- * This class can also be used with the need of {@link AsyncHandler}</p>
+ * This class can also be used without the need of {@link AsyncHandler}</p>
  * {@code
  *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<Response> f = c.doGet(TARGET_URL);
+ *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * }
  */
@@ -153,6 +149,23 @@ public class AsyncHttpClient {
 
     };
 
+    public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
+        private BoundRequestBuilder(RequestType type) {
+            super(type);
+        }
+
+        private BoundRequestBuilder(Request prototype) {
+            super(prototype);
+        }
+
+        public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {
+            return AsyncHttpClient.this.performRequest(build(), handler);
+        }
+
+        public Future<Response> execute() throws IOException {
+            return AsyncHttpClient.this.performRequest(build(), voidHandler);
+        }
+    }
 
     public AsyncHttpProvider getProvider() {
         return httpProvider;
@@ -216,322 +229,32 @@ public class AsyncHttpClient {
     public boolean isCompressionEnabled() {
         return httpProvider.isCompressionEnabled();
     }
-
-
-    public Future<Response> doGet(String url) throws IOException {
-        return doGet(url,(Headers) null);
-    }
-
-    public Future<Response> doGet(String url, Headers headers) throws IOException {
-        return doGet(url, headers,(List<Cookie>) null);
-    }
-
-    public Future<Response> doGet(String url, Headers headers, List<Cookie> cookies) throws IOException {
-        return performRequest(new Request(RequestType.GET, url, headers, cookies), voidHandler);
-    }
-
-    public <T> Future<T> doGet(String url, AsyncHandler<T> handler) throws IOException {
-        return doGet(url, null, null, handler);
-    }
-
-    public <T> Future<T> doGet(String url, Headers headers, AsyncHandler<T> handler) throws IOException {
-        return doGet(url, headers, null, handler);
-    }
-
-    public <T> Future<T> doGet(String url, Headers headers, List<Cookie> cookies, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.GET, url, headers, cookies), handler);
-    }
-
-    public Future<Response>  doPost(String url, byte[] data) throws IOException {
-        return doPost(url, null, null, data);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, byte[] data) throws IOException {
-        return doPost(url, headers, null, data);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, List<Cookie> cookies, byte[] data) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, data), voidHandler);
-    }
-
-    public Future<Response>  doPost(String url, InputStream data) throws IOException {
-        return doPost(url, null, null, data, -1);
-    }
-
-    public Future<Response>  doPost(String url, EntityWriter entityWriter) throws IOException {
-        return doPost(url, null, null, entityWriter, -1);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, InputStream data) throws IOException {
-        return doPost(url, headers, null, data, -1);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, EntityWriter entityWriter) throws IOException {
-        return doPost(url, headers, entityWriter, -1);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, EntityWriter entityWriter, long length) throws IOException {
-        return doPost(url, headers, null, entityWriter, length);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, List<Cookie> cookies, InputStream data) throws IOException {
-        return doPost(url, headers, cookies, data, -1);
-    }
-
-    public Future<Response>  doPost(String url, InputStream data, long length) throws IOException {
-        return doPost(url, null, null, data, length);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, InputStream data, long length) throws IOException {
-        return doPost(url, headers, null, data, length);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, List<Cookie> cookies, InputStream data, long length) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, data, length), voidHandler);
-    }
-
-   public Future<Response>  doPost(String url, Headers headers, List<Cookie> cookies, EntityWriter entityWriter, long length) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, entityWriter, length), voidHandler);
-    }
-
-    public Future<Response> doPost(String url, Map<String, String> params) throws IOException {
-        return doPost(url, (Headers)null, (List<Cookie>)null, params);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, Map<String, String> params) throws IOException {
-        return doPost(url, headers, null, params);
-    }
-
-    public Future<Response>  doPost(String url, Headers headers, List<Cookie> cookies, Map<String, String> params) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, params), voidHandler);
-    }
-
-    public <T> Future<T> doPost(String url, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, null, null, data, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, null, data, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, List<Cookie> cookies, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, data), handler);
-    }
-
-    public <T> Future<T> doPost(String url, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, null, null, data, -1, handler);
-    }
-
-    public <T> Future<T> doPost(String url, EntityWriter entityWriter, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, null, null, entityWriter, -1, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, null, data, -1, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, EntityWriter entityWriter, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, entityWriter, handler, -1);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, EntityWriter entityWriter, AsyncHandler<T> handler, long length) throws IOException {
-        return doPost(url, headers, null, entityWriter, length, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, List<Cookie> cookies, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, cookies, data, -1, handler);
-    }
-
-    public <T> Future<T> doPost(String url, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, null, null, data, length, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, null, data, length, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, List<Cookie> cookies, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, data, length), handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, List<Cookie> cookies, EntityWriter entityWriter, long length, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, entityWriter, length), handler);
-    }
-
-    public <T> Future<T> doPost(String url, Map<String, String> params, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, null, null, params, handler);
-    }
-
-    public <T> Future<T> doPost(String url, Headers headers, Map<String, String> params, AsyncHandler<T> handler) throws IOException {
-        return doPost(url, headers, null, params, handler);
-    }
-   
-    public <T> Future<T> doPost(String url, Headers headers, List<Cookie> cookies, Map<String, String> params, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, params), handler);
-    }
-
-    public Future<Response> doMultipartPost(String url, List<Part> params) throws IOException {
-        return doMultipartPost(url, null, null, params);
-    }
-
-    public Future<Response> doMultipartPost(String url, Headers headers, List<Part> params) throws IOException {
-        return doMultipartPost(url, headers, null, params);
-    }
-
-    public Future<Response> doMultipartPost(String url, Headers headers, List<Cookie> cookies, List<Part> params) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, params), voidHandler);
-    }    
-
-    public <T> Future<T> doMultipartPost(String url, List<Part> params, AsyncHandler<T> handler) throws IOException {
-        return doMultipartPost(url, null, null, params, handler);
-    }
-
-    public <T> Future<T> doMultipartPost(String url, Headers headers, List<Part> params, AsyncHandler<T> handler) throws IOException {
-        return doMultipartPost(url, headers, null, params, handler);
-    }
-
-    public <T> Future<T> doMultipartPost(String url, Headers headers, List<Cookie> cookies, List<Part> params, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.POST, url, headers, cookies, params), handler);
-    }
-
-    public Future<Response> doPut(String url, byte[] data) throws IOException {
-        return doPut(url, null, null, data);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, byte[] data) throws IOException {
-        return doPut(url, headers, null, data);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, List<Cookie> cookies, byte[] data) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, data), voidHandler);
-    }
-
-    public Future<Response> doPut(String url, InputStream data) throws IOException {
-        return doPut(url, null, null, data, -1);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, InputStream data) throws IOException {
-        return doPut(url, headers, null, data, -1);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, List<Cookie> cookies, InputStream data) throws IOException {
-        return doPut(url, headers, cookies, data, -1);
-    }
-
-    public Future<Response> doPut(String url, InputStream data, long length) throws IOException {
-        return doPut(url, null, null, data, length);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, InputStream data, long length) throws IOException {
-        return doPut(url, headers, null, data, length);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, EntityWriter entityWriter, long length) throws IOException {
-        return doPut(url, headers, (List<Cookie>)null, entityWriter, length);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, List<Cookie> cookies, InputStream data, long length) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, data, length), voidHandler);
-    }
-
-    public Future<Response> doPut(String url, Headers headers, List<Cookie> cookies, EntityWriter entityWriter, long length) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, entityWriter, length), voidHandler);
-    }
-
-    public <T> Future<T> doPut(String url, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, null, null, data, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, headers, null, data, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, List<Cookie> cookies, byte[] data, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, data), handler);
-    }
-
-    public <T> Future<T> doPut(String url, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, null, null, data, -1, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, headers, null, data, -1, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, List<Cookie> cookies, InputStream data, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, headers, cookies, data, -1, handler);
-    }
-
-    public <T> Future<T> doPut(String url, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, null, null, data, length, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, headers, null, data, length, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, EntityWriter entityWriter, long length, AsyncHandler<T> handler) throws IOException {
-        return doPut(url, headers, null, entityWriter, length, handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, List<Cookie> cookies, InputStream data, long length, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, data, length), handler);
-    }
-
-    public <T> Future<T> doPut(String url, Headers headers, List<Cookie> cookies, EntityWriter entityWriter, long length, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.PUT, url, headers, cookies, entityWriter, length), handler);
-    }
-
-    public Future<Response> doDelete(String url) throws IOException {
-        return doDelete(url, (Headers)null);
-    }
-
-    public Future<Response> doDelete(String url, Headers headers) throws IOException {
-        return doDelete(url, headers, (List<Cookie>)null);
-    }
-
-    public Future<Response> doDelete(String url, Headers headers, List<Cookie> cookies) throws IOException {
-        return performRequest(new Request(RequestType.DELETE, url, headers, cookies), voidHandler);
-    }
-
-    public <T> Future<T> doDelete(String url, AsyncHandler<T> handler) throws IOException {
-        return doDelete(url, null, null, handler);
-    }
-
-    public <T> Future<T> doDelete(String url, Headers headers, AsyncHandler<T> handler) throws IOException {
-        return doDelete(url, headers, null, handler);
-    }
-
-    public <T> Future<T> doDelete(String url, Headers headers, List<Cookie> cookies, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.DELETE, url, headers, cookies), handler);
-    }
-
-    public Future<Response> doHead(String url) throws IOException {
-        return doHead(url, (Headers)null);
-    }
-
-    public Future<Response> doHead(String url, Headers headers) throws IOException {
-        return doHead(url, headers, (List<Cookie>)null);
-    }
-
-    public Future<Response> doHead(String url, Headers headers, List<Cookie> cookies) throws IOException {
-        return performRequest(new Request(RequestType.HEAD, url, headers, cookies), voidHandler);
-    }
     
-    public <T> Future<T> doHead(String url, AsyncHandler<T> handler) throws IOException {
-        return doHead(url, null, null, handler);
+    public BoundRequestBuilder prepareGet(String url) {
+        return new BoundRequestBuilder(RequestType.GET).setUrl(url);
     }
 
-    public <T> Future<T> doHead(String url, Headers headers, AsyncHandler<T> handler) throws IOException {
-        return doHead(url, headers, null, handler);
+    public BoundRequestBuilder prepareHead(String url) {
+        return new BoundRequestBuilder(RequestType.HEAD).setUrl(url);
     }
 
-    public <T> Future<T> doHead(String url, Headers headers, List<Cookie> cookies, AsyncHandler<T> handler) throws IOException {
-        return performRequest(new Request(RequestType.HEAD, url, headers, cookies), handler);
+    public BoundRequestBuilder preparePost(String url) {
+        return new BoundRequestBuilder(RequestType.POST).setUrl(url);
     }
 
-    public <T> Future<T> performRequest(Request request,
-                                AsyncHandler<T> handler) throws IOException {
+    public BoundRequestBuilder preparePut(String url) {
+        return new BoundRequestBuilder(RequestType.PUT).setUrl(url);
+    }
+
+    public BoundRequestBuilder prepareDelete(String url) {
+        return new BoundRequestBuilder(RequestType.DELETE).setUrl(url);
+    }
+
+    public BoundRequestBuilder prepareRequest(Request request) {
+        return new BoundRequestBuilder(request);
+    }
+
+    public <T> Future<T> performRequest(Request request, AsyncHandler<T> handler) throws IOException {
         return httpProvider.handle(request, handler);
     }
 }

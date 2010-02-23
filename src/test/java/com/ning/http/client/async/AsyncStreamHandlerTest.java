@@ -42,8 +42,8 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamGETTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
-            
-        c.doGet(TARGET_URL,new AsyncStreamingHandler() {
+
+        c.prepareGet(TARGET_URL).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -84,7 +84,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -142,7 +142,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final AtomicBoolean a = new AtomicBoolean(true);
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -183,7 +183,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Future<Response> f = c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        Future<Response> f = c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -223,7 +223,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.doGet(TARGET_URL,new AsyncStreamingHandler() {
+        c.prepareGet(TARGET_URL).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -259,7 +259,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) {
@@ -303,7 +303,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
 
         // Let do the same again
-        c.doPost(TARGET_URL,m,new AsyncStreamingHandler() {
+        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncStreamingHandler() {
 
             @Override
             public Response onContentReceived(HttpContent content) throws ResponseComplete
