@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -112,31 +111,24 @@ import java.util.concurrent.Future;
  * }
  */
 public class AsyncHttpClient {
-    public static final int DEFAULT_MAX_TOTAL_CONNECTIONS = Integer.getInteger("xn.httpClient.defaultMaxTotalConnections", 2000);
-    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = Integer.getInteger("xn.httpClient.defaultMaxConnectionsPerHost", 2000);
-    public static final long DEFAULT_CONNECTION_TIMEOUT_MS = Long.getLong("xn.httpClient.defaultConnectionTimeoutInMS", 60 * 1000L);
-    public static final long DEFAULT_IDLE_CONNECTION_TIMEOUT_MS = Long.getLong("xn.httpClient.defaultIdleConnectionTimeoutInMS", 15 * 1000L);
-    public static final int DEFAULT_REQUEST_TIMEOUT_MS = Integer.getInteger("xn.httpClient.defaultRequestTimeoutInMS", 60 * 1000);
-    public static final boolean DEFAULT_REDIRECTS_ENABLED = Boolean.getBoolean("xn.httpClient.defaultRedirectsEnabled");
-    public static final int DEFAULT_MAX_REDIRECTS = Integer.getInteger("xn.httpClient.defaultMaxRedirects", 5);
 
     private final AsyncHttpProvider httpProvider;
 
+    private final AsyncHttpClientConfig config;
+
+
     public AsyncHttpClient() {
-        this(new NettyAsyncHttpProvider(new ProviderConfig(
-                Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()))));
+        this(new AsyncHttpClientConfig.Builder().build());
+    }
+
+    public AsyncHttpClient(AsyncHttpClientConfig config) {
+        this.config = config;
+        this.httpProvider = new NettyAsyncHttpProvider(config);
     }
 
     public AsyncHttpClient(AsyncHttpProvider httpProvider) {
+        this.config = new AsyncHttpClientConfig.Builder().build();
         this.httpProvider = httpProvider;
-
-        setMaximumConnectionsTotal(DEFAULT_MAX_TOTAL_CONNECTIONS);
-        setMaximumConnectionsPerHost(DEFAULT_MAX_CONNECTIONS_PER_HOST);
-        setFollowRedirects(DEFAULT_REDIRECTS_ENABLED);
-        setRequestTimeout(DEFAULT_REQUEST_TIMEOUT_MS);
-        setConnectionTimeout(DEFAULT_CONNECTION_TIMEOUT_MS);
-        setIdleConnectionTimeout(DEFAULT_IDLE_CONNECTION_TIMEOUT_MS);
-        setMaximumNumberOfRedirects(DEFAULT_MAX_REDIRECTS);
     }
 
     private final static AsyncHandler<Response> voidHandler = new AsyncHandler<Response>(){
@@ -168,53 +160,9 @@ public class AsyncHttpClient {
         super.finalize();
     }
 
-    public void setMaximumConnectionsTotal(int maxConnectionsTotal) {
-        httpProvider.setMaximumConnectionsTotal(maxConnectionsTotal);
-    }
 
-    public void setMaximumConnectionsPerHost(int maxConnectionsPerHost) {
-        httpProvider.setMaximumConnectionsPerHost(maxConnectionsPerHost);
-    }
-
-    public void setConnectionTimeout(long timeOutInMS) {
-        httpProvider.setConnectionTimeout(timeOutInMS);
-    }
-
-    public void setIdleConnectionTimeout(long timeOutInMS) {
-        httpProvider.setIdleConnectionTimeout(timeOutInMS);
-    }
-
-    public void setRequestTimeout(int timeOutInMS) {
-        httpProvider.setRequestTimeout(timeOutInMS);
-    }
-
-    public void setFollowRedirects(boolean followRedirects) {
-        httpProvider.setFollowRedirects(followRedirects);
-    }
-
-    public void setMaximumNumberOfRedirects(int maxNumRedirects) {
-        httpProvider.setMaximumNumberOfRedirects(maxNumRedirects);
-    }
-
-    public void setCompressionEnabled(boolean compressionEnabled) {
-        httpProvider.setCompressionEnabled(compressionEnabled);
-    }
-
-    public void setUserAgent(String userAgent) {
-        httpProvider.setUserAgent(userAgent);
-    }
-
-    /**
-     * Sets the proxy for this HttpClient.
-     *
-     * @param proxyServer The proxy server to use. Can be null, which means "no proxy".
-     */
-    public void setProxy(final ProxyServer proxyServer) {
-        httpProvider.setProxyServer(proxyServer);
-    }
-
-    public boolean isCompressionEnabled() {
-        return httpProvider.isCompressionEnabled();
+    public AsyncHttpClientConfig getConfig(){
+        return config;
     }
 
 

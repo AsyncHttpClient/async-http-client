@@ -17,8 +17,7 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ProviderConfig;
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.Headers;
 import com.ning.http.client.Part;
@@ -27,6 +26,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
+import com.ning.http.client.providers.NettyAsyncHttpProvider;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -40,13 +40,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
-
     static class VoidListener implements AsyncHandler<Response> {
 
         @Override
@@ -64,7 +62,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncProviderContentLenghtGETTest() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
         URL url = new URL(TARGET_URL);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -104,7 +102,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncContentTypeGETTest() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new Request(RequestType.GET, TARGET_URL);
@@ -127,7 +125,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncHeaderGETTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new Request(RequestType.GET, TARGET_URL);
         n.handle(request, new VoidListener() {
@@ -151,7 +149,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncHeaderPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
         Request request = new Request(RequestType.POST, TARGET_URL);
         Headers h = new Headers();
@@ -185,7 +183,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncParamPOSTTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
@@ -220,7 +218,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncStatusHEADTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new Request(RequestType.HEAD, TARGET_URL);
@@ -242,7 +240,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncDoGetTransferEncodingTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
         AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
@@ -267,7 +265,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncDoGetHeadersTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
 
         AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
@@ -475,9 +473,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncDoPostBasicGZIPTest() throws Throwable {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cf);
         final CountDownLatch l = new CountDownLatch(1);
-        c.setCompressionEnabled(true);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         StringBuilder sb = new StringBuilder();
@@ -509,8 +507,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncDoPostProxyTest() throws Throwable {
 
-        AsyncHttpClient c = new AsyncHttpClient();
-        c.setProxy(new ProxyServer("127.0.0.1", 38080));
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
+        AsyncHttpClient c = new AsyncHttpClient(cf);
 
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -544,7 +542,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
     public void asyncRequestVirtualServerPOSTTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new ProviderConfig(Executors.newScheduledThreadPool(1)));
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
 
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -876,8 +874,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoPostDelayHandlerTest() throws Throwable {
         Headers h = new Headers();
         h.add("LockThread", "true");
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setRequestTimeout(5 * 1000);
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(5 * 1000).build());
 
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);

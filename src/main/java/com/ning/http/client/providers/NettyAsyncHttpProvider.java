@@ -16,17 +16,17 @@
 package com.ning.http.client.providers;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncStreamingHandler;
 import com.ning.http.client.AsyncStreamingHandler.ResponseComplete;
-import com.ning.http.client.HttpContent;
-import com.ning.http.client.HttpResponseBody;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.ProviderConfig;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.Headers;
+import com.ning.http.client.HttpContent;
+import com.ning.http.client.HttpResponseBody;
+import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
@@ -85,7 +85,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -94,37 +93,19 @@ import static org.jboss.netty.channel.Channels.pipeline;
 @ChannelPipelineCoverage(value = "one")
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
-
-    @SuppressWarnings("unused")
-    private int maxConnectionsTotal = 250;
-    @SuppressWarnings("unused")
-    private int maxConnectionsPerHost = 250;
-    private long connectionTimeout;
-    @SuppressWarnings("unused")
-    private long idleConnectionTimeout;
-    private long requestTimeout = 30 * 1000;
-    private boolean followRedirects;
-    private int maxNumRedirects;
-    private ProxyServer proxyServer;
-    private boolean compressionEnabled = false;
-    private String userAgent = "";
-    private boolean keepAlive = true;
-
     private final ClientBootstrap bootstrap;
     private final static int MAX_BUFFERRED_BYTES = 8192;
 
     private volatile int redirectCount = 0;
-    // Used to times out when the FutureImpl.get(..) is not used.
-    private final ScheduledExecutorService reaper;
+    private final AsyncHttpClientConfig config;
 
-
-    public NettyAsyncHttpProvider(ProviderConfig config) {
-        this.reaper = config.reaper();
+    public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         // TODO: Should we expose the Executors.
         bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
-                Executors.newCachedThreadPool()));
+                config.executorService()));
+        this.config = config;
     }
 
     void configure() {
@@ -136,7 +117,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 pipeline.addLast("decoder", new HttpResponseDecoder());
                 pipeline.addLast("encoder", new HttpRequestEncoder());
 
-                if (compressionEnabled) {
+                if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
                 }
 
@@ -151,12 +132,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         configure();
         ChannelFuture channelFuture = null;
 
-        if (proxyServer == null) {
+        if (config.getProxyServer() == null) {
             channelFuture = bootstrap.connect(
                     new InetSocketAddress(url.getHost(), url.getPort()));
         } else {
             channelFuture = bootstrap.connect(
-                    new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
+                    new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
         }
 
         // Blocking connect
@@ -196,14 +177,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        String ka = keepAlive ? "keep-alive" : "close";
+        String ka = config.getKeepAlive() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
-        if (proxyServer != null) {
+        if (config.getProxyServer() != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
         }
 
-        if (userAgent != null) {
-            nettyRequest.setHeader("User-Agent", userAgent);
+        if (config.getUserAgent() != null) {
+            nettyRequest.setHeader("User-Agent", config.getUserAgent());
         }
 
         if (request.getCookies() != null && !request.getCookies().isEmpty()) {
@@ -222,7 +203,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.setHeader(HttpHeaders.Names.COOKIE, httpCookieEncoder.encode());
         }
 
-        if (compressionEnabled) {
+        if (config.isCompressionEnabled()) {
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
         }
 
@@ -298,7 +279,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public void close() {
-        reaper.shutdown();
+        config.reaper().shutdown();
+        config.executorService().shutdown();
     }
 
     Url createUrl(String u) {
@@ -349,14 +331,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         log.debug("Executing the handle operation: " + handler);
 
+        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, config.getDefaultRequestTimeout());
 
-        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, requestTimeout);
-
-        channel.getConfig().setConnectTimeoutMillis((int) connectionTimeout);
+        channel.getConfig().setConnectTimeoutMillis((int) config.getDefaultConnectionTimeoutInMs());
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
         final ChannelFuture cf = channel.write(nettyRequest);
-        reaper.schedule(new Callable<Object>() {
+        config.reaper().schedule(new Callable<Object>() {
             public Object call() {
                 if (!cf.isDone() || !cf.isCancelled()) {
                     cf.cancel();
@@ -365,7 +346,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return null;
             }
 
-        }, requestTimeout, TimeUnit.MILLISECONDS);
+        }, config.getDefaultRequestTimeout(), TimeUnit.MILLISECONDS);
 
         return f;
     }
@@ -390,9 +371,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (e.getMessage() instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e.getMessage();
 
-            if (followRedirects
+            if (config.isRedirectEnabled()
                     && response.getStatus().getCode() == 302
-                    && (redirectCount + 1) < maxNumRedirects) {
+                    && (redirectCount + 1) < config.getDefaultMaxRedirects()) {
                 HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
                 ctx.getChannel().write(r);
                 return;
@@ -470,71 +451,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return isComplete;
     }
 
-    public boolean getKeepAliveValue() {
-        return keepAlive;
-    }
-
-    public void setKeepAliveValue(final boolean keepAlive) {
-        this.keepAlive = keepAlive;
-    }
-
-
-    @Override
-    public void setMaximumConnectionsTotal(final int maxConnectionsTotal) {
-        this.maxConnectionsTotal = maxConnectionsTotal;
-    }
-
-    @Override
-    public void setMaximumConnectionsPerHost(final int maxConnectionsPerHost) {
-        this.maxConnectionsPerHost = maxConnectionsPerHost;
-    }
-
-
-    @Override
-    public void setConnectionTimeout(final long connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
-    }
-
-    @Override
-    public void setIdleConnectionTimeout(final long idleConnectionTimeout) {
-        this.idleConnectionTimeout = idleConnectionTimeout;
-    }
-
-    @Override
-    public void setRequestTimeout(final int requestTimeout) {
-        this.requestTimeout = requestTimeout;
-    }
-
-    @Override
-    public void setFollowRedirects(final boolean followRedirects) {
-        this.followRedirects = followRedirects;
-    }
-
-    @Override
-    public void setMaximumNumberOfRedirects(final int maxNumRedirects) {
-        this.maxNumRedirects = maxNumRedirects;
-    }
-
-    @Override
-    public void setProxyServer(final ProxyServer proxyServer) {
-        this.proxyServer = proxyServer;
-    }
-
-    @Override
-    public void setCompressionEnabled(final boolean compressionEnabled) {
-        this.compressionEnabled = compressionEnabled;
-    }
-
-    @Override
-    public boolean isCompressionEnabled() {
-        return compressionEnabled;
-    }
-
-    @Override
-    public void setUserAgent(final String userAgent) {
-        this.userAgent = userAgent;
-    }
-
+    //Simple marker for stopping publishing bytes.
     private final class DiscardEvent {
     }
 
