@@ -6,14 +6,14 @@ DESCRIPTION
 Async Http Client is a Java based set of APIs that can be used to accomplish asynchronous http requests and receive asynchronous responses. The API is as simple as:
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.doGet("http://www.ning.com/");
+    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
     // Wait for the response
     Response r = f.get();
 
 You can also accomplish asynchronous operation without using a Future to block for the response:
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    asyncHttpClient.doGet("http://www.ning.com/", new AsyncHandler<Response>(){
+    asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Response>(){
         
         @Override
         public Response onCompleted(Response response){
@@ -31,7 +31,7 @@ You can also accomplish asynchronous operation without using a Future to block f
 You can also mix Future with AsyncHandler
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Integer> f = asyncHttpClient.doGet("http://www.ning.com/", new AsyncHandler<Integer>(){
+    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Integer>(){
         
         @Override
         public int onCompleted(Response response){
@@ -50,7 +50,7 @@ You can also mix Future with AsyncHandler
 You can also have full control on the Response life cycle by deciding at any moment to stop processing what the server is sending back:
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.doGet("http://www.ning.com/", new AsyncStreamingHandler(){
+    Future<Response> f = asyncHttpClient.preparePost("http://www.ning.com/").addBodyPart(new StringPart("foo", "bar")).execute(new AsyncStreamingHandler(){
         
         @Override
         public Response onContentReceived(HttpContent content) {
@@ -74,3 +74,12 @@ You can also have full control on the Response life cycle by deciding at any mom
     }
     // The response may be incomplete if the AsyncStreamingHandler decided to only read the headers or part of the body
     Response response = f.get();
+
+Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConfig object:
+
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
+        AsyncHttpClient c = new AsyncHttpClient(cf);
+
+For more information, post your question to http://groups.google.com/group/asynchttpclient
+
+
