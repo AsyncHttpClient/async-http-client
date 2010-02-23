@@ -25,13 +25,13 @@ import java.util.concurrent.Future;
 public interface AsyncHttpProvider {
 
     /**
-     * Send the request and invoke the {@link com.ning.http.client.AsyncHandler} when the response arrive.
+     * Execute the request and invoke the {@link com.ning.http.client.AsyncHandler} when the response arrive.
      *
      * @param handler an instance of {@link AsyncHandler}
      * @return a {@link java.util.concurrent.Future}
      * @throws IOException
      */
-    public <T> Future<T> handle(Request request, AsyncHandler<T> handler) throws IOException;
+    public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
 
     /**
      * Close the current underlying TCP/HTTP connection.

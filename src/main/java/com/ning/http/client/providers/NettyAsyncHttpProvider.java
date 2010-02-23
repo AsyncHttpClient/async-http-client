@@ -28,7 +28,6 @@ import com.ning.http.client.HttpContent;
 import com.ning.http.client.HttpResponseBody;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Part;
-import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.StringPart;
@@ -308,7 +307,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return url;
     }
 
-    public <T> Future<T> handle(final Request request, final AsyncHandler<T> handler) throws IOException {
+    public <T> Future<T> execute(final Request request, final AsyncHandler<T> handler) throws IOException {
         Url url = createUrl(request.getUrl());
 
         Channel channel = performConnect(url);
@@ -329,7 +328,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest = construct(request, HttpMethod.HEAD, url);
                 break;
         }
-        log.debug("Executing the handle operation: " + handler);
+        log.debug("Executing the execute operation: " + handler);
 
         final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, config.getDefaultRequestTimeout());
 
@@ -461,7 +460,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Channel ch = e.getChannel();
         Throwable cause = e.getCause();
 
-        log.debug("I/O Exception during read or handle: ", e.getCause());
+        log.debug("I/O Exception during read or execute: ", e.getCause());
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();

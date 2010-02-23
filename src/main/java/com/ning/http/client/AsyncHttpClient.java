@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
  * To execute synchronous HTTP request, you just need to do
  * {@code
  *    AsyncHttpClient c = new AsyncHttpClient();
- *    Future<Response> f = c.doGet("http://www.ning.com/").get();
+ *    Future<Response> f = c.prepareGet("http://www.ning.com/").execute();
  * }
  *
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
@@ -105,8 +105,17 @@ import java.util.concurrent.Future;
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * }
+ *
+ * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
+ * {@code
+ *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(...).build());
+ *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
+ *      Response r = f.get();
+ * }
  */
 public class AsyncHttpClient {
+
+
 
     private final AsyncHttpProvider httpProvider;
 
@@ -202,6 +211,6 @@ public class AsyncHttpClient {
     }
 
     public <T> Future<T> performRequest(Request request, AsyncHandler<T> handler) throws IOException {
-        return httpProvider.handle(request, handler);
+        return httpProvider.execute(request, handler);
     }
 }
