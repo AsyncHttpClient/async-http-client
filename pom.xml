@@ -3,8 +3,8 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
-    <artifactId>ning-async-http</artifactId>
-    <name>async-http</name>
+    <artifactId>async-http-client</artifactId>
+    <name>async-http-client</name>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description/>
@@ -180,7 +180,19 @@
             </plugin>
         </plugins>
     </build>
-
+    <distributionManagement>
+        <!-- use the following if you're not using a snapshot version. -->
+        <repository>
+            <id>releases</id>
+            <name>Sonatype Release</name>
+            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Sonatype Snapshot</name>
+            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
     <repositories>
         <repository>
             <id>oss.sonatype.org</id>
