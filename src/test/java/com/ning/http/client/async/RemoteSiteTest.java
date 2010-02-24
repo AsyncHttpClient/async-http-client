@@ -133,5 +133,16 @@ public class RemoteSiteTest {
         c.prepareGet("http://update.microsoft.com/").execute(h);
         b.await();
     }
+
+    @Test
+    public void testGoogleComWithTimeout() throws IOException, BrokenBarrierException, InterruptedException {
+        // Works
+        c.prepareGet("http://google.com/").execute(h);
+        b.await();
+        Thread.sleep(20000); // Wait for timeout
+        if (t != null){
+            Assert.fail("timeout?!");            
+        }
+    }
 }
 

@@ -338,7 +338,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         final ChannelFuture cf = channel.write(nettyRequest);
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
-                if (!cf.isDone() || !cf.isCancelled()) {
+                if (!cf.isDone() && !cf.isCancelled()) {
                     cf.cancel();
                     f.onThrowable(new TimeoutException());
                 }
