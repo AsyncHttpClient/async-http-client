@@ -115,8 +115,6 @@ import java.util.concurrent.Future;
  */
 public class AsyncHttpClient {
 
-
-
     private final AsyncHttpProvider httpProvider;
 
     private final AsyncHttpClientConfig config;
