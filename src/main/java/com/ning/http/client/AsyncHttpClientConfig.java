@@ -88,15 +88,15 @@ public class AsyncHttpClientConfig {
         return maxConnectionPerHost;
     }
 
-    public long getDefaultConnectionTimeoutInMs() {
+    public long getConnectionTimeoutInMs() {
         return connectionTimeOutInMs;
     }
 
-    public long getDefaultIdleConnectionTimeout() {
+    public long getIdleConnectionTimeout() {
         return idleConnectionTimeoutInMs;
     }
 
-    public int getDefaultRequestTimeout() {
+    public int getRequestTimeout() {
         return requestTimeoutInMs;
     }
 
@@ -104,7 +104,7 @@ public class AsyncHttpClientConfig {
         return redirectEnabled;
     }
 
-    public int getDefaultMaxRedirects() {
+    public int getMaxRedirects() {
         return maxDefaultRedirects;
     }
 

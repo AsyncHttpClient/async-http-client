@@ -330,9 +330,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         log.debug("Executing the execute operation: " + handler);
 
-        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, config.getDefaultRequestTimeout());
+        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, nettyRequest, config.getRequestTimeout());
 
-        channel.getConfig().setConnectTimeoutMillis((int) config.getDefaultConnectionTimeoutInMs());
+        channel.getConfig().setConnectTimeoutMillis((int) config.getConnectionTimeoutInMs());
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
         final ChannelFuture cf = channel.write(nettyRequest);
@@ -345,7 +345,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return null;
             }
 
-        }, config.getDefaultRequestTimeout(), TimeUnit.MILLISECONDS);
+        }, config.getRequestTimeout(), TimeUnit.MILLISECONDS);
 
         return f;
     }
@@ -372,7 +372,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (config.isRedirectEnabled()
                     && response.getStatus().getCode() == 302
-                    && (redirectCount + 1) < config.getDefaultMaxRedirects()) {
+                    && (redirectCount + 1) < config.getMaxRedirects()) {
                 HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
                 ctx.getChannel().write(r);
                 return;
