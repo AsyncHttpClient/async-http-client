@@ -404,7 +404,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
 
-            if (response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+            if (!response.isChunked() || response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                 asyncResponse.getFuture().done();
             }
 
