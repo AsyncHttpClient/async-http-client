@@ -30,6 +30,12 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 
+/**
+ * Unit tests for remote site.
+ *
+ * see http://github.com/MSch/ning-async-http-client-bug/tree/master
+ * @author Martin Schürrer
+ */
 public class RemoteSiteTest {
 
     private AsyncHttpClient c;
