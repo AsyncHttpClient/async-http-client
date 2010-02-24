@@ -59,6 +59,8 @@ public interface Response {
      */
     public String getResponseBodyExcerpt(int maxLength) throws IOException;
 
+    public String getResponseBody() throws IOException;
+
     public Url getUrl() throws MalformedURLException;
 
     public String getContentType();

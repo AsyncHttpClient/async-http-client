@@ -101,6 +101,21 @@ public class NettyAsyncResponse<V> implements Response {
     }
 
     @Override
+    public String getResponseBody() throws IOException {
+        String contentType = getContentType();
+        String charset = "UTF-8";
+        if (contentType != null) {
+            for (String part : contentType.split(";")) {
+                if (part.startsWith("charset=")) {
+                    charset = part.substring("charset=".length());
+                }
+            }
+        }
+        InputStream responseInput = getResponseBodyAsStream();
+        return IOUtils.toString(responseInput, charset);
+    }
+
+    @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         String contentType = getContentType();
         String charset = "UTF-8";
@@ -113,7 +128,8 @@ public class NettyAsyncResponse<V> implements Response {
         }
         InputStream responseInput = getResponseBodyAsStream();
         String response = IOUtils.toString(responseInput, charset);
-        return response.substring(0,maxLength);
+    
+        return response.length() <= maxLength ? response : response.substring(0,maxLength);
     }
 
     @Override

@@ -335,11 +335,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         channel.getConfig().setConnectTimeoutMillis((int) config.getConnectionTimeoutInMs());
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
-        final ChannelFuture cf = channel.write(nettyRequest);
+        channel.write(nettyRequest);
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
-                if (!cf.isDone() && !cf.isCancelled()) {
-                    cf.cancel();
+                if (!f.isDone()) {
                     f.onThrowable(new TimeoutException());
                 }
                 return null;

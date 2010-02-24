@@ -141,6 +141,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public void done() {
+        isDone.set(true);
         getContent();
         latch.countDown();
     }

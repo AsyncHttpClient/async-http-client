@@ -811,6 +811,33 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Assert.assertEquals(response.getStatusCode(), 200);
     }
 
+    @Test(groups = "async")
+    public void asyncResponseBodyTooLarge() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+        Response response = c.prepareGet(TARGET_URL).execute(new VoidListener() {
+
+            @Override
+            public void onThrowable(Throwable t) {
+                Assert.fail("Unexpected exception", t);
+            }
+        }).get();
+
+        Assert.assertNotNull(response.getResponseBodyExcerpt(Integer.MAX_VALUE));
+    }
+
+    @Test(groups = "async")
+    public void asyncResponseBody() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+        Response response = c.prepareGet(TARGET_URL).execute(new VoidListener() {
+
+            @Override
+            public void onThrowable(Throwable t) {
+                Assert.fail("Unexpected exception", t);
+            }
+        }).get();
+
+        Assert.assertNotNull(response.getResponseBody());
+    }
 
     @Test(groups = "asyncAPI")
     public void asyncAPIContentLenghtGETTest() throws Throwable {
