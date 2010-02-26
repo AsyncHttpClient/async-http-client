@@ -396,13 +396,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (handler != null) {
                 if (update(handler, new HttpResponseHeaders(asyncResponse), ctx)) {
-                    ctx.setAttachment(new DiscardEvent());
-                    asyncResponse.getFuture().done();
-                    ctx.getChannel().setReadable(false);
+                    finishUpdate(asyncResponse,ctx);
+                    return;
+                } else if (!response.isChunked()){
+                    update(handler, new HttpResponseBody(asyncResponse), ctx);
+                    finishUpdate(asyncResponse,ctx);
                     return;
                 }
             }
-
+            
             if (!response.isChunked() || response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                 asyncResponse.getFuture().done();
             }
@@ -427,13 +429,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (handler != null) {
                 if (update(handler, new HttpResponseBody(asyncResponse, chunk), ctx) || chunk.isLast()) {
-                    ctx.setAttachment(new DiscardEvent());
-                    asyncResponse.getFuture().done();
-                    ctx.getChannel().setReadable(false);
+                    finishUpdate(asyncResponse,ctx);
                     return;
                 }
             }
         }
+    }
+
+    private void finishUpdate(NettyAsyncResponse<?> asyncResponse, ChannelHandlerContext ctx) {
+        ctx.setAttachment(new DiscardEvent());
+        asyncResponse.getFuture().done();
+        ctx.getChannel().setReadable(false);
     }
 
     private final boolean update(AsyncHandler<?> handler, HttpContent c, ChannelHandlerContext ctx) {

@@ -24,6 +24,11 @@ import org.jboss.netty.handler.codec.http.HttpChunk;
 public class HttpResponseBody extends HttpContent {
     private final HttpChunk chunk;
 
+    public HttpResponseBody(NettyAsyncResponse<?> response) {
+        super(response);
+        this.chunk = null;
+    }
+
     public HttpResponseBody(NettyAsyncResponse<?> response, HttpChunk chunk) {
         super(response);
         this.chunk = chunk;
@@ -36,6 +41,6 @@ public class HttpResponseBody extends HttpContent {
      * @return <tt>true</tt> if the full response's body has been read
      */
     public final boolean isComplete() {
-        return chunk.isLast();
+        return chunk == null? true : chunk.isLast();
     }
 }

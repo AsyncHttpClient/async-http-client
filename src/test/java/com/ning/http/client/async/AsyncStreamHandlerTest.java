@@ -17,10 +17,10 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncStreamingHandler;
+import com.ning.http.client.Headers;
 import com.ning.http.client.HttpContent;
 import com.ning.http.client.HttpResponseBody;
 import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.Headers;
 import com.ning.http.client.Response;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -347,6 +347,53 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             Assert.fail("Timeout out");
         }
     }
+
+    @Test
+    public void asyncStream301WithBody() throws Throwable {
+        final CountDownLatch l = new CountDownLatch(1);
+        AsyncHttpClient c = new AsyncHttpClient();
+        c.prepareGet("http://google.com/").execute(new AsyncStreamingHandler() {
+            @Override
+            public Response onContentReceived(HttpContent content) {
+                if (content instanceof HttpResponseHeaders) {
+                    Headers h = content.getResponse().getHeaders();
+                    Assert.assertNotNull(h);
+                    Assert.assertEquals(h.getHeaderValue("content-type"), "text/html; charset=UTF-8");
+                    Assert.assertEquals(content.getResponse().getStatusCode(), 301);
+                } else if (content instanceof HttpResponseBody) {
+                    HttpResponseBody b = (HttpResponseBody) content;
+                    if (b.isComplete()) {
+                        try {
+                            InputStream is = b.getResponse().getResponseBodyAsStream();
+                            byte[] response = new byte[is.available()];
+                            is.read(response, 0, is.available());
+                            Assert.assertTrue(new String(response).contains("301 Moved"));
+                        } catch (IOException ex) {
+                            Assert.fail("", ex);
+                        } finally {
+                            l.countDown();
+                        }
+                        throw new ResponseComplete();
+                    }
+                }
+                return content.getResponse();
+            }
+
+            @Override
+            public void onThrowable(Throwable t) {
+                try {
+                    Assert.fail("", t);
+                } finally {
+                    l.countDown();
+                }
+            }
+        });
+
+        if (!l.await(20, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+    }
+
 
 //    @Test
 //    public void asyncChainedStreamFutureTest() throws Throwable {
