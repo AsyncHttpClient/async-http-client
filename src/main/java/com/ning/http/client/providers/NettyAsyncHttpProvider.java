@@ -303,8 +303,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         int port = (uri.getPort() == -1) ? 80 : uri.getPort();
-        Url url = new Url(uri.getScheme(), uri.getHost(), port, uri.getPath(), uri.getQuery());
-        return url;
+        return new Url(uri.getScheme(), uri.getHost(), port, uri.getPath(), uri.getQuery());
     }
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> handler) throws IOException {
@@ -324,6 +323,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 break;
             case PUT:
                 nettyRequest = construct(request, HttpMethod.PUT, url);
+                break;
             case HEAD:
                 nettyRequest = construct(request, HttpMethod.HEAD, url);
                 break;
