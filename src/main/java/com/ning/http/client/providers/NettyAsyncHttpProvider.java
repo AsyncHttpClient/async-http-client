@@ -330,7 +330,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     Url createUrl(String u) {
         URI uri = URI.create(u);
         final String scheme = uri.getScheme();
-        if (!scheme.equalsIgnoreCase("http")) {
+        if (scheme == null || !scheme.equalsIgnoreCase("http")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + u
                     + ", must be equal (ignoring case) to 'http'");
         }

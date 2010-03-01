@@ -239,6 +239,20 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = "async")
+    public void asyncNullSchemeTest() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        try{
+            c.prepareGet("www.sun.com").execute();
+            Assert.fail();
+        } catch (IllegalArgumentException ex){
+            ex.printStackTrace();
+            Assert.assertTrue(true);
+        }
+
+    }
+
+    @Test(groups = "async")
     public void asyncDoGetTransferEncodingTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         
