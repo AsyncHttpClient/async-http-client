@@ -370,7 +370,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             HttpResponse response = (HttpResponse) e.getMessage();
 
             if (config.isRedirectEnabled()
-                    && response.getStatus().getCode() == 302
+                    && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301)
                     && (redirectCount + 1) < config.getMaxRedirects()) {
                 HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
                 ctx.getChannel().write(r);
