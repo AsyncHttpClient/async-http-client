@@ -18,6 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.Headers;
 import com.ning.http.client.Part;
@@ -980,4 +981,47 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             Assert.fail("Timed out");
         }
     }
+
+    @Test(groups = "async")
+    public void asyncDoGetMaxConnectionsTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient(new Builder().setMaximumConnectionsTotal(2).build());
+
+        // Use a latch in case the assert fail
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        AsyncHandler handler = new VoidListener() {
+
+            @Override
+            public Response onCompleted(Response response) {
+                latch.countDown();
+                return response;
+            }
+
+            @Override
+            public void onThrowable(Throwable t) {
+                try {
+                    Assert.fail("Unexpected exception", t);
+                } finally {
+                    latch.countDown();
+                }
+            }
+        };
+
+        client.prepareGet("http://www.oracle.com/index.html").execute(handler).get();
+        client.prepareGet("http://www.apache.org/").execute(handler).get();
+
+        try{
+            client.prepareGet("http://www.ning.com/").execute(handler).get();
+            Assert.fail();
+        } catch (IOException ex){
+            String s = ex.getMessage();
+            Assert.assertEquals(s,"Too many connections");
+        }
+       
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+        client.close();
+    }
+
 }

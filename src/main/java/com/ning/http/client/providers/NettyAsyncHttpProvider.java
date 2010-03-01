@@ -107,8 +107,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final ConcurrentHashMap<Url,Channel> connectionsPool = new ConcurrentHashMap<Url,Channel>();
 
-    private volatile int maxConnections;
-
+    private volatile int maxConnectionsPerHost;
     private final HashedWheelTimer timer = new HashedWheelTimer();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
@@ -353,6 +352,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> handler) throws IOException {
+        if (connectionsPool.size() >= config.getMaxTotalConnections()){
+            throw new IOException("Too many connections");
+        }
+        
         Url url = createUrl(request.getUrl());
 
         Channel channel = performConnect(url);
@@ -484,14 +487,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void removeFromCache(ChannelHandlerContext ctx, ChannelEvent e) throws MalformedURLException {
-        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-        NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
-        connectionsPool.remove(asyncResponse.getUrl());
+        if (ctx.getAttachment() instanceof NettyResponseFuture){
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+            NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
+            connectionsPool.remove(asyncResponse.getUrl());
+        }
     }
 
     private void markAsDoneAndCacheConnection(final NettyAsyncResponse<?> asyncResponse, final Channel channel) throws MalformedURLException {
         String ka = asyncResponse.getHeader("Connection");
-        if (ka !=null && ka.equals("keep-alive") && maxConnections++ < config.getMaxConnectionPerHost()){
+        if (ka !=null && ka.toLowerCase().equals("keep-alive") && maxConnectionsPerHost++ < config.getMaxConnectionPerHost()){
             connectionsPool.put(asyncResponse.getUrl(),channel);
         } else {
             connectionsPool.remove(asyncResponse.getUrl());
