@@ -93,7 +93,7 @@ public class RemoteSiteTest {
     @Test
     public void testGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
-        c.prepareGet("http://google.com/").execute(h);
+        c.prepareGet("http://www.google.com/").execute(h);
         b.await();
     }
 
