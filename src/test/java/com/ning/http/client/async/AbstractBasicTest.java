@@ -72,6 +72,8 @@ public class AbstractBasicTest {
                 requestBody.append("_");
             }
 
+            httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
+
             javax.servlet.http.Cookie[] cs = httpRequest.getCookies();
             if (cs != null) {
                 for (javax.servlet.http.Cookie c : cs) {

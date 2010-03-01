@@ -132,14 +132,14 @@ public class AsyncHttpClientConfig {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + ".defaultMaxTotalConnections", 2000);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", 2000);
         private long defaultConnectionTimeOutInMs = Long.getLong(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000L);
-        private long defaultIdleConnectionTimeoutInMs = Long.getLong(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 15 * 1000L);
+        private long defaultIdleConnectionTimeoutInMs = Long.getLong(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000L);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
         private boolean redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         private boolean compressionEnabled = false;
         private String userAgent = "NING/1.0";
         private boolean keepAlive = true;
-        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(1);
+        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null; 
 

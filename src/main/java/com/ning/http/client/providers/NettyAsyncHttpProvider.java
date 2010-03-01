@@ -72,11 +72,16 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
@@ -98,8 +103,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private volatile int redirectCount = 0;
     private final AsyncHttpClientConfig config;
 
-    public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
+    private final ConcurrentHashMap<Url,Channel> connectionsPool = new ConcurrentHashMap<Url,Channel>();
 
+    private volatile int maxConnections;
+
+    private final HashedWheelTimer timer = new HashedWheelTimer();
+
+    public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         // TODO: Should we expose the Executors.
         bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
@@ -120,13 +130,44 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     pipeline.addLast("inflater", new HttpContentDecompressor());
                 }
 
+                IdleStateHandler h = new IdleStateHandler(timer,0,0,config.getIdleConnectionTimeout(),TimeUnit.MILLISECONDS){
+                    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws MalformedURLException {
+                        e.getChannel().close();
+                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+                        NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
+                        connectionsPool.remove(asyncResponse.getUrl());
+                    }
+                };
+                pipeline.addLast("timeout",h);
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
             }
         });
     }
 
+    private Channel lookupInCache(Url url){
+        Channel channel = connectionsPool.get(url);
+        if (channel != null){
+            /**
+             * The Channel will eventually be closed by Netty and will becomes invalid.
+             * We might suffer a memory leak if we don't scan for closed channel. The
+             * AsyncHttpClientConfig.reaper() will always make sure those are cleared.
+             */
+            if (channel.isOpen()) {
+                channel.setReadable(true);
+            } else {
+                connectionsPool.remove(url);
+            }
+        }
+        return channel;        
+    }
+
     Channel performConnect(Url url) throws IOException {
+
+        log.debug("Lookup cache: " + url.toString());         
+        Channel channel = lookupInCache(url);
+        if (channel != null) return channel;
+
         log.debug("performConnect: " + url.toString());
         configure();
         ChannelFuture channelFuture = null;
@@ -140,7 +181,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         // Blocking connect
-        Channel channel = channelFuture.awaitUninterruptibly().getChannel();
+        channel = channelFuture.awaitUninterruptibly().getChannel();
 
         if (!channel.isConnected()) {
             throw new ConnectException("Connection refused: " + url.toString());
@@ -278,6 +319,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public void close() {
+        Iterator<Entry<Url,Channel>> i =connectionsPool.entrySet().iterator();
+        while(i.hasNext()){
+            i.next().getValue().close();
+        }
+        timer.stop();
         config.reaper().shutdown();
         config.executorService().shutdown();
     }
@@ -336,10 +382,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
         channel.write(nettyRequest);
+
+        /**
+         * The reaper play two role. It times out idle connection and also check if the cached Channel
+         * are still open.
+         * TODO: May need two Scheduler instead.
+         */
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
                 if (!f.isDone()) {
                     f.onThrowable(new TimeoutException());
+                }
+
+                Iterator<Entry<Url,Channel>> i = connectionsPool.entrySet().iterator();
+                Entry<Url,Channel> e;
+                while(i.hasNext()){
+                    e = i.next();
+                    if (!e.getValue().isOpen()){
+                        i.remove();
+                    }
                 }
                 return null;
             }
@@ -406,7 +467,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             
             if (!response.isChunked() || response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                asyncResponse.getFuture().done();
+                markAsDoneAndCacheConnection(asyncResponse,ctx.getChannel());
             }
 
         } else if (e.getMessage() instanceof HttpChunk) {
@@ -419,16 +480,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             buf.writeBytes(chunk.getContent());
-
-            if (chunk.isLast()) {
-                asyncResponse.getFuture().done();
-                if (chunk instanceof HttpChunkTrailer) {
-                    asyncResponse.setTrailingHeaders((HttpChunkTrailer) chunk);
-                }
-            }
-
             if (handler != null) {
                 if (update(handler, new HttpResponseBody(asyncResponse, chunk), ctx) || chunk.isLast()) {
+                    if (chunk instanceof HttpChunkTrailer) {
+                        asyncResponse.setTrailingHeaders((HttpChunkTrailer) chunk);
+                    }       
                     finishUpdate(asyncResponse,ctx);
                     return;
                 }
@@ -436,9 +492,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private void finishUpdate(NettyAsyncResponse<?> asyncResponse, ChannelHandlerContext ctx) {
-        ctx.setAttachment(new DiscardEvent());
+    private void markAsDoneAndCacheConnection(final NettyAsyncResponse<?> asyncResponse, final Channel channel) throws MalformedURLException {
+        String ka = asyncResponse.getHeader("Connection");
+        if (ka !=null && ka.equals("keep-alive") && maxConnections++ < config.getMaxConnectionPerHost()){
+            connectionsPool.put(asyncResponse.getUrl(),channel);
+        } else {
+            connectionsPool.remove(asyncResponse.getUrl());
+        }
         asyncResponse.getFuture().done();
+    }
+
+    private void finishUpdate(NettyAsyncResponse<?> asyncResponse, ChannelHandlerContext ctx) throws MalformedURLException {
+        ctx.setAttachment(new DiscardEvent());
+        markAsDoneAndCacheConnection(asyncResponse,ctx.getChannel());
         ctx.getChannel().setReadable(false);
     }
 

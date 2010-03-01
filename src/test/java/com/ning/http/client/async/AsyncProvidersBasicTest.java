@@ -896,7 +896,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = "async")
-    public void asyncDoPostDelayHandlerTest() throws Throwable {
+    public void asyncDoGetDelayHandlerTest() throws Throwable {
         Headers h = new Headers();
         h.add("LockThread", "true");
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(5 * 1000).build());
@@ -929,6 +929,52 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             }
         });
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+    }
+
+
+    @Test(groups = "async")
+    public void asyncDoGetKeepAliveHandlerTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        // Use a latch in case the assert fail
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        AsyncHandler handler = new VoidListener() {
+
+            String remoteAddr = null;
+
+            @Override
+            public Response onCompleted(Response response) {
+                try {
+                    Assert.assertEquals(response.getStatusCode(),200);
+                    if (remoteAddr == null){
+                        remoteAddr = response.getHeader("X-KEEP-ALIVE");
+                    } else {
+                        Assert.assertEquals(response.getHeader("X-KEEP-ALIVE"),remoteAddr);
+                    }
+
+                } finally {
+                    latch.countDown();
+                }
+                return response;
+            }
+
+            @Override
+            public void onThrowable(Throwable t) {
+                try {
+                    Assert.fail("Unexpected exception", t);
+                } finally {
+                    latch.countDown();
+                }
+            }
+        };
+
+        client.prepareGet(TARGET_URL).execute(handler).get();
+        client.prepareGet(TARGET_URL).execute(handler);
 
         if (!latch.await(10, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
