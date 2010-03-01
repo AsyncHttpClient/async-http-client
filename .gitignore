@@ -1,0 +1,16 @@
+*.class
+*~
+.*.swp
+.*.swo
+.loadpath
+.buildpath
+.project
+.settings
+.idea
+*.iml
+*.ipr
+*.iws
+nbproject
+.DS_Store
+target
+test-output
