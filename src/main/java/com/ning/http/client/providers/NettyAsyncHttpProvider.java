@@ -50,11 +50,13 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -133,9 +135,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 IdleStateHandler h = new IdleStateHandler(timer,0,0,config.getIdleConnectionTimeout(),TimeUnit.MILLISECONDS){
                     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws MalformedURLException {
                         e.getChannel().close();
-                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-                        NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
-                        connectionsPool.remove(asyncResponse.getUrl());
+                        removeFromCache(ctx,e);
                     }
                 };
                 pipeline.addLast("timeout",h);
@@ -383,24 +383,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         channel.write(nettyRequest);
 
-        /**
-         * The reaper play two role. It times out idle connection and also check if the cached Channel
-         * are still open.
-         * TODO: May need two Scheduler instead.
-         */
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
                 if (!f.isDone()) {
                     f.onThrowable(new TimeoutException());
-                }
-
-                Iterator<Entry<Url,Channel>> i = connectionsPool.entrySet().iterator();
-                Entry<Url,Channel> e;
-                while(i.hasNext()){
-                    e = i.next();
-                    if (!e.getValue().isOpen()){
-                        i.remove();
-                    }
                 }
                 return null;
             }
@@ -490,6 +476,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
         }
+    }
+
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        removeFromCache(ctx,e);
+        ctx.sendUpstream(e);
+    }
+
+    private void removeFromCache(ChannelHandlerContext ctx, ChannelEvent e) throws MalformedURLException {
+        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+        NettyAsyncResponse<?> asyncResponse = future.getAsyncResponse();
+        connectionsPool.remove(asyncResponse.getUrl());
     }
 
     private void markAsDoneAndCacheConnection(final NettyAsyncResponse<?> asyncResponse, final Channel channel) throws MalformedURLException {
