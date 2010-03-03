@@ -19,6 +19,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * Configuration class to use with a {@link AsyncHttpClient}
+ */
 public class AsyncHttpClientConfig {
 
     private final static String ASYNC_CLIENT = AsyncHttpClient.class.getName();
