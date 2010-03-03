@@ -54,14 +54,16 @@ You can also have full control on the Response life cycle by deciding at any mom
           private StringBuilder builder = new StringBuilder();
 
           @Override
-          public void onStatusReceived(HttpResponseStatus s) throws Exception {
+          public void onStatusReceived(HttpResponseStatus status) throws Exception {
+              int statusCode = status.getStatusCode();
                // The Status have been read
                // If you don't want to read the headers,body, or stop processing the response
                throw new ResponseComplete();
           }
 
           @Override
-          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception {
+          public void onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+              Headers headers = headers.getHeaders();
                // The headers have been read
                // If you don't want to read the body, or stop processing the response
                throw new ResponseComplete();
