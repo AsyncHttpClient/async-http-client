@@ -26,4 +26,8 @@ public class HttpResponseHeaders extends HttpContent {
         super(response);
     }
 
+    public Headers getHeaders(){
+        return response.getHeaders();
+    }
+
 }

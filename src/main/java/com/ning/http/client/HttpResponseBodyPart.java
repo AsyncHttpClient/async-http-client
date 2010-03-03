@@ -17,30 +17,32 @@ package com.ning.http.client;
 
 import com.ning.http.client.providers.NettyAsyncResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
- * A simple {@link HttpContent} which gets created when an asynchronous response's body is available for processing.
+ * A simple {@link HttpContent} which gets created when an asynchronous response's bytes of the body are available for processing.
  */
-public class HttpResponseBody extends HttpContent {
+public class HttpResponseBodyPart extends HttpContent {
     private final HttpChunk chunk;
+    private final HttpResponse httpResponse;
 
-    public HttpResponseBody(NettyAsyncResponse<?> response) {
+    public HttpResponseBodyPart(NettyAsyncResponse<?> response, HttpResponse httpResponse) {
         super(response);
         this.chunk = null;
+        this.httpResponse = httpResponse;
     }
 
-    public HttpResponseBody(NettyAsyncResponse<?> response, HttpChunk chunk) {
+    public HttpResponseBodyPart(NettyAsyncResponse<?> response, HttpChunk chunk) {
         super(response);
         this.chunk = chunk;
+        this.httpResponse = null;        
     }
 
-    /**
-     * Return <tt>true</tt> if the full response's body has been read and this instance will be the last one sent
-     * to an {@link AsyncStreamingHandler}
-     *
-     * @return <tt>true</tt> if the full response's body has been read
-     */
-    public final boolean isComplete() {
-        return chunk == null? true : chunk.isLast();
+    public byte[] getResponseBytes(){
+        if (chunk != null){
+            return chunk.getContent().array();
+        } else {
+            return httpResponse.getContent().array();
+        }
     }
 }

@@ -15,7 +15,7 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
@@ -40,7 +40,7 @@ public class RemoteSiteTest {
 
     private AsyncHttpClient c;
     private CyclicBarrier b;
-    private AsyncHandler h;
+    private AsyncCompletionHandler<Response> h;
     private Throwable t;
 
     @BeforeClass
@@ -49,7 +49,7 @@ public class RemoteSiteTest {
         b = new CyclicBarrier(2);
         c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
         t = null;
-        h = new AsyncHandler() {
+        h = new AsyncCompletionHandler<Response>() {
             public void onThrowable(Throwable t) {
                 try {
                     RemoteSiteTest.this.t = t;
@@ -65,10 +65,9 @@ public class RemoteSiteTest {
                 }
             }
 
-            public Object onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 try {
-                    // never reached :(
-                    return null;
+                    return response;
                 } finally {
                     try {
                         b.await();
@@ -129,6 +128,7 @@ public class RemoteSiteTest {
     }
 
     @Test
+
     public void testUpdateMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://update.microsoft.com/").execute(h);
         b.await();

@@ -15,7 +15,7 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
@@ -46,20 +46,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
-    static class VoidListener implements AsyncHandler<Response> {
-
-        @Override
-        public Response onCompleted(Response response) throws IOException{
-            return response;
-        }
-
-        @Override
-        public void onThrowable(Throwable t) {
-            t.printStackTrace();
-            Assert.fail("Unexpected exception", t);
-        }
-
-    }
 
     @Test(groups = "async")
     public void asyncProviderContentLenghtGETTest() throws Throwable {
@@ -70,10 +56,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         connection.connect();
 
         Request request = new RequestBuilder(RequestType.GET).setUrl(TARGET_URL).build();
-        p.execute(request, new VoidListener() {
+        p.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 int contentLenght = -1;
                 if (response.getHeader("content-length") != null) {
@@ -107,10 +93,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.GET).setUrl(TARGET_URL).build();
-        p.execute(request, new VoidListener() {
+        p.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 Assert.assertEquals(response.getContentType(), "text/html; charset=utf-8");
                 l.countDown();
@@ -129,10 +115,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.GET).setUrl(TARGET_URL).build();
-        n.execute(request, new VoidListener() {
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 Assert.assertEquals(response.getContentType(), "text/html; charset=utf-8");
 
@@ -160,10 +146,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test5", "Test5");
         Request request = new RequestBuilder(RequestType.GET).setUrl(TARGET_URL).setHeaders(h).build();
 
-        n.execute(request, new VoidListener() {
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 System.out.println(">>>>> " + response.getStatusText());
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
@@ -194,10 +180,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             m.put("param_" + i, "value_" + i);
         }
         Request request = new RequestBuilder(RequestType.POST).setUrl(TARGET_URL).setHeaders(h).setParameters(m).build();
-        n.execute(request, new VoidListener() {
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
 
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
@@ -222,10 +208,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.HEAD).setUrl(TARGET_URL).build();
-        n.execute(request, new VoidListener() {
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 l.countDown();
                 return response;
@@ -259,10 +245,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
 
-        c.prepareGet(TARGET_URL).execute(new VoidListener() {
+        c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
 
                 Assert.assertEquals(response.getStatusCode(), 200);
                 Assert.assertEquals(response.getHeader("Transfer-Encoding"), "chunked");
@@ -289,10 +275,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test3", "Test3");
         h.add("Test4", "Test4");
         h.add("Test5", "Test5");
-        c.prepareGet(TARGET_URL).setHeaders(h).execute(new VoidListener() {
+        c.prepareGet(TARGET_URL).setHeaders(h).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
 
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
@@ -320,10 +306,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test5", "Test5");
 
         Cookie coo = new Cookie("/", "foo", "value", "/", 3000, false);
-        c.prepareGet(TARGET_URL).setHeaders(h).addCookie(coo).execute(new VoidListener() {
+        c.prepareGet(TARGET_URL).setHeaders(h).addCookie(coo).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 System.out.println(">>>> " + response.getHeader("Set-Cookie"));
                 Assert.assertEquals(response.getStatusCode(), 200);
                 Assert.assertEquals("foo=value;Path=/;Domain=/", response.getHeader("Set-Cookie"));
@@ -353,10 +339,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
                     System.out.println(">>>>> " + response.getHeader("X-param_" + i));
@@ -390,10 +376,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         sb.deleteCharAt(sb.length() - 1);
         ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
 
-        c.preparePost(TARGET_URL).setHeaders(h).setBody(is).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).setHeaders(h).setBody(is).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
                     System.out.println(">>>>> " + response.getHeader("X-param_" + i));
@@ -435,10 +421,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             public void writeEntity(OutputStream out) throws IOException {
                 out.write(sb.toString().getBytes("UTF-8"));
             }
-        }).execute(new VoidListener() {
+        }).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 for (int i = 1; i < 5; i++) {
                     System.out.println(">>>>> " + response.getHeader("X-param_" + i));
@@ -461,10 +447,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Part p = new StringPart("foo", "bar");
 
-        c.preparePost(TARGET_URL).addBodyPart(p).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 String xContentType = response.getHeader("X-Content-Type");
                 String boundary = xContentType.substring(
                         (xContentType.indexOf("boundary") + "boundary".length() + 1));
@@ -498,10 +484,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 Assert.assertEquals(response.getHeader("X-Accept-Encoding"), "gzip");
                 l.countDown();
@@ -532,9 +518,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        Response response = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncHandler<Response>() {
+        Response response = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandler<Response>() {
             @Override
-            public Response onCompleted(Response response) {
+            public Response onCompleted(Response response) throws Exception {
                 return response;
             }
 
@@ -568,7 +554,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                             .setVirtualHost("localhost")
                             .build();
 
-        Response response = n.execute(request, new VoidListener()).get();
+        Response response = n.execute(request, new AsyncCompletionHandlerAdapter()).get();
 
         Assert.assertEquals(response.getStatusCode(), 200);
         Assert.assertEquals(response.getHeader("X-Host"), "localhost:19999");
@@ -591,7 +577,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        Response response = c.preparePut(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener()).get();
+        Response response = c.preparePut(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter()).get();
 
         Assert.assertEquals(response.getStatusCode(), 200);
         Assert.assertEquals(response.getHeader("X-param_1"), null);
@@ -620,10 +606,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
          */
         final CountDownLatch latch = new CountDownLatch(1);
 
-        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) throws IOException {
+            public Response onCompleted(Response response) throws Exception {
                 try {
                     Assert.assertEquals(response.getStatusCode(), 200);
                     for (int i = 1; i < 5; i++) {
@@ -655,7 +641,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         StringBuilder sb = new StringBuilder();
         sb.append("LockThread=true");
 
-        Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener());
+        Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
         future.cancel(true);
         Response response = future.get(5, TimeUnit.SECONDS);
         Assert.assertNotNull(response);
@@ -673,7 +659,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         sb.append("LockThread=true");
 
         try {
-            Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener(){
+            Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter(){
                 @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
@@ -705,7 +691,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         sb.deleteCharAt(sb.length() - 1);
 
-        Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener());
+        Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
 
         Response response = future.get();
         Assert.assertNotNull(response);
@@ -730,10 +716,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new VoidListener() {
+        c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
                     @Override
-                    public Response onCompleted(Response response) {
+                    public Response onCompleted(Response response) throws Exception {
                         Assert.assertEquals(response.getStatusCode(), 200);
                         latch.countDown();
                         return response;
@@ -763,7 +749,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         IOException expected = null;
         try {
-            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString()).execute(new VoidListener());
+            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
         } catch (IOException ex) {
             expected = ex;
         }
@@ -791,7 +777,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         sb.deleteCharAt(sb.length() - 1);
 
         try{
-            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString()).execute(new VoidListener());
+            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
             Assert.assertTrue(false);          
         } catch (ConnectException ex){
             Assert.assertTrue(true);
@@ -803,7 +789,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient();
 
         try {
-            c.prepareGet("http://127.0.0.1:9999/").execute(new VoidListener());
+            c.prepareGet("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter());
             Assert.fail("No ConnectionException was thrown");
         } catch (ConnectException ex) {
             Assert.assertEquals(ex.getMessage(), "Connection refused: http://127.0.0.1:9999/");
@@ -814,7 +800,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncContentLenghtGETTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        Response response = c.prepareGet(TARGET_URL).execute(new VoidListener() {
+        Response response = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
             public void onThrowable(Throwable t) {
@@ -829,7 +815,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncResponseBodyTooLarge() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        Response response = c.prepareGet(TARGET_URL).execute(new VoidListener() {
+        Response response = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
             public void onThrowable(Throwable t) {
@@ -843,7 +829,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncResponseBody() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        Response response = c.prepareGet(TARGET_URL).execute(new VoidListener() {
+        Response response = c.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
             public void onThrowable(Throwable t) {
@@ -861,10 +847,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);
 
-        client.prepareGet(TARGET_URL).execute(new VoidListener() {
+        client.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) {
+            public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
                 latch.countDown();
                 return response;
@@ -888,9 +874,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);
 
-        client.prepareGet(TARGET_URL).execute(new VoidListener() {
+        client.prepareGet(TARGET_URL).execute(new AsyncCompletionHandlerAdapter() {
             @Override
-            public Response onCompleted(Response response) {
+            public Response onCompleted(Response response) throws Exception {
                 throw new IllegalStateException("FOO");
             }
 
@@ -919,10 +905,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);
 
-        client.prepareGet(TARGET_URL).setHeaders(h).execute(new VoidListener() {
+        client.prepareGet(TARGET_URL).setHeaders(h).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) {
+            public Response onCompleted(Response response) throws Exception {
                 try {
                     Assert.fail("Must not receive a response");
                 } finally {
@@ -958,33 +944,22 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(2);
 
-        AsyncHandler handler = new VoidListener() {
+        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
 
             String remoteAddr = null;
 
             @Override
-            public Response onCompleted(Response response) {
-                try {
-                    Assert.assertEquals(response.getStatusCode(),200);
-                    if (remoteAddr == null){
-                        remoteAddr = response.getHeader("X-KEEP-ALIVE");
-                    } else {
-                        Assert.assertEquals(response.getHeader("X-KEEP-ALIVE"),remoteAddr);
-                    }
+            public Response onCompleted(Response response) throws Exception {
 
-                } finally {
+                Assert.assertEquals(response.getStatusCode(),200);
+                if (remoteAddr == null){
+                    remoteAddr = response.getHeader("X-KEEP-ALIVE");
+                    latch.countDown();                    
+                } else {
+                    Assert.assertEquals(response.getHeader("X-KEEP-ALIVE"),remoteAddr);
                     latch.countDown();
                 }
                 return response;
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                try {
-                    Assert.fail("Unexpected exception", t);
-                } finally {
-                    latch.countDown();
-                }
             }
         };
 
@@ -1003,10 +978,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(2);
 
-        AsyncHandler handler = new VoidListener() {
+        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
 
             @Override
-            public Response onCompleted(Response response) {
+            public Response onCompleted(Response response) throws Exception {
                 latch.countDown();
                 return response;
             }

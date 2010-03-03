@@ -12,15 +12,24 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
  * License for the specific language governing permissions and limitations
  * under the License.
+ *
  */
 package com.ning.http.client;
 
 import com.ning.http.client.providers.NettyAsyncResponse;
 
-public class HttpContent {
-    protected final NettyAsyncResponse<?> response;
+public class HttpResponseStatus extends HttpContent{
 
-    protected HttpContent(NettyAsyncResponse<?> response) {
-        this.response = response;
+    public HttpResponseStatus(NettyAsyncResponse<?> response) {
+        super(response);
     }
+
+    public int getStatusCode(){
+        return response.getStatusCode();
+    }
+
+    public String getStatusText(){
+        return response.getStatusText();
+    }
+
 }

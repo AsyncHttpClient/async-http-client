@@ -15,12 +15,19 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
@@ -136,5 +143,46 @@ public class AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
+    public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
 
+        @Override
+        public Response onCompleted(Response response) throws Exception {
+            return response;
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            t.printStackTrace();
+            Assert.fail("Unexpected exception", t);
+        }
+
+    }
+
+    public static class AsyncHandlerAdapter implements AsyncHandler<String> {
+
+
+        @Override
+        public void onThrowable(Throwable t) {
+            t.printStackTrace();
+            Assert.fail("Unexpected exception", t);
+        }
+
+        @Override
+        public void onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        }
+
+        @Override
+        public void onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
+        }
+
+        @Override
+        public void onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        }
+
+        @Override
+        public String onCompleted() throws Exception {
+            return "";
+        }
+
+    }
 }

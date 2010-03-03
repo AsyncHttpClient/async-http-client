@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.providers;
 
+import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Request;
@@ -131,7 +132,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     V getContent() {
         if (content.get() == null) {
             try {
-                content.set(asyncHandler.onCompleted(asyncResponse));
+                if (asyncHandler instanceof AsyncCompletionHandler){
+                    content.set(((AsyncCompletionHandler<V>)asyncHandler).onCompleted(asyncResponse));
+                } else {
+                    content.set(asyncHandler.onCompleted());
+                }
             } catch (Throwable ex) {
                 onThrowable(ex);
                 throw new RuntimeException(ex);

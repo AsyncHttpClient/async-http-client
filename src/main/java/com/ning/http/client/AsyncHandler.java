@@ -15,12 +15,21 @@
  */
 package com.ning.http.client;
 
-import java.io.IOException;
-
 /**
- * Marker interface for all asynchronous handler implementation.
+ * An asynchronous handler or callback which gets invoked as soon as some data are available when
+ * processing an asynchronous response. Interrupting the process of the asynchronous response can be achieved by
+ * throwing an {@link com.ning.http.client.AsyncHandler.ResponseCompleted} exception at any moment during the
+ * processing of the asynchronous response.
  */
 public interface AsyncHandler<T> {
+
+    /**
+     * Convenience exception to throw for interrupting the processing of the asynchronous response.
+     */
+    public class ResponseCompleted extends Exception{
+        public ResponseCompleted(){
+        }
+    }
 
     /**
      * Invoked when an unexpected exception occurs during the processing of the response
@@ -29,12 +38,31 @@ public interface AsyncHandler<T> {
      */
     void onThrowable(Throwable t);
 
+    /**
+     * Invoked as soon as some response body are received.
+     * @param bodyPart response's body part.
+     * @throws Exception
+     */
+    void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
     /**
-     * Invoked once the HTTP response has been fully processed
-     *
-     * @param response The {@link com.ning.http.client.Response}
-     * return T 
+     * Invoked as soon as the HTTP status line has been received
+     * @param responseStatus
+     * @throws Exception
      */
-     T onCompleted(Response response) throws IOException;
+    void onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
+
+    /**
+     * Invoked as soon as the HTTP headers has been received.
+     * @param headers
+     * @throws Exception
+     */
+    void onHeadersReceived(HttpResponseHeaders headers) throws Exception;
+
+    /**
+     * Invoked once the HTTP response has been fully received
+     * @return
+     * @throws Exception
+     */
+    T onCompleted() throws Exception;
 }

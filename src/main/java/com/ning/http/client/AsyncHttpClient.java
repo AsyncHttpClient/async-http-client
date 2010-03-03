@@ -31,11 +31,11 @@ import java.util.concurrent.Future;
  * }
  *
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
- * create an {@link AsyncHandler}
+ * create an {@link AsyncHandler} or its abstract implementation, {@link com.ning.http.client.AsyncCompletionHandler}
  *
  * {@code
  *       AsyncHttpClient c = new AsyncHttpClient();
- *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Response>() &#123;
+ *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
  *
  *          @Override
  *          public Response onCompleted(Response response) throws IOException &#123;
@@ -50,7 +50,7 @@ import java.util.concurrent.Future;
  *      Response response = f.get();
  *
  *      // We are just interested to retrieve the status code.
- *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Integer>() &#123;
+ *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>() &#123;
  *
  *          @Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
@@ -64,40 +64,50 @@ import java.util.concurrent.Future;
  *      &#125;);
  *      Integer statusCode = f.get();
  * }
- * The {@link AsyncHandler#onCompleted(com.ning.http.client.Response)} will be invoked once the http response has been fully read, which include
+ * The {@link AsyncCompletionHandler#onCompleted(com.ning.http.client.Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
  * 
- * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncStreamingHandler}
+ * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
  * {@code
  *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncStreamingHandler() &#123;
+ *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
+ *          private StringBuilder builder = new StringBuilder();
  *
  *          @Override
- *          public Response onContentReceived(HttpContent content) throws ResponseComplete &#123;
- *              if (content instanceof HttpResponseHeaders) &#123;
- *                  // The headers have been read
- *                  // If you don't want to read the body, or stop processing the response
- *                  throw new ResponseComplete();
- *              &#125; else if (content instanceof HttpResponseBody) &#123;
- *                  HttpResponseBody b = (HttpResponseBody) content;
- *                  // Do something with the body. It may not been fully read yet.
- *                  if (b.isComplete()) &#123;
- *                      // The full response has been read.
- *                  &#125;
- *              &#125;
- *              return content.getResponse();
+ *          public void onStatusReceived(HttpResponseStatus s) throws Exception &#123;
+ *               // The Status have been read
+ *               // If you don't want to read the headers,body, or stop processing the response
+ *               throw new ResponseComplete();
+ *          }
+ *
+ *          @Override
+ *          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
+ *               // The headers have been read
+ *               // If you don't want to read the body, or stop processing the response
+ *               throw new ResponseComplete();
+ *          }
+ *          @Override
+ *
+ *          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
+ *               builder.append(new String(bodyPart));
+ *          &#125;
+ *
+ *          @Override
+ *          public String onCompleted() throws Exception &#123;
+ *               // Will be invoked once the response has been fully read or a ResponseComplete exception
+ *               // has been thrown.
+ *               return builder.toString();
  *          &#125;
  *
  *          @Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
- *      Response response = f.get();
+ *
+ *      String bodyResponse = f.get();
  * }
- * From an {@link HttpContent}, you can asynchronously process the response headers and body and decide when to
- * stop the processing the response by throwing {@link AsyncStreamingHandler.ResponseComplete} at any moment. The returned
- * {@link Response} will be incomplete until {@link HttpResponseBody#isComplete()} return true, which means the
- * response has been fully read and buffered in memory.
+ * From any {@link HttpContent} sub classses, you can asynchronously process the response status,headers and body and decide when to
+ * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
  *
  * This class can also be used without the need of {@link AsyncHandler}</p>
  * {@code
@@ -134,10 +144,10 @@ public class AsyncHttpClient {
         this.httpProvider = httpProvider;
     }
 
-    private final static AsyncHandler<Response> voidHandler = new AsyncHandler<Response>(){
+    private final static AsyncHandler voidHandler = new AsyncCompletionHandler<Response>(){
 
         @Override
-        public Response onCompleted(Response response) throws IOException{
+        public Response onCompleted(Response response) throws Exception {
             return response;
         }
 
@@ -166,10 +176,17 @@ public class AsyncHttpClient {
         }
     }
 
+    /**
+     * Return the asynchronouys {@link com.ning.http.client.AsyncHttpProvider}
+     * @return
+     */
     public AsyncHttpProvider getProvider() {
         return httpProvider;
     }
 
+    /**
+     * Close the underlying connection.
+     */
     public void close() {
         httpProvider.close();
     }
@@ -180,10 +197,14 @@ public class AsyncHttpClient {
         super.finalize();
     }
 
+    /**
+     * Return the {@link com.ning.http.client.AsyncHttpClientConfig}
+     * @return
+     */
     public AsyncHttpClientConfig getConfig(){
         return config;
     }
-    
+
     public BoundRequestBuilder prepareGet(String url) {
         return new BoundRequestBuilder(RequestType.GET).setUrl(url);
     }

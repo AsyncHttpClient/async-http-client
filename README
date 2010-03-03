@@ -13,12 +13,12 @@ Async Http Client is a Java based set of APIs that can be used to accomplish asy
 You can also accomplish asynchronous operation without using a Future to block for the response:
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Response>(){
+    asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
         
         @Override
         public Response onCompleted(Response response){
             // Do something with the Response
-            // ...
+            // ...                                   `
             return response;
         }
         
@@ -31,7 +31,7 @@ You can also accomplish asynchronous operation without using a Future to block f
 You can also mix Future with AsyncHandler
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncHandler<Integer>(){
+    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>(){
         
         @Override
         public int onCompleted(Response response){
@@ -49,37 +49,49 @@ You can also mix Future with AsyncHandler
 
 You can also have full control on the Response life cycle by deciding at any moment to stop processing what the server is sending back:
 
-    AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.preparePost("http://www.ning.com/").addBodyPart(new StringPart("foo", "bar")).execute(new AsyncStreamingHandler(){
-        
-        @Override
-        public Response onContentReceived(HttpContent content) {
-            if (content instanceof HttpResponseHeaders) {
-                // The Response HTTP headers has been received.   
-                ..
-                // If we aren't interested by the response body, we just have to:
-                throw new ResponseComplete();
-            } else if (content instance HttpResponseBody){
-                // As soon as the response's bytes arrive, we get notified
-                if ( ((HttpResponseBody)content).isComplete()){
-                    // The response has been fully read
-                }
-            }
-        }
+      AsyncHttpClient c = new AsyncHttpClient();
+      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
+          private StringBuilder builder = new StringBuilder();
 
-        @Override
-        public void onThrowable(Throwable t){
-            // Something wrong happened.
-        }
-    }
-    // The response may be incomplete if the AsyncStreamingHandler decided to only read the headers or part of the body
-    Response response = f.get();
+          @Override
+          public void onStatusReceived(HttpResponseStatus s) throws Exception {
+               // The Status have been read
+               // If you don't want to read the headers,body, or stop processing the response
+               throw new ResponseComplete();
+          }
+
+          @Override
+          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception {
+               // The headers have been read
+               // If you don't want to read the body, or stop processing the response
+               throw new ResponseComplete();
+          }
+          @Override
+
+          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+               builder.append(new String(bodyPart));
+          }
+
+          @Override
+          public String onCompleted() throws Exception {
+               // Will be invoked once the response has been fully read or a ResponseComplete exception
+               // has been thrown.
+               return builder.toString();
+          }
+
+          @Override
+          public void onThrowable(Throwable t) {
+          }
+      });
+      
+      String bodyResponse = f.get();
+
 
 Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConfig object:
 
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
         AsyncHttpClient c = new AsyncHttpClient(cf);
 
-For more information, post your question to http://groups.google.com/group/asynchttpclient
+For more information, post your questions to http://groups.google.com/group/asynchttpclient
 
 
