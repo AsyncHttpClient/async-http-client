@@ -71,7 +71,7 @@ You can also have full control on the Response life cycle by deciding at any mom
           @Override
 
           public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-               builder.append(new String(bodyPart));
+               builder.append(new String(bodyPart.getBodyPartBytes()));
           }
 
           @Override

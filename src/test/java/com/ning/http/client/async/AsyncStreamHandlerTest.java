@@ -90,7 +90,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override
@@ -185,7 +185,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override
@@ -264,7 +264,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override
@@ -293,7 +293,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override
@@ -325,7 +325,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override
@@ -358,7 +358,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                builder.append(new String(content.getResponseBytes()));
+                builder.append(new String(content.getBodyPartBytes()));
             }
 
             @Override

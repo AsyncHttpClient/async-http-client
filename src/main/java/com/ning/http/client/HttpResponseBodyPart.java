@@ -38,7 +38,7 @@ public class HttpResponseBodyPart extends HttpContent {
         this.httpResponse = null;        
     }
 
-    public byte[] getResponseBytes(){
+    public byte[] getBodyPartBytes(){
         if (chunk != null){
             return chunk.getContent().array();
         } else {
