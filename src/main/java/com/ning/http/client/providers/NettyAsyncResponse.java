@@ -19,7 +19,6 @@ import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Headers;
 import com.ning.http.client.Response;
 import com.ning.http.url.Url;
-import org.apache.commons.io.IOUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -28,6 +27,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -112,7 +112,18 @@ public class NettyAsyncResponse<V> implements Response {
             }
         }
         InputStream responseInput = getResponseBodyAsStream();
-        return IOUtils.toString(responseInput, charset);
+        return contentToString(charset);
+    }
+
+    String contentToString(String charset) throws UnsupportedEncodingException {
+        if (!r.isChunked()) {
+            return new String(r.getContent().array(),charset);
+        } else {
+            if (buffer == null) {
+                throw new NullPointerException("buffer is null");
+            }
+            return new String(buffer.array(),charset);
+        }
     }
 
     @Override
@@ -127,7 +138,7 @@ public class NettyAsyncResponse<V> implements Response {
             }
         }
         InputStream responseInput = getResponseBodyAsStream();
-        String response = IOUtils.toString(responseInput, charset);
+        String response = contentToString(charset);
     
         return response.length() <= maxLength ? response : response.substring(0,maxLength);
     }
