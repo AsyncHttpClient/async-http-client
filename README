@@ -3,14 +3,32 @@ Copyright 2010 Ning Inc
 
 DESCRIPTION
 -----------
-Async Http Client is a Java based set of APIs that can be used to accomplish asynchronous http requests and receive asynchronous responses. The API is as simple as:
+Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process
+the HTTP responses.
+
+The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add this dependency:
+
+    <dependency>
+        <groupId>com.ning</groupId>
+        <artifactId>async-http-client</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+
+For now, you'll have to add the Sonatype snapshot repo to your settings in order to be able to access the snapshot builds:
+
+    http://oss.sonatype.org/service/local/repositories/snapshots/content
+
+Then in your code you can simply do:
+
+    import com.ning.http.client.*;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
-    // Wait for the response
+    Future f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
     Response r = f.get();
 
-You can also accomplish asynchronous operation without using a Future to block for the response:
+You can also accomplish asynchronous operations without using a Future if you want to block for the response:
+
+    import com.ning.http.client.*;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
     asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
@@ -28,7 +46,9 @@ You can also accomplish asynchronous operation without using a Future to block f
         }
     });
 
-You can also mix Future with AsyncHandler
+You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
+
+    import com.ning.http.client.*;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
     Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>(){
@@ -47,7 +67,9 @@ You can also mix Future with AsyncHandler
     
     int statuѕCode = f.get();
 
-You can also have full control on the Response life cycle by deciding at any moment to stop processing what the server is sending back:
+ You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
+
+      import com.ning.http.client.*;
 
       AsyncHttpClient c = new AsyncHttpClient();
       Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
@@ -68,8 +90,8 @@ You can also have full control on the Response life cycle by deciding at any mom
                // If you don't want to read the body, or stop processing the response
                throw new ResponseComplete();
           }
-          @Override
 
+          @Override
           public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                builder.append(new String(bodyPart.getBodyPartBytes()));
           }
@@ -94,6 +116,12 @@ Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConf
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
         AsyncHttpClient c = new AsyncHttpClient(cf);
 
-For more information, post your questions to http://groups.google.com/group/asynchttpclient
+The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build
+on top of Netty (http://www.jboss.org/netty), the Java NIO Client Server Socket Framework from JBoss, but the library
+exposes a configurable provider SPI which allows to easily plug in other frameworks.
+
+Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
+
+        http://groups.google.com/group/asynchttpclient
 
 
