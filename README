@@ -18,22 +18,24 @@ For now, you'll have to add the Sonatype snapshot repo to your settings in order
 Then in your code you can simply do:
 
     import com.ning.http.client.*;
+    import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
+    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
     Response r = f.get();
 
 You can also accomplish asynchronous operations without using a Future if you want to block for the response:
 
     import com.ning.http.client.*;
+    import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
     asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
         
         @Override
-        public Response onCompleted(Response response){
+        public Response onCompleted(Response response) throws Exception{
             // Do something with the Response
-            // ...                                   `
+            // ...
             return response;
         }
         
@@ -46,12 +48,13 @@ You can also accomplish asynchronous operations without using a Future if you wa
 You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
 
     import com.ning.http.client.*;
+    import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
     Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>(){
         
         @Override
-        public int onCompleted(Response response){
+        public Integer onCompleted(Response response) throws Exception{
             // Do something with the Response
             return response.getStatusCode();
         }
@@ -67,6 +70,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
  You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
 
       import com.ning.http.client.*;
+      import java.util.concurrent.Future;
 
       AsyncHttpClient c = new AsyncHttpClient();
       Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
@@ -77,15 +81,15 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
               int statusCode = status.getStatusCode();
                // The Status have been read
                // If you don't want to read the headers,body, or stop processing the response
-               throw new ResponseComplete();
+               throw new ResponseCompleted();
           }
 
           @Override
-          public void onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-              Headers headers = headers.getHeaders();
+          public void onHeadersReceived(HttpResponseHeaders h) throws Exception {
+              Headers headers = h.getHeaders();
                // The headers have been read
                // If you don't want to read the body, or stop processing the response
-               throw new ResponseComplete();
+               throw new ResponseCompleted();
           }
 
           @Override
