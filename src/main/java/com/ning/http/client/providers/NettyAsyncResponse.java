@@ -111,7 +111,6 @@ public class NettyAsyncResponse<V> implements Response {
                 }
             }
         }
-        InputStream responseInput = getResponseBodyAsStream();
         return contentToString(charset);
     }
 
@@ -137,9 +136,7 @@ public class NettyAsyncResponse<V> implements Response {
                 }
             }
         }
-        InputStream responseInput = getResponseBodyAsStream();
-        String response = contentToString(charset);
-    
+        String response = contentToString(charset);    
         return response.length() <= maxLength ? response : response.substring(0,maxLength);
     }
 
