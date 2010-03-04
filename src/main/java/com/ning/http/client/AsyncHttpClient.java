@@ -122,30 +122,54 @@ import java.util.concurrent.Future;
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * }
+ *
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
+ * expires. This object can hold many persistent connections to different host.
+ * 
  */
 public class AsyncHttpClient {
 
     private final AsyncHttpProvider httpProvider;
-
     private final AsyncHttpClientConfig config;
 
-
+    /**
+     * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
+     * default {@link AsyncHttpProvider} will be used ({@link com.ning.http.client.providers.NettyAsyncHttpProvider}
+     */
     public AsyncHttpClient() {
         this(new AsyncHttpClientConfig.Builder().build());
     }
 
-    public AsyncHttpClient(AsyncHttpClientConfig config) {
-        this.config = config;
-        this.httpProvider = new NettyAsyncHttpProvider(config);
-    }
-
+    /**
+     * Create a new HTTP Asynchronous Client using an implementation of {@link AsyncHttpProvider} and
+     * the default {@link AsyncHttpClientConfig} configuration.
+     * @param httpProvider a {@link AsyncHttpProvider}
+     */
     public AsyncHttpClient(AsyncHttpProvider httpProvider) {
         this.config = new AsyncHttpClientConfig.Builder().build();
         this.httpProvider = httpProvider;
     }
 
-    private final static AsyncHandler voidHandler = new AsyncCompletionHandler<Response>(){
+    /**
+     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration.
+     * @param config a {@link AsyncHttpClientConfig}
+     */
+    public AsyncHttpClient(AsyncHttpClientConfig config) {
+        this(new NettyAsyncHttpProvider(config), config);
+    }
 
+    /**
+     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
+     * and a {@link AsyncHttpProvider}.
+     * @param config a {@link AsyncHttpClientConfig}
+     * @param httpProvider a {@link AsyncHttpProvider}
+     */
+    public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
+        this.config = new AsyncHttpClientConfig.Builder().build();
+        this.httpProvider = httpProvider;
+    }
+
+    private final static AsyncHandler defaultHandler = new AsyncCompletionHandler<Response>(){
         @Override
         public Response onCompleted(Response response) throws Exception {
             return response;
@@ -168,11 +192,11 @@ public class AsyncHttpClient {
         }
 
         public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {
-            return AsyncHttpClient.this.performRequest(build(), handler);
+            return AsyncHttpClient.this.executeRequest(build(), handler);
         }
 
         public Future<Response> execute() throws IOException {
-            return AsyncHttpClient.this.performRequest(build(), voidHandler);
+            return AsyncHttpClient.this.executeRequest(build(), defaultHandler);
         }
     }
 
@@ -185,7 +209,7 @@ public class AsyncHttpClient {
     }
 
     /**
-     * Close the underlying connection.
+     * Close the underlying connections.
      */
     public void close() {
         httpProvider.close();
@@ -199,37 +223,84 @@ public class AsyncHttpClient {
 
     /**
      * Return the {@link com.ning.http.client.AsyncHttpClientConfig}
-     * @return
+     * @return {@link com.ning.http.client.AsyncHttpClientConfig}
      */
     public AsyncHttpClientConfig getConfig(){
         return config;
     }
 
+    /**
+     * Prepare an HTTP client GET request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder prepareGet(String url) {
         return new BoundRequestBuilder(RequestType.GET).setUrl(url);
     }
-
+    /**
+     * Prepare an HTTP client HEAD request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder prepareHead(String url) {
         return new BoundRequestBuilder(RequestType.HEAD).setUrl(url);
     }
 
+    /**
+     * Prepare an HTTP client POST request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder preparePost(String url) {
         return new BoundRequestBuilder(RequestType.POST).setUrl(url);
     }
 
+    /**
+     * Prepare an HTTP client PUT request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder preparePut(String url) {
         return new BoundRequestBuilder(RequestType.PUT).setUrl(url);
     }
-
+    
+    /**
+     * Prepare an HTTP client DELETE request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder prepareDelete(String url) {
         return new BoundRequestBuilder(RequestType.DELETE).setUrl(url);
     }
 
+    /**
+     * Construct a {@link RequestBuilder} using a {@link Request}
+     * @param request a {@link Request}
+     * @return {@link RequestBuilder}
+     */
     public BoundRequestBuilder prepareRequest(Request request) {
         return new BoundRequestBuilder(request);
     }
 
-    public <T> Future<T> performRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    /**
+     * Execute an HTTP request.
+     * @param request {@link Request}
+     * @param handler an instance of {@link AsyncHandler}
+     * @param <T>
+     * @return a {@link Future} of type T
+     * @throws IOException
+     */
+    public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
         return httpProvider.execute(request, handler);
+    }
+
+     /**
+     * Execute an HTTP request.
+     * @param request {@link Request}
+     * @return a {@link Future} of type Response
+     * @throws IOException
+     */
+    public Future<Response> executeRequest(Request request) throws IOException {
+        return httpProvider.execute(request, defaultHandler );
     }
 }

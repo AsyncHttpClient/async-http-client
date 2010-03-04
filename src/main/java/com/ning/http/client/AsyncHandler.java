@@ -17,9 +17,17 @@ package com.ning.http.client;
 
 /**
  * An asynchronous handler or callback which gets invoked as soon as some data are available when
- * processing an asynchronous response. Interrupting the process of the asynchronous response can be achieved by
+ * processing an asynchronous response. Callbacks method gets invoked in the following order:
+ * (1) {@link #onStatusReceived(HttpResponseStatus)}
+ * (2) {@link #onHeadersReceived(HttpResponseHeaders)}
+ * (3) {@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times
+ * (4) {@link #onCompleted()}, once the response has been fully read.
+ *
+ * Interrupting the process of the asynchronous response can be achieved by
  * throwing an {@link com.ning.http.client.AsyncHandler.ResponseCompleted} exception at any moment during the
  * processing of the asynchronous response.
+ *
+ * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
 public interface AsyncHandler<T> {
 
@@ -39,7 +47,7 @@ public interface AsyncHandler<T> {
     void onThrowable(Throwable t);
 
     /**
-     * Invoked as soon as some response body are received.
+     * Invoked as soon as some response body part are received.
      * @param bodyPart response's body part.
      * @throws Exception
      */
@@ -47,21 +55,21 @@ public interface AsyncHandler<T> {
 
     /**
      * Invoked as soon as the HTTP status line has been received
-     * @param responseStatus
+     * @param responseStatus the status code and test of the response
      * @throws Exception
      */
     void onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
      * Invoked as soon as the HTTP headers has been received.
-     * @param headers
+     * @param headers the HTTP headers.
      * @throws Exception
      */
     void onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
      * Invoked once the HTTP response has been fully received
-     * @return
+     * @return T The 
      * @throws Exception
      */
     T onCompleted() throws Exception;
