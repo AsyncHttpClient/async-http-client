@@ -24,7 +24,7 @@ Then in your code you can simply do:
     Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
     Response r = f.get();
 
-You can also accomplish asynchronous operations without using a Future if you want to block for the response:
+You can also accomplish asynchronous operation without using a Future if you want to receive and process the response in your handler:
 
     import com.ning.http.client.*;
     import java.util.concurrent.Future;
