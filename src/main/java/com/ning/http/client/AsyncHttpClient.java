@@ -37,13 +37,13 @@ import java.util.concurrent.Future;
  *       AsyncHttpClient c = new AsyncHttpClient();
  *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
  *
- *          @Override
+ *          &#64;Override
  *          public Response onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response;
  *          &#125;
  *
- *          @Override
+ *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
@@ -52,13 +52,13 @@ import java.util.concurrent.Future;
  *      // We are just interested to retrieve the status code.
  *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>() &#123;
  *
- *          @Override
+ *          &#64;Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response.getStatusCode();
  *          &#125;
  *
- *          @Override
+ *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
@@ -73,33 +73,33 @@ import java.util.concurrent.Future;
  *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
  *          private StringBuilder builder = new StringBuilder();
  *
- *          @Override
+ *          &#64;Override
  *          public void onStatusReceived(HttpResponseStatus s) throws Exception &#123;
  *               // The Status have been read
  *               // If you don't want to read the headers,body, or stop processing the response
  *               throw new ResponseComplete();
  *          }
  *
- *          @Override
+ *          &#64;Override
  *          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
  *               // The headers have been read
  *               // If you don't want to read the body, or stop processing the response
  *               throw new ResponseComplete();
  *          }
- *          @Override
+ *          &#64;Override
  *
  *          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
  *          &#125;
  *
- *          @Override
+ *          &#64;Override
  *          public String onCompleted() throws Exception &#123;
  *               // Will be invoked once the response has been fully read or a ResponseComplete exception
  *               // has been thrown.
  *               return builder.toString();
  *          &#125;
  *
- *          @Override
+ *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
@@ -202,7 +202,7 @@ public class AsyncHttpClient {
 
     /**
      * Return the asynchronouys {@link com.ning.http.client.AsyncHttpProvider}
-     * @return
+     * @return an {@link com.ning.http.client.AsyncHttpProvider}
      */
     public AsyncHttpProvider getProvider() {
         return httpProvider;

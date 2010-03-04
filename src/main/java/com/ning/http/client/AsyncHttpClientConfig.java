@@ -95,7 +95,7 @@ public class AsyncHttpClientConfig {
     /**
      * A {@link ScheduledExecutorService} used to expire idle connections.
      *
-     * @return
+     * @return {@link ScheduledExecutorService} 
      */
     public ScheduledExecutorService reaper() {
         return reaper;

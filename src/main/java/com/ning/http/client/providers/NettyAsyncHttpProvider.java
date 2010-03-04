@@ -451,9 +451,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (updateStatusAndInterrupt(handler, new HttpResponseStatus(asyncResponse))) {
                 finishUpdate(handler, asyncResponse, ctx);
                 return;
-            }
-
-            if (updateHeadersAndInterrupt(handler, new HttpResponseHeaders(asyncResponse))) {
+            } else if (updateHeadersAndInterrupt(handler, new HttpResponseHeaders(asyncResponse))) {
                 finishUpdate(handler, asyncResponse, ctx);
                 return;
             } else if (!response.isChunked()) {
@@ -462,7 +460,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return;
             }
 
-            if (!response.isChunked() || response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+            if (response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                 markAsDoneAndCacheConnection(asyncResponse, ctx.getChannel());
             }
 
@@ -478,9 +476,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             buf.writeBytes(chunk.getContent());
             if (handler != null) {
                 if (updateBodyAndInterrupt(handler, new HttpResponseBodyPart(asyncResponse, chunk)) || chunk.isLast()) {
-                    // TODO: Should we invoke the onHeaders
                     if (chunk instanceof HttpChunkTrailer) {
                         asyncResponse.setTrailingHeaders((HttpChunkTrailer) chunk);
+                        updateHeadersAndInterrupt(handler, new HttpResponseHeaders(asyncResponse, true));
                     }
                     finishUpdate(handler, asyncResponse, ctx);
                     return;
@@ -546,7 +544,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     //Simple marker for stopping publishing bytes.
-
     private final static class DiscardEvent {
     }
 

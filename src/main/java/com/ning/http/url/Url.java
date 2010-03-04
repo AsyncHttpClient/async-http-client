@@ -160,7 +160,7 @@ public class Url implements Cloneable, Serializable {
     /**
      * Gets the path part of this url. The value is url-decoded.
      *
-     * @return
+     * @return he path part of this url. The value is url-decoded.
      */
     public String getPath() {
         return path;
@@ -427,7 +427,7 @@ public class Url implements Cloneable, Serializable {
      * Is the given Url string in a valid format?
      *
      * @param url
-     * @return
+     * @return true if valid
      */
     public static boolean isValidUrl(String url) {
         try {
