@@ -17,6 +17,10 @@ package com.ning.http.client;
 
 import java.util.concurrent.Future;
 
+/**
+ * Extended {@link Future}
+ * @param <V> Type of the value that will be returned.
+ */
 public interface FutureImpl<V> extends Future<V> {
 
     /**

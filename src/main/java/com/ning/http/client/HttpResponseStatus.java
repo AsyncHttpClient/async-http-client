@@ -16,18 +16,27 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.providers.NettyAsyncResponse;
-
+/**
+ * A class that represent the HTTP response' status line (code + text)
+ */
 public class HttpResponseStatus extends HttpContent{
 
-    public HttpResponseStatus(NettyAsyncResponse<?> response) {
+    public HttpResponseStatus(Response response) {
         super(response);
     }
 
+    /**
+     * Return the response status code
+     * @return the response status code
+     */
     public int getStatusCode(){
         return response.getStatusCode();
     }
 
+    /**
+     * Return the response status text
+     * @return the response status text
+     */
     public String getStatusText(){
         return response.getStatusText();
     }

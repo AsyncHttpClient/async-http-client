@@ -15,29 +15,32 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.providers.NettyAsyncResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
- * A simple {@link HttpContent} which gets created when an asynchronous response's bytes of the body are available for processing.
+ * A callback class used when an HTTP response body is received.
  */
 public class HttpResponseBodyPart extends HttpContent {
     private final HttpChunk chunk;
     private final HttpResponse httpResponse;
 
-    public HttpResponseBodyPart(NettyAsyncResponse<?> response, HttpResponse httpResponse) {
+    public HttpResponseBodyPart(Response response, HttpResponse httpResponse) {
         super(response);
         this.chunk = null;
         this.httpResponse = httpResponse;
     }
 
-    public HttpResponseBodyPart(NettyAsyncResponse<?> response, HttpChunk chunk) {
+    public HttpResponseBodyPart(Response response, HttpChunk chunk) {
         super(response);
         this.chunk = chunk;
         this.httpResponse = null;        
     }
 
+    /**
+     * Return the response body's part bytes received.
+     * @return the response body's part bytes received.
+     */
     public byte[] getBodyPartBytes(){
         if (chunk != null){
             return chunk.getContent().array();

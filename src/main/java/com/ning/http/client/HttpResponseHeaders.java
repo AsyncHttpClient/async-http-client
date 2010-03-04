@@ -15,19 +15,36 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.providers.NettyAsyncResponse;
-
 /**
- * A simple {@link HttpContent} which gets created when an asynchronous response's headers are available for processing.
+ * A class that represent the HTTP headers.
  */
 public class HttpResponseHeaders extends HttpContent {
 
-    public HttpResponseHeaders(NettyAsyncResponse<?> response) {
+    private final boolean traillingHeaders;
+
+    public HttpResponseHeaders(Response response) {
         super(response);
+        this.traillingHeaders = false;
     }
 
+    public HttpResponseHeaders(Response response, boolean traillingHeaders) {
+        super(response);
+        this.traillingHeaders = traillingHeaders;
+    }
+
+    /**
+     * Return the HTTP header
+     * @return an {@link Headers}
+     */
     public Headers getHeaders(){
         return response.getHeaders();
     }
 
+    /**
+     * Return true is headers has been received after the response body.
+     * @return true is headers has been received after the response body.
+     */
+    public boolean isTraillingHeadersReceived(){
+        return traillingHeaders;
+    }
 }

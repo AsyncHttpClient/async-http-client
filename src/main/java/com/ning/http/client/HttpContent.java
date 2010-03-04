@@ -15,12 +15,13 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.providers.NettyAsyncResponse;
-
+/**
+ * Base class for callback class used by {@link com.ning.http.client.AsyncHandler}
+ */
 public class HttpContent {
-    protected final NettyAsyncResponse<?> response;
+    protected final Response response;
 
-    protected HttpContent(NettyAsyncResponse<?> response) {
+    protected HttpContent(Response response) {
         this.response = response;
     }
 }

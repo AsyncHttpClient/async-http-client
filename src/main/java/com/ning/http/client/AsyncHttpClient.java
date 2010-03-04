@@ -286,7 +286,7 @@ public class AsyncHttpClient {
      * Execute an HTTP request.
      * @param request {@link Request}
      * @param handler an instance of {@link AsyncHandler}
-     * @param <T>
+     * @param <T> Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      * @return a {@link Future} of type T
      * @throws IOException
      */

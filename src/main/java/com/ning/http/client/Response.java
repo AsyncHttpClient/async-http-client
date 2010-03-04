@@ -24,7 +24,8 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 /**
- * Represents the http response.
+ * Represents the asynchronous HTTP response callback for an {@link com.ning.http.client.AsyncCompletionHandler}
+ *  
  */
 public interface Response {
     /**
@@ -46,6 +47,7 @@ public interface Response {
      * and that you should not close the stream.
      *
      * @return The input stream
+     * @throws java.io.IOException
      */
     public InputStream getResponseBodyAsStream() throws IOException;
 
@@ -56,17 +58,41 @@ public interface Response {
      *
      * @param maxLength The maximum number of bytes to read
      * @return The response body
+     * @throws java.io.IOException
      */
     public String getResponseBodyExcerpt(int maxLength) throws IOException;
 
+    /**
+     * Return the entire response body as a String.
+     * @return the entire response body as a String.
+     * @throws IOException
+     */
     public String getResponseBody() throws IOException;
 
+    /**
+     * Return the request {@link Url}. Note that if the request got redirected, the value of the {@link Url} will be
+     * the last valid redirect url.
+     * @return the request {@link Url}.
+     * @throws MalformedURLException
+     */
     public Url getUrl() throws MalformedURLException;
 
+    /**
+     * Return the content-type header value.
+     * @return the content-type header value.
+     */
     public String getContentType();
 
+    /**
+     * Return the response header
+     * @return the response header
+     */
     public String getHeader(String name);
 
+    /**
+     * Return a {@link List} of the response header value.
+     * @return the response header
+     */
     public List<String> getHeaders(String name);
 
     public Headers getHeaders();
@@ -77,7 +103,6 @@ public interface Response {
      * @return True if the response redirects to another object.
      */
     boolean isRedirected();
-
 
     /**
      * Subclasses SHOULD implement toString() in a way that identifies the request for logging.

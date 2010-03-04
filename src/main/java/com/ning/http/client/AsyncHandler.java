@@ -69,7 +69,7 @@ public interface AsyncHandler<T> {
 
     /**
      * Invoked once the HTTP response has been fully received
-     * @return T The 
+     * @return T Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      * @throws Exception
      */
     T onCompleted() throws Exception;

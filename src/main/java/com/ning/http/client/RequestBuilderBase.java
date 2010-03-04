@@ -26,6 +26,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Builder for {@link Request}
+ * 
+ * @param <T>
+ */
 abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
 
     private static final class RequestImpl implements Request {
