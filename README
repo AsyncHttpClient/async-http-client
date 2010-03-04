@@ -3,10 +3,7 @@ Copyright 2010 Ning Inc
 
 DESCRIPTION
 -----------
-Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process
-the HTTP responses.
-
-The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add this dependency:
+Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses. The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add this dependency:
 
     <dependency>
         <groupId>com.ning</groupId>
@@ -116,9 +113,7 @@ Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConf
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
         AsyncHttpClient c = new AsyncHttpClient(cf);
 
-The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build
-on top of Netty (http://www.jboss.org/netty), the Java NIO Client Server Socket Framework from JBoss, but the library
-exposes a configurable provider SPI which allows to easily plug in other frameworks.
+The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of Netty (http://www.jboss.org/netty), the Java NIO Client Server Socket Framework from JBoss, but the library exposes a configurable provider SPI which allows to easily plug in other frameworks.
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
