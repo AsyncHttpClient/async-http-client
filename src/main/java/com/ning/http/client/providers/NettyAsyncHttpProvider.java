@@ -16,7 +16,7 @@
 package com.ning.http.client.providers;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHandler.ResponseCompleted;
+import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
@@ -32,12 +32,7 @@ import com.ning.http.client.RequestType;
 import com.ning.http.client.StringPart;
 import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.multipart.ByteArrayPartSource;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.PartSource;
@@ -517,30 +512,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final boolean updateStatusAndInterrupt(AsyncHandler<?> handler, HttpResponseStatus c) throws Exception {
-        try {
-            handler.onStatusReceived(c);
-        } catch (ResponseCompleted r) {
-            return true;
-        }
-        return false;
+        return (handler.onStatusReceived(c) == STATE.CONTINUE ? false : true);
     }
 
     private final boolean updateHeadersAndInterrupt(AsyncHandler<?> handler, HttpResponseHeaders c) throws Exception {
-        try {
-            handler.onHeadersReceived(c);
-        } catch (ResponseCompleted r) {
-            return true;
-        }
-        return false;
+        return (handler.onHeadersReceived(c) == STATE.CONTINUE ? false : true);
     }
 
     private final boolean updateBodyAndInterrupt(AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
-        try {
-            handler.onBodyPartReceived(c);
-        } catch (ResponseCompleted r) {
-            return true;
-        }
-        return false;
+        return (handler.onBodyPartReceived(c) == STATE.CONTINUE ? false : true);
     }
 
     //Simple marker for stopping publishing bytes.
@@ -600,28 +580,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return HttpMethod.HEAD;
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    /**
-     * Map Netty Method to CommonsHttp Method.
-     *
-     * @param m
-     * @return
-     */
-    HttpMethodBase reverseMap(HttpMethod m) {
-        if (m == HttpMethod.GET) {
-            return new GetMethod();
-        } else if (m == HttpMethod.POST) {
-            return new PostMethod();
-        } else if (m == HttpMethod.DELETE) {
-            return new DeleteMethod();
-        } else if (m == HttpMethod.PUT) {
-            return new PutMethod();
-        } else if (m == HttpMethod.HEAD) {
-            return new HeadMethod();
-        } else {
-            return null;
         }
     }
 

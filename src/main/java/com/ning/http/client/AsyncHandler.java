@@ -31,14 +31,7 @@ package com.ning.http.client;
  */
 public interface AsyncHandler<T> {
 
-    /**
-     * Convenience exception to throw for interrupting the processing of the asynchronous response.
-     */
-    public class ResponseCompleted extends Exception{
-        public ResponseCompleted(){
-        }
-    }
-
+    public static enum STATE {ABORT,CONTINUE}
     /**
      * Invoked when an unexpected exception occurs during the processing of the response
      *
@@ -51,21 +44,21 @@ public interface AsyncHandler<T> {
      * @param bodyPart response's body part.
      * @throws Exception
      */
-    void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
+    STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
     /**
      * Invoked as soon as the HTTP status line has been received
      * @param responseStatus the status code and test of the response
      * @throws Exception
      */
-    void onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
+    STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
      * Invoked as soon as the HTTP headers has been received.
      * @param headers the HTTP headers.
      * @throws Exception
      */
-    void onHeadersReceived(HttpResponseHeaders headers) throws Exception;
+    STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
      * Invoked once the HTTP response has been fully received

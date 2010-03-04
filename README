@@ -77,24 +77,25 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
           private StringBuilder builder = new StringBuilder();
 
           @Override
-          public void onStatusReceived(HttpResponseStatus status) throws Exception {
+          public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
               int statusCode = status.getStatusCode();
                // The Status have been read
-               // If you don't want to read the headers,body, or stop processing the response
-               throw new ResponseCompleted();
+               // If you don't want to read the headers,body or stop processing the response
+               return STATE.ABORT;
           }
 
           @Override
-          public void onHeadersReceived(HttpResponseHeaders h) throws Exception {
+          public STATE onHeadersReceived(HttpResponseHeaders h) throws Exception {
               Headers headers = h.getHeaders();
                // The headers have been read
                // If you don't want to read the body, or stop processing the response
-               throw new ResponseCompleted();
+               return STATE.ABORT;
           }
 
           @Override
-          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                builder.append(new String(bodyPart.getBodyPartBytes()));
+               return STATE.CONTINU
           }
 
           @Override

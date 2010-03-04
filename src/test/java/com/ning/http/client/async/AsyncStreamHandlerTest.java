@@ -43,12 +43,12 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.prepareGet(TARGET_URL).execute(new AsyncHandlerAdapter() {
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
                 l.countDown();
-                throw new ResponseCompleted();
+                return STATE.ABORT;
             }
 
             @Override
@@ -82,15 +82,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
@@ -134,18 +136,18 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
-                throw new ResponseCompleted();
+                return STATE.ABORT;
             }
 
             @Override
-            public void onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
                 a.set(false);
                 Assert.fail("Interrupted not working");
-                throw new ResponseCompleted();
+                return STATE.ABORT;
             }
 
             @Override
@@ -177,15 +179,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
@@ -219,7 +223,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.prepareGet(TARGET_URL).execute(new AsyncHandlerAdapter() {
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 throw new RuntimeException("FOO");
             }
 
@@ -256,15 +260,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
@@ -285,15 +291,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
@@ -317,15 +325,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
@@ -350,15 +360,17 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             private StringBuilder builder = new StringBuilder();
 
             @Override
-            public void onHeadersReceived(HttpResponseHeaders content) throws Exception {
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
                 Assert.assertEquals(h.getHeaderValue("content-type"), "text/html; charset=ISO-8859-1");
+                return STATE.CONTINUE;
             }
 
             @Override
-            public void onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
                 builder.append(new String(content.getBodyPartBytes()));
+                return STATE.CONTINUE;
             }
 
             @Override
