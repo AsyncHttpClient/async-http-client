@@ -936,6 +936,33 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
+    @Test(groups = "async")
+    public void asyncDoGetQueryStringTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        // Use a latch in case the assert fail
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.assertTrue(response.getHeader("X-pathInfo") != null);
+                Assert.assertTrue(response.getHeader("X-queryString") != null);
+                latch.countDown();
+                return response;
+            }
+        };
+
+        Request req = new RequestBuilder(RequestType.GET)
+                .setUrl(TARGET_URL + "?foo=bar").build();
+        
+        client.executeRequest(req,handler).get();
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+    }
 
     @Test(groups = "async")
     public void asyncDoGetKeepAliveHandlerTest() throws Throwable {

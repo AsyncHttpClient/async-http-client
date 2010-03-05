@@ -79,6 +79,14 @@ public class AbstractBasicTest {
                 requestBody.append("_");
             }
 
+            String pathInfo = httpRequest.getPathInfo();
+            if (pathInfo != null)
+                httpResponse.addHeader("X-pathInfo", pathInfo);
+
+            String queryString = httpRequest.getQueryString();
+            if (queryString != null)
+                httpResponse.addHeader("X-queryString", queryString);
+
             httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
 
             javax.servlet.http.Cookie[] cs = httpRequest.getCookies();

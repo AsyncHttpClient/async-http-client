@@ -28,7 +28,7 @@ import java.util.Map;
 
 /**
  * Builder for {@link Request}
- * 
+ *
  * @param <T>
  */
 abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {

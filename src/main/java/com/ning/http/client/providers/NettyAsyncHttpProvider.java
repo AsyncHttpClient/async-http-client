@@ -192,8 +192,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             host = request.getVirtualHost();
         }
 
-        HttpRequest nettyRequest = new DefaultHttpRequest(
+        HttpRequest nettyRequest;
+        String queryString = url.getQueryString();
+
+        // does this GET request have a query string
+        if (RequestType.GET.equals(request.getType()) && queryString != null) {
+        	nettyRequest = new DefaultHttpRequest(
+                    HttpVersion.HTTP_1_1, m, url.getUri());
+        } else {
+          nettyRequest = new DefaultHttpRequest(
                 HttpVersion.HTTP_1_1, m, url.getPath());
+        }
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + url.getPort());
 
         Headers h = request.getHeaders();
