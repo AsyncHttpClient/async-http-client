@@ -121,7 +121,7 @@ public class NettyAsyncResponse<V> implements Response {
             if (buffer == null) {
                 throw new NullPointerException("buffer is null");
             }
-            return new String(buffer.array(),charset);
+            return new String(buffer.array(),0, buffer.writerIndex(),charset);
         }
     }
 
