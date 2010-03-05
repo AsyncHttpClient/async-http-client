@@ -40,15 +40,11 @@ public class TestFancyClientBuilder
         BasicConfigurator.configure();
 
         Connector listener = new SelectChannelConnector();
-
         listener.setHost("127.0.0.1");
         listener.setPort(12345);
 
         server.addConnector(listener);
 
-        listener = new SelectChannelConnector();
-        listener.setHost("127.0.0.1");
-        listener.setPort(38080);
 
         server.addConnector(listener);
 
@@ -94,6 +90,7 @@ public class TestFancyClientBuilder
         Response r = asyncClient.prepareGet("http://localhost:12345/hello").execute().get();
 
         String rs = r.getResponseBody();
+        assertEquals("world".length(), rs.length());
         assertEquals("world", rs);
 
     }
