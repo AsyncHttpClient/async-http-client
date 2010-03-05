@@ -169,18 +169,7 @@ public class AsyncHttpClient {
         this.httpProvider = httpProvider;
     }
 
-    private final static AsyncHandler defaultHandler = new AsyncCompletionHandler<Response>(){
-        @Override
-        public Response onCompleted(Response response) throws Exception {
-            return response;
-        }
-
-        @Override
-        public void onThrowable(Throwable t) {
-            t.printStackTrace();
-        }
-
-    };
+    private final static AsyncHandler<Response> defaultHandler = new AsyncCompletionHandlerBase();
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
         private BoundRequestBuilder(RequestType type) {
@@ -303,4 +292,5 @@ public class AsyncHttpClient {
     public Future<Response> executeRequest(Request request) throws IOException {
         return httpProvider.execute(request, defaultHandler );
     }
+
 }
