@@ -39,7 +39,7 @@ public class TypeMapper
                     @Override
                     public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception
                     {
-                        b.append(bodyPart.getBodyPartBytes());
+                        b.append(new String(bodyPart.getBodyPartBytes()));
                         return STATE.CONTINUE;
                     }
 

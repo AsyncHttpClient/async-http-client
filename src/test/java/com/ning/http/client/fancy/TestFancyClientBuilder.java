@@ -101,7 +101,7 @@ public class TestFancyClientBuilder
     }
 
     @Test
-    public void testFoo() throws Exception
+    public void testReturnResponse() throws Exception
     {
         FooClient client = builder.build(FooClient.class);
 
@@ -111,6 +111,17 @@ public class TestFancyClientBuilder
         Response r = fr.get();
 
         assertEquals("world", r.getResponseBody());
+    }
+
+    @Test
+    public void testReturnString() throws Exception
+    {
+        FooClient client = builder.build(FooClient.class);
+
+        results.put("/", "world");
+
+        Future<String> fr =  client.getRootAsString();
+        assertEquals("world", fr.get());
     }
 
     @BaseURL("http://localhost:12345")

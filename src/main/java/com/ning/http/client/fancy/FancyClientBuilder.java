@@ -36,29 +36,27 @@ public class FancyClientBuilder
             if (method.isAnnotationPresent(GET.class)) {
                 final GET get = method.getAnnotation(GET.class);
                 final String url = base + get.value();
+
+                final Class crt;
+                final Type rt = method.getGenericReturnType();
+                if (rt instanceof ParameterizedType) {
+                    final ParameterizedType prt = (ParameterizedType) rt;
+                    final Type[] generics = prt.getActualTypeArguments();
+                    if (generics.length != 1 || !(generics[0] instanceof Class)) {
+                        throw new UnsupportedOperationException("Not Yet Implemented!");
+                    }
+                    crt = (Class) generics[0];
+                }
+                else {
+                    throw new UnsupportedOperationException("Not Yet Implemented!");
+                }
+
                 urls.put(method.toGenericString(), new Handler()
                 {
-                    private final Class crt;
-                    {
-                        final Type rt = method.getGenericReturnType();
-                        if (rt instanceof ParameterizedType) {
-                            final ParameterizedType prt = (ParameterizedType) rt;
-                            final Type[] generics = prt.getActualTypeArguments();
-                            if (generics.length != 1 || !(generics[0] instanceof Class)) {
-                                throw new UnsupportedOperationException("Not Yet Implemented!");
-                            }
-                            crt = (Class) generics[0];
-                        }
-                        else {
-                            throw new UnsupportedOperationException("Not Yet Implemented!");
-                        }
-                    }
-
                     @Override
                     public Object handle(Object[] args) throws IOException
                     {
-                        client.prepareGet(url).execute(mapper.getAsyncHandlerFor(crt));
-                        return null;
+                        return client.prepareGet(url).execute(mapper.getAsyncHandlerFor(crt));
                     }
                 });
             }
