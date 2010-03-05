@@ -24,7 +24,7 @@ package com.ning.http.client;
  * (4) {@link #onCompleted()}, once the response has been fully read.
  *
  * Interrupting the process of the asynchronous response can be achieved by
- * throwing an {@link com.ning.http.client.AsyncHandler.ResponseCompleted} exception at any moment during the
+ * returning a {@link AsyncHandler.STATE#ABORT} at any moment during the
  * processing of the asynchronous response.
  *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}

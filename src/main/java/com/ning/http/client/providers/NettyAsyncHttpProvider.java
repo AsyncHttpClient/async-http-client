@@ -31,12 +31,10 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.StringPart;
 import com.ning.http.collection.Pair;
+import com.ning.http.multipart.ByteArrayPartSource;
+import com.ning.http.multipart.MultipartRequestEntity;
+import com.ning.http.multipart.PartSource;
 import com.ning.http.url.Url;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.multipart.ByteArrayPartSource;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.PartSource;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -81,6 +79,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -283,13 +282,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         lenght = MAX_BUFFERRED_BYTES;
                     }
 
-                    /**
-                     * This is quite ugly to mix and match with Apache Client,
-                     * but the fastest way for now
-                     * TODO: Remove this dependency.
-                     */
-                    PostMethod post = new PostMethod(request.getUrl());
-                    MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), post.getParams());
+                    MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), request.getParams());
 
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
@@ -593,31 +586,30 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     /**
-     * This is quite ugly has the code is coming from the HTTPClient.
-     *
+     * This is quite ugly as our internal names are duplicated, but we build on top of HTTP Client implementation.
      * @param params
      * @param methodParams
      * @return
      * @throws java.io.FileNotFoundException
      */
-    private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, HttpMethodParams methodParams) throws FileNotFoundException {
-        org.apache.commons.httpclient.methods.multipart.Part[] parts = new org.apache.commons.httpclient.methods.multipart.Part[params.size()];
+    private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, Map<String,String> methodParams) throws FileNotFoundException {
+        com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
         int i = 0;
 
         for (Part part : params) {
             if (part instanceof StringPart) {
-                parts[i] = new org.apache.commons.httpclient.methods.multipart.StringPart(part.getName(),
+                parts[i] = new com.ning.http.multipart.StringPart(part.getName(),
                         ((StringPart) part).getValue(),
                         "UTF-8");
             } else if (part instanceof FilePart) {
-                parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
+                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),
                         ((FilePart) part).getMimeType(),
                         ((FilePart) part).getCharSet());
 
             } else if (part instanceof ByteArrayPart) {
                 PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getData());
-                parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
+                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
                         source,
                         ((ByteArrayPart) part).getMimeType(),
                         ((ByteArrayPart) part).getCharSet());
