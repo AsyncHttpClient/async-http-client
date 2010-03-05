@@ -8,7 +8,9 @@ import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -31,10 +33,9 @@ public class TestFancyClientBuilder
     private Server server;
     private final Map<String, String> results = Collections.synchronizedMap(new HashMap<String, String>());
 
-    @BeforeMethod
+    @BeforeClass(alwaysRun = true)
     public void setUp() throws Exception
     {
-        results.clear();
         server = new Server();
 
         BasicConfigurator.configure();
@@ -76,12 +77,17 @@ public class TestFancyClientBuilder
     }
 
 
-    @AfterMethod
+    @AfterClass(alwaysRun = true)
     public void tearDown() throws Exception
     {
         server.stop();
     }
 
+    @BeforeMethod(alwaysRun = true)
+    public void setUp2() throws Exception
+    {
+        results.clear();
+    }
 
     @Test
     public void testStuffWorks() throws Exception
@@ -92,20 +98,26 @@ public class TestFancyClientBuilder
         String rs = r.getResponseBody();
         assertEquals("world".length(), rs.length());
         assertEquals("world", rs);
-
     }
 
     @Test
     public void testFoo() throws Exception
     {
         FooClient client = builder.build(FooClient.class);
+
+        results.put("/", "world");
+
+        assertEquals("world", client.getRoot().get().getResponseBody());
     }
 
-    @BaseURL("http://localhost:")
+    @BaseURL("http://localhost:12345")
     public interface FooClient
     {
         @GET("/")
         public Future<Response> getRoot();
+
+        @GET("/")
+        public Future<String> getRootAsString();
     }
 
 }
