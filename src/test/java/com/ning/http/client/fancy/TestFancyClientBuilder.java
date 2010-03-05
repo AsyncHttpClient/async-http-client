@@ -107,7 +107,10 @@ public class TestFancyClientBuilder
 
         results.put("/", "world");
 
-        assertEquals("world", client.getRoot().get().getResponseBody());
+        Future<Response> fr =  client.getRoot();
+        Response r = fr.get();
+
+        assertEquals("world", r.getResponseBody());
     }
 
     @BaseURL("http://localhost:12345")

@@ -1,5 +1,6 @@
 package com.ning.http.client.fancy;
 
+import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -18,7 +19,7 @@ public class TypeMapper
             @Override
             public AsyncHandler<Response> build()
             {
-                return null;
+                return new AsyncCompletionHandlerBase();
             }
         });
 
