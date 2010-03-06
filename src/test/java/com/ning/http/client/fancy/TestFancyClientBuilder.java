@@ -29,7 +29,8 @@ public class TestFancyClientBuilder
     private AsyncHttpClient asyncClient;
     private FancyClientBuilder builder;
     private Server server;
-    private final Map<String, String> results = Collections.synchronizedMap(new HashMap<String, String>());
+    private final Map<String, MiniHandler> results = Collections.synchronizedMap(new HashMap<String, MiniHandler>());
+    private FooClient client;
 
     @BeforeClass(alwaysRun = true)
     public void setUp() throws Exception
@@ -56,14 +57,13 @@ public class TestFancyClientBuilder
                 res.setContentType("text/plain");
                 if (results.containsKey(path)) {
                     res.setStatus(200);
-                    res.getOutputStream().write(results.get(path).getBytes());
+                    results.get(path).handle(req, res);
                 }
                 else {
                     res.setStatus(404);
                 }
 
                 res.getOutputStream().flush();
-                res.getOutputStream().close();
             }
         });
         server.start();
@@ -72,6 +72,24 @@ public class TestFancyClientBuilder
         asyncClient = new AsyncHttpClient();
         builder = new FancyClientBuilder(asyncClient);
 
+    }
+
+    private interface MiniHandler {
+        void handle(HttpServletRequest req, HttpServletResponse res) throws IOException;
+    }
+
+    private static class StringHandler implements MiniHandler{
+        private final String res;
+
+        private StringHandler(String res) {
+            this.res = res;
+        }
+
+        @Override
+        public void handle(HttpServletRequest req, HttpServletResponse res) throws IOException
+        {
+            res.getOutputStream().write(this.res.getBytes());
+        }
     }
 
 
@@ -85,12 +103,13 @@ public class TestFancyClientBuilder
     public void setUp2() throws Exception
     {
         results.clear();
+        client = builder.build(FooClient.class);
     }
 
     @Test
     public void testStuffWorks() throws Exception
     {
-        results.put("/hello", "world");
+        results.put("/hello", new StringHandler("world"));
         Response r = asyncClient.prepareGet("http://localhost:12345/hello").execute().get();
 
         String rs = r.getResponseBody();
@@ -101,9 +120,7 @@ public class TestFancyClientBuilder
     @Test
     public void testReturnResponse() throws Exception
     {
-        FooClient client = builder.build(FooClient.class);
-
-        results.put("/", "world");
+        results.put("/", new StringHandler("world"));
 
         Future<Response> fr =  client.getRoot();
         Response r = fr.get();
@@ -114,12 +131,26 @@ public class TestFancyClientBuilder
     @Test
     public void testReturnString() throws Exception
     {
-        FooClient client = builder.build(FooClient.class);
-
-        results.put("/", "world");
+        results.put("/", new StringHandler("world"));
 
         Future<String> fr =  client.getRootAsString();
         assertEquals("world", fr.get());
+    }
+
+    @Test
+    public void testQueryParam() throws Exception
+    {
+        results.put("/", new MiniHandler() {
+            public void handle(HttpServletRequest req, HttpServletResponse res) throws IOException
+            {
+                res.getOutputStream().write(req.getQueryString().getBytes());
+            }
+        });
+
+        String rs = client.getRootWithParam("brian").get();
+
+        assertEquals("name=brian", rs);
+
     }
 
     @BaseURL("http://localhost:12345")
@@ -130,6 +161,9 @@ public class TestFancyClientBuilder
 
         @GET("/")
         public Future<String> getRootAsString();
+
+        @GET("/")
+        public Future<String> getRootWithParam(@QueryParam("name") String name);
     }
 
 }

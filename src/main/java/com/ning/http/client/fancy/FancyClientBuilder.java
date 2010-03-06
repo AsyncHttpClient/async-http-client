@@ -3,6 +3,7 @@ package com.ning.http.client.fancy;
 import com.ning.http.client.AsyncHttpClient;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -54,9 +55,27 @@ public class FancyClientBuilder
                 urls.put(method.toGenericString(), new Handler()
                 {
                     @Override
-                    public Object handle(Object[] args) throws IOException
+                    public Object handle(Method m, Object[] args) throws IOException
                     {
-                        return client.prepareGet(url).execute(mapper.getAsyncHandlerFor(crt));
+                        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(url);
+
+                        Annotation[][] param_annos = m.getParameterAnnotations();
+                        for (int i = 0; i < param_annos.length; i++) {
+                            Annotation[] annos = param_annos[i];
+                            if (annos.length != 1) {
+                                throw new UnsupportedOperationException("Not Yet Implemented!");
+                            }
+                            for (Annotation anno : annos) {
+                                if (anno instanceof QueryParam) {
+                                    QueryParam qp = (QueryParam) anno;
+                                    String name = qp.value();
+                                    String value = String.valueOf(args[i]);
+                                    r.setQueryParameter(name, value);
+                                }
+                            }
+                        }
+
+                        return r.execute(mapper.getAsyncHandlerFor(crt));
                     }
                 });
             }
@@ -70,7 +89,7 @@ public class FancyClientBuilder
                                               public Object invoke(Object o, Method method, Object[] objects) throws Throwable
                                               {
                                                   if (urls.containsKey(method.toGenericString())) {
-                                                      return urls.get(method.toGenericString()).handle(objects);
+                                                      return urls.get(method.toGenericString()).handle(method, objects);
                                                   }
                                                   else {
                                                       return method.invoke(o, objects);
@@ -82,6 +101,6 @@ public class FancyClientBuilder
 
     private interface Handler
     {
-        Object handle(Object[] args) throws IOException;
+        Object handle(Method m, Object[] args) throws IOException;
     }
 }

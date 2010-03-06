@@ -66,7 +66,7 @@ import java.util.concurrent.Future;
  * }
  * The {@link AsyncCompletionHandler#onCompleted(com.ning.http.client.Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
- * 
+ *
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
  * {@code
  *      AsyncHttpClient c = new AsyncHttpClient();
@@ -125,7 +125,7 @@ import java.util.concurrent.Future;
  *
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
  * expires. This object can hold many persistent connections to different host.
- * 
+ *
  */
 public class AsyncHttpClient {
 
@@ -252,7 +252,7 @@ public class AsyncHttpClient {
     public BoundRequestBuilder preparePut(String url) {
         return new BoundRequestBuilder(RequestType.PUT).setUrl(url);
     }
-    
+
     /**
      * Prepare an HTTP client DELETE request.
      * @param url A well formed URL.
