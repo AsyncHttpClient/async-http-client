@@ -90,7 +90,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncContentTypeGETTest() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        
+
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.GET).setUrl(TARGET_URL).build();
         p.execute(request, new AsyncCompletionHandlerAdapter() {
@@ -130,14 +130,14 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
     public void asyncHeaderPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        
+
         Headers h = new Headers();
         h.add("Test1", "Test1");
         h.add("Test2", "Test2");
@@ -164,13 +164,13 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
     public void asyncParamPOSTTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        
+
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -199,13 +199,13 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
     public void asyncStatusHEADTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        
+
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.HEAD).setUrl(TARGET_URL).build();
         n.execute(request, new AsyncCompletionHandlerAdapter() {
@@ -221,7 +221,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
@@ -232,7 +232,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             c.prepareGet("www.sun.com").execute();
             Assert.fail();
         } catch (IllegalArgumentException ex){
-            ex.printStackTrace();
             Assert.assertTrue(true);
         }
 
@@ -241,7 +240,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncDoGetTransferEncodingTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        
+
         AsyncHttpClient c = new AsyncHttpClient(n);
         final CountDownLatch l = new CountDownLatch(1);
 
@@ -260,7 +259,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
@@ -291,7 +290,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
@@ -497,7 +496,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
@@ -529,7 +528,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        
+
 
         Assert.assertEquals(response.getStatusCode(), 200);
         Assert.assertEquals(response.getHeader("X-Proxy-Connection"), "keep-alive");
@@ -558,7 +557,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Assert.assertEquals(response.getStatusCode(), 200);
         Assert.assertEquals(response.getHeader("X-Host"), "localhost:19999");
-        
+
     }
 
     @Test(groups = "async")
@@ -581,7 +580,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Assert.assertEquals(response.getStatusCode(), 200);
         Assert.assertEquals(response.getHeader("X-param_1"), null);
-        
+
     }
 
     @Test(groups = "async")
@@ -628,7 +627,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-        
+
     }
 
     @Test(groups = "async")
@@ -778,7 +777,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         try{
             c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
-            Assert.assertTrue(false);          
+            Assert.assertTrue(false);
         } catch (ConnectException ex){
             Assert.assertTrue(true);
         }
@@ -956,7 +955,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Request req = new RequestBuilder(RequestType.GET)
                 .setUrl(TARGET_URL + "?foo=bar").build();
-        
+
         client.executeRequest(req,handler).get();
 
         if (!latch.await(10, TimeUnit.SECONDS)) {
@@ -981,7 +980,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 Assert.assertEquals(response.getStatusCode(),200);
                 if (remoteAddr == null){
                     remoteAddr = response.getHeader("X-KEEP-ALIVE");
-                    latch.countDown();                    
+                    latch.countDown();
                 } else {
                     Assert.assertEquals(response.getHeader("X-KEEP-ALIVE"),remoteAddr);
                     latch.countDown();
@@ -1033,7 +1032,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             String s = ex.getMessage();
             Assert.assertEquals(s,"Too many connections");
         }
-       
+
         if (!latch.await(10, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }

@@ -19,7 +19,7 @@ package com.ning.http.client;
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
  * when the {@link Response} has been fully received.
- * 
+ *
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{

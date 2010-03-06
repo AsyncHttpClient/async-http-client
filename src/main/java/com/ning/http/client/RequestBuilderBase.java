@@ -17,8 +17,10 @@ package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.collection.Pair;
+import com.ning.http.url.Url;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,10 +48,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
+        public Map<String, String> queryParams;
 
         public RequestImpl() {
         }
-        
+
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.type = prototype.getType();
@@ -74,7 +77,20 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
 
         @Override
         public String getUrl() {
-            return url;
+            try {
+                Url url = Url.valueOf(this.url);
+
+                if (queryParams != null) {
+                    for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                        url.addParameter(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                return url.toString();
+            }
+            catch (MalformedURLException e) {
+                throw new IllegalArgumentException("Illegal URL", e);
+            }
         }
 
         @Override
@@ -145,7 +161,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
     }
 
     private final RequestImpl request;
-    
+
     public RequestBuilderBase(RequestType type) {
         request = new RequestImpl();
         request.type = type;
@@ -258,6 +274,14 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         request.entityWriter = dataWriter;
         request.length       = length;
         return (T)this;
+    }
+
+    public void setQueryParameter(String name, String value)
+    {
+        if (request.queryParams == null) {
+            request.queryParams = new LinkedHashMap<String, String>();
+        }
+        request.queryParams.put(name, value);
     }
 
     @SuppressWarnings("unchecked")
