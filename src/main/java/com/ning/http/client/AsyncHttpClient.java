@@ -74,21 +74,21 @@ import java.util.concurrent.Future;
  *          private StringBuilder builder = new StringBuilder();
  *
  *          &#64;Override
- *          public void onStatusReceived(ResponseStatus s) throws Exception &#123;
+ *          public void onStatusReceived(HttpResponseStatus s) throws Exception &#123;
  *               // The Status have been read
  *               // If you don't want to read the headers,body, or stop processing the response
  *               throw new ResponseComplete();
  *          }
  *
  *          &#64;Override
- *          public void onHeadersReceived(ResponseHeaders bodyPart) throws Exception &#123;
+ *          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
  *               // The headers have been read
  *               // If you don't want to read the body, or stop processing the response
  *               throw new ResponseComplete();
  *          }
  *          &#64;Override
  *
- *          public void onBodyPartReceived(ResponseBodyPart bodyPart) throws Exception &#123;
+ *          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
  *          &#125;
  *
