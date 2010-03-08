@@ -32,7 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
-    private final static String RESPONSE = "param_4=value_4&param_0=value_0&param_1=value_1&param_2=value_2&param_3=value_3";
+    private final static String RESPONSE_JDK5 = "param_4=value_4&param_2=value_2&param_0=value_0&param_3=value_3&param_1=value_1";
+    private final static String RESPONSE_JDK6 = "param_4=value_4&param_0=value_0&param_1=value_1&param_2=value_2&param_3=value_3";
+
+    private final static String RESPONSE = System.getProperty("java.version").startsWith("1.5") ? RESPONSE_JDK5: RESPONSE_JDK6;
 
     private final static String UTF8 = "text/html; charset=utf-8";
     @Test
@@ -102,18 +105,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
                 l.countDown();
                 return r;
             }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                try {
-                    Assert.fail("", t);
-                } finally {
-                    l.countDown();
-                }
-            }
         });
 
-        if (!l.await(20, TimeUnit.SECONDS)) {
+        if (!l.await(10, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }

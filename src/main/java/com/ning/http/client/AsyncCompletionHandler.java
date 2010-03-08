@@ -36,7 +36,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public final STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         bodies.add(content);
         return STATE.CONTINUE;
@@ -45,7 +45,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         this.status = status;
         return STATE.CONTINUE;
@@ -54,7 +54,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public final STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         this.headers = headers;
         return STATE.CONTINUE;
@@ -64,7 +64,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public final T onCompleted() throws Exception {
         return onCompleted(status == null? null : status.provider().prepareResponse(status,headers,bodies));
     }

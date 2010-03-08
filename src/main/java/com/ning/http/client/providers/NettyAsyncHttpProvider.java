@@ -115,7 +115,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     void configure() {
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
-            @Override
+            /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast("decoder", new HttpResponseDecoder());
@@ -327,7 +327,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         config.executorService().shutdown();
     }
 
-    @Override
+    /* @Override */
     public Response prepareResponse(final HttpResponseStatus<HttpResponse> status,
                                     final HttpResponseHeaders<HttpResponse> headers,
                                     final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {

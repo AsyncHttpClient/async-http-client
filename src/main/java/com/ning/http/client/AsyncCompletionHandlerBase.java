@@ -30,7 +30,7 @@ public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>
         return response;
     }
 
-    @Override
+    /* @Override */
     public void onThrowable(Throwable t) {
         if (log.isDebugEnabled()) {
             log.debug(t);

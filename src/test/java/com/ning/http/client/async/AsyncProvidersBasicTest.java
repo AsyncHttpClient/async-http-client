@@ -416,7 +416,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         c.preparePost(TARGET_URL).setHeaders(h).setBody(new Request.EntityWriter() {
 
-            @Override
+            /* @Override */
             public void writeEntity(OutputStream out) throws IOException {
                 out.write(sb.toString().getBytes("UTF-8"));
             }
@@ -523,7 +523,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
 
-            @Override
+            /* @Override */
             public void onThrowable(Throwable t) {
             }
         }).get();

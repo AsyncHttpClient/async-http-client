@@ -53,17 +53,17 @@ public class NettyAsyncResponse implements Response {
         url = status.getUrl();
     }
 
-    @Override
+    /* @Override */
     public int getStatusCode() {
         return status.getStatusCode();
     }
 
-    @Override
+    /* @Override */
     public String getStatusText() {
         return status.getStatusText();
     }
 
-    @Override
+    /* @Override */
     public String getResponseBody() throws IOException {
         String contentType = getContentType();
         String charset = "UTF-8";
@@ -85,7 +85,7 @@ public class NettyAsyncResponse implements Response {
         return b.toString();
     }
 
-    @Override
+    /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         ChannelBuffer buf =  ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp: bodyParts){
@@ -100,7 +100,7 @@ public class NettyAsyncResponse implements Response {
         return new ChannelBufferInputStream(buf); 
     }
 
-    @Override
+    /* @Override */
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         String contentType = getContentType();
         String charset = "UTF-8";
@@ -115,32 +115,32 @@ public class NettyAsyncResponse implements Response {
         return response.length() <= maxLength ? response : response.substring(0,maxLength);
     }
 
-    @Override
+    /* @Override */
     public Url getUrl() throws MalformedURLException {
         return url;
     }
 
-    @Override
+    /* @Override */
     public String getContentType() {
         return headers.getHeaders().getHeaderValue("Content-Type");
     }
 
-    @Override
+    /* @Override */
     public String getHeader(String name) {
         return headers.getHeaders().getHeaderValue(name);
     }
 
-    @Override
+    /* @Override */
     public List<String> getHeaders(String name) {
         return headers.getHeaders().getHeaderValues(name);
     }
 
-    @Override
+    /* @Override */
     public Headers getHeaders() {
         return headers.getHeaders();
     }
 
-    @Override
+    /* @Override */
     public boolean isRedirected() {
         return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
     }

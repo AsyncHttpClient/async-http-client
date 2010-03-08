@@ -70,12 +70,12 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
             }
         }
 
-        @Override
+        /* @Override */
         public RequestType getType() {
             return type;
         }
 
-        @Override
+        /* @Override */
         public String getUrl() {
             try {
                 Url url = Url.valueOf(this.url);
@@ -93,52 +93,52 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
             }
         }
 
-        @Override
+        /* @Override */
         public Headers getHeaders() {
             return Headers.unmodifiableHeaders(headers);
         }
 
-        @Override
+        /* @Override */
         public Collection<Cookie> getCookies() {
             return Collections.unmodifiableCollection(cookies);
         }
 
-        @Override
+        /* @Override */
         public byte[] getByteData() {
             return byteData;
         }
 
-        @Override
+        /* @Override */
         public String getStringData() {
             return stringData;
         }
 
-        @Override
+        /* @Override */
         public InputStream getStreamData() {
             return streamData;
         }
 
-        @Override
+        /* @Override */
         public EntityWriter getEntityWriter() {
             return entityWriter;
         }
 
-        @Override
+        /* @Override */
         public long getLength() {
             return length;
         }
 
-        @Override
+        /* @Override */
         public Map<String, String> getParams() {
             return params == null ? null : Collections.unmodifiableMap(params);
         }
 
-        @Override
+        /* @Override */
         public List<Part> getParts() {
             return parts == null ? null : Collections.unmodifiableList(parts);
         }
 
-        @Override
+        /* @Override */
         public String getVirtualHost() {
             return virtualHost;
         }

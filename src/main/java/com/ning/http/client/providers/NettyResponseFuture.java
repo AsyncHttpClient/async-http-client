@@ -69,7 +69,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public boolean isDone() {
         return isDone.get();
     }
@@ -77,7 +77,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public boolean isCancelled() {
         return isCancelled.get();
     }
@@ -85,7 +85,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public boolean cancel(boolean force) {
         latch.countDown();
         isCancelled.set(true);
@@ -95,7 +95,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public V get() throws InterruptedException {
         try{
             if (!isDone() && !isCancelled()) {
@@ -119,7 +119,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * {@inheritDoc}
      */
-    @Override
+    /* @Override */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException {
         if (!isDone() && !isCancelled()) {
             if (!latch.await(l, tu)) {
