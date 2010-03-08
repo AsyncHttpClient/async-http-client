@@ -16,8 +16,6 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
-
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -129,9 +127,12 @@ import java.util.concurrent.Future;
  */
 public class AsyncHttpClient {
 
+    private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.NettyAsyncHttpProvider";
     private final AsyncHttpProvider httpProvider;
     private final AsyncHttpClientConfig config;
+    private final static AsyncHandler<Response> defaultHandler = new AsyncCompletionHandlerBase();
 
+    
     /**
      * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
      * default {@link AsyncHttpProvider} will be used ({@link com.ning.http.client.providers.NettyAsyncHttpProvider}
@@ -143,19 +144,19 @@ public class AsyncHttpClient {
     /**
      * Create a new HTTP Asynchronous Client using an implementation of {@link AsyncHttpProvider} and
      * the default {@link AsyncHttpClientConfig} configuration.
-     * @param httpProvider a {@link AsyncHttpProvider}
+     * @param provider a {@link AsyncHttpProvider}
      */
-    public AsyncHttpClient(AsyncHttpProvider httpProvider) {
-        this.config = new AsyncHttpClientConfig.Builder().build();
-        this.httpProvider = httpProvider;
+    public AsyncHttpClient(AsyncHttpProvider provider) {
+        this(provider,new AsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration.
+     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and the
+     * {@link #DEFAULT_PROVIDER}
      * @param config a {@link AsyncHttpClientConfig}
      */
     public AsyncHttpClient(AsyncHttpClientConfig config) {
-        this(new NettyAsyncHttpProvider(config), config);
+        this(loadDefaultProvider(DEFAULT_PROVIDER, config),config);
     }
 
     /**
@@ -165,11 +166,20 @@ public class AsyncHttpClient {
      * @param httpProvider a {@link AsyncHttpProvider}
      */
     public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
-        this.config = new AsyncHttpClientConfig.Builder().build();
+        this.config = config;
         this.httpProvider = httpProvider;
     }
 
-    private final static AsyncHandler<Response> defaultHandler = new AsyncCompletionHandlerBase();
+    /**
+     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
+     * and a AsyncHttpProvider class' name.
+     * @param config a {@link AsyncHttpClientConfig}
+     * @param providerClass a {@link AsyncHttpProvider}
+     */
+    public AsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
+        this.config = new AsyncHttpClientConfig.Builder().build();
+        this.httpProvider = loadDefaultProvider(providerClass,config);
+    }
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
         private BoundRequestBuilder(RequestType type) {
@@ -291,5 +301,16 @@ public class AsyncHttpClient {
      */
     public Future<Response> executeRequest(Request request) throws IOException {
         return httpProvider.execute(request, defaultHandler );
+    }
+
+    private final static AsyncHttpProvider<?> loadDefaultProvider(String className, AsyncHttpClientConfig config){
+        try{
+            Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>) Thread.currentThread()
+                    .getContextClassLoader().loadClass(className);
+            return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
+                    new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
+        } catch (Throwable t){
+            throw new RuntimeException(t);
+        }
     }
 }
