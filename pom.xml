@@ -11,7 +11,7 @@
     <scm>
         <connection>scm:git:git@github.com:ning/async-http-client.git</connection>
         <url>scm:git:git@github.com:ning/async-http-client.git</url>
-        <developerConnection>scm:git:git@github.com:ning/async-http-client.git</developerConnection>  
+        <developerConnection>scm:git:git@github.com:ning/async-http-client.git</developerConnection>
     </scm>
     <prerequisites>
         <maven>2.0.9</maven>
@@ -36,6 +36,12 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.13</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.collections</groupId>
+            <artifactId>google-collections</artifactId>
+            <version>1.0</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -171,11 +177,22 @@
                         </goals>
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>selfcontained</shadedClassifierName>
+                            <shadedClassifierName>shaded</shadedClassifierName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
                             </transformers>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.google.collections:google-collections</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>com.ning.http.shaded.com.google.collections</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
