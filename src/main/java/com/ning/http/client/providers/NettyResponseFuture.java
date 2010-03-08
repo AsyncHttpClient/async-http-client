@@ -24,6 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.net.MalformedURLException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -48,6 +49,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final Url url;
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
+    private ExecutionException exEx = null;
     
     public NettyResponseFuture(Url url,
                                Request request,
@@ -96,37 +98,38 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      * {@inheritDoc}
      */
     /* @Override */
-    public V get() throws InterruptedException {
-        try{
-            if (!isDone() && !isCancelled()) {
-                if (!latch.await(responseTimeoutInMs, TimeUnit.MILLISECONDS)) {
-                    isCancelled.set(true);
-                    TimeoutException te = new TimeoutException("No response received");
-                    onThrowable(te);
-                    throw te;
-                }
-                isDone.set(true);
+    public V get() throws InterruptedException, ExecutionException{
+        if (!isDone() && !isCancelled()) {
+            if (!latch.await(responseTimeoutInMs, TimeUnit.MILLISECONDS)) {
+                isCancelled.set(true);
+                TimeoutException te = new TimeoutException("No response received");
+                onThrowable(te);
+                throw new RuntimeException(te);
             }
-            return (V) getContent();
-        } catch (TimeoutException ex) {
-            /**
-             * To prevent deadlock, we still throw an exception, but a Runtime one to fulfill the API contract.
-             */
-            throw new RuntimeException(ex);
+            isDone.set(true);
         }
+
+        if (exEx != null){
+            throw exEx;
+        }
+        return (V) getContent();
     }
 
     /**
      * {@inheritDoc}
      */
     /* @Override */
-    public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException {
+    public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
         if (!isDone() && !isCancelled()) {
             if (!latch.await(l, tu)) {
                 isCancelled.set(true);
                 TimeoutException te = new TimeoutException("No response received");
                 onThrowable(te);
                 throw te;
+            }
+
+            if (exEx != null){
+                throw exEx;
             }
         }
 
@@ -149,37 +152,43 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return content.get();
     }
 
-    public void done() {
+    public final void done() {
         isDone.set(true);
         getContent();
         latch.countDown();
     }
 
-    public Request getRequest() {
+    public final void abort(final RuntimeException t) {
+        exEx = new ExecutionException(t);
+        isDone.set(true);
+        latch.countDown();
+    }
+
+    public final Request getRequest() {
         return request;
     }
 
-    public HttpRequest getNettyRequest() {
+    public final HttpRequest getNettyRequest() {
         return nettyRequest;
     }
 
-    public AsyncHandler<V> getAsyncHandler() {
+    public final AsyncHandler<V> getAsyncHandler() {
         return asyncHandler;
     }
 
-    public boolean getKeepAlive() {
+    public final boolean getKeepAlive() {
         return keepAlive;
     }
 
-    public void setKeepAlive(final boolean keepAlive) {
+    public final void setKeepAlive(final boolean keepAlive) {
         this.keepAlive = keepAlive;
     }
 
-    public HttpResponse getHttpResponse() {
+    public final HttpResponse getHttpResponse() {
         return httpResponse;
     }
 
-    public void setHttpResponse(final HttpResponse httpResponse) {
+    public final void setHttpResponse(final HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
 }

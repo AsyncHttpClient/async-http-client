@@ -32,5 +32,6 @@ public interface FutureImpl<V> extends Future<V> {
 
     void done();
 
+    void abort(RuntimeException t);
 
 }

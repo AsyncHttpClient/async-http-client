@@ -423,63 +423,68 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
 
-        if (e.getMessage() instanceof HttpResponse) {
-            HttpResponse response = (HttpResponse) e.getMessage();
-            // Required if there is some trailling headers.
-            future.setHttpResponse(response);
+        try{
+            if (e.getMessage() instanceof HttpResponse) {
+                HttpResponse response = (HttpResponse) e.getMessage();
+                // Required if there is some trailling headers.
+                future.setHttpResponse(response);
 
-            String ka = response.getHeader("Connection");
-            future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
+                String ka = response.getHeader("Connection");
+                future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
 
-            if (config.isRedirectEnabled()
-                    && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301)
-                    && (redirectCount + 1) < config.getMaxRedirects()) {
-                HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
-                ctx.getChannel().write(r);
-                return;
-            }
-            redirectCount = 0;
-            if (log.isDebugEnabled()){
-                log.debug("Status: " + response.getStatus());
-                log.debug("Version: " + response.getProtocolVersion());
-                log.debug("\"");
-                if (!response.getHeaderNames().isEmpty()) {
-                    for (String name : response.getHeaderNames()) {
-                        log.debug("Header: " + name + " = " + response.getHeaders(name));
-                    }
-                    log.debug("\"");
+                if (config.isRedirectEnabled()
+                        && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301)
+                        && (redirectCount + 1) < config.getMaxRedirects()) {
+                    HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
+                    ctx.getChannel().write(r);
+                    return;
                 }
-            }   
-
-            if (updateStatusAndInterrupt(handler, new ResponseStatus(future.getUrl(),response, this))) {
-                finishUpdate(handler, future, ctx);
-                return;
-            } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),response, this))) {
-                finishUpdate(handler, future, ctx);
-                return;
-            } else if (!response.isChunked()) {
-                updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getUrl(),response, this));
-                finishUpdate(handler, future, ctx);
-                return;
-            }
-
-            if (response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                markAsDoneAndCacheConnection(future, ctx.getChannel());
-            }
-
-        } else if (e.getMessage() instanceof HttpChunk) {
-            HttpChunk chunk = (HttpChunk) e.getMessage();
-
-            if (handler != null) {
-                if (updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getUrl(),null, this,chunk)) || chunk.isLast()) {
-                    if (chunk instanceof HttpChunkTrailer) {
-                        updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),
-                                future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
+                redirectCount = 0;
+                if (log.isDebugEnabled()){
+                    log.debug("Status: " + response.getStatus());
+                    log.debug("Version: " + response.getProtocolVersion());
+                    log.debug("\"");
+                    if (!response.getHeaderNames().isEmpty()) {
+                        for (String name : response.getHeaderNames()) {
+                            log.debug("Header: " + name + " = " + response.getHeaders(name));
+                        }
+                        log.debug("\"");
                     }
+                }
+
+                if (updateStatusAndInterrupt(handler, new ResponseStatus(future.getUrl(),response, this))) {
+                    finishUpdate(handler, future, ctx);
+                    return;
+                } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),response, this))) {
+                    finishUpdate(handler, future, ctx);
+                    return;
+                } else if (!response.isChunked()) {
+                    updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getUrl(),response, this));
                     finishUpdate(handler, future, ctx);
                     return;
                 }
+
+                if (response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+                    markAsDoneAndCacheConnection(future, ctx.getChannel());
+                }
+
+            } else if (e.getMessage() instanceof HttpChunk) {
+                HttpChunk chunk = (HttpChunk) e.getMessage();
+
+                if (handler != null) {
+                    if (updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getUrl(),null, this,chunk)) || chunk.isLast()) {
+                        if (chunk instanceof HttpChunkTrailer) {
+                            updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),
+                                    future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
+                        }
+                        finishUpdate(handler, future, ctx);
+                        return;
+                    }
+                }
             }
+        } catch (RuntimeException t){
+            future.abort(t);
+            throw t;
         }
     }
 
