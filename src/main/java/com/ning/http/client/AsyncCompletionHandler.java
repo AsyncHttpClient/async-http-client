@@ -16,6 +16,9 @@
  */
 package com.ning.http.client;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +30,8 @@ import java.util.Collections;
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
+
+    private final static Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
     private final Collection<HttpResponseBodyPart<?>> bodies =
             Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart<?>>());
@@ -67,6 +72,15 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>{
     /* @Override */
     public final T onCompleted() throws Exception {
         return onCompleted(status == null? null : status.provider().prepareResponse(status,headers,bodies));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public void onThrowable(Throwable t) {
+        if (log.isDebugEnabled())
+            log.debug(t);
     }
 
     /**
