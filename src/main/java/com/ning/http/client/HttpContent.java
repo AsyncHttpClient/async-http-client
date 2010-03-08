@@ -15,13 +15,27 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.url.Url;
+
 /**
  * Base class for callback class used by {@link com.ning.http.client.AsyncHandler}
  */
-public class HttpContent {
-    protected final Response response;
+public class HttpContent<R> {
+    protected final R response;
+    protected final AsyncHttpProvider provider;
+    protected final Url url;
 
-    protected HttpContent(Response response) {
+    protected HttpContent(Url url,R response,AsyncHttpProvider provider) {
         this.response = response;
+        this.provider = provider;
+        this.url= url;
+    }
+
+    protected final AsyncHttpProvider provider(){
+        return provider;
+    }
+
+    public final Url getUrl(){
+        return url;
     }
 }

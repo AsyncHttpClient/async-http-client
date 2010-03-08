@@ -16,29 +16,27 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.url.Url;
+
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
-public class HttpResponseStatus extends HttpContent{
+public abstract class HttpResponseStatus<R> extends HttpContent<R>{
 
-    public HttpResponseStatus(Response response) {
-        super(response);
+    public HttpResponseStatus(Url url,R response,AsyncHttpProvider provider) {
+        super(url,response, provider);
     }
 
     /**
      * Return the response status code
      * @return the response status code
      */
-    public int getStatusCode(){
-        return response.getStatusCode();
-    }
+    abstract public int getStatusCode();
 
     /**
      * Return the response status text
      * @return the response status text
      */
-    public String getStatusText(){
-        return response.getStatusText();
-    }
+    abstract public String getStatusText();
 
 }

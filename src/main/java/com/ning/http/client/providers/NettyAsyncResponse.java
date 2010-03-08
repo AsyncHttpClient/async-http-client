@@ -15,89 +15,52 @@
  */
 package com.ning.http.client.providers;
 
-import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Headers;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.url.Url;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
  *
- * @param <V>
  */
-public class NettyAsyncResponse<V> implements Response {
+public class NettyAsyncResponse implements Response {
     private final Url url;
+    private final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts;
+    private final HttpResponseHeaders<HttpResponse> headers;
+    private final HttpResponseStatus<HttpResponse> status;
 
-    private HttpResponse r;
-    private FutureImpl<V> rf;
-    @SuppressWarnings("unused")
-    private V content;
-    private HttpChunkTrailer trailingHeaders;
-    private ChannelBuffer buffer;
+    public NettyAsyncResponse(HttpResponseStatus<HttpResponse> status,
+                              HttpResponseHeaders<HttpResponse> headers,
+                              Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {
 
-    public NettyAsyncResponse(Url url) {
-        this.url = url;
-    }
-
-    void setTrailingHeaders(HttpChunkTrailer t) {
-        trailingHeaders = t;
+        this.status = status;
+        this.headers = headers;
+        this.bodyParts = bodyParts;
+        url = status.getUrl();
     }
 
     @Override
     public int getStatusCode() {
-        return r.getStatus().getCode();
+        return status.getStatusCode();
     }
 
     @Override
     public String getStatusText() {
-        return r.getStatus().getReasonPhrase();
-    }
-
-    void setBuffer(ChannelBuffer chunkedOutputBuffer) {
-        this.buffer = chunkedOutputBuffer;
-    }
-
-    ChannelBuffer getBuffer(){
-        return buffer;
-    }
-
-    @Override
-    public InputStream getResponseBodyAsStream() throws IOException {
-        if (!r.isChunked()) {
-            return new ChannelBufferInputStream(r.getContent());
-        } else {
-            if (buffer == null) {
-                throw new NullPointerException("buffer is null");
-            }
-            return new ChannelBufferInputStream(buffer);
-        }
-    }
-
-    public FutureImpl<V> getFuture() {
-        return rf;
-    }
-
-    void setFuture(FutureImpl<V> rf) {
-        this.rf = rf;
-    }
-
-    void setResponse(HttpResponse r) {
-        this.r = r;
-    }
-
-    void setContent(V content) {
-        this.content = content;
+        return status.getStatusText();
     }
 
     @Override
@@ -115,14 +78,26 @@ public class NettyAsyncResponse<V> implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        if (!r.isChunked()) {
-            return new String(r.getContent().array(),charset);
-        } else {
-            if (buffer == null) {
-                throw new NullPointerException("buffer is null");
-            }
-            return new String(buffer.array(),0, buffer.writerIndex(),charset);
+        StringBuilder b = new StringBuilder();
+        for (HttpResponseBodyPart bp: bodyParts){
+            b.append(new String(bp.getBodyPartBytes(),charset));
         }
+        return b.toString();
+    }
+
+    @Override
+    public InputStream getResponseBodyAsStream() throws IOException {
+        ChannelBuffer buf =  ChannelBuffers.dynamicBuffer();
+        for (HttpResponseBodyPart bp: bodyParts){
+            // Ugly. TODO
+            // (1) We must remove the downcast,
+            // (2) we need a CompositeByteArrayInputStream to avoid
+            // copying the bytes.
+            if (bp.getClass().isAssignableFrom(ResponseBodyPart.class)){
+                buf.writeBytes(((ResponseBodyPart)bp).chunk().getContent());
+            }
+        }
+        return new ChannelBufferInputStream(buf); 
     }
 
     @Override
@@ -147,47 +122,27 @@ public class NettyAsyncResponse<V> implements Response {
 
     @Override
     public String getContentType() {
-        return r.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+        return headers.getHeaders().getHeaderValue("Content-Type");
     }
 
     @Override
     public String getHeader(String name) {
-        String s = r.getHeader(name);
-        if (s == null && trailingHeaders != null) {
-            return trailingHeaders.getHeader(name);
-        }
-        return s;
+        return headers.getHeaders().getHeaderValue(name);
     }
 
     @Override
     public List<String> getHeaders(String name) {
-        List<String> s = r.getHeaders(name);
-        if ((s == null || s.size() == 0) && trailingHeaders != null) {
-            return trailingHeaders.getHeaders(name);
-        } else {
-            return s;
-        }
+        return headers.getHeaders().getHeaderValues(name);
     }
 
     @Override
     public Headers getHeaders() {
-        Headers h = new Headers();
-        for (String s : r.getHeaderNames()) {
-            h.add(s, r.getHeader(s));
-        }
-
-        if (trailingHeaders != null && trailingHeaders.getHeaderNames().size() > 0) {
-            for (final String s : trailingHeaders.getHeaderNames()) {
-                h.add(s, r.getHeader(s));
-            }
-        }
-
-        return Headers.unmodifiableHeaders(h);
+        return headers.getHeaders();
     }
 
     @Override
     public boolean isRedirected() {
-        return (r.getStatus().getCode() >= 300) && (r.getStatus().getCode() <= 399);
+        return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
     }
 
 }

@@ -643,7 +643,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
         future.cancel(true);
         Response response = future.get(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(response);
+        Assert.assertNull(response);
         c.close();
     }
 

@@ -16,6 +16,7 @@
 package com.ning.http.client;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.Future;
 
 /**
@@ -23,7 +24,7 @@ import java.util.concurrent.Future;
  * By default, the {@link com.ning.http.client.providers.NettyAsyncHttpProvider} is used.
  * 
  */
-public interface AsyncHttpProvider {
+public interface AsyncHttpProvider<A> {
 
     /**
      * Execute the request and invoke the {@link AsyncHandler} when the response arrive.
@@ -38,5 +39,16 @@ public interface AsyncHttpProvider {
      * Close the current underlying TCP/HTTP connection.s
      */
     public void close();
+
+    /**
+     * Prepare a {@link Response}
+     * @param status  {@link HttpResponseStatus}
+     * @param headers   {@link HttpResponseHeaders}
+     * @param bodyParts  list of {@link HttpResponseBodyPart}
+     * @return a {@link Response}
+     */
+    public Response prepareResponse(HttpResponseStatus<A> status,
+                                    HttpResponseHeaders<A> headers,
+                                    Collection<HttpResponseBodyPart<A>> bodyParts);
 
 }

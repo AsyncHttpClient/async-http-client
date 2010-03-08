@@ -15,37 +15,21 @@
  */
 package com.ning.http.client;
 
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import com.ning.http.url.Url;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class HttpResponseBodyPart extends HttpContent {
-    private final HttpChunk chunk;
-    private final HttpResponse httpResponse;
+public abstract class HttpResponseBodyPart<R> extends HttpContent<R> {
 
-    public HttpResponseBodyPart(Response response, HttpResponse httpResponse) {
-        super(response);
-        this.chunk = null;
-        this.httpResponse = httpResponse;
-    }
-
-    public HttpResponseBodyPart(Response response, HttpChunk chunk) {
-        super(response);
-        this.chunk = chunk;
-        this.httpResponse = null;        
+    public HttpResponseBodyPart(Url url, R response, AsyncHttpProvider provider) {
+        super(url,response, provider);
     }
 
     /**
      * Return the response body's part bytes received.
      * @return the response body's part bytes received.
      */
-    public byte[] getBodyPartBytes(){
-        if (chunk != null){
-            return chunk.getContent().array();
-        } else {
-            return httpResponse.getContent().array();
-        }
-    }
+    abstract public byte[] getBodyPartBytes();
+
 }

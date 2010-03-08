@@ -15,13 +15,14 @@
  */
 package com.ning.http.client.providers;
 
-import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Request;
 import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 
+import java.net.MalformedURLException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -39,23 +40,30 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-    private final NettyAsyncResponse<V> asyncResponse;
     private final AsyncHandler<V> asyncHandler;
-    private final long responseTimeoutInMs;
+    private final int responseTimeoutInMs;
     private final Request request;
     private final HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
-
-    public NettyResponseFuture(Url  url,Request request, AsyncHandler<V> asyncHandler,
-                               HttpRequest nettyRequest,long responseTimeoutInMs) {
-
-        this.asyncResponse = new NettyAsyncResponse<V>(url);
-        asyncResponse.setFuture(this);
+    private final Url url;
+    private boolean keepAlive = true;
+    private HttpResponse httpResponse;
+    
+    public NettyResponseFuture(Url url,
+                               Request request,
+                               AsyncHandler<V> asyncHandler,
+                               HttpRequest nettyRequest,
+                               int responseTimeoutInMs) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
+        this.url = url;
+    }
+
+    public Url getUrl() throws MalformedURLException {
+        return url;
     }
 
     /**
@@ -132,11 +140,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     V getContent() {
         if (content.get() == null) {
             try {
-                if (asyncHandler instanceof AsyncCompletionHandler){
-                    content.set(((AsyncCompletionHandler<V>)asyncHandler).onCompleted(asyncResponse));
-                } else {
-                    content.set(asyncHandler.onCompleted());
-                }
+                content.set(asyncHandler.onCompleted());
             } catch (Throwable ex) {
                 onThrowable(ex);
                 throw new RuntimeException(ex);
@@ -155,15 +159,27 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return request;
     }
 
-    public NettyAsyncResponse<V> getAsyncResponse() {
-        return asyncResponse;
-    }
-
     public HttpRequest getNettyRequest() {
         return nettyRequest;
     }
 
     public AsyncHandler<V> getAsyncHandler() {
         return asyncHandler;
+    }
+
+    public boolean getKeepAlive() {
+        return keepAlive;
+    }
+
+    public void setKeepAlive(final boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
+    public HttpResponse getHttpResponse() {
+        return httpResponse;
+    }
+
+    public void setHttpResponse(final HttpResponse httpResponse) {
+        this.httpResponse = httpResponse;
     }
 }
