@@ -27,10 +27,6 @@ import java.util.Map;
 public class Headers implements Iterable<Pair<String, String>> {
     public static final String CONTENT_TYPE = "Content-type";
 
-    public static interface Filter {
-        public Pair<String, String> process(Pair<String, String> header);
-    }
-
     private List<Pair<String, String>> headers = new ArrayList<Pair<String, String>>();
 
     public static Headers unmodifiableHeaders(Headers headers) {

@@ -16,6 +16,8 @@
  */
 package com.ning.http.client;
 
+import com.google.common.collect.Multimap;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface Request {
+
     public static interface EntityWriter {
         public void writeEntity(OutputStream out) throws IOException;
     }
@@ -46,9 +49,11 @@ public interface Request {
 
     public long getLength();
 
-    public Map<String, String> getParams();
+    public Multimap<String, String> getParams();
 
     public List<Part> getParts();
 
     public String getVirtualHost();
+
+    public Multimap<String,String> getQueryParams();
 }

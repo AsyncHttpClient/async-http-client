@@ -15,6 +15,9 @@
  */
 package com.ning.http.client;
 
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
@@ -24,7 +27,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,11 +46,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         private String stringData;
         private InputStream streamData;
         private EntityWriter entityWriter;
-        private Map<String, String> params;
+        private Multimap<String, String> params;
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
-        public Map<String, String> queryParams;
+        public Multimap<String, String> queryParams;
 
         public RequestImpl() {
         }
@@ -63,7 +65,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
-                this.params = (prototype.getParams() == null ? null : new LinkedHashMap<String, String>(prototype.getParams()));
+                this.params = (prototype.getParams() == null ? null :  LinkedListMultimap.create(prototype.getParams()));
+                this.queryParams = (prototype.getQueryParams() == null ? null :  LinkedListMultimap.create(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
@@ -81,7 +84,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
                 Url url = Url.valueOf(this.url);
 
                 if (queryParams != null) {
-                    for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+
+                    for (Map.Entry<String, String> entry : queryParams.entries()) {
                         url.addParameter(entry.getKey(), entry.getValue());
                     }
                 }
@@ -129,8 +133,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         }
 
         /* @Override */
-        public Map<String, String> getParams() {
-            return params == null ? null : Collections.unmodifiableMap(params);
+        public Multimap<String, String> getParams() {
+            return params == null ? null : Multimaps.unmodifiableMultimap(params);
         }
 
         /* @Override */
@@ -141,6 +145,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         /* @Override */
         public String getVirtualHost() {
             return virtualHost;
+        }
+
+        public Multimap<String, String> getQueryParams()
+        {
+            return queryParams == null ? null : Multimaps.unmodifiableMultimap(queryParams);
         }
 
         @Override
@@ -183,13 +192,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T)this;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unused"})
     public T setHeader(String name, String value) {
         request.headers.replace(name, value);
         return (T)this;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unused"})
     public T addHeader(String name, String value) {
         request.headers.add(name, value);
         return (T)this;
@@ -276,25 +285,36 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T)this;
     }
 
-    public void setQueryParameter(String name, String value)
+    public void addQueryParameter(String name, String value)
     {
         if (request.queryParams == null) {
-            request.queryParams = new LinkedHashMap<String, String>();
+            request.queryParams = LinkedListMultimap.create();
         }
         request.queryParams.put(name, value);
     }
 
-    @SuppressWarnings("unchecked")
-    public T setParameter(String key, String value) throws IllegalArgumentException {
+    @SuppressWarnings({"unchecked", "unused"})
+    public T addParameter(String key, String value) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
         resetMultipartData();
         if (request.params == null) {
-            request.params = new LinkedHashMap<String, String>();
+            request.params =  LinkedListMultimap.create();
         }
         request.params.put(key, value);
+        return (T)this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+            throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
+        }
+        resetNonMultipartData();
+        resetMultipartData();
+        request.params = LinkedListMultimap.create(parameters);
         return (T)this;
     }
 
@@ -305,7 +325,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         }
         resetNonMultipartData();
         resetMultipartData();
-        request.params = new LinkedHashMap<String, String>(parameters);
+        request.params = LinkedListMultimap.create(Multimaps.forMap(parameters));
         return (T)this;
     }
 
@@ -333,6 +353,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
                     request.length = Long.parseLong(contentLength);
                 }
                 catch (NumberFormatException e) {
+                    // NoOp -- we wdn't specify length so it will be chunked?
                 }
             }
         }

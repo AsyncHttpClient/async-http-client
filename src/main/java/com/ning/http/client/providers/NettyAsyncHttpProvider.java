@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.providers;
 
+import com.google.common.collect.Multimap;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -164,7 +165,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (log.isDebugEnabled())
             log.debug("performConnect: " + url.toString());
-        
+
         configure();
         ChannelFuture channelFuture = null;
 
@@ -268,7 +269,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
                 } else if (request.getParams() != null) {
                     StringBuilder sb = new StringBuilder();
-                    for (final Entry<String, String> param : request.getParams().entrySet()) {
+                    for (final Entry<String, String> param : request.getParams().entries()) {
                         sb.append(param.getKey());
                         sb.append("=");
                         sb.append(param.getValue());
@@ -387,9 +388,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (log.isDebugEnabled())
             log.debug("Executing the execute operation: " + handler);
 
-        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler, 
+        final NettyResponseFuture<T> f = new NettyResponseFuture<T>(url, request, handler,
                 nettyRequest, config.getRequestTimeout());
-        
+
         channel.getConfig().setConnectTimeoutMillis((int) config.getConnectionTimeoutInMs());
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
@@ -593,7 +594,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
      * @return
      * @throws java.io.FileNotFoundException
      */
-    private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, Map<String,String> methodParams) throws FileNotFoundException {
+    private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, Multimap<String,String> methodParams) throws FileNotFoundException {
         com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
         int i = 0;
 

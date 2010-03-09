@@ -15,20 +15,19 @@
  */
 package com.ning.http.multipart;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 public class MultipartRequestEntity implements RequestEntity {
 
     private final static Logger log = LogManager.getLogger(MultipartRequestEntity.class);
-    
+
     /** The Content-Type for multipart/form-data. */
     private static final String MULTIPART_FORM_CONTENT_TYPE = "multipart/form-data";
 
@@ -56,19 +55,19 @@ public class MultipartRequestEntity implements RequestEntity {
 
     private byte[] multipartBoundary;
 
-    private Map<String,String> methodParams;
+    private Multimap<String,String> methodParams;
 
     /**
      * Creates a new multipart entity containing the given parts.
      * @param parts The parts to include.
      * @param methodParams The params of the HttpMethod using this entity.
      */
-    public MultipartRequestEntity(Part[] parts, Map<String,String> methodParams) {
+    public MultipartRequestEntity(Part[] parts, Multimap<String,String> methodParams) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
         if (methodParams == null) {
-            methodParams = new HashMap<String,String>();
+            methodParams = ArrayListMultimap.create();
         }
         this.parts = parts;
         this.methodParams = methodParams;
@@ -85,7 +84,7 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     protected byte[] getMultipartBoundary() {
         if (multipartBoundary == null) {
-            String temp = (String) methodParams.get("");
+            String temp =  methodParams.get("").isEmpty() ? null : methodParams.get("").iterator().next();
             if (temp != null) {
                 multipartBoundary = MultipartEncodingUtil.getAsciiBytes(temp);
             } else {
