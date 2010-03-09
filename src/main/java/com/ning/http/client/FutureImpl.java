@@ -23,13 +23,6 @@ import java.util.concurrent.Future;
  */
 public interface FutureImpl<V> extends Future<V> {
 
-    /**
-     * Notify listener of this class of a unexpected {@link Throwable}
-     *
-     * @param t
-     */
-    void onThrowable(Throwable t);
-
     void done();
 
     void abort(RuntimeException t);

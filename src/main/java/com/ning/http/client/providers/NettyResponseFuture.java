@@ -49,7 +49,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final Url url;
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
-    private ExecutionException exEx = null;
+    private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     
     public NettyResponseFuture(Url url,
                                Request request,
@@ -109,8 +109,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             isDone.set(true);
         }
 
-        if (exEx != null){
-            throw exEx;
+        if (exEx.get() != null){
+            throw exEx.getAndSet(null);
         }
         return (V) getContent();
     }
@@ -128,15 +128,15 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                 throw te;
             }
 
-            if (exEx != null){
-                throw exEx;
+            if (exEx.get() != null){
+                throw exEx.getAndSet(null);
             }
         }
 
         return (V) getContent();
     }
 
-    public void onThrowable(Throwable t) {
+    private void onThrowable(Throwable t) {
         asyncHandler.onThrowable(t);
     }
 
@@ -153,13 +153,20 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public final void done() {
+        if (exEx.get() != null){
+            return;
+        }
         isDone.set(true);
         getContent();
         latch.countDown();
     }
 
     public final void abort(final RuntimeException t) {
-        exEx = new ExecutionException(t);
+        if (isDone.get() || isCancelled.get()) return;
+        
+        if (exEx.get() == null){
+            exEx.set(new ExecutionException(t));
+        }
         isDone.set(true);
         latch.countDown();
     }

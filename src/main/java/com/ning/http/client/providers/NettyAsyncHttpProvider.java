@@ -399,7 +399,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
                 if (!f.isDone()) {
-                    f.onThrowable(new TimeoutException());
+                    handler.onThrowable(new TimeoutException());
                 }
                 return null;
             }
@@ -544,7 +544,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             if (future!= null)
-                future.onThrowable(cause);
+                future.getAsyncHandler().onThrowable(cause);
         }
         if (log.isDebugEnabled()){
             log.debug(e);
