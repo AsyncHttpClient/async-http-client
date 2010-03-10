@@ -46,4 +46,24 @@ public class ResponseStatus extends HttpResponseStatus<HttpResponse>{
         return response.getStatus().getReasonPhrase();
     }
 
+    @Override
+    public String getProtocolName() {
+        return response.getProtocolVersion().getProtocolName();
+    }
+
+    @Override
+    public int getProtocolMajorVersion() {
+        return response.getProtocolVersion().getMajorVersion();
+    }
+
+    @Override
+    public int getProtocolMinorVersion() {
+        return response.getProtocolVersion().getMinorVersion();
+    }
+
+    @Override
+    public String getProtocolText() {
+        return response.getProtocolVersion().getText();
+    }
+
 }

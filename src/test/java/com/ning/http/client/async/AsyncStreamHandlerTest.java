@@ -15,11 +15,13 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -380,5 +382,72 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             Assert.fail("Timeout out");
         }
     }
+
+    @Test (timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
+    public void asyncStreamJustStatusLine() throws Throwable {
+        final int STATUS = 0;
+        final int COMPLETED = 1;
+        final int OTHER = 2;
+        final boolean[] whatCalled = new boolean[] {false, false, false};
+        final CountDownLatch latch = new CountDownLatch(1);
+        AsyncHttpClient client = new AsyncHttpClient();
+        Future<Integer> statusCode = client.prepareGet(TARGET_URL).execute(new AsyncHandler<Integer>() {
+            private int status = -1;
+
+            /* @Override */
+            public void onThrowable(Throwable t) {
+                whatCalled[OTHER] = true;
+                latch.countDown();
+            }
+
+           /* @Override */
+            public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                whatCalled[OTHER] = true;
+                latch.countDown();
+                return STATE.ABORT;
+            }
+
+            /* @Override */
+            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                whatCalled[STATUS] = true;
+                System.out.println(responseStatus);
+                status = responseStatus.getStatusCode();
+                latch.countDown();
+                return STATE.ABORT;
+            }
+
+            /* @Override */
+            public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                whatCalled[OTHER] = true;
+                latch.countDown();
+                return STATE.ABORT;
+            }
+
+            /* @Override */
+            public Integer onCompleted() throws Exception {
+                whatCalled[COMPLETED] = true;
+                latch.countDown();
+                return status;
+            }
+        });
+
+        if (!latch.await(2, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout");
+            return;
+        }
+        Integer status = statusCode.get(1, TimeUnit.SECONDS);
+        Assert.assertEquals((int) status, 200, "Expected status code failed.");
+
+        if (!whatCalled[STATUS]) {
+            Assert.fail("onStatusReceived not called.");
+        }
+        if (!whatCalled[COMPLETED]) {
+            Assert.fail("onCompleted not called.");
+        }
+        if (whatCalled[OTHER]) {
+            Assert.fail("Other method of AsyncHandler got called.");
+        }
+    }
+
 
 }

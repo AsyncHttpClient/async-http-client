@@ -39,4 +39,31 @@ public abstract class HttpResponseStatus<R> extends HttpContent<R>{
      */
     abstract public String getStatusText();
 
+    /**
+     * Protocol name from status line.
+     *
+     * @return Protocol name.
+     */
+    abstract public String getProtocolName() ;
+
+    /**
+     * Protocol major version.
+     *
+     * @return Major version.
+     */
+    abstract public int getProtocolMajorVersion() ;
+
+    /**
+     * Protocol minor version.
+     *
+     * @return Minor version.
+     */
+    abstract public int getProtocolMinorVersion() ;
+
+    /**
+     * Full protocol name + version
+     *
+     * @return protocol name + version
+     */
+    abstract public String getProtocolText() ;
 }
