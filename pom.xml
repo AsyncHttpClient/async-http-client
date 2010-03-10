@@ -69,7 +69,10 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Import-Package>*</Import-Package>
+                        <Import-Package>
+                            !com.ning.http.*,
+                            *
+                        </Import-Package>
                         <Export-Package>
                             com.ning.http.*
                         </Export-Package>
