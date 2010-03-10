@@ -285,12 +285,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T)this;
     }
 
-    public void addQueryParameter(String name, String value)
-    {
+    @SuppressWarnings({"unchecked", "unused"})
+    public T addQueryParameter(String name, String value) {
         if (request.queryParams == null) {
             request.queryParams = LinkedListMultimap.create();
         }
         request.queryParams.put(name, value);
+        return (T) this;
     }
 
     @SuppressWarnings({"unchecked", "unused"})
