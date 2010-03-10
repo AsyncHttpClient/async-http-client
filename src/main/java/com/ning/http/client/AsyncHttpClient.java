@@ -130,9 +130,7 @@ public class AsyncHttpClient {
     private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.NettyAsyncHttpProvider";
     private final AsyncHttpProvider httpProvider;
     private final AsyncHttpClientConfig config;
-    private final static AsyncHandler<Response> defaultHandler = new AsyncCompletionHandlerBase();
 
-    
     /**
      * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
      * default {@link AsyncHttpProvider} will be used ({@link com.ning.http.client.providers.NettyAsyncHttpProvider}
@@ -195,7 +193,7 @@ public class AsyncHttpClient {
         }
 
         public Future<Response> execute() throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), defaultHandler);
+            return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
         }
     }
 
@@ -300,7 +298,7 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public Future<Response> executeRequest(Request request) throws IOException {
-        return httpProvider.execute(request, defaultHandler );
+        return httpProvider.execute(request, new AsyncCompletionHandlerBase());
     }
 
     private final static AsyncHttpProvider<?> loadDefaultProvider(String className, AsyncHttpClientConfig config){
