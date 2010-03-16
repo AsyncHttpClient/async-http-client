@@ -161,7 +161,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         latch.countDown();
     }
 
-    public final void abort(final RuntimeException t) {
+    public final void abort(final Throwable t) {
         if (isDone.get() || isCancelled.get()) return;
         
         if (exEx.get() == null){

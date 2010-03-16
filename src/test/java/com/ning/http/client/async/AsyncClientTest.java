@@ -1,11 +1,7 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Headers;
-import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
