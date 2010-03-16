@@ -27,6 +27,7 @@ import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestType;
@@ -433,13 +434,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 String ka = response.getHeader("Connection");
                 future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
 
+
                 if (config.isRedirectEnabled()
-                        && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301)
-                        && (redirectCount + 1) < config.getMaxRedirects()) {
-                    HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
-                    ctx.getChannel().write(r);
-                    return;
+                        && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301) ){
+
+                    if ( redirectCount++ < config.getMaxRedirects()) {
+                        HttpRequest r = construct(request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
+                        ctx.getChannel().write(r);
+                        return;
+                    } else {
+                        throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+                    }
                 }
+                
                 redirectCount = 0;
                 if (log.isDebugEnabled()){
                     log.debug("Status: " + response.getStatus());

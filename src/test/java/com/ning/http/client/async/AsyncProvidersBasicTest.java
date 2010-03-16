@@ -21,6 +21,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.Headers;
+import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
@@ -997,7 +998,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "async")
+ 
+   @Test(groups = "async")
     public void asyncDoGetMaxConnectionsTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new Builder().setMaximumConnectionsTotal(2).build());
 
@@ -1039,4 +1041,37 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         client.close();
     }
 
+    @Test(groups = "async")
+    public void asyncDoGetMaxRedirectTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient(new Builder().setMaximumNumberOfRedirects(0).setFollowRedirects(true).build());
+
+        // Use a latch in case the assert fail
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.fail("Should not be here");
+                return response;
+            }
+
+            @Override
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+                try{
+                    Assert.assertEquals(t.getClass(), MaxRedirectException.class);
+                } finally {
+                    latch.countDown();
+                }
+            }
+        };
+
+        client.prepareGet("http://google.com/").execute(handler);
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+        client.close();
+    }
 }
