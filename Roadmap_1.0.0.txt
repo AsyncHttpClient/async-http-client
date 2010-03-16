@@ -6,10 +6,9 @@ P1 [Must Have]
     + Add SSL support
     + Expose ByteBuffer to Handler (or some new Handler)
     + annotated-client support
-    + Merge Hubert's proposal for adding status line support
     + Replace Log4J with our own logging interface and add instantiable adapters to the various loggers which can be set on the client instance. (offer a public interface user can implement to support their favorite logger. Default JDK)
     + Proper connection pool 
-    + Support for arbitrary HTTP verbs
+    + Support for arbitrary HTTP verbs and all the defined one.
     + Stable release of Netty 3.2
     + Javadoc for the public API.
     + Decent unit test coverage
