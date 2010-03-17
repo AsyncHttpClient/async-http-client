@@ -411,6 +411,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     ChannelBuffer b = ChannelBuffers.dynamicBuffer((int) lenght);
                     request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
+                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                     nettyRequest.setContent(b);
                 }
                 break;
