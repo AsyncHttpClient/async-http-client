@@ -3,7 +3,7 @@ Roadmap for 1.0.0
 
 P1 [Must Have]
 ---------------
-    + Add SSL support
+    + Add SSL support [Support Added March 18]
     + Expose ByteBuffer to Handler (or some new Handler)
     + annotated-client support
     + Replace Log4J with our own logging interface and add instantiable adapters to the various loggers which can be set on the client instance. (offer a public interface user can implement to support their favorite logger. Default JDK)
