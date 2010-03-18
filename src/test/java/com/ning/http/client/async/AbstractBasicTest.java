@@ -40,7 +40,7 @@ import java.util.Enumeration;
 public class AbstractBasicTest {
     protected final static int PORT = 19999;
     protected Server server;
-    protected final static Logger log = Logger.getLogger(AsyncProvidersBasicTest.class);
+    protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
 
     protected final static String TARGET_URL = "http://127.0.0.1:19999/foo/test";
 
@@ -136,7 +136,7 @@ public class AbstractBasicTest {
 
         listener.setHost("127.0.0.1");
         listener.setPort(PORT);
-
+                                                                                                 
         server.addConnector(listener);
 
         listener = new SelectChannelConnector();
@@ -146,7 +146,6 @@ public class AbstractBasicTest {
         server.addConnector(listener);
 
         server.setHandler(configureHandler());
-        server.start();
         server.start();
         log.info("Local HTTP server started successfully");
     }

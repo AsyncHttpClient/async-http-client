@@ -38,6 +38,7 @@ import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 import com.ning.http.url.Url;
+import com.ning.http.url.Url.Protocol;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -70,17 +71,29 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -116,12 +129,36 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         this.config = config;
     }
 
-    void configure() {
+    void configure(final boolean useSSL) {
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
+
+                if (useSSL){
+                    SSLEngine sslEngine = config.getSSLEngine();
+                    if (sslEngine == null){
+                        InputStream keyStoreStream = NettyAsyncHttpProvider.class.getResourceAsStream("keystore.jks");
+                        log.warn("No SSLEngine specified. Using the default one");
+                        char[] keyStorePassword = "changeit".toCharArray();
+                        KeyStore ks = KeyStore.getInstance("JKS");
+                        ks.load(keyStoreStream, keyStorePassword);
+
+                        SSLContext sslContext = SSLContext.getInstance("TLS");
+                        char[] certificatePassword = "changeit".toCharArray();
+                        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                        kmf.init(ks, certificatePassword);
+
+                        // Initialize the SSLContext to work with our key managers.
+                        KeyManager[] keyManagers = kmf.getKeyManagers();
+                        sslContext.init(keyManagers,new TrustManager[]{DUMMY_TRUST_MANAGER},new SecureRandom());
+                        sslEngine = sslContext.createSSLEngine();
+                        sslEngine.setUseClientMode(true);                        
+                    }
+                    pipeline.addLast("ssl", new SslHandler(sslEngine));
+                }
+                            
                 pipeline.addLast("decoder", new HttpResponseDecoder());
                 pipeline.addLast("encoder", new HttpRequestEncoder());
 
@@ -160,7 +197,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     /**
-     * Blocking connect.
+     * Non Blocking connect.
      */
     private final static class ConnectListener<T> implements ChannelFutureListener{
 
@@ -271,7 +308,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final static Url createUrl(String u) {
         URI uri = URI.create(u);
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http")) {
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + u
                     + ", must be equal (ignoring case) to 'http'");
         }
@@ -467,18 +504,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             executeRequest(channel,asyncHandler,config,future,nettyRequest);
             return future;
         }
-        configure();
+        configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
 
         ChannelFuture channelFuture = null;
         ConnectListener<T> c = new ConnectListener.Builder(config, request, asyncHandler).build();
-        if (config.getProxyServer() == null) {
-            channelFuture = bootstrap.connect(
-                    new InetSocketAddress(url.getHost(), url.getPort()));
-        } else {
-            channelFuture = bootstrap.connect(
-                    new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
+        try{
+            if (config.getProxyServer() == null) {
+                channelFuture = bootstrap.connect(
+                        new InetSocketAddress(url.getHost(), url.getPort()));
+            } else {
+                channelFuture = bootstrap.connect(
+                        new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
+            }
+            bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
+        } catch (Throwable t){
+            log.error(t);
+            asyncHandler.onThrowable(t.getCause());
+            c.future().abort(t.getCause());
+            return c.future(); 
         }
-        bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
         channelFuture.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(asyncHandler);
 
         channelFuture.addListener(c);
@@ -712,5 +756,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         return new MultipartRequestEntity(parts, methodParams);
     }
+    
+    private static final TrustManager DUMMY_TRUST_MANAGER = new X509TrustManager() {
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+
+        public void checkClientTrusted(
+                X509Certificate[] chain, String authType) throws CertificateException {
+        }
+
+        public void checkServerTrusted(
+                X509Certificate[] chain, String authType) throws CertificateException {
+        }
+    };
 
 }

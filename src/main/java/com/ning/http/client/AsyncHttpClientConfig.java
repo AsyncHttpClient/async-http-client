@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,6 +54,7 @@ public class AsyncHttpClientConfig {
     private final ScheduledExecutorService reaper;
     private final ExecutorService applicationThreadPool;
     private final ProxyServer proxyServer;
+    private final SSLEngine sslEngine;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -65,7 +68,8 @@ public class AsyncHttpClientConfig {
                                   boolean keepAlive,
                                   ScheduledExecutorService reaper,
                                   ExecutorService applicationThreadPool,
-                                  ProxyServer proxyServer) {
+                                  ProxyServer proxyServer,
+                                  SSLEngine sslEngine) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -77,6 +81,7 @@ public class AsyncHttpClientConfig {
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
         this.keepAlive = keepAlive;
+        this.sslEngine = sslEngine;
 
         if (reaper == null) {
             this.reaper = Executors.newScheduledThreadPool(1);
@@ -212,6 +217,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return an instance of {@link SSLEngine} used for SSL connection.
+     * @return an instance of {@link SSLEngine} used for SSL connection.
+     */
+    public SSLEngine getSSLEngine(){
+        return sslEngine;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -228,6 +241,7 @@ public class AsyncHttpClientConfig {
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null;
+        private SSLEngine sslEngine;
 
         public Builder() {
         }
@@ -379,6 +393,17 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Set the {@link SSLEngine} for secure connection.
+         * 
+         * @param sslEngine the {@link SSLEngine} for secure connection
+         * @return a {@link Builder}
+         */
+        public Builder setSSLEngine(SSLEngine sslEngine){
+            this.sslEngine = sslEngine;
+            return this;
+        }
+
+        /**
          * Build an {@link AsyncHttpClientConfig}
          *
          * @return an {@link AsyncHttpClientConfig}
@@ -396,7 +421,8 @@ public class AsyncHttpClientConfig {
                     keepAlive,
                     reaper,
                     applicationThreadPool,
-                    proxyServer);
+                    proxyServer,
+                    sslEngine);
         }
 
     }
