@@ -307,8 +307,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final static Url createUrl(String u) {
         URI uri = URI.create(u);
-        final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
+        final String scheme = uri.getScheme().toLowerCase();
+        if (scheme == null || !scheme.equals("http") && !scheme.equals("https")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + u
                     + ", must be equal (ignoring case) to 'http'");
         }
@@ -325,7 +325,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     + ". must start with a '/'");
         }
 
-        int port = (uri.getPort() == -1) ? 80 : uri.getPort();
+        int port = uri.getPort();
+        if (port == -1)
+            port = scheme.equals("http")? 80: 443 ;
+               
         return new Url(uri.getScheme(), uri.getHost(), port, uri.getPath(), uri.getQuery());
     }
 

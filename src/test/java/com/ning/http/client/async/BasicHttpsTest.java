@@ -201,29 +201,27 @@ public class BasicHttpsTest {
 
     }
 
-    // Netty issue: https://jira.jboss.org/jira/browse/NETTY-301
+    @Test
+    public void multipleJavaDotDeadSSLTest() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
 
-//    @Test
-//    public void multipleJavaDotDeadSSLTest() throws Throwable {
-//        AsyncHttpClient c = new AsyncHttpClient();
-//
-//        String body = "hello there";
-//
-//        // once
-//        Response response = c.preparePost("https://atmosphere.dev.java.net/")
-//                .setBody(body)
-//                .execute().get(20, TimeUnit.SECONDS);
-//
-//        assertEquals(response.getResponseBody(), body);
-//
-//        // twice
-//        response = c.preparePost("https://grizzly.dev.java.net/")
-//                .setBody(body)
-//                .execute().get(20, TimeUnit.SECONDS);
-//
-//        assertEquals(response.getResponseBody(), body);
-//
-//    }
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
+                .setBody(body)
+                .execute().get(20, TimeUnit.SECONDS);
+
+        assertEquals(response.getStatusCode(), 200);
+
+        // twice
+        response = c.preparePost("https://grizzly.dev.java.net:443/")
+                .setBody(body)
+                .execute().get(20, TimeUnit.SECONDS);
+
+        assertEquals(response.getStatusCode(), 200);
+
+    }
 
     @Test
     public void multipleRequestsTest() throws Throwable {
