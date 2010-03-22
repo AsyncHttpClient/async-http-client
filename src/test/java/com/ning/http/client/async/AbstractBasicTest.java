@@ -38,6 +38,11 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 public class AbstractBasicTest {
+
+    static{
+        BasicConfigurator.configure();
+    }
+       
     protected final static int PORT = 19999;
     protected Server server;
     protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
@@ -130,7 +135,6 @@ public class AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-        BasicConfigurator.configure();
 
         Connector listener = new SelectChannelConnector();
 

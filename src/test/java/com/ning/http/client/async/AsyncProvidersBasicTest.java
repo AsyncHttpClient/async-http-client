@@ -752,7 +752,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         ConnectException expected = null;
         try {
             c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString())
-                    .execute(new AsyncCompletionHandlerAdapter()).get();
+                    .execute(new AsyncCompletionHandlerAdapter(){
+                        /* @Override */
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get();
         } catch (ExecutionException ex) {
             if (ex.getCause() instanceof ConnectException){
                 expected = (ConnectException)ex.getCause();
@@ -783,7 +787,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         try{
             c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString())
-                    .execute(new AsyncCompletionHandlerAdapter()).get();
+                    .execute(new AsyncCompletionHandlerAdapter(){
+                        /* @Override */
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get();
             Assert.assertTrue(false);
         } catch (ExecutionException ex){
             Assert.assertEquals(ex.getCause().getClass(),ConnectException.class);
@@ -807,6 +815,24 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             Assert.fail("Timed out");
         }
     }
+
+    @Test(groups = "async")
+    public void asyncConnectInvalidHandlerHost() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        c.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter(){
+             /* @Override */
+            public void onThrowable(Throwable t) {
+                 Assert.assertEquals(t.getClass(), ConnectException.class);
+                 latch.countDown();
+            }
+        });
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+    }
     
 
     @Test(groups = "async")
@@ -814,7 +840,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient();
 
         try {
-            c.prepareGet("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter()).get();
+            c.prepareGet("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter(){
+                        /* @Override */
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get();
             Assert.fail("No ConnectionException was thrown");
         } catch (ExecutionException ex) {
             Assert.assertEquals(ex.getCause().getClass(), ConnectException.class);

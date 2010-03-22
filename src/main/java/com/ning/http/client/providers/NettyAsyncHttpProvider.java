@@ -275,7 +275,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         config.reaper().schedule(new Callable<Object>() {
             public Object call() {
                 if (!future.isDone()) {
-                    asyncHandler.onThrowable(new TimeoutException());
+                    future.abort(new TimeoutException());
                 }
                 return null;
             }
@@ -522,12 +522,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
         } catch (Throwable t){
             log.error(t);
-            asyncHandler.onThrowable(t.getCause());
             c.future().abort(t.getCause());
             return c.future(); 
         }
-        channelFuture.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(asyncHandler);
-
         channelFuture.addListener(c);
         return c.future();
     }
@@ -675,8 +672,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (future!= null){
                 future.getAsyncHandler().onThrowable(cause);
             }
-        } else if (ctx.getAttachment() instanceof AsyncHandler<?>) {
-           ((AsyncHandler<?>)ctx.getAttachment()).onThrowable(e.getCause()); 
         }
 
         if (log.isDebugEnabled()){

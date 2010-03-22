@@ -167,6 +167,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (exEx.get() == null){
             exEx.set(new ExecutionException(t));
         }
+        asyncHandler.onThrowable(t);        
         isDone.set(true);
         latch.countDown();
     }
