@@ -15,11 +15,106 @@
  */
 package com.ning.http.client;
 
+import java.io.InputStream;
+import java.util.Map;
+
+import com.google.common.collect.Multimap;
+import com.ning.http.client.Request.EntityWriter;
+
 /**
- * Builder for {@link Request}
+ * Builder for a {@link Request}.
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     public RequestBuilder(RequestType type) {
         super(type);
+    }
+
+    // Note: For now we keep the delegates in place even though they are not needed
+    //       since otherwise Clojure (and maybe other languages) won't be able to
+    //       access these methods - see Clojure tickets 126 and 259
+    
+    @Override
+    public RequestBuilder addBodyPart(Part part) throws IllegalArgumentException {
+        return super.addBodyPart(part);
+    }
+
+    @Override
+    public RequestBuilder addCookie(Cookie cookie) {
+        return super.addCookie(cookie);
+    }
+
+    @Override
+    public RequestBuilder addHeader(String name, String value) {
+        return super.addHeader(name, value);
+    }
+
+    @Override
+    public RequestBuilder addParameter(String key, String value) throws IllegalArgumentException {
+        return super.addParameter(key, value);
+    }
+
+    @Override
+    public RequestBuilder addQueryParameter(String name, String value) {
+        return super.addQueryParameter(name, value);
+    }
+
+    @Override
+    public Request build() {
+        return super.build();
+    }
+
+    @Override
+    public RequestBuilder setBody(byte[] data) throws IllegalArgumentException {
+        return super.setBody(data);
+    }
+
+    @Override
+    public RequestBuilder setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
+        return super.setBody(dataWriter, length);
+    }
+
+    @Override
+    public RequestBuilder setBody(EntityWriter dataWriter) {
+        return super.setBody(dataWriter);
+    }
+
+    @Override
+    public RequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
+        return super.setBody(stream);
+    }
+
+    @Override
+    public RequestBuilder setBody(String data) throws IllegalArgumentException {
+        return super.setBody(data);
+    }
+
+    @Override
+    public RequestBuilder setHeader(String name, String value) {
+        return super.setHeader(name, value);
+    }
+
+    @Override
+    public RequestBuilder setHeaders(Headers headers) {
+        return super.setHeaders(headers);
+    }
+
+    @Override
+    public RequestBuilder setParameters(Map<String, String> parameters) throws IllegalArgumentException {
+        return super.setParameters(parameters);
+    }
+
+    @Override
+    public RequestBuilder setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+        return super.setParameters(parameters);
+    }
+
+    @Override
+    public RequestBuilder setUrl(String url) {
+        return super.setUrl(url);
+    }
+
+    @Override
+    public RequestBuilder setVirtualHost(String virtualHost) {
+        return super.setVirtualHost(virtualHost);
     }
 }

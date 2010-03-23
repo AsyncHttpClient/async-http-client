@@ -17,7 +17,12 @@
 package com.ning.http.client;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 import java.util.concurrent.Future;
+
+import com.google.common.collect.Multimap;
+import com.ning.http.client.Request.EntityWriter;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
@@ -194,6 +199,95 @@ public class AsyncHttpClient {
 
         public Future<Response> execute() throws IOException {
             return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
+        }
+
+        // Note: For now we keep the delegates in place even though they are not needed
+        //       since otherwise Clojure (and maybe other languages) won't be able to
+        //       access these methods - see Clojure tickets 126 and 259
+
+        @Override
+        public BoundRequestBuilder addBodyPart(Part part) throws IllegalArgumentException {
+            return super.addBodyPart(part);
+        }
+
+        @Override
+        public BoundRequestBuilder addCookie(Cookie cookie) {
+            return super.addCookie(cookie);
+        }
+
+        @Override
+        public BoundRequestBuilder addHeader(String name, String value) {
+            return super.addHeader(name, value);
+        }
+
+        @Override
+        public BoundRequestBuilder addParameter(String key, String value) throws IllegalArgumentException {
+            return super.addParameter(key, value);
+        }
+
+        @Override
+        public BoundRequestBuilder addQueryParameter(String name, String value) {
+            return super.addQueryParameter(name, value);
+        }
+
+        @Override
+        public Request build() {
+            return super.build();
+        }
+
+        @Override
+        public BoundRequestBuilder setBody(byte[] data) throws IllegalArgumentException {
+            return super.setBody(data);
+        }
+
+        @Override
+        public BoundRequestBuilder setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
+            return super.setBody(dataWriter, length);
+        }
+
+        @Override
+        public BoundRequestBuilder setBody(EntityWriter dataWriter) {
+            return super.setBody(dataWriter);
+        }
+
+        @Override
+        public BoundRequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
+            return super.setBody(stream);
+        }
+
+        @Override
+        public BoundRequestBuilder setBody(String data) throws IllegalArgumentException {
+            return super.setBody(data);
+        }
+
+        @Override
+        public BoundRequestBuilder setHeader(String name, String value) {
+            return super.setHeader(name, value);
+        }
+
+        @Override
+        public BoundRequestBuilder setHeaders(Headers headers) {
+            return super.setHeaders(headers);
+        }
+
+        @Override
+        public BoundRequestBuilder setParameters(Map<String, String> parameters) throws IllegalArgumentException {
+            return super.setParameters(parameters);
+        }
+
+        @Override
+        public BoundRequestBuilder setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+            return super.setParameters(parameters);
+        }
+
+        @Override
+        public BoundRequestBuilder setUrl(String url) {
+            return super.setUrl(url);
+        }
+
+        @Override
+        public BoundRequestBuilder setVirtualHost(String virtualHost) {
+            return super.setVirtualHost(virtualHost);
         }
     }
 
