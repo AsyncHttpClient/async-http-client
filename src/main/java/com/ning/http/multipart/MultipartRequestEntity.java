@@ -24,6 +24,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Random;
 
+/**
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
+ */
 public class MultipartRequestEntity implements RequestEntity {
 
     private final static Logger log = LogManager.getLogger(MultipartRequestEntity.class);

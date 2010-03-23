@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * @since 3.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public interface RequestEntity {
 

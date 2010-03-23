@@ -25,21 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-
 /**
- * This class implements a part of a Multipart post object that
- * consists of a file.
- *
- * @author <a href="mailto:mattalbright@yahoo.com">Matthew Albright</a>
- * @author <a href="mailto:jsdever@apache.org">Jeff Dever</a>
- * @author <a href="mailto:adrian@ephox.com">Adrian Sutton</a>
- * @author <a href="mailto:becke@u.washington.edu">Michael Becke</a>
- * @author <a href="mailto:mdiggory@latte.harvard.edu">Mark Diggory</a>
- * @author <a href="mailto:mbowler@GargoyleSoftware.com">Mike Bowler</a>
- * @author <a href="mailto:oleg@ural.ru">Oleg Kalnichevski</a>
- *
- * @since 2.0
- *
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public class FilePart extends PartBase {
 

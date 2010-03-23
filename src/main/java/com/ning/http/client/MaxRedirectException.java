@@ -17,13 +17,12 @@
 package com.ning.http.client;
 
 /**
- * Throwed when the {@link AsyncHttpClientConfig#getMaxRedirects()} has been reached.
+ * Thrown when the {@link AsyncHttpClientConfig#getMaxRedirects()} has been reached.
  */
 public class MaxRedirectException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public MaxRedirectException()
-    {
+    public MaxRedirectException() {
         super();
     }
 
@@ -31,13 +30,11 @@ public class MaxRedirectException extends Exception {
         super(msg);
     }
 
-    public MaxRedirectException(Throwable cause)
-    {
+    public MaxRedirectException(Throwable cause) {
         super(cause);
     }
 
-    public MaxRedirectException(String message, Throwable cause)
-    {
+    public MaxRedirectException(String message, Throwable cause) {
         super(message, cause);
     }
 }

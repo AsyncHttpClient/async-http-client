@@ -23,14 +23,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Abstract class for one Part of a multipart post object.
- *
- * @author <a href="mailto:mattalbright@yahoo.com">Matthew Albright</a>
- * @author <a href="mailto:jsdever@apache.org">Jeff Dever</a>
- * @author <a href="mailto:adrian@ephox.com">Adrian Sutton</a>
- * @author <a href="mailto:mbowler@GargoyleSoftware.com">Mike Bowler</a>
- * @author <a href="mailto:oleg@ural.ru">Oleg Kalnichevski</a>
- * @since 2.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class Part {
 

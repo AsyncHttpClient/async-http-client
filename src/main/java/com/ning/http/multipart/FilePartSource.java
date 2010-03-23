@@ -23,13 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A PartSource that reads from a File.
- *
- * @author <a href="mailto:becke@u.washington.edu">Michael Becke</a>
- * @author <a href="mailto:mdiggory@latte.harvard.edu">Mark Diggory</a>
- * @author <a href="mailto:mbowler@GargoyleSoftware.com">Mike Bowler</a>
- *
- * @since 2.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public class FilePartSource implements PartSource {
 

@@ -22,14 +22,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Simple string parameter for a multipart post
- *
- * @author <a href="mailto:mattalbright@yahoo.com">Matthew Albright</a>
- * @author <a href="mailto:jsdever@apache.org">Jeff Dever</a>
- * @author <a href="mailto:mbowler@GargoyleSoftware.com">Mike Bowler</a>
- * @author <a href="mailto:oleg@ural.ru">Oleg Kalnichevski</a>
- *
- * @since 2.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public class StringPart extends PartBase {
 

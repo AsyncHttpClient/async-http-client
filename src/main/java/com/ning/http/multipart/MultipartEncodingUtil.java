@@ -21,7 +21,10 @@ import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 
-
+/**
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
+ */
 public class MultipartEncodingUtil {
 
      /** Log object for this class. */

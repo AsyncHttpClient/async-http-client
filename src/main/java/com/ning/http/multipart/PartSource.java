@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * An interface for providing access to data when posting MultiPart messages.
- * 
- * @author <a href="mailto:becke@u.washington.edu">Michael Becke</a>
- *
- * @since 2.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public interface PartSource {
 

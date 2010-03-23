@@ -16,9 +16,8 @@
 package com.ning.http.multipart;
 
 /**
- * Provides setters and getters for the basic Part properties.
- *
- * @author Michael Becke
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class PartBase extends Part {
 

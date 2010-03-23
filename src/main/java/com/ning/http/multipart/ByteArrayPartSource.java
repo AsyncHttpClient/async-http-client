@@ -20,12 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A PartSource that reads from a byte array.  This class should be used when
- * the data to post is already loaded into memory.
- *
- * @author <a href="mailto:becke@u.washington.edu">Michael Becke</a>
- *
- * @since 2.0
+ * This class is an adaptation of the Apache HttpClient implementation
+ * @link http://hc.apache.org/httpclient-3.x/
  */
 public class ByteArrayPartSource implements PartSource {
 
