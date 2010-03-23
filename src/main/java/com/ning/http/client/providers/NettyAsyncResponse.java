@@ -94,7 +94,7 @@ public class NettyAsyncResponse implements Response {
             // (2) we need a CompositeByteArrayInputStream to avoid
             // copying the bytes.
             if (bp.getClass().isAssignableFrom(ResponseBodyPart.class)){
-                buf.writeBytes(((ResponseBodyPart)bp).chunk().getContent());
+                buf.writeBytes(bp.getBodyPartBytes());
             }
         }
         return new ChannelBufferInputStream(buf); 

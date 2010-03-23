@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class AsyncClientTest extends AbstractBasicTest {
+public class ComplexClientTest extends AbstractBasicTest {
 
     @Test
     public void multipleRequestsTest() throws Throwable {
