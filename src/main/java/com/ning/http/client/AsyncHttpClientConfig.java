@@ -137,7 +137,7 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
      */
-    public long getIdleConnectionTimeout() {
+    public long getIdleConnectionTimeoutInMs() {
         return idleConnectionTimeoutInMs;
     }
 
@@ -146,7 +146,7 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response
      */
-    public int getRequestTimeout() {
+    public int getRequestTimeoutInMs() {
         return requestTimeoutInMs;
     }
 
@@ -285,7 +285,7 @@ public class AsyncHttpClientConfig {
          *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
          * @return a {@link Builder}
          */
-        public Builder setIdleConnectionTimeout(long defaultIdleConnectionTimeoutInMs) {
+        public Builder setIdleConnectionTimeoutInMs(long defaultIdleConnectionTimeoutInMs) {
             this.defaultIdleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs;
             return this;
         }
@@ -296,7 +296,7 @@ public class AsyncHttpClientConfig {
          * @param defaultRequestTimeoutInMs the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response
          * @return a {@link Builder}
          */
-        public Builder setRequestTimeout(int defaultRequestTimeoutInMs) {
+        public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
             this.defaultRequestTimeoutInMs = defaultRequestTimeoutInMs;
             return this;
         }

@@ -955,7 +955,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoGetDelayHandlerTest() throws Throwable {
         Headers h = new Headers();
         h.add("LockThread", "true");
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(5 * 1000).build());
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(5 * 1000).build());
 
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);

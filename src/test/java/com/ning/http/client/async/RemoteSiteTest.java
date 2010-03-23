@@ -47,7 +47,7 @@ public class RemoteSiteTest {
     public void before() {
         BasicConfigurator.configure();
         b = new CyclicBarrier(2);
-        c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(10000).build());
+        c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         t = null;
         h = new AsyncCompletionHandler<Response>() {
             public void onThrowable(Throwable t) {

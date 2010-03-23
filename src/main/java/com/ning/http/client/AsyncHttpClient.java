@@ -121,12 +121,12 @@ import com.ning.http.client.Request.EntityWriter;
  *
  * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
  * {@code
- *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeout(...).build());
+ *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * }
  *
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeout()}
+ * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.
  *
  */

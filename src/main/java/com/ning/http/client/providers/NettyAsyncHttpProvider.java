@@ -164,7 +164,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     pipeline.addLast("inflater", new HttpContentDecompressor());
                 }
 
-                IdleStateHandler h = new IdleStateHandler(timer, 0, 0, config.getIdleConnectionTimeout(), TimeUnit.MILLISECONDS) {
+                IdleStateHandler h = new IdleStateHandler(timer, 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) {
                     @SuppressWarnings("unused")
                     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws MalformedURLException {
                         e.getChannel().close();
@@ -247,7 +247,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     log.debug("Executing the execute operation: " + asyncHandler);
 
                 NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
-                        nettyRequest, config.getRequestTimeout());
+                        nettyRequest, config.getRequestTimeoutInMs());
 
                 return new ConnectListener<T>(config, asyncHandler, future, nettyRequest);
             }
@@ -275,7 +275,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return null;
             }
 
-        }, config.getRequestTimeout(), TimeUnit.MILLISECONDS);
+        }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS);
     }
 
     private final static HttpRequest buildRequest(AsyncHttpClientConfig config,Request request, Url url) throws IOException{
@@ -498,7 +498,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (channel != null) {
             HttpRequest nettyRequest = buildRequest(config,request,url);
             NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
-                nettyRequest, config.getRequestTimeout());
+                nettyRequest, config.getRequestTimeoutInMs());
             executeRequest(channel,asyncHandler,config,future,nettyRequest);
             return future;
         }
