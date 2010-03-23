@@ -17,7 +17,6 @@ package com.ning.http.client.providers;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Headers;
-import com.ning.http.client.HttpContent;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -30,14 +29,14 @@ public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
 
     private final HttpChunkTrailer trailingHeaders;
 
-    public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider provider) {
-        super(url,response, provider, false);
+    public ResponseHeaders(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider) {
+        super(url, response, provider, false);
         this.trailingHeaders = null;
 
     }
 
-    public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider provider,HttpChunkTrailer traillingHeaders) {
-        super(url,response, provider, true);
+    public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunkTrailer traillingHeaders) {
+        super(url, response, provider, true);
         this.trailingHeaders = traillingHeaders;
     }
 
@@ -45,7 +44,7 @@ public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
      * Return the HTTP header
      * @return an {@link com.ning.http.client.Headers}
      */
-    public Headers getHeaders(){
+    public Headers getHeaders() {
         Headers h = new Headers();
         for (String s : response.getHeaderNames()) {
             h.add(s, response.getHeader(s));

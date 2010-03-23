@@ -22,20 +22,20 @@ import com.ning.http.url.Url;
  */
 public class HttpContent<R> {
     protected final R response;
-    protected final AsyncHttpProvider provider;
+    protected final AsyncHttpProvider<R> provider;
     protected final Url url;
 
-    protected HttpContent(Url url,R response,AsyncHttpProvider provider) {
+    protected HttpContent(Url url, R response, AsyncHttpProvider<R> provider) {
         this.response = response;
         this.provider = provider;
         this.url= url;
     }
 
-    protected final AsyncHttpProvider provider(){
+    protected final AsyncHttpProvider<R> provider() {
         return provider;
     }
 
-    public final Url getUrl(){
+    public final Url getUrl(  ){
         return url;
     }
 }

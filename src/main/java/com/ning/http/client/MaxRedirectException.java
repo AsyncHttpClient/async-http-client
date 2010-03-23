@@ -19,9 +19,25 @@ package com.ning.http.client;
 /**
  * Throwed when the {@link AsyncHttpClientConfig#getMaxRedirects()} has been reached.
  */
-public class MaxRedirectException extends Exception{
+public class MaxRedirectException extends Exception {
+    private static final long serialVersionUID = 1L;
 
-    public MaxRedirectException(String msg){
+    public MaxRedirectException()
+    {
+        super();
+    }
+
+    public MaxRedirectException(String msg) {
         super(msg);
+    }
+
+    public MaxRedirectException(Throwable cause)
+    {
+        super(cause);
+    }
+
+    public MaxRedirectException(String message, Throwable cause)
+    {
+        super(message, cause);
     }
 }

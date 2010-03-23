@@ -24,13 +24,13 @@ public abstract class HttpResponseHeaders<R> extends HttpContent<R> {
 
     private final boolean traillingHeaders;
 
-    public HttpResponseHeaders(Url url,R response,AsyncHttpProvider provider) {
-        super(url,response, provider);
+    public HttpResponseHeaders(Url url, R response, AsyncHttpProvider<R> provider) {
+        super(url, response, provider);
         this.traillingHeaders = false;
     }
 
-    public HttpResponseHeaders(Url url,R response,AsyncHttpProvider provider, boolean traillingHeaders) {
-        super(url,response, provider);
+    public HttpResponseHeaders(Url url, R response, AsyncHttpProvider<R> provider, boolean traillingHeaders) {
+        super(url, response, provider);
         this.traillingHeaders = traillingHeaders;
 
     }
@@ -41,12 +41,11 @@ public abstract class HttpResponseHeaders<R> extends HttpContent<R> {
      */
     abstract public Headers getHeaders();
 
-
     /**
      * Return true is headers has been received after the response body.
      * @return true is headers has been received after the response body.
      */
-    public boolean isTraillingHeadersReceived(){
+    public boolean isTraillingHeadersReceived() {
        return traillingHeaders;
     }
 }

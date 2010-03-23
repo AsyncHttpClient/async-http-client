@@ -192,13 +192,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T)this;
     }
 
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings({"unchecked"})
     public T setHeader(String name, String value) {
         request.headers.replace(name, value);
         return (T)this;
     }
 
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings({"unchecked"})
     public T addHeader(String name, String value) {
         request.headers.add(name, value);
         return (T)this;
@@ -285,7 +285,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T)this;
     }
 
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings({"unchecked"})
     public T addQueryParameter(String name, String value) {
         if (request.queryParams == null) {
             request.queryParams = LinkedListMultimap.create();
@@ -294,7 +294,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return (T) this;
     }
 
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings({"unchecked"})
     public T addParameter(String key, String value) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");

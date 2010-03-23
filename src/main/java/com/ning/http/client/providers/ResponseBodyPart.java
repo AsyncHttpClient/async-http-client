@@ -24,17 +24,17 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class ResponseBodyPart extends HttpResponseBodyPart<HttpResponse>  {
+public class ResponseBodyPart extends HttpResponseBodyPart<HttpResponse> {
 
     private final HttpChunk chunk;
 
-    public ResponseBodyPart(Url url,HttpResponse response, AsyncHttpProvider provider) {
-        super(url,response, provider);
+    public ResponseBodyPart(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse> provider) {
+        super(url, response, provider);
         this.chunk = null;
     }
 
-    public ResponseBodyPart(Url url,HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk) {
-        super(url,response, provider);
+    public ResponseBodyPart(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunk chunk) {
+        super(url, response, provider);
         this.chunk = chunk;
     }
 
@@ -42,15 +42,15 @@ public class ResponseBodyPart extends HttpResponseBodyPart<HttpResponse>  {
      * Return the response body's part bytes received.
      * @return the response body's part bytes received.
      */
-    public byte[] getBodyPartBytes(){
-        if (chunk != null){
+    public byte[] getBodyPartBytes() {
+        if (chunk != null) {
             return chunk.getContent().array();
         } else {
             return response.getContent().array();
         }
     }
 
-    protected HttpChunk chunk(){
+    protected HttpChunk chunk() {
         return chunk;
     }
 }

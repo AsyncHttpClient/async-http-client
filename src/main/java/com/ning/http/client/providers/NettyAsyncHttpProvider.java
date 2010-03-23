@@ -97,10 +97,8 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -167,6 +165,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 IdleStateHandler h = new IdleStateHandler(timer, 0, 0, config.getIdleConnectionTimeout(), TimeUnit.MILLISECONDS) {
+                    @SuppressWarnings("unused")
                     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws MalformedURLException {
                         e.getChannel().close();
                         removeFromCache(ctx, e);
@@ -199,51 +198,47 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     /**
      * Non Blocking connect.
      */
-    private final static class ConnectListener<T> implements ChannelFutureListener{
+    private final static class ConnectListener<T> implements ChannelFutureListener {
 
         private final AsyncHttpClientConfig config;
-        private final Request request;
         private final AsyncHandler<T> asyncHandler;
-        private final CountDownLatch latch = new CountDownLatch(1);
         private final NettyResponseFuture<T> future;
         private final HttpRequest nettyRequest;
 
         private ConnectListener(AsyncHttpClientConfig config,
-                                Request request,
                                 AsyncHandler<T> asyncHandler,
                                 NettyResponseFuture<T> future,
-                                HttpRequest nettyRequest){
+                                HttpRequest nettyRequest) {
             this.config = config;
-            this.request = request;
             this.asyncHandler = asyncHandler;
             this.future = future;
             this.nettyRequest = nettyRequest;
         }
 
-        public NettyResponseFuture<T> future(){
+        public NettyResponseFuture<T> future() {
             return future;
         }
 
         public final void operationComplete(ChannelFuture f) throws Exception {
-            try{
-                executeRequest(f.getChannel(),asyncHandler,config,future,nettyRequest);
+            try {
+                executeRequest(f.getChannel(), asyncHandler, config, future, nettyRequest);
             } catch (ConnectException ex){
                 future.abort(ex);
             }
         }
 
-        public static class Builder<T>{
+        public static class Builder<T> {
             private final AsyncHttpClientConfig config;
             private final Request request;
             private final AsyncHandler<T> asyncHandler;
 
-            public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler){
+            public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler) {
                 this.config = config;
                 this.request = request;
                 this.asyncHandler = asyncHandler;
             }
 
-            public ConnectListener build() throws IOException{
+            public ConnectListener<T> build() throws IOException {
 
                 Url url = createUrl(request.getUrl());
                 HttpRequest nettyRequest = buildRequest(config,request,url);
@@ -254,15 +249,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
                         nettyRequest, config.getRequestTimeout());
 
-                return new ConnectListener(config,request,asyncHandler, future, nettyRequest);
+                return new ConnectListener<T>(config, asyncHandler, future, nettyRequest);
             }
         }
     }
 
-    private final static void executeRequest(final Channel channel,
-                                             final AsyncHandler asyncHandler,
+    private final static <T> void executeRequest(final Channel channel,
+                                             final AsyncHandler<T> asyncHandler,
                                              final AsyncHttpClientConfig config,
-                                             final NettyResponseFuture future,
+                                             final NettyResponseFuture<T> future,
                                              final HttpRequest nettyRequest) throws ConnectException {
 
         if (!channel.isConnected()){
@@ -510,7 +505,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
 
         ChannelFuture channelFuture = null;
-        ConnectListener<T> c = new ConnectListener.Builder(config, request, asyncHandler).build();
+        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler).build();
         try{
             if (config.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(
@@ -621,7 +616,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void removeFromCache(ChannelHandlerContext ctx, ChannelEvent e) throws MalformedURLException {
-        if (ctx.getAttachment() instanceof NettyResponseFuture) {
+        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             connectionsPool.remove(future.getUrl());
         }
@@ -642,15 +637,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         ctx.getChannel().setReadable(false);
     }
 
-    private final boolean updateStatusAndInterrupt(AsyncHandler<?> handler, HttpResponseStatus c) throws Exception {
+    @SuppressWarnings("unchecked")
+    private final boolean updateStatusAndInterrupt(AsyncHandler handler, HttpResponseStatus c) throws Exception {
         return (handler.onStatusReceived(c) == STATE.CONTINUE ? false : true);
     }
 
-    private final boolean updateHeadersAndInterrupt(AsyncHandler<?> handler, HttpResponseHeaders c) throws Exception {
+    @SuppressWarnings("unchecked")
+    private final boolean updateHeadersAndInterrupt(AsyncHandler handler, HttpResponseHeaders c) throws Exception {
         return (handler.onHeadersReceived(c) == STATE.CONTINUE ? false : true);
     }
 
-    private final boolean updateBodyAndInterrupt(AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
+    @SuppressWarnings("unchecked")
+    private final boolean updateBodyAndInterrupt(AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
         return (handler.onBodyPartReceived(c) == STATE.CONTINUE ? false : true);
     }
 

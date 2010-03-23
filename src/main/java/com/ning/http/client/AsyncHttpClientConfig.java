@@ -15,7 +15,6 @@
  */
 package com.ning.http.client;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

@@ -18,10 +18,6 @@ package com.ning.http.multipart;
 import java.io.IOException;
 import java.io.OutputStream;
 
-
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * @since 3.0
  */

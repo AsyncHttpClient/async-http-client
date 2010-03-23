@@ -79,8 +79,8 @@ public class NettyAsyncResponse implements Response {
 
     String contentToString(String charset) throws UnsupportedEncodingException {
         StringBuilder b = new StringBuilder();
-        for (HttpResponseBodyPart bp: bodyParts){
-            b.append(new String(bp.getBodyPartBytes(),charset));
+        for (HttpResponseBodyPart<?> bp : bodyParts) {
+            b.append(new String(bp.getBodyPartBytes(), charset));
         }
         return b.toString();
     }
@@ -88,7 +88,7 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         ChannelBuffer buf =  ChannelBuffers.dynamicBuffer();
-        for (HttpResponseBodyPart bp: bodyParts){
+        for (HttpResponseBodyPart<?> bp : bodyParts){
             // Ugly. TODO
             // (1) We must remove the downcast,
             // (2) we need a CompositeByteArrayInputStream to avoid

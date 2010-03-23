@@ -998,7 +998,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);
 
-        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -1026,7 +1026,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(2);
 
-        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
             String remoteAddr = null;
 
@@ -1061,7 +1061,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(2);
 
-        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -1103,7 +1103,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(1);
 
-        AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -1137,7 +1137,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         // Use a latch in case the assert fail
         final CountDownLatch latch = new CountDownLatch(2);
 
-        final AsyncCompletionHandler handler = new AsyncCompletionHandlerAdapter() {
+        final AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
             private final static int MAX_NESTED = 2;
 

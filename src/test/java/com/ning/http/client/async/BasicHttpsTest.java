@@ -16,13 +16,8 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -52,7 +47,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;

@@ -22,8 +22,8 @@ import com.ning.http.url.Url;
  */
 public abstract class HttpResponseBodyPart<R> extends HttpContent<R> {
 
-    public HttpResponseBodyPart(Url url, R response, AsyncHttpProvider provider) {
-        super(url,response, provider);
+    public HttpResponseBodyPart(Url url, R response, AsyncHttpProvider<R> provider) {
+        super(url, response, provider);
     }
 
     /**

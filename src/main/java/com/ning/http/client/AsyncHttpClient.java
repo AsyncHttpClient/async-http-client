@@ -133,7 +133,7 @@ import com.ning.http.client.Request.EntityWriter;
 public class AsyncHttpClient {
 
     private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.NettyAsyncHttpProvider";
-    private final AsyncHttpProvider httpProvider;
+    private final AsyncHttpProvider<?> httpProvider;
     private final AsyncHttpClientConfig config;
 
     /**
@@ -149,7 +149,7 @@ public class AsyncHttpClient {
      * the default {@link AsyncHttpClientConfig} configuration.
      * @param provider a {@link AsyncHttpProvider}
      */
-    public AsyncHttpClient(AsyncHttpProvider provider) {
+    public AsyncHttpClient(AsyncHttpProvider<?> provider) {
         this(provider,new AsyncHttpClientConfig.Builder().build());
     }
 
@@ -168,7 +168,7 @@ public class AsyncHttpClient {
      * @param config a {@link AsyncHttpClientConfig}
      * @param httpProvider a {@link AsyncHttpProvider}
      */
-    public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
+    public AsyncHttpClient(AsyncHttpProvider<?> httpProvider, AsyncHttpClientConfig config) {
         this.config = config;
         this.httpProvider = httpProvider;
     }
@@ -295,7 +295,7 @@ public class AsyncHttpClient {
      * Return the asynchronouys {@link com.ning.http.client.AsyncHttpProvider}
      * @return an {@link com.ning.http.client.AsyncHttpProvider}
      */
-    public AsyncHttpProvider getProvider() {
+    public AsyncHttpProvider<?> getProvider() {
         return httpProvider;
     }
 
@@ -395,8 +395,9 @@ public class AsyncHttpClient {
         return httpProvider.execute(request, new AsyncCompletionHandlerBase());
     }
 
+    @SuppressWarnings("unchecked")
     private final static AsyncHttpProvider<?> loadDefaultProvider(String className, AsyncHttpClientConfig config){
-        try{
+        try {
             Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>) Thread.currentThread()
                     .getContextClassLoader().loadClass(className);
             return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
