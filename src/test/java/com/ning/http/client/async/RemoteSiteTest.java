@@ -37,6 +37,9 @@ import java.util.concurrent.CyclicBarrier;
  * @author Martin Schurrer
  */
 public class RemoteSiteTest {
+    static{
+        BasicConfigurator.configure();        
+    }
 
     private AsyncHttpClient c;
     private CyclicBarrier b;
@@ -45,7 +48,6 @@ public class RemoteSiteTest {
 
     @BeforeClass
     public void before() {
-        BasicConfigurator.configure();
         b = new CyclicBarrier(2);
         c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         t = null;
