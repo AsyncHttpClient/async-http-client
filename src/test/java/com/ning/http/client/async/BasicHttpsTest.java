@@ -247,7 +247,7 @@ public class BasicHttpsTest {
 
         SSLContext sslContext = null;
         try {
-            InputStream keyStoreStream = ComplexClientTest.class.getResourceAsStream("ssltest-cacerts.jks");
+            InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
             char[] keyStorePassword = "changeit".toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(keyStoreStream, keyStorePassword);
