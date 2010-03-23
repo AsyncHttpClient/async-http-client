@@ -253,10 +253,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final static <T> void executeRequest(final Channel channel,
-                                             final AsyncHandler<T> asyncHandler,
-                                             final AsyncHttpClientConfig config,
-                                             final NettyResponseFuture<T> future,
-                                             final HttpRequest nettyRequest) throws ConnectException {
+                                                 final AsyncHandler<T> asyncHandler,
+                                                 final AsyncHttpClientConfig config,
+                                                 final NettyResponseFuture<T> future,
+                                                 final HttpRequest nettyRequest) throws ConnectException {
 
         if (!channel.isConnected()){
             throw new ConnectException("Connection refused to " + channel.getRemoteAddress());
@@ -493,7 +493,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug("Lookup cache: " + url.toString());
 
         Channel channel = lookupInCache(url);
-        if (channel != null) {
+        if (channel != null && channel.isOpen()) {
             HttpRequest nettyRequest = buildRequest(config,request,url);
             NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
                 nettyRequest, config.getRequestTimeoutInMs());
