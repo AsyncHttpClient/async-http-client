@@ -51,7 +51,6 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -106,7 +105,6 @@ import java.util.concurrent.TimeoutException;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-@ChannelPipelineCoverage(value = "one")
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider<HttpResponse> {
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
     private final ClientBootstrap bootstrap;
