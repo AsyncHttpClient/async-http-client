@@ -51,7 +51,7 @@ public class AsyncClientTest extends AbstractBasicTest {
     @Test
     public void multipleMaxConnectionOpenTest() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
-                .setConnectionTimeoutInMs(1000).setMaximumConnectionsTotal(1).build();
+                .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         String body = "hello there";
