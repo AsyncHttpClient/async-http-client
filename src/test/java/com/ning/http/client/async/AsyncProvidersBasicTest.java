@@ -236,8 +236,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .addHeader("Content-Lenght","1")
                 .setUrl(TARGET_URL)
                 .build();
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
 
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
             @Override
             public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);

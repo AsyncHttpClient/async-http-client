@@ -42,8 +42,8 @@ public class AsyncHttpClientConfig {
 
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
-    private final long connectionTimeOutInMs;
-    private final long idleConnectionTimeoutInMs;
+    private final int connectionTimeOutInMs;
+    private final int idleConnectionTimeoutInMs;
     private final int requestTimeoutInMs;
     private final boolean redirectEnabled;
     private final int maxDefaultRedirects;
@@ -57,8 +57,8 @@ public class AsyncHttpClientConfig {
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
-                                  long connectionTimeOutInMs,
-                                  long idleConnectionTimeoutInMs,
+                                  int connectionTimeOutInMs,
+                                  int idleConnectionTimeoutInMs,
                                   int requestTimeoutInMs,
                                   boolean redirectEnabled,
                                   int maxDefaultRedirects,
@@ -229,8 +229,8 @@ public class AsyncHttpClientConfig {
     public static class Builder {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", 2000);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", 2000);
-        private long defaultConnectionTimeOutInMs = Long.getLong(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000L);
-        private long defaultIdleConnectionTimeoutInMs = Long.getLong(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000L);
+        private int defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
+        private int defaultIdleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
         private boolean redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
@@ -273,7 +273,7 @@ public class AsyncHttpClientConfig {
          * @param defaultConnectionTimeOutInMs the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
          * @return a {@link Builder}
          */
-        public Builder setConnectionTimeoutInMs(long defaultConnectionTimeOutInMs) {
+        public Builder setConnectionTimeoutInMs(int defaultConnectionTimeOutInMs) {
             this.defaultConnectionTimeOutInMs = defaultConnectionTimeOutInMs;
             return this;
         }
@@ -285,7 +285,7 @@ public class AsyncHttpClientConfig {
          *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
          * @return a {@link Builder}
          */
-        public Builder setIdleConnectionTimeoutInMs(long defaultIdleConnectionTimeoutInMs) {
+        public Builder setIdleConnectionTimeoutInMs(int defaultIdleConnectionTimeoutInMs) {
             this.defaultIdleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs;
             return this;
         }
