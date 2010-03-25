@@ -582,7 +582,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Response response = c.preparePut(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter()).get();
 
         Assert.assertEquals(response.getStatusCode(), 200);
-        Assert.assertEquals(response.getHeader("X-param_1"), null);
 
     }
 
