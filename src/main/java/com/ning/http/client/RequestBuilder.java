@@ -29,6 +29,10 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(type);
     }
 
+    public RequestBuilder(Request prototype) {
+        super(prototype);
+    }
+
     // Note: For now we keep the delegates in place even though they are not needed
     //       since otherwise Clojure (and maybe other languages) won't be able to
     //       access these methods - see Clojure tickets 126 and 259

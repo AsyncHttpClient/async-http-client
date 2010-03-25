@@ -76,4 +76,17 @@ public class ComplexClientTest extends AbstractBasicTest {
         assertNotNull(exception);
         assertEquals(exception.getMessage(),"Too many connections");
     }
+
+    @Test
+    public void redirected302Test() throws Throwable {
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        // once
+        Response response = c.preparePost(TARGET_URL)
+                .setHeader("X-redirect", "http://www.google.com/")
+                .execute().get();
+
+        assertEquals(response.getUrl().toString(), "http://www.google.com/");
+    }
 }

@@ -30,6 +30,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
@@ -110,7 +111,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final ClientBootstrap bootstrap;
     private final static int MAX_BUFFERRED_BYTES = 8192;
 
-    private volatile int redirectCount = 0;
     private final AsyncHttpClientConfig config;
 
     private final ConcurrentHashMap<Url, Channel> connectionsPool = new ConcurrentHashMap<Url, Channel>();
@@ -229,11 +229,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             private final AsyncHttpClientConfig config;
             private final Request request;
             private final AsyncHandler<T> asyncHandler;
+            private NettyResponseFuture<T> future;
 
             public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler) {
                 this.config = config;
                 this.request = request;
                 this.asyncHandler = asyncHandler;
+                this.future = null;
+            }
+
+            public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
+                this.config = config;
+                this.request = request;
+                this.asyncHandler = asyncHandler;
+                this.future = future;
             }
 
             public ConnectListener<T> build() throws IOException {
@@ -244,9 +253,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (log.isDebugEnabled())
                     log.debug("Executing the execute operation: " + asyncHandler);
 
-                NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
-                        nettyRequest, config.getRequestTimeoutInMs());
-
+                if (future == null){
+                    future = new NettyResponseFuture<T>(url, request, asyncHandler,
+                            nettyRequest, config.getRequestTimeoutInMs());
+                }
                 return new ConnectListener<T>(config, asyncHandler, future, nettyRequest);
             }
         }
@@ -397,6 +407,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         switch (request.getType()) {
             case POST:
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");                
                 if (request.getByteData() != null) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
@@ -460,6 +471,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
             nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "txt/html; charset=utf-8");
         }
+
         if (log.isDebugEnabled())
             log.debug("Constructed request: " + nettyRequest);
         return nettyRequest;
@@ -481,7 +493,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {
         return new NettyAsyncResponse(status,headers,bodyParts);
     }
-
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         if (connectionsPool.size() >= config.getMaxTotalConnections()) {
@@ -516,10 +527,47 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } catch (Throwable t){
             log.error(t);
             c.future().abort(t.getCause());
-            return c.future(); 
+            return c.future();
         }
         channelFuture.addListener(c);
         return c.future();
+    }
+
+    private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
+        if (connectionsPool.size() >= config.getMaxTotalConnections()) {
+            throw new IOException("Too many connections");
+        }
+        Url url = createUrl(request.getUrl());
+
+        if (log.isDebugEnabled())
+            log.debug("Lookup cache: " + url.toString());
+
+        Channel channel = lookupInCache(url);
+        if (channel != null && channel.isOpen()) {
+            HttpRequest nettyRequest = buildRequest(config,request,url);
+            executeRequest(channel,f.getAsyncHandler(),config,f,nettyRequest);
+            return;
+        }
+        configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
+
+        ChannelFuture channelFuture = null;
+        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, f.getAsyncHandler(),f).build();
+        try{
+            if (config.getProxyServer() == null) {
+                channelFuture = bootstrap.connect(
+                        new InetSocketAddress(url.getHost(), url.getPort()));
+            } else {
+                channelFuture = bootstrap.connect(
+                        new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
+            }
+            bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
+        } catch (Throwable t){
+            log.error(t);
+            c.future().abort(t.getCause());
+            return;
+        }
+        channelFuture.addListener(c);
+        return;
     }
 
     @Override
@@ -546,20 +594,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 String ka = response.getHeader("Connection");
                 future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
 
-
                 if (config.isRedirectEnabled()
                         && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301) ){
 
-                    if ( redirectCount++ < config.getMaxRedirects()) {
-                        HttpRequest r = construct(config,request, map(request.getType()), createUrl(response.getHeader(HttpHeaders.Names.LOCATION)));
-                        ctx.getChannel().write(r);
+                    if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
+                        Url url = createUrl(response.getHeader(HttpHeaders.Names.LOCATION));
+                        RequestBuilder builder = new RequestBuilder(future.getRequest());
+                        future.setUrl(url);
+                        execute(builder.setUrl(url.toString()).build(),future);
                         return;
                     } else {
                         throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
                     }
                 }
 
-                redirectCount = 0;
                 if (log.isDebugEnabled()){
                     log.debug("Status: " + response.getStatus());
                     log.debug("Version: " + response.getProtocolVersion());

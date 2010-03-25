@@ -46,10 +46,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final Request request;
     private final HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
-    private final Url url;
+    private Url url;
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
+    private volatile int redirectCount;
     
     public NettyResponseFuture(Url url,
                                Request request,
@@ -66,6 +67,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public Url getUrl() throws MalformedURLException {
         return url;
+    }
+
+    public void setUrl(Url url){
+        this.url = url;
     }
 
     /**
@@ -199,4 +204,9 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     public final void setHttpResponse(final HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
+
+    public int incrementAndGetCurrentRedirectCount(){
+        return redirectCount++;
+    }
+
 }

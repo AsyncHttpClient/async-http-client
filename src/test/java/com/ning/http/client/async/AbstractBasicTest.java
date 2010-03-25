@@ -71,6 +71,11 @@ public class AbstractBasicTest {
                     }
                 }
 
+                if (param.startsWith("X-redirect")){
+                    httpResponse.sendRedirect(httpRequest.getHeader("X-redirect"));
+                    return;
+                }
+
                 httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
             }
 
