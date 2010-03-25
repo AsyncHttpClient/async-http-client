@@ -251,7 +251,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 HttpRequest nettyRequest = buildRequest(config,request,url);
 
                 if (log.isDebugEnabled())
-                    log.debug("Executing the execute operation: " + asyncHandler);
+                    log.debug("Executing the doConnect operation: " + asyncHandler);
 
                 if (future == null){
                     future = new NettyResponseFuture<T>(url, request, asyncHandler,
@@ -279,6 +279,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             public Object call() {
                 if (!future.isDone() && !future.isCancelled()) {
                     future.abort(new TimeoutException());
+                    channel.close();
                 }
                 return null;
             }
@@ -495,8 +496,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {
         return new NettyAsyncResponse(status,headers,bodyParts);
     }
-
+    
+    /* @Override */
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+        return doConnect(request,asyncHandler, null);
+    }
+
+    private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
+        doConnect(request,f.getAsyncHandler(),f);
+        return;
+    }
+
+    private <T> Future<T> doConnect(final Request request, final AsyncHandler asyncHandler, NettyResponseFuture<T> f) throws IOException{
         if (connectionsPool.size() >= config.getMaxTotalConnections()) {
             throw new IOException("Too many connections");
         }
@@ -508,15 +519,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Channel channel = lookupInCache(url);
         if (channel != null && channel.isOpen()) {
             HttpRequest nettyRequest = buildRequest(config,request,url);
-            NettyResponseFuture<T> future = new NettyResponseFuture<T>(url, request, asyncHandler,
+            if (f == null) {
+                f = new NettyResponseFuture<T>(url, request, asyncHandler,
                 nettyRequest, config.getRequestTimeoutInMs());
-            executeRequest(channel,asyncHandler,config,future,nettyRequest);
-            return future;
+            }
+            executeRequest(channel,asyncHandler,config,f,nettyRequest);
+            return f;
         }
         configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
 
         ChannelFuture channelFuture = null;
-        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler).build();
+        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler,f).build();
         try{
             if (config.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(
@@ -533,43 +546,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         channelFuture.addListener(c);
         return c.future();
-    }
-
-    private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        if (connectionsPool.size() >= config.getMaxTotalConnections()) {
-            throw new IOException("Too many connections");
-        }
-        Url url = createUrl(request.getUrl());
-
-        if (log.isDebugEnabled())
-            log.debug("Lookup cache: " + url.toString());
-
-        Channel channel = lookupInCache(url);
-        if (channel != null && channel.isOpen()) {
-            HttpRequest nettyRequest = buildRequest(config,request,url);
-            executeRequest(channel,f.getAsyncHandler(),config,f,nettyRequest);
-            return;
-        }
-        configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
-
-        ChannelFuture channelFuture = null;
-        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, f.getAsyncHandler(),f).build();
-        try{
-            if (config.getProxyServer() == null) {
-                channelFuture = bootstrap.connect(
-                        new InetSocketAddress(url.getHost(), url.getPort()));
-            } else {
-                channelFuture = bootstrap.connect(
-                        new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
-            }
-            bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
-        } catch (Throwable t){
-            log.error(t);
-            c.future().abort(t.getCause());
-            return;
-        }
-        channelFuture.addListener(c);
-        return;
     }
 
     @Override
@@ -659,6 +635,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        if (log.isDebugEnabled())
+            log.debug("Channel closed: " + e.getState().toString());
+        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+
+            if (future!= null){
+                future.getAsyncHandler().onThrowable(new IOException("No response received. Connection timed out"));
+            }
+        }
         removeFromCache(ctx, e);
         ctx.sendUpstream(e);
     }
@@ -711,7 +696,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
 
         if (log.isDebugEnabled())
-            log.debug("I/O Exception during read or execute: ", e.getCause());
+            log.debug("I/O Exception during read or doConnect: ", e.getCause());
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 

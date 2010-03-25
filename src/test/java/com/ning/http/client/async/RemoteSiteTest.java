@@ -18,7 +18,12 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
+import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
+import com.ning.http.client.providers.NettyAsyncHttpProvider;
 import org.apache.log4j.BasicConfigurator;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -27,7 +32,9 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -37,10 +44,6 @@ import java.util.concurrent.CyclicBarrier;
  * @author Martin Schurrer
  */
 public class RemoteSiteTest {
-    static{
-        BasicConfigurator.configure();        
-    }
-
     private AsyncHttpClient c;
     private CyclicBarrier b;
     private AsyncCompletionHandler<Response> h;
@@ -48,6 +51,7 @@ public class RemoteSiteTest {
 
     @BeforeClass
     public void before() {
+        BasicConfigurator.configure();
         b = new CyclicBarrier(2);
         c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         t = null;
@@ -89,6 +93,7 @@ public class RemoteSiteTest {
             t.printStackTrace();
             Assert.fail("timeout?!");
         }
+        BasicConfigurator.resetConfiguration(); 
     }
 
     @Test
@@ -145,6 +150,30 @@ public class RemoteSiteTest {
         if (t != null){
             Assert.fail("timeout?!");            
         }
+    }
+
+    @Test(groups = "async")
+    public void asyncStatusHEADContentLenghtTest() throws Throwable {
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+
+        final CountDownLatch l = new CountDownLatch(1);
+        Request request = new RequestBuilder(RequestType.HEAD)
+                .setUrl("http://www.google.com/")
+                .build();
+
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.assertEquals(response.getStatusCode(), 200);
+                l.countDown();
+                return response;
+            }
+        }).get();
+
+        if (!l.await(5, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+
     }
 }
 

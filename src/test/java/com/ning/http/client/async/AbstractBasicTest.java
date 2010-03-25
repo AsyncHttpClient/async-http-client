@@ -38,11 +38,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 public class AbstractBasicTest {
-
-    static{
-        BasicConfigurator.configure();
-    }
-       
+  
     protected final static int PORT = 19999;
     protected Server server;
     protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
@@ -56,6 +52,10 @@ public class AbstractBasicTest {
                            HttpServletRequest httpRequest,
                            HttpServletResponse httpResponse,
                            int dispatch) throws ServletException, IOException {
+
+            if (httpRequest.getHeader("X-HEAD") != null){
+                httpResponse.setContentLength(1);
+            }
 
             httpResponse.setContentType("text/html; charset=utf-8");
             Enumeration<?> e = httpRequest.getHeaderNames();
@@ -130,6 +130,7 @@ public class AbstractBasicTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws InterruptedException, Exception {
+        BasicConfigurator.resetConfiguration();
         server.stop();
     }
 
@@ -140,6 +141,7 @@ public class AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
+        BasicConfigurator.configure();        
 
         Connector listener = new SelectChannelConnector();
 

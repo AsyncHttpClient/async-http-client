@@ -53,10 +53,6 @@ import static org.testng.Assert.assertEquals;
 
 public class BasicHttpsTest {
 
-    static{
-        BasicConfigurator.configure();
-    }
-    
     protected final static int PORT = 19999;
     protected Server server;
     protected final static Logger log = Logger.getLogger(BasicHttpsTest.class);
@@ -138,6 +134,7 @@ public class BasicHttpsTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws InterruptedException, Exception {
+        BasicConfigurator.resetConfiguration();        
         server.stop();
     }
 
@@ -148,6 +145,7 @@ public class BasicHttpsTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
+        BasicConfigurator.configure();
 
         SslSocketConnector connector = new SslSocketConnector();
         connector.setHost("127.0.0.1");
