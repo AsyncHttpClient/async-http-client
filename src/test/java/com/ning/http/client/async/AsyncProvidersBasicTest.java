@@ -228,6 +228,31 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = "async")
+    public void asyncStatusHEADContentLenghtTest() throws Throwable {
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+
+        final CountDownLatch l = new CountDownLatch(1);
+        Request request = new RequestBuilder(RequestType.HEAD)
+                .addHeader("Content-Lenght","1")
+                .setUrl(TARGET_URL)
+                .build();
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
+
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.assertEquals(response.getStatusCode(), 200);
+                l.countDown();
+                return response;
+            }
+        }).get();
+
+        if (!l.await(5, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+
+    }
+
+    @Test(groups = "async")
     public void asyncNullSchemeTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
