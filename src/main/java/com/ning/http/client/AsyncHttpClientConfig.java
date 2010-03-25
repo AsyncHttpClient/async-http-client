@@ -128,7 +128,7 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host
      */
-    public long getConnectionTimeoutInMs() {
+    public int getConnectionTimeoutInMs() {
         return connectionTimeOutInMs;
     }
 
@@ -137,7 +137,7 @@ public class AsyncHttpClientConfig {
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
      */
-    public long getIdleConnectionTimeoutInMs() {
+    public int getIdleConnectionTimeoutInMs() {
         return idleConnectionTimeoutInMs;
     }
 
