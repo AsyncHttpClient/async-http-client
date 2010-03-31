@@ -18,6 +18,7 @@ package com.ning.http.client.providers;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -47,12 +48,16 @@ public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
     public Headers getHeaders() {
         Headers h = new Headers();
         for (String s : response.getHeaderNames()) {
-            h.add(s, response.getHeader(s));
+            for (String header : response.getHeaders(s)) {
+                h.add(s, header);
+            }
         }
 
         if (trailingHeaders != null && trailingHeaders.getHeaderNames().size() > 0) {
             for (final String s : trailingHeaders.getHeaderNames()) {
-                h.add(s, trailingHeaders.getHeader(s));
+                for (String header : response.getHeaders(s)) {
+                    h.add(s, header);
+                }
             }
         }
 
