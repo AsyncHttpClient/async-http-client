@@ -321,10 +321,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (path == null) {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ", must be non-null");
-        } else if (path.length() == 0) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ", must be present");
-        } else if (path.charAt(0) != '/') {
+        } else if (path.length() > 0 && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ". must start with a '/'");
         }
@@ -559,7 +556,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-        Request request = future.getRequest();
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
 

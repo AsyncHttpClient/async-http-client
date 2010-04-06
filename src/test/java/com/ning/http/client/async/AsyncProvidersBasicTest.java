@@ -1209,4 +1209,15 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.close();
     }
+
+    @Test(groups = "async")
+    public void asyncUrlWithoutPath() throws Throwable {
+        final AsyncHttpClient client = new AsyncHttpClient(new Builder().build());
+        Response r = client.prepareGet("http://www.google.com").execute().get();
+
+        r.getResponseBody();
+        r.getResponseBodyAsStream();
+
+        client.close();
+    }
 }
