@@ -143,7 +143,8 @@ public class BasicHttpsTest {
 
     @AfterMethod(alwaysRun = true)
     public void tearDownProps() throws InterruptedException, Exception {
-        System.setProperty("javax.net.ssl.keyStore","");
+        System.clearProperty("javax.net.ssl.keyStore");
+        System.clearProperty("javax.net.ssl.trustStore");
     }
 
 
@@ -254,6 +255,8 @@ public class BasicHttpsTest {
         // override system properties
         URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
         System.setProperty("javax.net.ssl.keyStore",keystoreUrl.toString().substring("file:".length()));
+        keystoreUrl = cl.getResource("ssltest-cacerts.jks");
+        System.setProperty("javax.net.ssl.trustStore",keystoreUrl.toString().substring("file:".length()));
 
         AsyncHttpClient c = new AsyncHttpClient();
 

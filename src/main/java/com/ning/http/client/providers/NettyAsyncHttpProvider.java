@@ -40,6 +40,7 @@ import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 import com.ning.http.url.Url;
 import com.ning.http.url.Url.Protocol;
+import com.ning.http.util.SslUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -82,6 +83,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -91,8 +93,10 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -138,37 +142,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (useSSL){
                     try{
                         SSLEngine sslEngine = config.getSSLEngine();
-                        InputStream keyStoreStream = null;
                         if (sslEngine == null){
-                            if (System.getProperty("javax.net.ssl.keyStore") != null && System.getProperty("javax.net.ssl.keyStore").length() > 0){
-                                keyStoreStream = new FileInputStream(System.getProperty("javax.net.ssl.keyStore"));
-                            }
-                            log.warn("No SSLEngine specified. Using the default one");
-
-
-                            String passwd = System.getProperty("javax.net.ssl.keyStorePassword") == null ?
-                                    "changeit" : System.getProperty("javax.net.ssl.keyStorePassword");
-
-                            char[] keyStorePassword = passwd.toCharArray();
-                            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-                            ks.load(keyStoreStream, keyStorePassword);
-
-                            passwd = System.getProperty("javax.net.ssl.trustStorePassword") == null ?
-                                    "changeit" : System.getProperty("javax.net.ssl.trustStorePassword");
-
-                            SSLContext sslContext = SSLContext.getInstance("TLS");
-                            char[] certificatePassword = passwd.toCharArray();
-                            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                            kmf.init(ks, certificatePassword);
-
-                            // Initialize the SSLContext to work with our key managers.
-                            KeyManager[] keyManagers = kmf.getKeyManagers();
-                            sslContext.init(keyManagers,new TrustManager[]{DUMMY_TRUST_MANAGER},new SecureRandom());
-                            sslEngine = sslContext.createSSLEngine();
-                            sslEngine.setUseClientMode(true);
+                            sslEngine = SslUtils.getSSLEngine();
                         }
                         pipeline.addLast("ssl", new SslHandler(sslEngine));
-                    } catch (IOException ex){
+                    } catch (Throwable ex){
                         cl.future().abort(ex);
                     }
                 }
