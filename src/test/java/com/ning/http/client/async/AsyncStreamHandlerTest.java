@@ -226,7 +226,6 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             @Override
 
             public void onThrowable(Throwable t) {
-                t.printStackTrace();
                 if (t.getMessage() != null) {
                     Assert.assertEquals(t.getMessage(), "FOO");
                     l.countDown();

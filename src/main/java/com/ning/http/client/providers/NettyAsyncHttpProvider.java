@@ -83,6 +83,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -103,6 +105,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -125,7 +129,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         this.config = config;
     }
 
-    void configure(final boolean useSSL) {
+    void configure(final boolean useSSL, final ConnectListener<?> cl){
+
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             /* @Override */
@@ -133,26 +138,41 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelPipeline pipeline = pipeline();
 
                 if (useSSL){
-                    SSLEngine sslEngine = config.getSSLEngine();
-                    if (sslEngine == null){
-                        InputStream keyStoreStream = NettyAsyncHttpProvider.class.getResourceAsStream("keystore.jks");
-                        log.warn("No SSLEngine specified. Using the default one");
-                        char[] keyStorePassword = "changeit".toCharArray();
-                        KeyStore ks = KeyStore.getInstance("JKS");
-                        ks.load(keyStoreStream, keyStorePassword);
+                    try{
+                        SSLEngine sslEngine = config.getSSLEngine();
+                        InputStream keyStoreStream = null;
+                        if (sslEngine == null){
+                            if (System.getProperty("javax.net.ssl.keyStore") != null && System.getProperty("javax.net.ssl.keyStore").length() > 0){
+                                keyStoreStream = new FileInputStream(System.getProperty("javax.net.ssl.keyStore"));
+                            }
+                            log.warn("No SSLEngine specified. Using the default one");
 
-                        SSLContext sslContext = SSLContext.getInstance("TLS");
-                        char[] certificatePassword = "changeit".toCharArray();
-                        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                        kmf.init(ks, certificatePassword);
 
-                        // Initialize the SSLContext to work with our key managers.
-                        KeyManager[] keyManagers = kmf.getKeyManagers();
-                        sslContext.init(keyManagers,new TrustManager[]{DUMMY_TRUST_MANAGER},new SecureRandom());
-                        sslEngine = sslContext.createSSLEngine();
-                        sslEngine.setUseClientMode(true);                        
+                            String passwd = System.getProperty("javax.net.ssl.keyStorePassword") == null ?
+                                    "changeit" : System.getProperty("javax.net.ssl.keyStorePassword");
+
+                            char[] keyStorePassword = passwd.toCharArray();
+                            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+                            ks.load(keyStoreStream, keyStorePassword);
+
+                            passwd = System.getProperty("javax.net.ssl.trustStorePassword") == null ?
+                                    "changeit" : System.getProperty("javax.net.ssl.trustStorePassword");
+
+                            SSLContext sslContext = SSLContext.getInstance("TLS");
+                            char[] certificatePassword = passwd.toCharArray();
+                            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                            kmf.init(ks, certificatePassword);
+
+                            // Initialize the SSLContext to work with our key managers.
+                            KeyManager[] keyManagers = kmf.getKeyManagers();
+                            sslContext.init(keyManagers,new TrustManager[]{DUMMY_TRUST_MANAGER},new SecureRandom());
+                            sslEngine = sslContext.createSSLEngine();
+                            sslEngine.setUseClientMode(true);
+                        }
+                        pipeline.addLast("ssl", new SslHandler(sslEngine));
+                    } catch (IOException ex){
+                        cl.future().abort(ex);
                     }
-                    pipeline.addLast("ssl", new SslHandler(sslEngine));
                 }
                             
                 pipeline.addLast("decoder", new HttpResponseDecoder());
@@ -515,14 +535,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             executeRequest(channel,asyncHandler,config,f,nettyRequest);
             return f;
         }
-        configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0);
+        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler,f).build();
+        configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0, c);
 
         ChannelFuture channelFuture = null;
-        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler,f).build();
         try{
             if (config.getProxyServer() == null) {
-                channelFuture = bootstrap.connect(
-                        new InetSocketAddress(url.getHost(), url.getPort()));
+                channelFuture = bootstrap.connect(new InetSocketAddress(url.getHost(), url.getPort()));
             } else {
                 channelFuture = bootstrap.connect(
                         new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
@@ -587,14 +606,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 if (updateStatusAndInterrupt(handler, new ResponseStatus(future.getUrl(),response, this))) {
-                    finishUpdate(handler, future, ctx);
+                    finishUpdate(future, ctx);
                     return;
                 } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),response, this))) {
-                    finishUpdate(handler, future, ctx);
+                    finishUpdate(future, ctx);
                     return;
                 } else if (!response.isChunked()) {
                     updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getUrl(),response, this));
-                    finishUpdate(handler, future, ctx);
+                    finishUpdate(future, ctx);
                     return;
                 }
 
@@ -611,13 +630,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getUrl(),
                                     future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
                         }
-                        finishUpdate(handler, future, ctx);
+                        finishUpdate(future, ctx);
                         return;
                     }
                 }
             }
         } catch (RuntimeException t){
-            future.abort(t);
+            future.abort(t);            
+            finishUpdate(future,ctx);
             throw t;
         }
     }
@@ -652,7 +672,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.done();
     }
 
-    private void finishUpdate(AsyncHandler<?> handler, NettyResponseFuture<?> future, ChannelHandlerContext ctx) throws IOException {
+    private void finishUpdate(NettyResponseFuture<?> future, ChannelHandlerContext ctx) throws IOException {
         ctx.setAttachment(new DiscardEvent());
         markAsDoneAndCacheConnection(future, ctx.getChannel());
         ctx.getChannel().setReadable(false);

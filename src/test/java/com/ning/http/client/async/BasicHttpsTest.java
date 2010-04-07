@@ -26,6 +26,7 @@ import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -50,6 +51,8 @@ import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 public class BasicHttpsTest {
 
@@ -138,6 +141,12 @@ public class BasicHttpsTest {
         server.stop();
     }
 
+    @AfterMethod(alwaysRun = true)
+    public void tearDownProps() throws InterruptedException, Exception {
+        System.setProperty("javax.net.ssl.keyStore","");
+    }
+
+
     public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
     }
@@ -207,6 +216,7 @@ public class BasicHttpsTest {
                 .setBody(body)
                 .execute().get(20, TimeUnit.SECONDS);
 
+        assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
 
         // twice
@@ -216,6 +226,52 @@ public class BasicHttpsTest {
 
         assertEquals(response.getStatusCode(), 200);
 
+    }
+
+        @Test
+    public void multipleJavaDotDeadWrongKeystoreTest() throws Throwable {
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
+        System.setProperty("javax.net.ssl.keyStore",keystoreUrl.toString());
+
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
+                .setBody(body)
+                .execute().get(20, TimeUnit.SECONDS);
+
+        assertNull(response);
+    }
+
+    @Test
+    public void multipleJavaDotDeadKeystoreTest() throws Throwable {
+
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
+        System.setProperty("javax.net.ssl.keyStore",keystoreUrl.toString().substring("file:".length()));
+
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
+                .setBody(body)
+                .execute().get(20, TimeUnit.SECONDS);
+
+        assertEquals(response.getStatusCode(), 200);
+
+        // twice
+        response = c.preparePost("https://grizzly.dev.java.net:443/")
+                .setBody(body)
+                .execute().get(20, TimeUnit.SECONDS);
+
+        assertEquals(response.getStatusCode(), 200);
     }
 
     @Test
