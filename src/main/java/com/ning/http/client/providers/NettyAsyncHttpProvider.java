@@ -405,6 +405,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         switch (request.getType()) {
             case POST:
+            case PUT:
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");                
                 if (request.getByteData() != null) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
@@ -455,15 +456,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                     nettyRequest.setContent(b);
-                }
-                break;
-            case PUT:
-                if (request.getByteData() != null) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
-                } else if (request.getStringData() != null) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, request.getStringData().length());                    
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
                 }
                 break;
         }

@@ -429,6 +429,43 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = "async")
+    public void asyncDoPutInputStreamTest() throws Throwable {
+
+        AsyncHttpClient c = new AsyncHttpClient();
+        final CountDownLatch l = new CountDownLatch(1);
+        Headers h = new Headers();
+        h.add("Content-Type", "application/x-www-form-urlencoded");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            sb.append("param_");
+            sb.append(i);
+            sb.append("=value_");
+            sb.append(i);
+            sb.append("&");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
+
+        c.preparePut(TARGET_URL).setHeaders(h).setBody(is).execute(new AsyncCompletionHandlerAdapter() {
+
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.assertEquals(response.getStatusCode(), 200);
+                for (int i = 1; i < 5; i++) {
+                    System.out.println(">>>>> " + response.getHeader("X-param_" + i));
+                    Assert.assertEquals(response.getHeader("X-param_" + i), "value_" + i);
+
+                }
+                l.countDown();
+                return response;
+            }
+        }).get();
+        if (!l.await(5, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+    }
+
+    @Test(groups = "async")
     public void asyncDoPostEntityWriterTest() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
