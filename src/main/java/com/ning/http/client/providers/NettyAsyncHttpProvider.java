@@ -669,8 +669,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try{
             ctx.getChannel().setReadable(false);
         } catch (Exception ex){
-            if (log.isDebugEnabled()){
-                log.debug(ex);
+            if (log.isTraceEnabled()){
+                log.trace(ex);
             }
         }
     }
