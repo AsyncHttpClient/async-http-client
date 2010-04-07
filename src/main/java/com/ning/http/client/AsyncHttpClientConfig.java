@@ -19,6 +19,7 @@ import javax.net.ssl.SSLEngine;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
@@ -83,7 +84,11 @@ public class AsyncHttpClientConfig {
         this.sslEngine = sslEngine;
 
         if (reaper == null) {
-            this.reaper = Executors.newScheduledThreadPool(1);
+            this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
+                public Thread newThread(Runnable r) {
+                    return new Thread(r,"AsyncHttpClient-Reaper");
+                }
+            });
         } else {
             this.reaper = reaper;
         }

@@ -83,7 +83,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -103,10 +102,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -295,17 +293,21 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
         channel.write(nettyRequest);
 
-        config.reaper().schedule(new Callable<Object>() {
-            public Object call() {
-                if (!future.isDone() && !future.isCancelled()) {
-                    future.abort(new TimeoutException());
-                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
-                    channel.close();
+        try{
+            config.reaper().schedule(new Callable<Object>() {
+                public Object call() {
+                    if (!future.isDone() && !future.isCancelled()) {
+                        future.abort(new TimeoutException());
+                        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
+                        channel.close();
+                    }
+                    return null;
                 }
-                return null;
-            }
 
-        }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS);
+            }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException ex){
+            future.abort(ex);
+        }
     }
 
     private final static HttpRequest buildRequest(AsyncHttpClientConfig config,Request request, Url url) throws IOException{
@@ -632,7 +634,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
                         }
                         finishUpdate(future, ctx);
-                        return;
                     }
                 }
             }
@@ -676,7 +677,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void finishUpdate(NettyResponseFuture<?> future, ChannelHandlerContext ctx) throws IOException {
         ctx.setAttachment(new DiscardEvent());
         markAsDoneAndCacheConnection(future, ctx.getChannel());
-        ctx.getChannel().setReadable(false);
+
+        // Catch any unexpected exception when marking the channel.
+        try{
+            ctx.getChannel().setReadable(false);
+        } catch (Exception ex){
+            if (log.isDebugEnabled()){
+                log.debug(ex);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
