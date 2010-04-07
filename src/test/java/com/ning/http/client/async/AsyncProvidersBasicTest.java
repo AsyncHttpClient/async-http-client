@@ -1212,13 +1212,12 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
-                latch.countDown();
 
                 if (nestedCount.getAndIncrement() < MAX_NESTED){
                     System.out.println("Executing a nested request: " + nestedCount);
                     client.prepareGet("http://google.com/").execute(this);
                 }
-
+                latch.countDown();                
                 return response;
             }
 

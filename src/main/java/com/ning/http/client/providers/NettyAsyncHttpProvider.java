@@ -109,6 +109,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -123,6 +124,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private volatile int maxConnectionsPerHost;
     private final HashedWheelTimer timer = new HashedWheelTimer();
+
+    private final AtomicBoolean isClose = new AtomicBoolean(false);
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
@@ -471,6 +474,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public void close() {
+        isClose.set(true);
         Iterator<Entry<Url, Channel>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
             i.next().getValue().close();
@@ -498,6 +502,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private <T> Future<T> doConnect(final Request request, final AsyncHandler asyncHandler, NettyResponseFuture<T> f) throws IOException{
+        
+        if (isClose.get()){
+           throw new IOException("Closed"); 
+        }
+        
         if (connectionsPool.size() >= config.getMaxTotalConnections()) {
             throw new IOException("Too many connections");
         }
@@ -625,7 +634,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         if (log.isDebugEnabled())
             log.debug("Channel closed: " + e.getState().toString());
-        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             if (future!= null && !future.isDone() && !future.isCancelled()){
@@ -785,19 +794,4 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         return new MultipartRequestEntity(parts, methodParams);
     }
-    
-    private static final TrustManager DUMMY_TRUST_MANAGER = new X509TrustManager() {
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-
-        public void checkClientTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
-        }
-
-        public void checkServerTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
-        }
-    };
-
 }
