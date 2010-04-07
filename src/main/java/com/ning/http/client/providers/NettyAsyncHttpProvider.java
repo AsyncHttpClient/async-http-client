@@ -299,6 +299,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             public Object call() {
                 if (!future.isDone() && !future.isCancelled()) {
                     future.abort(new TimeoutException());
+                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
                     channel.close();
                 }
                 return null;
@@ -695,6 +696,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     //Simple marker for stopping publishing bytes.
     private final static class DiscardEvent {
+    }
+
+    //Simple marker for closed events
+    private final static class ClosedEvent {
     }
 
     @Override
