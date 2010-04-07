@@ -649,7 +649,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
-            if (future!= null){
+            if (future!= null && !future.isDone() && !future.isCancelled()){
                 future.getAsyncHandler().onThrowable(new IOException("No response received. Connection timed out"));
             }
         }
