@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 
 public class BasicHttpsTest {
 
@@ -78,9 +79,8 @@ public class BasicHttpsTest {
 
                 if (param.startsWith("LockThread")) {
                     try {
-                        Thread.sleep(20 * 1000);
+                        Thread.sleep(40 * 1000);
                     } catch (InterruptedException ex) {
-                        ex.printStackTrace();
                     }
                 }
 
@@ -215,7 +215,7 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
@@ -223,7 +223,7 @@ public class BasicHttpsTest {
         // twice
         response = c.preparePost("https://grizzly.dev.java.net:443/")
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getStatusCode(), 200);
 
@@ -243,7 +243,7 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertNull(response);
     }
@@ -265,14 +265,14 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getStatusCode(), 200);
 
         // twice
         response = c.preparePost("https://grizzly.dev.java.net:443/")
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getStatusCode(), 200);
     }
@@ -286,14 +286,14 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
         response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
@@ -333,14 +333,14 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
         response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(20, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
     }

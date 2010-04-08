@@ -43,6 +43,8 @@ public class AbstractBasicTest {
     protected Server server;
     protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
 
+    public final static int TIMEOUT = 30;
+
     protected final static String TARGET_URL = "http://127.0.0.1:19999/foo/test";
 
     public static class EchoHandler extends AbstractHandler {
@@ -65,9 +67,8 @@ public class AbstractBasicTest {
 
                 if (param.startsWith("LockThread")) {
                     try {
-                        Thread.sleep(20 * 1000);
+                        Thread.sleep(40 * 1000);
                     } catch (InterruptedException ex) {
-                        ex.printStackTrace();
                     }
                 }
 

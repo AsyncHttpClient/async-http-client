@@ -66,7 +66,7 @@ public class Head302Test extends AbstractBasicTest {
             }
         }).get(3, TimeUnit.SECONDS);
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }

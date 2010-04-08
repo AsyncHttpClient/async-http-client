@@ -36,14 +36,14 @@ public class ComplexClientTest extends AbstractBasicTest {
         // once
         Response response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(5, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
         response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(5, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
     }
@@ -59,7 +59,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // once
         Response response = c.preparePost(TARGET_URL)
                 .setBody(body)
-                .execute().get(5, TimeUnit.SECONDS);
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
@@ -68,7 +68,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         try{
             response = c.preparePost(TARGET_URL)
                     .setBody(body)
-                    .execute().get(5, TimeUnit.SECONDS);
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex){
             ex.printStackTrace();
             exception = ex;

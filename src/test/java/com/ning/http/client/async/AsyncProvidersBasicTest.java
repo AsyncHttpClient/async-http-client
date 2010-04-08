@@ -83,7 +83,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -107,7 +107,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
         p.close();
@@ -130,7 +130,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -164,7 +164,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -199,7 +199,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -221,7 +221,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -290,7 +290,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -321,7 +321,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -350,7 +350,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -386,7 +386,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -423,7 +423,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -460,7 +460,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -504,7 +504,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -531,7 +531,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
     }
@@ -564,7 +564,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -694,7 +694,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         });
 
-        if (!l.await(5, TimeUnit.SECONDS)) {
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
 
@@ -712,7 +712,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Future<Response> future = c.preparePost(TARGET_URL).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
         future.cancel(true);
-        Response response = future.get(5, TimeUnit.SECONDS);
+        Response response = future.get(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNull(response);
         c.close();
     }
@@ -735,7 +735,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             });
 
-            future.get(5, TimeUnit.SECONDS);
+            future.get(TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException ex) {
             Assert.assertTrue(true);
         } catch (IllegalStateException ex) {
@@ -795,7 +795,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                     }
                 });
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Latch time out");
         }
     }
@@ -878,7 +878,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         });
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -896,7 +896,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         });
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -984,7 +984,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         });
 
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -1013,7 +1013,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         });
 
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -1053,7 +1053,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         });
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -1081,7 +1081,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.executeRequest(req,handler).get();
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -1115,7 +1115,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         client.prepareGet(TARGET_URL).execute(handler).get();
         client.prepareGet(TARGET_URL).execute(handler);
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
     }
@@ -1157,7 +1157,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             Assert.assertEquals(s,"Too many connections");
         }
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
         client.close();
@@ -1191,7 +1191,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.prepareGet("http://google.com/").execute(handler);
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
         client.close();
@@ -1229,7 +1229,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.prepareGet("http://www.google.com/").execute(handler);
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
         client.close();
