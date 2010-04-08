@@ -51,6 +51,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private volatile int redirectCount;
+    private Future<Object> reaperFuture;
     
     public NettyResponseFuture(Url url,
                                Request request,
@@ -161,6 +162,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (exEx.get() != null){
             return;
         }
+        if (reaperFuture != null) reaperFuture.cancel(true);
         isDone.set(true);
         getContent();
         latch.countDown();
@@ -168,6 +170,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public final void abort(final Throwable t) {
         if (isDone.get() || isCancelled.get()) return;
+
+        if (reaperFuture != null) reaperFuture.cancel(true);
         
         if (exEx.get() == null){
             exEx.set(new ExecutionException(t));
@@ -209,4 +213,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return redirectCount++;
     }
 
+    public void setReaperFuture(Future<Object> reaperFuture) {
+        this.reaperFuture = reaperFuture;
+    }
 }

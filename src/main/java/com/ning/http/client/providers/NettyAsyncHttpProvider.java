@@ -275,7 +275,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         channel.write(nettyRequest);
 
         try{
-            config.reaper().schedule(new Callable<Object>() {
+            future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
                 public Object call() {
                     if (!future.isDone() && !future.isCancelled()) {
                         future.abort(new TimeoutException());
@@ -285,7 +285,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return null;
                 }
 
-            }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS);
+            }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS));
         } catch (RejectedExecutionException ex){
             future.abort(ex);
         }
