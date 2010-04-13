@@ -78,27 +78,13 @@ import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -338,7 +324,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     @SuppressWarnings("deprecation")
-    private final static HttpRequest construct(AsyncHttpClientConfig config,
+    private static HttpRequest construct(AsyncHttpClientConfig config,
                                                Request request,
                                                HttpMethod m,
                                                Url url) throws IOException {
@@ -351,8 +337,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         HttpRequest nettyRequest;
         String queryString = url.getQueryString();
 
-        // does this GET request have a query string
-        if (RequestType.GET.equals(request.getType()) && queryString != null) {
+        // does this request have a query string
+        if (queryString != null) {
         	nettyRequest = new DefaultHttpRequest(
                     HttpVersion.HTTP_1_1, m, url.getUri());
         } else {

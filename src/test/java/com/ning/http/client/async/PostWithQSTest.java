@@ -3,6 +3,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
@@ -11,10 +12,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -38,19 +40,26 @@ public class PostWithQSTest extends AbstractBasicTest {
                            int i) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                if (qs != null && !qs.isEmpty() && request.getInputStream().available() == 3) {
+                ServletInputStream is = request.getInputStream();
+                if (qs != null && !qs.isEmpty() && is.available() == 3) {
                     response.setStatus(HttpServletResponse.SC_OK);
+                    byte buf[] = new byte[is.available()];
+                    is.readLine(buf, 0, is.available());
+                    ServletOutputStream os = response.getOutputStream();
+                    os.println(new String(buf));
+                    os.flush();
+                    os.close();
                 } else {
-                    response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                    response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE);
                 }
             } else { // this handler is to handle POST request
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }
         }
     }
 
-    @Test(enabled = false)
-    public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
+    @Test
+    public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         Future<Response> f = client.preparePost("http://localhost:" + PORT + "/?a=b").setBody("abc".getBytes()).execute();
         Response resp = f.get(3, TimeUnit.SECONDS);
