@@ -40,6 +40,7 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -338,18 +339,20 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test4", "Test4");
         h.add("Test5", "Test5");
 
-        Cookie coo = new Cookie("/", "foo", "value", "/", 3000, false);
+        final Cookie coo = new Cookie("/", "foo", "value", "/", -1, false);
         c.prepareGet(TARGET_URL).setHeaders(h).addCookie(coo).execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
-                System.out.println(">>>> " + response.getHeader("Set-Cookie"));
                 Assert.assertEquals(response.getStatusCode(), 200);
-                Assert.assertEquals("foo=value;Path=/;Domain=/", response.getHeader("Set-Cookie"));
+                List<Cookie> cookies = response.getCookies();
+                Assert.assertEquals(cookies.size(),1);
+                Assert.assertEquals(cookies.get(0).toString(), coo.toString());
                 l.countDown();
                 return response;
             }
         }).get();
+
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }

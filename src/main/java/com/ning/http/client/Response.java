@@ -109,4 +109,9 @@ public interface Response {
      * @return The textual representation
      */
     public String toString();
+
+    /**
+     * Return the list of {@link Cookie}.
+     */
+    public List<Cookie> getCookies();
 }

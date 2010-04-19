@@ -15,33 +15,37 @@
  */
 package com.ning.http.client.providers;
 
+import com.ning.http.client.Cookie;
 import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
- *
  */
 public class NettyAsyncResponse implements Response {
     private final Url url;
     private final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts;
     private final HttpResponseHeaders<HttpResponse> headers;
     private final HttpResponseStatus<HttpResponse> status;
+    private final List<Cookie> cookies = new ArrayList<Cookie>();
 
     public NettyAsyncResponse(HttpResponseStatus<HttpResponse> status,
                               HttpResponseHeaders<HttpResponse> headers,
@@ -87,17 +91,17 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        ChannelBuffer buf =  ChannelBuffers.dynamicBuffer();
-        for (HttpResponseBodyPart<?> bp : bodyParts){
+        ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
+        for (HttpResponseBodyPart<?> bp : bodyParts) {
             // Ugly. TODO
             // (1) We must remove the downcast,
             // (2) we need a CompositeByteArrayInputStream to avoid
             // copying the bytes.
-            if (bp.getClass().isAssignableFrom(ResponseBodyPart.class)){
+            if (bp.getClass().isAssignableFrom(ResponseBodyPart.class)) {
                 buf.writeBytes(bp.getBodyPartBytes());
             }
         }
-        return new ChannelBufferInputStream(buf); 
+        return new ChannelBufferInputStream(buf);
     }
 
     /* @Override */
@@ -111,8 +115,8 @@ public class NettyAsyncResponse implements Response {
                 }
             }
         }
-        String response = contentToString(charset);    
-        return response.length() <= maxLength ? response : response.substring(0,maxLength);
+        String response = contentToString(charset);
+        return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
 
     /* @Override */
@@ -143,6 +147,43 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
     public boolean isRedirected() {
         return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
+    }
+    
+    /* @Override */
+    public List<Cookie> getCookies() {
+        if (cookies.isEmpty()) {
+            Iterator<Pair<String, String>> i = headers.getHeaders().iterator();
+            Pair<String, String> p;
+            while (i.hasNext()) {
+                p = i.next();
+                if (p.getFirst().equalsIgnoreCase("Set-Cookie")) {
+                    String[] fields = p.getSecond().split(";\\s*");
+                    String[] cookieValue = fields[0].split("=");
+                    String name = cookieValue[0];
+                    String value = cookieValue[1];
+                    String expires = "-1";
+                    String path = null;
+                    String domain = null;
+                    boolean secure = false; // Parse each field
+                    for (int j = 1; j < fields.length; j++) {
+                        if ("secure".equalsIgnoreCase(fields[j])) {
+                            secure = true;
+                        } else if (fields[j].indexOf('=') > 0) {
+                            String[] f = fields[j].split("=");
+                            if ("expires".equalsIgnoreCase(f[0])) {
+                                expires = f[1];
+                            } else if ("domain".equalsIgnoreCase(f[0])) {
+                                domain = f[1];
+                            } else if ("path".equalsIgnoreCase(f[0])) {
+                                path = f[1];
+                            }
+                        }
+                    }
+                    cookies.add(new Cookie(domain, name, value, path, Integer.valueOf(expires), secure));
+                }
+            }
+        }
+        return Collections.unmodifiableList(cookies);
     }
 
 }
