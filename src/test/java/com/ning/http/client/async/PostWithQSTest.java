@@ -41,7 +41,7 @@ public class PostWithQSTest extends AbstractBasicTest {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
                 ServletInputStream is = request.getInputStream();
-                if (qs != null && !qs.isEmpty() && is.available() == 3) {
+                if (qs != null && !qs.equals("") && is.available() == 3) {
                     response.setStatus(HttpServletResponse.SC_OK);
                     byte buf[] = new byte[is.available()];
                     is.readLine(buf, 0, is.available());
