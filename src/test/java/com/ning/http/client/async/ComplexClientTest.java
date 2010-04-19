@@ -78,6 +78,35 @@ public class ComplexClientTest extends AbstractBasicTest {
     }
 
     @Test
+    public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
+                .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost(TARGET_URL + "?foo=bar")
+                .setBody(body)
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getResponseBody(),  "foo_" + body);
+
+        // twice
+        Exception exception = null;
+        try{
+            response = c.preparePost(TARGET_URL)
+                    .setBody(body)
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            exception = ex;
+        }
+        assertNotNull(exception);
+        assertEquals(exception.getMessage(),"Too many connections");
+    }
+
+    @Test
     public void redirected302Test() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
