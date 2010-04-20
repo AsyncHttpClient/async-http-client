@@ -118,8 +118,8 @@ public class Relative302Test extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
+        // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
-            // Some OS will throw an exception
             Response response = c.preparePost(TARGET_URL)
                     .setHeader("X-redirect", "http://www.grroooogle.com/")
                     .execute().get();
