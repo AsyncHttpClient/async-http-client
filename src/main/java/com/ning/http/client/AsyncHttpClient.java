@@ -186,11 +186,11 @@ public class AsyncHttpClient {
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
         private BoundRequestBuilder(RequestType type) {
-            super(type);
+            super(BoundRequestBuilder.class, type);
         }
 
         private BoundRequestBuilder(Request prototype) {
-            super(prototype);
+            super(BoundRequestBuilder.class, prototype);
         }
 
         public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {

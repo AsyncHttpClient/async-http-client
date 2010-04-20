@@ -26,11 +26,11 @@ import com.ning.http.client.Request.EntityWriter;
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     public RequestBuilder(RequestType type) {
-        super(type);
+        super(RequestBuilder.class, type);
     }
 
     public RequestBuilder(Request prototype) {
-        super(prototype);
+        super(RequestBuilder.class, prototype);
     }
 
     // Note: For now we keep the delegates in place even though they are not needed

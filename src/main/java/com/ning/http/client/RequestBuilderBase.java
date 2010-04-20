@@ -169,51 +169,54 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         }
     }
 
+    private final Class<T> derived;
     private final RequestImpl request;
 
-    public RequestBuilderBase(RequestType type) {
+    public RequestBuilderBase(Class<T> derived, RequestType type) {
+        this.derived = derived;
         request = new RequestImpl();
         request.type = type;
     }
 
-    public RequestBuilderBase(Request prototype) {
+    public RequestBuilderBase(Class<T> derived, Request prototype) {
+        this.derived = derived;
         request = new RequestImpl(prototype);
     }
 
     @SuppressWarnings("unchecked")
     public T setUrl(String url) {
         request.url = url;
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings({"unchecked"})
     public T setHeader(String name, String value) {
         request.headers.replace(name, value);
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings({"unchecked"})
     public T addHeader(String name, String value) {
         request.headers.add(name, value);
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
     public T setHeaders(Headers headers) {
         request.headers = (headers == null ? new Headers() : new Headers(headers));
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
     public T addCookie(Cookie cookie) {
         request.cookies.add(cookie);
-        return (T)this;
+        return derived.cast(this);
     }
 
     private void resetParameters() {
@@ -241,7 +244,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetNonMultipartData();
         resetMultipartData();
         request.byteData = data;
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -253,7 +256,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetNonMultipartData();
         resetMultipartData();
         request.stringData = data;
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -265,7 +268,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetNonMultipartData();
         resetMultipartData();
         request.streamData = stream;
-        return (T)this;
+        return derived.cast(this);
     }
 
     public T setBody(EntityWriter dataWriter) {
@@ -282,7 +285,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetMultipartData();
         request.entityWriter = dataWriter;
         request.length       = length;
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -291,7 +294,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
             request.queryParams = LinkedListMultimap.create();
         }
         request.queryParams.put(name, value);
-        return (T) this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -305,7 +308,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
             request.params =  LinkedListMultimap.create();
         }
         request.params.put(key, value);
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -316,7 +319,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetNonMultipartData();
         resetMultipartData();
         request.params = LinkedListMultimap.create(parameters);
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -327,7 +330,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         resetNonMultipartData();
         resetMultipartData();
         request.params = LinkedListMultimap.create(Multimaps.forMap(parameters));
-        return (T)this;
+        return derived.cast(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -341,7 +344,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
             request.parts = new ArrayList<Part>();
         }
         request.parts.add(part);
-        return (T)this;
+        return derived.cast(this);
     }
 
     public Request build() {
