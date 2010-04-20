@@ -559,8 +559,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301) ){
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
-                        Url url = createUrl(response.getHeader(HttpHeaders.Names.LOCATION));
-                        RequestBuilder builder = new RequestBuilder(future.getRequest());
+
+                        String location = response.getHeader(HttpHeaders.Names.LOCATION);
+                        if (location.startsWith("/")) {
+                            location = future.getUrl().getBaseUrl() + location;
+                        }
+
+                        Url url = createUrl(location);
+                        RequestBuilder builder = new RequestBuilder(future.getRequest().getType());
                         future.setUrl(url);
                         execute(builder.setUrl(url.toString()).build(),future);
                         return;
