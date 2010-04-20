@@ -566,8 +566,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         Url url = createUrl(location);
-                        RequestBuilder builder = new RequestBuilder(future.getRequest().getType());
+                        RequestBuilder builder = new RequestBuilder(future.getRequest());
                         future.setUrl(url);
+
+                        ctx.setAttachment(new DiscardEvent());
+                        try{
+                            ctx.getChannel().setReadable(false);
+                        } catch (Exception ex){
+                            if (log.isTraceEnabled()){
+                                log.trace(ex);
+                            }
+                        }
                         execute(builder.setUrl(url.toString()).build(),future);
                         return;
                     } else {
@@ -616,7 +625,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
             }
-        } catch (RuntimeException t){
+        } catch (Exception t){
             future.abort(t);            
             finishUpdate(future,ctx);
             throw t;

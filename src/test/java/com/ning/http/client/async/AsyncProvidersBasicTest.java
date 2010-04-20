@@ -228,36 +228,36 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     }
 
-//    @Test(groups = "async")
-//    public void asyncStatusHEADContentLenghtTest() throws Throwable {
-//        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder()
-//                .setRequestTimeoutInMs(120 * 1000).build());
-//
-//        final CountDownLatch l = new CountDownLatch(1);
-//        Request request = new RequestBuilder(RequestType.HEAD)
-//                .setUrl(TARGET_URL)
-//                .build();
-//
-//        n.execute(request, new AsyncCompletionHandlerAdapter() {
-//            @Override
-//            public Response onCompleted(Response response) throws Exception {
-//                Assert.fail();
-//                return response;
-//            }
-//            @Override
-//            public void onThrowable(Throwable t) {
-//                t.printStackTrace();
-//                Assert.assertEquals(t.getClass(),IOException.class);
-//                Assert.assertEquals(t.getMessage(),"No response received. Connection timed out");
-//
-//            }
-//        }).get();
-//
-//        if (!l.await(10 * 5 * 1000, TimeUnit.SECONDS)) {
-//            Assert.fail("Timeout out");
-//        }
-//
-//    }
+    @Test(groups = "async", enabled = false)
+    public void asyncStatusHEADContentLenghtTest() throws Throwable {
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder()
+                .setRequestTimeoutInMs(120 * 1000).build());
+
+        final CountDownLatch l = new CountDownLatch(1);
+        Request request = new RequestBuilder(RequestType.HEAD)
+                .setUrl(TARGET_URL)
+                .build();
+
+        n.execute(request, new AsyncCompletionHandlerAdapter() {
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.fail();
+                return response;
+            }
+            @Override
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+                Assert.assertEquals(t.getClass(),IOException.class);
+                Assert.assertEquals(t.getMessage(),"No response received. Connection timed out");
+
+            }
+        }).get();
+
+        if (!l.await(10 * 5 * 1000, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+
+    }
 
     @Test(groups = "async")
     public void asyncNullSchemeTest() throws Throwable {
