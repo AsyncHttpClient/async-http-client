@@ -738,7 +738,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             });
 
-            future.get(TIMEOUT, TimeUnit.SECONDS);
+            future.get(10, TimeUnit.SECONDS);
         } catch (TimeoutException ex) {
             Assert.assertTrue(true);
         } catch (IllegalStateException ex) {

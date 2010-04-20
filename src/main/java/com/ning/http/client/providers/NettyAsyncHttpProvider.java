@@ -58,6 +58,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
@@ -113,10 +115,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final AtomicBoolean isClose = new AtomicBoolean(false);
 
+    private final NioClientSocketChannelFactory socketChannelFactory;
+
+    private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
-        bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
+        socketChannelFactory = new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
-                config.executorService()));
+                config.executorService());
+        bootstrap = new ClientBootstrap(socketChannelFactory);
         this.config = config;
     }
 
@@ -461,13 +468,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public void close() {
         isClose.set(true);
-        Iterator<Entry<String, Channel>> i = connectionsPool.entrySet().iterator();
-        while (i.hasNext()) {
-            i.next().getValue().close();
-        }
+        connectionsPool.clear();
+        openChannels.close();
         timer.stop();
         config.reaper().shutdown();
         config.executorService().shutdown();
+        socketChannelFactory.releaseExternalResources();
+        bootstrap.releaseExternalResources();
     }
 
     /* @Override */
@@ -529,6 +536,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return c.future();
         }
         channelFuture.addListener(c);
+        openChannels.add(channelFuture.getChannel());        
         return c.future();
     }
 
