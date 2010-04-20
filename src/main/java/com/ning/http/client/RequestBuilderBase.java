@@ -35,7 +35,7 @@ import java.util.Map;
  *
  * @param <T>
  */
-abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
+abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private RequestType type;
@@ -183,37 +183,31 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         request = new RequestImpl(prototype);
     }
 
-    @SuppressWarnings("unchecked")
     public T setUrl(String url) {
         request.url = url;
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
         return derived.cast(this);
     }
 
-    @SuppressWarnings({"unchecked"})
     public T setHeader(String name, String value) {
         request.headers.replace(name, value);
         return derived.cast(this);
     }
 
-    @SuppressWarnings({"unchecked"})
     public T addHeader(String name, String value) {
         request.headers.add(name, value);
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setHeaders(Headers headers) {
         request.headers = (headers == null ? new Headers() : new Headers(headers));
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T addCookie(Cookie cookie) {
         request.cookies.add(cookie);
         return derived.cast(this);
@@ -235,7 +229,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         request.parts = null;
     }
 
-    @SuppressWarnings("unchecked")
     public T setBody(byte[] data) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
@@ -247,7 +240,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setBody(String data) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
@@ -259,7 +251,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setBody(InputStream stream) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
@@ -275,7 +266,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return setBody(dataWriter, -1);
     }
 
-    @SuppressWarnings("unchecked")
     public T setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
@@ -288,7 +278,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings({"unchecked"})
     public T addQueryParameter(String name, String value) {
         if (request.queryParams == null) {
             request.queryParams = LinkedListMultimap.create();
@@ -297,7 +286,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings({"unchecked"})
     public T addParameter(String key, String value) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
@@ -311,7 +299,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
@@ -322,7 +309,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T setParameters(Map<String, String> parameters) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
@@ -333,7 +319,6 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<?>> {
         return derived.cast(this);
     }
 
-    @SuppressWarnings("unchecked")
     public T addBodyPart(Part part) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for parts");
