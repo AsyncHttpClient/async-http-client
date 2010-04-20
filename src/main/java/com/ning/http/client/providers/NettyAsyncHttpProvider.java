@@ -549,7 +549,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try{
             if (e.getMessage() instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e.getMessage();
-                // Required if there is some trailling headers.
+                // Required if there is some trailing headers.
                 future.setHttpResponse(response);
 
                 String ka = response.getHeader("Connection");
