@@ -35,6 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Enumeration;
 import java.util.concurrent.BrokenBarrierException;
@@ -126,7 +127,7 @@ public class Relative302Test extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(),404);
         } catch (ExecutionException ex) {
-            assertEquals(ex.getCause().getClass(),UnresolvedAddressException.class);
+            assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
     }
 
