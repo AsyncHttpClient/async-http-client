@@ -35,6 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.Enumeration;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -116,13 +117,17 @@ public class Relative302Test extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        // once
-        Response response = c.preparePost(TARGET_URL)
-                .setHeader("X-redirect", "http://www.grroooogle.com/")
-                .execute().get();
+        try {
+            // Some OS will throw an exception
+            Response response = c.preparePost(TARGET_URL)
+                    .setHeader("X-redirect", "http://www.grroooogle.com/")
+                    .execute().get();
 
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(),404);
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(),404);
+        } catch (ExecutionException ex) {
+            assertEquals(ex.getCause().getClass(),UnresolvedAddressException.class);
+        }
     }
 
     @Test
