@@ -172,13 +172,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     private final RequestImpl request;
 
-    public RequestBuilderBase(Class<T> derived, RequestType type) {
+    RequestBuilderBase(Class<T> derived, RequestType type) {
         this.derived = derived;
         request = new RequestImpl();
         request.type = type;
     }
 
-    public RequestBuilderBase(Class<T> derived, Request prototype) {
+    RequestBuilderBase(Class<T> derived, Request prototype) {
         this.derived = derived;
         request = new RequestImpl(prototype);
     }
