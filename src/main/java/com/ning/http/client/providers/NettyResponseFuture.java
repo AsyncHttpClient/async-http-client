@@ -105,20 +105,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      */
     /* @Override */
     public V get() throws InterruptedException, ExecutionException{
-        if (!isDone() && !isCancelled()) {
-            if (!latch.await(responseTimeoutInMs, TimeUnit.MILLISECONDS)) {
-                isCancelled.set(true);
-                TimeoutException te = new TimeoutException("No response received");
-                onThrowable(te);
-                throw new RuntimeException(te);
-            }
-            isDone.set(true);
+        try {
+            return get(responseTimeoutInMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
         }
-
-        if (exEx.get() != null){
-            throw exEx.getAndSet(null);
-        }
-        return (V) getContent();
     }
 
     /**
@@ -133,12 +124,12 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                 onThrowable(te);
                 throw te;
             }
+            isDone.set(true);
 
             if (exEx.get() != null){
                 throw exEx.getAndSet(null);
             }
         }
-
         return (V) getContent();
     }
 
