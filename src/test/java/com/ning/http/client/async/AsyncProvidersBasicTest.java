@@ -49,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.testng.Assert.assertEquals;
+
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "async")
@@ -159,7 +161,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 for (int i = 1; i < 5; i++) {
                     Assert.assertEquals(response.getHeader("X-Test" + i), "Test" + i);
                 }
-                l.countDown();
                 l.countDown();
                 return response;
             }
@@ -348,6 +349,28 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 List<Cookie> cookies = response.getCookies();
                 Assert.assertEquals(cookies.size(),1);
                 Assert.assertEquals(cookies.get(0).toString(), coo.toString());
+                l.countDown();
+                return response;
+            }
+        }).get();
+
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+    }
+
+    @Test(groups = "async")
+    public void asyncDoPostDefaultContentType() throws Throwable {
+
+        AsyncHttpClient c = new AsyncHttpClient();
+        final CountDownLatch l = new CountDownLatch(1);
+        c.preparePost(TARGET_URL).addParameter("foo","bar").execute(new AsyncCompletionHandlerAdapter() {
+
+            @Override
+            public Response onCompleted(Response response) throws Exception {
+                Assert.assertEquals(response.getStatusCode(), 200);
+                Headers h = response.getHeaders();
+                assertEquals(h.getHeaderValue("X-Content-Type"),"application/x-www-form-urlencoded");
                 l.countDown();
                 return response;
             }
