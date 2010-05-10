@@ -121,11 +121,14 @@ public class MultipleHeaderTest {
             }
 
             public STATE onHeadersReceived(HttpResponseHeaders<Void> response) throws Exception {
-                int i = 0;
-                for (String header : response.getHeaders().getHeaderValues("Content-Length")) {
-                    clHeaders[i++] = header;
+                try {
+                    int i = 0;
+                    for (String header : response.getHeaders().getHeaderValues("Content-Length")) {
+                        clHeaders[i++] = header;
+                    }
+                } finally {
+                    latch.countDown();
                 }
-                latch.countDown();
                 return STATE.CONTINUE;
             }
 

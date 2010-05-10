@@ -37,9 +37,10 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     private final static String RESPONSE_JDK5 = "param_4=value_4&param_2=value_2&param_0=value_0&param_3=value_3&param_1=value_1";
     private final static String RESPONSE_JDK6 = "param_4=value_4&param_0=value_0&param_1=value_1&param_2=value_2&param_3=value_3";
 
-    private final static String RESPONSE = System.getProperty("java.version").startsWith("1.5") ? RESPONSE_JDK5: RESPONSE_JDK6;
+    private final static String RESPONSE = System.getProperty("java.version").startsWith("1.5") ? RESPONSE_JDK5 : RESPONSE_JDK6;
 
     private final static String UTF8 = "text/html; charset=utf-8";
+
     @Test
     public void asyncStreamGETTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
@@ -49,11 +50,14 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders<String> content) throws Exception {
-                Headers h = content.getHeaders();
-                Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
-                l.countDown();
-                return STATE.ABORT;
+                try {
+                    Headers h = content.getHeaders();
+                    Assert.assertNotNull(h);
+                    Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                    return STATE.ABORT;
+                } finally {
+                    l.countDown();
+                }
             }
 
             @Override
@@ -102,10 +106,13 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
-                Assert.assertEquals(r, RESPONSE);
-                l.countDown();
-                return r;
+                try {
+                    String r = builder.toString();
+                    Assert.assertEquals(r, RESPONSE);
+                    return r;
+                } finally {
+                    l.countDown();
+                }
             }
         });
 
@@ -198,11 +205,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public void onThrowable(Throwable t) {
-                try {
-                    Assert.fail("", t);
-                } finally {
-
-                }
+                Assert.fail("", t);
             }
         });
 
@@ -226,8 +229,11 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             @Override
 
             public void onThrowable(Throwable t) {
-                if (t.getMessage() != null) {
-                    Assert.assertEquals(t.getMessage(), "FOO");
+                try {
+                    if (t.getMessage() != null) {
+                        Assert.assertEquals(t.getMessage(), "FOO");
+                    }
+                } finally {
                     l.countDown();
                 }
             }
@@ -270,10 +276,14 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
-                Assert.assertEquals(r, RESPONSE);
-                l.countDown();
-                return r;
+                try {
+                    String r = builder.toString();
+                    Assert.assertEquals(r, RESPONSE);
+                    return r;
+                } finally {
+                    l.countDown();
+                }
+
             }
         });
 
@@ -335,10 +345,14 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
-                Assert.assertTrue(r.contains("301 Moved"));
-                l.countDown();
-                return r;
+                try {
+                    String r = builder.toString();
+                    Assert.assertTrue(r.contains("301 Moved"));
+                    l.countDown();
+                    return r;
+                } finally {
+                    l.countDown();
+                }
             }
         });
 
@@ -370,10 +384,13 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
-                Assert.assertTrue(!r.contains("301 Moved"));
-                l.countDown();
-                return r;
+                try {
+                    String r = builder.toString();
+                    Assert.assertTrue(!r.contains("301 Moved"));
+                    return r;
+                } finally {
+                    l.countDown();
+                }
             }
         });
 
@@ -382,12 +399,12 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test (timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
+    @Test(timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
     public void asyncStreamJustStatusLine() throws Throwable {
         final int STATUS = 0;
         final int COMPLETED = 1;
         final int OTHER = 2;
-        final boolean[] whatCalled = new boolean[] {false, false, false};
+        final boolean[] whatCalled = new boolean[]{false, false, false};
         final CountDownLatch latch = new CountDownLatch(1);
         AsyncHttpClient client = new AsyncHttpClient();
         Future<Integer> statusCode = client.prepareGet(TARGET_URL).execute(new AsyncHandler<Integer>() {
@@ -399,7 +416,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
                 latch.countDown();
             }
 
-           /* @Override */
+            /* @Override */
             public STATE onBodyPartReceived(HttpResponseBodyPart<Integer> bodyPart) throws Exception {
                 whatCalled[OTHER] = true;
                 latch.countDown();
