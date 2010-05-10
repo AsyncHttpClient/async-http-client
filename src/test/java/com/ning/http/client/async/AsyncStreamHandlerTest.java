@@ -34,10 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
-    private final static String RESPONSE_JDK5 = "param_4=value_4&param_2=value_2&param_0=value_0&param_3=value_3&param_1=value_1";
-    private final static String RESPONSE_JDK6 = "param_4=value_4&param_0=value_0&param_1=value_1&param_2=value_2&param_3=value_3";
-
-    private final static String RESPONSE = System.getProperty("java.version").startsWith("1.5") ? RESPONSE_JDK5 : RESPONSE_JDK6;
+    private final static String RESPONSE = "param_0_param_4_param_1_param_2_param_3_";
 
     private final static String UTF8 = "text/html; charset=utf-8";
 
@@ -107,7 +104,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             @Override
             public String onCompleted() throws Exception {
                 try {
-                    String r = builder.toString();
+                    String r = builder.toString().trim();
                     Assert.assertEquals(r, RESPONSE);
                     return r;
                 } finally {
@@ -169,9 +166,6 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test
     public void asyncStreamFutureTest() throws Throwable {
-        Headers h = new Headers();
-        h.add("Content-Type", "application/x-www-form-urlencoded");
-
         Map<String, String> m = new HashMap<String, String>();
         for (int i = 0; i < 5; i++) {
             m.put("param_" + i, "value_" + i);
@@ -197,7 +191,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
+                String r = builder.toString().trim();
                 Assert.assertEquals(r, RESPONSE);
                 return r;
             }
@@ -277,7 +271,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             @Override
             public String onCompleted() throws Exception {
                 try {
-                    String r = builder.toString();
+                    String r = builder.toString().trim();
                     Assert.assertEquals(r, RESPONSE);
                     return r;
                 } finally {
@@ -311,7 +305,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString();
+                String r = builder.toString().trim();
                 Assert.assertEquals(r, RESPONSE);
                 return r;
             }
