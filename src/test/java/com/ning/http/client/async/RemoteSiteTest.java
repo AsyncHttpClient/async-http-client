@@ -152,9 +152,10 @@ public class RemoteSiteTest {
         }
     }
 
-    @Test(groups = "async", enabled = false)
+    @Test
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(
+                new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
 
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder(RequestType.HEAD)
