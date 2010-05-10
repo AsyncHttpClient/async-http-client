@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Headers implements Iterable<Pair<String, String>> {
-    public static final String CONTENT_TYPE = "Content-type";
+    public static final String CONTENT_TYPE = "Content-Type";
 
     private List<Pair<String, String>> headers = new ArrayList<Pair<String, String>>();
 
