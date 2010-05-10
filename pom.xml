@@ -20,10 +20,7 @@
         <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.2.0.CR1-SNAPSHOT</version>
-            <!-- TODO once Netty gets released don't use system/snapshot -->
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/netty-3.2.0.CR1-SNAPSHOT.jar</systemPath>
+            <version>3.2.0.CR1</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
@@ -224,7 +221,7 @@
         </repository>
         <repository>
             <id>repository.jboss.org</id>
-            <url>http://repository.jboss.org/maven2</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
