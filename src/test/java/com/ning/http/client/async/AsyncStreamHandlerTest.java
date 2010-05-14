@@ -305,9 +305,13 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString().trim();
-                Assert.assertEquals(r, RESPONSE);
-                return r;
+                try {
+                    String r = builder.toString().trim();
+                    Assert.assertEquals(r, RESPONSE);
+                    return r;
+                } finally {
+                    l.countDown();
+                }
             }
         });
 
