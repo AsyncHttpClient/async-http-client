@@ -75,6 +75,9 @@ public class Relative302Test extends AbstractBasicTest {
         server = new Server();
         BasicConfigurator.configure();
 
+        port1 = findFreePort();
+        port2 = findFreePort();
+
         Connector listener = new SelectChannelConnector();
 
         listener.setHost("127.0.0.1");
@@ -111,7 +114,7 @@ public class Relative302Test extends AbstractBasicTest {
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
             Response response = c.preparePost(getTargetUrl())
-                    .setHeader("X-redirect", "http://www.grroooogle.com/")
+                    .setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2))
                     .execute().get();
 
             assertNotNull(response);

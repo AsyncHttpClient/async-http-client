@@ -29,6 +29,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     public static final String CONTENT_TYPE = "Content-Type";
 
     private final Map<String, List<String>> headers = new LinkedHashMap<String, List<String>>();
+    private final Map<String, String> headerNames = new LinkedHashMap<String, String>();
 
     public static Headers unmodifiableHeaders(Headers headers) {
         return new UnmodifiableHeaders(headers);
@@ -63,14 +64,24 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public Headers add(String name, String value) {
         if (value != null) {
-            List<String> values = headers.get(name);
-    
-            if (values == null) {
-                values = new ArrayList<String>();
-                // TODO: parse if mode is set accordingly
-                headers.put(name, values);
+            String       key       = name.toLowerCase();
+            String       usedName  = headerNames.get(key);
+            List<String> curValues = null;
+
+            if (usedName == null) {
+                usedName = name;
+                headerNames.put(key, name);
             }
-            values.add(value);
+            else {
+                curValues = headers.get(usedName);
+            }
+    
+            if (curValues == null) {
+                curValues = new ArrayList<String>();
+                // TODO: parse if mode is set accordingly
+                headers.put(usedName, curValues);
+            }
+            curValues.add(value);
         }
         return this;
     }
@@ -85,14 +96,24 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public Headers add(String name, Collection<String> values) {
         if (values != null) {
-            List<String> curValues = headers.get(name);
-    
-            if (values == null) {
-                values = new ArrayList<String>();
-                // TODO: parse if mode is set accordingly
-                headers.put(name, curValues);
+            String       key       = name.toLowerCase();
+            String       usedName  = headerNames.get(key);
+            List<String> curValues = null;
+
+            if (usedName == null) {
+                usedName = name;
+                headerNames.put(key, name);
             }
-            values.addAll(values);
+            else {
+                curValues = headers.get(usedName);
+            }
+    
+            if (curValues == null) {
+                curValues = new ArrayList<String>();
+                // TODO: parse if mode is set accordingly
+                headers.put(usedName, curValues);
+            }
+            curValues.addAll(values);
         }
         return this;
     }
@@ -171,7 +192,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return {@code true} if the header is defined
      */
     public boolean isDefined(String name) {
-        return headers.containsKey(name);
+        return headerNames.containsKey(name.toLowerCase());
     }
 
     /**
@@ -182,7 +203,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return The header value; {@code null} if this header is not defined
      */
     public String getHeaderValue(String name) {
-        List<String> values = headers.get(name);
+        List<String> values = getHeaderValues(name);
         
         if (values == null) {
             return null;
@@ -210,9 +231,17 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return The values, or {@code null} if the header is not defined
      */
     public List<String> getHeaderValues(String name) {
-        List<String> values = headers.get(name);
+        String key      = name.toLowerCase();
+        String usedName = headerNames.get(key);
 
-        return values == null ? Collections.<String>emptyList() : Collections.unmodifiableList(values);
+        if (usedName == null) {
+            return null;
+        }
+        else {
+            List<String> values = headers.get(usedName);
+
+            return values == null ? Collections.<String>emptyList() : Collections.unmodifiableList(values);
+        }
     }
 
     /**
@@ -222,7 +251,12 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return This object
      */
     public Headers remove(String name) {
-        headers.remove(name);
+        String key      = name.toLowerCase();
+        String usedName = headerNames.remove(key);
+
+        if (usedName != null) {
+            headers.remove(usedName);
+        }
         return this;
     }
 
@@ -241,6 +275,35 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         } else if (!headers.equals(other.headers))
             return false;
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder result = new StringBuilder();
+
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            if (result.length() > 0) {
+                result.append("; ");
+            }
+            result.append("\"");
+            result.append(entry.getKey());
+            result.append("=");
+
+            boolean needsComma = false;
+
+            for (String value : entry.getValue()) {
+                if (needsComma) {
+                    result.append(", ");
+                }
+                else {
+                    needsComma = true;
+                }
+                result.append(value);
+            }
+            result.append("\"");
+        }
+        return result.toString();
     }
 
     private static class UnmodifiableHeaders extends Headers {
@@ -316,6 +379,12 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         public void replace(String header, String value)
         {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString()
+        {
+            return headers.toString();
         }
     }
 }

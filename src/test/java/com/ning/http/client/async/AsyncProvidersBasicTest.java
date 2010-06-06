@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -651,7 +650,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncDoPostProxyTest() throws Throwable {
 
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port2)).build();
         AsyncHttpClient c = new AsyncHttpClient(cf);
 
         Headers h = new Headers();
@@ -672,7 +671,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
 
-            /* @Override */
+            @Override
             public void onThrowable(Throwable t) {
             }
         }).get();
@@ -704,7 +703,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Response response = n.execute(request, new AsyncCompletionHandlerAdapter()).get();
 
         assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getHeader("X-Host"), "localhost:19999");
+        assertEquals(response.getHeader("X-Host"), "localhost:" + port1);
 
     }
 
@@ -857,7 +856,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
 
         c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
-
             @Override
             public Response onCompleted(Response response) throws Exception {
                 try {
@@ -881,11 +879,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         ConnectException expected = null;
         try {
             c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
-                        /* @Override */
-                        public void onThrowable(Throwable t) {
-                            t.printStackTrace();                            
-                        }
-                    }).get();
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                }
+            }).get();
         } catch (ExecutionException ex) {
             ex.printStackTrace();
             if (ex.getCause() instanceof ConnectException) {
@@ -903,13 +901,17 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncConnectInvalidPort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
+
+        // pick a random unused local port
+        int port = findFreePort();
+
         try {
-            c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
-                        /* @Override */
-                        public void onThrowable(Throwable t) {
-                            t.printStackTrace();
-                        }
-                    }).get();
+            c.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                }
+            }).get();
             Assert.assertTrue(false);
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -920,8 +922,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidHandlerPort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
         final CountDownLatch l = new CountDownLatch(1);
+        int port = findFreePort();
 
-        c.prepareGet("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
+        c.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
             /* @Override */
             public void onThrowable(Throwable t) {
                 try {
@@ -945,11 +948,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         c.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter() {
             /* @Override */
             public void onThrowable(Throwable t) {
-                try {
-                    assertEquals(t.getClass(), ConnectException.class);
-                } finally {
-                    l.countDown();
-                }
+                assertEquals(t.getClass(), ConnectException.class);
+                l.countDown();
             }
         });
 
@@ -963,15 +963,14 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidFuturePort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
-        ServerSocket socket = new ServerSocket(0);
-
-        int port = socket.getLocalPort();
-        socket.close();
+        // pick a random unused local port
+        int port = findFreePort();
 
         try {
             c.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
+                    assertEquals(t.getClass(), ConnectException.class);
                 }
             }).get();
             Assert.fail("No ConnectionException was thrown");

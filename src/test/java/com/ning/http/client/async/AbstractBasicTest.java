@@ -193,7 +193,7 @@ public class AbstractBasicTest {
         /* @Override */
         public void onThrowable(Throwable t) {
             t.printStackTrace();
-            Assert.fail("Unexpected exception", t);
+            Assert.fail("Unexpected exception: " + t.getMessage(), t);
         }
 
     }
