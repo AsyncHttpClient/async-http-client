@@ -33,9 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStreamHandlerTest extends AbstractBasicTest {
-
-    private final static String RESPONSE = "param_0_param_4_param_1_param_2_param_3_";
-
+    private final static String RESPONSE = "param_1_";
     private final static String UTF8 = "text/html; charset=utf-8";
 
     @Test
@@ -77,11 +75,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
         h.add("Content-Type", "application/x-www-form-urlencoded");
-
         Map<String, String> m = new HashMap<String, String>();
-        for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
-        }
+        m.put("param_1", "value_1");
+
         AsyncHttpClient c = new AsyncHttpClient();
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
@@ -125,10 +121,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
         Map<String, String> m = new HashMap<String, String>();
-        for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
-        }
-
+        m.put("param_1", "value_1");
 
         final AtomicBoolean a = new AtomicBoolean(true);
         AsyncHttpClient c = new AsyncHttpClient();
@@ -167,9 +160,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test
     public void asyncStreamFutureTest() throws Throwable {
         Map<String, String> m = new HashMap<String, String>();
-        for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
-        }
+        m.put("param_1", "value_1");
         AsyncHttpClient c = new AsyncHttpClient();
 
         Future<String> f = c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
@@ -246,9 +237,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
         Map<String, String> m = new HashMap<String, String>();
-        for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
-        }
+        m.put("param_1", "value_1");
         AsyncHttpClient c = new AsyncHttpClient();
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
@@ -305,9 +294,13 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                String r = builder.toString().trim();
-                Assert.assertEquals(r, RESPONSE);
-                return r;
+                try {
+                    String r = builder.toString().trim();
+                    Assert.assertEquals(r, RESPONSE);
+                    return r;
+                } finally {
+                    l.countDown();
+                }
             }
         });
 

@@ -878,27 +878,16 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidPortFuture() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        Headers h = new Headers();
-        h.add("Content-Type", "application/x-www-form-urlencoded");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 5; i++) {
-            sb.append("param_");
-            sb.append(i);
-            sb.append("=value_");
-            sb.append(i);
-            sb.append("&");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-
         ConnectException expected = null;
         try {
-            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString())
-                    .execute(new AsyncCompletionHandlerAdapter() {
+            c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
                         /* @Override */
                         public void onThrowable(Throwable t) {
+                            t.printStackTrace();                            
                         }
                     }).get();
         } catch (ExecutionException ex) {
+            ex.printStackTrace();
             if (ex.getCause() instanceof ConnectException) {
                 expected = (ConnectException) ex.getCause();
             }
@@ -914,23 +903,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "async")
     public void asyncConnectInvalidPort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
-        Headers h = new Headers();
-        h.add("Content-Type", "application/x-www-form-urlencoded");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 5; i++) {
-            sb.append("param_");
-            sb.append(i);
-            sb.append("=value_");
-            sb.append(i);
-            sb.append("&");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-
         try {
-            c.preparePost("http://127.0.0.1:9999/").setHeaders(h).setBody(sb.toString())
-                    .execute(new AsyncCompletionHandlerAdapter() {
+            c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
                         /* @Override */
                         public void onThrowable(Throwable t) {
+                            t.printStackTrace();
                         }
                     }).get();
             Assert.assertTrue(false);

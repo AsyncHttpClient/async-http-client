@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -50,7 +51,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
-    private volatile int redirectCount;
+    private final AtomicInteger redirectCount = new AtomicInteger();
     private Future<Object> reaperFuture;
     
     public NettyResponseFuture(Url url,
@@ -201,7 +202,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public int incrementAndGetCurrentRedirectCount(){
-        return redirectCount++;
+        return redirectCount.incrementAndGet();
     }
 
     public void setReaperFuture(Future<Object> reaperFuture) {
