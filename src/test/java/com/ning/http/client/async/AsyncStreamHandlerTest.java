@@ -43,7 +43,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.prepareGet(TARGET_URL).execute(new AsyncHandlerAdapter() {
+        c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders<String> content) throws Exception {
@@ -84,7 +84,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
+        c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
             @Override
@@ -133,7 +133,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final AtomicBoolean a = new AtomicBoolean(true);
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
+        c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders<String> content) throws Exception {
@@ -172,7 +172,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Future<String> f = c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
+        Future<String> f = c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
             @Override
@@ -213,7 +213,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.prepareGet(TARGET_URL).execute(new AsyncHandlerAdapter() {
+        c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders<String> content) throws Exception {
@@ -251,7 +251,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
         AsyncHttpClient c = new AsyncHttpClient();
 
-        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
+        c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
             @Override
@@ -286,7 +286,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
 
         // Let do the same again
-        c.preparePost(TARGET_URL).setParameters(m).execute(new AsyncHandlerAdapter() {
+        c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
             @Override
@@ -401,7 +401,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final boolean[] whatCalled = new boolean[]{false, false, false};
         final CountDownLatch latch = new CountDownLatch(1);
         AsyncHttpClient client = new AsyncHttpClient();
-        Future<Integer> statusCode = client.prepareGet(TARGET_URL).execute(new AsyncHandler<Integer>() {
+        Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
             private int status = -1;
 
             /* @Override */

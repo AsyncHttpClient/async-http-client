@@ -18,16 +18,9 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import org.mortbay.jetty.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -41,14 +34,14 @@ public class ComplexClientTest extends AbstractBasicTest {
         String body = "hello there";
 
         // once
-        Response response = c.preparePost(TARGET_URL)
+        Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
-        response = c.preparePost(TARGET_URL)
+        response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -64,7 +57,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         String body = "hello there";
 
         // once
-        Response response = c.preparePost(TARGET_URL)
+        Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -73,7 +66,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // twice
         Exception exception = null;
         try {
-            response = c.preparePost(TARGET_URL)
+            response = c.preparePost(getTargetUrl())
                     .setBody(body)
                     .execute().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex) {
@@ -93,7 +86,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         String body = "hello there";
 
         // once
-        Response response = c.preparePost(TARGET_URL + "?foo=bar")
+        Response response = c.preparePost(getTargetUrl() + "?foo=bar")
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -102,7 +95,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // twice
         Exception exception = null;
         try {
-            response = c.preparePost(TARGET_URL)
+            response = c.preparePost(getTargetUrl())
                     .setBody(body)
                     .execute().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex) {

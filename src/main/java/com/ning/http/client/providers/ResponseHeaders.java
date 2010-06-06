@@ -18,7 +18,6 @@ package com.ning.http.client.providers;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;

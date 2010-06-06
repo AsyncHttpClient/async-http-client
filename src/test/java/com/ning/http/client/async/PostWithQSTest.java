@@ -17,13 +17,8 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
+
 import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.nio.SelectChannelConnector;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
@@ -76,25 +71,14 @@ public class PostWithQSTest extends AbstractBasicTest {
     @Test
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
-        Future<Response> f = client.preparePost("http://localhost:" + PORT + "/?a=b").setBody("abc".getBytes()).execute();
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
-        server = new Server();
-        BasicConfigurator.configure();
-
-        Connector listener = new SelectChannelConnector();
-
-        listener.setHost("127.0.0.1");
-        listener.setPort(PORT);
-        server.addConnector(listener);
-
-        server.setHandler(new PostWithQSHandler());
-        server.start();
-        log.info("Local HTTP server started successfully");
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new PostWithQSHandler();
     }
 }

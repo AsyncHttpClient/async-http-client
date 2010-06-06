@@ -35,17 +35,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Enumeration;
 
 public class AbstractBasicTest {
   
-    protected final static int PORT = 19999;
     protected Server server;
+    protected int port1;
+    protected int port2;
     protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
 
     public final static int TIMEOUT = 30;
-
-    protected final static String TARGET_URL = "http://127.0.0.1:19999/foo/test";
 
     public static class EchoHandler extends AbstractHandler {
 
@@ -134,6 +134,25 @@ public class AbstractBasicTest {
         server.stop();
     }
 
+    protected int findFreePort() throws IOException {
+        ServerSocket socket = null;
+
+        try {
+            socket = new ServerSocket(0);
+    
+            return socket.getLocalPort();
+        }
+        finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
+
+    protected String getTargetUrl() {
+        return String.format("http://127.0.0.1:%d/foo/test", port1);
+    }
+
     public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
     }
@@ -143,16 +162,19 @@ public class AbstractBasicTest {
         server = new Server();
         BasicConfigurator.configure();        
 
+        port1 = findFreePort();
+        port2 = findFreePort();
+
         Connector listener = new SelectChannelConnector();
 
         listener.setHost("127.0.0.1");
-        listener.setPort(PORT);
+        listener.setPort(port1);
                                                                                                  
         server.addConnector(listener);
 
         listener = new SelectChannelConnector();
         listener.setHost("127.0.0.1");
-        listener.setPort(38080);
+        listener.setPort(port2);
 
         server.addConnector(listener);
 

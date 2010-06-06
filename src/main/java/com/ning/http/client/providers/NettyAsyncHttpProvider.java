@@ -34,7 +34,6 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
-import com.ning.http.collection.Pair;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
@@ -354,17 +353,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         Headers h = request.getHeaders();
         if (h != null) {
-            Iterator<Pair<String, String>> i = h.iterator();
-            Pair<String, String> p;
-            while (i.hasNext()) {
-                p = i.next();
-                if ("host".equalsIgnoreCase(p.getFirst())) {
-                    continue;
+            for (String name : h.getHeaderNames()) {
+                if (!"host".equalsIgnoreCase(name)) {
+                    for (String value : h.getHeaderValues(name)) {
+                        nettyRequest.addHeader(name, value);
+                    }
                 }
-                String key = p.getFirst() == null ? "" : p.getFirst();
-                String value = p.getSecond() == null ? "" : p.getSecond();
-
-                nettyRequest.setHeader(key, value);
             }
         }
 
@@ -462,7 +456,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
-            nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "txt/html; charset=utf-8");
+            nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=utf-8");
         }
 
         if (log.isDebugEnabled())

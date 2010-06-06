@@ -19,7 +19,6 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
 
 import java.io.InputStream;
@@ -158,11 +157,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             sb.append("\t");
             sb.append(type);
-            for (Pair<String, String> header : headers) {
+            for (String name : headers.getHeaderNames()) {
                 sb.append("\t");
-                sb.append(header.getFirst());
+                sb.append(name);
                 sb.append(":");
-                sb.append(header.getSecond());
+                sb.append(headers.getHeaderValue(name));
             }
 
             return sb.toString();

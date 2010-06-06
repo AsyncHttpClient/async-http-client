@@ -78,7 +78,7 @@ public class Relative302Test extends AbstractBasicTest {
         Connector listener = new SelectChannelConnector();
 
         listener.setHost("127.0.0.1");
-        listener.setPort(PORT);
+        listener.setPort(port1);
         server.addConnector(listener);
 
         server.setHandler(new Relative302Handler());
@@ -93,7 +93,7 @@ public class Relative302Test extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         // once
-        Response response = c.prepareGet(TARGET_URL)
+        Response response = c.prepareGet(getTargetUrl())
                 .setHeader("X-redirect", "http://www.microsoft.com/")
                 .execute().get();
 
@@ -110,7 +110,7 @@ public class Relative302Test extends AbstractBasicTest {
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
-            Response response = c.preparePost(TARGET_URL)
+            Response response = c.preparePost(getTargetUrl())
                     .setHeader("X-redirect", "http://www.grroooogle.com/")
                     .execute().get();
 
@@ -128,11 +128,11 @@ public class Relative302Test extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        Response response = c.preparePost(TARGET_URL)
+        Response response = c.preparePost(getTargetUrl())
                 .setHeader("X-redirect", "/foo/test")
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(),200);
-        assertEquals(response.getUrl().toString(), TARGET_URL);
+        assertEquals(response.getUrl().toString(), getTargetUrl());
     }
 }

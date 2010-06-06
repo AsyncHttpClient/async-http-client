@@ -21,7 +21,6 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.collection.Pair;
 import com.ning.http.url.Url;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
@@ -34,8 +33,8 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
@@ -152,34 +151,34 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
     public List<Cookie> getCookies() {
         if (cookies.isEmpty()) {
-            Iterator<Pair<String, String>> i = headers.getHeaders().iterator();
-            Pair<String, String> p;
-            while (i.hasNext()) {
-                p = i.next();
-                if (p.getFirst().equalsIgnoreCase("Set-Cookie")) {
-                    String[] fields = p.getSecond().split(";\\s*");
-                    String[] cookieValue = fields[0].split("=");
-                    String name = cookieValue[0];
-                    String value = cookieValue[1];
-                    String expires = "-1";
-                    String path = null;
-                    String domain = null;
-                    boolean secure = false; // Parse each field
-                    for (int j = 1; j < fields.length; j++) {
-                        if ("secure".equalsIgnoreCase(fields[j])) {
-                            secure = true;
-                        } else if (fields[j].indexOf('=') > 0) {
-                            String[] f = fields[j].split("=");
-                            if ("expires".equalsIgnoreCase(f[0])) {
-                                expires = f[1];
-                            } else if ("domain".equalsIgnoreCase(f[0])) {
-                                domain = f[1];
-                            } else if ("path".equalsIgnoreCase(f[0])) {
-                                path = f[1];
+            for (Map.Entry<String, List<String>> header : headers.getHeaders()) {
+                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                    // TODO: ask for parsed header
+                    for (String value : header.getValue()) {
+                        String[] fields = value.split(";\\s*");
+                        String[] cookie = fields[0].split("=");
+                        String cookieName = cookie[0];
+                        String cookieValue = cookie[1];
+                        String expires = "-1";
+                        String path = null;
+                        String domain = null;
+                        boolean secure = false; // Parse each field
+                        for (int j = 1; j < fields.length; j++) {
+                            if ("secure".equalsIgnoreCase(fields[j])) {
+                                secure = true;
+                            } else if (fields[j].indexOf('=') > 0) {
+                                String[] f = fields[j].split("=");
+                                if ("expires".equalsIgnoreCase(f[0])) {
+                                    expires = f[1];
+                                } else if ("domain".equalsIgnoreCase(f[0])) {
+                                    domain = f[1];
+                                } else if ("path".equalsIgnoreCase(f[0])) {
+                                    path = f[1];
+                                }
                             }
                         }
+                        cookies.add(new Cookie(domain, cookieName, cookieValue, path, Integer.valueOf(expires), secure));
                     }
-                    cookies.add(new Cookie(domain, name, value, path, Integer.valueOf(expires), secure));
                 }
             }
         }

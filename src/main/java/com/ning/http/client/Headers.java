@@ -16,18 +16,19 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.collection.Pair;
-
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class Headers implements Iterable<Pair<String, String>> {
+public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     public static final String CONTENT_TYPE = "Content-Type";
 
-    private List<Pair<String, String>> headers = new ArrayList<Pair<String, String>>();
+    private final Map<String, List<String>> headers = new LinkedHashMap<String, List<String>>();
 
     public static Headers unmodifiableHeaders(Headers headers) {
         return new UnmodifiableHeaders(headers);
@@ -38,16 +39,16 @@ public class Headers implements Iterable<Pair<String, String>> {
 
     public Headers(Headers src) {
         if (src != null) {
-            for (Pair<String, String> header : src) {
-                add(header);
+            for (Map.Entry<String, List<String>> header : src) {
+                add(header.getKey(), header.getValue());
             }
         }
     }
 
-    public Headers(Map<String, Collection<String>> headers) {
-        for (Map.Entry<String, Collection<String>> entry : headers.entrySet()) {
-            for (String value : entry.getValue()) {
-                add(entry.getKey(), value);
+    public Headers(Map<String, Collection<String>> src) {
+        if (src != null) {
+            for (Map.Entry<String, Collection<String>> header : src.entrySet()) {
+                add(header.getKey(), header.getValue());
             }
         }
     }
@@ -56,34 +57,72 @@ public class Headers implements Iterable<Pair<String, String>> {
      * Adds the specified header and returns this headers object.
      *
      * @param name  The header name
-     * @param value The header value
+     * @param value The header value; if null then this method has no effect. Use the empty string to
+     *              generate an empty header value
      * @return This object
      */
     public Headers add(String name, String value) {
-        headers.add(new Pair<String, String>(name, value));
+        if (value != null) {
+            List<String> values = headers.get(name);
+    
+            if (values == null) {
+                values = new ArrayList<String>();
+                // TODO: parse if mode is set accordingly
+                headers.put(name, values);
+            }
+            values.add(value);
+        }
         return this;
     }
 
     /**
-     * Adds the specified header and returns this headers object.
+     * Adds the specified header values and returns this headers object.
      *
-     * @param header The name / value pair
+     * @param name   The header name
+     * @param values The header values; if null then this method has no effect. Use an empty collection
+     *               to generate an empty header value
      * @return This object
      */
-    public Headers add(Pair<String, String> header) {
-        headers.add(new Pair<String, String>(header.getFirst(), header.getSecond()));
+    public Headers add(String name, Collection<String> values) {
+        if (values != null) {
+            List<String> curValues = headers.get(name);
+    
+            if (values == null) {
+                values = new ArrayList<String>();
+                // TODO: parse if mode is set accordingly
+                headers.put(name, curValues);
+            }
+            values.addAll(values);
+        }
         return this;
     }
 
     /**
      * Adds all headers from the given headers object to this object and returns this headers object.
      *
-     * @param srcHeaders The source headers object
+     * @param src The source headers object
      * @return This object
      */
-    public Headers addAll(Headers srcHeaders) {
-        for (Pair<String, String> entry : srcHeaders.headers) {
-            headers.add(new Pair<String, String>(entry.getFirst(), entry.getSecond()));
+    public Headers addAll(Headers src) {
+        if (src != null) {
+            for (Map.Entry<String, List<String>> header : src) {
+                add(header.getKey(), header.getValue());
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Adds all headers from the given map to this object and returns this headers object.
+     *
+     * @param src The source map of headers
+     * @return This object
+     */
+    public Headers addAll(Map<String, Collection<String>> src) {
+        if (src != null) {
+            for (Map.Entry<String, Collection<String>> header : src.entrySet()) {
+                add(header.getKey(), header.getValue());
+            }
         }
         return this;
     }
@@ -99,10 +138,10 @@ public class Headers implements Iterable<Pair<String, String>> {
     }
 
     /**
-     * Replaces all existing headers with the header given.
+     * Replaces the indicated header with the given value.
      *
-     * @param header The header name.
-     * @param value  The new header value.
+     * @param header The header name
+     * @param value  The new header value
      */
     public void replace(final String header, final String value) {
         remove(header);
@@ -112,56 +151,78 @@ public class Headers implements Iterable<Pair<String, String>> {
     /**
      * {@inheritDoc}
      */
-    public Iterator<Pair<String, String>> iterator() {
-        return headers.iterator();
+    public Iterator<Map.Entry<String, List<String>>> iterator() {
+        return Collections.unmodifiableSet(headers.entrySet()).iterator();
     }
 
     /**
-     * Returns the value of first header of the given name.
+     * Returns the names of all defined headers.
+     * 
+     * @return The header names
+     */
+    public Set<String> getHeaderNames() {
+        return Collections.unmodifiableSet(headers.keySet());
+    }
+
+    /**
+     * Determines whether the indicated header is defined.
+     * 
+     * @param name The header name
+     * @return {@code true} if the header is defined
+     */
+    public boolean isDefined(String name) {
+        return headers.containsKey(name);
+    }
+
+    /**
+     * Returns the value of the header of the given name. If there are multiple values
+     * for that header, then they will be concatenated according to the RFC????.
      *
      * @param name The header's name
-     * @return The value
+     * @return The header value; {@code null} if this header is not defined
      */
     public String getHeaderValue(String name) {
-        for (Pair<String, String> header : this) {
-            if (name.equalsIgnoreCase(header.getFirst())) {
-                return header.getSecond();
-            }
+        List<String> values = headers.get(name);
+        
+        if (values == null) {
+            return null;
         }
-        return null;
+        else if (values.size() == 1) {
+            return values.get(0);
+        }
+        else {
+            StringBuilder result = new StringBuilder();
+
+            for (String value : values) {
+                if (result.length() > 0) {
+                    result.append(", ");
+                }
+                result.append(value);
+            }
+            return result.toString();
+        }
     }
 
     /**
-     * Returns the values of all header of the given name.
+     * Returns all defined values for the specified header.
      *
      * @param name The header name
-     * @return The values, will not be <code>null</code>
+     * @return The values, or {@code null} if the header is not defined
      */
     public List<String> getHeaderValues(String name) {
-        ArrayList<String> values = new ArrayList<String>();
+        List<String> values = headers.get(name);
 
-        for (Pair<String, String> header : this) {
-            if (name.equalsIgnoreCase(header.getFirst())) {
-                values.add(header.getSecond());
-            }
-        }
-        return values;
+        return values == null ? Collections.<String>emptyList() : Collections.unmodifiableList(values);
     }
 
     /**
-     * Adds the specified header(s) and returns this headers object.
+     * Removes the specified header(s) if present and returns this headers object.
      *
      * @param name The header name
      * @return This object
      */
     public Headers remove(String name) {
-        for (Iterator<Pair<String, String>> it = headers.iterator(); it.hasNext();) {
-            Pair<String, String> header = it.next();
-
-            if (name.equalsIgnoreCase(header.getFirst())) {
-                it.remove();
-            }
-        }
+        headers.remove(name);
         return this;
     }
 
@@ -190,17 +251,22 @@ public class Headers implements Iterable<Pair<String, String>> {
         }
 
         @Override
-        public Headers add(Pair<String, String> header) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Headers add(String name, String value) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Headers addAll(Headers srcHeaders) {
+        public Headers add(String name, Collection<String> values) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Headers addAll(Headers src) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Headers addAll(Map<String, Collection<String>> src) {
             throw new UnsupportedOperationException();
         }
 
@@ -220,17 +286,35 @@ public class Headers implements Iterable<Pair<String, String>> {
         }
 
         @Override
+        public Set<String> getHeaderNames()
+        {
+            return headers.getHeaderNames();
+        }
+
+        @Override
         public List<String> getHeaderValues(String name) {
             return headers.getHeaderValues(name);
         }
 
         @Override
-        public Iterator<Pair<String, String>> iterator() {
+        public boolean isDefined(String name)
+        {
+            return headers.isDefined(name);
+        }
+
+        @Override
+        public Iterator<Map.Entry<String, List<String>>> iterator() {
             return headers.iterator();
         }
 
         @Override
         public Headers remove(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void replace(String header, String value)
+        {
             throw new UnsupportedOperationException();
         }
     }
