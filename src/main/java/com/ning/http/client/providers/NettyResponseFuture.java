@@ -140,15 +140,15 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     V getContent() {
-        if (content.get() == null) {
-            try {
-                content.set(asyncHandler.onCompleted());
-            } catch (Throwable ex) {
-                onThrowable(ex);
-                throw new RuntimeException(ex);
-            }
+        V update;
+        try {
+            update = asyncHandler.onCompleted();
+        } catch (Throwable ex) {
+            onThrowable(ex);
+            throw new RuntimeException(ex);
         }
-        return content.get();
+        content.compareAndSet(null, update);
+        return update;
     }
 
     public final void done() {
