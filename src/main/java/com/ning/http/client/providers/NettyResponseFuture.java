@@ -127,11 +127,12 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             }
             isDone.set(true);
 
-            if (exEx.get() != null){
-                throw exEx.getAndSet(null);
+            ExecutionException e = exEx.getAndSet(null);
+            if (e != null){
+                throw e;
             }
         }
-        return (V) getContent();
+        return getContent();
     }
 
     private void onThrowable(Throwable t) {
@@ -164,11 +165,9 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (isDone.get() || isCancelled.get()) return;
 
         if (reaperFuture != null) reaperFuture.cancel(true);
-        
-        if (exEx.get() == null){
-            exEx.set(new ExecutionException(t));
-        }
-        asyncHandler.onThrowable(t);        
+
+        exEx.compareAndSet(null, new ExecutionException(t));
+        asyncHandler.onThrowable(t);
         isDone.set(true);
         latch.countDown();
     }
