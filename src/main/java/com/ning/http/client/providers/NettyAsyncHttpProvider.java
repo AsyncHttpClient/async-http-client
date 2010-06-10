@@ -711,7 +711,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
 
         if (log.isDebugEnabled())
-            log.debug("I/O Exception during read or doConnect: ", e.getCause());
+            log.debug("I/O Exception during read or doConnect: ", cause);
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 

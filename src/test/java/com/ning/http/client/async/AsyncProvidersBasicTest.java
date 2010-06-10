@@ -47,9 +47,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
@@ -876,25 +881,19 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidPortFuture() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        ConnectException expected = null;
         try {
-            c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
+            Response response = c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
                 /* @Override */
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                 }
             }).get();
+            assertNull(response, "Should have thrown ExecutionException");
         } catch (ExecutionException ex) {
-            ex.printStackTrace();
-            if (ex.getCause() instanceof ConnectException) {
-                expected = (ConnectException) ex.getCause();
+            Throwable cause = ex.getCause();
+            if (!(cause instanceof ConnectException)) {
+                fail("Should have been caused by ConnectException, not by " + cause.getClass().getName());
             }
-        }
-
-        if (expected != null) {
-            assertEquals(expected.getClass(), ConnectException.class);
-        } else {
-            Assert.fail("Must have thrown an ExecutionException");
         }
     }
 
@@ -906,13 +905,13 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         int port = findFreePort();
 
         try {
-            c.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+            Response response = c.preparePost(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
                 /* @Override */
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                 }
             }).get();
-            Assert.assertTrue(false);
+            assertNull(response, "No ExecutionException was thrown");
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
@@ -963,21 +962,27 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncConnectInvalidFuturePort() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
+        final AtomicBoolean called = new AtomicBoolean(false);
+        final AtomicBoolean rightCause = new AtomicBoolean(false);
         // pick a random unused local port
         int port = findFreePort();
 
         try {
-            c.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
+            Response response = c.prepareGet(String.format("http://127.0.0.1:%d/", port)).execute(new AsyncCompletionHandlerAdapter() {
                 @Override
                 public void onThrowable(Throwable t) {
-                    assertEquals(t.getClass(), ConnectException.class);
+                    called.set(true);
+                    if (t instanceof ConnectException) {
+                        rightCause.set(true);
+                    }
                 }
             }).get();
-            Assert.fail("No ConnectionException was thrown");
+            assertNull(response, "No ExecutionException was thrown");
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
-
+        assertTrue(called.get(), "onThrowable should get called.");
+        assertTrue(rightCause.get(), "onThrowable should get called with ConnectionException");
     }
 
     @Test(groups = "async")
