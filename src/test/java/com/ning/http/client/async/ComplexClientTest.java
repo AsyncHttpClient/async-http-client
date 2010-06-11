@@ -105,4 +105,18 @@ public class ComplexClientTest extends AbstractBasicTest {
         assertNotNull(exception);
         assertEquals(exception.getMessage(), "Too many connections");
     }
+
+    @Test
+    public void urlWithoutSlashTest() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1))
+                .setBody(body)
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getResponseBody(),body);
+    }
 }
