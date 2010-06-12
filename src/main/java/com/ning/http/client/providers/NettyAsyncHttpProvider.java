@@ -31,7 +31,6 @@ import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
@@ -47,7 +46,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -152,10 +150,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 IdleStateHandler h = new IdleStateHandler(timer, 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) {
+                    // TODO: This will never get called
                     @SuppressWarnings("unused")
                     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws MalformedURLException {
                         e.getChannel().close();
-                        removeFromCache(ctx, e);
+                        removeFromCache(ctx);
                     }
                 };
                 pipeline.addLast("timeout", h);
@@ -188,16 +187,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final static class ConnectListener<T> implements ChannelFutureListener {
 
         private final AsyncHttpClientConfig config;
-        private final AsyncHandler<T> asyncHandler;
         private final NettyResponseFuture<T> future;
         private final HttpRequest nettyRequest;
 
         private ConnectListener(AsyncHttpClientConfig config,
-                                AsyncHandler<T> asyncHandler,
                                 NettyResponseFuture<T> future,
                                 HttpRequest nettyRequest) {
             this.config = config;
-            this.asyncHandler = asyncHandler;
             this.future = future;
             this.nettyRequest = nettyRequest;
         }
@@ -208,7 +204,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         public final void operationComplete(ChannelFuture f) throws Exception {
             try {
-                executeRequest(f.getChannel(), asyncHandler, config, future, nettyRequest);
+                executeRequest(f.getChannel(), config, future, nettyRequest);
             } catch (ConnectException ex){
                 future.abort(ex);
             }
@@ -246,13 +242,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     future = new NettyResponseFuture<T>(url, request, asyncHandler,
                             nettyRequest, config.getRequestTimeoutInMs());
                 }
-                return new ConnectListener<T>(config, asyncHandler, future, nettyRequest);
+                return new ConnectListener<T>(config, future, nettyRequest);
             }
         }
     }
 
     private final static <T> void executeRequest(final Channel channel,
-                                                 final AsyncHandler<T> asyncHandler,
                                                  final AsyncHttpClientConfig config,
                                                  final NettyResponseFuture<T> future,
                                                  final HttpRequest nettyRequest) throws ConnectException {
@@ -405,7 +400,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
                 } else if (request.getStreamData() != null) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStreamData().available()));
-                    byte[] b = new byte[(int) request.getStreamData().available()];
+                    byte[] b = new byte[request.getStreamData().available()];
                     request.getStreamData().read(b);
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
                 } else if (request.getParams() != null) {
@@ -436,7 +431,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer((int) lenght);
+                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                     mre.writeRequest(new ChannelBufferOutputStream(b));
                     nettyRequest.setContent(b);
                 } else if (request.getEntityWriter() != null) {
@@ -446,7 +441,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         lenght = MAX_BUFFERRED_BYTES;
                     }
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer((int) lenght);
+                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                     request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                     nettyRequest.setContent(b);
@@ -488,10 +483,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
         doConnect(request,f.getAsyncHandler(),f);
-        return;
     }
 
-    private <T> Future<T> doConnect(final Request request, final AsyncHandler asyncHandler, NettyResponseFuture<T> f) throws IOException{
+    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f) throws IOException{
         
         if (isClose.get()){
            throw new IOException("Closed"); 
@@ -512,13 +506,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 f = new NettyResponseFuture<T>(url, request, asyncHandler,
                 nettyRequest, config.getRequestTimeoutInMs());
             }
-            executeRequest(channel,asyncHandler,config,f,nettyRequest);
+            executeRequest(channel, config,f,nettyRequest);
             return f;
         }
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler,f).build();
         configure(url.getProtocol().compareTo(Protocol.HTTPS) == 0, c);
 
-        ChannelFuture channelFuture = null;
+        ChannelFuture channelFuture;
         try{
             if (config.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(url.getHost(), url.getPort()));
@@ -526,7 +520,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 channelFuture = bootstrap.connect(
                         new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
             }
-            bootstrap.setOption("connectTimeout", (int) config.getConnectionTimeoutInMs());
+            bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t){
             log.error(t);
             c.future().abort(t.getCause());
@@ -647,14 +641,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.getAsyncHandler().onThrowable(new IOException("No response received. Connection timed out"));
             }
         }
-        removeFromCache(ctx, e);
+        removeFromCache(ctx);
         ctx.sendUpstream(e);
     }
 
-    private void removeFromCache(ChannelHandlerContext ctx, ChannelEvent e) throws MalformedURLException {
+    private void removeFromCache(ChannelHandlerContext ctx) throws MalformedURLException {
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-            connectionsPool.remove(future.getUrl());
+            connectionsPool.remove(future.getUrl().getBaseUrl());
         }
     }
 
@@ -662,7 +656,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (future.getKeepAlive() && maxConnectionsPerHost++ < config.getMaxConnectionPerHost()) {
             connectionsPool.put(future.getUrl().getBaseUrl(), channel);
         } else {
-            connectionsPool.remove(future.getUrl());
+            connectionsPool.remove(future.getUrl().getBaseUrl());
         }
         future.done();
     }
@@ -683,17 +677,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     @SuppressWarnings("unchecked")
     private final boolean updateStatusAndInterrupt(AsyncHandler handler, HttpResponseStatus c) throws Exception {
-        return (handler.onStatusReceived(c) == STATE.CONTINUE ? false : true);
+        return handler.onStatusReceived(c) != STATE.CONTINUE;
     }
 
     @SuppressWarnings("unchecked")
     private final boolean updateHeadersAndInterrupt(AsyncHandler handler, HttpResponseHeaders c) throws Exception {
-        return (handler.onHeadersReceived(c) == STATE.CONTINUE ? false : true);
+        return handler.onHeadersReceived(c) != STATE.CONTINUE;
     }
 
     @SuppressWarnings("unchecked")
     private final boolean updateBodyAndInterrupt(AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
-        return (handler.onBodyPartReceived(c) == STATE.CONTINUE ? false : true);
+        return handler.onBodyPartReceived(c) != STATE.CONTINUE;
     }
 
     //Simple marker for stopping publishing bytes.
@@ -736,29 +730,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             r.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(lenght));
         }
         return lenght;
-    }
-
-    /**
-     * Map CommonsHttp Method to Netty Method.
-     *
-     * @param type
-     * @return
-     */
-    private final static HttpMethod map(RequestType type) {
-        switch (type) {
-            case GET:
-                return HttpMethod.GET;
-            case POST:
-                return HttpMethod.POST;
-            case DELETE:
-                return HttpMethod.DELETE;
-            case PUT:
-                return HttpMethod.PUT;
-            case HEAD:
-                return HttpMethod.HEAD;
-            default:
-                throw new IllegalStateException();
-        }
     }
 
     /**
