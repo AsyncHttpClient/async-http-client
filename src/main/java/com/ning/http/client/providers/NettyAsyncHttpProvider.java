@@ -31,6 +31,7 @@ import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
@@ -276,25 +277,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final static HttpRequest buildRequest(AsyncHttpClientConfig config,Request request, Url url) throws IOException{
-        HttpRequest nettyRequest = null;
-        switch (request.getType()) {
-            case GET:
-                nettyRequest = construct(config, request, HttpMethod.GET, url);
-                break;
-            case POST:
-                nettyRequest = construct(config, request, HttpMethod.POST, url);
-                break;
-            case DELETE:
-                nettyRequest = construct(config, request, HttpMethod.DELETE, url);
-                break;
-            case PUT:
-                nettyRequest = construct(config, request, HttpMethod.PUT, url);
-                break;
-            case HEAD:
-                nettyRequest = construct(config, request, HttpMethod.HEAD, url);
-                break;
-        }
-        return nettyRequest;
+        return construct(config, request, new HttpMethod(request.getType().toString()), url);
     }
 
     private final static Url createUrl(String u) {
@@ -386,66 +369,64 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
         }
 
-        switch (request.getType()) {
-            case POST:
-            case PUT:
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");                
-                if (request.getByteData() != null) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
-                } else if (request.getStringData() != null) {
-                    // TODO: Not sure we need to reconfigure that one.
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
-                } else if (request.getStreamData() != null) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStreamData().available()));
-                    byte[] b = new byte[request.getStreamData().available()];
-                    request.getStreamData().read(b);
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
-                } else if (request.getParams() != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (final Entry<String, String> param : request.getParams().entries()) {
-                        sb.append(param.getKey());
-                        sb.append("=");
-                        sb.append(param.getValue());
-                        sb.append("&");
-                    }
-                    sb.deleteCharAt(sb.length() - 1);
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes()));
-
-                    if (!request.getHeaders().isDefined(Headers.CONTENT_TYPE)) {
-                        nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
-                    }
-
-                } else if (request.getParts() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
-
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERRED_BYTES;
-                    }
-
-                    MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), request.getParams());
-
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
-
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
-                    mre.writeRequest(new ChannelBufferOutputStream(b));
-                    nettyRequest.setContent(b);
-                } else if (request.getEntityWriter() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
-                    
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERRED_BYTES;
-                    }
-
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
-                    request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
-                    nettyRequest.setContent(b);
+        RequestType type = request.getType();
+        if (RequestType.POST.equals(type) || RequestType.PUT.equals(type)) {
+            nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
+            if (request.getByteData() != null) {
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
+            } else if (request.getStringData() != null) {
+                // TODO: Not sure we need to reconfigure that one.
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
+            } else if (request.getStreamData() != null) {
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStreamData().available()));
+                byte[] b = new byte[request.getStreamData().available()];
+                request.getStreamData().read(b);
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
+            } else if (request.getParams() != null) {
+                StringBuilder sb = new StringBuilder();
+                for (final Entry<String, String> param : request.getParams().entries()) {
+                    sb.append(param.getKey());
+                    sb.append("=");
+                    sb.append(param.getValue());
+                    sb.append("&");
                 }
-                break;
+                sb.deleteCharAt(sb.length() - 1);
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes()));
+
+                if (!request.getHeaders().isDefined(Headers.CONTENT_TYPE)) {
+                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
+                }
+
+            } else if (request.getParts() != null) {
+                int lenght = computeAndSetContentLength(request, nettyRequest);
+
+                if (lenght == -1) {
+                    lenght = MAX_BUFFERRED_BYTES;
+                }
+
+                MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), request.getParams());
+
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
+
+                ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                mre.writeRequest(new ChannelBufferOutputStream(b));
+                nettyRequest.setContent(b);
+            } else if (request.getEntityWriter() != null) {
+                int lenght = computeAndSetContentLength(request, nettyRequest);
+
+                if (lenght == -1) {
+                    lenght = MAX_BUFFERRED_BYTES;
+                }
+
+                ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
+                nettyRequest.setContent(b);
+            }
         }
 
         if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
