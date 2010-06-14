@@ -278,6 +278,11 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     }
 
     @Override
+    public int hashCode() {
+        return headers == null ? 0 : headers.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         StringBuilder result = new StringBuilder();
