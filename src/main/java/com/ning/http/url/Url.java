@@ -147,9 +147,7 @@ public class Url implements Serializable {
     }
 
     public void setScheme(String s) {
-        if (Protocol.valueOf(s.toUpperCase()) == null) {
-            throw new IllegalArgumentException("Illegal scheme used [" + s + "]");
-        }
+        Protocol.valueOf(s.toUpperCase());
         this.scheme = s;
     }
 
