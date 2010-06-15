@@ -42,9 +42,7 @@ import java.util.concurrent.TimeoutException;
  * @author Hubert Iwaniuk
  */
 public class Head302Test extends AbstractBasicTest {
-    /**
-     * Handler that does Moved (302) in response to HEAD method.
-     */
+    /** Handler that does Found (302) in response to HEAD method. */
     private class Head302handler extends AbstractHandler {
         public void handle(String s,
                            HttpServletRequest request,
@@ -54,7 +52,7 @@ public class Head302Test extends AbstractBasicTest {
                 if (request.getPathInfo().endsWith("_moved")) {
                     response.setStatus(HttpServletResponse.SC_OK);
                 } else {
-                    response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY); // 302
+                    response.setStatus(HttpServletResponse.SC_FOUND); // 302
                     response.setHeader("Location", request.getPathInfo() + "_moved");
                 }
             } else { // this handler is to handle HEAD reqeust
@@ -63,7 +61,7 @@ public class Head302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(enabled = false)
+    @Test(groups = "standalone")
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClient client = new AsyncHttpClient();
         final CountDownLatch l = new CountDownLatch(1);
