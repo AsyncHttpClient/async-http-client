@@ -122,8 +122,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             if (!latch.await(l, tu)) {
                 isCancelled.set(true);
                 TimeoutException te = new TimeoutException("No response received");
-                onThrowable(te);
-                throw te;
+                try {
+                    asyncHandler.onThrowable(te);
+                } finally {
+                    throw te;
+                }
             }
             isDone.set(true);
 
@@ -135,30 +138,32 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return getContent();
     }
 
-    private void onThrowable(Throwable t) {
-        asyncHandler.onThrowable(t);
-    }
-
     V getContent() {
         V update;
         try {
             update = asyncHandler.onCompleted();
         } catch (Throwable ex) {
-            onThrowable(ex);
-            throw new RuntimeException(ex);
+            try {
+                asyncHandler.onThrowable(ex);
+            } finally {
+                throw new RuntimeException(ex);
+            }
         }
         content.compareAndSet(null, update);
         return update;
     }
 
     public final void done() {
-        if (exEx.get() != null){
-            return;
+        try {
+            if (exEx.get() != null){
+                return;
+            }
+            if (reaperFuture != null) reaperFuture.cancel(true);
+            isDone.set(true);
+            getContent();
+        } finally {
+            latch.countDown();
         }
-        if (reaperFuture != null) reaperFuture.cancel(true);
-        isDone.set(true);
-        getContent();
-        latch.countDown();
     }
 
     public final void abort(final Throwable t) {
@@ -167,9 +172,12 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (reaperFuture != null) reaperFuture.cancel(true);
 
         exEx.compareAndSet(null, new ExecutionException(t));
-        asyncHandler.onThrowable(t);
-        isDone.set(true);
-        latch.countDown();
+        try {
+            asyncHandler.onThrowable(t);
+        } finally {
+            isDone.set(true);
+            latch.countDown();
+        }
     }
 
     public final Request getRequest() {
