@@ -83,7 +83,7 @@ public class RC10KTest extends AbstractBasicTest {
         Server srv = new Server();
         Connector listener = new SelectChannelConnector();
         listener.setHost("127.0.0.1");
-        int port = dport++;
+        int port = findFreePort();
         listener.setPort(port);
         srv.addConnector(listener);
         srv.setHandler(configureHandler());
