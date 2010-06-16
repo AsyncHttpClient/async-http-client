@@ -89,7 +89,7 @@ public class Relative302Test extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test
+    @Test(groups = "online")
     public void redirected302Test() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
@@ -105,7 +105,7 @@ public class Relative302Test extends AbstractBasicTest {
         assertEquals(response.getUrl().getBaseUrl(), "http://www.microsoft.com");
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
@@ -124,7 +124,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
         

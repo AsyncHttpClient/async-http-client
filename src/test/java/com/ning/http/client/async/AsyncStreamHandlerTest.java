@@ -36,7 +36,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     private final static String RESPONSE = "param_1_";
     private final static String UTF8 = "text/html; charset=utf-8";
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamGETTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
@@ -70,7 +70,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
@@ -114,7 +114,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamInterruptTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
@@ -157,7 +157,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         Assert.assertTrue(a.get());
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamFutureTest() throws Throwable {
         Map<String, String> m = new HashMap<String, String>();
         m.put("param_1", "value_1");
@@ -198,7 +198,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         Assert.assertEquals(r.trim(), RESPONSE);
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamThrowableRefusedTest() throws Throwable {
 
         final CountDownLatch l = new CountDownLatch(1);
@@ -230,7 +230,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void asyncStreamReusePOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         Headers h = new Headers();
@@ -309,7 +309,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "online")
     public void asyncStream301WithBody() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient();
@@ -348,7 +348,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @Test(groups = "online")
     public void asyncStream301RedirectWithBody() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
@@ -386,7 +386,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @Test(timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
+    @Test(groups = "standalone", timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
     public void asyncStreamJustStatusLine() throws Throwable {
         final int STATUS = 0;
         final int COMPLETED = 1;
