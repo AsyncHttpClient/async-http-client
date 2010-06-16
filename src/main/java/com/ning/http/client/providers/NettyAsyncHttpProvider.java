@@ -110,7 +110,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final AtomicInteger activeConnectionsCount = new AtomicInteger();
 
-    private volatile int maxConnectionsPerHost;
+    private final ConcurrentHashMap<String, AtomicInteger> connectionsPerHost = new ConcurrentHashMap<String, AtomicInteger>();
+
     private final HashedWheelTimer timer = new HashedWheelTimer();
 
     private final AtomicBoolean isClose = new AtomicBoolean(false);
@@ -645,14 +646,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
-        if (future.getKeepAlive() && maxConnectionsPerHost++ < config.getMaxConnectionPerHost()) {
-            connectionsPool.put(future.getUrl().getBaseUrl(), channel);
+        if (future.getKeepAlive() ){
+            AtomicInteger connectionPerHost = connectionsPerHost.get(future.getUrl().getBaseUrl());
+            if (connectionPerHost == null) {
+                connectionPerHost = new AtomicInteger(1);
+                connectionsPerHost.put(future.getUrl().getBaseUrl(),connectionPerHost);
+            }
+            
+            if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
+                connectionsPool.put(future.getUrl().getBaseUrl(), channel);
+            } else {
+                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+            }
         } else {
             activeConnectionsCount.decrementAndGet();
         }
         future.done();
     }
-
+    
     private void finishUpdate(NettyResponseFuture<?> future, ChannelHandlerContext ctx) throws IOException {
         // Catch any unexpected exception when marking the channel.
         ctx.setAttachment(new DiscardEvent());        
