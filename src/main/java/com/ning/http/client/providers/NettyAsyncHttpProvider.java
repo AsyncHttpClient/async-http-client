@@ -253,7 +253,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                  final HttpRequest nettyRequest) throws ConnectException {
 
         if (!channel.isConnected()){
-            throw new ConnectException("Connection refused to " + channel.getRemoteAddress());
+            String url = channel.getRemoteAddress() != null ? channel.getRemoteAddress().toString() : null;
+            if (url == null) {
+                try {
+                    url = future.getUrl().toStringWithoutParams();
+                } catch (MalformedURLException e) {
+                    log.debug(e);
+                }
+            }
+            throw new ConnectException(String.format("Connection refused to %s", url));
         }
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
@@ -376,7 +384,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
             } else if (request.getStringData() != null) {
-                // TODO: Not sure we need to reconfigure that one.
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
             } else if (request.getStreamData() != null) {
