@@ -160,6 +160,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         for (Entry<String,Channel> e: connectionsPool.entrySet()) {
                             if (e.getValue().equals(ctx.getChannel())) {
                                 connectionsPool.remove(e.getKey());
+                                activeConnectionsCount.decrementAndGet();
                                 return;
                             }
                         }

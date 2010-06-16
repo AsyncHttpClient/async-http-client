@@ -58,7 +58,6 @@ public class RC10KTest extends AbstractBasicTest {
     private static final int SRV_COUNT = 10;
     protected List<Server> servers = new ArrayList<Server>(SRV_COUNT);
     private int[] ports;
-    private int dport = 8080;
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
