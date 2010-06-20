@@ -334,7 +334,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&
             ((request.type == RequestType.POST) || (request.type == RequestType.PUT))) {
-            String contentLength = request.headers.getHeaderValue("Content-Length");
+            // can't concatenate content-length
+            String contentLength = request.headers.getFirstHeaderValue("Content-Length");
 
             if (contentLength != null) {
                 try {

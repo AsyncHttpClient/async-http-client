@@ -125,12 +125,12 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public String getContentType() {
-        return headers.getHeaders().getHeaderValue("Content-Type");
+        return headers.getHeaders().getFirstHeaderValue("Content-Type");
     }
 
     /* @Override */
     public String getHeader(String name) {
-        return headers.getHeaders().getHeaderValue(name);
+        return headers.getHeaders().getFirstHeaderValue(name);
     }
 
     /* @Override */

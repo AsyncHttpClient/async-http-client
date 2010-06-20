@@ -78,7 +78,6 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     
             if (curValues == null) {
                 curValues = new ArrayList<String>();
-                // TODO: parse if mode is set accordingly
                 headers.put(usedName, curValues);
             }
             curValues.add(value);
@@ -110,7 +109,6 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     
             if (curValues == null) {
                 curValues = new ArrayList<String>();
-                // TODO: parse if mode is set accordingly
                 headers.put(usedName, curValues);
             }
             curValues.addAll(values);
@@ -193,6 +191,27 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public boolean isDefined(String name) {
         return headerNames.containsKey(name.toLowerCase());
+    }
+
+    /**
+     * Returns the (first) value of the header of the given name. If there are multiple values
+     * for that header, then the first one will be returned.
+     *
+     * @param name The header's name
+     * @return The (first) header value; {@code null} if this header is not defined
+     */
+    public String getFirstHeaderValue(String name) {
+        List<String> values = getHeaderValues(name);
+
+        if (values == null) {
+            return null;
+        }
+        else if (values.isEmpty()) {
+            return "";
+        }
+        else {
+            return values.get(0);
+        }
     }
 
     /**
