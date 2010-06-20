@@ -54,7 +54,7 @@ public class MultipleHeaderTest {
     private static final int PORT = 2929;
     private Future<Void> voidFuture;
 
-    @Test
+    @Test(groups = "standalone")
     public void testMultipleOtherHeaders()
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[]{null, null};
@@ -99,7 +99,7 @@ public class MultipleHeaderTest {
     }
 
 
-    @Test
+    @Test(groups = "standalone")
     public void testMultipleEntityHeaders()
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[]{null, null};

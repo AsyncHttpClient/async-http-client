@@ -39,17 +39,10 @@ public abstract class Part {
     protected static final String BOUNDARY = "----------------314159265358979323846";
 
     /**
-     * The boundary as a byte array.
-     *
-     * @deprecated
-     */
-    protected static final byte[] BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
-
-    /**
      * The default boundary to be used if etBoundaryBytes(byte[]) has not
      * been called.
      */
-    private static final byte[] DEFAULT_BOUNDARY_BYTES = BOUNDARY_BYTES;
+    private static final byte[] DEFAULT_BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
 
     /**
      * Carriage return/linefeed
@@ -59,7 +52,7 @@ public abstract class Part {
     /**
      * Carriage return/linefeed as a byte array
      */
-    protected static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
+    static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
 
     /**
      * Content dispostion characters
@@ -69,8 +62,7 @@ public abstract class Part {
     /**
      * Content dispostion as a byte array
      */
-    protected static final byte[] QUOTE_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(QUOTE);
+    static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
 
     /**
      * Extra characters
@@ -80,8 +72,7 @@ public abstract class Part {
     /**
      * Extra characters as a byte array
      */
-    protected static final byte[] EXTRA_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(EXTRA);
+    static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
 
     /**
      * Content dispostion characters
@@ -91,8 +82,7 @@ public abstract class Part {
     /**
      * Content dispostion as a byte array
      */
-    protected static final byte[] CONTENT_DISPOSITION_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+    static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
 
     /**
      * Content type header
@@ -102,8 +92,7 @@ public abstract class Part {
     /**
      * Content type header as a byte array
      */
-    protected static final byte[] CONTENT_TYPE_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
+    static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
 
     /**
      * Content charset
@@ -113,8 +102,7 @@ public abstract class Part {
     /**
      * Content charset as a byte array
      */
-    protected static final byte[] CHARSET_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(CHARSET);
+    static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
 
     /**
      * Content type header
@@ -124,7 +112,7 @@ public abstract class Part {
     /**
      * Content type header as a byte array
      */
-    protected static final byte[] CONTENT_TRANSFER_ENCODING_BYTES =
+    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES =
             MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
 
     /**
@@ -396,10 +384,10 @@ public abstract class Part {
         if (partBoundary == null || partBoundary.length == 0) {
             throw new IllegalArgumentException("partBoundary may not be empty");
         }
-        for (int i = 0; i < parts.length; i++) {
+        for (Part part : parts) {
             // set the part boundary before the part is sent
-            parts[i].setPartBoundary(partBoundary);
-            parts[i].send(out);
+            part.setPartBoundary(partBoundary);
+            part.send(out);
         }
         out.write(EXTRA_BYTES);
         out.write(partBoundary);
@@ -434,10 +422,10 @@ public abstract class Part {
             throw new IllegalArgumentException("Parts may not be null");
         }
         long total = 0;
-        for (int i = 0; i < parts.length; i++) {
+        for (Part part : parts) {
             // set the part boundary before we calculate the part's length
-            parts[i].setPartBoundary(partBoundary);
-            long l = parts[i].length();
+            part.setPartBoundary(partBoundary);
+            long l = part.length();
             if (l < 0) {
                 return -1;
             }

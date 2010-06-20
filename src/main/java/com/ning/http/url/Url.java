@@ -31,7 +31,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Url implements Cloneable, Serializable {
+public class Url implements Serializable {
     private static final long serialVersionUID = 2187287725357847401L;
 
     public enum Protocol {
@@ -102,7 +102,7 @@ public class Url implements Cloneable, Serializable {
             throws MalformedURLException {
         final Url result;
         if (!uri.matches("[\\p{Alpha}][\\p{Alnum}-.+_]+://.+")) { // relative url?
-            result = base.clone();
+            result = new Url(base.scheme, base.host, base.port, base.path, base.params);
             if (uri.startsWith("/")) { // relative to root?
                 result.setUri(uri);
             } else { // relative to current dir
@@ -147,9 +147,7 @@ public class Url implements Cloneable, Serializable {
     }
 
     public void setScheme(String s) {
-        if (Protocol.valueOf(s.toUpperCase()) == null) {
-            throw new IllegalArgumentException("Illegal scheme used [" + s + "]");
-        }
+        Protocol.valueOf(s.toUpperCase());
         this.scheme = s;
     }
 
@@ -407,11 +405,6 @@ public class Url implements Cloneable, Serializable {
         }
 
         return result;
-    }
-
-
-    public Url clone() {
-        return new Url(scheme, host, port, path, params);
     }
 
     public int hashCode() {

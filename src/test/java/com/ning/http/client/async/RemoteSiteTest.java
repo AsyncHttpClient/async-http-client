@@ -96,52 +96,51 @@ public class RemoteSiteTest {
         BasicConfigurator.resetConfiguration(); 
     }
 
-    @Test
+    @Test(groups = "online")
     public void testGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://www.google.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testMailGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://mail.google.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testPlanetromeoCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://planetromeo.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testMiniPlanetromeoCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://mini.planetromeo.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testWwwMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://www.microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test
-
+    @Test(groups = "online")
     public void testUpdateMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://update.microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test
+    @Test(groups = "online")
     public void testGoogleComWithTimeout() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://google.com/").execute(h);
@@ -152,7 +151,7 @@ public class RemoteSiteTest {
         }
     }
 
-    @Test
+    @Test(groups = "online")
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(
                 new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());

@@ -15,7 +15,6 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
@@ -24,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.security.SslSocketConnector;
-import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -57,7 +55,6 @@ import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 
 public class BasicHttpsTest {
 
-    protected final static int PORT = 19999;
     protected Server server;
     protected final static Logger log = Logger.getLogger(BasicHttpsTest.class);
 
@@ -80,7 +77,7 @@ public class BasicHttpsTest {
                 if (param.startsWith("LockThread")) {
                     try {
                         Thread.sleep(40 * 1000);
-                    } catch (InterruptedException ex) {
+                    } catch (InterruptedException ex) { // nothing to do here
                     }
                 }
 
@@ -124,6 +121,7 @@ public class BasicHttpsTest {
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
+                //noinspection ResultOfMethodCallIgnored
                 httpRequest.getInputStream().read(bytes);
                 httpResponse.getOutputStream().write(bytes);
             }
@@ -136,13 +134,13 @@ public class BasicHttpsTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws InterruptedException, Exception {
+    public void tearDownGlobal() throws Exception {
         BasicConfigurator.resetConfiguration();        
         server.stop();
     }
 
     @AfterMethod(alwaysRun = true)
-    public void tearDownProps() throws InterruptedException, Exception {
+    public void tearDownProps() throws Exception {
         System.clearProperty("javax.net.ssl.keyStore");
         System.clearProperty("javax.net.ssl.trustStore");
     }
@@ -165,22 +163,18 @@ public class BasicHttpsTest {
         // override system properties
         URL cacertsUrl = cl.getResource("ssltest-cacerts.jks");
         String trustStoreFile = new File(cacertsUrl.toURI()).getAbsolutePath();
-        if (cacertsUrl != null) {
-            connector.setTruststore(trustStoreFile);
-            connector.setTrustPassword("changeit");
-            connector.setTruststoreType("JKS");
-        }
+        connector.setTruststore(trustStoreFile);
+        connector.setTrustPassword("changeit");
+        connector.setTruststoreType("JKS");
 
         log.info("SSL certs path: " + trustStoreFile);
 
         // override system properties
         URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
         String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
-        if (keystoreUrl != null) {
-            connector.setKeystore(keyStoreFile);
-            connector.setKeyPassword("changeit");
-            connector.setKeystoreType("JKS");
-        }
+        connector.setKeystore(keyStoreFile);
+        connector.setKeyPassword("changeit");
+        connector.setKeystoreType("JKS");
 
         log.info("SSL keystore path: " + keyStoreFile);
 
@@ -191,22 +185,7 @@ public class BasicHttpsTest {
         log.info("Local HTTP server started successfully");
     }
 
-    public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
-
-        @Override
-        public Response onCompleted(Response response) throws Exception {
-            return response;
-        }
-
-        /* @Override */
-        public void onThrowable(Throwable t) {
-            t.printStackTrace();
-            Assert.fail("Unexpected exception", t);
-        }
-
-    }
-
-    @Test
+    @Test(groups = "online")
     public void multipleJavaDotDeadSSLTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -229,7 +208,7 @@ public class BasicHttpsTest {
 
     }
 
-        @Test
+    @Test(groups = "online")
     public void multipleJavaDotDeadWrongKeystoreTest() throws Throwable {
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -248,7 +227,7 @@ public class BasicHttpsTest {
         assertNull(response);
     }
 
-    @Test
+    @Test(groups = "online")
     public void multipleJavaDotDeadKeystoreTest() throws Throwable {
 
         ClassLoader cl = getClass().getClassLoader();
@@ -277,7 +256,7 @@ public class BasicHttpsTest {
         assertEquals(response.getStatusCode(), 200);
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void multipleRequestsTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -299,10 +278,10 @@ public class BasicHttpsTest {
 
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void multipleSSLRequestsTest() throws Throwable {
 
-        SSLContext sslContext = null;
+        SSLContext sslContext;
         try {
             InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
             char[] keyStorePassword = "changeit".toCharArray();
