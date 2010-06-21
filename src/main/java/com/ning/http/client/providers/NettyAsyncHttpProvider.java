@@ -412,7 +412,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes()));
 
-                if (!request.getHeaders().isDefined(Headers.CONTENT_TYPE)) {
+                if (!request.getHeaders().isDefined(HttpHeaders.Names.CONTENT_TYPE)) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
                 }
 

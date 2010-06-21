@@ -17,17 +17,17 @@
 package com.ning.http.client;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class Headers implements Iterable<Map.Entry<String, List<String>>> {
-    public static final String CONTENT_TYPE = "Content-Type";
-
     private final Map<String, List<String>> headers = new LinkedHashMap<String, List<String>>();
     private final Map<String, String> headerNames = new LinkedHashMap<String, String>();
 
@@ -57,32 +57,33 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     /**
      * Adds the specified header and returns this headers object.
      *
-     * @param name  The header name
-     * @param value The header value; if null then this method has no effect. Use the empty string to
-     *              generate an empty header value
+     * @param name   The header name
+     * @param values The header value; if null then this method has no effect. Use the empty string to
+     *               generate an empty header value
      * @return This object
      */
-    public Headers add(String name, String value) {
-        if (value != null) {
-            String       key       = name.toLowerCase();
-            String       usedName  = headerNames.get(key);
-            List<String> curValues = null;
-
-            if (usedName == null) {
-                usedName = name;
-                headerNames.put(key, name);
-            }
-            else {
-                curValues = headers.get(usedName);
-            }
-    
-            if (curValues == null) {
-                curValues = new ArrayList<String>();
-                headers.put(usedName, curValues);
-            }
-            curValues.add(value);
+    public Headers add(String name, String... values) {
+        if ((values != null) && (values.length > 0)) {
+            add(name, Arrays.asList(values));
         }
         return this;
+    }
+
+    private List<String> getNonNullValues(Collection<String> values) {
+        List<String> result = null;
+
+        if (values != null) {
+            for (String value : values) {
+                if (value != null) {
+                    if (result == null) {
+                        // lazy initialization
+                        result = new ArrayList<String>();
+                    }
+                    result.add(value);
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -94,7 +95,9 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return This object
      */
     public Headers add(String name, Collection<String> values) {
-        if (values != null) {
+        List<String> nonNullValues = getNonNullValues(values);
+
+        if (nonNullValues != null) {
             String       key       = name.toLowerCase();
             String       usedName  = headerNames.get(key);
             List<String> curValues = null;
@@ -111,7 +114,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
                 curValues = new ArrayList<String>();
                 headers.put(usedName, curValues);
             }
-            curValues.addAll(values);
+            curValues.addAll(nonNullValues);
         }
         return this;
     }
@@ -147,24 +150,73 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     }
 
     /**
-     * Convenience method to add a Content-type header
+     * Replaces the indicated header with the given values.
      *
-     * @param contentType content type to set
+     * @param name   The header name
+     * @param values The new header values
      * @return This object
      */
-    public Headers addContentTypeHeader(String contentType) {
-        return add(CONTENT_TYPE, contentType);
+    public Headers replace(final String name, final String... values) {
+        return replace(name, Arrays.asList(values));
     }
 
     /**
-     * Replaces the indicated header with the given value.
+     * Replaces the indicated header with the given values.
      *
-     * @param header The header name
-     * @param value  The new header value
+     * @param name  The header name
+     * @param value The new header value
+     * @return This object
      */
-    public void replace(final String header, final String value) {
-        remove(header);
-        add(header, value);
+    public Headers replace(final String name, final Collection<String> values) {
+        List<String> nonNullValues = getNonNullValues(values);
+        String       key           = name.toLowerCase();
+        String       usedName      = headerNames.get(key);
+
+        if (nonNullValues == null) {
+            headerNames.remove(key);
+            if (usedName != null) {
+                headers.remove(usedName);
+            }
+        }
+        else {
+            if (!name.equals(usedName)) {
+                headerNames.put(key, name);
+                headers.remove(usedName);
+            }
+            headers.put(name, nonNullValues);
+        }
+
+        return this;
+    }
+
+    /**
+     * Replaces all headers present the given headers object in this object and returns this headers object.
+     *
+     * @param src The source headers object
+     * @return This object
+     */
+    public Headers replaceAll(Headers src) {
+        if (src != null) {
+            for (Map.Entry<String, List<String>> header : src) {
+                replace(header.getKey(), header.getValue());
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Replaces all headers from the given map in this object and returns this headers object.
+     *
+     * @param src The source map of headers
+     * @return This object
+     */
+    public Headers replaceAll(Map<String, Collection<String>> src) {
+        if (src != null) {
+            for (Map.Entry<String, Collection<String>> header : src.entrySet()) {
+                replace(header.getKey(), header.getValue());
+            }
+        }
+        return this;
     }
 
     /**
@@ -180,7 +232,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @return The header names
      */
     public Set<String> getHeaderNames() {
-        return Collections.unmodifiableSet(headers.keySet());
+        return new LinkedHashSet<String>(headerNames.values());
     }
 
     /**
@@ -195,7 +247,9 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
 
     /**
      * Returns the (first) value of the header of the given name. If there are multiple values
-     * for that header, then the first one will be returned.
+     * for that header, then the first one will be returned. This method is more appropriate for
+     * certain headers like Content-Type or Content-Length where multiple values can break
+     * servers/clients.
      *
      * @param name The header's name
      * @return The (first) header value; {@code null} if this header is not defined
@@ -264,7 +318,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
     }
 
     /**
-     * Removes the specified header(s) if present and returns this headers object.
+     * Removes the specified header if present and returns this headers object.
      *
      * @param name The header name
      * @return This object
@@ -275,6 +329,36 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
 
         if (usedName != null) {
             headers.remove(usedName);
+        }
+        return this;
+    }
+
+    /**
+     * Removed all specified headers in this object and returns this headers object.
+     *
+     * @param names The header names
+     * @return This object
+     */
+    public Headers removeAll(String... names) {
+        if (names != null) {
+            for (String name : names) {
+                remove(name);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removed all specified headers in this object and returns this headers object.
+     *
+     * @param names The header names
+     * @return This object
+     */
+    public Headers removeAll(Collection<String> names) {
+        if (names != null) {
+            for (String name : names) {
+                remove(name);
+            }
         }
         return this;
     }
@@ -338,7 +422,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         }
 
         @Override
-        public Headers add(String name, String value) {
+        public Headers add(String name, String... values) {
             throw new UnsupportedOperationException();
         }
 
@@ -354,11 +438,6 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
 
         @Override
         public Headers addAll(Map<String, Collection<String>> src) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers addContentTypeHeader(String contentType) {
             throw new UnsupportedOperationException();
         }
 
@@ -405,7 +484,13 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         }
 
         @Override
-        public void replace(String header, String value)
+        public Headers replace(String header, String... values)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Headers replace(String header, Collection<String> values)
         {
             throw new UnsupportedOperationException();
         }
