@@ -33,16 +33,16 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
 
     private final static Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
-    private final Collection<HttpResponseBodyPart<T>> bodies =
-            Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart<T>>());
-    private HttpResponseStatus<T> status;
-    private HttpResponseHeaders<T> headers;
+    private final Collection<HttpResponseBodyPart> bodies =
+            Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
+    private HttpResponseStatus status;
+    private HttpResponseHeaders headers;
 
     /**
      * {@inheritDoc}
      */
     /* @Override */
-    public STATE onBodyPartReceived(final HttpResponseBodyPart<T> content) throws Exception {
+    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         bodies.add(content);
         return STATE.CONTINUE;
     }
@@ -51,7 +51,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     /* @Override */
-    public final STATE onStatusReceived(final HttpResponseStatus<T> status) throws Exception {
+    public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         this.status = status;
         return STATE.CONTINUE;
     }
@@ -60,7 +60,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     /* @Override */
-    public final STATE onHeadersReceived(final HttpResponseHeaders<T> headers) throws Exception {
+    public final STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         this.headers = headers;
         return STATE.CONTINUE;
     }

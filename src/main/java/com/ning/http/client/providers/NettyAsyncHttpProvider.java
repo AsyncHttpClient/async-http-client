@@ -466,9 +466,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     /* @Override */
-    public Response prepareResponse(final HttpResponseStatus<HttpResponse> status,
-                                    final HttpResponseHeaders<HttpResponse> headers,
-                                    final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {
+    public Response prepareResponse(final HttpResponseStatus status,
+                                    final HttpResponseHeaders headers,
+                                    final Collection<HttpResponseBodyPart> bodyParts) {
         return new NettyAsyncResponse(status,headers,bodyParts);
     }
     

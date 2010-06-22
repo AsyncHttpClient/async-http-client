@@ -136,18 +136,18 @@ public class RC10KTest extends AbstractBasicTest {
             log.warn("onThrowable called.", t);
         }
 
-        public STATE onBodyPartReceived(HttpResponseBodyPart<Integer> event) throws Exception {
+        public STATE onBodyPartReceived(HttpResponseBodyPart event) throws Exception {
             String s = new String(event.getBodyPartBytes());
             result.compareAndSet(-1, new Integer(s.trim().equals("") ? "-1" : s));
             return STATE.CONTINUE;
         }
 
-        public STATE onStatusReceived(HttpResponseStatus<Integer> event) throws Exception {
+        public STATE onStatusReceived(HttpResponseStatus event) throws Exception {
             assertEquals(event.getStatusCode(), 200);
             return STATE.CONTINUE;
         }
 
-        public STATE onHeadersReceived(HttpResponseHeaders<Integer> event) throws Exception {
+        public STATE onHeadersReceived(HttpResponseHeaders event) throws Exception {
             assertEquals(event.getHeaders().getHeaderValue(ARG_HEADER), arg);
             return STATE.CONTINUE;
         }

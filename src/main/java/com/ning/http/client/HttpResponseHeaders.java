@@ -20,17 +20,17 @@ import com.ning.http.url.Url;
 /**
  * A class that represent the HTTP headers.
  */
-public abstract class HttpResponseHeaders<R> extends HttpContent<R> {
+public abstract class HttpResponseHeaders extends HttpContent {
 
     private final boolean traillingHeaders;
 
-    public HttpResponseHeaders(Url url, R response, AsyncHttpProvider<R> provider) {
-        super(url, response, provider);
+    public HttpResponseHeaders(Url url, AsyncHttpProvider<?> provider) {
+        super(url, provider);
         this.traillingHeaders = false;
     }
 
-    public HttpResponseHeaders(Url url, R response, AsyncHttpProvider<R> provider, boolean traillingHeaders) {
-        super(url, response, provider);
+    public HttpResponseHeaders(Url url, AsyncHttpProvider<?> provider, boolean traillingHeaders) {
+        super(url, provider);
         this.traillingHeaders = traillingHeaders;
 
     }

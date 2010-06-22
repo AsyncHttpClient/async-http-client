@@ -24,18 +24,21 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class ResponseBodyPart extends HttpResponseBodyPart<HttpResponse> {
+public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpChunk chunk;
+    private final HttpResponse response;
 
     public ResponseBodyPart(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse> provider) {
-        super(url, response, provider);
+        super(url, provider);
         this.chunk = null;
+        this.response = response;
     }
 
-    public ResponseBodyPart(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunk chunk) {
-        super(url, response, provider);
+    public  ResponseBodyPart(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunk chunk) {
+        super(url, provider);
         this.chunk = chunk;
+        this.response = response;        
     }
 
     /**

@@ -164,7 +164,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * Replaces the indicated header with the given values.
      *
      * @param name  The header name
-     * @param value The new header value
+     * @param values The new header value
      * @return This object
      */
     public Headers replace(final String name, final Collection<String> values) {

@@ -20,10 +20,10 @@ import com.ning.http.url.Url;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public abstract class HttpResponseBodyPart<R> extends HttpContent<R> {
+public abstract class HttpResponseBodyPart extends HttpContent {
 
-    public HttpResponseBodyPart(Url url, R response, AsyncHttpProvider<R> provider) {
-        super(url, response, provider);
+    public HttpResponseBodyPart(Url url, AsyncHttpProvider<?> provider) {
+        super(url, provider);
     }
 
     /**

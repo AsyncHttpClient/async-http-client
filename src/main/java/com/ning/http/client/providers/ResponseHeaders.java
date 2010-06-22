@@ -25,19 +25,23 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * A class that represent the HTTP headers.
  */
-public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
+public class ResponseHeaders extends HttpResponseHeaders {
 
     private final HttpChunkTrailer trailingHeaders;
+    private final HttpResponse response;
 
     public ResponseHeaders(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider) {
-        super(url, response, provider, false);
+        super(url, provider, false);
         this.trailingHeaders = null;
+        this.response = response;
 
     }
 
     public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunkTrailer traillingHeaders) {
-        super(url, response, provider, true);
+        super(url, provider, true);
         this.trailingHeaders = traillingHeaders;
+        this.response = response;
+
     }
 
     /**

@@ -47,8 +47,8 @@ public interface AsyncHttpProvider<A> {
      * @param bodyParts  list of {@link HttpResponseBodyPart}
      * @return a {@link Response}
      */
-    public Response prepareResponse(HttpResponseStatus<A> status,
-                                    HttpResponseHeaders<A> headers,
-                                    Collection<HttpResponseBodyPart<A>> bodyParts);
+    public Response prepareResponse(HttpResponseStatus status,
+                                    HttpResponseHeaders headers,
+                                    Collection<HttpResponseBodyPart> bodyParts);
 
 }

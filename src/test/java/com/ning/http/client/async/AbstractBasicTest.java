@@ -208,17 +208,17 @@ public class AbstractBasicTest {
         }
 
         /* @Override */
-        public STATE onBodyPartReceived(final HttpResponseBodyPart<String> content) throws Exception {
+        public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             return STATE.CONTINUE;
         }
 
         /* @Override */
-        public STATE onStatusReceived(final HttpResponseStatus<String> responseStatus) throws Exception {
+        public STATE onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
             return STATE.CONTINUE;
         }
 
         /* @Override */
-        public STATE onHeadersReceived(final HttpResponseHeaders<String> headers) throws Exception {
+        public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
             return STATE.CONTINUE;
         }
 

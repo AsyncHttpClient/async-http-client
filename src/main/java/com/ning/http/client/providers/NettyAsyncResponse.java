@@ -41,14 +41,14 @@ import java.util.Map;
  */
 public class NettyAsyncResponse implements Response {
     private final Url url;
-    private final Collection<HttpResponseBodyPart<HttpResponse>> bodyParts;
-    private final HttpResponseHeaders<HttpResponse> headers;
-    private final HttpResponseStatus<HttpResponse> status;
+    private final Collection<HttpResponseBodyPart> bodyParts;
+    private final HttpResponseHeaders headers;
+    private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
 
-    public NettyAsyncResponse(HttpResponseStatus<HttpResponse> status,
-                              HttpResponseHeaders<HttpResponse> headers,
-                              Collection<HttpResponseBodyPart<HttpResponse>> bodyParts) {
+    public NettyAsyncResponse(HttpResponseStatus status,
+                              HttpResponseHeaders headers,
+                              Collection<HttpResponseBodyPart> bodyParts) {
 
         this.status = status;
         this.headers = headers;
@@ -82,7 +82,7 @@ public class NettyAsyncResponse implements Response {
 
     String contentToString(String charset) throws UnsupportedEncodingException {
         StringBuilder b = new StringBuilder();
-        for (HttpResponseBodyPart<?> bp : bodyParts) {
+        for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
         }
         return b.toString();
@@ -91,7 +91,7 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
-        for (HttpResponseBodyPart<?> bp : bodyParts) {
+        for (HttpResponseBodyPart bp : bodyParts) {
             // Ugly. TODO
             // (1) We must remove the downcast,
             // (2) we need a CompositeByteArrayInputStream to avoid
