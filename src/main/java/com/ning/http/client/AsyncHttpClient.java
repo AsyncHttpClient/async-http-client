@@ -77,22 +77,23 @@ import com.ning.http.client.Request.EntityWriter;
  *          private StringBuilder builder = new StringBuilder();
  *
  *          &#64;Override
- *          public void onStatusReceived(HttpResponseStatus s) throws Exception &#123;
- *               // The Status have been read
- *               // If you don't want to read the headers,body, or stop processing the response
- *               throw new ResponseComplete();
+ *          public STATE onStatusReceived(HttpResponseStatus s) throws Exception &#123;
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
  *          }
  *
  *          &#64;Override
- *          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
- *               // The headers have been read
- *               // If you don't want to read the body, or stop processing the response
- *               throw new ResponseComplete();
+ *          public STATE onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
+ *
  *          }
  *          &#64;Override
  *
- *          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
+ *          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
  *          &#125;
  *
  *          &#64;Override
