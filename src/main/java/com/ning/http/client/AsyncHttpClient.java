@@ -110,7 +110,7 @@ import com.ning.http.client.Request.EntityWriter;
  *
  *      String bodyResponse = f.get();
  * }
- * From any {@link HttpContent} sub classses, you can asynchronously process the response status,headers and body and decide when to
+ * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
  *
  * This class can also be used without the need of {@link AsyncHandler}</p>
