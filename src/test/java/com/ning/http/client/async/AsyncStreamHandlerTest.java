@@ -452,5 +452,37 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         }
     }
 
+    @Test(groups = "online")
+    public void asyncOptionsTest() throws Throwable {
+        final CountDownLatch l = new CountDownLatch(1);
+        AsyncHttpClient c = new AsyncHttpClient();
+        c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
+            @Override
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                Headers h = content.getHeaders();
+                Assert.assertNotNull(h);
+                Assert.assertEquals(h.getHeaderValue("Allow"), "GET,HEAD,POST,OPTIONS,TRACE");
+                return STATE.ABORT;
+            }
+
+            @Override
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                return STATE.CONTINUE;
+            }
+
+            @Override
+            public String onCompleted() throws Exception {
+                try {
+                    return "OK";
+                } finally {
+                    l.countDown();
+                }
+            }
+        });
+
+        if (!l.await(20, TimeUnit.SECONDS)) {
+            Assert.fail("Timeout out");
+        }
+    }
 }

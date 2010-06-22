@@ -329,6 +329,16 @@ public class AsyncHttpClient {
     public BoundRequestBuilder prepareGet(String url) {
         return new BoundRequestBuilder(RequestType.GET).setUrl(url);
     }
+
+    /**
+     * Prepare an HTTP client OPTIONS request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
+    public BoundRequestBuilder prepareOptions(String url) {
+        return new BoundRequestBuilder(RequestType.OPTIONS).setUrl(url);
+    }
+
     /**
      * Prepare an HTTP client HEAD request.
      * @param url A well formed URL.
