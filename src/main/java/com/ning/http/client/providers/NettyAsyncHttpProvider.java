@@ -573,7 +573,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 log.trace(ex);
                             }
                         }
-                        execute(builder.setUrl(url.toString()).build(),future);
+
+                        String newUrl = url.toString();
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Redirecting to %s", newUrl));
+                        }
+
+                        execute(builder.setUrl(newUrl).build(),future);
                         return;
                     } else {
                         throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
