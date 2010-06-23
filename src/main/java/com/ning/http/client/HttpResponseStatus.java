@@ -21,10 +21,10 @@ import com.ning.http.url.Url;
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
-public abstract class HttpResponseStatus<R> extends HttpContent<R> {
+public abstract class HttpResponseStatus extends HttpContent {
 
-    public HttpResponseStatus(Url url, R response, AsyncHttpProvider<R> provider) {
-        super(url, response, provider);
+    public HttpResponseStatus(Url url, AsyncHttpProvider<?> provider) {
+        super(url, provider);
     }
 
     /**

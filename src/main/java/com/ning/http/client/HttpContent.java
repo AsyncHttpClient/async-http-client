@@ -20,18 +20,16 @@ import com.ning.http.url.Url;
 /**
  * Base class for callback class used by {@link com.ning.http.client.AsyncHandler}
  */
-public class HttpContent<R> {
-    protected final R response;
-    protected final AsyncHttpProvider<R> provider;
+public class HttpContent {
+    protected final AsyncHttpProvider<?> provider;
     protected final Url url;
 
-    protected HttpContent(Url url, R response, AsyncHttpProvider<R> provider) {
-        this.response = response;
+    protected HttpContent(Url url, AsyncHttpProvider<?> provider) {
         this.provider = provider;
         this.url= url;
     }
 
-    protected final AsyncHttpProvider<R> provider() {
+    protected final AsyncHttpProvider<?> provider() {
         return provider;
     }
 

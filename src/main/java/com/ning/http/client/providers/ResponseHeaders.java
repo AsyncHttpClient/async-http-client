@@ -25,26 +25,27 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 /**
  * A class that represent the HTTP headers.
  */
-public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
+public class ResponseHeaders extends HttpResponseHeaders {
 
     private final HttpChunkTrailer trailingHeaders;
+    private final HttpResponse response;
+    private final Headers headers;
 
     public ResponseHeaders(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider) {
-        super(url, response, provider, false);
+        super(url, provider, false);
         this.trailingHeaders = null;
-
+        this.response = response;
+        headers = computerHeaders();
     }
 
     public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunkTrailer traillingHeaders) {
-        super(url, response, provider, true);
+        super(url, provider, true);
         this.trailingHeaders = traillingHeaders;
+        this.response = response;
+        headers = computerHeaders();
     }
 
-    /**
-     * Return the HTTP header
-     * @return an {@link com.ning.http.client.Headers}
-     */
-    public Headers getHeaders() {
+    private Headers computerHeaders() {
         Headers h = new Headers();
         for (String s : response.getHeaderNames()) {
             for (String header : response.getHeaders(s)) {
@@ -63,4 +64,12 @@ public class ResponseHeaders extends HttpResponseHeaders<HttpResponse> {
         return Headers.unmodifiableHeaders(h);
     }
 
+    /**
+     * Return the HTTP header
+     * @return an {@link com.ning.http.client.Headers}
+     */
+    @Override
+    public Headers getHeaders() {
+        return headers;
+    }
 }

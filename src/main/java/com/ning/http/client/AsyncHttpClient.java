@@ -78,22 +78,23 @@ import com.ning.http.client.Request.EntityWriter;
  *          private StringBuilder builder = new StringBuilder();
  *
  *          &#64;Override
- *          public void onStatusReceived(HttpResponseStatus s) throws Exception &#123;
- *               // The Status have been read
- *               // If you don't want to read the headers,body, or stop processing the response
- *               throw new ResponseComplete();
+ *          public STATE onStatusReceived(HttpResponseStatus s) throws Exception &#123;
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
  *          }
  *
  *          &#64;Override
- *          public void onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
- *               // The headers have been read
- *               // If you don't want to read the body, or stop processing the response
- *               throw new ResponseComplete();
+ *          public STATE onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
+ *
  *          }
  *          &#64;Override
  *
- *          public void onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
+ *          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
+ *               // return STATE.CONTINUE or STATE.ABORT
+ *               return STATE.CONTINUE
  *          &#125;
  *
  *          &#64;Override
@@ -110,7 +111,7 @@ import com.ning.http.client.Request.EntityWriter;
  *
  *      String bodyResponse = f.get();
  * }
- * From any {@link HttpContent} sub classses, you can asynchronously process the response status,headers and body and decide when to
+ * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
  *
  * This class can also be used without the need of {@link AsyncHandler}</p>
@@ -334,6 +335,16 @@ public class AsyncHttpClient {
     public BoundRequestBuilder prepareGet(String url) {
         return new BoundRequestBuilder(RequestType.GET).setUrl(url);
     }
+
+    /**
+     * Prepare an HTTP client OPTIONS request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
+    public BoundRequestBuilder prepareOptions(String url) {
+        return new BoundRequestBuilder(RequestType.OPTIONS).setUrl(url);
+    }
+
     /**
      * Prepare an HTTP client HEAD request.
      * @param url A well formed URL.

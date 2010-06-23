@@ -44,21 +44,21 @@ public interface AsyncHandler<T> {
      * @param bodyPart response's body part.
      * @throws Exception
      */
-    STATE onBodyPartReceived(HttpResponseBodyPart<T> bodyPart) throws Exception;
+    STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
     /**
      * Invoked as soon as the HTTP status line has been received
      * @param responseStatus the status code and test of the response
      * @throws Exception
      */
-    STATE onStatusReceived(HttpResponseStatus<T> responseStatus) throws Exception;
+    STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
      * Invoked as soon as the HTTP headers has been received.
      * @param headers the HTTP headers.
      * @throws Exception
      */
-    STATE onHeadersReceived(HttpResponseHeaders<T> headers) throws Exception;
+    STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
      * Invoked once the HTTP response has been fully received
