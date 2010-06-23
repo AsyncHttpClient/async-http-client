@@ -5,15 +5,23 @@ DESCRIPTION
 -----------
 Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses. The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add this dependency:
 
-    <dependency>
-        <groupId>com.ning</groupId>
-        <artifactId>async-http-client</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-    </dependency>
+        <repository>
+            <id>Sonatype</id>
+            <name>Sonatype Release</name>
+            <url>>http://oss.sonatype.org/content/repositories/releases</url>
+        </repository>
 
-For now, you'll have to add the Sonatype snapshot repo to your settings in order to be able to access the snapshot builds:
+and then define the dependency as:
 
-    http://oss.sonatype.org/service/local/repositories/snapshots/content
+         <dependency>
+             <groupId>com.ning</groupId>
+             <artifactId>async-http-client</artifactId>
+             <version>1.0.0</version>
+         </dependency>
+
+You can also download the artifact
+
+    http://oss.sonatype.org/content/repositories/releases
 
 Then in your code you can simply do:
 

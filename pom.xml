@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>2</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>async-http-client</name>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <description />
+    <description>
+        Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
+        asynchronously process the HTTP responses.
+    </description>
+    <url>http://github.com/ning/async-http-client</url>
     <scm>
         <connection>scm:git:git@github.com:ning/async-http-client.git</connection>
         <url>scm:git:git@github.com:ning/async-http-client.git</url>
@@ -15,6 +25,33 @@
     <prerequisites>
         <maven>2.0.9</maven>
     </prerequisites>
+    <developers>
+        <developer>
+            <id>brianm</id>
+            <name>Brian McCallister</name>
+            <email>brianm@skife.org</email>
+        </developer>
+        <developer>
+            <id>jfarcand</id>
+            <name>Jeanfrancois Arcand</name>
+            <email>jfarcand@apache.org</email>
+        </developer>
+        <developer>
+            <id>thomd</id>
+            <name>Thomas Dudziak</name>
+        </developer>
+        <developer>
+            <id>neotyk</id>
+            <name>Hubert Iwaniuk</name>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <dependencies>
         <dependency>
             <groupId>org.jboss.netty</groupId>
@@ -86,7 +123,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin> 
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -181,8 +218,10 @@
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
                             </transformers>
                             <artifactSet>
                                 <includes>
@@ -228,34 +267,34 @@
                 </plugins>
             </build>
         </profile>
-      <profile>
-        <id>offline-testing</id>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <configuration>
-                <groups>standalone</groups>
-              </configuration>
-            </plugin>
-          </plugins>
-        </build>
-      </profile>
-      <profile>
-        <id>online-testing</id>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <configuration>
-                <groups>standalone, online</groups>
-              </configuration>
-            </plugin>
-          </plugins>
-        </build>
-      </profile>
+        <profile>
+            <id>offline-testing</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>standalone</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>online-testing</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>standalone, online</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
     <distributionManagement>
         <repository>
