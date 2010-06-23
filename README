@@ -8,7 +8,7 @@ Async Http Client library purpose is to allow Java applications to easily execut
         <repository>
             <id>Sonatype</id>
             <name>Sonatype Release</name>
-            <url>>http://oss.sonatype.org/content/repositories/releases</url>
+            <url>http://oss.sonatype.org/content/repositories/releases</url>
         </repository>
 
 and then define the dependency as:
