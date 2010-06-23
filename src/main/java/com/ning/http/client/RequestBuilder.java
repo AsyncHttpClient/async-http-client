@@ -16,6 +16,7 @@
 package com.ning.http.client;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Map;
 
 import com.google.common.collect.Multimap;
@@ -99,6 +100,11 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 
     @Override
     public RequestBuilder setHeaders(Headers headers) {
+        return super.setHeaders(headers);
+    }
+
+    @Override
+    public RequestBuilder setHeaders(Map<String, Collection<String>> headers) {
         return super.setHeaders(headers);
     }
 

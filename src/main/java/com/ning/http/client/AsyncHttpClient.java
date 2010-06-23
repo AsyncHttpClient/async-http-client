@@ -18,6 +18,7 @@ package com.ning.http.client;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -267,6 +268,11 @@ public class AsyncHttpClient {
 
         @Override
         public BoundRequestBuilder setHeaders(Headers headers) {
+            return super.setHeaders(headers);
+        }
+
+        @Override
+        public BoundRequestBuilder setHeaders(Map<String, Collection<String>> headers) {
             return super.setHeaders(headers);
         }
 

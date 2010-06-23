@@ -207,6 +207,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setHeaders(Map<String, Collection<String>> headers) {
+        request.headers = (headers == null ? new Headers() : new Headers(headers));
+        return derived.cast(this);
+    }
+
     public T addCookie(Cookie cookie) {
         request.cookies.add(cookie);
         return derived.cast(this);
