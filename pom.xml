@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.2.0.Final</version>
+            <version>3.2.1.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
@@ -87,8 +87,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <!-- 
+            </plugin> 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -111,7 +110,6 @@
                     </execution>
                 </executions>
             </plugin>
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
