@@ -21,15 +21,14 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.url.Url;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +39,7 @@ import java.util.Map;
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
 public class NettyAsyncResponse implements Response {
-    private final Url url;
+    private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
@@ -53,7 +52,7 @@ public class NettyAsyncResponse implements Response {
         this.status = status;
         this.headers = headers;
         this.bodyParts = bodyParts;
-        url = status.getUrl();
+        uri = status.getUrl();
     }
 
     /* @Override */
@@ -119,8 +118,8 @@ public class NettyAsyncResponse implements Response {
     }
 
     /* @Override */
-    public Url getUrl() throws MalformedURLException {
-        return url;
+    public URI getUri() throws MalformedURLException {
+        return uri;
     }
 
     /* @Override */

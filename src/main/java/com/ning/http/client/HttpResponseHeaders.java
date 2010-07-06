@@ -15,7 +15,7 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.url.Url;
+import java.net.URI;
 
 /**
  * A class that represent the HTTP headers.
@@ -24,13 +24,13 @@ public abstract class HttpResponseHeaders extends HttpContent {
 
     private final boolean traillingHeaders;
 
-    public HttpResponseHeaders(Url url, AsyncHttpProvider<?> provider) {
-        super(url, provider);
+    public HttpResponseHeaders(URI uri, AsyncHttpProvider<?> provider) {
+        super(uri, provider);
         this.traillingHeaders = false;
     }
 
-    public HttpResponseHeaders(Url url, AsyncHttpProvider<?> provider, boolean traillingHeaders) {
-        super(url, provider);
+    public HttpResponseHeaders(URI uri, AsyncHttpProvider<?> provider, boolean traillingHeaders) {
+        super(uri, provider);
         this.traillingHeaders = traillingHeaders;
 
     }

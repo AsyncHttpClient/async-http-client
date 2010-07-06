@@ -17,7 +17,6 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
@@ -30,12 +29,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 
 public class IdleStateHandlerTest extends AbstractBasicTest {
