@@ -19,15 +19,14 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.url.Url;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Builder for {@link Request}
@@ -38,7 +37,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private RequestType type;
-        private String url;
+        private String url = null;
         private Headers headers = new Headers();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
@@ -64,8 +63,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
-                this.params = (prototype.getParams() == null ? null :  LinkedListMultimap.create(prototype.getParams()));
-                this.queryParams = (prototype.getQueryParams() == null ? null :  LinkedListMultimap.create(prototype.getQueryParams()));
+                this.params = (prototype.getParams() == null ? null : LinkedListMultimap.create(prototype.getParams()));
+                this.queryParams = (prototype.getQueryParams() == null ? null : LinkedListMultimap.create(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
@@ -73,27 +72,54 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
+
         public RequestType getType() {
             return type;
         }
 
         /* @Override */
+
         public String getUrl() {
+
+            if (url == null) throw new NullPointerException("url is null");
+
+            String uri = null;
             try {
-                Url url = Url.valueOf(this.url);
+                uri = URI.create(url).toURL().toString();
+            } catch (MalformedURLException e) {
+                throw new IllegalStateException("Illegal URL", e);
+            }
 
-                if (queryParams != null) {
+            if (queryParams != null) {
+                String result = null;
 
-                    for (Map.Entry<String, String> entry : queryParams.entries()) {
-                        url.addParameter(entry.getKey(), entry.getValue());
+                if (!params.isEmpty()) {
+                    StringBuilder builder = new StringBuilder();
+
+                    for (Iterator<Entry<String, Collection<String>>> i = queryParams.asMap().entrySet()
+                            .iterator(); i.hasNext();) {
+                        Map.Entry<String, Collection<String>> param = i.next();
+                        String name = param.getKey();
+                        for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
+                            String value = j.next();
+                            builder.append(name);
+                            if (value != null) {
+                                builder.append('=');
+                                builder.append(value);
+                            }
+                            if (j.hasNext()) {
+                                builder.append('&');
+                            }
+                        }
+                        if (i.hasNext()) {
+                            builder.append('&');
+                        }
                     }
+                    uri += builder.toString();
                 }
+            }
+            return uri;
 
-                return url.toString();
-            }
-            catch (MalformedURLException e) {
-                throw new IllegalArgumentException("Illegal URL", e);
-            }
         }
 
         /* @Override */
@@ -146,8 +172,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return virtualHost;
         }
 
-        public Multimap<String, String> getQueryParams()
-        {
+        public Multimap<String, String> getQueryParams() {
             return queryParams == null ? null : Multimaps.unmodifiableMultimap(queryParams);
         }
 
@@ -222,11 +247,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private void resetNonMultipartData() {
-        request.byteData     = null;
-        request.stringData   = null;
-        request.streamData   = null;
+        request.byteData = null;
+        request.stringData = null;
+        request.streamData = null;
         request.entityWriter = null;
-        request.length       = -1;
+        request.length = -1;
     }
 
     private void resetMultipartData() {
@@ -278,7 +303,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         request.entityWriter = dataWriter;
-        request.length       = length;
+        request.length = length;
         return derived.cast(this);
     }
 
@@ -297,7 +322,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         if (request.params == null) {
-            request.params =  LinkedListMultimap.create();
+            request.params = LinkedListMultimap.create();
         }
         request.params.put(key, value);
         return derived.cast(this);
@@ -338,7 +363,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&
-            ((request.type == RequestType.POST) || (request.type == RequestType.PUT))) {
+                ((request.type == RequestType.POST) || (request.type == RequestType.PUT))) {
             // can't concatenate content-length
             String contentLength = request.headers.getFirstHeaderValue("Content-Length");
 

@@ -16,11 +16,10 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.url.Url;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -70,12 +69,12 @@ public interface Response {
     public String getResponseBody() throws IOException;
 
     /**
-     * Return the request {@link Url}. Note that if the request got redirected, the value of the {@link Url} will be
+     * Return the request {@link URI}. Note that if the request got redirected, the value of the {@link URI} will be
      * the last valid redirect url.
-     * @return the request {@link Url}.
+     * @return the request {@link URI}.
      * @throws MalformedURLException
      */
-    public Url getUrl() throws MalformedURLException;
+    public URI getUri() throws MalformedURLException;
 
     /**
      * Return the content-type header value.

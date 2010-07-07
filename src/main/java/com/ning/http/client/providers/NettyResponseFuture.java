@@ -18,11 +18,11 @@ package com.ning.http.client.providers;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Request;
-import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -47,14 +47,14 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final Request request;
     private final HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
-    private Url url;
+    private URI uri;
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
     private Future<Object> reaperFuture;
     
-    public NettyResponseFuture(Url url,
+    public NettyResponseFuture(URI uri,
                                Request request,
                                AsyncHandler<V> asyncHandler,
                                HttpRequest nettyRequest,
@@ -64,15 +64,15 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.responseTimeoutInMs = responseTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
-        this.url = url;
+        this.uri = uri;
     }
 
-    public Url getUrl() throws MalformedURLException {
-        return url;
+    public URI getURI() throws MalformedURLException {
+        return uri;
     }
 
-    public void setUrl(Url url){
-        this.url = url;
+    public void setURI(URI uri){
+        this.uri = uri;
     }
 
     /**

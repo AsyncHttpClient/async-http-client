@@ -18,9 +18,10 @@ package com.ning.http.client.providers;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Headers;
 import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.url.Url;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+
+import java.net.URI;
 
 /**
  * A class that represent the HTTP headers.
@@ -31,15 +32,15 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final HttpResponse response;
     private final Headers headers;
 
-    public ResponseHeaders(Url url, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider) {
-        super(url, provider, false);
+    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider) {
+        super(uri, provider, false);
         this.trailingHeaders = null;
         this.response = response;
         headers = computerHeaders();
     }
 
-    public ResponseHeaders(Url url,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunkTrailer traillingHeaders) {
-        super(url, provider, true);
+    public ResponseHeaders(URI uri,HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunkTrailer traillingHeaders) {
+        super(uri, provider, true);
         this.trailingHeaders = traillingHeaders;
         this.response = response;
         headers = computerHeaders();

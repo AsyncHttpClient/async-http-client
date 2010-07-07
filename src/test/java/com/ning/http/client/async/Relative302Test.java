@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.URI;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -102,7 +103,25 @@ public class Relative302Test extends AbstractBasicTest {
 
         assertNotNull(response);
         assertEquals(response.getStatusCode(),200);
-        assertEquals(response.getUrl().getBaseUrl(), "http://www.microsoft.com");
+
+        assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com:80");
+    }
+
+    private String getBaseUrl(URI uri){
+        String url = uri.toString();
+        int port = uri.getPort();
+        if (port == -1) {
+            port = getPort(uri);
+            url = url.substring(0,url.length() -1) + ":" + port;
+        }
+        return url.substring(0,url.lastIndexOf(":") + String.valueOf(port).length() +1);
+    }
+
+    private static int getPort(URI uri) {
+        int port = uri.getPort();
+        if (port == -1)
+            port = uri.getScheme().equals("http")? 80: 443 ;
+        return port;
     }
 
     @Test(groups = "standalone")
@@ -136,6 +155,6 @@ public class Relative302Test extends AbstractBasicTest {
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(),200);
-        assertEquals(response.getUrl().toString(), getTargetUrl());
+        assertEquals(response.getUri().toString(), getTargetUrl());
     }
 }
