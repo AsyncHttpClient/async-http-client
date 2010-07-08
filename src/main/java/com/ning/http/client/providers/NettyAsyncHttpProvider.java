@@ -453,12 +453,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (isClose.get()){
            throw new IOException("Closed"); 
         }
-        
-        if (activeConnectionsCount.getAndIncrement() >= config.getMaxTotalConnections()) {
+
+
+        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement()>= config.getMaxTotalConnections()) {
             throw new IOException("Too many connections");
         }
-        URI uri = createUri(request.getUrl());
 
+        URI uri = createUri(request.getUrl());
         if (log.isDebugEnabled())
             log.debug("Lookup cache: " + uri.toString());
 
