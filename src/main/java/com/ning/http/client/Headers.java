@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Headers implements Iterable<Map.Entry<String, List<String>>> {
+public class Headers implements Map<String, List<String>> {
     private final Map<String, List<String>> headers = new LinkedHashMap<String, List<String>>();
     private final Map<String, String> headerNames = new LinkedHashMap<String, String>();
 
@@ -40,7 +40,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
 
     public Headers(Headers src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src) {
+            for (Map.Entry<String, List<String>> header : src.entrySet()) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -127,7 +127,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public Headers addAll(Headers src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src) {
+            for (Map.Entry<String, List<String>> header : src.entrySet()) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -197,7 +197,7 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public Headers replaceAll(Headers src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src) {
+            for (Map.Entry<String, List<String>> header : src.entrySet()) {
                 replace(header.getKey(), header.getValue());
             }
         }
@@ -210,13 +210,99 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      * @param src The source map of headers
      * @return This object
      */
-    public Headers replaceAll(Map<String, Collection<String>> src) {
+    public Headers replaceAll(Map<? extends String, ? extends Collection<String>> src) {
         if (src != null) {
-            for (Map.Entry<String, Collection<String>> header : src.entrySet()) {
+            for (Map.Entry<? extends String, ? extends Collection<String>> header : src.entrySet()) {
                 replace(header.getKey(), header.getValue());
             }
         }
         return this;
+    }
+
+    /* @Override */
+    public List<String> put(String key, List<String> value)
+    {
+        if (key == null) {
+            throw new NullPointerException("Null keys are not allowed");
+        }
+
+        List<String> oldValue = getHeaderValues(key);
+
+        replace(key, value);
+        return oldValue;
+    }
+
+    /* @Override */
+    public void putAll(Map<? extends String, ? extends List<String>> values)
+    {
+        replaceAll(values);
+    }
+
+    /**
+     * Removes the specified header if present and returns this headers object.
+     *
+     * @param name The header name
+     * @return This object
+     */
+    public Headers delete(String name) {
+        String key      = name.toLowerCase();
+        String usedName = headerNames.remove(key);
+
+        if (usedName != null) {
+            headers.remove(usedName);
+        }
+        return this;
+    }
+
+    /**
+     * Removed all specified headers in this object and returns this headers object.
+     *
+     * @param names The header names
+     * @return This object
+     */
+    public Headers deleteAll(String... names) {
+        if (names != null) {
+            for (String name : names) {
+                remove(name);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removed all specified headers in this object and returns this headers object.
+     *
+     * @param names The header names
+     * @return This object
+     */
+    public Headers deleteAll(Collection<String> names) {
+        if (names != null) {
+            for (String name : names) {
+                remove(name);
+            }
+        }
+        return this;
+    }
+
+    /* @Override */
+    public List<String> remove(Object key)
+    {
+        if (key == null) {
+            return null;
+        }
+        else {
+            List<String> oldValues = getHeaderValues(key.toString());
+
+            delete(key.toString());
+            return oldValues;
+        }
+    }
+
+    /* @Override */
+    public void clear()
+    {
+        headerNames.clear();
+        headers.clear();
     }
 
     /**
@@ -235,6 +321,30 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         return new LinkedHashSet<String>(headerNames.values());
     }
 
+    /* @Override */
+    public Set<String> keySet()
+    {
+        return getHeaderNames();
+    }
+
+    /* @Override */
+    public Set<Entry<String, List<String>>> entrySet()
+    {
+        return headers.entrySet();
+    }
+
+    /* @Override */
+    public int size()
+    {
+        return headers.size();
+    }
+
+    /* @Override */
+    public boolean isEmpty()
+    {
+        return headers.isEmpty();
+    }
+
     /**
      * Determines whether the indicated header is defined.
      * 
@@ -243,6 +353,18 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
      */
     public boolean isDefined(String name) {
         return headerNames.containsKey(name.toLowerCase());
+    }
+
+    /* @Override */
+    public boolean containsKey(Object key)
+    {
+        return key == null ? false : isDefined(key.toString());
+    }
+
+    /* @Override */
+    public boolean containsValue(Object value)
+    {
+        return headers.containsValue(value);
     }
 
     /**
@@ -317,50 +439,16 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
         }
     }
 
-    /**
-     * Removes the specified header if present and returns this headers object.
-     *
-     * @param name The header name
-     * @return This object
-     */
-    public Headers remove(String name) {
-        String key      = name.toLowerCase();
-        String usedName = headerNames.remove(key);
-
-        if (usedName != null) {
-            headers.remove(usedName);
-        }
-        return this;
+    /* @Override */
+    public List<String> get(Object key)
+    {
+        return key == null ? null : getHeaderValues(key.toString());
     }
 
-    /**
-     * Removed all specified headers in this object and returns this headers object.
-     *
-     * @param names The header names
-     * @return This object
-     */
-    public Headers removeAll(String... names) {
-        if (names != null) {
-            for (String name : names) {
-                remove(name);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Removed all specified headers in this object and returns this headers object.
-     *
-     * @param names The header names
-     * @return This object
-     */
-    public Headers removeAll(Collection<String> names) {
-        if (names != null) {
-            for (String name : names) {
-                remove(name);
-            }
-        }
-        return this;
+    /* @Override */
+    public Collection<List<String>> values()
+    {
+        return headers.values();
     }
 
     @Override
@@ -412,93 +500,5 @@ public class Headers implements Iterable<Map.Entry<String, List<String>>> {
             result.append("\"");
         }
         return result.toString();
-    }
-
-    private static class UnmodifiableHeaders extends Headers {
-        final Headers headers;
-
-        UnmodifiableHeaders(Headers headers) {
-            this.headers = headers;
-        }
-
-        @Override
-        public Headers add(String name, String... values) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers add(String name, Collection<String> values) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers addAll(Headers src) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers addAll(Map<String, Collection<String>> src) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return (obj instanceof Headers) && headers.equals(obj);
-        }
-
-        @Override
-        public int hashCode() {
-            return headers.hashCode();
-        }
-
-        @Override
-        public String getHeaderValue(String name) {
-            return headers.getHeaderValue(name);
-        }
-
-        @Override
-        public Set<String> getHeaderNames()
-        {
-            return headers.getHeaderNames();
-        }
-
-        @Override
-        public List<String> getHeaderValues(String name) {
-            return headers.getHeaderValues(name);
-        }
-
-        @Override
-        public boolean isDefined(String name)
-        {
-            return headers.isDefined(name);
-        }
-
-        @Override
-        public Iterator<Map.Entry<String, List<String>>> iterator() {
-            return headers.iterator();
-        }
-
-        @Override
-        public Headers remove(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers replace(String header, String... values)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Headers replace(String header, Collection<String> values)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString()
-        {
-            return headers.toString();
-        }
     }
 }
