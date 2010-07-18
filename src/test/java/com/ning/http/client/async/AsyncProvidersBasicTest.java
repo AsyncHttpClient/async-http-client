@@ -56,6 +56,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
+    private static final String UTF_8 = "text/html;charset=UTF-8";
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderContentLenghtGETTest() throws Throwable {
@@ -115,7 +116,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             public Response onCompleted(Response response) throws Exception {
                 try {
                     assertEquals(response.getStatusCode(), 200);
-                    assertEquals(response.getContentType(), "text/html; charset=utf-8");
+                    assertEquals(response.getContentType(), UTF_8);
                 } finally {
                     l.countDown();
                 }
@@ -140,7 +141,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             public Response onCompleted(Response response) throws Exception {
                 try {
                     assertEquals(response.getStatusCode(), 200);
-                    assertEquals(response.getContentType(), "text/html; charset=utf-8");
+                    assertEquals(response.getContentType(), UTF_8);
                 } finally {
                     l.countDown();
                 }

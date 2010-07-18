@@ -21,8 +21,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
-
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -45,9 +44,9 @@ public class Head302Test extends AbstractBasicTest {
     /** Handler that does Found (302) in response to HEAD method. */
     private class Head302handler extends AbstractHandler {
         public void handle(String s,
+                           org.eclipse.jetty.server.Request r,
                            HttpServletRequest request,
-                           HttpServletResponse response,
-                           int i) throws IOException, ServletException {
+                           HttpServletResponse response) throws IOException, ServletException {
             if ("HEAD".equalsIgnoreCase(request.getMethod())) {
                 if (request.getPathInfo().endsWith("_moved")) {
                     response.setStatus(HttpServletResponse.SC_OK);

@@ -19,10 +19,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -47,9 +48,9 @@ public class Relative302Test extends AbstractBasicTest {
 
 
         public void handle(String s,
+                           Request r,
                            HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse,
-                           int i) throws IOException, ServletException {
+                           HttpServletResponse httpResponse) throws IOException, ServletException {
 
                 String param;
                 httpResponse.setContentType("text/html; charset=utf-8");

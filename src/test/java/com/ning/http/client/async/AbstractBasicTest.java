@@ -22,11 +22,15 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.apache.log4j.PatternLayout;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -51,9 +55,9 @@ public class AbstractBasicTest {
 
         /* @Override */
         public void handle(String pathInContext,
+                           Request request,
                            HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse,
-                           int dispatch) throws ServletException, IOException {
+                           HttpServletResponse httpResponse) throws IOException, ServletException {
 
             if (httpRequest.getHeader("X-HEAD") != null){
                 httpResponse.setContentLength(1);
@@ -111,8 +115,8 @@ public class AbstractBasicTest {
             }
 
             int size = 10 * 1024;
-            if (httpRequest.getInputStream().available() > 0) {
-                size = httpRequest.getInputStream().available();
+            if (httpRequest.getContentLength() > 0) {
+                size = httpRequest.getContentLength();
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
@@ -160,7 +164,10 @@ public class AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-        BasicConfigurator.configure();        
+        Logger root = Logger.getRootLogger();
+        root.setLevel(Level.DEBUG);
+        root.addAppender(new ConsoleAppender(
+                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
 
         port1 = findFreePort();
         port2 = findFreePort();
