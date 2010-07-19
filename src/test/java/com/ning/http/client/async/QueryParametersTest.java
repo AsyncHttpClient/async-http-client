@@ -18,6 +18,11 @@ import java.util.concurrent.TimeoutException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
+/**
+ * Testing query parameters support.
+ *
+ * @author Hubert Iwaniuk
+ */
 public class QueryParametersTest extends AbstractBasicTest {
     private class QueryStringHandler extends AbstractHandler {
         public void handle(String s,
