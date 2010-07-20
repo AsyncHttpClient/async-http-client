@@ -582,7 +582,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     finishUpdate(future, ctx);
                     return;
                 } else if (!response.isChunked()) {
-                    updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(),response, this));
+                    if (response.getContent().readableBytes() != 0) {
+                        updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(),response, this));
+                    }
                     finishUpdate(future, ctx);
                     return;
                 }
