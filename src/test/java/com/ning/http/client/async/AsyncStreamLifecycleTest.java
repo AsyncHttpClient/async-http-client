@@ -11,7 +11,6 @@ import org.eclipse.jetty.continuation.ContinuationSupport;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
@@ -39,12 +38,6 @@ import static org.testng.Assert.fail;
  */
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-    @BeforeClass
-    @Override
-    public void setUpGlobal() throws Exception {
-        super.setUpGlobal();
-    }
 
     @AfterClass
     @Override
