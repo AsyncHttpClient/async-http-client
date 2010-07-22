@@ -21,11 +21,14 @@ import com.google.common.collect.Multimaps;
 import com.ning.http.client.Request.EntityWriter;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -83,7 +86,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             if (url == null) throw new NullPointerException("url is null");
 
-            String uri = null;
+            String uri;
             try {
                 uri = URI.create(url).toURL().toString();
             } catch (MalformedURLException e) {
@@ -91,32 +94,33 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
 
             if (queryParams != null) {
-                String result = null;
 
-                if (!params.isEmpty()) {
-                    StringBuilder builder = new StringBuilder();
+                StringBuilder builder = new StringBuilder();
+                if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
+                    builder.append("/");
+                }
+                builder.append(url.contains("?") ? "&" : "?"); // in case we have some query string in url already
 
-                    for (Iterator<Entry<String, Collection<String>>> i = queryParams.asMap().entrySet()
-                            .iterator(); i.hasNext();) {
-                        Map.Entry<String, Collection<String>> param = i.next();
-                        String name = param.getKey();
-                        for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
-                            String value = j.next();
-                            builder.append(name);
-                            if (value != null) {
-                                builder.append('=');
-                                builder.append(value);
-                            }
-                            if (j.hasNext()) {
-                                builder.append('&');
-                            }
+                for (Iterator<Entry<String, Collection<String>>> i = queryParams.asMap().entrySet()
+                        .iterator(); i.hasNext();) {
+                    Map.Entry<String, Collection<String>> param = i.next();
+                    String name = param.getKey();
+                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
+                        String value = j.next();
+                        builder.append(name);
+                        if (value != null) {
+                            builder.append('=');
+                            builder.append(value);
                         }
-                        if (i.hasNext()) {
+                        if (j.hasNext()) {
                             builder.append('&');
                         }
                     }
-                    uri += builder.toString();
+                    if (i.hasNext()) {
+                        builder.append('&');
+                    }
                 }
+                uri += builder.toString();
             }
             return uri;
 
