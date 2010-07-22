@@ -58,6 +58,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
+import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -595,8 +596,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 HttpChunk chunk = (HttpChunk) e.getMessage();
 
                 if (handler != null) {
-                    if (updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(),null, this,chunk)) || chunk.isLast()) {
-                        if (chunk instanceof HttpChunkTrailer) {
+                    if (chunk.isLast() || updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(),null, this,chunk))) {
+                        if (chunk instanceof DefaultHttpChunkTrailer) {
                             updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(),
                                     future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
                         }
