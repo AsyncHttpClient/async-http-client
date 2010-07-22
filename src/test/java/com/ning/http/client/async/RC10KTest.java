@@ -25,10 +25,11 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -95,7 +96,7 @@ public class RC10KTest extends AbstractBasicTest {
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
-            public void handle(String s, HttpServletRequest req, HttpServletResponse resp, int i) throws IOException, ServletException {
+            public void handle(String s, Request r, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
                 resp.setContentType("text/pain");
                 String arg = s.substring(1);
                 resp.setHeader(ARG_HEADER, arg);

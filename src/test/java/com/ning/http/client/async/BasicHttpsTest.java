@@ -20,9 +20,10 @@ import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.security.SslSocketConnector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -48,10 +49,10 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 
+import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
-import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 
 public class BasicHttpsTest {
 
@@ -64,9 +65,9 @@ public class BasicHttpsTest {
 
         /* @Override */
         public void handle(String pathInContext,
+                           Request r,
                            HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse,
-                           int dispatch) throws ServletException, IOException {
+                           HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
             Enumeration<?> e = httpRequest.getHeaderNames();
@@ -116,8 +117,8 @@ public class BasicHttpsTest {
             }
 
             int size = 10 * 1024;
-            if (httpRequest.getInputStream().available() > 0) {
-                size = httpRequest.getInputStream().available();
+            if (httpRequest.getContentLength() > 0) {
+                size = httpRequest.getContentLength();
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {

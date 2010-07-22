@@ -18,10 +18,11 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.apache.log4j.BasicConfigurator;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -42,9 +43,9 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
 
         public void handle(String s,
+                           Request r,
                            HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse,
-                           int i) throws IOException, ServletException {
+                           HttpServletResponse httpResponse) throws IOException, ServletException {
 
             try {
                 Thread.sleep(20 * 1000);

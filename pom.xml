@@ -89,9 +89,9 @@
             <classifier>jdk15</classifier>
         </dependency>
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>6.1.22</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>7.1.4.v20100610</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -17,8 +17,8 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
-
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
@@ -45,13 +45,13 @@ public class PostWithQSTest extends AbstractBasicTest {
     /** POST with QS server part. */
     private class PostWithQSHandler extends AbstractHandler {
         public void handle(String s,
+                           Request r,
                            HttpServletRequest request,
-                           HttpServletResponse response,
-                           int i) throws IOException, ServletException {
+                           HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                ServletInputStream is = request.getInputStream();
-                if (qs != null && !qs.equals("") && is.available() == 3) {
+                if (qs != null && !qs.equals("") && request.getContentLength() == 3) {
+                    ServletInputStream is = request.getInputStream();
                     response.setStatus(HttpServletResponse.SC_OK);
                     byte buf[] = new byte[is.available()];
                     is.readLine(buf, 0, is.available());

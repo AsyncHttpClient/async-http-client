@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStreamHandlerTest extends AbstractBasicTest {
     private final static String RESPONSE = "param_1_";
-    private final static String UTF8 = "text/html; charset=utf-8";
+    private final static String UTF8 = "text/html;charset=utf-8";
 
     @Test(groups = "standalone")
     public void asyncStreamGETTest() throws Throwable {
@@ -320,7 +320,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 Headers h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), "text/html; charset=utf-8");
                 return STATE.CONTINUE;
             }
 
