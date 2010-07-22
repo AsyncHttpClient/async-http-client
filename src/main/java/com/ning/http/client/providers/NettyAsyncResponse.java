@@ -150,7 +150,7 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
     public List<Cookie> getCookies() {
         if (cookies.isEmpty()) {
-            for (Map.Entry<String, List<String>> header : headers.getHeaders()) {
+            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
                     // TODO: ask for parsed header
                     for (String value : header.getValue()) {

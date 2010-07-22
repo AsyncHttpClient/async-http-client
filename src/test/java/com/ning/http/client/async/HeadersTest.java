@@ -152,9 +152,9 @@ public class HeadersTest
 
         Headers headers = new Headers(srcHeaders);
 
-        srcHeaders.remove("foo");
-        srcHeaders.remove("bar");
-        srcHeaders.remove("baz");
+        srcHeaders.delete("foo");
+        srcHeaders.delete("bar");
+        srcHeaders.delete("baz");
         assertTrue(srcHeaders.getHeaderNames().isEmpty());
 
         assertEquals(headers.getHeaderNames(), new LinkedHashSet<String>(Arrays.asList("foo", "baz", "bar")));
@@ -170,7 +170,7 @@ public class HeadersTest
     }
 
     @Test
-    public void removeHeaderTest() {
+    public void deleteHeaderTest() {
         Headers headers = new Headers();
 
         headers.add("foo", "bar");
@@ -184,7 +184,7 @@ public class HeadersTest
         assertEquals(headers.getHeaderValue("baz"), "foo, bar");
         assertEquals(headers.getHeaderValues("baz"), Arrays.asList("foo", "bar"));
 
-        headers.remove("bAz");
+        headers.delete("bAz");
 
         assertEquals(headers.getHeaderNames(), new LinkedHashSet<String>(Arrays.asList("foo")));
         assertEquals(headers.getFirstHeaderValue("foo"), "bar");
@@ -196,7 +196,7 @@ public class HeadersTest
     }
 
     @Test
-    public void removeHeadersTest1() {
+    public void deleteHeadersTest1() {
         Headers headers = new Headers();
 
         headers.add("foo", "bar");
@@ -210,7 +210,7 @@ public class HeadersTest
         assertEquals(headers.getHeaderValue("baz"), "foo, bar");
         assertEquals(headers.getHeaderValues("baz"), Arrays.asList("foo", "bar"));
 
-        headers.removeAll("bAz", "Boo");
+        headers.deleteAll("bAz", "Boo");
 
         assertEquals(headers.getHeaderNames(), new LinkedHashSet<String>(Arrays.asList("foo")));
         assertEquals(headers.getFirstHeaderValue("foo"), "bar");
@@ -222,7 +222,7 @@ public class HeadersTest
     }
 
     @Test
-    public void removeHeadersTest2() {
+    public void deleteHeadersTest2() {
         Headers headers = new Headers();
 
         headers.add("foo", "bar");
@@ -236,7 +236,7 @@ public class HeadersTest
         assertEquals(headers.getHeaderValue("baz"), "foo, bar");
         assertEquals(headers.getHeaderValues("baz"), Arrays.asList("foo", "bar"));
 
-        headers.removeAll(Arrays.asList("bAz", "fOO"));
+        headers.deleteAll(Arrays.asList("bAz", "fOO"));
 
         assertEquals(headers.getHeaderNames(), Collections.<String>emptyList());
         assertNull(headers.getFirstHeaderValue("foo"));
@@ -248,7 +248,7 @@ public class HeadersTest
     }
 
     @Test
-    public void removeUndefinedHeaderTest() {
+    public void deleteUndefinedHeaderTest() {
         Headers headers = new Headers();
 
         headers.add("foo", "bar");
@@ -262,7 +262,7 @@ public class HeadersTest
         assertEquals(headers.getHeaderValue("baz"), "foo, bar");
         assertEquals(headers.getHeaderValues("baz"), Arrays.asList("foo", "bar"));
 
-        headers.remove("bar");
+        headers.delete("bar");
 
         assertEquals(headers.getHeaderNames(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(headers.getFirstHeaderValue("foo"), "bar");
@@ -483,7 +483,7 @@ public class HeadersTest
             // expected
         }
         try {
-            headers.remove("foo");
+            headers.delete("foo");
             fail("Expected UnsupportedOperationException");
         }
         catch (UnsupportedOperationException ex) {
