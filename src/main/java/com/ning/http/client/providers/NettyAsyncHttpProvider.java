@@ -310,7 +310,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             host = request.getVirtualHost();
         }
 
-        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
+        StringBuilder path = new StringBuilder(uri.getPath());
+        if (uri.getQuery() != null) {
+            path.append("?").append(uri.getQuery());
+        }
+        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
 
         Headers h = request.getHeaders();
