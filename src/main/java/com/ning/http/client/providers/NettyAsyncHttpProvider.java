@@ -15,7 +15,6 @@
  */
 package com.ning.http.client.providers;
 
-import com.google.common.collect.Multimap;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -23,7 +22,8 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
-import com.ning.http.client.Headers;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -317,11 +317,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
 
-        Headers h = request.getHeaders();
+        FluentCaseInsensitiveStringsMap h = request.getHeaders();
         if (h != null) {
-            for (String name : h.getHeaderNames()) {
+            for (String name : h.keySet()) {
                 if (!"host".equalsIgnoreCase(name)) {
-                    for (String value : h.getHeaderValues(name)) {
+                    for (String value : h.get(name)) {
                         nettyRequest.addHeader(name, value);
                     }
                 }
@@ -374,17 +374,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
-                for (final Entry<String, String> param : request.getParams().entries()) {
-                    sb.append(param.getKey());
-                    sb.append("=");
-                    sb.append(param.getValue());
-                    sb.append("&");
+                for (final Entry<String, List<String>> paramEntry : request.getParams().entrySet()) {
+                    for (final String value : paramEntry.getValue()) {
+                        sb.append(paramEntry.getKey());
+                        sb.append("=");
+                        sb.append(value);
+                        sb.append("&");
+                    }
                 }
                 sb.deleteCharAt(sb.length() - 1);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes()));
 
-                if (!request.getHeaders().isDefined(HttpHeaders.Names.CONTENT_TYPE)) {
+                if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
                 }
 
@@ -754,7 +756,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
      * @return
      * @throws java.io.FileNotFoundException
      */
-    private final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, Multimap<String,String> methodParams) throws FileNotFoundException {
+    private final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentStringsMap methodParams) throws FileNotFoundException {
         com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
         int i = 0;
 

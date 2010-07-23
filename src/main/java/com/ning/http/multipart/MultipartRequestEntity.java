@@ -15,10 +15,10 @@
  */
 package com.ning.http.multipart;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+
+import com.ning.http.client.FluentStringsMap;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,19 +59,19 @@ public class MultipartRequestEntity implements RequestEntity {
 
     private byte[] multipartBoundary;
 
-    private Multimap<String,String> methodParams;
+    private FluentStringsMap methodParams;
 
     /**
      * Creates a new multipart entity containing the given parts.
      * @param parts The parts to include.
      * @param methodParams The params of the HttpMethod using this entity.
      */
-    public MultipartRequestEntity(Part[] parts, Multimap<String,String> methodParams) {
+    public MultipartRequestEntity(Part[] parts, FluentStringsMap methodParams) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
         if (methodParams == null) {
-            methodParams = ArrayListMultimap.create();
+            methodParams = new FluentStringsMap();
         }
         this.parts = parts;
         this.methodParams = methodParams;
@@ -88,7 +88,7 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     protected byte[] getMultipartBoundary() {
         if (multipartBoundary == null) {
-            String temp =  methodParams.get("").isEmpty() ? null : methodParams.get("").iterator().next();
+            String temp =  methodParams.get("") == null ? null : methodParams.get("").iterator().next();
             if (temp != null) {
                 multipartBoundary = MultipartEncodingUtil.getAsciiBytes(temp);
             } else {

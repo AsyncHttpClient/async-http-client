@@ -15,9 +15,6 @@
  */
 package com.ning.http.client;
 
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.ning.http.client.Request.EntityWriter;
 
 import java.io.InputStream;
@@ -41,17 +38,17 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private static final class RequestImpl implements Request {
         private RequestType type;
         private String url = null;
-        private Headers headers = new Headers();
+        private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
         private EntityWriter entityWriter;
-        private Multimap<String, String> params;
+        private FluentStringsMap params;
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
-        public Multimap<String, String> queryParams;
+        public FluentStringsMap queryParams;
 
         public RequestImpl() {
         }
@@ -60,14 +57,14 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             if (prototype != null) {
                 this.type = prototype.getType();
                 this.url = prototype.getUrl();
-                this.headers = new Headers(prototype.getHeaders());
+                this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
-                this.params = (prototype.getParams() == null ? null : LinkedListMultimap.create(prototype.getParams()));
-                this.queryParams = (prototype.getQueryParams() == null ? null : LinkedListMultimap.create(prototype.getQueryParams()));
+                this.params = (prototype.getParams() == null ? null : new FluentStringsMap());
+                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap());
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
@@ -101,9 +98,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
                 builder.append(url.contains("?") ? "&" : "?"); // in case we have some query string in url already
 
-                for (Iterator<Entry<String, Collection<String>>> i = queryParams.asMap().entrySet()
-                        .iterator(); i.hasNext();) {
-                    Map.Entry<String, Collection<String>> param = i.next();
+                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
+                    Map.Entry<String, List<String>> param = i.next();
                     String name = param.getKey();
                     for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
@@ -127,8 +123,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
-        public Headers getHeaders() {
-            return Headers.unmodifiableHeaders(headers);
+        public FluentCaseInsensitiveStringsMap getHeaders() {
+            return headers;
         }
 
         /* @Override */
@@ -162,13 +158,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
-        public Multimap<String, String> getParams() {
-            return params == null ? null : Multimaps.unmodifiableMultimap(params);
+        public FluentStringsMap getParams() {
+            return params;
         }
 
         /* @Override */
         public List<Part> getParts() {
-            return parts == null ? null : Collections.unmodifiableList(parts);
+            return parts;
         }
 
         /* @Override */
@@ -176,8 +172,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return virtualHost;
         }
 
-        public Multimap<String, String> getQueryParams() {
-            return queryParams == null ? null : Multimaps.unmodifiableMultimap(queryParams);
+        public FluentStringsMap getQueryParams() {
+            return queryParams;
         }
 
         @Override
@@ -186,11 +182,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             sb.append("\t");
             sb.append(type);
-            for (String name : headers.getHeaderNames()) {
+            for (String name : headers.keySet()) {
                 sb.append("\t");
                 sb.append(name);
                 sb.append(":");
-                sb.append(headers.getHeaderValue(name));
+                sb.append(headers.getJoinedValue(name, ", "));
             }
 
             return sb.toString();
@@ -231,13 +227,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setHeaders(Headers headers) {
-        request.headers = (headers == null ? new Headers() : new Headers(headers));
+    public T setHeaders(FluentCaseInsensitiveStringsMap headers) {
+        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
         return derived.cast(this);
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        request.headers = (headers == null ? new Headers() : new Headers(headers));
+        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
         return derived.cast(this);
     }
 
@@ -313,9 +309,9 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T addQueryParameter(String name, String value) {
         if (request.queryParams == null) {
-            request.queryParams = LinkedListMultimap.create();
+            request.queryParams = new FluentStringsMap();
         }
-        request.queryParams.put(name, value);
+        request.queryParams.add(name, value);
         return derived.cast(this);
     }
 
@@ -326,19 +322,19 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         if (request.params == null) {
-            request.params = LinkedListMultimap.create();
+            request.params = new FluentStringsMap();
         }
-        request.params.put(key, value);
+        request.params.add(key, value);
         return derived.cast(this);
     }
 
-    public T setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+    public T setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
         resetMultipartData();
-        request.params = LinkedListMultimap.create(parameters);
+        request.params = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
@@ -348,7 +344,10 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
         resetNonMultipartData();
         resetMultipartData();
-        request.params = LinkedListMultimap.create(Multimaps.forMap(parameters));
+        request.params = new FluentStringsMap();
+        for (Map.Entry<String, String> paramEntry : parameters.entrySet()) {
+            request.params.add(paramEntry.getKey(), paramEntry.getValue());
+        }
         return derived.cast(this);
     }
 
@@ -369,7 +368,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if ((request.length < 0) && (request.streamData == null) &&
                 ((request.type == RequestType.POST) || (request.type == RequestType.PUT))) {
             // can't concatenate content-length
-            String contentLength = request.headers.getFirstHeaderValue("Content-Length");
+            String contentLength = request.headers.getFirstValue("Content-Length");
 
             if (contentLength != null) {
                 try {

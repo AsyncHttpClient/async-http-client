@@ -16,7 +16,7 @@
 package com.ning.http.client.providers;
 
 import com.ning.http.client.Cookie;
-import com.ning.http.client.Headers;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -124,21 +124,21 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public String getContentType() {
-        return headers.getHeaders().getFirstHeaderValue("Content-Type");
+        return headers.getHeaders().getFirstValue("Content-Type");
     }
 
     /* @Override */
     public String getHeader(String name) {
-        return headers.getHeaders().getFirstHeaderValue(name);
+        return headers.getHeaders().getFirstValue(name);
     }
 
     /* @Override */
     public List<String> getHeaders(String name) {
-        return headers.getHeaders().getHeaderValues(name);
+        return headers.getHeaders().get(name);
     }
 
     /* @Override */
-    public Headers getHeaders() {
+    public FluentCaseInsensitiveStringsMap getHeaders() {
         return headers.getHeaders();
     }
 

@@ -37,9 +37,9 @@ public abstract class HttpResponseHeaders extends HttpContent {
 
     /**
      * Return the HTTP header
-     * @return an {@link Headers}
+     * @return an {@link FluentCaseInsensitiveStringsMap}
      */
-    abstract public Headers getHeaders();
+    abstract public FluentCaseInsensitiveStringsMap getHeaders();
 
     /**
      * Return true is headers has been received after the response body.

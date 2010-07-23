@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 
-import com.google.common.collect.Multimap;
 import com.ning.http.client.Request.EntityWriter;
 
 /**
@@ -99,7 +98,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setHeaders(Headers headers) {
+    public RequestBuilder setHeaders(FluentCaseInsensitiveStringsMap headers) {
         return super.setHeaders(headers);
     }
 
@@ -114,7 +113,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+    public RequestBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
         return super.setParameters(parameters);
     }
 
