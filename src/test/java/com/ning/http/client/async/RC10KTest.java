@@ -149,7 +149,7 @@ public class RC10KTest extends AbstractBasicTest {
         }
 
         public STATE onHeadersReceived(HttpResponseHeaders event) throws Exception {
-            assertEquals(event.getHeaders().getHeaderValue(ARG_HEADER), arg);
+            assertEquals(event.getHeaders().getJoinedValue(ARG_HEADER, ", "), arg);
             return STATE.CONTINUE;
         }
 

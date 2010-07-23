@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import com.google.common.collect.Multimap;
 import com.ning.http.client.Request.EntityWriter;
 
 /**
@@ -268,7 +267,7 @@ public class AsyncHttpClient {
         }
 
         @Override
-        public BoundRequestBuilder setHeaders(Headers headers) {
+        public BoundRequestBuilder setHeaders(FluentCaseInsensitiveStringsMap headers) {
             return super.setHeaders(headers);
         }
 
@@ -283,7 +282,7 @@ public class AsyncHttpClient {
         }
 
         @Override
-        public BoundRequestBuilder setParameters(Multimap<String, String> parameters) throws IllegalArgumentException {
+        public BoundRequestBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
             return super.setParameters(parameters);
         }
 

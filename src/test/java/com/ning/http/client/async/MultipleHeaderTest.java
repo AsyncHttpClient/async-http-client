@@ -77,7 +77,7 @@ public class MultipleHeaderTest {
 
             public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
                 int i = 0;
-                for (String header : response.getHeaders().getHeaderValues("X-Forwarded-For")) {
+                for (String header : response.getHeaders().get("X-Forwarded-For")) {
                     xffHeaders[i++] = header;
                 }
                 latch.countDown();
@@ -123,7 +123,7 @@ public class MultipleHeaderTest {
             public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
                 try {
                     int i = 0;
-                    for (String header : response.getHeaders().getHeaderValues("Content-Length")) {
+                    for (String header : response.getHeaders().get("Content-Length")) {
                         clHeaders[i++] = header;
                     }
                 } finally {

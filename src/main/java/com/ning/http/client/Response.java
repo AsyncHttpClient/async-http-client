@@ -94,7 +94,7 @@ public interface Response {
      */
     public List<String> getHeaders(String name);
 
-    public Headers getHeaders();
+    public FluentCaseInsensitiveStringsMap getHeaders();
 
     /**
      * Return true if the response redirects to another object.

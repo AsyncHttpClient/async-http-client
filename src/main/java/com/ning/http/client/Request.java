@@ -16,8 +16,6 @@
  */
 package com.ning.http.client;
 
-import com.google.common.collect.Multimap;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,7 +32,7 @@ public interface Request {
 
     public String getUrl();
 
-    public Headers getHeaders();
+    public FluentCaseInsensitiveStringsMap getHeaders();
 
     public Collection<Cookie> getCookies();
 
@@ -48,11 +46,11 @@ public interface Request {
 
     public long getLength();
 
-    public Multimap<String, String> getParams();
+    public FluentStringsMap getParams();
 
     public List<Part> getParts();
 
     public String getVirtualHost();
 
-    public Multimap<String,String> getQueryParams();
+    public FluentStringsMap getQueryParams();
 }

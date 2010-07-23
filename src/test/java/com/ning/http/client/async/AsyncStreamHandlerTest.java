@@ -18,7 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Headers;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -46,9 +46,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 try {
-                    Headers h = content.getHeaders();
+                    FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                     return STATE.ABORT;
                 } finally {
                     l.countDown();
@@ -73,7 +73,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void asyncStreamPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        Headers h = new Headers();
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         Map<String, String> m = new HashMap<String, String>();
         m.put("param_1", "value_1");
@@ -85,9 +85,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                 return STATE.CONTINUE;
             }
 
@@ -117,7 +117,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void asyncStreamInterruptTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        Headers h = new Headers();
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
         Map<String, String> m = new HashMap<String, String>();
@@ -130,9 +130,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                 return STATE.ABORT;
             }
 
@@ -168,9 +168,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                 return STATE.CONTINUE;
             }
 
@@ -233,7 +233,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void asyncStreamReusePOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        Headers h = new Headers();
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
         Map<String, String> m = new HashMap<String, String>();
@@ -245,9 +245,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                 return STATE.CONTINUE;
             }
 
@@ -280,9 +280,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), UTF8);
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
                 return STATE.CONTINUE;
             }
 
@@ -318,9 +318,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type").toLowerCase(), "text/html; charset=utf-8");
+                Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), "text/html; charset=utf-8");
                 return STATE.CONTINUE;
             }
 
@@ -357,9 +357,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("content-type"), "text/html; charset=ISO-8859-1");
+                Assert.assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
                 return STATE.CONTINUE;
             }
 
@@ -460,9 +460,9 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
-                Headers h = content.getHeaders();
+                FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getHeaderValue("Allow"), "GET,HEAD,POST,OPTIONS,TRACE");
+                Assert.assertEquals(h.getJoinedValue("Allow", ", "), "GET,HEAD,POST,OPTIONS,TRACE");
                 return STATE.ABORT;
             }
 
