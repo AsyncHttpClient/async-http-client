@@ -301,16 +301,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     @SuppressWarnings("deprecation")
     private static HttpRequest construct(AsyncHttpClientConfig config,
-                                               Request request,
-                                               HttpMethod m,
-                                               URI uri) throws IOException {
+                                         Request request,
+                                         HttpMethod m,
+                                         URI uri) throws IOException {
         String host = uri.getHost();
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
         }
 
-        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
+        StringBuilder path = new StringBuilder(uri.getPath());
+        if (uri.getQuery() != null) {
+            path.append("?").append(uri.getQuery());
+        }
+        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
 
         FluentCaseInsensitiveStringsMap h = request.getHeaders();
