@@ -301,9 +301,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     @SuppressWarnings("deprecation")
     private static HttpRequest construct(AsyncHttpClientConfig config,
-                                               Request request,
-                                               HttpMethod m,
-                                               URI uri) throws IOException {
+                                         Request request,
+                                         HttpMethod m,
+                                         URI uri) throws IOException {
         String host = uri.getHost();
 
         if (request.getVirtualHost() != null) {
