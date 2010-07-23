@@ -460,7 +460,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
 
-        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement()>= config.getMaxTotalConnections()) {
+        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement() >= config.getMaxTotalConnections()) {
+            activeConnectionsCount.decrementAndGet();
             throw new IOException("Too many connections");
         }
 
@@ -646,6 +647,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
                 connectionsPool.put(getBaseUrl(future.getURI()), channel);
             } else {
+                connectionPerHost.decrementAndGet();
                 log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             }
         } else {
