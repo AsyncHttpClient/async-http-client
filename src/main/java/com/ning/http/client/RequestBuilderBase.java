@@ -63,8 +63,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
-                this.params = (prototype.getParams() == null ? null : new FluentStringsMap());
-                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap());
+                this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
+                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
