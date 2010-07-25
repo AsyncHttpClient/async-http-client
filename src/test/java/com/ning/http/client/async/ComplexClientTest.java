@@ -123,13 +123,10 @@ public class ComplexClientTest extends AbstractBasicTest {
     public void urlWithColonTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test/colon?q=test:colon:", port1))
-                .setBody(body)
+        String query = "q=test:colon:";
+        Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?%s", port1, query))
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        assertEquals(response.getResponseBody(),body);
+        assertEquals(response.getHeader("X-queryString"), query);
     }
 }

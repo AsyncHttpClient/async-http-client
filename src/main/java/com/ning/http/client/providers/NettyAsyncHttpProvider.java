@@ -665,7 +665,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             port = getPort(uri);
             url = url.substring(0,url.length() -1) + ":" + port;
         }
-        return url.substring(0,url.lastIndexOf(":") + String.valueOf(port).length() +1);
+        return url.substring(0,url.indexOf(":", 9) + String.valueOf(port).length() +1);
     }
     
     private static int getPort(URI uri) {
