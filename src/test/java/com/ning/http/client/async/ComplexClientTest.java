@@ -118,4 +118,15 @@ public class ComplexClientTest extends AbstractBasicTest {
 
         assertEquals(response.getResponseBody(),body);
     }
+
+    @Test(groups = "standalone")
+    public void urlWithColonTest() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        String query = "q=test:colon:";
+        Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?%s", port1, query))
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getHeader("X-queryString"), query);
+    }
 }

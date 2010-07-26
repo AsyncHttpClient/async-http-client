@@ -462,7 +462,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
 
-        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement()>= config.getMaxTotalConnections()) {
+        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement() >= config.getMaxTotalConnections()) {
+            activeConnectionsCount.decrementAndGet();
             throw new IOException("Too many connections");
         }
 
@@ -648,6 +649,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
                 connectionsPool.put(getBaseUrl(future.getURI()), channel);
             } else {
+                connectionPerHost.decrementAndGet();
                 log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             }
         } else {
@@ -663,7 +665,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             port = getPort(uri);
             url = url.substring(0,url.length() -1) + ":" + port;
         }
-        return url.substring(0,url.lastIndexOf(":") + String.valueOf(port).length() +1);
+        return url.substring(0,url.indexOf(":", 9) + String.valueOf(port).length() +1);
     }
     
     private static int getPort(URI uri) {
