@@ -191,7 +191,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         public NettyResponseFuture<T> future() {
-            return future;
+            return future;                                               
         }
 
         public final void operationComplete(ChannelFuture f) throws Exception {
@@ -643,19 +643,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
         if (future.getKeepAlive()){
-            if (config.getMaxConnectionPerHost() != -1) {
-                AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
-                if (connectionPerHost == null) {
-                    connectionPerHost = new AtomicInteger(1);
-                    connectionsPerHost.put(getBaseUrl(future.getURI()),connectionPerHost);
-                }
+            AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
+            if (connectionPerHost == null) {
+                connectionPerHost = new AtomicInteger(1);
+                connectionsPerHost.put(getBaseUrl(future.getURI()),connectionPerHost);
+            }
 
-                if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
-                    connectionsPool.put(getBaseUrl(future.getURI()), channel);
-                } else {
-                    connectionPerHost.decrementAndGet();
-                    log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
-                }
+            if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
+                connectionsPool.put(getBaseUrl(future.getURI()), channel);
+            } else {
+                connectionPerHost.decrementAndGet();
+                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             }
         } else if (config.getMaxTotalConnections() != -1) {
             activeConnectionsCount.decrementAndGet();
