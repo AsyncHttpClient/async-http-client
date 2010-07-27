@@ -49,6 +49,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private String virtualHost;
         private long length = -1;
         public FluentStringsMap queryParams;
+        public ProxyServer proxyServer;
 
         public RequestImpl() {
         }
@@ -68,6 +69,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
+                this.proxyServer = prototype.getProxyServer();
             }
         }
 
@@ -174,6 +176,10 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public FluentStringsMap getQueryParams() {
             return queryParams;
+        }
+
+        public ProxyServer getProxyServer() {
+            return proxyServer;
         }
 
         @Override
@@ -361,6 +367,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             request.parts = new ArrayList<Part>();
         }
         request.parts.add(part);
+        return derived.cast(this);
+    }
+
+    public T setProxy(ProxyServer proxyServer) {
+        request.proxyServer = proxyServer;
         return derived.cast(this);
     }
 
