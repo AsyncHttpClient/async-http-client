@@ -461,7 +461,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
            throw new IOException("Closed"); 
         }
 
-
         if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement() >= config.getMaxTotalConnections()) {
             activeConnectionsCount.decrementAndGet();
             throw new IOException("Too many connections");
@@ -494,7 +493,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t){
-            activeConnectionsCount.decrementAndGet();
+            if (config.getMaxTotalConnections() != -1) {
+                activeConnectionsCount.decrementAndGet();
+            }
             log.error(t);
             c.future().abort(t.getCause());
             return c.future();
@@ -510,9 +511,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         closeChannel(ctx);
         
         for (Entry<String,Channel> e: connectionsPool.entrySet()) {
-           if (e.getValue().equals(ctx.getChannel())) {
+            if (e.getValue().equals(ctx.getChannel())) {
                 connectionsPool.remove(e.getKey());
-                activeConnectionsCount.decrementAndGet();
+                if (config.getMaxTotalConnections() != -1) {
+                    activeConnectionsCount.decrementAndGet();
+                }
                 break;
             }
         }
@@ -639,22 +642,25 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
-        if (future.getKeepAlive() ){
-            AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
-            if (connectionPerHost == null) {
-                connectionPerHost = new AtomicInteger(1);
-                connectionsPerHost.put(getBaseUrl(future.getURI()),connectionPerHost);
+        if (future.getKeepAlive()){
+            if (config.getMaxConnectionPerHost() != -1) {
+                AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
+                if (connectionPerHost == null) {
+                    connectionPerHost = new AtomicInteger(1);
+                    connectionsPerHost.put(getBaseUrl(future.getURI()),connectionPerHost);
+                }
+
+                if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
+                    connectionsPool.put(getBaseUrl(future.getURI()), channel);
+                } else {
+                    connectionPerHost.decrementAndGet();
+                    log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+                }
             }
-            
-            if (connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
-                connectionsPool.put(getBaseUrl(future.getURI()), channel);
-            } else {
-                connectionPerHost.decrementAndGet();
-                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
-            }
-        } else {
+        } else if (config.getMaxTotalConnections() != -1) {
             activeConnectionsCount.decrementAndGet();
         }
+
         future.done();
     }
 
