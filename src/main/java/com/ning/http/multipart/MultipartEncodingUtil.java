@@ -15,10 +15,6 @@
  */
 package com.ning.http.multipart;
 
-import org.apache.log4j.LogManager;
-
-import org.apache.log4j.Logger;
-
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -27,9 +23,6 @@ import java.io.UnsupportedEncodingException;
  */
 public class MultipartEncodingUtil {
 
-     /** Log object for this class. */
-    private final static Logger LOG = LogManager.getLogger(MultipartEncodingUtil.class);
-    
     public static byte[] getAsciiBytes(String data){
         try {
             return data.getBytes("US-ASCII");
@@ -63,12 +56,7 @@ public class MultipartEncodingUtil {
         try {
             return data.getBytes(charset);
         } catch (UnsupportedEncodingException e) {
-
-            if (LOG.isDebugEnabled()) {
-                LOG.warn("Unsupported encoding: " + charset + ". System encoding used.");
-            }
-
-            return data.getBytes();
+            throw new IllegalArgumentException(String.format("Unsupported encoding: %s", charset));
         }
     }
 }

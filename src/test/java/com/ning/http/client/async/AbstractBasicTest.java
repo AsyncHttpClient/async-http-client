@@ -21,11 +21,9 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -44,10 +42,10 @@ import java.util.Enumeration;
 
 public class AbstractBasicTest {
   
+    protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
     protected Server server;
     protected int port1;
     protected int port2;
-    protected final static Logger log = Logger.getLogger(AbstractBasicTest.class);
 
     public final static int TIMEOUT = 30;
 
@@ -134,7 +132,6 @@ public class AbstractBasicTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws InterruptedException, Exception {
-        BasicConfigurator.resetConfiguration();
         server.stop();
     }
 
@@ -164,10 +161,6 @@ public class AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-        Logger root = Logger.getRootLogger();
-        root.setLevel(Level.DEBUG);
-        root.addAppender(new ConsoleAppender(
-                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
 
         port1 = findFreePort();
         port2 = findFreePort();
