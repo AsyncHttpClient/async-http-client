@@ -16,6 +16,7 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
@@ -63,6 +64,37 @@ public class ProxyTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
+        String target = "http://127.0.0.1:1234/";
+        Future<Response> f = client
+                .prepareGet(target)
+                .setProxy(new ProxyServer("127.0.0.1", port1))
+                .execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("target"), target);
+    }
+
+    @Test(groups = "standalone")
+    public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClientConfig cfg
+                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
+        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        String target = "http://127.0.0.1:1234/";
+        Future<Response> f = client
+                .prepareGet(target)
+                .execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("target"), target);
+    }
+
+    @Test(groups = "standalone")
+    public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClientConfig cfg
+                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
+        AsyncHttpClient client = new AsyncHttpClient(cfg);
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
