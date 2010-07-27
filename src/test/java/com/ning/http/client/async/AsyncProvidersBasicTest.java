@@ -39,6 +39,8 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,9 +201,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
-        Map<String, String> m = new HashMap<String, String>();
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
+            m.put("param_" + i, Arrays.asList("value_" + i));
         }
         Request request = new RequestBuilder(RequestType.POST).setUrl(getTargetUrl()).setHeaders(h).setParameters(m).build();
         n.execute(request, new AsyncCompletionHandlerAdapter() {
@@ -695,9 +697,9 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
-        Map<String, String> m = new HashMap<String, String>();
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         for (int i = 0; i < 5; i++) {
-            m.put("param_" + i, "value_" + i);
+            m.put("param_" + i, Arrays.asList("value_" + i));
         }
         Request request = new RequestBuilder(RequestType.POST)
                 .setUrl(getTargetUrl())

@@ -374,7 +374,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
-                for (final Entry<String, List<String>> paramEntry : request.getParams().entrySet()) {
+                for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                     for (final String value : paramEntry.getValue()) {
                         sb.append(paramEntry.getKey());
                         sb.append("=");

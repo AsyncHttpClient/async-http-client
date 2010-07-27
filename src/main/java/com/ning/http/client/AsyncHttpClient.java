@@ -277,7 +277,7 @@ public class AsyncHttpClient {
         }
 
         @Override
-        public BoundRequestBuilder setParameters(Map<String, String> parameters) throws IllegalArgumentException {
+        public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
             return super.setParameters(parameters);
         }
 

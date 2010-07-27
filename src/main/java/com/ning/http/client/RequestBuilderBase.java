@@ -63,8 +63,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
-                this.params = (prototype.getParams() == null ? null : new FluentStringsMap());
-                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap());
+                this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
+                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
@@ -338,16 +338,13 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setParameters(Map<String, String> parameters) throws IllegalArgumentException {
+    public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
         resetMultipartData();
-        request.params = new FluentStringsMap();
-        for (Map.Entry<String, String> paramEntry : parameters.entrySet()) {
-            request.params.add(paramEntry.getKey(), paramEntry.getValue());
-        }
+        request.params = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 

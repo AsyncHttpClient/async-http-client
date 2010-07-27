@@ -30,7 +30,7 @@ import java.util.Set;
  * An implementation of a {@code String -> List<String>} map that adds a fluent interface, i.e. methods that
  * return this instance.
  */
-public class FluentStringsMap implements Map<String, List<String>> {
+public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map.Entry<String, List<String>>> {
     private final Map<String, List<String>> values = new LinkedHashMap<String, List<String>>();
 
     public FluentStringsMap() {
@@ -38,7 +38,7 @@ public class FluentStringsMap implements Map<String, List<String>> {
 
     public FluentStringsMap(FluentStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -117,7 +117,7 @@ public class FluentStringsMap implements Map<String, List<String>> {
      */
     public FluentStringsMap addAll(FluentStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -180,7 +180,7 @@ public class FluentStringsMap implements Map<String, List<String>> {
      */
     public FluentStringsMap replaceAll(FluentStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 replace(header.getKey(), header.getValue());
             }
         }

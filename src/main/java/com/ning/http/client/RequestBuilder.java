@@ -108,7 +108,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setParameters(Map<String, String> parameters) throws IllegalArgumentException {
+    public RequestBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
         return super.setParameters(parameters);
     }
 

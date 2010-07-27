@@ -32,9 +32,9 @@ import java.util.Set;
  * return this instance. This class differs from {@link FluentStringsMap} in that keys are treated in an
  * case-insensitive matter, i.e. case of the key doesn't matter when retrieving values or changing the map.
  * However, the map preserves the key case (of the first insert or replace) and returns the keys in their
- * original case in the appropriate methods (e.g. {@link FluentCaseInsensitiveStringsMap#getKeys()}).  
+ * original case in the appropriate methods (e.g. {@link FluentCaseInsensitiveStringsMap#keySet()}).  
  */
-public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>> {
+public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>>, Iterable<Map.Entry<String, List<String>>> {
     private final Map<String, List<String>> values = new LinkedHashMap<String, List<String>>();
     private final Map<String, String> keyLookup = new LinkedHashMap<String, String>();
 
@@ -43,7 +43,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
 
     public FluentCaseInsensitiveStringsMap(FluentCaseInsensitiveStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -132,7 +132,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap addAll(FluentCaseInsensitiveStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 add(header.getKey(), header.getValue());
             }
         }
@@ -204,7 +204,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap replaceAll(FluentCaseInsensitiveStringsMap src) {
         if (src != null) {
-            for (Map.Entry<String, List<String>> header : src.entrySet()) {
+            for (Map.Entry<String, List<String>> header : src) {
                 replace(header.getKey(), header.getValue());
             }
         }

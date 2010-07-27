@@ -25,6 +25,8 @@ import com.ning.http.client.HttpResponseStatus;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -75,8 +77,8 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
-        Map<String, String> m = new HashMap<String, String>();
-        m.put("param_1", "value_1");
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+        m.put("param_1", Arrays.asList("value_1"));
 
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -120,8 +122,8 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
-        Map<String, String> m = new HashMap<String, String>();
-        m.put("param_1", "value_1");
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+        m.put("param_1", Arrays.asList("value_1"));
 
         final AtomicBoolean a = new AtomicBoolean(true);
         AsyncHttpClient c = new AsyncHttpClient();
@@ -159,8 +161,8 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void asyncStreamFutureTest() throws Throwable {
-        Map<String, String> m = new HashMap<String, String>();
-        m.put("param_1", "value_1");
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+        m.put("param_1", Arrays.asList("value_1"));
         AsyncHttpClient c = new AsyncHttpClient();
 
         Future<String> f = c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
@@ -236,8 +238,8 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
 
-        Map<String, String> m = new HashMap<String, String>();
-        m.put("param_1", "value_1");
+        Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+        m.put("param_1", Arrays.asList("value_1"));
         AsyncHttpClient c = new AsyncHttpClient();
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
