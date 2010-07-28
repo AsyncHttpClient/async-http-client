@@ -47,7 +47,7 @@ public class ProxyTest extends AbstractBasicTest {
                            HttpServletRequest request,
                            HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
-                response.addHeader("target", request.getRequestURI());
+                response.addHeader("target", r.getUri().toString());
                 response.setStatus(HttpServletResponse.SC_OK);
             } else { // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);

@@ -315,7 +315,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (uri.getQuery() != null) {
             path.append("?").append(uri.getQuery());
         }
-        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
+        HttpRequest nettyRequest;
+        if (config.getProxyServer() != null || request.getProxyServer() != null) {
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
+        } else {
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
+        }
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
 
         FluentCaseInsensitiveStringsMap h = request.getHeaders();
@@ -490,7 +495,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (config.getProxyServer() == null && request.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), getPort(uri)));
             } else {
-                ProxyServer proxy = (config.getProxyServer() != null ? config.getProxyServer() : request.getProxyServer());
+                ProxyServer proxy = (request.getProxyServer() == null ? config.getProxyServer() : request.getProxyServer());
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
