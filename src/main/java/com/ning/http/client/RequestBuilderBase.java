@@ -370,7 +370,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setProxy(ProxyServer proxyServer) {
+    public T setProxyServer(ProxyServer proxyServer) {
         request.proxyServer = proxyServer;
         return derived.cast(this);
     }

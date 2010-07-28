@@ -67,7 +67,7 @@ public class ProxyTest extends AbstractBasicTest {
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
-                .setProxy(new ProxyServer("127.0.0.1", port1))
+                .setProxyServer(new ProxyServer("127.0.0.1", port1))
                 .execute();
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
@@ -98,7 +98,7 @@ public class ProxyTest extends AbstractBasicTest {
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
-                .setProxy(new ProxyServer("127.0.0.1", port1))
+                .setProxyServer(new ProxyServer("127.0.0.1", port1))
                 .execute();
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
