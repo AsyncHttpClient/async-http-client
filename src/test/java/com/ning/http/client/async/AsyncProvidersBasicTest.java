@@ -1368,4 +1368,16 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.close();
     }
+
+    @Test(groups = "online")
+    public void testAwsS3() throws Exception {
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().build());
+        Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
+        if (response.getResponseBody() == null || response.getResponseBody().isEmpty()) {
+            fail("No response Body");
+        } else {
+            assertEquals(response.getStatusCode(), 403);
+        }
+        c.close();
+    }
 }
