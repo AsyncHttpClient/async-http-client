@@ -606,7 +606,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     return;
                 }
 
-                if (response.getStatus().getCode() != 200 || nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+                if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                     markAsDoneAndCacheConnection(future, ctx.getChannel());
                 }
 
