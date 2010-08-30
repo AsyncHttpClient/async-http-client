@@ -53,4 +53,6 @@ public interface Request {
     public String getVirtualHost();
 
     public FluentStringsMap getQueryParams();
+
+    public ProxyServer getProxyServer();
 }

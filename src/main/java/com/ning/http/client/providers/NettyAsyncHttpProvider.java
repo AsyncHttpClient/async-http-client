@@ -29,6 +29,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
@@ -314,7 +315,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (uri.getQuery() != null) {
             path.append("?").append(uri.getRawQuery());
         }
-        HttpRequest nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
+        HttpRequest nettyRequest;
+        if (config.getProxyServer() != null || request.getProxyServer() != null) {
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
+        } else {
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
+        }
         nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
 
         FluentCaseInsensitiveStringsMap h = request.getHeaders();
@@ -330,7 +336,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         String ka = config.getKeepAlive() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
-        if (config.getProxyServer() != null) {
+        if (config.getProxyServer() != null || request.getProxyServer() != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
         }
 
@@ -485,11 +491,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         ChannelFuture channelFuture;
         try{
-            if (config.getProxyServer() == null) {
+            if (config.getProxyServer() == null && request.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), getPort(uri)));
             } else {
-                channelFuture = bootstrap.connect(
-                        new InetSocketAddress(config.getProxyServer().getHost(), config.getProxyServer().getPort()));
+                ProxyServer proxy = (request.getProxyServer() == null ? config.getProxyServer() : request.getProxyServer());
+                channelFuture = bootstrap.connect(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t){

@@ -123,6 +123,11 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
+    public RequestBuilder setProxyServer(ProxyServer proxyServer) {
+        return super.setProxyServer(proxyServer);
+    }
+
+    @Override
     public RequestBuilder setVirtualHost(String virtualHost) {
         return super.setVirtualHost(virtualHost);
     }
