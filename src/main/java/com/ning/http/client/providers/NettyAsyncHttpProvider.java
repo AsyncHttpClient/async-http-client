@@ -663,13 +663,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private String getBaseUrl(URI uri){
-        String url = uri.toString();
+        String url = uri.getScheme() + "://" + uri.getAuthority();
         int port = uri.getPort();
         if (port == -1) {
             port = getPort(uri);
-            url = url.substring(0,url.length() -1) + ":" + port;
+            url += ":" + port;
         }
-        return url.substring(0,url.indexOf(":", 9) + String.valueOf(port).length() +1);
+        return url;
     }
     
     private static int getPort(URI uri) {
