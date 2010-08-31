@@ -225,7 +225,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             public ConnectListener<T> build() throws IOException {
 
-                URI uri = createUri(request.getUrl());
+                URI uri = createUri(request.getRawUrl());
                 HttpRequest nettyRequest = buildRequest(config,request,uri);
 
                 if (log.isDebugEnabled())
@@ -472,7 +472,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException("Too many connections");
         }
 
-        URI uri = createUri(request.getUrl());
+        URI uri = createUri(request.getRawUrl());
         if (log.isDebugEnabled())
             log.debug("Lookup cache: " + uri.toString());
 

@@ -30,7 +30,17 @@ public interface Request {
 
     public RequestType getType();
 
+    /**
+     * Return the decoded url
+     * @return  the decoded url
+     */
     public String getUrl();
+
+    /**
+     * Return the undecoded url
+     * @return the undecoded url
+     */
+    public String getRawUrl();
 
     public FluentCaseInsensitiveStringsMap getHeaders();
 

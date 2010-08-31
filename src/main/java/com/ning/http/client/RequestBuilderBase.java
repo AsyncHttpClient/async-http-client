@@ -59,7 +59,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.type = prototype.getType();
-                this.url = prototype.getUrl();
+                int pos = prototype.getUrl().indexOf("?");
+                this.url = pos > 0 ? prototype.getUrl().substring(0,pos) : prototype.getUrl();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
@@ -84,6 +85,10 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         /* @Override */
 
         public String getUrl() {
+            return toUrl(true);
+        }
+
+        private String toUrl(boolean encode) {
 
             if (url == null) throw new NullPointerException("url is null");
 
@@ -91,7 +96,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             try {
                 uri = URI.create(url).toURL().toString();
             } catch (MalformedURLException e) {
-                throw new IllegalStateException("Illegal URL", e);
+                throw new IllegalStateException("Illegal URL: " + url, e);
             }
 
             if (queryParams != null) {
@@ -100,7 +105,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
                     builder.append("/");
                 }
-                builder.append(url.contains("?") ? "&" : "?"); // in case we have some query string in url already
+                builder.append("?"); 
 
                 for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
                     Map.Entry<String, List<String>> param = i.next();
@@ -110,11 +115,15 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         builder.append(name);
                         if (value != null) {
                             builder.append('=');
-                            try {
-                                builder.append(URLEncoder.encode(value, "UTF-8").replace("+", "%20"));
-                            }
-                            catch (UnsupportedEncodingException e) {
-                                throw new AssertionError("UTF-8 encoding not found");
+                            if (encode) {
+                                try {
+                                    builder.append(URLEncoder.encode(value, "UTF-8").replace("+", "%20"));
+                                }
+                                catch (UnsupportedEncodingException e) {
+                                    throw new AssertionError("UTF-8 encoding not found");
+                                }
+                            } else {
+                                builder.append(value);
                             }
                         }
                         if (j.hasNext()) {
@@ -128,7 +137,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 uri += builder.toString();
             }
             return uri;
+        }
 
+        /* @Override */
+        public String getRawUrl() {
+            return toUrl(false);
         }
 
         /* @Override */
@@ -221,9 +234,38 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setUrl(String url) {
-        request.url = url;
+        request.url = buildUrl(url);
         return derived.cast(this);
     }
+
+    private String buildUrl(String url) {
+        URI uri = URI.create(url);
+        StringBuilder buildedUrl = new StringBuilder();
+
+        if (uri.getScheme() != null) {
+            buildedUrl.append(uri.getScheme());
+            buildedUrl.append("://");
+        }
+
+        if (uri.getAuthority() != null) {
+            buildedUrl.append(uri.getAuthority());
+        }
+        buildedUrl.append(uri.getRawPath());
+
+        if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
+            String[] queries = uri.getRawQuery().split("&");
+            int pos = 0;
+            for( String query : queries) {
+                pos = query.indexOf("=");
+                if (pos <= 0) {
+                    throw new IllegalStateException("Illegal URL: " + url);
+                }
+                addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
+            }
+        }
+        return buildedUrl.toString();
+    }
+
 
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
