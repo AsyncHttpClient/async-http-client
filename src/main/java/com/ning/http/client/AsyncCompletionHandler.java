@@ -16,12 +16,12 @@
  */
 package com.ning.http.client;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
 
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
@@ -31,7 +31,7 @@ import java.util.Collections;
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
 
-    private final static Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
     private final Collection<HttpResponseBodyPart> bodies =
             Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
@@ -78,8 +78,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      */
     /* @Override */
     public void onThrowable(Throwable t) {
-        if (log.isDebugEnabled())
-            log.debug(t);
+        log.debug(t);
     }
 
     /**

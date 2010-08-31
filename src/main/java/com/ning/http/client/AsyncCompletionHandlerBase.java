@@ -16,14 +16,14 @@
  */
 package com.ning.http.client;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
 
 /**
  *  Simple {@link AsyncHandler} of type {@link Response}
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
-    private final static Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
     @Override
     public Response onCompleted(Response response) throws Exception {
@@ -32,8 +32,6 @@ public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>
 
     /* @Override */
     public void onThrowable(Throwable t) {
-        if (log.isDebugEnabled()) {
-            log.debug(t);
-        }
+        log.debug(t);
     }
 }

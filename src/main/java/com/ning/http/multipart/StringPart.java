@@ -15,9 +15,6 @@
  */
 package com.ning.http.multipart;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -26,9 +23,6 @@ import java.io.OutputStream;
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class StringPart extends PartBase {
-
-    /** Log object for this class. */
-    private final static Logger LOG = LogManager.getLogger(StringPart.class);
 
     /** Default content encoding of string parameters. */
     public static final String DEFAULT_CONTENT_TYPE = "text/plain";
@@ -100,7 +94,6 @@ public class StringPart extends PartBase {
      * @throws java.io.IOException if there is a write error
      */
     protected void sendData(OutputStream out) throws IOException {
-        LOG.trace("enter sendData(OutputStream)");
         out.write(getContent());
     }
 
@@ -110,7 +103,6 @@ public class StringPart extends PartBase {
      * @throws IOException If an IO problem occurs
      */
     protected long lengthOfData() throws IOException {
-        LOG.trace("enter lengthOfData()");
         return getContent().length;
     }
 

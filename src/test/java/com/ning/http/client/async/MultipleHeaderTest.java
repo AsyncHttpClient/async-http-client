@@ -23,7 +23,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
-import org.apache.log4j.BasicConfigurator;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -148,7 +147,6 @@ public class MultipleHeaderTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        BasicConfigurator.configure();
         serverSocket = new ServerSocket(PORT);
         executorService = Executors.newFixedThreadPool(1);
         voidFuture = executorService.submit(new Callable() {

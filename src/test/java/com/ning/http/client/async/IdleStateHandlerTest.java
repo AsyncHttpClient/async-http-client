@@ -17,7 +17,6 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import org.apache.log4j.BasicConfigurator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -35,12 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 
-
 public class IdleStateHandlerTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class IdleStateHandler extends AbstractHandler {
-
 
         public void handle(String s,
                            Request r,
@@ -62,7 +59,6 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-        BasicConfigurator.configure();
 
         port1 = findFreePort();
         Connector listener = new SelectChannelConnector();

@@ -18,8 +18,9 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -56,10 +57,10 @@ import static org.testng.Assert.assertNull;
 
 public class BasicHttpsTest {
 
-    protected Server server;
-    protected final static Logger log = Logger.getLogger(BasicHttpsTest.class);
-
     protected final static String TARGET_URL = "https://127.0.0.1:18181/foo/test";
+
+    protected final Logger log = LogManager.getLogger(BasicHttpsTest.class);
+    protected Server server;
 
     public static class EchoHandler extends AbstractHandler {
 
@@ -136,7 +137,6 @@ public class BasicHttpsTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
-        BasicConfigurator.resetConfiguration();        
         server.stop();
     }
 
@@ -154,7 +154,6 @@ public class BasicHttpsTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-        BasicConfigurator.configure();
 
         SslSocketConnector connector = new SslSocketConnector();
         connector.setHost("127.0.0.1");
