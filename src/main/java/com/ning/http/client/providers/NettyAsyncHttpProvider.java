@@ -593,6 +593,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                                            .setMethodName(request.getType().toString())
                                                            .setScheme(Realm.AuthScheme.DIGEST)
                                                            .build();
+                    
+                    // If authentication fail, we don't want to end up here again.
                     future.setInDigestAuth(true);
                     log.debug("Sending authentication to %s", request.getUrl());
                     
