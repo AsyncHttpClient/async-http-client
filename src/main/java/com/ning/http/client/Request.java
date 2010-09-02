@@ -65,4 +65,6 @@ public interface Request {
     public FluentStringsMap getQueryParams();
 
     public ProxyServer getProxyServer();
+
+    public Realm getRealm();
 }

@@ -30,6 +30,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
+import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.RequestType;
@@ -40,6 +41,7 @@ import com.ning.http.client.logging.Logger;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
+import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -83,6 +85,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -315,6 +318,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (uri.getQuery() != null) {
             path.append("?").append(uri.getRawQuery());
         }
+
         HttpRequest nettyRequest;
         if (config.getProxyServer() != null || request.getProxyServer() != null) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
@@ -331,6 +335,26 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         nettyRequest.addHeader(name, value);
                     }
                 }
+            }
+        }
+
+        Realm realm = request.getRealm();
+        if (realm != null) {
+            switch (realm.getAuthScheme()) {
+                case BASIC:
+                    nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
+                                           AuthenticatorUtils.computeBasicAuthentication(realm));
+                    break;
+                case DIGEST:
+                    try {
+                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
+                                               AuthenticatorUtils.computeDisgestAuthentication(realm));
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new SecurityException(e);
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException("Invalid Realm");
             }
         }
 

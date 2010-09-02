@@ -52,6 +52,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long length = -1;
         public FluentStringsMap queryParams;
         public ProxyServer proxyServer;
+        private Realm realm;
 
         public RequestImpl() {
         }
@@ -73,6 +74,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
                 this.proxyServer = prototype.getProxyServer();
+                this.realm = prototype.getRealm();
             }
         }
 
@@ -200,6 +202,10 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public ProxyServer getProxyServer() {
             return proxyServer;
+        }
+
+        public Realm getRealm() {
+            return realm;
         }
 
         @Override
@@ -418,6 +424,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setProxyServer(ProxyServer proxyServer) {
         request.proxyServer = proxyServer;
+        return derived.cast(this);
+    }
+
+    public T setRealm(Realm realm) {
+        request.realm = realm;
         return derived.cast(this);
     }
 
