@@ -348,7 +348,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 case DIGEST:
                     try {
                         nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                               AuthenticatorUtils.computeDisgestAuthentication(realm));
+                                               AuthenticatorUtils.computeDigestAuthentication(realm));
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }

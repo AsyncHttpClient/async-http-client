@@ -36,7 +36,7 @@ public final class AuthenticatorUtils {
         return "Basic " + Base64.encode(s.getBytes());
     }
 
-    public static String computeDisgestAuthentication(Realm realm) throws NoSuchAlgorithmException {
+    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         construct(builder, "username", realm.getPrincipal());
