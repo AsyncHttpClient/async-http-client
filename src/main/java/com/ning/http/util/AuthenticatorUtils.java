@@ -17,9 +17,12 @@ package com.ning.http.util;
 
 import com.ning.http.client.Realm;
 
+import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
+
+    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
@@ -40,7 +43,7 @@ public final class AuthenticatorUtils {
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
 
-        return builder.toString();
+        return new String(builder.toString().getBytes(ISO_8859_1));
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value) {

@@ -368,7 +368,7 @@ public class Realm {
             md.update((byte) ':');
             md.update(cnonce.getBytes(ISO_8859_1));
             md.update((byte) ':');
-            md.update(methodName.getBytes(ISO_8859_1));
+            md.update(qop.getBytes(ISO_8859_1));
             md.update((byte) ':');
             md.update(convert(ha2, 16).getBytes(ISO_8859_1));
             byte[] digest = md.digest();
@@ -403,8 +403,10 @@ public class Realm {
 
         public Realm build() {
 
-            newCnonce();
-            newResponse();
+            if (nonce != null && !nonce.equals("")) {
+                newCnonce();
+                newResponse();
+            }
 
             return new Realm(scheme,
                     principal,
