@@ -17,19 +17,9 @@ package com.ning.http.util;
 
 import com.ning.http.client.Realm;
 
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
 
 public final class AuthenticatorUtils {
-
-    private final static Charset UTF_8 = Charset.forName("UTF-8");
-    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-
-    private static final String NC = "00000001";
-    private Realm securityRealm;
-    private Map details;
 
     public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
@@ -43,87 +33,21 @@ public final class AuthenticatorUtils {
         construct(builder, "realm", realm.getRealmName());
         construct(builder, "nonce", realm.getNonce());
         construct(builder, "uri", realm.getUri());
-        construct(builder, "algorithm", realm.getAlgorithm());
-        construct(builder, "response", digest(realm));
-        construct(builder, "qop", realm.getQop());
-        construct(builder, "nc", realm.getNc());
-        construct(builder, "cnonce", realm.getCnonce());
+        builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
+
+        construct(builder, "response", realm.getResponse());
+        builder.append("qop").append('=').append(realm.getQop()).append(", ");
+        builder.append("nc").append('=').append(realm.getNc()).append(", ");
+        construct(builder, "cnonce", realm.getCnonce(), true);
 
         return builder.toString();
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value) {
-        return builder.append(name).append('=').append('"').append(value).append("\", ");
+        return construct(builder,name,value,false);
     }
 
-    protected static String digest(Realm realm) throws NoSuchAlgorithmException {
-            String cnonce = newCnonce(realm);
-            MessageDigest md = MessageDigest.getInstance("MD5");
-
-            md.update(realm.getPrincipal().getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realm.getRealmName().getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realm.getPassword().getBytes(ISO_8859_1));
-            byte[] ha1 = md.digest();
-            md.reset();
-            md.update(realm.getMethodName().getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realm.getUri().getBytes(ISO_8859_1));
-            byte[] ha2 = md.digest();
-
-            md.update(convert(ha1, 16).getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realm.getNonce().getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(NC.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(cnonce.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realm.getMethodName().getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(convert(ha2, 16).getBytes(ISO_8859_1));
-            byte[] digest = md.digest();
-
-            return encode(digest);
+    private static StringBuilder construct(StringBuilder builder, String name, String value, boolean tail) {
+        return builder.append(name).append('=').append('"').append(value).append(tail ? "\"" : "\", ");
     }
-
-    private static String newCnonce(Realm realm) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
-            return encode(b);
-        }
-        catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static String encode(byte[] data) {
-        StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < data.length; i++) {
-            buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
-            buffer.append(Integer.toHexString(data[i] & 0x0f));
-        }
-        return buffer.toString();
-    }
-
-    private static String convert(byte[] bytes, int base)
-    {
-        StringBuilder buf = new StringBuilder();
-        for (byte b : bytes)
-        {
-            int bi=0xff&b;
-            int c='0'+(bi/base)%base;
-            if (c>'9')
-                c= 'a'+(c-'0'-10);
-            buf.append((char)c);
-            c='0'+bi%base;
-            if (c>'9')
-                c= 'a'+(c-'0'-10);
-            buf.append((char)c);
-        }
-        return buf.toString();
-    }
-
 }

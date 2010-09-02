@@ -343,18 +343,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             switch (realm.getAuthScheme()) {
                 case BASIC:
                     nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                           AuthenticatorUtils.computeBasicAuthentication(realm));
+                                   AuthenticatorUtils.computeBasicAuthentication(realm));
                     break;
                 case DIGEST:
-                    try {
-                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                               AuthenticatorUtils.computeDigestAuthentication(realm));
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new SecurityException(e);
+                    if (realm.getNonce() != null && !realm.getNonce().equals("")) {
+                        try {
+                            nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
+                                           AuthenticatorUtils.computeDigestAuthentication(realm));
+                        } catch (NoSuchAlgorithmException e) {
+                            throw new SecurityException(e);
+                        }
                     }
                     break;
                 default:
-                    throw new IllegalStateException("Invalid Realm");
+                    throw new IllegalStateException("Invalie AuthType");
             }
         }
 
@@ -575,8 +577,32 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 // Required if there is some trailing headers.
                 future.setHttpResponse(response);
 
-                String ka = response.getHeader("Connection");
+                String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
                 future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
+
+                String wwwAuth = response.getHeader(HttpHeaders.Names.WWW_AUTHENTICATE);
+                Request request = future.getRequest();
+                if (response.getStatus().getCode() == 401
+                        && wwwAuth != null
+                        && future.getRequest().getRealm() != null
+                        && !future.isInDigestAuth()) {
+
+                    Realm realm =  new Realm.RealmBuilder().clone(request.getRealm())
+                                                           .parseWWWAuthenticateHeader(wwwAuth)
+                                                           .setUri(URI.create(request.getUrl()).getPath())
+                                                           .setMethodName(request.getType().toString())
+                                                           .setScheme(Realm.AuthScheme.DIGEST)
+                                                           .build();
+                    future.setInDigestAuth(true);
+                    log.debug("Sending authentication to %s", request.getUrl());
+                    
+                    //Cache our current connection so we don't have to re-open it.
+                    markAsDoneAndCacheConnection(future, ctx.getChannel(), false);
+                    RequestBuilder builder = new RequestBuilder(future.getRequest());
+
+                    execute(builder.setRealm(realm).build(),future);
+                    return;
+                }
 
                 if (config.isRedirectEnabled()
                         && (response.getStatus().getCode() == 302 || response.getStatus().getCode() == 301) ){
@@ -631,7 +657,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
 
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                    markAsDoneAndCacheConnection(future, ctx.getChannel());
+                    markAsDoneAndCacheConnection(future, ctx.getChannel(), true);
                 }
 
             } else if (e.getMessage() instanceof HttpChunk) {
@@ -671,7 +697,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ctx.sendUpstream(e);
     }
 
-    private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
+    private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel, boolean releaseFuture) throws MalformedURLException {
         if (future.getKeepAlive()){
             AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
             if (connectionPerHost == null) {
@@ -689,7 +715,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             activeConnectionsCount.decrementAndGet();
         }
 
-        future.done();
+        if (releaseFuture)
+            future.done();
     }
 
     private String getBaseUrl(URI uri){
@@ -711,7 +738,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     
     private void finishUpdate(NettyResponseFuture<?> future, ChannelHandlerContext ctx) throws IOException {
         closeChannel(ctx);
-        markAsDoneAndCacheConnection(future, ctx.getChannel());
+        markAsDoneAndCacheConnection(future, ctx.getChannel(), true);
     }
 
     private void closeChannel(ChannelHandlerContext ctx) {

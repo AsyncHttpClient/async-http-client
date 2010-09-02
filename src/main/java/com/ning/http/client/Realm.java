@@ -16,7 +16,17 @@
  */
 package com.ning.http.client;
 
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.regex.Pattern;
+
 public class Realm {
+
+
+    private final static Charset UTF_8 = Charset.forName("UTF-8");
+    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+    private static final String NC = "00000001";
 
     private final String principal;
     private final String password;
@@ -30,6 +40,8 @@ public class Realm {
     private final String cnonce;
     private final String uri;
     private final String methodName;
+
+    private final static Pattern REALM = Pattern.compile("REALM=");
 
     public enum AuthScheme {
         DIGEST,
@@ -47,7 +59,7 @@ public class Realm {
                   String nc,
                   String cnonce,
                   String uri, String method) {
-        
+
         this.principal = principal;
         this.password = password;
         this.scheme = scheme;
@@ -138,6 +150,24 @@ public class Realm {
     }
 
     @Override
+    public String toString() {
+        return "Realm{" +
+                "principal='" + principal + '\'' +
+                ", password='" + password + '\'' +
+                ", scheme=" + scheme +
+                ", realmName='" + realmName + '\'' +
+                ", nonce='" + nonce + '\'' +
+                ", algorithm='" + algorithm + '\'' +
+                ", response='" + response + '\'' +
+                ", qop='" + qop + '\'' +
+                ", nc='" + nc + '\'' +
+                ", cnonce='" + cnonce + '\'' +
+                ", uri='" + uri + '\'' +
+                ", methodName='" + methodName + '\'' +
+                '}';
+    }
+
+    @Override
     public int hashCode() {
         int result = principal != null ? principal.hashCode() : 0;
         result = 31 * result + (password != null ? password.hashCode() : 0);
@@ -153,17 +183,17 @@ public class Realm {
         return result;
     }
 
-    public static class Builder {
+    public static class RealmBuilder {
 
         private String principal = "";
         private String password = "";
         private AuthScheme scheme = AuthScheme.BASIC;
         private String realmName = "";
         private String nonce = "";
-        private String algorithm = "";
+        private String algorithm = "MD5";
         private String response = "";
-        private String qop  = "";
-        private String nc = "";
+        private String qop = "auth";
+        private String nc = "00000001";
         private String cnonce = "";
         private String uri = "";
         private String methodName = "GET";
@@ -172,7 +202,7 @@ public class Realm {
             return principal;
         }
 
-        public Builder setPrincipal(String principal) {
+        public RealmBuilder setPrincipal(String principal) {
             this.principal = principal;
             return this;
         }
@@ -181,7 +211,7 @@ public class Realm {
             return password;
         }
 
-        public Builder setPassword(String password) {
+        public RealmBuilder setPassword(String password) {
             this.password = password;
             return this;
         }
@@ -190,7 +220,7 @@ public class Realm {
             return scheme;
         }
 
-        public Builder setScheme(AuthScheme scheme) {
+        public RealmBuilder setScheme(AuthScheme scheme) {
             this.scheme = scheme;
             return this;
         }
@@ -199,7 +229,7 @@ public class Realm {
             return realmName;
         }
 
-        public Builder setRealmName(String realmName) {
+        public RealmBuilder setRealmName(String realmName) {
             this.realmName = realmName;
             return this;
         }
@@ -208,7 +238,7 @@ public class Realm {
             return nonce;
         }
 
-        public Builder setNonce(String nonce) {
+        public RealmBuilder setNonce(String nonce) {
             this.nonce = nonce;
             return this;
         }
@@ -217,7 +247,7 @@ public class Realm {
             return algorithm;
         }
 
-        public Builder setAlgorithm(String algorithm) {
+        public RealmBuilder setAlgorithm(String algorithm) {
             this.algorithm = algorithm;
             return this;
         }
@@ -226,7 +256,7 @@ public class Realm {
             return response;
         }
 
-        public Builder setResponse(String response) {
+        public RealmBuilder setResponse(String response) {
             this.response = response;
             return this;
         }
@@ -235,7 +265,7 @@ public class Realm {
             return qop;
         }
 
-        public Builder setQop(String qop) {
+        public RealmBuilder setQop(String qop) {
             this.qop = qop;
             return this;
         }
@@ -244,17 +274,8 @@ public class Realm {
             return nc;
         }
 
-        public Builder setNc(String nc) {
+        public RealmBuilder setNc(String nc) {
             this.nc = nc;
-            return this;
-        }
-
-        public String getCnonce() {
-            return cnonce;
-        }
-
-        public Builder setCnonce(String cnonce) {
-            this.cnonce = cnonce;
             return this;
         }
 
@@ -262,7 +283,7 @@ public class Realm {
             return uri;
         }
 
-        public Builder setUri(String uri) {
+        public RealmBuilder setUri(String uri) {
             this.uri = uri;
             return this;
         }
@@ -271,12 +292,132 @@ public class Realm {
             return methodName;
         }
 
-        public void setMethodName(String methodName) {
+        public RealmBuilder setMethodName(String methodName) {
             this.methodName = methodName;
+            return this;
         }
 
-        public Realm build(){
-            return new Realm(scheme,principal,password,realmName, nonce,algorithm,response,qop,nc,cnonce,uri, methodName);
+        public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
+            setRealmName(match(headerLine, "realm"));
+            setNonce(match(headerLine, "nonce"));
+            setAlgorithm(match(headerLine, "algorithm"));
+            setQop(match(headerLine, "qop"));
+            return this;
+        }
+
+        private String match(String headerLine, String token) {
+            int match = headerLine.indexOf(token);
+            if (match <= 0) return "";
+
+            // = to skip
+            match += token.length() + 1;
+            int traillingComa = headerLine.indexOf(",", match);
+            String value = headerLine.substring(match, traillingComa > 0 ? traillingComa : headerLine.length());
+            value = value.endsWith("\"") ? value.substring(0, value.length() - 1) : value;
+            return value.startsWith("\"") ? value.substring(1) : value;
+        }
+
+        public RealmBuilder clone(Realm clone) {
+            setRealmName(clone.getRealmName());
+            setAlgorithm(clone.getAlgorithm());
+            setMethodName(clone.getMethodName());
+            setNc(clone.getNc());
+            setNonce(clone.getNonce());
+            setPassword(clone.getPassword());
+            setPrincipal(clone.getPrincipal());
+            setQop(clone.getQop());
+            setScheme(clone.getScheme());
+            setUri(clone.getUri());
+            return this;
+        }
+
+        private void newCnonce() {
+            try {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
+                cnonce = encode(b);
+            } catch (Exception e) {
+                 throw new SecurityException(e);
+            }
+        }
+
+        protected void newResponse() {
+            MessageDigest md = null;
+            try {
+                md = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                throw new SecurityException(e);
+            }
+            md.update(principal.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(realmName.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(password.getBytes(ISO_8859_1));
+            byte[] ha1 = md.digest();
+            md.reset();
+            md.update(methodName.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(uri.getBytes(ISO_8859_1));
+            byte[] ha2 = md.digest();
+
+            md.update(convert(ha1, 16).getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(nonce.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(NC.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(cnonce.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(methodName.getBytes(ISO_8859_1));
+            md.update((byte) ':');
+            md.update(convert(ha2, 16).getBytes(ISO_8859_1));
+            byte[] digest = md.digest();
+
+            response = encode(digest);
+        }
+
+        private static String encode(byte[] data) {
+            StringBuilder buffer = new StringBuilder();
+            for (int i = 0; i < data.length; i++) {
+                buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
+                buffer.append(Integer.toHexString(data[i] & 0x0f));
+            }
+            return buffer.toString();
+        }
+
+        private static String convert(byte[] bytes, int base) {
+            StringBuilder buf = new StringBuilder();
+            for (byte b : bytes) {
+                int bi = 0xff & b;
+                int c = '0' + (bi / base) % base;
+                if (c > '9')
+                    c = 'a' + (c - '0' - 10);
+                buf.append((char) c);
+                c = '0' + bi % base;
+                if (c > '9')
+                    c = 'a' + (c - '0' - 10);
+                buf.append((char) c);
+            }
+            return buf.toString();
+        }
+
+        public Realm build() {
+
+            newCnonce();
+            newResponse();
+
+            return new Realm(scheme,
+                    principal,
+                    password,
+                    realmName,
+                    nonce,
+                    algorithm,
+                    response,
+                    qop,
+                    nc,
+                    cnonce,
+                    uri,
+                    methodName);
         }
     }
 
