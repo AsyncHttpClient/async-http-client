@@ -21,8 +21,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
+/**
+ * This class is required when authentication is needed. The class support DIGEST and BASIC. 
+ */
 public class Realm {
-
 
     private final static Charset UTF_8 = Charset.forName("UTF-8");
     private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
@@ -40,8 +42,6 @@ public class Realm {
     private final String cnonce;
     private final String uri;
     private final String methodName;
-
-    private final static Pattern REALM = Pattern.compile("REALM=");
 
     public enum AuthScheme {
         DIGEST,
@@ -183,7 +183,13 @@ public class Realm {
         return result;
     }
 
+
     public static class RealmBuilder {
+
+        //
+        //  Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
+        //  This code is already Apache licenced.
+        //
 
         private String principal = "";
         private String password = "";
@@ -305,18 +311,6 @@ public class Realm {
             return this;
         }
 
-        private String match(String headerLine, String token) {
-            int match = headerLine.indexOf(token);
-            if (match <= 0) return "";
-
-            // = to skip
-            match += token.length() + 1;
-            int traillingComa = headerLine.indexOf(",", match);
-            String value = headerLine.substring(match, traillingComa > 0 ? traillingComa : headerLine.length());
-            value = value.endsWith("\"") ? value.substring(0, value.length() - 1) : value;
-            return value.startsWith("\"") ? value.substring(1) : value;
-        }
-
         public RealmBuilder clone(Realm clone) {
             setRealmName(clone.getRealmName());
             setAlgorithm(clone.getAlgorithm());
@@ -341,7 +335,25 @@ public class Realm {
             }
         }
 
-        protected void newResponse() {
+        /**
+         * TODO: A Pattern/Matcher may be better.
+         * @param headerLine
+         * @param token
+         * @return
+         */
+        private String match(String headerLine, String token) {
+            int match = headerLine.indexOf(token);
+            if (match <= 0) return "";
+
+            // = to skip
+            match += token.length() + 1;
+            int traillingComa = headerLine.indexOf(",", match);
+            String value = headerLine.substring(match, traillingComa > 0 ? traillingComa : headerLine.length());
+            value = value.endsWith("\"") ? value.substring(0, value.length() - 1) : value;
+            return value.startsWith("\"") ? value.substring(1) : value;
+        }
+
+        private void newResponse() {
             MessageDigest md = null;
             try {
                 md = MessageDigest.getInstance("MD5");
@@ -401,8 +413,13 @@ public class Realm {
             return buf.toString();
         }
 
+        /**
+         * Build a {@link Realm}
+         * @return a {@link Realm}
+         */
         public Realm build() {
 
+            // Avoid generating
             if (nonce != null && !nonce.equals("")) {
                 newCnonce();
                 newResponse();
