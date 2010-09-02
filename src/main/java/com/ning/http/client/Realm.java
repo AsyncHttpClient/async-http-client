@@ -153,7 +153,7 @@ public class Realm {
         return result;
     }
 
-    public class Builder {
+    public static class Builder {
 
         private String principal = "";
         private String password = "";
