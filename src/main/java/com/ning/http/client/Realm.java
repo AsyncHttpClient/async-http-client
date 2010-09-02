@@ -183,7 +183,9 @@ public class Realm {
         return result;
     }
 
-
+    /**
+     * A builder for {@link Realm}
+     */
     public static class RealmBuilder {
 
         //
