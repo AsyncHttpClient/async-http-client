@@ -79,6 +79,7 @@ import org.jboss.netty.util.internal.ConcurrentHashMap;
 import javax.net.ssl.SSLEngine;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -381,8 +382,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } else if (request.getStreamData() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStreamData().available()));
                 byte[] b = new byte[request.getStreamData().available()];
-                request.getStreamData().read(b);
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
+                int offset = 0;
+                int length = b.length;
+
+                InputStream in = request.getStreamData();
+                while (length > 0) {
+                  int count = in.read(b, offset, length);
+                  if (count < 0) { // EOD
+                    break;
+                  }
+                  length -= count;
+                  offset += count;
+                }
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));                
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (final Entry<String, List<String>> paramEntry : request.getParams()) {
