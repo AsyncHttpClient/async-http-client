@@ -19,7 +19,6 @@ package com.ning.http.client;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.regex.Pattern;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC. 
@@ -331,7 +330,7 @@ public class Realm {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
                 byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
-                cnonce = encode(b);
+                cnonce = toHexString(b);
             } catch (Exception e) {
                  throw new SecurityException(e);
             }
@@ -362,35 +361,37 @@ public class Realm {
             } catch (NoSuchAlgorithmException e) {
                 throw new SecurityException(e);
             }
-            md.update(principal.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(realmName.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(password.getBytes(ISO_8859_1));
+            md.update(new StringBuilder(principal)
+                        .append(":")
+                        .append(realmName)
+                        .append(":")
+                        .append(password)
+                        .toString().getBytes(ISO_8859_1));
             byte[] ha1 = md.digest();
+
             md.reset();
-            md.update(methodName.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(uri.getBytes(ISO_8859_1));
+            md.update(new StringBuilder(methodName)
+                        .append(':')
+                        .append(uri).toString().getBytes(ISO_8859_1));
             byte[] ha2 = md.digest();
 
-            md.update(convert(ha1, 16).getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(nonce.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(NC.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(cnonce.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(qop.getBytes(ISO_8859_1));
-            md.update((byte) ':');
-            md.update(convert(ha2, 16).getBytes(ISO_8859_1));
+            md.update(new StringBuilder(toBase16(ha1))
+                        .append(':')
+                        .append(nonce)
+                        .append(':')
+                        .append(NC)
+                        .append(':')
+                        .append(cnonce)
+                        .append(':')
+                        .append(qop)
+                        .append(':')
+                        .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
             byte[] digest = md.digest();
 
-            response = encode(digest);
+            response = toHexString(digest);
         }
 
-        private static String encode(byte[] data) {
+        private static String toHexString(byte[] data) {
             StringBuilder buffer = new StringBuilder();
             for (int i = 0; i < data.length; i++) {
                 buffer.append(Integer.toHexString((data[i] & 0xf0) >>> 4));
@@ -399,7 +400,8 @@ public class Realm {
             return buffer.toString();
         }
 
-        private static String convert(byte[] bytes, int base) {
+        private static String toBase16(byte[] bytes) {
+            int base = 16;
             StringBuilder buf = new StringBuilder();
             for (byte b : bytes) {
                 int bi = 0xff & b;
