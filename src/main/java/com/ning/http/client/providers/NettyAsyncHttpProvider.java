@@ -406,21 +406,31 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
             } else if (request.getStreamData() != null) {
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStreamData().available()));
                 byte[] b = new byte[request.getStreamData().available()];
                 int offset = 0;
                 int length = b.length;
 
                 InputStream in = request.getStreamData();
-                while (length > 0) {
-                    int count = in.read(b, offset, length);
+                int count = 0;
+                while (true) {
+                    count = in.read(b, offset, length);
                     if (count < 0) { // EOF
                         break;
+                    } else if (count == 0) {
+                        // The array is full.
+                        offset += count;
+                        length = b.length;
+                        
+                        byte[] b2 = new byte[b.length * 2]; // Wild guess
+                        System.arraycopy(b,0,b2,0,b.length);
+                        b = b2;
+                        continue;
                     }
                     length -= count;
                     offset += count;
                 }
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(offset));                
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b, 0, offset));
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (final Entry<String, List<String>> paramEntry : request.getParams()) {
