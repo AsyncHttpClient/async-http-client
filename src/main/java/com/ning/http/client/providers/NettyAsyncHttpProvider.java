@@ -86,7 +86,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -105,8 +104,6 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
-
-    private final static Charset UTF_8 = Charset.forName("UTF-8");
 
     private final ClientBootstrap bootstrap;
 
@@ -433,7 +430,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
                 sb.deleteCharAt(sb.length() - 1);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes(UTF_8)));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes("UTF-8")));
 
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");

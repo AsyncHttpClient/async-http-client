@@ -17,19 +17,18 @@ package com.ning.http.util;
 
 import com.ning.http.client.Realm;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
-
-    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
         return "Basic " + Base64.encode(s.getBytes());
     }
 
-    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
+    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException, UnsupportedEncodingException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         construct(builder, "username", realm.getPrincipal());
@@ -43,7 +42,7 @@ public final class AuthenticatorUtils {
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
 
-        return new String(builder.toString().getBytes(ISO_8859_1));
+        return new String(builder.toString().getBytes("ISO_8859_1"));
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value) {

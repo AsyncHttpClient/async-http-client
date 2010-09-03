@@ -16,7 +16,7 @@
  */
 package com.ning.http.client;
 
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -25,8 +25,6 @@ import java.security.NoSuchAlgorithmException;
  */
 public class Realm {
 
-    private final static Charset UTF_8 = Charset.forName("UTF-8");
-    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
     private static final String NC = "00000001";
 
     private final String principal;
@@ -329,7 +327,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(ISO_8859_1));
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes("ISO-8859-1"));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                  throw new SecurityException(e);
@@ -354,7 +352,7 @@ public class Realm {
             return value.startsWith("\"") ? value.substring(1) : value;
         }
 
-        private void newResponse() {
+        private void newResponse() throws UnsupportedEncodingException {
             MessageDigest md = null;
             try {
                 md = MessageDigest.getInstance("MD5");
@@ -366,13 +364,13 @@ public class Realm {
                         .append(realmName)
                         .append(":")
                         .append(password)
-                        .toString().getBytes(ISO_8859_1));
+                        .toString().getBytes("ISO-8859-1"));
             byte[] ha1 = md.digest();
 
             md.reset();
             md.update(new StringBuilder(methodName)
                         .append(':')
-                        .append(uri).toString().getBytes(ISO_8859_1));
+                        .append(uri).toString().getBytes("ISO-8859-1"));
             byte[] ha2 = md.digest();
 
             md.update(new StringBuilder(toBase16(ha1))
@@ -385,7 +383,7 @@ public class Realm {
                         .append(':')
                         .append(qop)
                         .append(':')
-                        .append(toBase16(ha2)).toString().getBytes(ISO_8859_1));
+                        .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
             byte[] digest = md.digest();
 
             response = toHexString(digest);
@@ -426,7 +424,11 @@ public class Realm {
             // Avoid generating
             if (nonce != null && !nonce.equals("")) {
                 newCnonce();
-                newResponse();
+                try {
+                    newResponse();
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             return new Realm(scheme,
