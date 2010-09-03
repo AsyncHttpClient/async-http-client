@@ -68,4 +68,5 @@ public class RequestBuilderTest {
         assertEquals(params.get("param1").get(0), "value1");
         assertEquals(params.get("param2").get(0), "value2");
     }
+
 }

@@ -86,6 +86,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -301,7 +302,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } else if (path.length() > 0 && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ". must start with a '/'");
-        }
+        } 
 
         return uri;
     }
@@ -410,21 +411,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 InputStream in = request.getStreamData();
                 while (length > 0) {
-                  int count = in.read(b, offset, length);
-                  if (count < 0) { // EOF
-                    break;
-                  }
-                  length -= count;
-                  offset += count;
+                    int count = in.read(b, offset, length);
+                    if (count < 0) { // EOF
+                        break;
+                    }
+                    length -= count;
+                    offset += count;
                 }
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));                
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b));
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                     for (final String value : paramEntry.getValue()) {
                         sb.append(paramEntry.getKey());
                         sb.append("=");
-                        sb.append(value);
+                        sb.append(URLEncoder.encode(value, "UTF-8").replace("+", "%20"));
                         sb.append("&");
                     }
                 }
