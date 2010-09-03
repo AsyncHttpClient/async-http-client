@@ -64,7 +64,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         root.addAppender(new ConsoleAppender(
                 new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
 
-        port1 = 8080;
+        port1 = findFreePort();
         Connector listener = new SelectChannelConnector();
 
         listener.setHost("127.0.0.1");
