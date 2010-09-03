@@ -388,7 +388,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 InputStream in = request.getStreamData();
                 while (length > 0) {
                   int count = in.read(b, offset, length);
-                  if (count < 0) { // EOD
+                  if (count < 0) { // EOF
                     break;
                   }
                   length -= count;
