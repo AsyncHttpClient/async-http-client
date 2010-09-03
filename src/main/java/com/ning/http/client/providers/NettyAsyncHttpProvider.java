@@ -302,7 +302,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } else if (path.length() > 0 && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ". must start with a '/'");
-        } 
+        } else if (path.length() == 0 ) {
+            return URI.create(u + "/");
+        }
 
         return uri;
     }
