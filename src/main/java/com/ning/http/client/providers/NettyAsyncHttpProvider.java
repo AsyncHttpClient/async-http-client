@@ -83,6 +83,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -100,7 +101,11 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
+
+    private final static Charset UTF_8 = Charset.forName("UTF-8");
+
     private final ClientBootstrap bootstrap;
+
     private final static int MAX_BUFFERRED_BYTES = 8192;
 
     private final AsyncHttpClientConfig config;
@@ -390,7 +395,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
                 sb.deleteCharAt(sb.length() - 1);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes()));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes(UTF_8)));
 
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
