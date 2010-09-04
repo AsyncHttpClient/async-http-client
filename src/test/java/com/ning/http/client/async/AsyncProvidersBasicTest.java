@@ -65,7 +65,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com/foo.html?q=+%20x").build();
-        NettyResponseFuture responseFuture = (NettyResponseFuture)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/foo.html?q=+%20x");
     }

@@ -18,7 +18,6 @@ package com.ning.http.util;
 import com.ning.http.client.Realm;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {

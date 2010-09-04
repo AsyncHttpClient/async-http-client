@@ -79,25 +79,36 @@ public final class Base64 {
      * @param bytes The unencoded raw data.
      */
     public static String encode(byte[] bytes) {
-        StringBuilder buf = new StringBuilder(4 * (bytes.length / 3 + 1));
+        // always sequence of 4 characters for each 3 bytes; padded with '='s as necessary:
+        StringBuilder buf = new StringBuilder(((bytes.length + 2) / 3) * 4);
 
-        for (int i = 0, n = bytes.length; i < n;) {
-            byte byte0 = bytes[i++];
-            byte byte1 = (i++ < n) ? bytes[i - 1] : 0;
-            byte byte2 = (i++ < n) ? bytes[i - 1] : 0;
-
-            buf.append(lookup[byte0 >> 2]);
-            buf.append(lookup[((byte0 << 4) | byte1 >> 4) & 63]);
-            buf.append(lookup[((byte1 << 2) | byte2 >> 6) & 63]);
-            buf.append(lookup[byte2 & 63]);
-
-            if (i > n) {
-                for (int m = buf.length(), j = m - (i - n); j < m; j++) {
-                    buf.setCharAt(j, '=');
-                }
-            }
+        // first, handle complete chunks (fast loop)
+        int i = 0;
+        for (int end = bytes.length - 2; i < end; ) {
+            int chunk = ((bytes[i++] & 0xFF) << 16)
+                | ((bytes[i++] & 0xFF) << 8)                  
+                | (bytes[i++] & 0xFF);                 
+            buf.append(lookup[chunk >> 18]);
+            buf.append(lookup[(chunk >> 12) & 0x3F]);
+            buf.append(lookup[(chunk >> 6) & 0x3F]);
+            buf.append(lookup[chunk & 0x3F]);
         }
 
+        // then leftovers, if any
+        int len = bytes.length;
+        if (i < len) { // 1 or 2 extra bytes?
+            int chunk = ((bytes[i++] & 0xFF) << 16);
+            buf.append(lookup[chunk >> 18]);
+            if (i < len) { // 2 bytes
+                chunk |= ((bytes[i] & 0xFF) << 8);
+                buf.append(lookup[(chunk >> 12) & 0x3F]);
+                buf.append(lookup[(chunk >> 6) & 0x3F]);
+            } else { // 1 byte
+                buf.append(lookup[(chunk >> 12) & 0x3F]);
+                buf.append('=');
+            }
+            buf.append('=');
+        }
         return buf.toString();
     }
 

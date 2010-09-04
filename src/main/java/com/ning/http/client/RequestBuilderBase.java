@@ -16,12 +16,11 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -114,16 +113,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     String name = param.getKey();
                     for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
-                        builder.append(name);
+                        if (encode) {
+                            UTF8UrlEncoder.appendEncoded(builder, name);
+                        } else {
+                            builder.append(name);
+                        }
                         if (value != null) {
                             builder.append('=');
                             if (encode) {
-                                try {
-                                    builder.append(URLEncoder.encode(value, "UTF-8").replace("+", "%20"));
-                                }
-                                catch (UnsupportedEncodingException e) {
-                                    throw new AssertionError("UTF-8 encoding not found");
-                                }
+                                UTF8UrlEncoder.appendEncoded(builder, value);
                             } else {
                                 builder.append(value);
                             }

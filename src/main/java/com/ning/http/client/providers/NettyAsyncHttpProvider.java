@@ -43,6 +43,7 @@ import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
+import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
@@ -86,7 +87,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -108,7 +108,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final ClientBootstrap bootstrap;
 
-    private final static int MAX_BUFFERRED_BYTES = 8192;
+    private final static int MAX_BUFFERED_BYTES = 8192;
 
     private final AsyncHttpClientConfig config;
 
@@ -406,42 +406,24 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
             } else if (request.getStreamData() != null) {
-                byte[] b = new byte[request.getStreamData().available()];
-                int offset = 0;
-                int length = b.length;
-
-                InputStream in = request.getStreamData();
-                int count = 0;
-                while (true) {
-                    count = in.read(b, offset, length);
-                    if (count < 0) { // EOF
-                        break;
-                    } else if (count == 0) {
-                        // The array is full.
-                        offset += count;
-                        length = b.length;
-                        
-                        byte[] b2 = new byte[b.length * 2]; // Wild guess
-                        System.arraycopy(b,0,b2,0,b.length);
-                        b = b2;
-                        continue;
-                    }
-                    length -= count;
-                    offset += count;
-                }
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(offset));                
-                nettyRequest.setContent(ChannelBuffers.copiedBuffer(b, 0, offset));
+                int[] lengthWrapper = new int[1];
+                byte[] bytes = readFully(request.getStreamData(), lengthWrapper);
+                int length = lengthWrapper[0];
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
+                nettyRequest.setContent(ChannelBuffers.copiedBuffer(bytes, 0, length));
             } else if (request.getParams() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (final Entry<String, List<String>> paramEntry : request.getParams()) {
+                    final String key = paramEntry.getKey();
                     for (final String value : paramEntry.getValue()) {
-                        sb.append(paramEntry.getKey());
+                        if (sb.length() > 0) {
+                            sb.append("&");
+                        }
+                        UTF8UrlEncoder.appendEncoded(sb, key);
                         sb.append("=");
-                        sb.append(URLEncoder.encode(value, "UTF-8").replace("+", "%20"));
-                        sb.append("&");
+                        UTF8UrlEncoder.appendEncoded(sb, value);
                     }
                 }
-                sb.deleteCharAt(sb.length() - 1);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes("UTF-8")));
 
@@ -453,7 +435,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 int lenght = computeAndSetContentLength(request, nettyRequest);
 
                 if (lenght == -1) {
-                    lenght = MAX_BUFFERRED_BYTES;
+                    lenght = MAX_BUFFERED_BYTES;
                 }
 
                 MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), request.getParams());
@@ -468,7 +450,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 int lenght = computeAndSetContentLength(request, nettyRequest);
 
                 if (lenght == -1) {
-                    lenght = MAX_BUFFERRED_BYTES;
+                    lenght = MAX_BUFFERED_BYTES;
                 }
 
                 ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
@@ -875,5 +857,36 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             ++i;
         }
         return new MultipartRequestEntity(parts, methodParams);
+    }
+
+    // TODO: optimize; better use segmented-buffer to avoid reallocs (expand-by-doubling)
+    private static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException
+    {
+        // just in case available() returns bogus (or -1), allocate non-trivial chunk
+        byte[] b = new byte[Math.max(512, in.available())];
+        int offset = 0;
+        while (true) {
+            int left = b.length - offset;
+            int count = in.read(b, offset, left);
+            if (count < 0) { // EOF
+                break;
+            }
+            offset += count;
+            if (count == left) { // full buffer, need to expand
+                b = doubleUp(b);
+            }
+        }
+        // wish Java had Tuple return type...
+        lengthWrapper[0] = offset;
+        return b;
+    }
+
+    private static byte[] doubleUp(byte[] b)
+    {
+        // TODO: in Java 1.6, we would use Arrays.copyOf(), but for now we only rely on 1.5:
+        int len = b.length;
+        byte[] b2 = new byte[len+len];
+        System.arraycopy(b,0,b2,0,len);
+        return b2;
     }
 }

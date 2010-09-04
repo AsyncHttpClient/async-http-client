@@ -51,7 +51,7 @@ public class MultipleHeaderTest {
     private ExecutorService executorService;
     private ServerSocket serverSocket;
     private static final int PORT = 2929;
-    private Future voidFuture;
+    private Future<?> voidFuture;
 
     @Test(groups = "standalone")
     public void testMultipleOtherHeaders()
@@ -61,7 +61,7 @@ public class MultipleHeaderTest {
         AsyncHttpClient ahc = new AsyncHttpClient();
         Request req = new RequestBuilder(RequestType.GET).setUrl("http://localhost:" + PORT + "/MultiOther").build();
         final CountDownLatch latch = new CountDownLatch(1);
-        ahc.executeRequest(req, new AsyncHandler() {
+        ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {
                 t.printStackTrace(System.out);
             }
@@ -106,7 +106,7 @@ public class MultipleHeaderTest {
         AsyncHttpClient ahc = new AsyncHttpClient();
         Request req = new RequestBuilder(RequestType.GET).setUrl("http://localhost:" + PORT + "/MultiEnt").build();
         final CountDownLatch latch = new CountDownLatch(1);
-        ahc.executeRequest(req, new AsyncHandler() {
+        ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {
                 t.printStackTrace(System.out);
             }
@@ -149,7 +149,7 @@ public class MultipleHeaderTest {
     public void setUpGlobal() throws Exception {
         serverSocket = new ServerSocket(PORT);
         executorService = Executors.newFixedThreadPool(1);
-        voidFuture = executorService.submit(new Callable() {
+        voidFuture = executorService.submit(new Callable<Void>() {
             public Void call() throws Exception {
                 Socket socket;
                 while ((socket = serverSocket.accept()) != null) {
