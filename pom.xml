@@ -15,11 +15,11 @@
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
     </description>
-    <url>http://github.com/ning/async-http-client</url>
+    <url>http://github.com/AsyncHttpClient/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:ning/async-http-client.git</connection>
-        <url>scm:git:git@github.com:ning/async-http-client.git</url>
-        <developerConnection>scm:git:git@github.com:ning/async-http-client.git</developerConnection>
+        <connection>scm:git:git@github.com:AsynHttpClient/async-http-client.git</connection>
+        <url>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</url>
+        <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
     </scm>
     <prerequisites>
         <maven>2.0.9</maven>
