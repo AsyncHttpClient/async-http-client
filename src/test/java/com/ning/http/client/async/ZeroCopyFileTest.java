@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
@@ -31,9 +32,12 @@ import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link com.ning.http.client.async.BasicHttpsTest}
@@ -71,12 +75,33 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         // override system properties
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
-        
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setFile(file).execute();
+        final AtomicBoolean headerSent = new AtomicBoolean(false);
+        final AtomicBoolean operationCompleted = new AtomicBoolean(false);
+
+
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setFile(file).execute(new AsyncCompletionHandler() {
+
+            public STATE onHeaderWriteCompleted() {
+                headerSent.set(true);
+                return STATE.CONTINUE;
+            }
+
+            public STATE onContentWriteCompleted() {
+                operationCompleted.set(true);
+                return STATE.CONTINUE;
+            }
+
+            @Override
+            public Object onCompleted(Response response) throws Exception {
+                return response;
+            }
+        });
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBody(), "This is a simple test file");
+        assertTrue(operationCompleted.get());
+        assertTrue(headerSent.get());
     }
 
     @Test(groups = "standalone")

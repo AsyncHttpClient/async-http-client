@@ -274,16 +274,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
-        channel.write(nettyRequest).addListener(new ChannelFutureProgressListener() {
-            public void operationComplete(ChannelFuture cf) {
-                if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-                    ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
-                }
-            }
 
-            public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
-            }
-        });
+        /**
+         * Currently it is impossible to write the headers and the FIle using a single I/O operation.
+         * I've filled NETTY-XXX as an enhancement.
+         */
+        channel.write(nettyRequest).addListener(new ProgressListener(true,future.getAsyncHandler()));
 
         if (future.getRequest().getFile() != null) {
             final File file = future.getRequest().getFile();
@@ -297,37 +293,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 ChannelFuture writeFuture;
                 if (channel.getPipeline().get(SslHandler.class) != null) {
                     writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
-                    writeFuture.addListener(new ChannelFutureProgressListener() {
-                        public void operationComplete(ChannelFuture cf) {
-                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
-                            }
-
-                        }
-
-                        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
-                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteProgess(amount,current,total);
-                            }
-                        }
-                    });
+                    writeFuture.addListener(new ProgressListener(false,future.getAsyncHandler()));
                 } else {
                     final FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
                     writeFuture = channel.write(region);
-                    writeFuture.addListener(new ChannelFutureProgressListener() {
-                        public void operationComplete(ChannelFuture cf) {
-                            region.releaseExternalResources();
-
-                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
-                            }
-
-                        }
-
-                        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
-                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteProgess(amount,current,total);
-                            }
+                    writeFuture.addListener(new ProgressListener(false,future.getAsyncHandler()) {
+                         public void operationComplete(ChannelFuture cf) {
+                             region.releaseExternalResources();
+                             super.operationComplete(cf);
                         }
                     });
                 }
@@ -963,5 +936,32 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         byte[] b2 = new byte[len+len];
         System.arraycopy(b,0,b2,0,len);
         return b2;
+    }
+
+    private static class ProgressListener implements ChannelFutureProgressListener {
+
+        private final boolean notifyHeaders;
+        private final AsyncHandler asyncHandler;
+
+        public ProgressListener(boolean notifyHeaders, AsyncHandler asyncHandler) {
+            this.notifyHeaders = notifyHeaders;
+            this.asyncHandler = asyncHandler;
+        }
+
+        public void operationComplete(ChannelFuture cf) {
+            if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                if (notifyHeaders) {
+                    ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
+                } else {
+                    ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
+                }
+            }
+        }
+
+        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
+            if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgess(amount,current,total);
+            }
+        }
     }
 }

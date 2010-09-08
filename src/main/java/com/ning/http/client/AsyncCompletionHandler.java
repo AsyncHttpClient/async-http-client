@@ -29,7 +29,7 @@ import com.ning.http.client.logging.Logger;
  *
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
-public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
+public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
 
     private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
@@ -88,4 +88,35 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      */
     abstract public T onCompleted(Response response) throws Exception;
+
+    /**
+     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * written on the I/O socket.
+     *
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onHeaderWriteCompleted() {
+        return STATE.CONTINUE;
+    }
+
+    /**
+     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * written on the I/O socket.
+     *
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onContentWriteCompleted() {
+        return STATE.CONTINUE;
+    }
+
+    /**
+     * Invoked when the I/O operation associated with the {@link Request} body as been progressed.
+     * @param amount The amount of bytes to transfer.
+     * @param current The amount of bytes transferred
+     * @param total The total number of bytes transferred
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onContentWriteProgess(long amount, long current, long total) {
+        return STATE.CONTINUE;
+    }
 }
