@@ -138,20 +138,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
 
-    private static final String NEWLINE;
-
-    static {
-        String newLine = null;
-
-        try {
-            newLine = new Formatter().format("%n").toString();
-        } catch (Exception e) {
-            newLine = "\n";
-        }
-
-        NEWLINE = newLine;
-    }
-
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) ;
         socketChannelFactory = new NioClientSocketChannelFactory(
