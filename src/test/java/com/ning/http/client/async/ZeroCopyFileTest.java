@@ -22,8 +22,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -38,27 +36,30 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
- * Tests POST request with Query String.
+ * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link com.ning.http.client.async.BasicHttpsTest}
  *
- * @author Hubert Iwaniuk
  */
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
-    /** POST with QS server part. */
     private class ZeroCopyHandler extends AbstractHandler {
         public void handle(String s,
                            Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+                           HttpServletRequest httpRequest,
+                           HttpServletResponse httpResponse) throws IOException, ServletException {
             
-            ServletInputStream is = request.getInputStream();
-            response.setStatus(HttpServletResponse.SC_OK);
-            byte buf[] = new byte["This is a simple test file".length()];
-            is.readLine(buf, 0, buf.length);
-            ServletOutputStream os = response.getOutputStream();
-            os.println(new String(buf));
-            os.flush();
-            os.close();
+            int size = 10 * 1024;
+            if (httpRequest.getContentLength() > 0) {
+                size = httpRequest.getContentLength();
+            }
+            byte[] bytes = new byte[size];
+            if (bytes.length > 0) {
+                httpRequest.getInputStream().read(bytes);
+                httpResponse.getOutputStream().write(bytes);
+            }
+
+            httpResponse.setStatus(200);
+            httpResponse.getOutputStream().flush();
+            httpResponse.getOutputStream().close();
         }
     }
 
@@ -75,7 +76,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file\r\n");
+        assertEquals(resp.getResponseBody(), "This is a simple test file");
     }
 
     @Test(groups = "standalone")
@@ -91,7 +92,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file\r\n");
+        assertEquals(resp.getResponseBody(), "This is a simple test file");
     }
 
     @Override

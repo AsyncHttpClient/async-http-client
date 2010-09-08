@@ -39,7 +39,9 @@ public interface AsyncHandler<T> {
         /**
          * Continue the processing
          */
-        CONTINUE }
+        CONTINUE
+    }
+    
     /**
      * Invoked when an unexpected exception occurs during the processing of the response
      *
@@ -51,7 +53,7 @@ public interface AsyncHandler<T> {
      * Invoked as soon as some response body part are received.
      * @param bodyPart response's body part.
      * @throws Exception if something wrong happens
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current response processing.
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
@@ -59,7 +61,7 @@ public interface AsyncHandler<T> {
      * Invoked as soon as the HTTP status line has been received
      * @param responseStatus the status code and test of the response
      * @throws Exception if something wrong happens
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current response processing.
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
@@ -67,7 +69,7 @@ public interface AsyncHandler<T> {
      * Invoked as soon as the HTTP headers has been received.
      * @param headers the HTTP headers.
      * @throws Exception if something wrong happens
-     * @return a {@link STATE} telling to CONTINUE or ABORT the current response processing.
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 

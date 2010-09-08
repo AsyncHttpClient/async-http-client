@@ -42,13 +42,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 import static org.testng.Assert.assertEquals;
@@ -279,8 +283,46 @@ public class BasicHttpsTest {
     }
 
     @Test(groups = "standalone")
-    public void multipleSSLRequestsTest() throws Throwable {
+    public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+        SSLEngine sslEngine = createEngine();
 
+        AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        Future<Response> f = client.preparePost(TARGET_URL).setFile(file).execute();
+        Response resp = f.get();
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getResponseBody(), "This is a simple test file");
+    }
+
+    @Test(groups = "standalone")
+    public void multipleSSLRequestsTest() throws Throwable {
+        SSLEngine sslEngine = createEngine();
+        AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+
+        String body = "hello there";
+
+        // once
+        Response response = c.preparePost(TARGET_URL)
+                .setBody(body)
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getResponseBody(), body);
+
+        // twice
+        response = c.preparePost(TARGET_URL)
+                .setBody(body)
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getResponseBody(), body);
+    }
+
+    private static SSLEngine createEngine() {
         SSLContext sslContext;
         try {
             InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
@@ -305,23 +347,7 @@ public class BasicHttpsTest {
 
         SSLEngine sslEngine = sslContext.createSSLEngine();
         sslEngine.setUseClientMode(true);
-        AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(TARGET_URL)
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-        // twice
-        response = c.preparePost(TARGET_URL)
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
+        return sslEngine;
     }
 
     private static final TrustManager DUMMY_TRUST_MANAGER = new X509TrustManager() {

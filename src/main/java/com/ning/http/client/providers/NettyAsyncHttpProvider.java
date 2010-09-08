@@ -29,6 +29,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
+import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
@@ -67,7 +68,6 @@ import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
@@ -96,7 +96,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -111,11 +110,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.setContentLength;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
@@ -280,7 +274,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
-        channel.write(nettyRequest);
+        channel.write(nettyRequest).addListener(new ChannelFutureProgressListener() {
+            public void operationComplete(ChannelFuture cf) {
+                if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                    ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
+                }
+            }
+
+            public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
+            }
+        });
 
         if (future.getRequest().getFile() != null) {
             final File file = future.getRequest().getFile();
@@ -294,16 +297,37 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 ChannelFuture writeFuture;
                 if (channel.getPipeline().get(SslHandler.class) != null) {
                     writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
-                } else {
-                    final FileRegion region =
-                        new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-                    writeFuture = channel.write(region);
                     writeFuture.addListener(new ChannelFutureProgressListener() {
-                        public void operationComplete(ChannelFuture future) {
-                            region.releaseExternalResources();
+                        public void operationComplete(ChannelFuture cf) {
+                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
+                            }
+
                         }
 
-                        public void operationProgressed(ChannelFuture future, long amount, long current, long total) {
+                        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
+                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteProgess(amount,current,total);
+                            }
+                        }
+                    });
+                } else {
+                    final FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+                    writeFuture = channel.write(region);
+                    writeFuture.addListener(new ChannelFutureProgressListener() {
+                        public void operationComplete(ChannelFuture cf) {
+                            region.releaseExternalResources();
+
+                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteCompleted();
+                            }
+
+                        }
+
+                        public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
+                            if (ProgressAsyncHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                                ProgressAsyncHandler.class.cast(future.getAsyncHandler()).onContentWriteProgess(amount,current,total);
+                            }
                         }
                     });
                 }
