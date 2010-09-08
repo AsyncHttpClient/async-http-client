@@ -51,11 +51,14 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.DefaultFileRegion;
 import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -64,6 +67,7 @@ import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
@@ -74,20 +78,25 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.jboss.netty.handler.stream.ChunkedFile;
+import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.net.ssl.SSLEngine;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -102,6 +111,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.setContentLength;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
@@ -123,6 +137,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final NioClientSocketChannelFactory socketChannelFactory;
 
     private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
+
+    private static final String NEWLINE;
+
+    static {
+        String newLine = null;
+
+        try {
+            newLine = new Formatter().format("%n").toString();
+        } catch (Exception e) {
+            newLine = "\n";
+        }
+
+        NEWLINE = newLine;
+    }
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) ;
@@ -158,6 +186,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
                 }
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
             }
@@ -266,6 +295,38 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
         channel.write(nettyRequest);
+
+        if (future.getRequest().getFile() != null) {
+            final File file = future.getRequest().getFile();
+            RandomAccessFile raf;
+            long fileLength = 0;
+
+            try {
+                raf = new RandomAccessFile(file, "r");
+                fileLength = raf.length();
+
+                ChannelFuture writeFuture;
+                if (channel.getPipeline().get(SslHandler.class) != null) {
+                    writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
+                } else {
+                    final FileRegion region =
+                        new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+                    writeFuture = channel.write(region);
+                    writeFuture.addListener(new ChannelFutureProgressListener() {
+                        public void operationComplete(ChannelFuture future) {
+                            region.releaseExternalResources();
+                        }
+
+                        public void operationProgressed(
+                                ChannelFuture future, long amount, long current, long total) {
+                            System.out.printf("%s: %d / %d (+%d)%n", file.getAbsolutePath(), current, total, amount);
+                        }
+                    });
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
 
         try{
             future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
@@ -457,6 +518,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                 nettyRequest.setContent(b);
+            } else if (request.getFile() != null) {
+                File file = request.getFile();
+                if (file.isHidden() || !file.exists() || !file.isFile()) {
+                    throw new IOException(String.format("File %s is not a file, is hidden or doesn't exist",file.getAbsolutePath()));
+                }
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, new RandomAccessFile(file, "r").length());
             }
         }
 

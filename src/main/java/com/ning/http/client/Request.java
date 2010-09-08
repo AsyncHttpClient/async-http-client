@@ -16,6 +16,7 @@
  */
 package com.ning.http.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -137,4 +138,10 @@ public interface Request {
      * @return the {@link Realm}
      */
     public Realm getRealm();
+
+    /**
+     * Return the {@link File} to upload.
+     * @return the {@link File} to upload.
+     */
+    public File getFile();
 }

@@ -18,6 +18,7 @@ package com.ning.http.client;
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.util.UTF8UrlEncoder;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -52,6 +53,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public FluentStringsMap queryParams;
         public ProxyServer proxyServer;
         private Realm realm;
+        private File file;
 
         public RequestImpl() {
         }
@@ -74,6 +76,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.length = prototype.getLength();
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
+                this.file = prototype.getFile();
             }
         }
 
@@ -204,6 +207,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public Realm getRealm() {
             return realm;
+        }
+
+        public File getFile() {
+            return file;
         }
 
         @Override
@@ -427,6 +434,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setRealm(Realm realm) {
         request.realm = realm;
+        return derived.cast(this);
+    }
+
+    public T setFile(File file) {
+        request.file = file;
         return derived.cast(this);
     }
 
