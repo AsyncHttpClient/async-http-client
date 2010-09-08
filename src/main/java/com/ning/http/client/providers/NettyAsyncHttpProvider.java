@@ -303,9 +303,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             region.releaseExternalResources();
                         }
 
-                        public void operationProgressed(
-                                ChannelFuture future, long amount, long current, long total) {
-                            System.out.printf("%s: %d / %d (+%d)%n", file.getAbsolutePath(), current, total, amount);
+                        public void operationProgressed(ChannelFuture future, long amount, long current, long total) {
                         }
                     });
                 }
