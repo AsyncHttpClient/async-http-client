@@ -323,6 +323,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private void resetMultipartData() {
         request.parts = null;
     }
+        
+    public T setBoby(File file) {
+        request.file = file;
+        return derived.cast(this);
+    }
 
     public T setBody(byte[] data) throws IllegalArgumentException {
         if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
@@ -437,10 +442,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setFile(File file) {
-        request.file = file;
-        return derived.cast(this);
-    }
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&

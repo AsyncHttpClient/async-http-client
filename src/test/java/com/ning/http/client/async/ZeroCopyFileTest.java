@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -79,7 +78,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
 
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setFile(file).execute(new AsyncCompletionHandler() {
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBoby(file).execute(new AsyncCompletionHandler() {
 
             public STATE onHeaderWriteCompleted() {
                 headerSent.set(true);
@@ -113,7 +112,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setFile(file).execute();
+        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBoby(file).execute();
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
