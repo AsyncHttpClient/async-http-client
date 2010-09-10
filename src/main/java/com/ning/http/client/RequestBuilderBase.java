@@ -324,7 +324,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.parts = null;
     }
         
-    public T setBoby(File file) {
+    public T setBody(File file) {
         request.file = file;
         return derived.cast(this);
     }

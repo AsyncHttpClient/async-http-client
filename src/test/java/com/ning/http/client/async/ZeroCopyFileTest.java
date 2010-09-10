@@ -78,7 +78,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
 
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBoby(file).execute(new AsyncCompletionHandler() {
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler() {
 
             public STATE onHeaderWriteCompleted() {
                 headerSent.set(true);
@@ -112,7 +112,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBoby(file).execute();
+        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(file).execute();
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);

@@ -293,7 +293,7 @@ public class BasicHttpsTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        Future<Response> f = client.preparePost(TARGET_URL).setBoby(file).execute();
+        Future<Response> f = client.preparePost(TARGET_URL).setBody(file).execute();
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
