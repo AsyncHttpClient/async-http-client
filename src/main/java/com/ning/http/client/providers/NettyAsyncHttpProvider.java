@@ -511,7 +511,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
             nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=utf-8");
         }
-
         return nettyRequest;
     }
 
@@ -559,16 +558,28 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         Channel channel = lookupInCache(uri);
         if (channel != null && channel.isOpen()) {
-            // Decrement the count as this is not a new connection.
-            activeConnectionsCount.decrementAndGet();
-            
-            HttpRequest nettyRequest = buildRequest(config,request,uri);
-            if (f == null) {
-                f = new NettyResponseFuture<T>(uri, request, asyncHandler,
-                                               nettyRequest, config.getRequestTimeoutInMs());
+            if (channel.isConnected()) {
+                // Decrement the count as this is not a new connection.
+                if (config.getMaxConnectionPerHost() == -1) {
+                    activeConnectionsCount.decrementAndGet();
+                }
+
+                HttpRequest nettyRequest = buildRequest(config,request,uri);
+                if (f == null) {
+                    f = new NettyResponseFuture<T>(uri, request, asyncHandler,
+                                                   nettyRequest, config.getRequestTimeoutInMs());
+                }
+                try {
+                    executeRequest(channel, config,f,nettyRequest);
+                    return f;
+                } catch (ConnectException ex) {
+                    // The connection failed because the channel got remotly closed
+                    // Let continue the normal processing.
+                    connectionsPool.remove(channel);                    
+                }
+            } else {
+                connectionsPool.remove(channel);
             }
-            executeRequest(channel, config,f,nettyRequest);
-            return f;
         }
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler,f).build();
         configure(uri.getScheme().compareToIgnoreCase("https") == 0, c);
@@ -750,8 +761,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             if (future!= null && !future.isDone() && !future.isCancelled()){
-                future.getAsyncHandler().onThrowable(new IOException("No response received. Connection timed out"));
+                try {
+                    future.getAsyncHandler().onThrowable(new IOException("No response received. Connection timed out"));
+                } catch (Throwable t) {
+                    log.error(t);
+                }
             }
+            connectionsPool.remove(ctx.getChannel());
         }
         ctx.sendUpstream(e);
     }
@@ -845,7 +861,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             if (future!= null){
-                future.getAsyncHandler().onThrowable(cause);
+                try {
+                    future.getAsyncHandler().onThrowable(cause);
+                } catch (Throwable t) {
+                    log.error(t);
+                }
             }
         }
 
