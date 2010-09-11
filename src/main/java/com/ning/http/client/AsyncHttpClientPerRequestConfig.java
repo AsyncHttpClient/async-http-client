@@ -12,26 +12,26 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
  * License for the specific language governing permissions and limitations
  * under the License.
- *
  */
 package com.ning.http.client;
 
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
-
 /**
- *  Simple {@link AsyncHandler} of type {@link Response}
+ * Per request configuration.
+ *
+ * @author Hubert Iwaniuk
  */
-public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
-    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+public class AsyncHttpClientPerRequestConfig {
+    private final ProxyServer proxyServer;
 
-    @Override
-    public Response onCompleted(Response response) throws Exception {
-        return response;
+    public AsyncHttpClientPerRequestConfig() {
+        this(null);
+    }
+    
+    public AsyncHttpClientPerRequestConfig(ProxyServer proxyServer) {
+        this.proxyServer = proxyServer;
     }
 
-    /* @Override */
-    public void onThrowable(Throwable t) {
-        log.debug(t);
+    public ProxyServer getProxyServer() {
+        return proxyServer;
     }
 }

@@ -165,7 +165,6 @@ public class SslUtils {
                 trustManagerAlgorithm = "SunX509";
             }
         }
-
     }
 
 }

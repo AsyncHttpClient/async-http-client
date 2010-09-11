@@ -8,7 +8,7 @@ Async Http Client library purpose is to allow Java applications to easily execut
         <repository>
             <id>Sonatype</id>
             <name>Sonatype Release</name>
-            <url>http://oss.sonatype.org/content/repositories/releases</url>
+            <url>http://oss.sonatype.org/content/repositories/releases </url>
         </repository>
 
 and then define the dependency as:
@@ -29,7 +29,7 @@ Then in your code you can simply do:
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
+    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute();
     Response r = f.get();
 
 You can also accomplish asynchronous operation without using a Future if you want to receive and process the response in your handler:
@@ -38,7 +38,7 @@ You can also accomplish asynchronous operation without using a Future if you wan
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
+    asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(new AsyncCompletionHandler<Response>(){
         
         @Override
         public Response onCompleted(Response response) throws Exception{
@@ -59,7 +59,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>(){
+    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(new AsyncCompletionHandler<Integer>(){
         
         @Override
         public Integer onCompleted(Response response) throws Exception{
@@ -81,7 +81,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
       import java.util.concurrent.Future;
 
       AsyncHttpClient c = new AsyncHttpClient();
-      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
+      Future<String> f = c.prepareGet("http://www.ning.com/ ").execute(new AsyncHandler<String>() {
           private StringBuilder builder = new StringBuilder();
 
           @Override

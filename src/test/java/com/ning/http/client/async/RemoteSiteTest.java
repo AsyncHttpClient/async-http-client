@@ -24,7 +24,6 @@ import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
-import org.apache.log4j.BasicConfigurator;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -35,7 +34,6 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-
 
 /**
  * Unit tests for remote site.
@@ -51,7 +49,6 @@ public class RemoteSiteTest {
 
     @BeforeClass
     public void before() {
-        BasicConfigurator.configure();
         b = new CyclicBarrier(2);
         c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         t = null;
@@ -93,7 +90,6 @@ public class RemoteSiteTest {
             t.printStackTrace();
             Assert.fail("timeout?!");
         }
-        BasicConfigurator.resetConfiguration(); 
     }
 
     @Test(groups = "online")

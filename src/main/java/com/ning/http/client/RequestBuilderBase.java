@@ -16,7 +16,9 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.util.UTF8UrlEncoder;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -33,7 +35,7 @@ import java.util.Map.Entry;
  *
  * @param <T>
  */
-abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
+public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private RequestType type;
@@ -49,6 +51,9 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private String virtualHost;
         private long length = -1;
         public FluentStringsMap queryParams;
+        public ProxyServer proxyServer;
+        private Realm realm;
+        private File file;
 
         public RequestImpl() {
         }
@@ -56,7 +61,8 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.type = prototype.getType();
-                this.url = prototype.getUrl();
+                int pos = prototype.getUrl().indexOf("?");
+                this.url = pos > 0 ? prototype.getUrl().substring(0,pos) : prototype.getUrl();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
@@ -68,6 +74,9 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getLength();
+                this.proxyServer = prototype.getProxyServer();
+                this.realm = prototype.getRealm();
+                this.file = prototype.getFile();
             }
         }
 
@@ -80,6 +89,10 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         /* @Override */
 
         public String getUrl() {
+            return toUrl(true);
+        }
+
+        private String toUrl(boolean encode) {
 
             if (url == null) throw new NullPointerException("url is null");
 
@@ -87,7 +100,7 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             try {
                 uri = URI.create(url).toURL().toString();
             } catch (MalformedURLException e) {
-                throw new IllegalStateException("Illegal URL", e);
+                throw new IllegalStateException("Illegal URL: " + url, e);
             }
 
             if (queryParams != null) {
@@ -96,17 +109,25 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
                     builder.append("/");
                 }
-                builder.append(url.contains("?") ? "&" : "?"); // in case we have some query string in url already
+                builder.append("?"); 
 
                 for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
                     Map.Entry<String, List<String>> param = i.next();
                     String name = param.getKey();
                     for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
-                        builder.append(name);
+                        if (encode) {
+                            UTF8UrlEncoder.appendEncoded(builder, name);
+                        } else {
+                            builder.append(name);
+                        }
                         if (value != null) {
                             builder.append('=');
-                            builder.append(value);
+                            if (encode) {
+                                UTF8UrlEncoder.appendEncoded(builder, value);
+                            } else {
+                                builder.append(value);
+                            }
                         }
                         if (j.hasNext()) {
                             builder.append('&');
@@ -119,7 +140,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 uri += builder.toString();
             }
             return uri;
+        }
 
+        /* @Override */
+        public String getRawUrl() {
+            return toUrl(false);
         }
 
         /* @Override */
@@ -176,6 +201,18 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return queryParams;
         }
 
+        public ProxyServer getProxyServer() {
+            return proxyServer;
+        }
+
+        public Realm getRealm() {
+            return realm;
+        }
+
+        public File getFile() {
+            return file;
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(url);
@@ -194,23 +231,52 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private final Class<T> derived;
-    private final RequestImpl request;
+    protected final RequestImpl request;
 
-    RequestBuilderBase(Class<T> derived, RequestType type) {
+    protected RequestBuilderBase(Class<T> derived, RequestType type) {
         this.derived = derived;
         request = new RequestImpl();
         request.type = type;
     }
 
-    RequestBuilderBase(Class<T> derived, Request prototype) {
+    protected RequestBuilderBase(Class<T> derived, Request prototype) {
         this.derived = derived;
         request = new RequestImpl(prototype);
     }
-
+    
     public T setUrl(String url) {
-        request.url = url;
+        request.url = buildUrl(url);
         return derived.cast(this);
     }
+
+    private String buildUrl(String url) {
+        URI uri = URI.create(url);
+        StringBuilder buildedUrl = new StringBuilder();
+
+        if (uri.getScheme() != null) {
+            buildedUrl.append(uri.getScheme());
+            buildedUrl.append("://");
+        }
+
+        if (uri.getAuthority() != null) {
+            buildedUrl.append(uri.getAuthority());
+        }
+        buildedUrl.append(uri.getRawPath());
+
+        if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
+            String[] queries = uri.getRawQuery().split("&");
+            int pos = 0;
+            for( String query : queries) {
+                pos = query.indexOf("=");
+                if (pos <= 0) {
+                    throw new IllegalStateException("Illegal URL: " + url);
+                }
+                addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
+            }
+        }
+        return buildedUrl.toString();
+    }
+
 
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
@@ -256,6 +322,11 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private void resetMultipartData() {
         request.parts = null;
+    }
+        
+    public T setBody(File file) {
+        request.file = file;
+        return derived.cast(this);
     }
 
     public T setBody(byte[] data) throws IllegalArgumentException {
@@ -360,6 +431,17 @@ abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.parts.add(part);
         return derived.cast(this);
     }
+
+    public T setProxyServer(ProxyServer proxyServer) {
+        request.proxyServer = proxyServer;
+        return derived.cast(this);
+    }
+
+    public T setRealm(Realm realm) {
+        request.realm = realm;
+        return derived.cast(this);
+    }
+
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&

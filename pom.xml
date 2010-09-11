@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -10,17 +9,17 @@
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>async-http-client</name>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
     </description>
-    <url>http://github.com/ning/async-http-client</url>
+    <url>http://github.com/AsyncHttpClient/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:ning/async-http-client.git</connection>
-        <url>scm:git:git@github.com:ning/async-http-client.git</url>
-        <developerConnection>scm:git:git@github.com:ning/async-http-client.git</developerConnection>
+        <connection>scm:git:git@github.com:AsynHttpClient/async-http-client.git</connection>
+        <url>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</url>
+        <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
     </scm>
     <prerequisites>
         <maven>2.0.9</maven>
@@ -57,7 +56,7 @@
         <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.2.1.Final</version>
+            <version>3.2.2.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
@@ -69,10 +68,19 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- Provided logging implementations (aside from java.util.logging) -->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.13</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.5.6</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- Test dependencies -->
@@ -87,6 +95,18 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>7.1.4.v20100610</version>
+            <scope>test</scope>
+        </dependency>
+         <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-security</artifactId>
+            <version>7.1.4.v20100610</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.5.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -160,6 +180,13 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.0-beta-9</version>
             </plugin>
@@ -212,23 +239,18 @@
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
-                            </transformers>
                             <artifactSet>
-                                <includes>
-                                    <include>com.google.collections:google-collections</include>
-                                </includes>
+                                <excludes>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>log4j:log4j</exclude>
+                                    <excluse>org.slf4j:slf4j-api</excluse>
+                                </excludes>
                             </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.google.common</pattern>
-                                    <shadedPattern>com.ning.http.shaded.com.google.collections</shadedPattern>
-                                </relocation>
-                            </relocations>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
@@ -271,6 +293,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone</groups>
+                            <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -285,6 +308,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone, online</groups>
+                            <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

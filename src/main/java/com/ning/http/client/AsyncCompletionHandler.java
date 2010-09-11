@@ -16,12 +16,12 @@
  */
 package com.ning.http.client;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
 
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
@@ -29,9 +29,9 @@ import java.util.Collections;
  *
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
-public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
+public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
 
-    private final static Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
 
     private final Collection<HttpResponseBodyPart> bodies =
             Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
@@ -78,8 +78,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      */
     /* @Override */
     public void onThrowable(Throwable t) {
-        if (log.isDebugEnabled())
-            log.debug(t);
+        log.debug(t);
     }
 
     /**
@@ -89,4 +88,35 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T> {
      * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      */
     abstract public T onCompleted(Response response) throws Exception;
+
+    /**
+     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * written on the I/O socket.
+     *
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onHeaderWriteCompleted() {
+        return STATE.CONTINUE;
+    }
+
+    /**
+     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * written on the I/O socket.
+     *
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onContentWriteCompleted() {
+        return STATE.CONTINUE;
+    }
+
+    /**
+     * Invoked when the I/O operation associated with the {@link Request} body as been progressed.
+     * @param amount The amount of bytes to transfer.
+     * @param current The amount of bytes transferred
+     * @param total The total number of bytes transferred
+     * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
+     */
+    public STATE onContentWriteProgess(long amount, long current, long total) {
+        return STATE.CONTINUE;
+    }
 }

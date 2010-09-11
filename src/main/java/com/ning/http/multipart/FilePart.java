@@ -15,10 +15,6 @@
  */
 package com.ning.http.multipart;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,9 +35,6 @@ public class FilePart extends PartBase {
 
     /** Default transfer encoding of file attachments. */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
-
-    /** Log object for this class. */
-    private final static Logger LOG = LogManager.getLogger(FilePart.class);
 
     /** Attachment's file name */
     protected static final String FILE_NAME = "; filename=";
@@ -161,7 +154,6 @@ public class FilePart extends PartBase {
      */
     protected void sendDispositionHeader(OutputStream out)
     throws IOException {
-        LOG.trace("enter sendDispositionHeader(OutputStream out)");
         super.sendDispositionHeader(out);
         String filename = this.source.getFileName();
         if (filename != null) {
@@ -178,13 +170,11 @@ public class FilePart extends PartBase {
      * @throws IOException if an IO problem occurs.
      */
     protected void sendData(OutputStream out) throws IOException {
-        LOG.trace("enter sendData(OutputStream out)");
         if (lengthOfData() == 0) {
 
             // this file contains no data, so there is nothing to send.
             // we don't want to create a zero length buffer as this will
             // cause an infinite loop when reading.
-            LOG.debug("No data to send.");
             return;
         }
 
@@ -207,7 +197,6 @@ public class FilePart extends PartBase {
      * @return The source.
      */
     protected PartSource getSource() {
-        LOG.trace("enter getSource()");
         return this.source;
     }
 
@@ -217,7 +206,6 @@ public class FilePart extends PartBase {
      * @throws IOException if an IO problem occurs
      */
     protected long lengthOfData() throws IOException {
-        LOG.trace("enter lengthOfData()");
         return source.getLength();
     }
 

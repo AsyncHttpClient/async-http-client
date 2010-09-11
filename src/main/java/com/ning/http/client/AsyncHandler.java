@@ -31,7 +31,17 @@ package com.ning.http.client;
  */
 public interface AsyncHandler<T> {
 
-    public static enum STATE { ABORT, CONTINUE }
+    public static enum STATE {
+        /**
+         * Stop the processing.
+         */
+        ABORT,
+        /**
+         * Continue the processing
+         */
+        CONTINUE
+    }
+    
     /**
      * Invoked when an unexpected exception occurs during the processing of the response
      *
@@ -42,28 +52,31 @@ public interface AsyncHandler<T> {
     /**
      * Invoked as soon as some response body part are received.
      * @param bodyPart response's body part.
-     * @throws Exception
+     * @throws Exception if something wrong happens
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
     /**
      * Invoked as soon as the HTTP status line has been received
      * @param responseStatus the status code and test of the response
-     * @throws Exception
+     * @throws Exception if something wrong happens
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
      * Invoked as soon as the HTTP headers has been received.
      * @param headers the HTTP headers.
-     * @throws Exception
+     * @throws Exception if something wrong happens
+     * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
      * Invoked once the HTTP response has been fully received
      * @return T Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
-     * @throws Exception
+     * @throws Exception if something wrong happens
      */
     T onCompleted() throws Exception;
 }

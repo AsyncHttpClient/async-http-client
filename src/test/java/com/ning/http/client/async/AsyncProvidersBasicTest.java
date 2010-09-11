@@ -30,6 +30,7 @@ import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.NettyResponseFuture;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -59,6 +60,15 @@ import static org.testng.Assert.fail;
 
 public class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
+
+    @Test(groups = {"standalone", "async"})
+    public void asyncProviderEncodingTest() throws Throwable {
+        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com/foo.html?q=+%20x").build();
+        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        String url = responseFuture.getNettyRequest().getUri();
+        Assert.assertEquals(url, "/foo.html?q=+%20x");
+    }
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderContentLenghtGETTest() throws Throwable {
@@ -1357,5 +1367,17 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         assertEquals(r.getHeader("Allow"), null);
 
         client.close();
+    }
+
+    @Test(groups = "online")
+    public void testAwsS3() throws Exception {
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().build());
+        Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
+        if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
+            fail("No response Body");
+        } else {
+            assertEquals(response.getStatusCode(), 403);
+        }
+        c.close();
     }
 }

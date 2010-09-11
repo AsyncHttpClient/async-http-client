@@ -15,10 +15,9 @@
  */
 package com.ning.http.multipart;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import com.ning.http.client.FluentStringsMap;
+import com.ning.http.client.logging.LogManager;
+import com.ning.http.client.logging.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,8 +28,6 @@ import java.util.Random;
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class MultipartRequestEntity implements RequestEntity {
-
-    private final static Logger log = LogManager.getLogger(MultipartRequestEntity.class);
 
     /** The Content-Type for multipart/form-data. */
     private static final String MULTIPART_FORM_CONTENT_TYPE = "multipart/form-data";
@@ -53,6 +50,8 @@ public class MultipartRequestEntity implements RequestEntity {
         }
         return bytes;
     }
+
+    private final Logger log = LogManager.getLogger(MultipartRequestEntity.class);
 
     /** The MIME parts as set by the constructor */
     protected Part[] parts;
@@ -124,7 +123,7 @@ public class MultipartRequestEntity implements RequestEntity {
         try {
             return Part.getLengthOfParts(parts, getMultipartBoundary());
         } catch (Exception e) {
-            log.error("An exception occurred while getting the length of the parts", e);
+            log.error(e, "An exception occurred while getting the length of the parts");
             return 0;
         }
     }

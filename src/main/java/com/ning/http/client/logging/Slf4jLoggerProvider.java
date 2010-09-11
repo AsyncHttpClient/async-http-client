@@ -12,26 +12,13 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
  * License for the specific language governing permissions and limitations
  * under the License.
- *
  */
-package com.ning.http.client;
+package com.ning.http.client.logging;
 
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- *  Simple {@link AsyncHandler} of type {@link Response}
- */
-public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
-    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
-
-    @Override
-    public Response onCompleted(Response response) throws Exception {
-        return response;
-    }
-
-    /* @Override */
-    public void onThrowable(Throwable t) {
-        log.debug(t);
+public class Slf4jLoggerProvider implements LoggerProvider {
+    public Logger getLogger(Class<?> clazz) {
+        return new Slf4jLogger(LoggerFactory.getLogger(clazz));
     }
 }
