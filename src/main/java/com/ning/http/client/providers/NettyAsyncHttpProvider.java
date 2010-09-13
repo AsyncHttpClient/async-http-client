@@ -391,7 +391,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             switch (realm.getAuthScheme()) {
                 case BASIC:
                     nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                   AuthenticatorUtils.computeBasicAuthentication(realm));
+                            AuthenticatorUtils.computeBasicAuthentication(realm));
                     break;
                 case DIGEST:
                     if (realm.getNonce() != null && !realm.getNonce().equals("")) {
@@ -404,14 +404,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                     break;
                 default:
-                    throw new IllegalStateException("Invalie AuthType");
+                    throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
             }
         }
 
         String ka = config.getKeepAlive() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
-        if (config.getProxyServer() != null || request.getProxyServer() != null) {
+        ProxyServer proxyServer = config.getProxyServer() != null ? config.getProxyServer() : request.getProxyServer();
+        if (proxyServer != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
+            if (proxyServer.getPrincipal() != null ) {
+                nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+            }
         }
 
         if (config.getUserAgent() != null) {
@@ -653,7 +657,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (response.getStatus().getCode() == 401
                         && wwwAuth != null
                         && future.getRequest().getRealm() != null
-                        && !future.isInDigestAuth()) {
+                        && !future.getAnSetAuth(true)) {
 
                     Realm realm =  new Realm.RealmBuilder().clone(request.getRealm())
                                                            .parseWWWAuthenticateHeader(wwwAuth)
@@ -661,16 +665,30 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                                            .setMethodName(request.getType().toString())
                                                            .setScheme(Realm.AuthScheme.DIGEST)
                                                            .build();
-                    
-                    // If authentication fail, we don't want to end up here again.
-                    future.setInDigestAuth(true);
+
                     log.debug("Sending authentication to %s", request.getUrl());
-                    
+
                     //Cache our current connection so we don't have to re-open it.
                     markAsDoneAndCacheConnection(future, ctx.getChannel(), false);
                     RequestBuilder builder = new RequestBuilder(future.getRequest());
 
                     execute(builder.setRealm(realm).build(),future);
+                    return;
+                }
+
+                String proxyAuth = response.getHeader(HttpHeaders.Names.PROXY_AUTHENTICATE);
+                if (response.getStatus().getCode() == 407
+                        && proxyAuth != null
+                        && future.getRequest().getRealm() != null
+                        && !future.getAnSetAuth(true)) {
+
+                    log.debug("Sending proxy authentication to %s", request.getUrl());
+
+                    //Cache our current connection so we don't have to re-open it.
+                    markAsDoneAndCacheConnection(future, ctx.getChannel(), false);
+                    RequestBuilder builder = new RequestBuilder(future.getRequest());
+
+                    execute(builder.build(),future);
                     return;
                 }
 

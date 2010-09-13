@@ -53,7 +53,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
     private Future<Object> reaperFuture;
-    private boolean inDigestAuth;
+    private final AtomicBoolean inAuth = new AtomicBoolean(false);
     
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -217,11 +217,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.reaperFuture = reaperFuture;
     }
 
-    public boolean isInDigestAuth() {
-        return inDigestAuth;
+    public boolean isInAuth() {
+        return inAuth.get();
     }
 
-    public void setInDigestAuth(boolean inDigestAuth) {
-        this.inDigestAuth = inDigestAuth;
+    public boolean getAnSetAuth(boolean inDigestAuth) {
+        return inAuth.getAndSet(inDigestAuth);
     }
 }

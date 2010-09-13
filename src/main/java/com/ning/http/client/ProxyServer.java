@@ -45,16 +45,29 @@ public class ProxyServer {
 
     private final Protocol protocol;
     private final String host;
+    private final String principal;
+    private final String password;
+
     private int port;
 
-    public ProxyServer(final Protocol protocol, final String host, final int port) {
+    public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
+        this.principal = principal;
+        this.password = password;
+    }
+
+    public ProxyServer(final String host, final int port, String principal, String password) {
+        this(Protocol.HTTP, host, port, principal, password);
+    }
+
+    public ProxyServer(final Protocol protocol, final String host, final int port) {
+        this(protocol, host, port, null, null);
     }
 
     public ProxyServer(final String host, final int port) {
-        this(Protocol.HTTP, host, port);
+        this(Protocol.HTTP, host, port, null, null);
     }
 
     public Protocol getProtocol() {
@@ -73,6 +86,14 @@ public class ProxyServer {
         return port;
     }
 
+    public String getPrincipal() {
+        return principal;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+    
     /**
      * Convert from Java java.net.Proxy object.
      *
