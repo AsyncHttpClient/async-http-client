@@ -380,6 +380,15 @@ public class AsyncHttpClient {
     }
 
     /**
+     * Prepare an HTTP client CONNECT request.
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
+    public BoundRequestBuilder prepareConnect(String url) {
+        return requestBuilder(RequestType.CONNECT, url);
+    }
+
+    /**
      * Prepare an HTTP client OPTIONS request.
      * @param url A well formed URL.
      * @return {@link RequestBuilder}

@@ -213,25 +213,6 @@ public class BasicHttpsTest {
     }
 
     @Test(groups = "online")
-    public void multipleJavaDotDeadWrongKeystoreTest() throws Throwable {
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        System.setProperty("javax.net.ssl.keyStore",keystoreUrl.toString());
-
-        AsyncHttpClient c = new AsyncHttpClient();
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertNull(response);
-    }
-
-    @Test(groups = "online")
     public void multipleJavaDotDeadKeystoreTest() throws Throwable {
 
         ClassLoader cl = getClass().getClassLoader();

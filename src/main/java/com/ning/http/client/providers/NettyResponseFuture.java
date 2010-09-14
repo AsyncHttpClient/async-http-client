@@ -45,7 +45,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AsyncHandler<V> asyncHandler;
     private final int responseTimeoutInMs;
     private final Request request;
-    private final HttpRequest nettyRequest;
+    private HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
     private URI uri;
     private boolean keepAlive = true;
@@ -187,6 +187,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public final HttpRequest getNettyRequest() {
         return nettyRequest;
+    }
+
+    protected final void setNettyRequest(HttpRequest nettyRequest) {
+        this.nettyRequest = nettyRequest;
     }
 
     public final AsyncHandler<V> getAsyncHandler() {
