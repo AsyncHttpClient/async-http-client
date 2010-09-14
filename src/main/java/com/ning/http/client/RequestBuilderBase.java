@@ -54,6 +54,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
+        private PerRequestConfig perRequestConfig;
 
         public RequestImpl() {
         }
@@ -77,6 +78,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
+                this.perRequestConfig = prototype.getPerRequestConfig();
             }
         }
 
@@ -211,6 +213,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public File getFile() {
             return file;
+        }
+
+        public PerRequestConfig getPerRequestConfig() {
+            return perRequestConfig;
         }
 
         @Override
@@ -442,6 +448,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setPerRequestConfig(PerRequestConfig perRequestConfig) {
+        request.perRequestConfig = perRequestConfig;
+        return derived.cast(this);
+    }
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&

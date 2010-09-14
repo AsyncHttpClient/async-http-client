@@ -29,6 +29,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
+import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -249,7 +250,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 if (future == null){
                     future = new NettyResponseFuture<T>(uri, request, asyncHandler,
-                            nettyRequest, config.getRequestTimeoutInMs());
+                            nettyRequest, requestTimeout(config, request.getPerRequestConfig()));
                 }
                 return new ConnectListener<T>(config, future, nettyRequest);
             }
@@ -313,13 +314,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
                 public Object call() {
                     if (!future.isDone() && !future.isCancelled()) {
-                        future.abort(new TimeoutException());
+                        future.abort(new TimeoutException("Reaper closed this request, as it didn't finish in time."));
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
                     }
                     return null;
                 }
-
-            }, config.getRequestTimeoutInMs(), TimeUnit.MILLISECONDS));
+            }, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
         } catch (RejectedExecutionException ex){
             future.abort(ex);
         }
@@ -567,10 +567,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 HttpRequest nettyRequest = buildRequest(config,request,uri);
                 if (f == null) {
                     f = new NettyResponseFuture<T>(uri, request, asyncHandler,
-                                                   nettyRequest, config.getRequestTimeoutInMs());
+                                                   nettyRequest, requestTimeout(config, request.getPerRequestConfig()));
                 }
                 try {
-                    executeRequest(channel, config,f,nettyRequest);
+                    executeRequest(channel, config, f, nettyRequest);
                     return f;
                 } catch (ConnectException ex) {
                     // The connection failed because the channel got remotly closed
@@ -604,6 +604,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         channelFuture.addListener(c);
         openChannels.add(channelFuture.getChannel());        
         return c.future();
+    }
+
+    private static int requestTimeout(AsyncHttpClientConfig config, PerRequestConfig perRequestConfig) {
+        int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
+        return (prRequestTimeout != -1 ? config.getRequestTimeoutInMs() : prRequestTimeout);
     }
 
     @Override
