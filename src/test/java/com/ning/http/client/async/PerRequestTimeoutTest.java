@@ -80,7 +80,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), "Reaper closed this request, as it didn't finish in time.");
+            assertEquals(e.getCause().getMessage(), "Request timed out.");
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
@@ -98,7 +98,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), "Reaper closed this request, as it didn't finish in time.");
+            assertEquals(e.getCause().getMessage(), "Request timed out.");
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }

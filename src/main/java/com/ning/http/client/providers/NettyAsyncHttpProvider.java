@@ -314,7 +314,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
                 public Object call() {
                     if (!future.isDone() && !future.isCancelled()) {
-                        future.abort(new TimeoutException("Reaper closed this request, as it didn't finish in time."));
+                        future.abort(new TimeoutException("Request timed out."));
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
                     }
                     return null;
