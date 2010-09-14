@@ -19,15 +19,8 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.Log4jLoggerProvider;
-import com.ning.http.client.logging.LogManager;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
@@ -72,17 +65,6 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @BeforeClass(alwaysRun = true)
-    @Override
-    public void setUpGlobal() throws Exception {
-        Logger root = Logger.getRootLogger();
-        root.setLevel(Level.DEBUG);
-        root.addAppender(new ConsoleAppender(
-                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
-        LogManager.setProvider(new Log4jLoggerProvider());
-        super.setUpGlobal();
-    }
-
     @Test(groups = "standalone")
     public void testRequestTimeout() throws IOException {
         AsyncHttpClient client = new AsyncHttpClient();
@@ -121,5 +103,4 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Timeout.", e);
         }
     }
-
 }
