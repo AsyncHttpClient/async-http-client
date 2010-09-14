@@ -607,8 +607,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private static int requestTimeout(AsyncHttpClientConfig config, PerRequestConfig perRequestConfig) {
-        int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-        return (prRequestTimeout != -1 ? config.getRequestTimeoutInMs() : prRequestTimeout);
+        int result;
+        if (perRequestConfig != null) {
+            int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
+            result = (prRequestTimeout != -1 ? prRequestTimeout :config.getRequestTimeoutInMs());
+        } else {
+            result = config.getRequestTimeoutInMs();
+        }
+        return result;
     }
 
     @Override

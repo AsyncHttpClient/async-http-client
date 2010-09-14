@@ -16,6 +16,7 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.logging.Log4jLoggerProvider;
@@ -38,7 +39,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
@@ -81,7 +84,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
-    public void testTimeout() throws IOException {
+    public void testRequestTimeout() throws IOException {
         AsyncHttpClient client = new AsyncHttpClient();
         PerRequestConfig requestConfig = new PerRequestConfig();
         requestConfig.setRequestTimeoutInMs(100);
@@ -94,9 +97,29 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            // we should end up here with TimeoutException as cause
+            assertTrue(e.getCause() instanceof TimeoutException);
+            assertEquals(e.getCause().getMessage(), "Reaper closed this request, as it didn't finish in time.");
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
     }
+
+    @Test(groups = "standalone")
+    public void testGlobalRequestTimeout() throws IOException {
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
+        Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
+        try {
+            Response response = responseFuture.get(200, TimeUnit.MILLISECONDS);
+            assertNull(response);
+            client.close();
+        } catch (InterruptedException e) {
+            fail("Interrupted.", e);
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TimeoutException);
+            assertEquals(e.getCause().getMessage(), "Reaper closed this request, as it didn't finish in time.");
+        } catch (TimeoutException e) {
+            fail("Timeout.", e);
+        }
+    }
+
 }
