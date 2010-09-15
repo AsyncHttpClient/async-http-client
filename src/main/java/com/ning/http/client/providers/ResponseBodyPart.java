@@ -72,7 +72,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     }
 
     public int writeTo(OutputStream outputStream) throws IOException{
-        return  writeTo(outputStream, -1);
+        return  writeTo(outputStream);
     }
 
     protected HttpChunk chunk() {
