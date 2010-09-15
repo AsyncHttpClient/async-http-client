@@ -694,7 +694,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (statusCode == 401
                         && wwwAuth != null
                         && future.getRequest().getRealm() != null
-                        && !future.getAnSetAuth(true)) {
+                        && !future.getAndSetAuth(true)) {
 
                     Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
                             .parseWWWAuthenticateHeader(wwwAuth)
@@ -717,7 +717,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (statusCode == 407
                         && proxyAuth != null
                         && future.getRequest().getRealm() != null
-                        && !future.getAnSetAuth(true)) {
+                        && !future.getAndSetAuth(true)) {
 
                     log.debug("Sending proxy authentication to %s", request.getUrl());
 

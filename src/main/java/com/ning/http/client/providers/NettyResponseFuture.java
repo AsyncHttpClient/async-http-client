@@ -225,7 +225,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return inAuth.get();
     }
 
-    public boolean getAnSetAuth(boolean inDigestAuth) {
+    public boolean getAndSetAuth(boolean inDigestAuth) {
         return inAuth.getAndSet(inDigestAuth);
     }
 }
