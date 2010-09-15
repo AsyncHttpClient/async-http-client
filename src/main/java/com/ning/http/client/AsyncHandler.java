@@ -27,6 +27,25 @@ package com.ning.http.client;
  * returning a {@link AsyncHandler.STATE#ABORT} at any moment during the
  * processing of the asynchronous response.
  *
+ * <strong>NOTE:<strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
+ * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
+ *
+ * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link com.ning.http.client.AsyncHttpClientConfig}:
+ * {@code
+ *         &#64;Override
+ *         public T onCompleted() throws Exception
+ *         &#123;
+ *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
+ *             &#123;
+ *                 public void run()
+ *                 &#123;
+ *                     asyncHttpClient.prepareGet(...);
+ *                 &#125;
+ *             &#125;);
+ *            return T;
+ *         &#125;
+ * }
+ *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
 public interface AsyncHandler<T> {

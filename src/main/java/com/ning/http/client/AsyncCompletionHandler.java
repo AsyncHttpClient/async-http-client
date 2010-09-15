@@ -27,6 +27,25 @@ import com.ning.http.client.logging.Logger;
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
  * when the {@link Response} has been fully received.
  *
+ * <strong>NOTE:<strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
+ * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
+ *
+ * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link com.ning.http.client.AsyncHttpClientConfig}:
+ * {@code
+ *         &#64;Override
+ *         public T onCompleted(Response response) throws Exception
+ *         &#123;
+ *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
+ *             &#123;
+ *                 public void run()
+ *                 &#123;
+ *                     asyncHttpClient.prepareGet(...);
+ *                 &#125;
+ *             &#125;);
+ *            return T;
+ *         &#125;
+ * }
+ *
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
