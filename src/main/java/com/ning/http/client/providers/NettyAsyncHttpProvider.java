@@ -137,7 +137,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
-        super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) ;
+        super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
         socketChannelFactory = new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
                 config.executorService());
@@ -145,7 +145,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         this.config = config;
     }
 
-    void configure(final boolean useSSL, final ConnectListener<?> cl){
+    void configure(final boolean useSSL, final ConnectListener<?> cl) {
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -153,10 +153,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
 
-                if (useSSL){
-                    try{
+                if (useSSL) {
+                    try {
                         SSLEngine sslEngine = config.getSSLEngine();
-                        if (sslEngine == null){
+                        if (sslEngine == null) {
                             sslEngine = SslUtils.getSSLEngine();
                         }
                         pipeline.addLast(SSL_HANDLER, new SslHandler(sslEngine));
@@ -218,7 +218,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         public final void operationComplete(ChannelFuture f) throws Exception {
             try {
                 executeRequest(f.getChannel(), config, future, nettyRequest);
-            } catch (ConnectException ex){
+            } catch (ConnectException ex) {
                 future.abort(ex);
             }
         }
@@ -247,11 +247,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             public ConnectListener<T> build() throws IOException {
 
                 URI uri = createUri(request.getRawUrl());
-                HttpRequest nettyRequest = buildRequest(config,request,uri,true);
+                HttpRequest nettyRequest = buildRequest(config, request, uri, true);
 
                 log.debug("Executing the doConnect operation: %s", asyncHandler);
 
-                if (future == null){
+                if (future == null) {
                     future = new NettyResponseFuture<T>(uri, request, asyncHandler,
                             nettyRequest, requestTimeout(config, request.getPerRequestConfig()));
                 }
@@ -265,7 +265,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                                  final NettyResponseFuture<T> future,
                                                  final HttpRequest nettyRequest) throws ConnectException {
 
-        if (!channel.isConnected()){
+        if (!channel.isConnected()) {
             String url = channel.getRemoteAddress() != null ? channel.getRemoteAddress().toString() : null;
             if (url == null) {
                 try {
@@ -283,7 +283,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          * Currently it is impossible to write the headers and the FIle using a single I/O operation.
          * I've filled NETTY-XXX as an enhancement.
          */
-        channel.write(nettyRequest).addListener(new ProgressListener(true,future.getAsyncHandler()));
+        channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler()));
 
         if (future.getRequest().getFile() != null) {
             final File file = future.getRequest().getFile();
@@ -301,7 +301,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } else {
                     final FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
                     writeFuture = channel.write(region);
-                    writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler()){
+                    writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler()) {
                         public void operationComplete(ChannelFuture cf) {
                             region.releaseExternalResources();
                             super.operationComplete(cf);
@@ -313,7 +313,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        try{
+        try {
             future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
                 public Object call() {
                     if (!future.isDone() && !future.isCancelled()) {
@@ -323,7 +323,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     return null;
                 }
             }, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
-        } catch (RejectedExecutionException ex){
+        } catch (RejectedExecutionException ex) {
             future.abort(ex);
         }
     }
@@ -432,7 +432,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ProxyServer proxyServer = config.getProxyServer() != null ? config.getProxyServer() : request.getProxyServer();
         if (proxyServer != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
-            if (proxyServer.getPrincipal() != null){
+            if (proxyServer.getPrincipal() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
             }
         }
@@ -489,7 +489,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes("UTF-8")));
 
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE,"application/x-www-form-urlencoded");
+                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/x-www-form-urlencoded");
                 }
 
             } else if (request.getParts() != null) {
@@ -550,20 +550,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public Response prepareResponse(final HttpResponseStatus status,
                                     final HttpResponseHeaders headers,
                                     final Collection<HttpResponseBodyPart> bodyParts) {
-        return new NettyAsyncResponse(status,headers,bodyParts);
+        return new NettyAsyncResponse(status, headers, bodyParts);
     }
 
     /* @Override */
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return doConnect(request,asyncHandler, null);
+        return doConnect(request, asyncHandler, null);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        doConnect(request,f.getAsyncHandler(),f);
+        doConnect(request, f.getAsyncHandler(), f);
     }
 
-    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f) throws IOException{
+    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f) throws IOException {
 
         if (isClose.get()) {
             throw new IOException("Closed");
@@ -614,7 +614,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         configure(useSSl, c);
 
         ChannelFuture channelFuture;
-        try{
+        try {
             if (config.getProxyServer() == null && request.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), getPort(uri)));
             } else {
@@ -622,7 +622,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
-        } catch (Throwable t){
+        } catch (Throwable t) {
             if (config.getMaxTotalConnections() != -1) {
                 activeConnectionsCount.decrementAndGet();
             }
@@ -639,7 +639,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         int result;
         if (perRequestConfig != null) {
             int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-            result = (prRequestTimeout != -1 ? prRequestTimeout :config.getRequestTimeoutInMs());
+            result = (prRequestTimeout != -1 ? prRequestTimeout : config.getRequestTimeoutInMs());
         } else {
             result = config.getRequestTimeoutInMs();
         }
@@ -651,7 +651,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
         closeChannel(ctx);
 
-        for (Entry<String,Channel> e : connectionsPool.entrySet()) {
+        for (Entry<String, Channel> e : connectionsPool.entrySet()) {
             if (e.getValue().equals(ctx.getChannel())) {
                 connectionsPool.remove(e.getKey());
                 if (config.getMaxTotalConnections() != -1) {
@@ -805,10 +805,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                 }
 
-                if (updateStatusAndInterrupt(handler, new ResponseStatus(future.getURI(),response, this))) {
+                if (updateStatusAndInterrupt(handler, new ResponseStatus(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
-                } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(),response, this))) {
+                } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
                 } else if (!response.isChunked()) {
@@ -836,11 +836,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                 }
             }
-        } catch (Exception t){
+        } catch (Exception t) {
             try {
                 future.abort(t);
             } finally {
-                finishUpdate(future,ctx);
+                finishUpdate(future, ctx);
                 throw t;
             }
         }
