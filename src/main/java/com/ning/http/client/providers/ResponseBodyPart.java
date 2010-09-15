@@ -39,7 +39,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         this.response = response;
     }
 
-    public  ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunk chunk) {
+    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse> provider, HttpChunk chunk) {
         super(uri, provider);
         this.chunk = chunk;
         this.response = response;
@@ -47,6 +47,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     /**
      * Return the response body's part bytes received.
+     *
      * @return the response body's part bytes received.
      */
     public byte[] getBodyPartBytes() {
@@ -56,7 +57,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             } else {
                 ChannelBuffer b = chunk.getContent();
                 byte[] bytes = new byte[b.readableBytes()];
-                b.getBytes(0, bytes, 0 , bytes.length);
+                b.getBytes(0, bytes, 0, bytes.length);
                 return bytes;
             }
         } else {
@@ -65,15 +66,24 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             } else {
                 ChannelBuffer b = response.getContent();
                 byte[] bytes = new byte[b.readableBytes()];
-                b.getBytes(0, bytes, 0 , bytes.length);
+                b.getBytes(0, bytes, 0, bytes.length);
                 return bytes;
             }
         }
     }
 
-    public int writeTo(OutputStream outputStream) throws IOException{
-        return  writeTo(outputStream);
+    public int writeTo(OutputStream outputStream) throws IOException {
+        if (chunk != null) {
+            ChannelBuffer b = chunk.getContent();
+            b.readBytes(outputStream, b.readableBytes());
+            return b.readableBytes();
+        } else {
+            ChannelBuffer b = response.getContent();
+            b.readBytes(outputStream, b.readableBytes());
+            return b.readableBytes();
+        }
     }
+
 
     protected HttpChunk chunk() {
         return chunk;
