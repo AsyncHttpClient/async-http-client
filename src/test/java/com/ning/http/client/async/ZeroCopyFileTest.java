@@ -139,7 +139,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        File tmp = new File(System.getProperty("java.io.tmpdir") + "zeroCopy.txt");
+        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         final FileOutputStream stream = new FileOutputStream(tmp);
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
             public void onThrowable(Throwable t) {
