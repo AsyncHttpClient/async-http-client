@@ -17,9 +17,12 @@ package com.ning.http.client.providers;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 
 /**
@@ -39,7 +42,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     public  ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse>  provider, HttpChunk chunk) {
         super(uri, provider);
         this.chunk = chunk;
-        this.response = response;        
+        this.response = response;
     }
 
     /**
@@ -48,10 +51,28 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      */
     public byte[] getBodyPartBytes() {
         if (chunk != null) {
-            return chunk.getContent().array();
+            if (chunk.getContent().hasArray()) {
+                return chunk.getContent().array();
+            } else {
+                ChannelBuffer b = chunk.getContent();
+                byte[] bytes = new byte[b.readableBytes()];
+                b.getBytes(0, bytes, 0 , bytes.length);
+                return bytes;
+            }
         } else {
-            return response.getContent().array();
+            if (response.getContent().hasArray()) {
+                return response.getContent().array();
+            } else {
+                ChannelBuffer b = response.getContent();
+                byte[] bytes = new byte[b.readableBytes()];
+                b.getBytes(0, bytes, 0 , bytes.length);
+                return bytes;
+            }
         }
+    }
+
+    public int writeTo(OutputStream outputStream) throws IOException{
+        return  writeTo(outputStream, -1);
     }
 
     protected HttpChunk chunk() {
