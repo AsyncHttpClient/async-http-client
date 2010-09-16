@@ -639,7 +639,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         int result;
         if (perRequestConfig != null) {
             int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-            result = (prRequestTimeout != -1 ? prRequestTimeout : config.getRequestTimeoutInMs());
+            result = (prRequestTimeout != 0 ? prRequestTimeout : config.getRequestTimeoutInMs());
         } else {
             result = config.getRequestTimeoutInMs();
         }
