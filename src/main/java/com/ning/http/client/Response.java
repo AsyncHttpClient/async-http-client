@@ -113,4 +113,26 @@ public interface Response {
      * Return the list of {@link Cookie}.
      */
     public List<Cookie> getCookies();
+
+    /**
+     * Return true if the response's status has been computed by an {@link AsyncHandler}
+     * @return true if the response's status has been computed by an {@link AsyncHandler}
+     */
+    public boolean hasResponseStatus();
+
+    /**
+     * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the
+     * either {@link com.ning.http.client.AsyncHandler#onStatusReceived(HttpResponseStatus)}
+     * or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link com.ning.http.client.AsyncHandler.STATE#ABORT}
+     * @return true if the response's headers has been computed by an {@link AsyncHandler}
+     */
+    public boolean hasResponseHeaders();
+
+    /**
+     * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the
+     * either {@link com.ning.http.client.AsyncHandler#onStatusReceived(HttpResponseStatus)}
+     * or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link com.ning.http.client.AsyncHandler.STATE#ABORT}
+     * @return true if the response's body has been computed by an {@link AsyncHandler}
+     */
+    public boolean hasResponseBody();
 }
