@@ -24,6 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A callback class used when an HTTP response body is received.
@@ -32,6 +33,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpChunk chunk;
     private final HttpResponse response;
+    private final AtomicReference<byte[]> bytes = new AtomicReference(null);
 
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse> provider) {
         super(uri, provider);
@@ -51,25 +53,17 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      * @return the response body's part bytes received.
      */
     public byte[] getBodyPartBytes() {
-        if (chunk != null) {
-            if (chunk.getContent().hasArray()) {
-                return chunk.getContent().array();
-            } else {
-                ChannelBuffer b = chunk.getContent();
-                byte[] bytes = new byte[b.readableBytes()];
-                b.getBytes(0, bytes, 0, bytes.length);
-                return bytes;
-            }
-        } else {
-            if (response.getContent().hasArray()) {
-                return response.getContent().array();
-            } else {
-                ChannelBuffer b = response.getContent();
-                byte[] bytes = new byte[b.readableBytes()];
-                b.getBytes(0, bytes, 0, bytes.length);
-                return bytes;
-            }
+
+        if (bytes.get() != null) {
+            return bytes.get();
         }
+
+        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
+        int read = b.readableBytes();
+        byte[] rb = new byte[read];
+        b.readBytes(rb);
+        bytes.set(rb);
+        return bytes.get();
     }
 
     public int writeTo(OutputStream outputStream) throws IOException {

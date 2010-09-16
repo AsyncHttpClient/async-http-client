@@ -83,9 +83,7 @@ public class NettyAsyncResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        if (bodyParts == null) {
-            throw new IllegalStateException(BODY_NOT_COMPUTED);
-        }
+        checkBodyParts(); 
 
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
@@ -96,9 +94,7 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        if (bodyParts == null) {
-            throw new IllegalStateException(BODY_NOT_COMPUTED);
-        }
+        checkBodyParts();
         
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp : bodyParts) {
@@ -111,6 +107,12 @@ public class NettyAsyncResponse implements Response {
             }
         }
         return new ChannelBufferInputStream(buf);
+    }
+
+    private void checkBodyParts() {
+        if (bodyParts == null && bodyParts.size() > 0) {
+            throw new IllegalStateException(BODY_NOT_COMPUTED);
+        }
     }
 
     /* @Override */
@@ -231,7 +233,7 @@ public class NettyAsyncResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return (bodyParts != null ? true : false);
+        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
     }
 
 }
