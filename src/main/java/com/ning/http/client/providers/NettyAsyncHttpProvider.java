@@ -314,15 +314,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         try {
-            future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
-                public Object call() {
-                    if (!future.isDone() && !future.isCancelled()) {
-                        future.abort(new TimeoutException("Request timed out."));
-                        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
+            int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
+            if (delay != -1) {
+                future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
+                    public Object call() {
+                        if (!future.isDone() && !future.isCancelled()) {
+                            future.abort(new TimeoutException("Request timed out."));
+                            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            }, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
+                }, delay, TimeUnit.MILLISECONDS));
+            }
         } catch (RejectedExecutionException ex) {
             future.abort(ex);
         }
