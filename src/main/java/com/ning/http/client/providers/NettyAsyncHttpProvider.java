@@ -808,7 +808,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, new ResponseStatus(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
-                } else if (!future.getAndSetHeaderReceived(true) && updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
+                } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
                 } else if (!response.isChunked()) {

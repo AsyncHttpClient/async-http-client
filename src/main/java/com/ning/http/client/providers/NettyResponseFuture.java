@@ -55,7 +55,6 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private Future<Object> reaperFuture;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
-    private AtomicBoolean headerReceived = new AtomicBoolean(false);
     
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -229,10 +228,6 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public boolean getAndSetAuth(boolean inDigestAuth) {
         return inAuth.getAndSet(inDigestAuth);
-    }
-
-    public boolean getAndSetHeaderReceived(boolean hr) {
-        return headerReceived.getAndSet(hr);
     }
 
     public boolean getAndSetStatusReceived(boolean sr) {
