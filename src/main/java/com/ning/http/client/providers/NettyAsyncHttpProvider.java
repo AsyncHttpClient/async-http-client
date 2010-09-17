@@ -526,11 +526,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, new RandomAccessFile(file, "r").length());
             }
         }
-
-        if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
-            nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=utf-8");
-        }
-
         return nettyRequest;
     }
 
