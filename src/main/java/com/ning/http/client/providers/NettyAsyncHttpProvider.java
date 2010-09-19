@@ -116,7 +116,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final static String HTTP_HANDLER = "httpHandler";
     private final static String SSL_HANDLER = "sslHandler";
 
-    private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
+    private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
     private final ClientBootstrap bootstrap;
 
@@ -314,15 +314,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         try {
-            future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
-                public Object call() {
-                    if (!future.isDone() && !future.isCancelled()) {
+            future.touch();
+            future.setReaperFuture(config.reaper().scheduleAtFixedRate(new Runnable() {
+                public void run() {
+                    if (future.hasExpired()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Request Timeout expired for " + future);
+                        }
                         future.abort(new TimeoutException("Request timed out."));
-                        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
+                        closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                     }
-                    return null;
                 }
-            }, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
+            }, 0, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
         } catch (RejectedExecutionException ex) {
             future.abort(ex);
         }
@@ -671,6 +674,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
         final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+        future.touch();
+
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
 
@@ -904,7 +909,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         markAsDoneAndCacheConnection(future, ctx.getChannel(), true);
     }
 
-    private void closeChannel(ChannelHandlerContext ctx) {
+    private static void closeChannel(ChannelHandlerContext ctx) {
         // Catch any unexpected exception when marking the channel.        
         ctx.setAttachment(new DiscardEvent());
         try {

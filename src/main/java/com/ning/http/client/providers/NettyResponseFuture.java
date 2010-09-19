@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -52,10 +53,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
-    private Future<Object> reaperFuture;
+    private Future<?> reaperFuture;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
-    
+    private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+
     public NettyResponseFuture(URI uri,
                                Request request,
                                AsyncHandler<V> asyncHandler,
@@ -101,6 +103,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         latch.countDown();
         isCancelled.set(true);
         return true;
+    }
+
+    /**
+     * Is the Future still valid
+     */
+    public boolean hasExpired(){
+        return ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs );
     }
 
     /**
@@ -218,7 +227,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return redirectCount.incrementAndGet();
     }
 
-    public void setReaperFuture(Future<Object> reaperFuture) {
+    public void setReaperFuture(Future<?> reaperFuture) {
         this.reaperFuture = reaperFuture;
     }
 
@@ -233,4 +242,32 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     public boolean getAndSetStatusReceived(boolean sr) {
         return statusReceived.getAndSet(sr);
     }
+
+    protected void touch() {
+        touch.set(System.currentTimeMillis());
+    }
+
+    @Override
+    public String toString() {
+        return "NettyResponseFuture{" +
+                "latch=" + latch +
+                ", isDone=" + isDone +
+                ", isCancelled=" + isCancelled +
+                ", asyncHandler=" + asyncHandler +
+                ", responseTimeoutInMs=" + responseTimeoutInMs +
+                ", request=" + request +
+                ", nettyRequest=" + nettyRequest +
+                ", content=" + content +
+                ", uri=" + uri +
+                ", keepAlive=" + keepAlive +
+                ", httpResponse=" + httpResponse +
+                ", exEx=" + exEx +
+                ", redirectCount=" + redirectCount +
+                ", reaperFuture=" + reaperFuture +
+                ", inAuth=" + inAuth +
+                ", statusReceived=" + statusReceived +
+                ", touch=" + touch +
+                '}';
+    }
+
 }
