@@ -116,7 +116,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final static String HTTP_HANDLER = "httpHandler";
     private final static String SSL_HANDLER = "sslHandler";
 
-    private final Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
+    private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
     private final ClientBootstrap bootstrap;
 
@@ -246,7 +246,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             public ConnectListener<T> build() throws IOException {
 
-                URI uri = createUri(request.getRawUrl());
+                URI uri = createUri(request.getRawUrl().replace(" ","%20"));
                 HttpRequest nettyRequest = buildRequest(config, request, uri, true);
 
                 log.debug("Executing the doConnect operation: %s", asyncHandler);
@@ -314,18 +314,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         try {
-            int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
-            if (delay != -1) {
-                future.setReaperFuture(config.reaper().schedule(new Callable<Object>() {
-                    public Object call() {
-                        if (!future.isDone() && !future.isCancelled()) {
-                            future.abort(new TimeoutException("Request timed out."));
-                            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(ClosedEvent.class);
+            future.touch();
+            future.setReaperFuture(config.reaper().scheduleAtFixedRate(new Runnable() {
+                public void run() {
+                    if (future.hasExpired()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Request Timeout expired for " + future);
                         }
-                        return null;
+                        future.abort(new TimeoutException("Request timed out."));
+                        closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                     }
-                }, delay, TimeUnit.MILLISECONDS));
-            }
+                }
+            }, 0, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
         } catch (RejectedExecutionException ex) {
             future.abort(ex);
         }
@@ -382,7 +382,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.getPath());
         } else {
-            StringBuilder path = new StringBuilder(uri.getPath());
+            StringBuilder path = new StringBuilder(uri.getRawPath());
             if (uri.getQuery() != null) {
                 path.append("?").append(uri.getRawQuery());
             }
@@ -529,11 +529,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, new RandomAccessFile(file, "r").length());
             }
         }
-
-        if (nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE) == null) {
-            nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=utf-8");
-        }
-
         return nettyRequest;
     }
 
@@ -679,6 +674,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
         final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+        future.touch();
+
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
 
@@ -811,7 +808,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, new ResponseStatus(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
-                } else if (!future.getAndSetHeaderReceived(true) && updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
+                } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
                     finishUpdate(future, ctx);
                     return;
                 } else if (!response.isChunked()) {
@@ -912,7 +909,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         markAsDoneAndCacheConnection(future, ctx.getChannel(), true);
     }
 
-    private void closeChannel(ChannelHandlerContext ctx) {
+    private static void closeChannel(ChannelHandlerContext ctx) {
         // Catch any unexpected exception when marking the channel.        
         ctx.setAttachment(new DiscardEvent());
         try {
