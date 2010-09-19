@@ -890,7 +890,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private String getBaseUrl(URI uri) {
         String url = uri.getScheme() + "://" + uri.getAuthority();
         int port = uri.getPort();
-
+        if (port == -1) {
+            port = getPort(uri);
+            url += ":" + port;
+        }
         return url;
     }
 
