@@ -246,7 +246,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             public ConnectListener<T> build() throws IOException {
 
-                URI uri = createUri(request.getRawUrl());
+                URI uri = createUri(request.getRawUrl().replace(" ","%20"));
                 HttpRequest nettyRequest = buildRequest(config, request, uri, true);
 
                 log.debug("Executing the doConnect operation: %s", asyncHandler);
