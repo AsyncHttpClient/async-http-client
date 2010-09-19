@@ -69,7 +69,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/foo.html?q=+%20x");
     }
-    
+
+    @Test(groups = {"standalone", "async"})
     public void asyncProviderEncodingTest2() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com/foo.html")
@@ -81,6 +82,17 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Assert.assertEquals(url, "/foo.html?q=a%20b");
     }
 
+    @Test(groups = {"standalone", "async"})
+    public void emptyRequestURI() throws Throwable {
+        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com")
+                .build();
+
+        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        responseFuture.get();
+        String url = responseFuture.getNettyRequest().getUri();
+        Assert.assertEquals(url, "/");
+    }
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderContentLenghtGETTest() throws Throwable {

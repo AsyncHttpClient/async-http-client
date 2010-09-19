@@ -162,7 +162,7 @@ public class AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         server = new Server();
 
-        port1 = findFreePort();
+        port1 = 8080;
         port2 = findFreePort();
 
         Connector listener = new SelectChannelConnector();
