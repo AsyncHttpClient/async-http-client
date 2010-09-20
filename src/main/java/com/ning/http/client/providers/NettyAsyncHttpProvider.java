@@ -373,7 +373,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } else {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-        nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + getPort(uri));
+        if (uri.getPort() == -1) {
+            nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
+        } else {
+            nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
+        }
 
         FluentCaseInsensitiveStringsMap h = request.getHeaders();
         if (h != null) {
