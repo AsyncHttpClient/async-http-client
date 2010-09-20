@@ -107,9 +107,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     /**
      * Is the Future still valid
+     *
+     * @return <code>true</code> iff response has expired and should be terminated.
      */
     public boolean hasExpired(){
-        return ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs );
+        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 
     /**
