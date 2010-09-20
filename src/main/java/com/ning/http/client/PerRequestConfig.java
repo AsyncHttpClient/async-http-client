@@ -20,18 +20,28 @@ package com.ning.http.client;
  *
  * @author Hubert Iwaniuk
  */
-public class AsyncHttpClientPerRequestConfig {
+public class PerRequestConfig {
     private final ProxyServer proxyServer;
+    private int requestTimeoutInMs;
 
-    public AsyncHttpClientPerRequestConfig() {
-        this(null);
+    public PerRequestConfig() {
+        this(null, 0);
     }
     
-    public AsyncHttpClientPerRequestConfig(ProxyServer proxyServer) {
+    public PerRequestConfig(ProxyServer proxyServer, int requestTimeoutInMs) {
         this.proxyServer = proxyServer;
+        this.requestTimeoutInMs = requestTimeoutInMs;
     }
 
     public ProxyServer getProxyServer() {
         return proxyServer;
+    }
+
+    public int getRequestTimeoutInMs() {
+        return requestTimeoutInMs;
+    }
+
+    public void setRequestTimeoutInMs(int requestTimeoutInMs) {
+        this.requestTimeoutInMs = requestTimeoutInMs;
     }
 }

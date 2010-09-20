@@ -35,7 +35,6 @@ import java.util.List;
  * }
  */
 public interface Request {
-
     /**
      * An entity that can be used to manipulate the Request's body output before it get sent.
      */
@@ -144,4 +143,11 @@ public interface Request {
      * @return the {@link File} to upload.
      */
     public File getFile();
+
+    /**
+     * Return Per request configuration.
+     *
+     * @return Per request configuration.
+     */
+    public PerRequestConfig getPerRequestConfig();
 }

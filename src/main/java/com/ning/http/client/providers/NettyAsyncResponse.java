@@ -39,6 +39,9 @@ import java.util.Map;
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
 public class NettyAsyncResponse implements Response {
+    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
+    private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
+
     private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
@@ -80,6 +83,8 @@ public class NettyAsyncResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
+        checkBodyParts(); 
+
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
@@ -89,6 +94,8 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
+        checkBodyParts();
+        
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp : bodyParts) {
             // Ugly. TODO
@@ -100,6 +107,12 @@ public class NettyAsyncResponse implements Response {
             }
         }
         return new ChannelBufferInputStream(buf);
+    }
+
+    private void checkBodyParts() {
+        if (bodyParts == null && bodyParts.size() > 0) {
+            throw new IllegalStateException(BODY_NOT_COMPUTED);
+        }
     }
 
     /* @Override */
@@ -124,21 +137,33 @@ public class NettyAsyncResponse implements Response {
 
     /* @Override */
     public String getContentType() {
+        if (headers == null ) {
+            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+        }
         return headers.getHeaders().getFirstValue("Content-Type");
     }
 
     /* @Override */
     public String getHeader(String name) {
+        if (headers == null ) {
+            throw new IllegalStateException();
+        }
         return headers.getHeaders().getFirstValue(name);
     }
 
     /* @Override */
     public List<String> getHeaders(String name) {
+        if (headers == null ) {
+            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+        }
         return headers.getHeaders().get(name);
     }
 
     /* @Override */
     public FluentCaseInsensitiveStringsMap getHeaders() {
+         if (headers == null ) {
+            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+        }
         return headers.getHeaders();
     }
 
@@ -149,6 +174,9 @@ public class NettyAsyncResponse implements Response {
     
     /* @Override */
     public List<Cookie> getCookies() {
+        if (headers == null ) {
+            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+        }
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
@@ -182,6 +210,30 @@ public class NettyAsyncResponse implements Response {
             }
         }
         return Collections.unmodifiableList(cookies);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean hasResponseStatus() {
+        return (bodyParts != null ? true : false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean hasResponseHeaders() {
+        return (headers != null ? true : false);
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean hasResponseBody() {
+        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
     }
 
 }

@@ -242,7 +242,12 @@ public class AsyncHttpClientConfig {
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
         private boolean keepAlive = true;
-        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),
+                new ThreadFactory() {
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "AsyncHttpClient-Reaper");
+                    }
+                });
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null;
         private SSLEngine sslEngine;

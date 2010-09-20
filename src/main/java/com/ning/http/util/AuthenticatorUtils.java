@@ -15,6 +15,7 @@
  */
 package com.ning.http.util;
 
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 
 import java.io.UnsupportedEncodingException;
@@ -24,6 +25,11 @@ public final class AuthenticatorUtils {
 
     public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
+        return "Basic " + Base64.encode(s.getBytes());
+    }
+
+    public static String computeBasicAuthentication(ProxyServer proxyServer) {
+        String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
         return "Basic " + Base64.encode(s.getBytes());
     }
 

@@ -51,7 +51,7 @@ public class SslUtils {
     static SSLContext getSSLContext()
             throws GeneralSecurityException, IOException {
         SSLConfig config = new SSLConfig();
-        if (config.keyStoreLocation == null) {
+        if (config.keyStoreLocation == null || config.trustStoreLocation != null) {
             return getLooseSSLContext();
         } else {
             return getStrictSSLContext(config);

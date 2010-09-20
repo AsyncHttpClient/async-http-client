@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 
 /**
@@ -31,5 +33,13 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      * @return the response body's part bytes received.
      */
     abstract public byte[] getBodyPartBytes();
+
+    /**
+     * Write the available bytes to the {@link java.io.OutputStream}
+     * @param outputStream
+     * @throws IOException
+     * @return The number of bytes written
+     */
+    abstract public int writeTo(OutputStream outputStream) throws IOException;
 
 }
