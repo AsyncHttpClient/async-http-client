@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -83,6 +84,25 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             assertEquals(e.getCause().getMessage(), "Request timed out.");
         } catch (TimeoutException e) {
             fail("Timeout.", e);
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
+        PerRequestConfig requestConfig = new PerRequestConfig();
+        requestConfig.setRequestTimeoutInMs(-1);
+        Future<Response> responseFuture =
+                client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
+        try {
+            Response response = responseFuture.get();
+            assertNotNull(response);
+            client.close();
+        } catch (InterruptedException e) {
+            fail("Interrupted.", e);
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof TimeoutException);
+            assertEquals(e.getCause().getMessage(), "Request timed out.");
         }
     }
 

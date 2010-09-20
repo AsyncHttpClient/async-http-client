@@ -107,9 +107,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     /**
      * Is the Future still valid
+     *
+     * @return <code>true</code> iff response has expired and should be terminated.
      */
     public boolean hasExpired(){
-        return ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs );
+        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 
     /**
@@ -130,7 +132,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /* @Override */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
         if (!isDone() && !isCancelled()) {
-            if (!latch.await(l, tu)) {
+            boolean failed = false;
+            if (l == -1) {
+                latch.await();
+            } else {
+                failed = !latch.await(l, tu);
+            }
+            if (failed) {
                 isCancelled.set(true);
                 TimeoutException te = new TimeoutException("No response received");
                 try {

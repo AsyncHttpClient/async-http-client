@@ -100,7 +100,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -315,17 +314,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         try {
             future.touch();
-            future.setReaperFuture(config.reaper().scheduleAtFixedRate(new Runnable() {
-                public void run() {
-                    if (future.hasExpired()) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Request Timeout expired for " + future);
+            int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
+            if (delay != -1) {
+                future.setReaperFuture(config.reaper().scheduleAtFixedRate(new Runnable() {
+                    public void run() {
+                        if (future.hasExpired()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Request Timeout expired for " + future);
+                            }
+                            future.abort(new TimeoutException("Request timed out."));
+                            closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                         }
-                        future.abort(new TimeoutException("Request timed out."));
-                        closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                     }
-                }
-            }, 0, requestTimeout(config, future.getRequest().getPerRequestConfig()), TimeUnit.MILLISECONDS));
+                }, 0, delay, TimeUnit.MILLISECONDS));
+            }
         } catch (RejectedExecutionException ex) {
             future.abort(ex);
         }
