@@ -782,18 +782,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         if (location.startsWith("/")) {
                             location = getBaseUrl(future.getURI()) + location;
                         }
+                        if(!location.equals(future.getURI().toString())){
+                            URI uri = createUri(location);
+                            RequestBuilder builder = new RequestBuilder(future.getRequest());
+                            future.setURI(uri);
 
-                        URI uri = createUri(location);
-                        RequestBuilder builder = new RequestBuilder(future.getRequest());
-                        future.setURI(uri);
+                            closeChannel(ctx);
+                            String newUrl = uri.toString();
 
-                        closeChannel(ctx);
-                        String newUrl = uri.toString();
-
-                        log.debug("Redirecting to %s", newUrl);
-
-                        execute(builder.setUrl(newUrl).build(), future);
-                        return;
+                            log.debug("Redirecting to %s", newUrl);
+                            execute(builder.setUrl(newUrl).build(), future);
+                            return;
+                        }
                     } else {
                         throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
                     }
