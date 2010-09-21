@@ -275,9 +275,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             for( String query : queries) {
                 pos = query.indexOf("=");
                 if (pos <= 0) {
-                    throw new IllegalStateException("Illegal URL: " + url);
+                    addQueryParameter(query, null);
+                }else{
+                    addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
                 }
-                addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
             }
         }
         return buildedUrl.toString();
