@@ -152,7 +152,7 @@ public class Relative302Test extends AbstractBasicTest {
                 .setHeader("X-redirect", "/foo/test")
                 .execute().get();
         assertNotNull(response);
-        assertEquals(response.getStatusCode(),200);
+        assertEquals(response.getStatusCode(),302);
         assertEquals(response.getUri().toString(), getTargetUrl());
     }
 }
