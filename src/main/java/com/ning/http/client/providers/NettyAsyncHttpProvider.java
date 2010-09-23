@@ -773,8 +773,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     return;
                 }
 
-                if (config.isRedirectEnabled()
-                        && (statusCode == 302 || statusCode == 301)) {
+                boolean redirectEnabled = (request.getFollowRedirects() == true
+                        || request.getFollowRedirects() == null && config.isRedirectEnabled());
+                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
 

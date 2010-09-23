@@ -145,9 +145,16 @@ public interface Request {
     public File getFile();
 
     /**
+     * Return the {@link followRedirects}
+     * @return the {@link followRedirects}
+     */
+    public Boolean getFollowRedirects();
+
+    /**
      * Return Per request configuration.
      *
      * @return Per request configuration.
      */
     public PerRequestConfig getPerRequestConfig();
+
 }
