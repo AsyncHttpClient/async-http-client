@@ -18,6 +18,7 @@ package com.ning.http.client;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 
 /**
  * A callback class used when an HTTP response body is received.
@@ -42,4 +43,9 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      */
     abstract public int writeTo(OutputStream outputStream) throws IOException;
 
+    /**
+     * Return the underlying {@link ByteBuffer}
+     * @return {@link ByteBuffer}
+     */
+    abstract public ByteBuffer getBodyByteBuffer();
 }

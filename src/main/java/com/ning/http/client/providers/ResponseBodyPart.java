@@ -24,6 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -73,6 +74,11 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return read;
     }
 
+    @Override
+    public ByteBuffer getBodyByteBuffer() {
+        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
+        return b.toByteBuffer();
+    }
 
     protected HttpChunk chunk() {
         return chunk;
