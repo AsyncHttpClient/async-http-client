@@ -58,7 +58,7 @@ public class Realm {
                   String cnonce,
                   String uri,
                   String method,
-                  boolean usePreventiveAuth) {
+                  boolean usePreemptiveAuth) {
 
         this.principal = principal;
         this.password = password;
@@ -72,7 +72,7 @@ public class Realm {
         this.cnonce = cnonce;
         this.uri = uri;
         this.methodName = method;
-        this.usePreemptiveAuth = usePreventiveAuth;
+        this.usePreemptiveAuth = usePreemptiveAuth;
     }
 
     public String getPrincipal() {
@@ -129,8 +129,8 @@ public class Realm {
     }
 
     /**
-     * Return true is preventive authentication is enabled
-     * @return true is preventive authentication is enabled
+     * Return true is preemptive authentication is enabled
+     * @return true is preemptive authentication is enabled
      */
     public boolean getUsePreemptiveAuth() {
         return usePreemptiveAuth;
