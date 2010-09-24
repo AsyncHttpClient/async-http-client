@@ -55,6 +55,7 @@ public class AsyncHttpClientConfig {
     private final ExecutorService applicationThreadPool;
     private final ProxyServer proxyServer;
     private final SSLEngine sslEngine;
+    private final AsyncHttpProviderConfig<?,?> providerConfig;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -69,7 +70,8 @@ public class AsyncHttpClientConfig {
                                   ScheduledExecutorService reaper,
                                   ExecutorService applicationThreadPool,
                                   ProxyServer proxyServer,
-                                  SSLEngine sslEngine) {
+                                  SSLEngine sslEngine,
+                                  AsyncHttpProviderConfig<?,?> providerConfig) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -82,6 +84,7 @@ public class AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.keepAlive = keepAlive;
         this.sslEngine = sslEngine;
+        this.providerConfig = providerConfig;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -229,6 +232,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the {@link com.ning.http.client.AsyncHttpProviderConfig}
+     * @return the {@link com.ning.http.client.AsyncHttpProviderConfig}
+     */
+    public AsyncHttpProviderConfig<?,?> getAsyncHttpProviderConfig() {
+        return providerConfig;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -251,6 +262,7 @@ public class AsyncHttpClientConfig {
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null;
         private SSLEngine sslEngine;
+        private AsyncHttpProviderConfig<?,?> providerConfig;
 
         public Builder() {
         }
@@ -413,6 +425,15 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
+         * @param providerConfig
+         */
+        public Builder setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
+            this.providerConfig = providerConfig;
+            return this;
+        }
+
+        /**
          * Build an {@link AsyncHttpClientConfig}
          *
          * @return an {@link AsyncHttpClientConfig}
@@ -431,7 +452,8 @@ public class AsyncHttpClientConfig {
                     reaper,
                     applicationThreadPool,
                     proxyServer,
-                    sslEngine);
+                    sslEngine,
+                    providerConfig);
         }
 
     }

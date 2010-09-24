@@ -19,6 +19,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
@@ -143,6 +144,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 config.executorService());
         bootstrap = new ClientBootstrap(socketChannelFactory);
         this.config = config;
+
+        AsyncHttpProviderConfig<?,?> providerConfig = config.getAsyncHttpProviderConfig();
+        if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
+            configureNetty(NettyAsyncHttpProviderConfig.class.cast(providerConfig));
+        }
+    }
+
+    void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
+        for(Entry<String,Object> entry : providerConfig.propertiesSet()) {
+            bootstrap.setOption(entry.getKey(),entry.getValue());
+        }
     }
 
     void configure(final boolean useSSL, final ConnectListener<?> cl) {

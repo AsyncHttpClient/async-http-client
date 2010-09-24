@@ -30,6 +30,7 @@ import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.NettyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.NettyResponseFuture;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -1396,6 +1397,23 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = "online")
     public void testAwsS3() throws Exception {
         final AsyncHttpClient c = new AsyncHttpClient(new Builder().build());
+        Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
+        if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
+            fail("No response Body");
+        } else {
+            assertEquals(response.getStatusCode(), 403);
+        }
+        c.close();
+    }
+    
+    @Test(groups = "online")
+    public void testAsyncHttpProviderConfig() throws Exception {
+
+        NettyAsyncHttpProviderConfig pc = new NettyAsyncHttpProviderConfig();
+        pc.addProperty("tcpNoDelay", true);
+
+        // Just make sure Netty still works.
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
         Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
         if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
             fail("No response Body");
