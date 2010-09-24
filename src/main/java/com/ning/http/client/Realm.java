@@ -39,6 +39,7 @@ public class Realm {
     private final String cnonce;
     private final String uri;
     private final String methodName;
+    private final boolean usePreventiveAuth;
 
     public enum AuthScheme {
         DIGEST,
@@ -55,7 +56,9 @@ public class Realm {
                   String qop,
                   String nc,
                   String cnonce,
-                  String uri, String method) {
+                  String uri,
+                  String method,
+                  boolean usePreventiveAuth) {
 
         this.principal = principal;
         this.password = password;
@@ -69,6 +72,7 @@ public class Realm {
         this.cnonce = cnonce;
         this.uri = uri;
         this.methodName = method;
+        this.usePreventiveAuth = usePreventiveAuth;
     }
 
     public String getPrincipal() {
@@ -122,6 +126,14 @@ public class Realm {
 
     public String getMethodName() {
         return methodName;
+    }
+
+    /**
+     * Return true is preventive authentication is enabled
+     * @return true is preventive authentication is enabled
+     */
+    public boolean usePreventiveAuth() {
+        return usePreventiveAuth;
     }
 
     @Override
@@ -202,6 +214,7 @@ public class Realm {
         private String cnonce = "";
         private String uri = "";
         private String methodName = "GET";
+        private boolean usePreventiveAuth = false;
 
         public String getPrincipal() {
             return principal;
@@ -300,6 +313,16 @@ public class Realm {
         public RealmBuilder setMethodName(String methodName) {
             this.methodName = methodName;
             return this;
+        }
+
+
+        public boolean isUsePreventiveAuth() {
+            return usePreventiveAuth;
+        }
+
+        public RealmBuilder setUsePreventiveAuth(boolean usePreventiveAuth) {
+            this.usePreventiveAuth = usePreventiveAuth;
+            return this;            
         }
 
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
@@ -442,7 +465,8 @@ public class Realm {
                     nc,
                     cnonce,
                     uri,
-                    methodName);
+                    methodName,
+                    usePreventiveAuth);
         }
     }
 

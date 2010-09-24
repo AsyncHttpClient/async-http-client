@@ -127,6 +127,19 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
+    public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
+                .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreventiveAuth(true).build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+    }
+
+    @Test(groups = "standalone")
     public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
