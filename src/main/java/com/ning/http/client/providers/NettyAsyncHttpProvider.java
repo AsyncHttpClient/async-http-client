@@ -95,6 +95,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -743,29 +744,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     markAsDoneAndCacheConnection(future, ctx.getChannel(), false);
                     RequestBuilder builder = new RequestBuilder(future.getRequest());
                     try {
-                        ChannelPipeline p = ctx.getChannel().getPipeline();
-                        if (p.get(HTTP_HANDLER) != null) {
-                            p.remove(HTTP_HANDLER);
-                        }
-
-                        if (request.getUrl().startsWith("https")) {
-
-                            SSLEngine sslEngine = config.getSSLEngine();
-                            if (sslEngine == null) {
-                                sslEngine = SslUtils.getSSLEngine();
-                            }
-
-                            if (p.get(SSL_HANDLER) == null) {
-                                p.addFirst(HTTP_HANDLER, new HttpClientCodec());
-                                p.addFirst(SSL_HANDLER, new SslHandler(sslEngine));
-                            } else {
-                                p.addAfter(SSL_HANDLER, HTTP_HANDLER, new HttpClientCodec());
-                            }
-
-                        } else {
-                            p.addFirst(HTTP_HANDLER, new HttpClientCodec());
-                        }
-
+                        upgradeProtocol(ctx.getChannel().getPipeline(),(request.getUrl()));
                     } catch (Throwable ex) {
                         future.abort(ex);
                     }
@@ -774,8 +753,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     return;
                 }
 
-                if (config.isRedirectEnabled()
-                        && (statusCode == 302 || statusCode == 301)) {
+                if (config.isRedirectEnabled() && (statusCode == 302 || statusCode == 301)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
 
@@ -783,8 +761,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         if (location.startsWith("/")) {
                             location = getBaseUrl(future.getURI()) + location;
                         }
+
                         if(!location.equals(future.getURI().toString())){
                             URI uri = createUri(location);
+
+                            if (location.startsWith("https")) {
+                                upgradeProtocol(ctx.getChannel().getPipeline(), "https");
+                            }
                             RequestBuilder builder = new RequestBuilder(future.getRequest());
                             future.setURI(uri);
 
@@ -850,6 +833,29 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 finishUpdate(future, ctx);
                 throw t;
             }
+        }
+    }
+
+    private void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
+        if (p.get(HTTP_HANDLER) != null) {
+            p.remove(HTTP_HANDLER);
+        }
+
+        if (scheme.startsWith("https")) {
+            SSLEngine sslEngine = config.getSSLEngine();
+            if (sslEngine == null) {
+                sslEngine = SslUtils.getSSLEngine();
+            }
+
+            if (p.get(SSL_HANDLER) == null) {
+                p.addFirst(HTTP_HANDLER, new HttpClientCodec());
+                p.addFirst(SSL_HANDLER, new SslHandler(sslEngine));
+            } else {
+                p.addAfter(SSL_HANDLER, HTTP_HANDLER, new HttpClientCodec());
+            }
+
+        } else {
+            p.addFirst(HTTP_HANDLER, new HttpClientCodec());
         }
     }
 
