@@ -150,4 +150,19 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
     }
+
+    @Test(groups = "standalone")
+    public void relativeLocationUrl() throws Throwable {
+        isSet.getAndSet(false);
+
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        Response response = c.preparePost(String.format("https://127.0.0.1:%d/foo/test", port2))
+                .setHeader("X-redirect", "/foo/test")
+                .execute().get();
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(),302);
+        assertEquals(response.getUri().toString(), String.format("https://127.0.0.1:%d/foo/test", port2));
+    }
 }
