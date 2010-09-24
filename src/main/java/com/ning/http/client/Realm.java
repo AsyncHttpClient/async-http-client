@@ -39,7 +39,7 @@ public class Realm {
     private final String cnonce;
     private final String uri;
     private final String methodName;
-    private final boolean usePreventiveAuth;
+    private final boolean usePreemptiveAuth;
 
     public enum AuthScheme {
         DIGEST,
@@ -72,7 +72,7 @@ public class Realm {
         this.cnonce = cnonce;
         this.uri = uri;
         this.methodName = method;
-        this.usePreventiveAuth = usePreventiveAuth;
+        this.usePreemptiveAuth = usePreventiveAuth;
     }
 
     public String getPrincipal() {
@@ -132,8 +132,8 @@ public class Realm {
      * Return true is preventive authentication is enabled
      * @return true is preventive authentication is enabled
      */
-    public boolean usePreventiveAuth() {
-        return usePreventiveAuth;
+    public boolean getUsePreemptiveAuth() {
+        return usePreemptiveAuth;
     }
 
     @Override
@@ -214,7 +214,7 @@ public class Realm {
         private String cnonce = "";
         private String uri = "";
         private String methodName = "GET";
-        private boolean usePreventiveAuth = false;
+        private boolean usePreemptive = false;
 
         public String getPrincipal() {
             return principal;
@@ -315,13 +315,12 @@ public class Realm {
             return this;
         }
 
-
-        public boolean isUsePreventiveAuth() {
-            return usePreventiveAuth;
+        public boolean getUsePreemptiveAuth() {
+            return usePreemptive;
         }
 
-        public RealmBuilder setUsePreventiveAuth(boolean usePreventiveAuth) {
-            this.usePreventiveAuth = usePreventiveAuth;
+        public RealmBuilder setUsePreemptiveAuth(boolean usePreemptiveAuth) {
+            this.usePreemptive = usePreemptiveAuth;
             return this;            
         }
 
@@ -344,6 +343,7 @@ public class Realm {
             setQop(clone.getQop());
             setScheme(clone.getScheme());
             setUri(clone.getUri());
+            setUsePreemptiveAuth(clone.getUsePreemptiveAuth());
             return this;
         }
 
@@ -466,7 +466,7 @@ public class Realm {
                     cnonce,
                     uri,
                     methodName,
-                    usePreventiveAuth);
+                    usePreemptive);
         }
     }
 

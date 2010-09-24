@@ -415,7 +415,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         Realm realm = request.getRealm();
-        if (realm != null && realm.usePreventiveAuth()) {
+        if (realm != null && realm.getUsePreemptiveAuth()) {
             switch (realm.getAuthScheme()) {
                 case BASIC:
                     nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
@@ -707,7 +707,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getType().toString())
                             .setScheme(request.getRealm().getAuthScheme())
-                            .setUsePreventiveAuth(true)
+                            .setUsePreemptiveAuth(true)
                             .build();
 
                     log.debug("Sending authentication to %s", request.getUrl());

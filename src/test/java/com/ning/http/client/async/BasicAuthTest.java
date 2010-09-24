@@ -130,7 +130,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
-                .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreventiveAuth(true).build());
+                .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(true).build());
 
         Future<Response> f = r.execute();
         Response resp = f.get(3, TimeUnit.SECONDS);
