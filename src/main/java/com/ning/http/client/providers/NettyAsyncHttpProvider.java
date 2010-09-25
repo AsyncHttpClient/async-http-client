@@ -233,7 +233,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
-        SSLEngine sslEngine = config.getSSLEngine();
+        SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine();
         if (sslEngine == null) {
             sslEngine = SslUtils.getSSLEngine();
         }

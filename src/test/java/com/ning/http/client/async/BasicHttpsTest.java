@@ -18,6 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
+import com.ning.http.client.SSLEngineFactory;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 
@@ -267,9 +268,9 @@ public class BasicHttpsTest {
 
     @Test(groups = "standalone")
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        SSLEngine sslEngine = createEngine();
+        SSLEngineFactory sslEngineFactory = createEngineFactory();
 
-        AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+        final AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLEngineFactory(sslEngineFactory).build());
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -285,8 +286,8 @@ public class BasicHttpsTest {
 
     @Test(groups = "standalone")
     public void multipleSSLRequestsTest() throws Throwable {
-        SSLEngine sslEngine = createEngine();
-        AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+        SSLEngineFactory sslEngineFactory = createEngineFactory();
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngineFactory(sslEngineFactory).build());
 
         String body = "hello there";
 
@@ -307,8 +308,8 @@ public class BasicHttpsTest {
     
     @Test(groups = "standalone")
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
-        final SSLEngine sslEngine = createEngine();
-        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+        SSLEngineFactory sslEngineFactory = createEngineFactory();
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngineFactory(sslEngineFactory).build());
 
         final String body = "hello there";
 
@@ -342,32 +343,38 @@ public class BasicHttpsTest {
         }
     }
 
-    private static SSLEngine createEngine() {
-        SSLContext sslContext;
-        try {
-            InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
-            char[] keyStorePassword = "changeit".toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(keyStoreStream, keyStorePassword);
+    private static SSLEngineFactory createEngineFactory() {
+        return new SSLEngineFactory()
+        {
+            public SSLEngine newSSLEngine()
+            {
+                SSLContext sslContext;
+                try {
+                    InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
+                    char[] keyStorePassword = "changeit".toCharArray();
+                    KeyStore ks = KeyStore.getInstance("JKS");
+                    ks.load(keyStoreStream, keyStorePassword);
 
-            // Set up key manager factory to use our key store
-            char[] certificatePassword = "changeit".toCharArray();
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, certificatePassword);
+                    // Set up key manager factory to use our key store
+                    char[] certificatePassword = "changeit".toCharArray();
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                    kmf.init(ks, certificatePassword);
 
-            // Initialize the SSLContext to work with our key managers.
-            KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[]{DUMMY_TRUST_MANAGER};
-            SecureRandom secureRandom = new SecureRandom();
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers, trustManagers, secureRandom);
-        } catch (Exception e) {
-            throw new Error("Failed to initialize the server-side SSLContext", e);
-        }
+                    // Initialize the SSLContext to work with our key managers.
+                    KeyManager[] keyManagers = kmf.getKeyManagers();
+                    TrustManager[] trustManagers = new TrustManager[]{DUMMY_TRUST_MANAGER};
+                    SecureRandom secureRandom = new SecureRandom();
+                    sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(keyManagers, trustManagers, secureRandom);
+                } catch (Exception e) {
+                    throw new Error("Failed to initialize the server-side SSLContext", e);
+                }
 
-        SSLEngine sslEngine = sslContext.createSSLEngine();
-        sslEngine.setUseClientMode(true);
-        return sslEngine;
+                SSLEngine sslEngine = sslContext.createSSLEngine();
+                sslEngine.setUseClientMode(true);
+                return sslEngine;
+            }
+        };
     }
 
     private static final AtomicBoolean TRUST_SERVER_CERT = new AtomicBoolean(true);

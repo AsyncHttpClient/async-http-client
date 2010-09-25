@@ -55,6 +55,7 @@ public class AsyncHttpClientConfig {
     private final ExecutorService applicationThreadPool;
     private final ProxyServer proxyServer;
     private final SSLEngine sslEngine;
+    private final SSLEngineFactory sslEngineFactory;
     private final AsyncHttpProviderConfig<?,?> providerConfig;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
@@ -71,6 +72,7 @@ public class AsyncHttpClientConfig {
                                   ExecutorService applicationThreadPool,
                                   ProxyServer proxyServer,
                                   SSLEngine sslEngine,
+                                  SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?,?> providerConfig) {
 
         this.maxTotalConnections = maxTotalConnections;
@@ -84,6 +86,7 @@ public class AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.keepAlive = keepAlive;
         this.sslEngine = sslEngine;
+        this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
 
         if (reaper == null) {
@@ -226,9 +229,28 @@ public class AsyncHttpClientConfig {
     /**
      * Return an instance of {@link SSLEngine} used for SSL connection.
      * @return an instance of {@link SSLEngine} used for SSL connection.
+     * @deprecated Use {@link #getSSLEngineFactory()} instead.
      */
-    public SSLEngine getSSLEngine(){
+    @Deprecated
+    public SSLEngine getSSLEngine() {
         return sslEngine;
+    }
+    
+    /**
+     * Return an instance of {@link SSLEngineFactory} used for SSL connection.
+     * @return an instance of {@link SSLEngineFactory} used for SSL connection.
+     */
+    public SSLEngineFactory getSSLEngineFactory() {
+        if (sslEngineFactory == null) {
+            return new SSLEngineFactory()
+            {
+                public SSLEngine newSSLEngine()
+                {
+                    return sslEngine;
+                }
+            };
+        }
+        return sslEngineFactory;
     }
 
     /**
@@ -262,6 +284,7 @@ public class AsyncHttpClientConfig {
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null;
         private SSLEngine sslEngine;
+        private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?,?> providerConfig;
 
         public Builder() {
@@ -418,9 +441,22 @@ public class AsyncHttpClientConfig {
          * 
          * @param sslEngine the {@link SSLEngine} for secure connection
          * @return a {@link Builder}
+         * @deprecated Use {@link #setSSLEngineFactory(SSLEngineFactory)} instead.
          */
+        @Deprecated
         public Builder setSSLEngine(SSLEngine sslEngine){
             this.sslEngine = sslEngine;
+            return this;
+        }
+        
+        /**
+         * Set the {@link SSLEngineFactory} for secure connection.
+         * 
+         * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection
+         * @return a {@link Builder}
+         */
+        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory){
+            this.sslEngineFactory = sslEngineFactory;
             return this;
         }
 
@@ -453,6 +489,7 @@ public class AsyncHttpClientConfig {
                     applicationThreadPool,
                     proxyServer,
                     sslEngine,
+                    sslEngineFactory,
                     providerConfig);
         }
 
