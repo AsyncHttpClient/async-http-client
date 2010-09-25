@@ -34,6 +34,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.ServletException;
@@ -53,6 +54,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 import static org.testng.Assert.assertEquals;
@@ -302,6 +304,43 @@ public class BasicHttpsTest {
 
         assertEquals(response.getResponseBody(), body);
     }
+    
+    @Test(groups = "standalone")
+    public void reconnectsAfterFailedCertificationPath() throws Throwable {
+        final SSLEngine sslEngine = createEngine();
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLEngine(sslEngine).build());
+
+        final String body = "hello there";
+
+        TRUST_SERVER_CERT.set(false);
+        try
+        {
+            // first request fails because server certificate is rejected
+            try
+            {
+                c.preparePost(TARGET_URL)
+                    .setBody(body)
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
+            }
+            catch (final ExecutionException e)
+            {
+                assertEquals(e.getCause().getClass(), SSLHandshakeException.class);
+            }
+
+            TRUST_SERVER_CERT.set(true);
+
+            // second request should succeed
+            final Response response = c.preparePost(TARGET_URL)
+                .setBody(body)
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(response.getResponseBody(), body);
+        }
+        finally
+        {
+            TRUST_SERVER_CERT.set(true);
+        }
+    }
 
     private static SSLEngine createEngine() {
         SSLContext sslContext;
@@ -331,6 +370,7 @@ public class BasicHttpsTest {
         return sslEngine;
     }
 
+    private static final AtomicBoolean TRUST_SERVER_CERT = new AtomicBoolean(true);
     private static final TrustManager DUMMY_TRUST_MANAGER = new X509TrustManager() {
         public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
@@ -342,6 +382,9 @@ public class BasicHttpsTest {
 
         public void checkServerTrusted(
                 X509Certificate[] chain, String authType) throws CertificateException {
+            if (!TRUST_SERVER_CERT.get()) {
+                throw new CertificateException("Server certificate not trusted.");
+            }
         }
     };
 
