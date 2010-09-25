@@ -68,6 +68,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
             if (r.getScheme().equalsIgnoreCase("https")) {
                 httpResponse.addHeader("X-httpToHttps", "PASS");
+                isSet.getAndSet(false);
             }
 
             httpResponse.setStatus(200);
@@ -144,6 +145,29 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
+                .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
+                .execute().get();
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+    }
+
+    @Test(groups = "standalone")
+    public void httpToHttpsProperConfig() throws Throwable {
+        isSet.getAndSet(false);
+
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumConnectionsPerHost(10).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        Response response = c.preparePost(getTargetUrl())
+                .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
+                .execute().get();
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+
+        // Test if the internal channel is downgraded to clean http.
+        response = c.preparePost(getTargetUrl())
                 .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
                 .execute().get();
         assertNotNull(response);

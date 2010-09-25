@@ -119,7 +119,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
-    private final ClientBootstrap bootstrap;
+    private final ClientBootstrap plainBootstrap;
+
+    private final ClientBootstrap secureBootstrap;
 
     private final static int MAX_BUFFERED_BYTES = 8192;
 
@@ -142,7 +144,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         socketChannelFactory = new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
                 config.executorService());
-        bootstrap = new ClientBootstrap(socketChannelFactory);
+        plainBootstrap = new ClientBootstrap(socketChannelFactory);
+        secureBootstrap = new ClientBootstrap(socketChannelFactory);
+
         this.config = config;
 
         AsyncHttpProviderConfig<?,?> providerConfig = config.getAsyncHttpProviderConfig();
@@ -153,28 +157,39 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
         for(Entry<String,Object> entry : providerConfig.propertiesSet()) {
-            bootstrap.setOption(entry.getKey(),entry.getValue());
+            plainBootstrap.setOption(entry.getKey(),entry.getValue());
         }
     }
 
-    void configure(final boolean useSSL, final ConnectListener<?> cl) {
+    void configure(final ConnectListener<?> cl) {
 
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+        plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
             /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
 
-                if (useSSL) {
-                    try {
-                        SSLEngine sslEngine = config.getSSLEngine();
-                        if (sslEngine == null) {
-                            sslEngine = SslUtils.getSSLEngine();
-                        }
-                        pipeline.addLast(SSL_HANDLER, new SslHandler(sslEngine));
-                    } catch (Throwable ex) {
-                        cl.future().abort(ex);
-                    }
+                pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+
+                if (config.isCompressionEnabled()) {
+                    pipeline.addLast("inflater", new HttpContentDecompressor());
+                }
+                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+                pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
+                return pipeline;
+            }
+        });
+
+        secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+
+            /* @Override */
+            public ChannelPipeline getPipeline() throws Exception {
+                ChannelPipeline pipeline = pipeline();
+
+                try {
+                    pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                } catch (Throwable ex) {
+                    cl.future().abort(ex);
                 }
 
                 pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
@@ -202,6 +217,37 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } else {
                 return null;
             }
+
+            try {
+                // Always make sure the channel who got cached support the proper protocol. It could
+                // only occurs when a HttpMethod.CONNECT is used agains a proxy that require upgrading from http to
+                // https.
+                return verifyChannelPipeline(channel, uri.getScheme());
+            } catch (Exception ex) {
+                if (log.isDebugEnabled()) {
+                    log.warn(ex);
+                }
+            }
+        }
+        return null;
+    }
+
+    private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
+        SSLEngine sslEngine = config.getSSLEngine();
+        if (sslEngine == null) {
+            sslEngine = SslUtils.getSSLEngine();
+        }
+        return sslEngine;
+    }
+
+    private Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
+
+        if (channel.getPipeline().get(SSL_HANDLER) != null && "http".equalsIgnoreCase(scheme)) {
+            channel.getPipeline().remove(SSL_HANDLER);
+        } else if (channel.getPipeline().get(HTTP_HANDLER) != null && "http".equalsIgnoreCase(scheme)) {
+            return channel;
+        } else if (channel.getPipeline().get(SSL_HANDLER) == null && "https".equalsIgnoreCase(scheme)) {
+            channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
         }
         return channel;
     }
@@ -291,10 +337,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
 
-        /**
-         * Currently it is impossible to write the headers and the FIle using a single I/O operation.
-         * I've filled NETTY-XXX as an enhancement.
-         */
         channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler()));
 
         if (future.getRequest().getFile() != null) {
@@ -559,7 +601,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         config.reaper().shutdown();
         config.executorService().shutdown();
         socketChannelFactory.releaseExternalResources();
-        bootstrap.releaseExternalResources();
+        plainBootstrap.releaseExternalResources();
+        secureBootstrap.releaseExternalResources();        
     }
 
     /* @Override */
@@ -628,9 +671,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         boolean useSSl = uri.getScheme().compareToIgnoreCase("https") == 0
                 && (request.getProxyServer() == null
                 || !request.getProxyServer().getProtocolAsString().equals("https"));
-        configure(useSSl, c);
+        configure(c);
 
         ChannelFuture channelFuture;
+        ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         try {
             if (config.getProxyServer() == null && request.getProxyServer() == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), getPort(uri)));
@@ -854,14 +898,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (scheme.startsWith("https")) {
-            SSLEngine sslEngine = config.getSSLEngine();
-            if (sslEngine == null) {
-                sslEngine = SslUtils.getSSLEngine();
-            }
-
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, new HttpClientCodec());
-                p.addFirst(SSL_HANDLER, new SslHandler(sslEngine));
+                p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
             } else {
                 p.addAfter(SSL_HANDLER, HTTP_HANDLER, new HttpClientCodec());
             }
