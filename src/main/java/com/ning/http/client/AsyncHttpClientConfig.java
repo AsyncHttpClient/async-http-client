@@ -57,7 +57,7 @@ public class AsyncHttpClientConfig {
     private final ScheduledExecutorService reaper;
     private final ExecutorService applicationThreadPool;
     private final ProxyServer proxyServer;
-    private final SSLEngine sslEngine;
+    private final SSLContext sslContext;
     private final SSLEngineFactory sslEngineFactory;
     private final AsyncHttpProviderConfig<?,?> providerConfig;
 
@@ -74,7 +74,7 @@ public class AsyncHttpClientConfig {
                                   ScheduledExecutorService reaper,
                                   ExecutorService applicationThreadPool,
                                   ProxyServer proxyServer,
-                                  SSLEngine sslEngine,
+                                  SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?,?> providerConfig) {
 
@@ -88,7 +88,7 @@ public class AsyncHttpClientConfig {
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
         this.keepAlive = keepAlive;
-        this.sslEngine = sslEngine;
+        this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
 
@@ -230,13 +230,12 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return an instance of {@link SSLEngine} used for SSL connection.
-     * @return an instance of {@link SSLEngine} used for SSL connection.
-     * @deprecated Use {@link #getSSLEngineFactory()} instead.
+     * Return an instance of {@link SSLContext} used for SSL connection.
+     * @return an instance of {@link SSLContext} used for SSL connection.
      */
     @Deprecated
-    public SSLEngine getSSLEngine() {
-        return sslEngine;
+    public SSLContext getSSLContext() {
+        return sslContext;
     }
     
     /**
@@ -249,7 +248,13 @@ public class AsyncHttpClientConfig {
             {
                 public SSLEngine newSSLEngine()
                 {
-                    return sslEngine;
+                    if (sslContext != null) {
+                        SSLEngine sslEngine = sslContext.createSSLEngine();
+                        sslEngine.setUseClientMode(true);
+                        return sslEngine;
+                    } else {
+                        return null;
+                    }
                 }
             };
         }
@@ -286,7 +291,7 @@ public class AsyncHttpClientConfig {
                 });
         private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
         private ProxyServer proxyServer = null;
-        private SSLEngine sslEngine;
+        private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?,?> providerConfig;
 
@@ -440,19 +445,6 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link SSLEngine} for secure connection.
-         * 
-         * @param sslEngine the {@link SSLEngine} for secure connection
-         * @return a {@link Builder}
-         * @deprecated Use {@link #setSSLEngineFactory(SSLEngineFactory)} instead.
-         */
-        @Deprecated
-        public Builder setSSLEngine(SSLEngine sslEngine){
-            this.sslEngine = sslEngine;
-            return this;
-        }
-        
-        /**
          * Set the {@link SSLEngineFactory} for secure connection.
          * 
          * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection
@@ -479,6 +471,7 @@ public class AsyncHttpClientConfig {
                     return sslEngine;
                 }
             };
+            this.sslContext = sslContext;
             return this;
         }
 
@@ -510,7 +503,7 @@ public class AsyncHttpClientConfig {
                     reaper,
                     applicationThreadPool,
                     proxyServer,
-                    sslEngine,
+                    sslContext,
                     sslEngineFactory,
                     providerConfig);
         }
