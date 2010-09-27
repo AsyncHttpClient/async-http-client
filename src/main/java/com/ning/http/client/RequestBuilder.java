@@ -131,4 +131,9 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     public RequestBuilder setVirtualHost(String virtualHost) {
         return super.setVirtualHost(virtualHost);
     }
+
+    @Override
+    public RequestBuilder setFollowRedirects(boolean followRedirects) {
+        return super.setFollowRedirects(followRedirects);
+    }
 }

@@ -54,6 +54,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
+        private boolean followRedirects;
         private PerRequestConfig perRequestConfig;
 
         public RequestImpl() {
@@ -78,6 +79,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
+                this.followRedirects = prototype.isRedirectEnabled();
                 this.perRequestConfig = prototype.getPerRequestConfig();
             }
         }
@@ -213,6 +215,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public File getFile() {
             return file;
+        }
+
+        public boolean isRedirectEnabled() {
+            return followRedirects;
         }
 
         public PerRequestConfig getPerRequestConfig() {
@@ -446,6 +452,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setRealm(Realm realm) {
         request.realm = realm;
+        return derived.cast(this);
+    }
+
+    public T setFollowRedirects(boolean followRedirects) {
+        request.followRedirects = followRedirects;
         return derived.cast(this);
     }
 

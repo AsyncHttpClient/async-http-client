@@ -145,9 +145,16 @@ public interface Request {
     public File getFile();
 
     /**
+     * Return the <tt>true></tt> to follow redirect
+     * @return the <tt>true></tt> to follow redirect
+     */
+    public boolean isRedirectEnabled();
+
+    /**
      * Return Per request configuration.
      *
      * @return Per request configuration.
      */
     public PerRequestConfig getPerRequestConfig();
+
 }
