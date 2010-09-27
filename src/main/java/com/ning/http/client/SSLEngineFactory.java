@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import java.security.GeneralSecurityException;
+
 import javax.net.ssl.SSLEngine;
 
 /**
@@ -26,6 +28,7 @@ public interface SSLEngineFactory
      * Creates new {@link SSLEngine}.
      * 
      * @return new engine
+     * @throws GeneralSecurityException if the SSLEngine cannot be created
      */
-    SSLEngine newSSLEngine();
+    SSLEngine newSSLEngine() throws GeneralSecurityException;
 }

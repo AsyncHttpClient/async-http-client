@@ -15,7 +15,10 @@
  */
 package com.ning.http.client;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+
+import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -457,6 +460,25 @@ public class AsyncHttpClientConfig {
          */
         public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory){
             this.sslEngineFactory = sslEngineFactory;
+            return this;
+        }
+        
+        /**
+         * Set the {@link SSLContext} for secure connection.
+         * 
+         * @param sslContext the {@link SSLContext} for secure connection
+         * @return a {@link Builder}
+         */
+        public Builder setSSLContext(final SSLContext sslContext){
+            this.sslEngineFactory = new SSLEngineFactory()
+            {
+                public SSLEngine newSSLEngine() throws GeneralSecurityException
+                {
+                    SSLEngine sslEngine = sslContext.createSSLEngine();
+                    sslEngine.setUseClientMode(true);
+                    return sslEngine;
+                }
+            };
             return this;
         }
 
