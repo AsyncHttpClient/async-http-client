@@ -18,7 +18,6 @@ package com.ning.http.client.async;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class RequestBuilderTest {
          * code points are encoded as three three-letter percent-encode entities).
          */
         for (String value : values) {
-            RequestBuilder builder = new RequestBuilder(RequestType.GET).
+            RequestBuilder builder = new RequestBuilder("GET").
                     setUrl("http://example.com/").
                     addQueryParameter("name", value);
 
@@ -77,7 +76,7 @@ public class RequestBuilderTest {
 
     @Test(groups = "standalone")
     public void testChaining() throws IOException, ExecutionException, InterruptedException {
-        Request request = new RequestBuilder(RequestType.GET)
+        Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com")
                 .addQueryParameter("x", "value")
                 .build();
@@ -89,7 +88,7 @@ public class RequestBuilderTest {
 
     @Test(groups = "standalone")
     public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
-        Request request = new RequestBuilder(RequestType.GET)
+        Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
                 .addQueryParameter("param2", "value2")
                 .build();
@@ -101,4 +100,10 @@ public class RequestBuilderTest {
         assertEquals(params.get("param2").get(0), "value2");
     }
 
+    @Test(groups="standalone")
+    public void testUserProvidedRequestMethod() {
+        Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
+        assertEquals(req.getReqType(), "ABC");
+        assertEquals(req.getUrl(), "http://foo.com");
+    }
 }

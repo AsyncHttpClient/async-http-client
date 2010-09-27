@@ -26,7 +26,6 @@ import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
@@ -65,7 +64,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "async"})
     public void asyncProviderEncodingTest() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com/foo.html?q=+%20x").build();
+        Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
         NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/foo.html?q=+%20x");
@@ -74,7 +73,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "async"})
     public void asyncProviderEncodingTest2() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com/foo.html")
+        Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html")
                 .addQueryParameter("q", "a b")
                 .build();
 
@@ -86,7 +85,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "async"})
     public void emptyRequestURI() throws Throwable {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-        Request request = new RequestBuilder(RequestType.GET).setUrl("http://foo.com")
+        Request request = new RequestBuilder("GET").setUrl("http://foo.com")
                 .build();
 
         NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
@@ -103,7 +102,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.connect();
 
-        Request request = new RequestBuilder(RequestType.GET).setUrl(getTargetUrl()).build();
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
         p.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
@@ -146,7 +145,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
 
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.GET).setUrl(getTargetUrl()).build();
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
         p.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
@@ -171,7 +170,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncHeaderGETTest() throws Throwable {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.GET).setUrl(getTargetUrl()).build();
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
         n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
@@ -203,7 +202,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test3", "Test3");
         h.add("Test4", "Test4");
         h.add("Test5", "Test5");
-        Request request = new RequestBuilder(RequestType.GET).setUrl(getTargetUrl()).setHeaders(h).build();
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).setHeaders(h).build();
 
         n.execute(request, new AsyncCompletionHandlerAdapter() {
 
@@ -240,7 +239,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         for (int i = 0; i < 5; i++) {
             m.put("param_" + i, Arrays.asList("value_" + i));
         }
-        Request request = new RequestBuilder(RequestType.POST).setUrl(getTargetUrl()).setHeaders(h).setParameters(m).build();
+        Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setParameters(m).build();
         n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
@@ -270,7 +269,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
 
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.HEAD).setUrl(getTargetUrl()).build();
+        Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
         n.execute(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
@@ -297,7 +296,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .setRequestTimeoutInMs(120 * 1000).build());
 
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.HEAD)
+        Request request = new RequestBuilder("HEAD")
                 .setUrl(getTargetUrl())
                 .build();
 
@@ -736,7 +735,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         for (int i = 0; i < 5; i++) {
             m.put("param_" + i, Arrays.asList("value_" + i));
         }
-        Request request = new RequestBuilder(RequestType.POST)
+        Request request = new RequestBuilder("POST")
                 .setUrl(getTargetUrl())
                 .setHeaders(h)
                 .setParameters(m)
@@ -1188,7 +1187,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         };
 
-        Request req = new RequestBuilder(RequestType.GET)
+        Request req = new RequestBuilder("GET")
                 .setUrl(getTargetUrl() + "?foo=bar").build();
 
         client.executeRequest(req, handler).get();

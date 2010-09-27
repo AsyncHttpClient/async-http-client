@@ -22,7 +22,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -59,7 +58,7 @@ public class MultipleHeaderTest {
         final String[] xffHeaders = new String[]{null, null};
 
         AsyncHttpClient ahc = new AsyncHttpClient();
-        Request req = new RequestBuilder(RequestType.GET).setUrl("http://localhost:" + PORT + "/MultiOther").build();
+        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + PORT + "/MultiOther").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {
@@ -104,7 +103,7 @@ public class MultipleHeaderTest {
         final String[] clHeaders = new String[]{null, null};
 
         AsyncHttpClient ahc = new AsyncHttpClient();
-        Request req = new RequestBuilder(RequestType.GET).setUrl("http://localhost:" + PORT + "/MultiEnt").build();
+        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + PORT + "/MultiEnt").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {

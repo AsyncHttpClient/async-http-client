@@ -19,7 +19,6 @@ import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
@@ -64,7 +63,7 @@ public class Head302Test extends AbstractBasicTest {
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClient client = new AsyncHttpClient();
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.HEAD).setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+        Request request = new RequestBuilder("HEAD").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
 
         client.executeRequest(request, new AsyncCompletionHandlerBase() {
             @Override

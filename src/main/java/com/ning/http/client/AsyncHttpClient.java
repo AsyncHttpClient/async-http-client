@@ -16,13 +16,13 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.Request.EntityWriter;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
-
-import com.ning.http.client.Request.EntityWriter;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
@@ -205,8 +205,8 @@ public class AsyncHttpClient {
          */
         protected String baseURL;
         
-        private BoundRequestBuilder(RequestType type) {
-            super(BoundRequestBuilder.class, type);
+        private BoundRequestBuilder(String reqType) {
+            super(BoundRequestBuilder.class, reqType);
         }
 
         private BoundRequestBuilder(Request prototype) {
@@ -376,7 +376,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder prepareGet(String url) {
-        return requestBuilder(RequestType.GET, url);
+        return requestBuilder("GET", url);
     }
 
     /**
@@ -385,7 +385,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder prepareConnect(String url) {
-        return requestBuilder(RequestType.CONNECT, url);
+        return requestBuilder("CONNECT", url);
     }
 
     /**
@@ -394,7 +394,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder prepareOptions(String url) {
-        return requestBuilder(RequestType.OPTIONS, url);
+        return requestBuilder("OPTIONS", url);
     }
 
     /**
@@ -403,7 +403,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder prepareHead(String url) {
-        return requestBuilder(RequestType.HEAD, url);
+        return requestBuilder("HEAD", url);
     }
 
     /**
@@ -412,7 +412,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder preparePost(String url) {
-        return requestBuilder(RequestType.POST, url);
+        return requestBuilder("POST", url);
     }
 
     /**
@@ -421,7 +421,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder preparePut(String url) {
-        return requestBuilder(RequestType.PUT, url);
+        return requestBuilder("PUT", url);
     }
 
     /**
@@ -430,7 +430,7 @@ public class AsyncHttpClient {
      * @return {@link RequestBuilder}
      */
     public BoundRequestBuilder prepareDelete(String url) {
-        return requestBuilder(RequestType.DELETE, url);
+        return requestBuilder("DELETE", url);
     }
 
     /**
@@ -476,8 +476,8 @@ public class AsyncHttpClient {
         }
     }
 
-    protected BoundRequestBuilder requestBuilder(RequestType requestType, String url) {
-        return new BoundRequestBuilder(requestType).setUrl(url).setSignatureCalculator(signatureCalculator);
+    protected BoundRequestBuilder requestBuilder(String reqType, String url) {
+        return new BoundRequestBuilder(reqType).setUrl(url).setSignatureCalculator(signatureCalculator);
     }
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {
