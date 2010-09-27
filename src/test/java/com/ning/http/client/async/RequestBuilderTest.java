@@ -100,4 +100,10 @@ public class RequestBuilderTest {
         assertEquals(params.get("param2").get(0), "value2");
     }
 
+    @Test(groups="standalone")
+    public void testUserProvidedRequestMethod() {
+        Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
+        assertEquals(req.getReqType(), "ABC");
+        assertEquals(req.getUrl(), "http://foo.com");
+    }
 }
