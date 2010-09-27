@@ -20,7 +20,6 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
 import com.ning.http.client.providers.NettyAsyncHttpProvider;
@@ -153,7 +152,7 @@ public class RemoteSiteTest {
                 new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
 
         final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder(RequestType.HEAD)
+        Request request = new RequestBuilder("HEAD")
                 .setUrl("http://www.google.com/")
                 .build();
 

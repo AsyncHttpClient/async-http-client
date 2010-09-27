@@ -38,7 +38,7 @@ import java.util.Map.Entry;
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
-        private RequestType type;
+        private String reqType;
         private String url = null;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
@@ -61,7 +61,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public RequestImpl(Request prototype) {
             if (prototype != null) {
-                this.type = prototype.getType();
+                this.reqType = prototype.getReqType();
                 int pos = prototype.getUrl().indexOf("?");
                 this.url = pos > 0 ? prototype.getUrl().substring(0,pos) : prototype.getUrl();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
@@ -84,8 +84,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         /* @Override */
 
-        public RequestType getType() {
-            return type;
+        public String getReqType() {
+            return reqType;
         }
 
         /* @Override */
@@ -224,7 +224,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             StringBuilder sb = new StringBuilder(url);
 
             sb.append("\t");
-            sb.append(type);
+            sb.append(reqType);
             for (String name : headers.keySet()) {
                 sb.append("\t");
                 sb.append(name);
@@ -239,10 +239,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     protected final RequestImpl request;
 
-    protected RequestBuilderBase(Class<T> derived, RequestType type) {
+    protected RequestBuilderBase(Class<T> derived, String reqType) {
         this.derived = derived;
         request = new RequestImpl();
-        request.type = type;
+        request.reqType = reqType;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
@@ -337,7 +337,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(byte[] data) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
         }
         resetParameters();
@@ -348,7 +348,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(String data) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
         }
         resetParameters();
@@ -359,7 +359,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(InputStream stream) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
         }
         resetParameters();
@@ -374,7 +374,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for content");
         }
         resetParameters();
@@ -394,7 +394,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addParameter(String key, String value) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
@@ -407,7 +407,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
@@ -417,7 +417,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
         }
         resetNonMultipartData();
@@ -427,7 +427,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addBodyPart(Part part) throws IllegalArgumentException {
-        if ((request.type != RequestType.POST) && (request.type != RequestType.PUT)) {
+        if ((!"POST".equals(request.reqType)) && (!"PUT".equals(request.reqType))) {
             throw new IllegalArgumentException("Request type has to POST or PUT for parts");
         }
         resetParameters();
@@ -456,7 +456,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) &&
-                ((request.type == RequestType.POST) || (request.type == RequestType.PUT))) {
+                (("POST".equals(request.reqType)) || ("PUT".equals(request.reqType)))) {
             // can't concatenate content-length
             String contentLength = request.headers.getFirstValue("Content-Length");
 

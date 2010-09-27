@@ -15,18 +15,18 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.Request.EntityWriter;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
-
-import com.ning.http.client.Request.EntityWriter;
 
 /**
  * Builder for a {@link Request}.
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
-    public RequestBuilder(RequestType type) {
-        super(RequestBuilder.class, type);
+    public RequestBuilder(String reqType) {
+        super(RequestBuilder.class, reqType);
     }
 
     public RequestBuilder(Request prototype) {

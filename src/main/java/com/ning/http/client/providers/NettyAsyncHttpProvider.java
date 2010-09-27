@@ -36,7 +36,6 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.RequestType;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.logging.LogManager;
@@ -390,7 +389,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect) throws IOException {
 
-        String method = request.getType().toString();
+        String method = request.getReqType();
         if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && "https".equalsIgnoreCase(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
@@ -521,8 +520,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             nettyRequest.setHeader(HttpHeaders.Names.COOKIE, httpCookieEncoder.encode());
         }
 
-        RequestType type = request.getType();
-        if (RequestType.POST.equals(type) || RequestType.PUT.equals(type)) {
+        String reqType = request.getReqType();
+        if ("POST".equals(reqType) || "PUT".equals(reqType)) {
             nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
             if (request.getByteData() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
@@ -762,7 +761,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
-                            .setMethodName(request.getType().toString())
+                            .setMethodName(request.getReqType())
                             .setScheme(request.getRealm().getAuthScheme())
                             .setUsePreemptiveAuth(true)
                             .build();
