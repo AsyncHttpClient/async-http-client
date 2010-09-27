@@ -15,7 +15,11 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.*;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ConnectionsPool;
+import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import org.jboss.netty.channel.Channel;
@@ -23,10 +27,15 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
@@ -63,6 +72,47 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             }
         }
     }
+
+    @Test(groups = {"standalone", "async"})
+    public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        // Use a l in case the assert fail
+        final CountDownLatch l = new CountDownLatch(2);
+
+        final Map<String, Boolean> remoteAddresses = new
+                ConcurrentHashMap<String, Boolean>();
+
+        AsyncCompletionHandler<Response> handler = new
+                AsyncCompletionHandlerAdapter() {
+
+                    @Override
+                    public Response onCompleted(Response response) throws
+                            Exception {
+                        System.out.println("ON COMPLETED INVOKED " +
+                                response.getHeader("X-KEEP-ALIVE"));
+                        try {
+                            assertEquals(response.getStatusCode(), 200);
+                            remoteAddresses.put(response.getHeader("X-KEEP-ALIVE"), true);
+                        } finally {
+                            l.countDown();
+                        }
+                        return response;
+                    }
+                };
+
+        client.prepareGet(getTargetUrl()).execute(handler).get();
+        server.stop();
+        server.start();
+        client.prepareGet(getTargetUrl()).execute(handler);
+
+        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+            Assert.fail("Timed out");
+        }
+
+        assertEquals(remoteAddresses.size(), 2);
+    }
+
 
     @Test
     public void testInvalidConnectionsPool() {
