@@ -22,6 +22,11 @@ import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import org.testng.annotations.Test;
 
+
+import java.io.IOException;
+
+import static org.testng.Assert.*;
+
 public class ConnectionPoolTest extends AbstractBasicTest{
     protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
    
@@ -32,20 +37,24 @@ public class ConnectionPoolTest extends AbstractBasicTest{
                         .setConnectionTimeoutInMs(100)
                         .setRequestTimeoutInMs(100)
                         .setKeepAlive(true)
-                        .setMaximumConnectionsTotal(30)
+                        .setMaximumConnectionsTotal(1)
                         .build()
         );
 
         String url = getTargetUrl();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 3; i++) {
             try {
                 log.info(String.format("%d requesting url [%s]...", i, url));
                 Response response = client.prepareGet(url).execute().get();
                 log.info(String.format("%d response [%s].", i, response));
+                if (i > 1) {
+                    fail();
+                }
             } catch (Exception e) {
+                assertEquals(e.getClass(), IOException.class);
+                assertEquals(e.getMessage(), "Too many connections");
                 log.error(String.format("%d error: %s", i, e.getMessage()));
             }
         }
     }
-
 }
