@@ -431,6 +431,7 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
+            if (this.reaper != null) this.reaper.shutdown();
             this.reaper = reaper;
             return this;
         }
@@ -444,6 +445,7 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setExecutorService(ExecutorService applicationThreadPool) {
+            if (this.applicationThreadPool != null) this.applicationThreadPool.shutdown();
             this.applicationThreadPool = applicationThreadPool;
             return this;
         }
