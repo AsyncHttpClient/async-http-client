@@ -501,6 +501,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
             }
         }
+        
+        // Add default accept headers.
+        if (request.getHeaders().getFirstValue("Accept") == null) {
+            nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
+        }
 
         if (config.getUserAgent() != null) {
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
