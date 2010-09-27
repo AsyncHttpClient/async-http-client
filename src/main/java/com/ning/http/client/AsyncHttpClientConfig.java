@@ -59,7 +59,8 @@ public class AsyncHttpClientConfig {
     private final ProxyServer proxyServer;
     private final SSLContext sslContext;
     private final SSLEngineFactory sslEngineFactory;
-    private final AsyncHttpProviderConfig<?,?> providerConfig;
+    private final AsyncHttpProviderConfig<?, ?> providerConfig;
+    private final ConnectionsPool<?, ?> connectionsPool;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -76,7 +77,8 @@ public class AsyncHttpClientConfig {
                                   ProxyServer proxyServer,
                                   SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
-                                  AsyncHttpProviderConfig<?,?> providerConfig) {
+                                  AsyncHttpProviderConfig<?,?> providerConfig,
+                                  ConnectionsPool<?, ?> connectionsPool) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -91,6 +93,7 @@ public class AsyncHttpClientConfig {
         this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
+        this.connectionsPool = connectionsPool;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -233,9 +236,16 @@ public class AsyncHttpClientConfig {
      * Return an instance of {@link SSLContext} used for SSL connection.
      * @return an instance of {@link SSLContext} used for SSL connection.
      */
-    @Deprecated
     public SSLContext getSSLContext() {
         return sslContext;
+    }
+
+    /**
+     * Return an instance of {@link ConnectionsPool}
+     * @return an instance of {@link ConnectionsPool}
+     */
+    public ConnectionsPool<?, ?> getConnectionsPool(){
+        return connectionsPool;
     }
     
     /**
@@ -269,6 +279,10 @@ public class AsyncHttpClientConfig {
         return providerConfig;
     }
 
+    public ConnectionsPool<?, ?> getConnectionPool() {
+        return connectionsPool;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -294,6 +308,7 @@ public class AsyncHttpClientConfig {
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?,?> providerConfig;
+        private ConnectionsPool<?, ?> connectionsPool;
 
         public Builder() {
         }
@@ -485,6 +500,15 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
+         * @param connectionsPool
+         */
+        public Builder setConnectionsPool(ConnectionsPool<?, ?> connectionsPool) {
+            this.connectionsPool = connectionsPool;
+            return this;
+        }
+
+        /**
          * Build an {@link AsyncHttpClientConfig}
          *
          * @return an {@link AsyncHttpClientConfig}
@@ -505,7 +529,8 @@ public class AsyncHttpClientConfig {
                     proxyServer,
                     sslContext,
                     sslEngineFactory,
-                    providerConfig);
+                    providerConfig,
+                    connectionsPool);
         }
 
     }

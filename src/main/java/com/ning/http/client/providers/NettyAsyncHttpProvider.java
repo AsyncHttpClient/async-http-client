@@ -15,29 +15,8 @@
  */
 package com.ning.http.client.providers;
 
-import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.*;
 import com.ning.http.client.AsyncHandler.STATE;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FluentStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Part;
-import com.ning.http.client.PerRequestConfig;
-import com.ning.http.client.ProgressAsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.multipart.ByteArrayPartSource;
@@ -101,14 +80,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -126,17 +103,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final AsyncHttpClientConfig config;
 
-    private final ConcurrentHashMap<String, Channel> connectionsPool = new ConcurrentHashMap<String, Channel>();
-
-    private final AtomicInteger activeConnectionsCount = new AtomicInteger();
-
-    private final ConcurrentHashMap<String, AtomicInteger> connectionsPerHost = new ConcurrentHashMap<String, AtomicInteger>();
-
     private final AtomicBoolean isClose = new AtomicBoolean(false);
 
     private final NioClientSocketChannelFactory socketChannelFactory;
 
     private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
+
+    private final ConnectionsPool<String, Channel> connectionsPool;
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -147,6 +120,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
 
         this.config = config;
+
+        // This is dangerous as we can't catch a wrong typed ConnectionsPool
+        ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionPool();
+        if (cp == null) {
+            cp = new NettyConnectionsPool(config);
+        }
+        this.connectionsPool = cp;
 
         AsyncHttpProviderConfig<?,?> providerConfig = config.getAsyncHttpProviderConfig();
         if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
@@ -204,7 +184,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private Channel lookupInCache(URI uri) {
-        Channel channel = connectionsPool.remove(getBaseUrl(uri));
+        Channel channel = connectionsPool.removeConnection(getBaseUrl(uri));
         if (channel != null) {
             /**
              * The Channel will eventually be closed by Netty and will becomes invalid.
@@ -594,7 +574,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public void close() {
         isClose.set(true);
-        connectionsPool.clear();
+        connectionsPool.destroy();
         openChannels.close();
         this.releaseExternalResources();
         config.reaper().shutdown();
@@ -628,8 +608,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException("Closed");
         }
 
-        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.getAndIncrement() >= config.getMaxTotalConnections()) {
-            activeConnectionsCount.decrementAndGet();
+        if (!connectionsPool.canCacheConnection()) {
             throw new IOException("Too many connections");
         }
 
@@ -640,11 +619,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Channel channel = lookupInCache(uri);
         if (channel != null && channel.isOpen()) {
             if (channel.isConnected()) {
-                // Decrement the count as this is not a new connection.
-                if (config.getMaxConnectionPerHost() != -1) {
-                    activeConnectionsCount.decrementAndGet();
-                }
-
                 HttpRequest nettyRequest = buildRequest(config, request, uri, false);
                 if (f == null) {
                     f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest, requestTimeout(config, request.getPerRequestConfig()));
@@ -658,10 +632,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } catch (ConnectException ex) {
                     // The connection failed because the channel got remotly closed
                     // Let continue the normal processing.
-                    connectionsPool.remove(channel);
+                    connectionsPool.removeAllConnections(channel);
                 }
             } else {
-                connectionsPool.remove(channel);
+                connectionsPool.removeAllConnections(channel);
             }
         }
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f).build();
@@ -683,9 +657,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
-            if (config.getMaxTotalConnections() != -1) {
-                activeConnectionsCount.decrementAndGet();
-            }
             log.error(t);
             c.future().abort(t.getCause());
             return c.future();
@@ -711,15 +682,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
         closeChannel(ctx);
 
-        for (Entry<String, Channel> e : connectionsPool.entrySet()) {
-            if (e.getValue().equals(ctx.getChannel())) {
-                connectionsPool.remove(e.getKey());
-                if (config.getMaxTotalConnections() != -1) {
-                    activeConnectionsCount.decrementAndGet();
-                }
-                break;
-            }
-        }
+        connectionsPool.removeAllConnections(ctx.getChannel());
         future.abort(new IOException("No response received. Connection timed out after " + config.getIdleConnectionTimeoutInMs()));
     }
 
@@ -924,27 +887,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     log.error(t);
                 }
             }
-            connectionsPool.remove(ctx.getChannel());
+            connectionsPool.removeAllConnections(ctx.getChannel());
         }
         ctx.sendUpstream(e);
     }
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel, boolean releaseFuture) throws MalformedURLException {
         if (future.getKeepAlive()) {
-            AtomicInteger connectionPerHost = connectionsPerHost.get(getBaseUrl(future.getURI()));
-            if (connectionPerHost == null) {
-                connectionPerHost = new AtomicInteger(1);
-                connectionsPerHost.put(getBaseUrl(future.getURI()), connectionPerHost);
-            }
-
-            if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.getAndIncrement() < config.getMaxConnectionPerHost()) {
-                connectionsPool.put(getBaseUrl(future.getURI()), channel);
-            } else {
-                connectionPerHost.decrementAndGet();
-                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
-            }
-        } else if (config.getMaxTotalConnections() != -1) {
-            activeConnectionsCount.decrementAndGet();
+            connectionsPool.addConnection(getBaseUrl(future.getURI()), channel);
         }
 
         if (releaseFuture)

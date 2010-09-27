@@ -1232,49 +1232,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-
-    @Test(groups = {"online", "async"})
-    public void asyncDoGetMaxConnectionsTest() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient(new Builder().setMaximumConnectionsTotal(2).build());
-
-        // Use a l in case the assert fail
-        final CountDownLatch l = new CountDownLatch(2);
-
-        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                l.countDown();
-                return response;
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                try {
-                    Assert.fail("Unexpected exception", t);
-                } finally {
-                    l.countDown();
-                }
-            }
-        };
-
-        client.prepareGet("http://www.oracle.com/index.html").execute(handler).get();
-        client.prepareGet("http://www.apache.org/").execute(handler).get();
-
-        try {
-            client.prepareGet("http://www.ning.com/").execute(handler).get();
-            Assert.fail();
-        } catch (IOException ex) {
-            String s = ex.getMessage();
-            assertEquals(s, "Too many connections");
-        }
-
-        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-            Assert.fail("Timed out");
-        }
-        client.close();
-    }
-
     @Test(groups = {"online", "async"})
     public void asyncDoGetMaxRedirectTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new Builder().setMaximumNumberOfRedirects(0).setFollowRedirects(true).build());

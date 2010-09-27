@@ -50,62 +50,6 @@ public class ComplexClientTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
-    public void multipleMaxConnectionOpenTest() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
-                .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-        // twice
-        Exception exception = null;
-        try {
-            c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            fail("Should throw exception. Too many connections issued.");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
-        }
-        assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections");
-    }
-
-    @Test(groups = "standalone")
-    public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
-                .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(getTargetUrl() + "?foo=bar")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), "foo_" + body);
-
-        // twice
-        Exception exception = null;
-        try {
-            c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            fail("Should throw exception. Too many connections issued.");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
-        }
-        assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections");
-    }
-
-    @Test(groups = "standalone")
     public void urlWithoutSlashTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
