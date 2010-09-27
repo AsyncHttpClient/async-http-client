@@ -15,8 +15,10 @@
  */
 package com.ning.http.client.providers;
 
-import com.ning.http.client.*;
 import com.ning.http.client.AsyncHandler.STATE;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.multipart.ByteArrayPartSource;
@@ -128,15 +130,15 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
         this.connectionsPool = cp;
 
-        AsyncHttpProviderConfig<?,?> providerConfig = config.getAsyncHttpProviderConfig();
+        AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
         if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
             configureNetty(NettyAsyncHttpProviderConfig.class.cast(providerConfig));
         }
     }
 
     void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
-        for(Entry<String,Object> entry : providerConfig.propertiesSet()) {
-            plainBootstrap.setOption(entry.getKey(),entry.getValue());
+        for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
+            plainBootstrap.setOption(entry.getKey(), entry.getValue());
         }
     }
 
@@ -283,7 +285,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             public ConnectListener<T> build() throws IOException {
 
-                URI uri = createUri(request.getRawUrl().replace(" ","%20"));
+                URI uri = createUri(request.getRawUrl().replace(" ", "%20"));
                 HttpRequest nettyRequest = buildRequest(config, request, uri, true);
 
                 log.debug("Executing the doConnect operation: %s", asyncHandler);
@@ -581,7 +583,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         config.executorService().shutdown();
         socketChannelFactory.releaseExternalResources();
         plainBootstrap.releaseExternalResources();
-        secureBootstrap.releaseExternalResources();        
+        secureBootstrap.releaseExternalResources();
     }
 
     /* @Override */
@@ -762,7 +764,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     markAsDoneAndCacheConnection(future, ctx.getChannel(), false);
                     RequestBuilder builder = new RequestBuilder(future.getRequest());
                     try {
-                        upgradeProtocol(ctx.getChannel().getPipeline(),(request.getUrl()));
+                        upgradeProtocol(ctx.getChannel().getPipeline(), (request.getUrl()));
                     } catch (Throwable ex) {
                         future.abort(ex);
                     }
@@ -781,7 +783,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             location = getBaseUrl(future.getURI()) + location;
                         }
 
-                        if(!location.equals(future.getURI().toString())){
+                        if (!location.equals(future.getURI().toString())) {
                             URI uri = createUri(location);
 
                             if (location.startsWith("https")) {
