@@ -32,7 +32,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      *
      * @param name  the name of the property
      * @param value the value of the property
-     * @return
+     * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
         properties.put(name, value);
@@ -43,7 +43,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Return the value associated with the property's name
      *
      * @param name
-     * @return
+     * @return this instance of AsyncHttpProviderConfig
      */
     public Object getProperty(String name) {
         return properties.get(name);
@@ -53,7 +53,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Remove the value associated with the property's name
      *
      * @param name
-     * @return
+     * @return true if removed
      */
     public Object removeProperty(String name) {
         return properties.remove(name);

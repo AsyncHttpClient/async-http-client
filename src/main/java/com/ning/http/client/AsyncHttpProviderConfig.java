@@ -31,7 +31,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      *
      * @param name  the name of the property
      * @param value the value of the property
-     * @return
+     * @return this instance of AsyncHttpProviderConfig
      */
     public AsyncHttpProviderConfig addProperty(U name, V value);
 
@@ -39,7 +39,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      * Return the value associated with the property's name
      *
      * @param name
-     * @return
+     * @return this instance of AsyncHttpProviderConfig
      */
     public V getProperty(U name);
 
@@ -47,7 +47,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      * Remove the value associated with the property's name
      *
      * @param name
-     * @return
+     * @return true if removed
      */
     public V removeProperty(U name);
 
