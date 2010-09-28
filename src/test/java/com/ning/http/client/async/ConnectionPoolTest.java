@@ -58,17 +58,8 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 log.info(String.format("%d requesting url [%s]...", i, url));
                 Response response = client.prepareGet(url).execute().get();
                 log.info(String.format("%d response [%s].", i, response));
-                if (i > 1) {
-                    fail("ConnectionsCache Broken");
-                }
             } catch (Exception e) {
-                if (i > 0) {
-                    assertEquals(e.getClass(), IOException.class);
-                    assertEquals(e.getMessage(), "Too many connections");
-                    log.error(String.format("%d error: %s", i, e.getMessage()));
-                } else {
-                    fail("ConnectionsCache Broken");
-                }
+                fail("ConnectionsCache Broken");
             }
         }
     }
@@ -226,7 +217,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         // twice
         Exception exception = null;
         try {
-            c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
             fail("Should throw exception. Too many connections issued.");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -254,14 +245,13 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         // twice
         Exception exception = null;
         try {
-            c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            fail("Should throw exception. Too many connections issued.");
+            response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            fail("Should throw exception. Too many connections issued.");
+
         }
-        assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections");
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(),200);
     }
 
     @Test(groups = {"online", "async"})

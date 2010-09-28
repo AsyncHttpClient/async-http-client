@@ -574,12 +574,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException("Closed");
         }
 
-        if (!connectionsPool.canCacheConnection()) {
-            throw new IOException("Too many connections");
-        }
-
         URI uri = createUri(request.getUrl());
         Channel channel = lookupInCache(uri);
+
         if (channel != null && channel.isOpen()) {
             if (channel.isConnected()) {
                 HttpRequest nettyRequest = buildRequest(config, request, uri, false);
@@ -603,6 +600,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } else {
                 connectionsPool.removeAllConnections(channel);
             }
+        }
+
+        if (!connectionsPool.canCacheConnection()) {
+            throw new IOException("Too many connections");
         }
 
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
