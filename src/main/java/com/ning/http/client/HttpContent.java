@@ -29,7 +29,7 @@ public class HttpContent {
         this.uri= url;
     }
 
-    protected final AsyncHttpProvider<?> provider() {
+    public final AsyncHttpProvider<?> provider() {
         return provider;
     }
 
