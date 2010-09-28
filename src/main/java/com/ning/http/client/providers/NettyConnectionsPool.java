@@ -21,6 +21,7 @@ import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import org.jboss.netty.channel.Channel;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +34,6 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
     private final ConcurrentHashMap<String, Channel> connectionsPool =
             new ConcurrentHashMap<String, Channel>();
-    private final AtomicInteger activeConnectionsCount = new AtomicInteger();
     private final ConcurrentHashMap<String, AtomicInteger> connectionsPerHost =
             new ConcurrentHashMap<String, AtomicInteger>();
     private final AsyncHttpClientConfig config;
@@ -46,17 +46,20 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     /**
      * {@inheritDoc}
      */
-    public boolean addConnection(String key, Channel connection) {
-        AtomicInteger connectionPerHost = connectionsPerHost.get(key);
+    public boolean addConnection(String uri, Channel connection) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("[Cache] Adding uri: %s for channel %s", uri, connection));
+        }
+
+        AtomicInteger connectionPerHost = connectionsPerHost.get(uri);
         if (connectionPerHost == null) {
             connectionPerHost = new AtomicInteger(1);
-            connectionsPerHost.put(key, connectionPerHost);
+            connectionsPerHost.put(uri, connectionPerHost);
         }
 
         if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.get() < config.getMaxConnectionPerHost()) {
-            connectionsPool.put(key, connection);
+            connectionsPool.put(uri, connection);
             connectionPerHost.incrementAndGet();
-            activeConnectionsCount.incrementAndGet();
         } else {
             log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             return false;
@@ -67,15 +70,25 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     /**
      * {@inheritDoc}
      */
-    public Channel getConnection(String key) {
-        return connectionsPool.get(key);
+    public Channel getConnection(String uri) {
+        Channel channel = connectionsPool.get(uri);
+        if (channel != null && !channel.isOpen()) {
+            removeConnection(uri);
+            return null;
+        }
+        return channel;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Channel removeConnection(String key) {
-        return connectionsPool.remove(key);
+    public Channel removeConnection(String uri) {
+        Channel channel = connectionsPool.remove(uri);
+        if (channel != null && (!channel.isConnected() || !channel.isOpen())) {
+            removeAllConnections(channel);
+            return null;
+        }
+        return channel;
     }
 
     /**
@@ -83,12 +96,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean removeAllConnections(Channel connection) {
         boolean isRemoved = false;
-        for (Map.Entry<String, Channel> e : connectionsPool.entrySet()) {
+        Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
+        while (i.hasNext()) {
+            Map.Entry<String,Channel> e = i.next();
             if (e.getValue().equals(connection)) {
-                connectionsPool.remove(e.getKey());
-                if (config.getMaxTotalConnections() != -1) {
-                    activeConnectionsCount.decrementAndGet();
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("[Cache] Removing uri: %s for channel %s", e.getKey(), e.getValue()));
                 }
+                i.remove();
                 isRemoved = true;
             }
         }
@@ -99,7 +114,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (config.getMaxTotalConnections() != -1 && activeConnectionsCount.get() >= config.getMaxTotalConnections()) {
+        if (config.getMaxTotalConnections() != -1 && connectionsPool.size() >= config.getMaxTotalConnections()) {
             return false;
         } else {
             return true;
@@ -110,6 +125,15 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public void destroy() {
-        connectionsPool.clear();
+        try {
+            Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
+            while (i.hasNext()) {
+                Channel channel = i.next().getValue();
+                removeAllConnections(channel);
+                channel.close();
+            }
+        } finally {
+            connectionsPool.clear();
+        }
     }
 }

@@ -57,18 +57,22 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    private final NettyAsyncHttpProvider asyncHttpProvider;
+    private final AtomicBoolean isPooled = new AtomicBoolean(false);
 
     public NettyResponseFuture(URI uri,
                                Request request,
                                AsyncHandler<V> asyncHandler,
                                HttpRequest nettyRequest,
-                               int responseTimeoutInMs) {
+                               int responseTimeoutInMs,
+                               NettyAsyncHttpProvider asyncHttpProvider) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
+        this.asyncHttpProvider = asyncHttpProvider;
     }
 
     public URI getURI() throws MalformedURLException {
@@ -249,12 +253,24 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return inAuth.getAndSet(inDigestAuth);
     }
 
+    public boolean isPooled() {
+        return isPooled.get();
+    }
+
+    public void setPooled(boolean isPooled) {
+        this.isPooled.set(isPooled);
+    }
+
     public boolean getAndSetStatusReceived(boolean sr) {
         return statusReceived.getAndSet(sr);
     }
 
     protected void touch() {
         touch.set(System.currentTimeMillis());
+    }
+
+    protected NettyAsyncHttpProvider provider() {
+        return asyncHttpProvider;
     }
 
     @Override
