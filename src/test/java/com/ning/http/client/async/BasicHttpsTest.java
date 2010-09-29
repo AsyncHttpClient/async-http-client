@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.KeyStore;
@@ -62,10 +63,9 @@ import static org.testng.Assert.assertNull;
 
 public class BasicHttpsTest {
 
-    protected final static String TARGET_URL = "https://127.0.0.1:18181/foo/test";
-
     protected final Logger log = LogManager.getLogger(BasicHttpsTest.class);
     protected Server server;
+    int port1;
 
     public static class EchoHandler extends AbstractHandler {
 
@@ -150,19 +150,37 @@ public class BasicHttpsTest {
         System.clearProperty("javax.net.ssl.keyStore");
         System.clearProperty("javax.net.ssl.trustStore");
     }
-
+    
+    protected String getTargetUrl() {
+        return String.format("https://127.0.0.1:%d/foo/test", port1);
+    }
 
     public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
+    }
+    
+    protected int findFreePort() throws IOException {
+        ServerSocket socket = null;
+
+        try {
+            socket = new ServerSocket(0);
+    
+            return socket.getLocalPort();
+        }
+        finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
     }
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
-
+        port1 = findFreePort();
         SslSocketConnector connector = new SslSocketConnector();
         connector.setHost("127.0.0.1");
-        connector.setPort(18181);
+        connector.setPort(port1);
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -249,14 +267,14 @@ public class BasicHttpsTest {
         String body = "hello there";
 
         // once
-        Response response = c.preparePost(TARGET_URL)
+        Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
-        response = c.preparePost(TARGET_URL)
+        response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -274,7 +292,7 @@ public class BasicHttpsTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        Future<Response> f = client.preparePost(TARGET_URL).setBody(file).execute();
+        Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).execute();
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -288,14 +306,14 @@ public class BasicHttpsTest {
         String body = "hello there";
 
         // once
-        Response response = c.preparePost(TARGET_URL)
+        Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
 
         // twice
-        response = c.preparePost(TARGET_URL)
+        response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -314,7 +332,7 @@ public class BasicHttpsTest {
             // first request fails because server certificate is rejected
             try
             {
-                c.preparePost(TARGET_URL)
+                c.preparePost(getTargetUrl())
                     .setBody(body)
                     .execute().get(TIMEOUT, TimeUnit.SECONDS);
             }
@@ -326,7 +344,7 @@ public class BasicHttpsTest {
             TRUST_SERVER_CERT.set(true);
 
             // second request should succeed
-            final Response response = c.preparePost(TARGET_URL)
+            final Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
