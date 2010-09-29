@@ -433,7 +433,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         String ka = config.getKeepAlive() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
-        ProxyServer proxyServer = config.getProxyServer() != null ? config.getProxyServer() : request.getProxyServer();
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         if (proxyServer != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
             if (proxyServer.getPrincipal() != null) {
@@ -607,20 +607,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer() ;
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase("https") == 0
-                && (request.getProxyServer() == null
-                || !request.getProxyServer().getProtocolAsString().equals("https"));
+                && (proxyServer == null
+                || !proxyServer.getProtocolAsString().equals("https"));
+        
         configure(c);
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         try {
-            if (config.getProxyServer() == null && request.getProxyServer() == null) {
+            if (proxyServer == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), getPort(uri)));
-            } else {
-                ProxyServer proxy = (request.getProxyServer() == null ? config.getProxyServer() : request.getProxyServer());
-                channelFuture = bootstrap.connect(new InetSocketAddress(proxy.getHost(), proxy.getPort()));
+            } else {               
+                channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
