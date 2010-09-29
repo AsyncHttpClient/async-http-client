@@ -587,7 +587,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } else {
                     f.setNettyRequest(nettyRequest);
                 }
-                f.setPooled(true);
+                f.setState(NettyResponseFuture.STATE.POOLED);
                 
                 try {
                     executeRequest(channel, config, f, nettyRequest);
@@ -862,7 +862,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             // Cleaning a broken connection.
             if (Boolean.class.isAssignableFrom(e.getValue().getClass()) && !Boolean.class.cast(e.getValue())) {
 
-                if (remotlyClosed(ctx.getChannel(), future)) {
+                if (remotelyClosed(ctx.getChannel(), future)) {
                     return;
                 }
             }
@@ -878,23 +878,29 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ctx.sendUpstream(e);
     }
 
-    private static boolean remotlyClosed(Channel channel, NettyResponseFuture<?> future) {
-        if (future == null || future.isPooled()) {
+    private static boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
+        if (future == null || future.getState() == NettyResponseFuture.STATE.POOLED) {
             if (NettyResponseFuture.class.isAssignableFrom(
                     channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment().getClass())) {
 
                 NettyResponseFuture<?> f = (NettyResponseFuture<?>)
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
-
+                f.setState(NettyResponseFuture.STATE.RECONNECTED);
                 try {
                     f.provider().execute(f.getRequest(),f);
                     return true;
                 } catch (IOException iox) {
+                    f.setState(NettyResponseFuture.STATE.CLOSED);
                     f.abort(iox);
                     log.error(iox);
                 }
             }
         }
+
+        if (future.getState() != NettyResponseFuture.STATE.NEW) {
+            return true;
+        }
+
         return false;
     }
 
@@ -988,7 +994,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     log.debug(cause);
                 }
 
-                remotlyClosed(channel, null);
+                remotelyClosed(channel, null);
                 return;
             }
 
@@ -1104,7 +1110,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     log.debug(cf.getCause());
                 }
                 
-                remotlyClosed(cf.getChannel(), null);
+                remotelyClosed(cf.getChannel(), null);
                 return;
             }
 

@@ -40,6 +40,13 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
+    enum STATE {
+        NEW,
+        POOLED,
+        RECONNECTED,
+        CLOSED,
+    }
+
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
@@ -58,7 +65,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
     private final NettyAsyncHttpProvider asyncHttpProvider;
-    private final AtomicBoolean isPooled = new AtomicBoolean(false);
+    private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -253,12 +260,12 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return inAuth.getAndSet(inDigestAuth);
     }
 
-    public boolean isPooled() {
-        return isPooled.get();
+    public STATE getState() {
+        return state.get();
     }
 
-    public void setPooled(boolean isPooled) {
-        this.isPooled.set(isPooled);
+    public void setState(STATE state) {
+        this.state.set(state);
     }
 
     public boolean getAndSetStatusReceived(boolean sr) {
