@@ -860,8 +860,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             // Cleaning a broken connection.
-            if (future.isPooled()) {
-                return;
+            if (Boolean.class.isAssignableFrom(e.getValue().getClass()) && !Boolean.class.cast(e.getValue())) {
+
+                if (remotlyClosed(ctx.getChannel(), future)) {
+                    return;
+                }
             }
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
@@ -874,6 +877,27 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
         ctx.sendUpstream(e);
     }
+
+    private static boolean remotlyClosed(Channel channel, NettyResponseFuture<?> future) {
+        if (future == null || future.isPooled()) {
+            if (NettyResponseFuture.class.isAssignableFrom(
+                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment().getClass())) {
+
+                NettyResponseFuture<?> f = (NettyResponseFuture<?>)
+                        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+
+                try {
+                    f.provider().execute(f.getRequest(),f);
+                    return true;
+                } catch (IOException iox) {
+                    f.abort(iox);
+                    log.error(iox);
+                }
+            }
+        }
+        return false;
+    }
+
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final Channel channel, boolean releaseFuture) throws MalformedURLException {
         if (future.getKeepAlive()) {
@@ -942,7 +966,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
             throws Exception {
-        Channel ch = e.getChannel();
+        Channel channel = e.getChannel();
         Throwable cause = e.getCause();
 
         if (log.isDebugEnabled()) {
@@ -954,6 +978,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
                 // We will recover from a badly cached connection.
+                return;
+            }
+
+            // Windows only.
+            if (cause != null && cause.getMessage() != null
+                    && cause.getMessage().equals("An established connection was aborted by the software in your host machine")) {
+                if (log.isDebugEnabled()) {
+                    log.debug(cause);
+                }
+
+                remotlyClosed(channel, null);
                 return;
             }
 
@@ -1069,16 +1104,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     log.debug(cf.getCause());
                 }
                 
-                Channel c = cf.getChannel();
-                NettyResponseFuture<?> f = (NettyResponseFuture<?>)
-                        c.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
-
-                try {
-                    f.provider().execute(f.getRequest(),f);
-                } catch (IOException e) {
-                    f.abort(e);
-                    log.error(e);
-                }
+                remotlyClosed(cf.getChannel(), null);
                 return;
             }
 
