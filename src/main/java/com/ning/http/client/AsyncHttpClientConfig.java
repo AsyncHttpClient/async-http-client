@@ -279,10 +279,6 @@ public class AsyncHttpClientConfig {
         return providerConfig;
     }
 
-    public ConnectionsPool<?, ?> getConnectionPool() {
-        return connectionsPool;
-    }
-
     /**
      * Builder for an {@link AsyncHttpClient}
      */
