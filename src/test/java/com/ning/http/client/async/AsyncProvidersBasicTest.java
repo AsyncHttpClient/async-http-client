@@ -65,9 +65,21 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest() throws Throwable {
         AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
-        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
-        String url = responseFuture.getNettyRequest().getUri();
-        Assert.assertEquals(url, "/foo.html?q=+%20x");
+        Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
+                @Override
+                public String onCompleted(Response response) throws Exception {
+                    return response.getUri().toString();
+                }
+
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                }
+
+            });
+        String url = responseFuture.get();
+        Assert.assertEquals(url, "http://foo.com/foo.html?q=+%20x");
     }
 
     @Test(groups = {"standalone", "async"})
@@ -77,9 +89,21 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .addQueryParameter("q", "a b")
                 .build();
 
-        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
-        String url = responseFuture.getNettyRequest().getUri();
-        Assert.assertEquals(url, "/foo.html?q=a%20b");
+        Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
+                @Override
+                public String onCompleted(Response response) throws Exception {
+                    return response.getUri().toString();
+                }
+        
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                }
+
+            });
+        String url = responseFuture.get();
+        Assert.assertEquals(url, "http://foo.com/foo.html?q=a%20b");
     }
 
     @Test(groups = {"standalone", "async"})
