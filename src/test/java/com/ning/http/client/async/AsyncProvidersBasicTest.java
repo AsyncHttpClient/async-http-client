@@ -28,9 +28,9 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.NettyAsyncHttpProviderConfig;
-import com.ning.http.client.providers.NettyResponseFuture;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.NettyResponseFuture;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -63,32 +63,32 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderEncodingTest() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
-        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/foo.html?q=+%20x");
     }
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderEncodingTest2() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html")
                 .addQueryParameter("q", "a b")
                 .build();
 
-        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/foo.html?q=a%20b");
     }
 
     @Test(groups = {"standalone", "async"})
     public void emptyRequestURI() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com")
                 .build();
 
-        NettyResponseFuture <?> responseFuture = (NettyResponseFuture<?>)p.execute(request, new AsyncCompletionHandlerAdapter(){});
+        NettyResponseFuture<?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
         responseFuture.get();
         String url = responseFuture.getNettyRequest().getUri();
         Assert.assertEquals(url, "/");
@@ -96,14 +96,14 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncProviderContentLenghtGETTest() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
         URL url = new URL(getTargetUrl());
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.connect();
 
         Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
-        p.execute(request, new AsyncCompletionHandlerAdapter() {
+        p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -142,11 +142,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncContentTypeGETTest() throws Throwable {
-        NettyAsyncHttpProvider p = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
 
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
-        p.execute(request, new AsyncCompletionHandlerAdapter() {
+        p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -168,10 +168,10 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncHeaderGETTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -194,7 +194,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "async"})
     public void asyncHeaderPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
 
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Test1", "Test1");
@@ -204,7 +204,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Test5", "Test5");
         Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).setHeaders(h).build();
 
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -229,7 +229,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncParamPOSTTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
 
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
@@ -240,7 +240,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             m.put("param_" + i, Arrays.asList("value_" + i));
         }
         Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setParameters(m).build();
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -266,11 +266,11 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncStatusHEADTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
 
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -292,7 +292,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     // TODO: fix test
     @Test(groups = {"standalone", "async"}, enabled = false)
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder()
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
                 .setRequestTimeoutInMs(120 * 1000).build());
 
         final CountDownLatch l = new CountDownLatch(1);
@@ -300,7 +300,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl())
                 .build();
 
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
             @Override
             public Response onCompleted(Response response) throws Exception {
                 Assert.fail();
@@ -340,9 +340,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncDoGetTransferEncodingTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-
-        AsyncHttpClient c = new AsyncHttpClient(n);
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch l = new CountDownLatch(1);
 
         c.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
@@ -367,9 +365,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncDoGetHeadersTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
-
-        AsyncHttpClient c = new AsyncHttpClient(n);
+        AsyncHttpClient c = new AsyncHttpClient();
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Test1", "Test1");
@@ -726,7 +722,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "async"})
     public void asyncRequestVirtualServerPOSTTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient n = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
 
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -742,7 +738,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .setVirtualHost("localhost")
                 .build();
 
-        Response response = n.execute(request, new AsyncCompletionHandlerAdapter()).get();
+        Response response = n.executeRequest(request, new AsyncCompletionHandlerAdapter()).get();
 
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-Host"), "localhost:" + port1);

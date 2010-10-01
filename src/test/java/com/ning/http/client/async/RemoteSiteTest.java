@@ -22,7 +22,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -148,7 +148,7 @@ public class RemoteSiteTest {
 
     @Test(groups = "online")
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
-        NettyAsyncHttpProvider n = new NettyAsyncHttpProvider(
+        AsyncHttpClient p = new AsyncHttpClient(
                 new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
 
         final CountDownLatch l = new CountDownLatch(1);
@@ -156,7 +156,7 @@ public class RemoteSiteTest {
                 .setUrl("http://www.google.com/")
                 .build();
 
-        n.execute(request, new AsyncCompletionHandlerAdapter() {
+        p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
             @Override
             public Response onCompleted(Response response) throws Exception {
                 Assert.assertEquals(response.getStatusCode(), 200);
