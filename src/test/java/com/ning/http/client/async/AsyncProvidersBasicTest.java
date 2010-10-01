@@ -112,10 +112,21 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Request request = new RequestBuilder("GET").setUrl("http://foo.com")
                 .build();
 
-        NettyResponseFuture<?> responseFuture = (NettyResponseFuture<?>)p.executeRequest(request, new AsyncCompletionHandlerAdapter(){});
-        responseFuture.get();
-        String url = responseFuture.getNettyRequest().getUri();
-        Assert.assertEquals(url, "/");
+        Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
+                @Override
+                public String onCompleted(Response response) throws Exception {
+                    return response.getUri().toString();
+                }
+
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                }
+
+            });
+        String url = responseFuture.get();
+        Assert.assertEquals(url, "http://foo.com/");
     }
 
     @Test(groups = {"standalone", "async"})
