@@ -22,7 +22,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

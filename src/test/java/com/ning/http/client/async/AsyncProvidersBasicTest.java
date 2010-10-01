@@ -28,9 +28,9 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
-import com.ning.http.client.providers.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.NettyAsyncHttpProviderConfig;
-import com.ning.http.client.providers.NettyResponseFuture;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.netty.NettyResponseFuture;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
