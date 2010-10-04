@@ -881,7 +881,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
         }
-        ctx.sendUpstream(e);
+        super.channelClosed(ctx,e);
     }
 
     private static boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
@@ -918,8 +918,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (releaseFuture) {
             future.done();
-        } else if (!future.getKeepAlive()) {
-            closeChannel(ctx);
+
+            if (!future.getKeepAlive()) {
+                closeChannel(ctx);
+            }
         }
     }
 
