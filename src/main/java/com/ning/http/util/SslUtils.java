@@ -48,7 +48,7 @@ public class SslUtils {
         return engine;
     }
 
-    static SSLContext getSSLContext()
+    public static SSLContext getSSLContext()
             throws GeneralSecurityException, IOException {
         SSLConfig config = new SSLConfig();
         if (config.keyStoreLocation == null || config.trustStoreLocation != null) {
