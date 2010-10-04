@@ -161,7 +161,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             try {
                 proxy = configureProxyAndAuth(proxyServer, request.getRealm());
             } catch (AuthenticationException e) {
-                throw new IOException(e);
+                throw new IOException(e.getMessage());
             }
         }
 
@@ -180,7 +180,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             try {
                 proxy = configureProxyAndAuth(proxyServer, request.getRealm());
             } catch (AuthenticationException e) {
-                throw new IOException(e);
+                throw new IOException(e.getMessage());
             }
         }
 
@@ -198,9 +198,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 try {
                     sslContext = SslUtils.getSSLContext();
                 } catch (NoSuchAlgorithmException e) {
-                    throw new IOException(e);
+                    throw new IOException(e.getMessage());
                 } catch (GeneralSecurityException e) {
-                    throw new IOException(e);
+                    throw new IOException(e.getMessage());
                 }
             }
             secure.setSSLSocketFactory(sslContext.getSocketFactory());
