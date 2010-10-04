@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class AsyncHttpClientConfig {
 
-    private final static String ASYNC_CLIENT = AsyncHttpClient.class.getName() + ".";
+    private final static String ASYNC_CLIENT = AsyncHttpClientConfig.class.getName() + ".";
 
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
