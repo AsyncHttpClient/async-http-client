@@ -41,9 +41,12 @@ public class Realm {
     private final String methodName;
     private final boolean usePreemptiveAuth;
 
+    private final String domain;
+
     public enum AuthScheme {
         DIGEST,
-        BASIC
+        BASIC,
+        NTLM
     }
 
     private Realm(AuthScheme scheme,
@@ -58,7 +61,8 @@ public class Realm {
                   String cnonce,
                   String uri,
                   String method,
-                  boolean usePreemptiveAuth) {
+                  boolean usePreemptiveAuth,
+                  String domain) {
 
         this.principal = principal;
         this.password = password;
@@ -73,6 +77,7 @@ public class Realm {
         this.uri = uri;
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
+        this.domain = domain;
     }
 
     public String getPrincipal() {
@@ -134,6 +139,14 @@ public class Realm {
      */
     public boolean getUsePreemptiveAuth() {
         return usePreemptiveAuth;
+    }
+
+    /**
+     * Return the NTLM domain to use. This value should map the JDK
+     * @return
+     */
+    public String getDomain() {
+        return domain;
     }
 
     @Override
@@ -215,6 +228,16 @@ public class Realm {
         private String uri = "";
         private String methodName = "GET";
         private boolean usePreemptive = false;
+        private String domain = "";
+
+        public String getDomain() {
+            return domain;
+        }
+
+        public RealmBuilder setDomain(String domain) {
+            this.domain = domain;
+            return this;
+        }
 
         public String getPrincipal() {
             return principal;
@@ -466,7 +489,8 @@ public class Realm {
                     cnonce,
                     uri,
                     methodName,
-                    usePreemptive);
+                    usePreemptive,
+                    domain);
         }
     }
 
