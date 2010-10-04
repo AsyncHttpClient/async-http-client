@@ -101,6 +101,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -127,6 +128,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final ConnectionsPool<String, Channel> connectionsPool;
 
     private final JDKAsyncHttpProvider ntlmProvider;
+
+    private final AtomicInteger maxConnections = new AtomicInteger();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -187,7 +190,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 try {
                     pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
                 } catch (Throwable ex) {
-                    cl.future().abort(ex);
+                    abort(cl.future(), ex);
                 }
 
                 pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
@@ -255,9 +258,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     protected final <T> void executeRequest(final Channel channel,
-                                          final AsyncHttpClientConfig config,
-                                          final NettyResponseFuture<T> future,
-                                          final HttpRequest nettyRequest) throws ConnectException {
+                                            final AsyncHttpClientConfig config,
+                                            final NettyResponseFuture<T> future,
+                                            final HttpRequest nettyRequest) throws ConnectException {
 
         if (!channel.isConnected()) {
             String url = channel.getRemoteAddress() != null ? channel.getRemoteAddress().toString() : null;
@@ -313,14 +316,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             if (log.isDebugEnabled()) {
                                 log.debug("Request Timeout expired for " + future);
                             }
-                            future.abort(new TimeoutException("Request timed out."));
+                            abort(future, new TimeoutException("Request timed out."));                            
                             markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                         }
                     }
                 }, 0, delay, TimeUnit.MILLISECONDS));
             }
         } catch (RejectedExecutionException ex) {
-            future.abort(ex);
+            abort(future, ex);
         }
     }
 
@@ -586,8 +589,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        if (!connectionsPool.canCacheConnection()) {
-            throw new IOException("Too many connections");
+        if (!connectionsPool.canCacheConnection() ||
+                (config.getMaxTotalConnections() > -1 && maxConnections.incrementAndGet() > config.getMaxTotalConnections())) {
+            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections() ));
         }
 
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
@@ -610,7 +614,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
             log.error(t);
-            c.future().abort(t.getCause());
+            abort(c.future(), t.getCause());
             return c.future();
         }
         channelFuture.addListener(c);
@@ -634,7 +638,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
         connectionsPool.removeAllConnections(ctx.getChannel());
-        future.abort(new IOException("No response received. Connection timed out after " + config.getIdleConnectionTimeoutInMs()));
+        abort(future, new IOException("No response received. Connection timed out after " + config.getIdleConnectionTimeoutInMs()));
         closeChannel(ctx);
     }
 
@@ -727,7 +731,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     try {
                         upgradeProtocol(ctx.getChannel().getPipeline(), (request.getUrl()));
                     } catch (Throwable ex) {
-                        future.abort(ex);
+                        abort(future, ex);
                     }
 
                     execute(builder.build(), future);
@@ -812,12 +816,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         } catch (Exception t) {
             try {
-                future.abort(t);
+                abort(future, t);
             } finally {
                 finishUpdate(future, ctx);
                 throw t;
             }
         }
+    }
+    
+    private void abort(NettyResponseFuture<?> future, Throwable t) {
+        maxConnections.decrementAndGet();
+        future.abort(t);
     }
 
     private void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
@@ -851,6 +860,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         connectionsPool.removeAllConnections(ctx.getChannel());
+        maxConnections.decrementAndGet();
 
         if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
@@ -982,7 +992,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             if (future != null) {
                 try {
-                    future.abort(cause);
+                    abort(future, cause);
                 } catch (Throwable t) {
                     log.error(t);
                 }

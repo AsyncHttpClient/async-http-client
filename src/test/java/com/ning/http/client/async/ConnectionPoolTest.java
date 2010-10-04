@@ -149,7 +149,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             exception = ex;
         }
         assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections");
+        assertEquals(exception.getMessage(), "Too many connections -1");
     }
 
     @Test
@@ -224,7 +224,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             exception = ex;
         }
         assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections");
+        assertEquals(exception.getMessage(), "Too many connections 1");
     }
 
     @Test(groups = "standalone")
@@ -287,7 +287,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             Assert.fail();
         } catch (IOException ex) {
             String s = ex.getMessage();
-            assertEquals(s, "Too many connections");
+            assertEquals(s, "Too many connections 2");
         }
 
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {

@@ -162,7 +162,7 @@ public class AsyncHttpProviderUtils {
      *
      * @param params
      * @param methodParams
-     * @return
+     * @return a MultipartRequestEntity.
      * @throws java.io.FileNotFoundException
      */
     public final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentStringsMap methodParams) throws FileNotFoundException {
