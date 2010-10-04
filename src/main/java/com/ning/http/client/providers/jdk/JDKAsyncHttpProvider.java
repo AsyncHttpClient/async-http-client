@@ -44,6 +44,7 @@ import com.ning.http.client.logging.Logger;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -119,31 +120,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     }
 
     private void configure(JDKAsyncHttpProviderConfig config) {
-
     }
-
-    protected final static URI createUri(String u) {
-        URI uri = URI.create(u);
-        final String scheme = uri.getScheme().toLowerCase();
-        if (scheme == null || !scheme.equals("http") && !scheme.equals("https")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + u
-                    + ", must be equal (ignoring case) to 'http'");
-        }
-
-        String path = uri.getPath();
-        if (path == null) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ", must be non-null");
-        } else if (path.length() > 0 && path.charAt(0) != '/') {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ". must start with a '/'");
-        } else if (path.length() == 0) {
-            return URI.create(u + "/");
-        }
-
-        return uri;
-    }
-
+    
     public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
 
         if (isClose.get()) {
@@ -186,9 +164,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         HttpURLConnection urlConnection = null;
         if (proxy == null) {
-            urlConnection = (HttpURLConnection) createUri(request.getUrl()).toURL().openConnection();
+            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection();
         } else {
-            urlConnection = (HttpURLConnection) createUri(request.getUrl()).toURL().openConnection(proxy);
+            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(proxy);
         }
 
         if (request.getUrl().startsWith("https")) {
@@ -249,9 +227,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 URI uri = null;
                 // Encoding with URLConnection is a bit bogus so we need to try both way before setting it
                 try {
-                    uri = createUri(currentRequest.getRawUrl());
+                    uri = AsyncHttpProviderUtils.createUri(currentRequest.getRawUrl());
                 } catch (IllegalArgumentException u) {
-                    uri = createUri(currentRequest.getUrl());
+                    uri = AsyncHttpProviderUtils.createUri(currentRequest.getUrl());
                 }
                 currentConnectionCount.incrementAndGet();
 
@@ -265,11 +243,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = currentUrlConnection.getHeaderField("Location");
                         if (location.startsWith("/")) {
-                            location = getBaseUrl(uri) + location;
+                            location = AsyncHttpProviderUtils.getBaseUrl(uri) + location;
                         }
 
                         if (!location.equals(uri.toString())) {
-                            URI newUri = createUri(location);
+                            URI newUri = AsyncHttpProviderUtils.createUri(location);
 
                             RequestBuilder builder = new RequestBuilder(currentRequest);
                             String newUrl = newUri.toString();
@@ -300,7 +278,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     }
 
                     int[] lengthWrapper = new int[1];
-                    byte[] bytes = readFully(is, lengthWrapper);
+                    byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
                     if (lengthWrapper[0] > 0) {
                         // That sucks!!
                         int valid = lengthWrapper[0];
@@ -480,7 +458,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     urlConnection.getOutputStream().write(request.getStringData().getBytes("UTF-8"));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
-                    byte[] bytes = readFully(request.getStreamData(), lengthWrapper);
+                    byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
                     int length = lengthWrapper[0];
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(length));
                     urlConnection.setFixedLengthStreamingMode(length);
@@ -517,7 +495,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         lenght = MAX_BUFFERED_BYTES;
                     }
 
-                    MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), request.getParams());
+                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getParams());
 
                     urlConnection.setRequestProperty("Content-Type", mre.getContentType());
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(mre.getContentLength()));
@@ -610,88 +588,4 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         }
     }
 
-    private String getBaseUrl(URI uri) {
-        String url = uri.getScheme() + "://" + uri.getAuthority();
-        int port = uri.getPort();
-        if (port == -1) {
-            port = getPort(uri);
-            url += ":" + port;
-        }
-        return url;
-    }
-
-    private static int getPort(URI uri) {
-        int port = uri.getPort();
-        if (port == -1)
-            port = uri.getScheme().equals("http") ? 80 : 443;
-        return port;
-    }
-
-    /**
-     * This is quite ugly as our internal names are duplicated, but we build on top of HTTP Client implementation.
-     *
-     * @param params
-     * @param methodParams
-     * @return
-     * @throws java.io.FileNotFoundException
-     */
-    private final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentStringsMap methodParams) throws FileNotFoundException {
-        com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
-        int i = 0;
-
-        for (Part part : params) {
-            if (part instanceof StringPart) {
-                parts[i] = new com.ning.http.multipart.StringPart(part.getName(),
-                        ((StringPart) part).getValue(),
-                        "UTF-8");
-            } else if (part instanceof FilePart) {
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
-                        ((FilePart) part).getFile(),
-                        ((FilePart) part).getMimeType(),
-                        ((FilePart) part).getCharSet());
-
-            } else if (part instanceof ByteArrayPart) {
-                PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getData());
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
-                        source,
-                        ((ByteArrayPart) part).getMimeType(),
-                        ((ByteArrayPart) part).getCharSet());
-
-            } else if (part == null) {
-                throw new NullPointerException("Part cannot be null");
-            } else {
-                throw new IllegalArgumentException(String.format("[" + Thread.currentThread().getName() + "] Unsupported part type for multipart parameter %s",
-                        part.getName()));
-            }
-            ++i;
-        }
-        return new MultipartRequestEntity(parts, methodParams);
-    }
-
-    private static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {
-        // just in case available() returns bogus (or -1), allocate non-trivial chunk
-        byte[] b = new byte[Math.max(512, in.available())];
-        int offset = 0;
-        while (true) {
-            int left = b.length - offset;
-            int count = in.read(b, offset, left);
-            if (count < 0) { // EOF
-                break;
-            }
-            offset += count;
-            if (count == left) { // full buffer, need to expand
-                b = doubleUp(b);
-            }
-        }
-        // wish Java had Tuple return type...
-        lengthWrapper[0] = offset;
-        return b;
-    }
-
-    private static byte[] doubleUp(byte[] b) {
-        int len = b.length;
-        byte[] b2 = new byte[len + len];
-        System.arraycopy(b, 0, b2, 0, len);
-        return b2;
-    }
 }

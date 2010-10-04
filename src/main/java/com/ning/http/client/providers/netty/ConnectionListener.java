@@ -21,6 +21,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -84,7 +85,7 @@ final class ConnectListener<T> implements ChannelFutureListener {
         }
 
         public ConnectListener<T> build() throws IOException {
-            URI uri = NettyAsyncHttpProvider.createUri(request.getRawUrl().replace(" ", "%20"));
+            URI uri = AsyncHttpProviderUtils.createUri(request.getRawUrl().replace(" ", "%20"));
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true);
             if (log.isDebugEnabled()) {
                 log.debug(String.format("[" + Thread.currentThread().getName() + "] Executing the doConnect operation: %s", asyncHandler));
