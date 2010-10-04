@@ -100,6 +100,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
         };
     }
 
+    //TODO Netty only.
     @Test(groups = "standalone")
     public void testStream() throws IOException {
         AsyncHttpClient ahc = new AsyncHttpClient();

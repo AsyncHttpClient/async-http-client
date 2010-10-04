@@ -122,6 +122,7 @@ public class Relative302Test extends AbstractBasicTest {
         return port;
     }
 
+    // TODO: Netty Only.
     @Test(groups = "standalone")
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);

@@ -72,7 +72,7 @@ public class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
+        assertEquals(resp.getHeader("target"), "http://127.0.0.1:1234/");
     }
 
     @Test(groups = "standalone")
@@ -87,7 +87,7 @@ public class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
+        assertEquals(resp.getHeader("target"), "http://127.0.0.1:1234/");
     }
 
     @Test(groups = "standalone")
@@ -103,6 +103,6 @@ public class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
+        assertEquals(resp.getHeader("target"), "http://127.0.0.1:1234/");
     }
 }

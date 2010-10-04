@@ -28,9 +28,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -1241,16 +1239,15 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
-                try {
-                    assertEquals(response.getStatusCode(), 200);
-                    if (remoteAddr == null) {
-                        remoteAddr = response.getHeader("X-KEEP-ALIVE");
-                    } else {
-                        assertEquals(response.getHeader("X-KEEP-ALIVE"), remoteAddr);
-                    }
-                } finally {
+                assertEquals(response.getStatusCode(), 200);
+                if (remoteAddr == null) {
+                    remoteAddr = response.getHeader("X-KEEP-ALIVE");
+                    l.countDown();
+                } else {
+                    assertEquals(response.getHeader("X-KEEP-ALIVE"), remoteAddr);
                     l.countDown();
                 }
+
                 return response;
             }
         };
@@ -1392,7 +1389,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         c.close();
     }
-    
+
+    // TODO Netty only
     @Test(groups = "online")
     public void testAsyncHttpProviderConfig() throws Exception {
 

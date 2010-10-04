@@ -16,15 +16,12 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
 
 public class ComplexClientTest extends AbstractBasicTest {
 
@@ -37,6 +34,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // once
         Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -44,6 +42,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // twice
         response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -58,6 +57,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         // once
         Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1))
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(),body);
@@ -69,6 +69,7 @@ public class ComplexClientTest extends AbstractBasicTest {
 
         String query = "q=test:colon:";
         Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?%s", port1, query))
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getHeader("X-queryString"), query);

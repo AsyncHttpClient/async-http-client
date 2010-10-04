@@ -269,6 +269,7 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -276,6 +277,7 @@ public class BasicHttpsTest {
         // twice
         response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")                
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -292,7 +294,7 @@ public class BasicHttpsTest {
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
 
-        Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).execute();
+        Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
         Response resp = f.get();
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -308,6 +310,7 @@ public class BasicHttpsTest {
         // once
         Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -315,6 +318,7 @@ public class BasicHttpsTest {
         // twice
         response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
@@ -334,6 +338,7 @@ public class BasicHttpsTest {
             {
                 c.preparePost(getTargetUrl())
                     .setBody(body)
+                    .setHeader("Content-Type", "text/html")
                     .execute().get(TIMEOUT, TimeUnit.SECONDS);
             }
             catch (final ExecutionException e)
@@ -346,6 +351,7 @@ public class BasicHttpsTest {
             // second request should succeed
             final Response response = c.preparePost(getTargetUrl())
                 .setBody(body)
+                .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);

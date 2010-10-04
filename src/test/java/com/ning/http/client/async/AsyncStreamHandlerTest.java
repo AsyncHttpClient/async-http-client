@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStreamHandlerTest extends AbstractBasicTest {
@@ -189,15 +190,19 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
                 return r;
             }
 
-
             @Override
             public void onThrowable(Throwable t) {
                 Assert.fail("", t);
             }
         });
 
-        String r = f.get(5, TimeUnit.SECONDS);
-        Assert.assertEquals(r.trim(), RESPONSE);
+        try {
+            String r = f.get(5, TimeUnit.SECONDS);
+            Assert.assertNotNull(r);
+            Assert.assertEquals(r.trim(), RESPONSE);
+        } catch (TimeoutException ex) {
+            Assert.fail();
+        }
     }
 
     @Test(groups = "standalone")
@@ -334,14 +339,10 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                try {
-                    String r = builder.toString();
-                    Assert.assertTrue(r.contains("301 Moved"));
-                    l.countDown();
-                    return r;
-                } finally {
-                    l.countDown();
-                }
+                String r = builder.toString();
+                Assert.assertTrue(r.contains("301 Moved"));
+                l.countDown();
+                return r;
             }
         });
 
@@ -373,13 +374,11 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
             @Override
             public String onCompleted() throws Exception {
-                try {
-                    String r = builder.toString();
-                    Assert.assertTrue(!r.contains("301 Moved"));
-                    return r;
-                } finally {
-                    l.countDown();
-                }
+                String r = builder.toString();
+                Assert.assertTrue(!r.contains("301 Moved"));
+                l.countDown();
+
+                return r;
             }
         });
 
