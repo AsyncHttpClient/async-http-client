@@ -143,7 +143,7 @@ public class Realm {
 
     /**
      * Return the NTLM domain to use. This value should map the JDK
-     * @return
+     * @return the NTLM domain
      */
     public String getDomain() {
         return domain;

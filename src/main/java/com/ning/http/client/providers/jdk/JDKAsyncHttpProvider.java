@@ -432,7 +432,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             }
 
-            if (realm != null && realm.getDomain() != null) {
+            if (realm != null && realm.getDomain() != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
                 System.setProperty("http.auth.ntlm.domain", realm.getDomain());
             }
             
