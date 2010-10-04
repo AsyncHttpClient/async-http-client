@@ -105,18 +105,6 @@ public class RemoteSiteTest {
     }
 
     @Test(groups = "online")
-    public void testPlanetromeoCom() throws IOException, BrokenBarrierException, InterruptedException {
-        c.prepareGet("http://planetromeo.com/").execute(h);
-        b.await();
-    }
-
-    @Test(groups = "online")
-    public void testMiniPlanetromeoCom() throws IOException, BrokenBarrierException, InterruptedException {
-        c.prepareGet("http://mini.planetromeo.com/").execute(h);
-        b.await();
-    }
-
-    @Test(groups = "online")
     public void testMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://microsoft.com/").execute(h);
