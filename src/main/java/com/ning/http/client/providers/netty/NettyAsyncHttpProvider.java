@@ -377,7 +377,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     .append(getPort(uri)).toString());
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, uri.toString());
         } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.getPath());
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
         } else {
             StringBuilder path = new StringBuilder(uri.getRawPath());
             if (uri.getQuery() != null) {
