@@ -144,7 +144,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         this.config = config;
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
-        ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionPool();
+        ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
         if (cp == null) {
             cp = new NettyConnectionsPool(config);
         }

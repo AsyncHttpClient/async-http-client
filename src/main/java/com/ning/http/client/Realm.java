@@ -382,9 +382,6 @@ public class Realm {
 
         /**
          * TODO: A Pattern/Matcher may be better.
-         * @param headerLine
-         * @param token
-         * @return
          */
         private String match(String headerLine, String token) {
             int match = headerLine.indexOf(token);
