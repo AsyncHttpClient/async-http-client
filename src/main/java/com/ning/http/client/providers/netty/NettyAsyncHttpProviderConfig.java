@@ -14,7 +14,7 @@
  * under the License.
  *
  */
-package com.ning.http.client.providers;
+package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
 

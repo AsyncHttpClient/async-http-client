@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.providers;
+package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
@@ -377,7 +377,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     .append(getPort(uri)).toString());
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, uri.toString());
         } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.getPath());
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
         } else {
             StringBuilder path = new StringBuilder(uri.getRawPath());
             if (uri.getQuery() != null) {
@@ -881,7 +881,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
         }
-        ctx.sendUpstream(e);
+        super.channelClosed(ctx,e);
     }
 
     private static boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
@@ -918,8 +918,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (releaseFuture) {
             future.done();
-        } else if (!future.getKeepAlive()) {
-            closeChannel(ctx);
+
+            if (!future.getKeepAlive()) {
+                closeChannel(ctx);
+            }
         }
     }
 
