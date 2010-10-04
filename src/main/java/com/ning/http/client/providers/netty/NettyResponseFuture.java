@@ -113,6 +113,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     public boolean cancel(boolean force) {
         latch.countDown();
         isCancelled.set(true);
+        if (reaperFuture != null) reaperFuture.cancel(true);
         return true;
     }
 
@@ -199,9 +200,9 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public final void abort(final Throwable t) {
-        if (isDone.get() || isCancelled.get()) return;
-
         if (reaperFuture != null) reaperFuture.cancel(true);
+
+        if (isDone.get() || isCancelled.get()) return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
         try {
