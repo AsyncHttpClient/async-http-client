@@ -36,6 +36,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
+import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -125,6 +126,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final ConnectionsPool<String, Channel> connectionsPool;
 
+    private final JDKAsyncHttpProvider ntlmProvider;
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
         socketChannelFactory = new NioClientSocketChannelFactory(
@@ -146,6 +149,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
             configureNetty(NettyAsyncHttpProviderConfig.class.cast(providerConfig));
         }
+        ntlmProvider = new JDKAsyncHttpProvider(config);
     }
 
     void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
@@ -542,6 +546,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (isClose.get()) {
             throw new IOException("Closed");
+        }
+
+        /**
+         * Netty doesn't support NTLM, so fall back to the JDK in that case.
+         */
+        if (request.getRealm() != null && request.getRealm().getScheme() == Realm.AuthScheme.NTLM) {
+            if (log.isDebugEnabled()) {
+                log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
+            }
+            return ntlmProvider.execute(request, asyncHandler);
         }
 
         URI uri = AsyncHttpProviderUtils.createUri(request.getUrl());
