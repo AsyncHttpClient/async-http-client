@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -109,7 +110,7 @@
             <version>7.1.4.v20100610</version>
             <scope>test</scope>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
             <version>7.1.4.v20100610</version>
@@ -143,6 +144,27 @@
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.6</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-java-1.5-compat</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -212,7 +234,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
+                    <argLine>
+                        -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
+                    </argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -277,9 +301,12 @@
                                 </excludes>
                             </artifactSet>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -323,7 +350,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone</groups>
-                            <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
+                            <argLine>
+                                -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
+                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -338,7 +367,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone, online</groups>
-                            <argLine>-Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider</argLine>
+                            <argLine>
+                                -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
+                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>
