@@ -13,9 +13,25 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * Copyright 2009 Red Hat, Inc.
+ *
+ * Red Hat licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package com.ning.http.util;
 
 import com.ning.http.client.ByteArrayPart;
+import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.Part;
@@ -28,12 +44,79 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
+ *
+ * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+    //space ' '
+    static final byte SP = 32;
+
+    //tab ' '
+    static final byte HT = 9;
+
+    /**
+     * Carriage return
+     */
+    static final byte CR = 13;
+
+    /**
+     * Equals '='
+     */
+    static final byte EQUALS = 61;
+
+    /**
+     * Line feed character
+     */
+    static final byte LF = 10;
+
+    /**
+     * carriage return line feed
+     */
+    static final byte[] CRLF = new byte[]{CR, LF};
+
+    /**
+     * Colon ':'
+     */
+    static final byte COLON = 58;
+
+    /**
+     * Semicolon ';'
+     */
+    static final byte SEMICOLON = 59;
+
+    /**
+     * comma ','
+     */
+    static final byte COMMA = 44;
+
+    static final byte DOUBLE_QUOTE = '"';
+
+    static final String PATH = "Path";
+
+    static final String EXPIRES = "Expires";
+
+    static final String MAX_AGE = "Max-Age";
+
+    static final String DOMAIN = "Domain";
+
+    static final String SECURE = "Secure";
+
+    static final String HTTPONLY = "HTTPOnly";
+
+    static final String COMMENT = "Comment";
+
+    static final String COMMENTURL = "CommentURL";
+
+    static final String DISCARD = "Discard";
+
+    static final String PORT = "Port";
+
+    static final String VERSION = "Version";
 
     public final static URI createUri(String u) {
         URI uri = URI.create(u);
@@ -57,7 +140,7 @@ public class AsyncHttpProviderUtils {
         return uri;
     }
 
-     public final static String getBaseUrl(URI uri) {
+    public final static String getBaseUrl(URI uri) {
         String url = uri.getScheme() + "://" + uri.getAuthority();
         int port = uri.getPort();
         if (port == -1) {
@@ -140,5 +223,106 @@ public class AsyncHttpProviderUtils {
         byte[] b2 = new byte[len + len];
         System.arraycopy(b, 0, b2, 0, len);
         return b2;
+    }
+
+    public static String encodeCookies(Collection<Cookie> cookies) {
+        StringBuilder sb = new StringBuilder();
+
+        for (Cookie cookie : cookies) {
+            if (cookie.getVersion() >= 1) {
+                add(sb, '$' + VERSION, 1);
+            }
+
+            add(sb, cookie.getName(), cookie.getValue());
+
+            if (cookie.getPath() != null) {
+                add(sb, '$' + PATH, cookie.getPath());
+            }
+
+            if (cookie.getDomain() != null) {
+                add(sb, '$' + DOMAIN, cookie.getDomain());
+            }
+
+            if (cookie.getVersion() >= 1) {
+                if (!cookie.getPorts().isEmpty()) {
+                    sb.append('$');
+                    sb.append(PORT);
+                    sb.append((char) EQUALS);
+                    sb.append((char) DOUBLE_QUOTE);
+                    for (int port : cookie.getPorts()) {
+                        sb.append(port);
+                        sb.append((char) COMMA);
+                    }
+                    sb.setCharAt(sb.length() - 1, (char) DOUBLE_QUOTE);
+                    sb.append((char) SEMICOLON);
+                }
+            }
+        }
+
+        sb.setLength(sb.length() - 1);
+        return sb.toString();
+    }
+
+    private static void add(StringBuilder sb, String name, String val) {
+        if (val == null) {
+            addQuoted(sb, name, "");
+            return;
+        }
+
+        for (int i = 0; i < val.length(); i++) {
+            char c = val.charAt(i);
+            switch (c) {
+                case '\t':
+                case ' ':
+                case '"':
+                case '(':
+                case ')':
+                case ',':
+                case '/':
+                case ':':
+                case ';':
+                case '<':
+                case '=':
+                case '>':
+                case '?':
+                case '@':
+                case '[':
+                case '\\':
+                case ']':
+                case '{':
+                case '}':
+                    addQuoted(sb, name, val);
+                    return;
+            }
+        }
+
+        addUnquoted(sb, name, val);
+    }
+
+    private static void addUnquoted(StringBuilder sb, String name, String val) {
+        sb.append(name);
+        sb.append((char) EQUALS);
+        sb.append(val);
+        sb.append((char) SEMICOLON);
+    }
+
+    private static void addQuoted(StringBuilder sb, String name, String val) {
+        if (val == null) {
+            val = "";
+        }
+
+        sb.append(name);
+        sb.append((char) EQUALS);
+        sb.append((char) DOUBLE_QUOTE);
+        sb.append(val.replace("\\", "\\\\").replace("\"", "\\\""));
+        sb.append((char) DOUBLE_QUOTE);
+        sb.append((char) SEMICOLON);
+    }
+
+    private static void add(StringBuilder sb, String name, int val) {
+        sb.append(name);
+        sb.append((char) EQUALS);
+        sb.append(val);
+        sb.append((char) SEMICOLON);
     }
 }

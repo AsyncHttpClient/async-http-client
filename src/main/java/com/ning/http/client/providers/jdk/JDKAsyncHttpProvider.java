@@ -20,17 +20,12 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Part;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
@@ -38,20 +33,15 @@ import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
-import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
-import com.ning.http.multipart.PartSource;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.DefaultCookie;
 
 import javax.naming.AuthenticationException;
 import javax.net.ssl.HostnameVerifier;
@@ -61,7 +51,6 @@ import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -79,7 +68,6 @@ import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -425,19 +413,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
             // TODO: Get rid of Netty's.
             if (request.getCookies() != null && !request.getCookies().isEmpty()) {
-                CookieEncoder httpCookieEncoder = new CookieEncoder(false);
-                Iterator<Cookie> ic = request.getCookies().iterator();
-                Cookie c;
-                org.jboss.netty.handler.codec.http.Cookie cookie;
-                while (ic.hasNext()) {
-                    c = ic.next();
-                    cookie = new DefaultCookie(c.getName(), c.getValue());
-                    cookie.setPath(c.getPath());
-                    cookie.setMaxAge(c.getMaxAge());
-                    cookie.setDomain(c.getDomain());
-                    httpCookieEncoder.addCookie(cookie);
-                }
-                urlConnection.setRequestProperty("Cookie", httpCookieEncoder.encode());
+                urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
             }
 
             String reqType = request.getReqType();
