@@ -132,6 +132,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final AtomicInteger maxConnections = new AtomicInteger();
 
+    private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
         socketChannelFactory = new NioClientSocketChannelFactory(
@@ -149,21 +151,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
         this.connectionsPool = cp;
 
-        AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
-            configureNetty(NettyAsyncHttpProviderConfig.class.cast(providerConfig));
+        if (config.getAsyncHttpProviderConfig() != null
+                && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
+            asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
+        } else {
+            asyncHttpProviderConfig = null;
         }
+
+        configureNetty();
         ntlmProvider = new JDKAsyncHttpProvider(config);
     }
 
-    void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
-        for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
-            plainBootstrap.setOption(entry.getKey(), entry.getValue());
-            secureBootstrap.setOption(entry.getKey(), entry.getValue());
+    void configureNetty() {
+        if (asyncHttpProviderConfig != null) {
+            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+                plainBootstrap.setOption(entry.getKey(), entry.getValue());
+            }
         }
-    }
-
-    void configure(final ConnectListener<?> cl) {
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -181,6 +185,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
+    }
+
+    void constructSSLPipeline(final ConnectListener<?> cl) {
 
         secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -204,6 +211,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
+
+        if (asyncHttpProviderConfig != null) {
+            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+                secureBootstrap.setOption(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     private Channel lookupInCache(URI uri) {
@@ -596,8 +609,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 && (proxyServer == null
                 || !proxyServer.getProtocolAsString().equals("https"));
 
-        configure(c);
-
+        if (useSSl) {
+            constructSSLPipeline(c);
+        }
         maxConnections.incrementAndGet();
 
         ChannelFuture channelFuture;
@@ -1122,10 +1136,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
                 abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));
                 markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+
                 this.nettyResponseFuture = null;
-	                this.channel = null;
-	        }
-		}	
+                this.channel = null;
+            }
+        }
     }
 }
 
