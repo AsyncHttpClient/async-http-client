@@ -95,6 +95,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -310,17 +311,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.touch();
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
-                future.setReaperFuture(config.reaper().scheduleAtFixedRate(new Runnable() {
-                    public void run() {
-                        if (future.hasExpired()) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Request Timeout expired for " + future);
-                            }
-                            abort(future, new TimeoutException("Request timed out."));                            
-                            markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
-                        }
-                    }
-                }, 0, delay, TimeUnit.MILLISECONDS));
+            	ReaperFuture reaperFuture = new ReaperFuture(channel, future);            	
+            	Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+            	reaperFuture.setScheduledFuture(scheduledFuture);
+            	future.setReaperFuture(reaperFuture);
+                
             }
         } catch (RejectedExecutionException ex) {
             abort(future, ex);
@@ -1052,4 +1047,73 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
     }
+    
+    /**
+     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until the try to run
+     * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
+     * this wrapper will release the references to the channel and the nettyResponseFuture immediately. Otherwise,
+     * the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
+     *
+     */
+    private final class ReaperFuture implements Future, Runnable
+    {
+    	private Future scheduledFuture;
+    	private Channel channel;
+    	private NettyResponseFuture nettyResponseFuture;
+    	
+    	
+		public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
+			this.channel = channel;
+			this.nettyResponseFuture = nettyResponseFuture;
+		}
+
+		public void setScheduledFuture(Future scheduledFuture){
+			this.scheduledFuture = scheduledFuture;
+		}
+		
+		@Override
+		public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+			//cleanup references to allow gc to reclaim memory independently
+			//of this Future lifecycle
+			this.channel = null;
+			this.nettyResponseFuture = null;
+			return this.scheduledFuture.cancel(mayInterruptIfRunning);
+		}
+
+		@Override
+		public Object get() throws InterruptedException, ExecutionException {
+			return this.scheduledFuture.get();
+		}
+
+		@Override
+		public Object get(long timeout, TimeUnit unit)
+				throws InterruptedException, ExecutionException,
+				TimeoutException {
+			return this.scheduledFuture.get(timeout, unit);
+		}
+
+		@Override
+		public boolean isCancelled() {
+			return this.scheduledFuture.isCancelled();
+		}
+
+		@Override
+		public boolean isDone() {
+			return this.scheduledFuture.isDone();
+		}
+
+		@Override
+		public synchronized void run() {
+			if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
+					if (log.isDebugEnabled()) {
+	                    log.debug("Request Timeout expired for " + this.nettyResponseFuture);
+	                }
+	                abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));                            
+	                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+	                this.nettyResponseFuture = null;
+	                this.channel = null;
+	        }
+		}	
+    }
 }
+
