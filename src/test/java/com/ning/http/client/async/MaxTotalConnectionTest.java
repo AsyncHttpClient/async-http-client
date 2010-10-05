@@ -17,12 +17,17 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
@@ -80,5 +85,64 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
             }
         }
     }
+
+
+    @Test
+    public void testMaxTotalConnectionsCorrectExceptionHandling() {
+        String[] urls = new String[]{
+                "http://google.com",
+                "http://github.com/"};
+
+        AsyncHttpClient client = new AsyncHttpClient(
+                new AsyncHttpClientConfig.Builder()
+                        .setConnectionTimeoutInMs(1000)
+                        .setRequestTimeoutInMs(5000)
+                        .setKeepAlive(false)
+                        .setMaximumConnectionsTotal(1)
+                        .setMaximumConnectionsPerHost(1)
+                        .build()
+        );
+
+        List<Future> futures = new ArrayList<Future>();
+        boolean caughtError = false;
+        for (int i = 0; i < urls.length; i++) {
+            try {
+                Future<Response> future = client.prepareGet(urls[i]).execute();
+                if (future != null) {
+                    futures.add(future);
+                }
+            } catch (IOException e) {
+                // assert that 2nd request fails, because maxTotalConnections=1
+                Assert.assertEquals(i, 1);
+                caughtError = true;
+            }
+        }
+        Assert.assertTrue(caughtError);
+
+        // get results of executed requests
+        for (Future future : futures) {
+            try {
+                Object res = future.get();
+            } catch (InterruptedException e) {
+                log.error("Error!", e);
+            } catch (ExecutionException e) {
+                log.error("Error!", e);
+            }
+        }
+
+        // try to execute once again, expecting that 1 connection is released
+        caughtError = false;
+        for (int i = 0; i < urls.length; i++) {
+            try {
+                client.prepareGet(urls[i]).execute();
+            } catch (IOException e) {
+                // assert that 2nd request fails, because maxTotalConnections=1
+                Assert.assertEquals(i, 1);
+                caughtError = true;
+            }
+        }
+        Assert.assertTrue(caughtError);
+    }
 }
+
 

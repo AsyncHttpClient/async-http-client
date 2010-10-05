@@ -590,7 +590,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (!connectionsPool.canCacheConnection() ||
-                (config.getMaxTotalConnections() > -1 && maxConnections.incrementAndGet() > config.getMaxTotalConnections())) {
+                (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1 )> config.getMaxTotalConnections())) {
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections() ));
         }
 
@@ -602,6 +602,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 || !proxyServer.getProtocolAsString().equals("https"));
         
         configure(c);
+        
+        maxConnections.incrementAndGet();
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
@@ -643,6 +645,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void closeChannel(ChannelHandlerContext ctx) {
+        maxConnections.decrementAndGet();
         ctx.setAttachment(new DiscardEvent());
         ctx.getChannel().close();
     }
@@ -860,7 +863,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         connectionsPool.removeAllConnections(ctx.getChannel());
-        maxConnections.decrementAndGet();
 
         if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
@@ -874,6 +876,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
+                maxConnections.decrementAndGet();                        
                 try {
                     future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out" ));
                 } catch (Throwable t) {
@@ -905,7 +908,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (future.getState() != NettyResponseFuture.STATE.NEW) {
             return true;
         }
-
         return false;
     }
 
