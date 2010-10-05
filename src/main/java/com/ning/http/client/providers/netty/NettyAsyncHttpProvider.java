@@ -1051,7 +1051,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
     
     /**
-     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until the try to run
+     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run
      * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
      * this wrapper will release the references to the channel and the nettyResponseFuture immediately. Otherwise,
      * the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
@@ -1062,8 +1062,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     	private Future scheduledFuture;
     	private Channel channel;
     	private NettyResponseFuture nettyResponseFuture;
-    	
-    	
+
 		public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
 			this.channel = channel;
 			this.nettyResponseFuture = nettyResponseFuture;
@@ -1073,7 +1072,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 			this.scheduledFuture = scheduledFuture;
 		}
 		
-		@Override
+		/** @Override  */
 		public synchronized boolean cancel(boolean mayInterruptIfRunning) {
 			//cleanup references to allow gc to reclaim memory independently
 			//of this Future lifecycle
@@ -1082,29 +1081,29 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 			return this.scheduledFuture.cancel(mayInterruptIfRunning);
 		}
 
-		@Override
+        /** @Override  */
 		public Object get() throws InterruptedException, ExecutionException {
 			return this.scheduledFuture.get();
 		}
 
-		@Override
+        /** @Override  */
 		public Object get(long timeout, TimeUnit unit)
 				throws InterruptedException, ExecutionException,
 				TimeoutException {
 			return this.scheduledFuture.get(timeout, unit);
 		}
 
-		@Override
+        /** @Override  */
 		public boolean isCancelled() {
 			return this.scheduledFuture.isCancelled();
 		}
 
-		@Override
+        /** @Override  */
 		public boolean isDone() {
 			return this.scheduledFuture.isDone();
 		}
 
-		@Override
+        /** @Override  */
 		public synchronized void run() {
 			if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
 					if (log.isDebugEnabled()) {
