@@ -1049,11 +1049,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
     
     /**
-     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until the try to run
-     * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
+     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until it runs
+     * them, we wrap the task with the future so when the NettyResponseFuture cancels the reaper future
      * this wrapper will release the references to the channel and the nettyResponseFuture immediately. Otherwise,
-     * the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
-     *
+     * the memory will only be released after the request timeout period which can be arbitrary long.
      */
     private final class ReaperFuture implements Future, Runnable
     {
