@@ -91,7 +91,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
     private final static int MAX_BUFFERED_BYTES = 8192;
 
-    private final AtomicInteger currentConnectionCount = new AtomicInteger();
+    private final AtomicInteger maxConnections = new AtomicInteger();
 
     private String jdkNtlmDomain;
 
@@ -123,9 +123,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             throw new IOException("Closed");
         }
 
-        if (config.getMaxTotalConnections() != -1 && currentConnectionCount.get() >= config.getMaxTotalConnections()) {
-            throw new IOException("Too many connections");
-        }        
+        if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
+            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+        }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Proxy proxy = null;
@@ -139,9 +139,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         HttpURLConnection urlConnection = createUrlConnection(request);
         JDKFuture f = new JDKFuture<T>(handler, config.getRequestTimeoutInMs());
-
         f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));
-
+        maxConnections.incrementAndGet();
+        
         return f;
     }
 
@@ -225,7 +225,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 } catch (IllegalArgumentException u) {
                     uri = AsyncHttpProviderUtils.createUri(currentRequest.getUrl());
                 }
-                currentConnectionCount.incrementAndGet();
 
                 configure(uri, currentUrlConnection, currentRequest);
                 currentUrlConnection.connect();
@@ -310,8 +309,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     logger.error(t2);
                 }
             } finally {
+                if (config.getMaxTotalConnections() != -1) {
+                    maxConnections.decrementAndGet();
+                }
                 currentUrlConnection.disconnect();
-                currentConnectionCount.decrementAndGet();
                 if (jdkNtlmDomain != null) {
                     System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
                 }
