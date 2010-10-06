@@ -665,7 +665,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {        
-    	// Discard in memory bytes if the HttpContent.interrupt() has been invoked.
+        // Discard in memory bytes if the HttpContent.interrupt() has been invoked.
         if (ctx.getAttachment() instanceof DiscardEvent) {
             ctx.getChannel().setReadable(false);
             return;
