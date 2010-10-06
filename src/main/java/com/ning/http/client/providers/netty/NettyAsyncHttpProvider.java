@@ -19,7 +19,6 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -612,8 +611,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (useSSl) {
             constructSSLPipeline(c);
         }
-        maxConnections.incrementAndGet();
 
+        if (config.getMaxTotalConnections() != -1) {
+            maxConnections.incrementAndGet();
+        }
+        
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         try {
@@ -654,7 +656,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void closeChannel(ChannelHandlerContext ctx) {
-        maxConnections.decrementAndGet();
+        if (config.getMaxTotalConnections() != -1) {
+            maxConnections.decrementAndGet();
+        }
         ctx.setAttachment(new DiscardEvent());
         ctx.getChannel().close();
     }
@@ -837,7 +841,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        maxConnections.decrementAndGet();
+        if (config.getMaxTotalConnections() != -1) {
+            maxConnections.decrementAndGet();
+        }
         future.abort(t);
     }
 
@@ -885,7 +891,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
-                maxConnections.decrementAndGet();
+                if (config.getMaxTotalConnections() != -1) {
+                    maxConnections.decrementAndGet();
+                }
                 try {
                     future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out"));
                 } catch (Throwable t) {

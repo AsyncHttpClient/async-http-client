@@ -40,7 +40,7 @@ import static org.testng.Assert.fail;
 public class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
 
-    @Test
+    @Test(groups = "standalone")
     public void testMaxTotalConnections() {
         AsyncHttpClient client = new AsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
@@ -104,8 +104,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         assertEquals(remoteAddresses.size(), 2);
     }
 
-
-    @Test
+    @Test(groups = "standalone")
     public void testInvalidConnectionsPool() {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
@@ -152,7 +151,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         assertEquals(exception.getMessage(), "Too many connections -1");
     }
 
-    @Test
+    @Test(groups = "standalone")
     public void testValidConnectionsPool() {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
