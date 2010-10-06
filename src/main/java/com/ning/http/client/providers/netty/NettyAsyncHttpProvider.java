@@ -664,8 +664,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        // Discard in memory bytes if the HttpContent.interrupt() has been invoked.
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {        
+    	// Discard in memory bytes if the HttpContent.interrupt() has been invoked.
         if (ctx.getAttachment() instanceof DiscardEvent) {
             ctx.getChannel().setReadable(false);
             return;
@@ -675,6 +675,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             // so we have nothing to do
             return;
         }
+        
+        //call super to reset the read timeout
+        super.messageReceived(ctx, e);
+        
         final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
         future.touch();
 
