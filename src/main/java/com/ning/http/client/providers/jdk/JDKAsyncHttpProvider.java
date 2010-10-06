@@ -54,6 +54,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -80,6 +81,8 @@ import java.util.zip.GZIPInputStream;
 public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection> {
     private final static Logger logger = LogManager.getLogger(JDKAsyncHttpProvider.class);
 
+    private final static String NTLM_DOMAIN = "http.auth.ntlm.domain";
+
     private final AsyncHttpClientConfig config;
 
     private final AtomicBoolean isClose = new AtomicBoolean(false);
@@ -89,6 +92,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     private final static int MAX_BUFFERED_BYTES = 8192;
 
     private final AtomicInteger currentConnectionCount = new AtomicInteger();
+
+    private String jdkNtlmDomain;
+
+    private Authenticator jdkAuthenticator;
 
     public JDKAsyncHttpProvider(AsyncHttpClientConfig config) {
 
@@ -120,7 +127,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             throw new IOException("Too many connections");
         }        
 
-        System.setProperty("http.maxConnections", "1");        
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Proxy proxy = null;
         if (proxyServer != null || request.getRealm() != null) {
@@ -305,7 +311,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             } finally {
                 currentUrlConnection.disconnect();
-                currentConnectionCount.decrementAndGet();                
+                currentConnectionCount.decrementAndGet();
+                if (jdkNtlmDomain != null) {
+                    System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
+                }
+                Authenticator.setDefault(jdkAuthenticator);
             }
             return null;
         }
@@ -399,7 +409,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             }
 
             if (realm != null && realm.getDomain() != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
-                System.setProperty("http.auth.ntlm.domain", realm.getDomain());
+                jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+                System.setProperty(NTLM_DOMAIN, realm.getDomain());
             }
             
             // Add default accept headers.
@@ -411,7 +422,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 urlConnection.setRequestProperty("User-Agent", config.getUserAgent() + " (JDKAsyncHttpProvider)");
             }
 
-            // TODO: Get rid of Netty's.
             if (request.getCookies() != null && !request.getCookies().isEmpty()) {
                 urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
             }
@@ -523,6 +533,18 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         final boolean hasProxy = (proxyServer != null && proxyServer.getPrincipal() != null);
         final boolean hasAuthentication = (realm != null && realm.getPrincipal() != null);
         if (hasProxy || hasAuthentication) {
+
+
+            Field f = null;
+            try {
+                f = Authenticator.class.getDeclaredField("theAuthenticator");
+
+                f.setAccessible(true);
+                jdkAuthenticator = (Authenticator) f.get(Authenticator.class);
+            } catch (NoSuchFieldException e) {
+            } catch (IllegalAccessException e) {
+            }
+
             Authenticator.setDefault(new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
                     if (hasProxy && getRequestingHost().equals(proxyServer.getHost())

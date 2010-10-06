@@ -132,6 +132,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final AtomicInteger maxConnections = new AtomicInteger();
 
+    private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
         socketChannelFactory = new NioClientSocketChannelFactory(
@@ -149,21 +151,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
         this.connectionsPool = cp;
 
-        AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
-            configureNetty(NettyAsyncHttpProviderConfig.class.cast(providerConfig));
+        if (config.getAsyncHttpProviderConfig() != null
+                && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
+            asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
+        } else {
+            asyncHttpProviderConfig = null;
         }
+
+        configureNetty();
         ntlmProvider = new JDKAsyncHttpProvider(config);
     }
 
-    void configureNetty(NettyAsyncHttpProviderConfig providerConfig) {
-        for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
-            plainBootstrap.setOption(entry.getKey(), entry.getValue());
-            secureBootstrap.setOption(entry.getKey(), entry.getValue());
+    void configureNetty() {
+        if (asyncHttpProviderConfig != null) {
+            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+                plainBootstrap.setOption(entry.getKey(), entry.getValue());
+            }
         }
-    }
-
-    void configure(final ConnectListener<?> cl) {
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -181,6 +185,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
+    }
+
+    void constructSSLPipeline(final ConnectListener<?> cl) {
 
         secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -204,6 +211,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
+
+        if (asyncHttpProviderConfig != null) {
+            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+                secureBootstrap.setOption(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     private Channel lookupInCache(URI uri) {
@@ -311,11 +324,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.touch();
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
-            	ReaperFuture reaperFuture = new ReaperFuture(channel, future);            	
-            	Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
-            	reaperFuture.setScheduledFuture(scheduledFuture);
-            	future.setReaperFuture(reaperFuture);
-                
+                ReaperFuture reaperFuture = new ReaperFuture(channel, future);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+                reaperFuture.setScheduledFuture(scheduledFuture);
+                future.setReaperFuture(reaperFuture);
+
             }
         } catch (RejectedExecutionException ex) {
             abort(future, ex);
@@ -412,7 +425,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
             }
         }
-        
+
         // Add default accept headers.
         if (request.getHeaders().getFirstValue("Accept") == null) {
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
@@ -562,15 +575,15 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (channel != null && channel.isOpen()) {
             if (channel.isConnected()) {
                 HttpRequest nettyRequest = buildRequest(config, request, uri, false);
-                
+
                 if (f == null) {
                     f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                                                   requestTimeout(config, request.getPerRequestConfig()), this);
+                            requestTimeout(config, request.getPerRequestConfig()), this);
                 } else {
                     f.setNettyRequest(nettyRequest);
                 }
                 f.setState(NettyResponseFuture.STATE.POOLED);
-                
+
                 try {
                     executeRequest(channel, config, f, nettyRequest);
                     return f;
@@ -585,25 +598,28 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (!connectionsPool.canCacheConnection() ||
-                (config.getMaxTotalConnections() > -1 && maxConnections.incrementAndGet() > config.getMaxTotalConnections())) {
-            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections() ));
+                (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
+            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
 
         ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer() ;
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase("https") == 0
                 && (proxyServer == null
                 || !proxyServer.getProtocolAsString().equals("https"));
-        
-        configure(c);
+
+        if (useSSl) {
+            constructSSLPipeline(c);
+        }
+        maxConnections.incrementAndGet();
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         try {
             if (proxyServer == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
-            } else {               
+            } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
@@ -638,6 +654,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void closeChannel(ChannelHandlerContext ctx) {
+        maxConnections.decrementAndGet();
         ctx.setAttachment(new DiscardEvent());
         ctx.getChannel().close();
     }
@@ -818,7 +835,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
     }
-    
+
     private void abort(NettyResponseFuture<?> future, Throwable t) {
         maxConnections.decrementAndGet();
         future.abort(t);
@@ -845,7 +862,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Exception exception = null;
         try {
-            super.channelClosed(ctx,e);
+            super.channelClosed(ctx, e);
         } catch (Exception ex) {
             exception = ex;
         }
@@ -855,7 +872,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         connectionsPool.removeAllConnections(ctx.getChannel());
-        maxConnections.decrementAndGet();
 
         if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
@@ -869,8 +885,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
+                maxConnections.decrementAndGet();
                 try {
-                    future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out" ));
+                    future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out"));
                 } catch (Throwable t) {
                     log.error(t);
                 }
@@ -887,7 +904,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
                 f.setState(NettyResponseFuture.STATE.RECONNECTED);
                 try {
-                    f.provider().execute(f.getRequest(),f);
+                    f.provider().execute(f.getRequest(), f);
                     return true;
                 } catch (IOException iox) {
                     f.setState(NettyResponseFuture.STATE.CLOSED);
@@ -900,7 +917,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (future.getState() != NettyResponseFuture.STATE.NEW) {
             return true;
         }
-
         return false;
     }
 
@@ -949,10 +965,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     //Simple marker for stopping publishing bytes.
+
     private final static class DiscardEvent {
     }
 
     //Simple marker for closed events
+
     private final static class ClosedEvent {
     }
 
@@ -1008,7 +1026,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
 
-
     private static class ProgressListener implements ChannelFutureProgressListener {
 
         private final boolean notifyHeaders;
@@ -1027,7 +1044,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (log.isDebugEnabled()) {
                     log.debug(cf.getCause());
                 }
-                
+
                 remotelyClosed(cf.getChannel(), null);
                 return;
             }
@@ -1047,72 +1064,83 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
     }
-    
+
     /**
-     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until it runs
-     * them, we wrap the task with the future so when the NettyResponseFuture cancels the reaper future
+     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run
+     * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
      * this wrapper will release the references to the channel and the nettyResponseFuture immediately. Otherwise,
-     * the memory will only be released after the request timeout period which can be arbitrary long.
+     * the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
      */
-    private final class ReaperFuture implements Future, Runnable
-    {
-    	private Future scheduledFuture;
-    	private Channel channel;
-    	private NettyResponseFuture nettyResponseFuture;
-    	
-    	
-		public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
-			this.channel = channel;
-			this.nettyResponseFuture = nettyResponseFuture;
-		}
+    private final class ReaperFuture implements Future, Runnable {
+        private Future scheduledFuture;
+        private Channel channel;
+        private NettyResponseFuture nettyResponseFuture;
 
-		public void setScheduledFuture(Future scheduledFuture){
-			this.scheduledFuture = scheduledFuture;
-		}
-		
-		@Override
-		public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-			//cleanup references to allow gc to reclaim memory independently
-			//of this Future lifecycle
-			this.channel = null;
-			this.nettyResponseFuture = null;
-			return this.scheduledFuture.cancel(mayInterruptIfRunning);
-		}
+        public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
+            this.channel = channel;
+            this.nettyResponseFuture = nettyResponseFuture;
+        }
 
-		@Override
-		public Object get() throws InterruptedException, ExecutionException {
-			return this.scheduledFuture.get();
-		}
+        public void setScheduledFuture(Future scheduledFuture) {
+            this.scheduledFuture = scheduledFuture;
+        }
 
-		@Override
-		public Object get(long timeout, TimeUnit unit)
-				throws InterruptedException, ExecutionException,
-				TimeoutException {
-			return this.scheduledFuture.get(timeout, unit);
-		}
+        /**
+         * @Override
+         */
+        public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+            //cleanup references to allow gc to reclaim memory independently
+            //of this Future lifecycle
+            this.channel = null;
+            this.nettyResponseFuture = null;
+            return this.scheduledFuture.cancel(mayInterruptIfRunning);
+        }
 
-		@Override
-		public boolean isCancelled() {
-			return this.scheduledFuture.isCancelled();
-		}
+        /**
+         * @Override
+         */
+        public Object get() throws InterruptedException, ExecutionException {
+            return this.scheduledFuture.get();
+        }
 
-		@Override
-		public boolean isDone() {
-			return this.scheduledFuture.isDone();
-		}
+        /**
+         * @Override
+         */
+        public Object get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException,
+                TimeoutException {
+            return this.scheduledFuture.get(timeout, unit);
+        }
 
-		@Override
-		public synchronized void run() {
-			if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
-					if (log.isDebugEnabled()) {
-	                    log.debug("Request Timeout expired for " + this.nettyResponseFuture);
-	                }
-	                abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));                            
-	                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
-	                this.nettyResponseFuture = null;
-	                this.channel = null;
-	        }
-		}	
+        /**
+         * @Override
+         */
+        public boolean isCancelled() {
+            return this.scheduledFuture.isCancelled();
+        }
+
+        /**
+         * @Override
+         */
+        public boolean isDone() {
+            return this.scheduledFuture.isDone();
+        }
+
+        /**
+         * @Override
+         */
+        public synchronized void run() {
+            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Request Timeout expired for " + this.nettyResponseFuture);
+                }
+                abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));
+                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+
+                this.nettyResponseFuture = null;
+                this.channel = null;
+            }
+        }
     }
 }
 
