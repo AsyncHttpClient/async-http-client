@@ -1003,10 +1003,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             // Windows only.
-            if (cause != null && cause.getMessage() != null
-                    && IOException.class.isAssignableFrom(cause.getClass())
-                    && !channel.isReadable()){
-                remotelyClosed(channel, future);
+            if (abortOnRemoteCloseException(cause)){
+                log.error(currentThread() + String.format("Trying to recover from dead Channel: %s ", channel));
+                remotelyClosed(channel, null);
                 return;
             }
 
@@ -1023,6 +1022,45 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             log.error(currentThread() + String.format("Exception Caught: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
             log.error(currentThread(), cause);
         }
+    }
+
+    /**
+     * On windows, there is scenario where the connection get broken and the only way we can find it is by inspecting
+     * the stack trace in order to catch the following exception:
+     *
+     *
+     * java.io.IOException: An established connection was aborted by the software in your host machine
+        at sun.nio.ch.SocketDispatcher.read0(Native Method)
+        at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:25)
+        at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:233)
+        at sun.nio.ch.IOUtil.read(IOUtil.java:200)
+        at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:207)
+        at org.jboss.netty.channel.socket.nio.NioWorker.read(NioWorker.java:322)
+        at org.jboss.netty.channel.socket.nio.NioWorker.processSelectedKeys(NioWorker.java:281)
+        at org.jboss.netty.channel.socket.nio.NioWorker.run(NioWorker.java:201)
+        at org.jboss.netty.util.internal.IoWorkerRunnable.run(IoWorkerRunnable.java:46)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:651)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:676)
+        at java.lang.Thread.run(Thread.java:595)
+     *
+     * We can't look at the exception's message because it is localized.
+     * @param cause  The {@Throwable}
+     * @return true if found.
+     */
+    private boolean abortOnRemoteCloseException(Throwable cause) {
+
+        for(StackTraceElement element: cause.getStackTrace()) {
+            if (element.getClassName().equals("sun.nio.ch.SocketDispatcher")
+                    && element.getMethodName().equals("read0")) {
+                return true;
+            }
+        }
+
+        if (cause.getCause() != null) {
+            return abortOnRemoteCloseException(cause.getCause());
+        }
+
+        return false;
     }
 
     private final static int computeAndSetContentLength(Request request, HttpRequest r) {

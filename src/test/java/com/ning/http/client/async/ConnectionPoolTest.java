@@ -31,10 +31,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
@@ -250,7 +252,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
         }
         assertNotNull(response);
-        assertEquals(response.getStatusCode(),200);
+        assertEquals(response.getStatusCode(), 200);
     }
 
     @Test(groups = {"online", "async"})
@@ -294,4 +296,34 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
         client.close();
     }
+
+    @Test(groups = "standalone")
+    public void win7DisconnectTest() throws Throwable {
+        final AtomicBoolean isThrown = new AtomicBoolean(false);
+
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncCompletionHandler<Response> handler = new
+                AsyncCompletionHandlerAdapter() {
+
+                    @Override
+                    public Response onCompleted(Response response) throws
+                            Exception {
+
+                        if (!isThrown.getAndSet(true)) {
+                            StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
+                            IOException t = new IOException();
+                            t.setStackTrace(new StackTraceElement[]{e});
+                            throw t;
+                        }
+                        return response;
+                    }
+                };
+
+        client.prepareGet(getTargetUrl()).execute(handler).get();
+        Response response = client.prepareGet(getTargetUrl()).execute(handler).get();
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
+        assertTrue(isThrown.get());
+    }
+
 }
