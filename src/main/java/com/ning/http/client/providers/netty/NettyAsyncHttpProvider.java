@@ -626,7 +626,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
             bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
-            log.error(t);
+            log.error(String.format(currentThread() + "doConnect"), t);
             abort(c.future(), t.getCause());
             return c.future();
         }
@@ -898,7 +898,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 try {
                     future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out"));
                 } catch (Throwable t) {
-                    log.error(t);
+                    log.error(String.format(currentThread() + "Channel Closed"), t);
                 }
             }
         }
@@ -914,7 +914,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 f.setState(NettyResponseFuture.STATE.RECONNECTED);
 
                 if (log.isDebugEnabled()) {
-                    log.error(String.format(currentThread() + "Trying to recover request %s", f.getNettyRequest()));
+                    log.debug(String.format(currentThread() + "Trying to recover request %s", f.getNettyRequest()));
                 }
 
                 try {
@@ -923,7 +923,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } catch (IOException iox) {
                     f.setState(NettyResponseFuture.STATE.CLOSED);
                     f.abort(iox);
-                    log.error(iox);
+                    log.error(String.format(currentThread() + "Remotely Closed"),iox);
                 }
             }
         }
@@ -994,10 +994,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Channel channel = e.getChannel();
         Throwable cause = e.getCause();
 
-        if (log.isDebugEnabled()) {
-            log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
-            log.error(currentThread(), cause);
-        }
+        log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+        log.error(currentThread(), cause);
 
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
