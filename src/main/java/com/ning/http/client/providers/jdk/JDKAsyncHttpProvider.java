@@ -273,20 +273,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     int[] lengthWrapper = new int[1];
                     byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
                     if (lengthWrapper[0] > 0) {
-                        // That sucks!!
-                        int valid = lengthWrapper[0];
-                        int i = 0;
-                        if (bytes[lengthWrapper[0] - 1] == 0) {
-                            for (byte b : bytes) {
-                                if (b == 0 && i > 0) {
-                                    valid = i;
-                                    break;
-                                }
-                                i++;
-                            }
-                        }
-                        byte[] body = new byte[valid];
-                        System.arraycopy(bytes, 0, body, 0, body.length);
+                        byte[] body = new byte[lengthWrapper[0]];
+                        System.arraycopy(bytes, 0, body, 0, lengthWrapper[0]);
 
                         asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, body, JDKAsyncHttpProvider.this));
                     }

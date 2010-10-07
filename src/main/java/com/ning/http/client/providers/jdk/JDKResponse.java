@@ -23,6 +23,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -97,32 +98,7 @@ public class JDKResponse implements Response {
 
     public InputStream getResponseBodyAsStream() throws IOException {
         checkBodyParts();
-        return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
-    }
-
-    private static class ByteArrayCollectionInputStream extends InputStream {
-
-        private final HttpResponseBodyPart[] parts;
-
-        private int pos;
-        private int bytePos;
-        private byte[] active;
-
-        public ByteArrayCollectionInputStream(HttpResponseBodyPart[] parts) {
-            this.parts = parts;
-        }
-
-        @Override
-        public int read() throws IOException {
-            int currentPos = bytePos < active.length ? pos : pos++;
-            if (bytePos >= active.length) {
-                bytePos = 0;
-            }
-
-            if (currentPos >= parts.length) return -1;
-
-            return parts[currentPos].getBodyPartBytes()[bytePos];
-        }
+        return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
     }
 
     private void checkBodyParts() {

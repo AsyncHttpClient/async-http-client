@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ResponseBodyPart extends HttpResponseBodyPart {
 
-    private final AtomicReference<byte[]> bytes = new AtomicReference(null);
     private final byte[] chunk;
 
     public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider<HttpURLConnection> provider) {
