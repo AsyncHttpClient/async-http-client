@@ -1004,7 +1004,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             // Windows only.
             if (abortOnRemoteCloseException(cause)){
-                log.error(currentThread() + String.format("Trying to recover from dead Channel: %s ", channel));
+                log.debug(currentThread() + String.format("Trying to recover from dead Channel: %s ", channel));
                 remotelyClosed(channel, null);
                 return;
             }
@@ -1025,9 +1025,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     /**
-     * On windows, there is scenario where the connection get broken and the only way we can find it is by inspecting
+     * On Windows, there is scenario where the connection get broken and the only way we can find it is by inspecting
      * the stack trace in order to catch the following exception:
-     *
      *
      * java.io.IOException: An established connection was aborted by the software in your host machine
         at sun.nio.ch.SocketDispatcher.read0(Native Method)
