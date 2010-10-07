@@ -109,9 +109,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final static String HTTP_HANDLER = "httpHandler";
     private final static String SSL_HANDLER = "sslHandler";
 
-    private final static String WIN7_DISCONNECTION = "An existing connection was forcibly closed by the remote host";
-    private final static String WINXP_DISCONNECTION = "An established connection was aborted by the software in your host machine";
-
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
     private final ClientBootstrap plainBootstrap;
@@ -1007,8 +1004,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             // Windows only.
             if (cause != null && cause.getMessage() != null
-                    && (cause.getMessage().equalsIgnoreCase(WINXP_DISCONNECTION)
-                    || cause.getMessage().equalsIgnoreCase(WIN7_DISCONNECTION))) {
+                    && (IOException.class.isAssignableFrom(cause.getClass()))
+                    && !channel.isReadable()){
                 remotelyClosed(channel, null);
                 return;
             }
