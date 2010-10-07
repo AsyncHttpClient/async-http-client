@@ -311,13 +311,13 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                     public Response onCompleted(Response response) throws
                             Exception {
 
+                        count.incrementAndGet();                        
                         if (!isThrown.getAndSet(true)) {
                             StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
                             IOException t = new IOException();
                             t.setStackTrace(new StackTraceElement[]{e});
                             throw t;
                         }
-                        count.incrementAndGet();
                         return response;
                     }
                 };
