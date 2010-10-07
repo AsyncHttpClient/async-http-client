@@ -993,7 +993,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Throwable cause = e.getCause();
 
         if (log.isDebugEnabled()) {
-            log.debug("Fatal I/O exception: ", cause);
+            log.error(String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+            log.error(cause);
         }
 
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
