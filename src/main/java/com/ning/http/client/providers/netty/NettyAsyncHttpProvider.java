@@ -1009,7 +1009,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             // Windows only.
             if (cause != null && cause.getMessage() != null
-                    && (IOException.class.isAssignableFrom(cause.getClass()))){
+                    && IOException.class.isAssignableFrom(cause.getClass())
+                    && !channel.isReadable()){
                 remotelyClosed(channel, future);
                 return;
             }
