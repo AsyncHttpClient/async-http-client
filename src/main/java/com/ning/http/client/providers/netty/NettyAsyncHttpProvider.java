@@ -912,6 +912,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 NettyResponseFuture<?> f = (NettyResponseFuture<?>)
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
                 f.setState(NettyResponseFuture.STATE.RECONNECTED);
+
+                if (log.isDebugEnabled()) {
+                    log.error(String.format(currentThread() + "Trying to recover request %s", f.getNettyRequest()));
+                }
+
                 try {
                     f.provider().execute(f.getRequest(), f);
                     return true;
@@ -1004,9 +1009,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             // Windows only.
             if (cause != null && cause.getMessage() != null
-                    && (IOException.class.isAssignableFrom(cause.getClass()))
-                    && !channel.isReadable()){
-                remotelyClosed(channel, null);
+                    && (IOException.class.isAssignableFrom(cause.getClass()))){
+                remotelyClosed(channel, future);
                 return;
             }
 
