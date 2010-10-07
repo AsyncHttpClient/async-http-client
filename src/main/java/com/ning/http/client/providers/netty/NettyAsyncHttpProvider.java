@@ -994,9 +994,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Channel channel = e.getChannel();
         Throwable cause = e.getCause();
 
-        log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
-        log.error(currentThread(), cause);
-
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
@@ -1021,6 +1018,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
         }
+
+        log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+        log.error(currentThread(), cause);
+
     }
 
     private final static int computeAndSetContentLength(Request request, HttpRequest r) {
