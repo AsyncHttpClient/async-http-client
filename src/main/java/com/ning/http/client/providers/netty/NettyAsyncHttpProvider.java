@@ -223,7 +223,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (channel != null) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("[" + Thread.currentThread().getName() + "] Using cached Channel %s", uri, channel));
+                log.debug(String.format(currentThread() + "Using cached Channel %s", uri, channel));
             }
             /**
              * The Channel will eventually be closed by Netty and will becomes invalid.
@@ -243,7 +243,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
                 if (log.isDebugEnabled()) {
-                    log.warn(ex);
+                    log.warn(currentThread(), ex);
                 }
             }
         }
@@ -284,7 +284,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     // ignored
                 }
             }
-            throw new ConnectException(String.format("[" + Thread.currentThread().getName() + "] Connection refused to %s", url));
+            throw new ConnectException(String.format(currentThread() + "Connection refused to %s", url));
         }
 
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
@@ -411,7 +411,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                     break;
                 default:
-                    throw new IllegalStateException(String.format("[" + Thread.currentThread().getName() + "] Invalid Authentication %s", realm.toString()));
+                    throw new IllegalStateException(String.format(currentThread() + "Invalid Authentication %s", realm.toString()));
             }
         }
 
@@ -514,7 +514,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } else if (request.getFile() != null) {
                 File file = request.getFile();
                 if (file.isHidden() || !file.exists() || !file.isFile()) {
-                    throw new IOException(String.format("[" + Thread.currentThread().getName() + "] File %s is not a file, is hidden or doesn't exist", file.getAbsolutePath()));
+                    throw new IOException(String.format(currentThread() + "File %s is not a file, is hidden or doesn't exist", file.getAbsolutePath()));
                 }
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, new RandomAccessFile(file, "r").length());
             }
@@ -563,7 +563,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          */
         if (request.getRealm() != null && request.getRealm().getScheme() == Realm.AuthScheme.NTLM) {
             if (log.isDebugEnabled()) {
-                log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
+                log.debug(currentThread() + "NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
             }
             return ntlmProvider.execute(request, asyncHandler);
         }
@@ -648,6 +648,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     @Override
     protected void channelIdle(ChannelHandlerContext ctx, IdleState state, long lastActivityTimeMillis) throws Exception {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(currentThread() + "Channel Idle: %s", ctx.getChannel()));
+        }
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
         connectionsPool.removeAllConnections(ctx.getChannel());
@@ -688,6 +691,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         try {
             if (e.getMessage() instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e.getMessage();
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format(currentThread()
+                            + "\n\nRequest %s\n\nResponse %s\n", nettyRequest.toString(), response.toString()));
+                }
+
                 // Required if there is some trailing headers.
                 future.setHttpResponse(response);
                 int statusCode = response.getStatus().getCode();
@@ -711,7 +720,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             .build();
 
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("[" + Thread.currentThread().getName() + "] Sending authentication to %s", request.getUrl()));
+                        log.debug(String.format(currentThread() + "Sending authentication to %s", request.getUrl()));
                     }
 
                     //Cache our current connection so we don't have to re-open it.
@@ -729,7 +738,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         && !future.getAndSetAuth(true)) {
 
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("[" + Thread.currentThread().getName() + "] Sending proxy authentication to %s", request.getUrl()));
+                        log.debug(String.format(currentThread() + "Sending proxy authentication to %s", request.getUrl()));
                     }
 
                     //Cache our current connection so we don't have to re-open it.
@@ -742,7 +751,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         && statusCode == 200) {
 
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("[" + Thread.currentThread().getName() + "] Connected to %s", request.getUrl()));
+                        log.debug(String.format(currentThread() + "Connected to %s", request.getUrl()));
                     }
 
                     //Cache our current connection so we don't have to re-open it.
@@ -781,25 +790,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             String newUrl = uri.toString();
 
                             if (log.isDebugEnabled()) {
-                                log.debug(String.format("[" + Thread.currentThread().getName() + "] Redirecting to %s", newUrl));
+                                log.debug(String.format(currentThread() + "Redirecting to %s", newUrl));
                             }
                             execute(builder.setUrl(newUrl).build(), future);
                             return;
                         }
                     } else {
                         throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
-                    }
-                }
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("[" + Thread.currentThread().getName() + "] Status: %s", response.getStatus()));
-                    log.debug(String.format("[" + Thread.currentThread().getName() + "] Version: %s", response.getProtocolVersion()));
-                    log.debug("\"");
-                    if (!response.getHeaderNames().isEmpty()) {
-                        for (String name : response.getHeaderNames()) {
-                            log.debug(String.format("[" + Thread.currentThread().getName() + "] Header: %s = %s", name, response.getHeaders(name)));
-                        }
-                        log.debug("\"");
                     }
                 }
 
@@ -878,7 +875,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("[" + Thread.currentThread().getName() + "] Channel state: %s", e.getState()));
+            log.debug(String.format(currentThread() + "Channel Closed: %s", e.getChannel()));
         }
 
         connectionsPool.removeAllConnections(ctx.getChannel());
@@ -993,8 +990,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Throwable cause = e.getCause();
 
         if (log.isDebugEnabled()) {
-            log.error(String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
-            log.error(cause);
+            log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+            log.error(currentThread(), cause);
         }
 
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
@@ -1008,10 +1005,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             // Windows only.
             if (cause != null && cause.getMessage() != null
                     && cause.getMessage().equals("An established connection was aborted by the software in your host machine")) {
-                if (log.isDebugEnabled()) {
-                    log.debug(cause);
-                }
-
                 remotelyClosed(channel, null);
                 return;
             }
@@ -1020,7 +1013,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 try {
                     abort(future, cause);
                 } catch (Throwable t) {
-                    log.error(t);
+                    log.error(currentThread(), t);
                 }
             }
         }
@@ -1055,7 +1048,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             Throwable cause = cf.getCause();
             if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
                 if (log.isDebugEnabled()) {
-                    log.debug(cf.getCause());
+                    log.debug(currentThread(), cf.getCause());
                 }
 
                 remotelyClosed(cf.getChannel(), null);
@@ -1078,6 +1071,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
     }
 
+    final static String currentThread() {
+       return new StringBuffer("[").append(Thread.currentThread().getName()).append("] ").toString();        
+    }
+    
     /**
      * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run
      * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
@@ -1145,7 +1142,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         public synchronized void run() {
             if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Request Timeout expired for " + this.nettyResponseFuture);
+                    log.debug(currentThread() + "Request Timeout expired for " + this.nettyResponseFuture);
                 }
                 abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));
                 markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));

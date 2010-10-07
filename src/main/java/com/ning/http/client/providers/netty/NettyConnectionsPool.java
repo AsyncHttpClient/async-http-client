@@ -48,7 +48,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean addConnection(String uri, Channel connection) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("[Cache] Adding uri: %s for channel %s", uri, connection));
+            log.debug(String.format(NettyAsyncHttpProvider.currentThread() + "Adding uri: %s for channel %s", uri, connection));
         }
 
         AtomicInteger connectionPerHost = connectionsPerHost.get(uri);
@@ -101,7 +101,8 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             Map.Entry<String,Channel> e = i.next();
             if (e.getValue().equals(connection)) {
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("[Cache] Removing uri: %s for channel %s", e.getKey(), e.getValue()));
+                    log.debug(String.format(NettyAsyncHttpProvider.currentThread()
+                            + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
                 }
                 i.remove();
                 isRemoved = true;
