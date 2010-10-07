@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -300,6 +301,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = "standalone")
     public void win7DisconnectTest() throws Throwable {
         final AtomicBoolean isThrown = new AtomicBoolean(false);
+        final AtomicInteger count = new AtomicInteger(0);
 
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         AsyncCompletionHandler<Response> handler = new
@@ -315,15 +317,16 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                             t.setStackTrace(new StackTraceElement[]{e});
                             throw t;
                         }
+                        count.incrementAndGet();
                         return response;
                     }
                 };
 
-        client.prepareGet(getTargetUrl()).execute(handler).get();
         Response response = client.prepareGet(getTargetUrl()).execute(handler).get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertTrue(isThrown.get());
+        assertEquals(count.get(), 2);
     }
 
 }
