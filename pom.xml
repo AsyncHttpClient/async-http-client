@@ -171,6 +171,7 @@
                 <version>2.0.1</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <manifestLocation>META-INF</manifestLocation>
                     <instructions>
                         <Import-Package>
                             !com.ning.http.*,
