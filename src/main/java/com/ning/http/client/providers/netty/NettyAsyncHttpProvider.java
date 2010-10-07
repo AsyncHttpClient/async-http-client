@@ -1019,9 +1019,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        log.error(currentThread() + String.format("Fatal I/O exception: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
-        log.error(currentThread(), cause);
-
+        if (log.isDebugEnabled()) {
+            log.error(currentThread() + String.format("Exception Caught: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+            log.error(currentThread(), cause);
+        }
     }
 
     private final static int computeAndSetContentLength(Request request, HttpRequest r) {
