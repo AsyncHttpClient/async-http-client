@@ -546,13 +546,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     }
 
                     if (hasAuthentication) {
-                        String password = "";
-                        if (proxyServer != null) {
-                            if (proxyServer.getPassword() != null) {
-                                password = proxyServer.getPassword();
-                            }
-                            return new PasswordAuthentication(proxyServer.getPrincipal(), password.toCharArray());
-                        }
                         return new PasswordAuthentication(realm.getPrincipal(), realm.getPassword().toCharArray());
                     }
 
