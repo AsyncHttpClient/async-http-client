@@ -1,0 +1,52 @@
+#+TITLE: Change Log
+* Release 1.2.0
+  This release breaks backward compatibility.
+** Bug fixes
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/6][Wrong import statement cause OSGi to fail]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/10][Parameter encoding issue]]
+    Test case by [[http://github.com/martint][Martin Traverso]].
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/11][Connection Pool: Make sure the channel is still open]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed/#issue/16][NettyAsyncProvider optimization: avoid invoking onStatusReceived and onHeadersReceived multiple time per transaction]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed/#issue/17][Do not set a default Content-Type]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/24][fix redirect loop issue]]
+    [[http://github.com/AsyncHttpClient/async-http-client/pull/24][Patch]] provided by [[http://github.com/jloomis][Jenny Loomis]].
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/22][NettyAsyncHttpProvider.construct incorrectly appends default port to host header]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/21][NettyAsyncHttpProvider.construct allows empty Request-URIs in Request-Line]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/20][The current reaper may close connection event if they are active]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/28][Escape from redirect loops & allow more urls]]
+    [[http://github.com/AsyncHttpClient/async-http-client/pull/28][Patch]] provided by [[http://github.com/jloomis][Jenny Loomis]].
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/34][Http to Https redirect broken]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/25][Mixing secure and not secure connections on a single client causes issues]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/19][Support custom HTTP methods]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/40][Configurable Connection Pool]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/23][NettyAsyncHttpProvider.construct should default to using Accept: */* header]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/42][AsyncHttpClientConfig.Builder leaks executors]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/43][onCompleted may get called twice]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/44][Race condition when the remote server close the connection and ConnectionsPool is used]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/47][Issue HTTPS tunneling when ProxyServer being set on the AsyncHttpConfig]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/31][Infinite redirects on some server because ":80" is appended to host name]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/51][Use full url (including host : port ) for request thru proxy]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/49][Channel must be closed when idle timeout fires]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/30][Per request follow redirects]]
+    [[http://github.com/AsyncHttpClient/async-http-client/pull/30][Patch]] provided by [[http://github.com/erwan][Erwan Loisant]].
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/33][MaximumConnectionsTotal doesn't work]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/29][Fix Idle timeout]]
+    [[http://github.com/AsyncHttpClient/async-http-client/commit/15f946584156555c32964bb9cbb30cdf32669e4c][Patch]] provided by [[http://github.com/felixtrepanier][felixtrepanier]].
+** New features
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/5][Add security support to ProxyServer]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/7][Add support for zero-copy file upload]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/8][Progress callbacks]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/12][Add CONNECT support]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/13][Add request timeout per request]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/issue/14][Add support for zero-copy bytes to ResponseBodyPart]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed/#issue/15][Make Response getter more robust, add helper]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/32][Add support for preemptive authentication configuration]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/35][Expose ByteBuffer in HttpResponseBodyPart to reduce byte copy]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/36][Add support for AsyncProviderConfig object that can be used to configure proprietary properties]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/37][SSL failure leaks channel]]
+    [[http://github.com/AsyncHttpClient/async-http-client/pull/38][Test case]] and a [[http://github.com/AsyncHttpClient/async-http-client/pull/39][fix]] provided by [[http://github.com/mpilquist][Michael Pilquist]].
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/50][Repackage the providers/* to providers/netty]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/41][Compile with 1.6+ and run with 1.5+]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/53][Add NTLM authentication support]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/45][Add WebDav support]]
+*** [[http://github.com/AsyncHttpClient/async-http-client/issues/closed#issue/54][Add support for a JDK Provider]]
