@@ -579,7 +579,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (channel != null && channel.isOpen()) {
             if (channel.isConnected()) {
-                HttpRequest nettyRequest = buildRequest(config, request, uri, false, f != null ? f.getNettyRequest().getContent() : null);
+
+                ChannelBuffer b = null;
+                if (f != null && f.getRequest().getStreamData() != null) {
+                    b = f.getNettyRequest().getContent();
+                }
+
+                HttpRequest nettyRequest = buildRequest(config, request, uri, false, b);
 
                 if (f == null) {
                     f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
