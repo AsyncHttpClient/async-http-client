@@ -76,7 +76,8 @@ final class ConnectListener<T> implements ChannelFutureListener {
             this.provider = provider;
         }
 
-        public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, NettyAsyncHttpProvider provider) {
+        public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler,
+                       NettyResponseFuture<T> future, NettyAsyncHttpProvider provider) {
             this.config = config;
             this.request = request;
             this.asyncHandler = asyncHandler;
@@ -86,7 +87,7 @@ final class ConnectListener<T> implements ChannelFutureListener {
 
         public ConnectListener<T> build() throws IOException {
             URI uri = AsyncHttpProviderUtils.createUri(request.getRawUrl().replace(" ", "%20"));
-            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true);
+            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, null);
             if (future == null) {
                 future = new NettyResponseFuture<T>(uri, request, asyncHandler,
                         nettyRequest, NettyAsyncHttpProvider.requestTimeout(config, request.getPerRequestConfig()), provider);

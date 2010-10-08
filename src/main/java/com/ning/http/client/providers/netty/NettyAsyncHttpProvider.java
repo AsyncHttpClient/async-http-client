@@ -334,20 +334,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
     }
 
-    protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect) throws IOException {
+    protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri,
+                                                    boolean allowConnect, ChannelBuffer buffer) throws IOException {
 
         String method = request.getReqType();
         if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && "https".equalsIgnoreCase(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
-        return construct(config, request, new HttpMethod(method), uri);
+        return construct(config, request, new HttpMethod(method), uri, buffer);
     }
 
     @SuppressWarnings("deprecation")
     private static HttpRequest construct(AsyncHttpClientConfig config,
                                          Request request,
                                          HttpMethod m,
-                                         URI uri) throws IOException {
+                                         URI uri,
+                                         ChannelBuffer buffer) throws IOException {
         String host = uri.getHost();
 
         if (request.getVirtualHost() != null) {
@@ -453,7 +455,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         String reqType = request.getReqType();
         if ("POST".equals(reqType) || "PUT".equals(reqType)) {
             nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
-            if (request.getByteData() != null) {
+            // We already have processed the body.
+            if (buffer != null) {
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
+                nettyRequest.setContent(buffer);
+            } else if (request.getByteData() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                 nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
             } else if (request.getStringData() != null) {
@@ -573,7 +579,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (channel != null && channel.isOpen()) {
             if (channel.isConnected()) {
-                HttpRequest nettyRequest = buildRequest(config, request, uri, false);
+                HttpRequest nettyRequest = buildRequest(config, request, uri, false, f != null ? f.getNettyRequest().getContent() : null);
 
                 if (f == null) {
                     f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,

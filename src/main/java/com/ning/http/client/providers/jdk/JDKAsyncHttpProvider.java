@@ -204,6 +204,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         // We kept a reference to the original one for debugging purpose
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
+        private byte[] cachedBytes;
+        private int cachedBytesLenght;
 
         public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, JDKFuture future) {
             this.urlConnection = urlConnection;
@@ -448,8 +450,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 urlConnection.setRequestProperty("Content-Length", "0");
                 urlConnection.setDoOutput(true);
                 //urlConnection.setChunkedStreamingMode(0);
-               
-                if (request.getByteData() != null) {
+
+                if (cachedBytes != null) {
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(cachedBytesLenght));
+                    urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
+                    urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
+                } else if (request.getByteData() != null) {
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(request.getByteData().length));
                     urlConnection.setFixedLengthStreamingMode(request.getByteData().length);
 
@@ -459,12 +465,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     urlConnection.getOutputStream().write(request.getStringData().getBytes("UTF-8"));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
-                    byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
-                    int length = lengthWrapper[0];
-                    urlConnection.setRequestProperty("Content-Length", String.valueOf(length));
-                    urlConnection.setFixedLengthStreamingMode(length);
+                    cachedBytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
+                    cachedBytesLenght = lengthWrapper[0];
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(cachedBytesLenght));
+                    urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
 
-                    urlConnection.getOutputStream().write(bytes, 0, length);
+                    urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
                 } else if (request.getParams() != null) {
                     StringBuilder sb = new StringBuilder();
                     for (final Map.Entry<String, List<String>> paramEntry : request.getParams()) {

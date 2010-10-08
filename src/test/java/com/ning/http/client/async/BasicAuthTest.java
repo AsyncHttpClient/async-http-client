@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -107,6 +108,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
 
             response.addHeader("X-Auth", request.getHeader("Authorization"));
+            response.addHeader("X-Content-Lenght", String.valueOf(request.getContentLength()));
             response.setStatus(200);
             response.getOutputStream().flush();
             response.getOutputStream().close();
@@ -149,6 +151,22 @@ public class BasicAuthTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), 401);
+    }
+
+    
+    @Test(groups = "standalone")
+    public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = new AsyncHttpClient();
+        ByteArrayInputStream is = new ByteArrayInputStream("test".getBytes());
+        AsyncHttpClient.BoundRequestBuilder r = client.preparePost("http://127.0.0.1:" + port1 + "/")
+                .setBody(is).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("X-Content-Lenght"), "4");
     }
 
     @Override
