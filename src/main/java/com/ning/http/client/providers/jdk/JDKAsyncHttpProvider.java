@@ -42,6 +42,8 @@ import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import sun.text.normalizer.ICUBinary;
 
 import javax.naming.AuthenticationException;
 import javax.net.ssl.HostnameVerifier;
@@ -205,6 +207,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         // We kept a reference to the original one for debugging purpose
         private HttpURLConnection currentUrlConnection;
         private int currentRedirectCount;
+        private AtomicBoolean isAuth = new AtomicBoolean(false);
 
         public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, JDKFuture future) {
             this.urlConnection = urlConnection;
@@ -255,6 +258,22 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     } else {
                         throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
                     }
+                }
+
+                if (statusCode == 401 && !isAuth.getAndSet(true)) {
+                    String wwwAuth = currentUrlConnection.getHeaderField("WWW-Authenticate");
+
+                    Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
+                            .parseWWWAuthenticateHeader(wwwAuth)
+                            .setUri(URI.create(request.getUrl()).getPath())
+                            .setMethodName(request.getReqType())
+                            .setScheme(request.getRealm().getAuthScheme())
+                            .setUsePreemptiveAuth(true)
+                            .build();
+                    RequestBuilder builder = new RequestBuilder(request);
+                    currentRequest = builder.setRealm(realm).build();
+                    currentUrlConnection = createUrlConnection(currentRequest);
+                    return call();
                 }
 
                 state = asyncHandler.onStatusReceived(new ResponseStatus(uri, currentUrlConnection, JDKAsyncHttpProvider.this));
@@ -522,7 +541,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         final boolean hasProxy = (proxyServer != null && proxyServer.getPrincipal() != null);
         final boolean hasAuthentication = (realm != null && realm.getPrincipal() != null);
         if (hasProxy || hasAuthentication) {
-
 
             Field f = null;
             try {
