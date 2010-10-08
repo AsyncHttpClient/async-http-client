@@ -42,8 +42,6 @@ import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import sun.text.normalizer.ICUBinary;
 
 import javax.naming.AuthenticationException;
 import javax.net.ssl.HostnameVerifier;
@@ -199,13 +197,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
     private final class AsyncHttpUrlConnection<T> implements Callable<T> {
 
-        private final HttpURLConnection urlConnection;
-        private final Request request;
+        private HttpURLConnection urlConnection;
+        private Request request;
         private final AsyncHandler<T> asyncHandler;
         private final JDKFuture future;
-        private Request currentRequest;
         // We kept a reference to the original one for debugging purpose
-        private HttpURLConnection currentUrlConnection;
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
 
@@ -214,8 +210,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             this.request = request;
             this.asyncHandler = asyncHandler;
             this.future = future;
-            this.currentRequest = request;
-            this.currentUrlConnection = urlConnection;
+            this.request = request;
         }
 
         public T call() throws Exception {
@@ -224,20 +219,26 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 URI uri = null;
                 // Encoding with URLConnection is a bit bogus so we need to try both way before setting it
                 try {
-                    uri = AsyncHttpProviderUtils.createUri(currentRequest.getRawUrl());
+                    uri = AsyncHttpProviderUtils.createUri(request.getRawUrl());
                 } catch (IllegalArgumentException u) {
-                    uri = AsyncHttpProviderUtils.createUri(currentRequest.getUrl());
+                    uri = AsyncHttpProviderUtils.createUri(request.getUrl());
                 }
 
-                configure(uri, currentUrlConnection, currentRequest);
-                currentUrlConnection.connect();
+                configure(uri, urlConnection, request);
+                urlConnection.connect();
 
-                int statusCode = currentUrlConnection.getResponseCode();
+                int statusCode = urlConnection.getResponseCode();
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format(AsyncHttpProviderUtils.currentThread()
+                            + "\n\nRequest %s\n\nResponse %s\n", request, statusCode));
+                }
+
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
-                        String location = currentUrlConnection.getHeaderField("Location");
+                        String location = urlConnection.getHeaderField("Location");
                         if (location.startsWith("/")) {
                             location = AsyncHttpProviderUtils.getBaseUrl(uri) + location;
                         }
@@ -245,14 +246,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         if (!location.equals(uri.toString())) {
                             URI newUri = AsyncHttpProviderUtils.createUri(location);
 
-                            RequestBuilder builder = new RequestBuilder(currentRequest);
+                            RequestBuilder builder = new RequestBuilder(request);
                             String newUrl = newUri.toString();
 
                             if (logger.isDebugEnabled()) {
-                                logger.debug(String.format("[" + Thread.currentThread().getName() + "] Redirecting to %s", newUrl));
+                                logger.debug(String.format(AsyncHttpProviderUtils.currentThread() + "Redirecting to %s", newUrl));
                             }
-                            currentRequest = builder.setUrl(newUrl).build();
-                            currentUrlConnection = createUrlConnection(currentRequest);
+                            request = builder.setUrl(newUrl).build();
+                            urlConnection = createUrlConnection(request);
                             return call();
                         }
                     } else {
@@ -261,8 +262,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
 
                 if (statusCode == 401 && !isAuth.getAndSet(true)) {
-                    String wwwAuth = currentUrlConnection.getHeaderField("WWW-Authenticate");
+                    String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format(AsyncHttpProviderUtils.currentThread() 
+                                + "Sending authentication to %s", request.getUrl()));
+                    }
+                    
                     Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
@@ -271,19 +277,19 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             .setUsePreemptiveAuth(true)
                             .build();
                     RequestBuilder builder = new RequestBuilder(request);
-                    currentRequest = builder.setRealm(realm).build();
-                    currentUrlConnection = createUrlConnection(currentRequest);
+                    request = builder.setRealm(realm).build();
+                    urlConnection = createUrlConnection(request);
                     return call();
                 }
 
-                state = asyncHandler.onStatusReceived(new ResponseStatus(uri, currentUrlConnection, JDKAsyncHttpProvider.this));
+                state = asyncHandler.onStatusReceived(new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this));
                 if (state == AsyncHandler.STATE.CONTINUE) {
-                    state = asyncHandler.onHeadersReceived(new ResponseHeaders(uri, currentUrlConnection, JDKAsyncHttpProvider.this));
+                    state = asyncHandler.onHeadersReceived(new ResponseHeaders(uri, urlConnection, JDKAsyncHttpProvider.this));
                 }
 
                 if (state == AsyncHandler.STATE.CONTINUE) {
-                    InputStream is = getInputStream(currentUrlConnection);
-                    String contentEncoding = currentUrlConnection.getHeaderField("Content-Encoding");
+                    InputStream is = getInputStream(urlConnection);
+                    String contentEncoding = urlConnection.getHeaderField("Content-Encoding");
                     boolean isGZipped = contentEncoding == null ? false : "gzip".equalsIgnoreCase(contentEncoding);
                     if (isGZipped) {
                         is = new GZIPInputStream(is);
@@ -319,7 +325,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 if (config.getMaxTotalConnections() != -1) {
                     maxConnections.decrementAndGet();
                 }
-                currentUrlConnection.disconnect();
+                urlConnection.disconnect();
                 if (jdkNtlmDomain != null) {
                     System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
                 }
@@ -412,7 +418,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         }
                         break;
                     default:
-                        throw new IllegalStateException(String.format("[" + Thread.currentThread().getName() + "] Invalid Authentication %s", realm.toString()));
+                        throw new IllegalStateException(String.format(AsyncHttpProviderUtils.currentThread()
+                                + "Invalid Authentication %s", realm.toString()));
                 }
             }
 

@@ -190,12 +190,16 @@ public class AsyncHttpProviderUtils {
             } else if (part == null) {
                 throw new NullPointerException("Part cannot be null");
             } else {
-                throw new IllegalArgumentException(String.format("[" + Thread.currentThread().getName() + "] Unsupported part type for multipart parameter %s",
+                throw new IllegalArgumentException(String.format(currentThread() + "Unsupported part type for multipart parameter %s",
                         part.getName()));
             }
             ++i;
         }
         return new MultipartRequestEntity(parts, methodParams);
+    }
+
+    public final static String currentThread() {
+       return new StringBuffer("[").append(Thread.currentThread().getName()).append("] ").toString();
     }
 
     public final static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {

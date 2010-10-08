@@ -587,7 +587,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     executeRequest(channel, config, f, nettyRequest);
                     return f;
                 } catch (ConnectException ex) {
-                    // The connection failed because the channel got remotly closed
+                    // The connection failed because the channel got remotely closed
                     // Let continue the normal processing.
                     connectionsPool.removeAllConnections(channel);
                 }
@@ -1115,7 +1115,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     final static String currentThread() {
-       return new StringBuffer("[").append(Thread.currentThread().getName()).append("] ").toString();        
+       return AsyncHttpProviderUtils.currentThread();
     }
     
     /**
