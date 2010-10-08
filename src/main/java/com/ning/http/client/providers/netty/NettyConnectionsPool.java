@@ -58,8 +58,10 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
 
         if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.get() < config.getMaxConnectionPerHost()) {
-            connectionsPool.put(uri, connection);
-            connectionPerHost.incrementAndGet();
+            boolean added = connectionsPool.put(uri, connection) == null ? true : false;
+            if (added) {
+                connectionPerHost.incrementAndGet();
+            }
         } else {
             log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             return false;
@@ -106,6 +108,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 }
                 i.remove();
                 isRemoved = true;
+                connectionsPerHost.remove(e.getKey());
             }
         }
         return isRemoved;
