@@ -108,7 +108,6 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 }
                 i.remove();
                 isRemoved = true;
-                connectionsPerHost.remove(e.getKey());
             }
         }
         return isRemoved;
