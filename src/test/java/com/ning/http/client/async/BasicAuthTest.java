@@ -40,7 +40,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -153,7 +155,6 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), 401);
     }
 
-    
     @Test(groups = "standalone")
     public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
@@ -169,6 +170,25 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertEquals(resp.getHeader("X-Content-Lenght"), "4");
     }
 
+    @Test(groups = "standalone")
+    public void basicAuthFileTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        AsyncHttpClient.BoundRequestBuilder r = client.preparePost("http://127.0.0.1:" + port1 + "/")
+                .setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+    }
+    
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
