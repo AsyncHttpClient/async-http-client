@@ -945,14 +945,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean releaseFuture) throws MalformedURLException {
         if (releaseFuture) {
             // We need to make sure everything is OK before adding the connection back to the pool.
-            future.done(new Callable<Boolean>() {
-                public Boolean call() throws Exception {
-                    if (future.getKeepAlive()) {
-                        return connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+            try {
+                future.done(new Callable<Boolean>() {
+                    public Boolean call() throws Exception {
+                        if (future.getKeepAlive()) {
+                            return connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                        }
+                        return false;
                     }
-                    return false;
+                });
+            } catch (Throwable t) {
+                // Never propagate exception once we know we are done.
+                if (log.isDebugEnabled()) {
+                    log.debug(currentThread(),t);
                 }
-            });
+            }
 
             if (!future.getKeepAlive()) {
                 closeChannel(ctx);
