@@ -36,7 +36,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         System.setProperty("org.atmosphere.useNative", "true");
 
-        int port = 8080;
+        int port = findFreePort();
         embedded = new Embedded();
         String path = new File(".").getAbsolutePath();
         embedded.setCatalinaHome(path);
