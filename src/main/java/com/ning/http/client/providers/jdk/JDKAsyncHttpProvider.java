@@ -435,7 +435,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 urlConnection.setRequestProperty("Accept", "*/*");
             }
 
-            if (config.getUserAgent() != null) {
+            if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
                 urlConnection.setRequestProperty("User-Agent", config.getUserAgent() + " (JDKAsyncHttpProvider)");
             }
 

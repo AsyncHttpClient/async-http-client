@@ -432,7 +432,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
         }
 
-        if (config.getUserAgent() != null) {
+        if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
         }
 
