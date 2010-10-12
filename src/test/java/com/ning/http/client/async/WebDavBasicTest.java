@@ -145,6 +145,13 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
         WebDavResponse webDavResponse =  c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
+            /**
+             * {@inheritDoc}
+             */
+            /* @Override */
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+            }
 
             @Override
             public WebDavResponse onCompleted(WebDavResponse response) throws Exception {
