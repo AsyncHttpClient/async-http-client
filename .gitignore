@@ -4,6 +4,7 @@
 .*.swo
 .loadpath
 .buildpath
+.classpath
 .project
 .settings
 .idea
