@@ -21,22 +21,25 @@ package com.ning.http.client.oauth;
  * simple container with two parts, public id part ("key") and
  * confidential ("secret") part.
  */
-public class RequestToken
-{
+public class RequestToken {
     private final String key;
     private final String secret;
 
-    public RequestToken(String key, String token)
-    {
+    public RequestToken(String key, String token) {
         this.key = key;
         this.secret = token;
     }
 
-    public String getKey() { return key; }
-    public String getSecret() { return secret; }
+    public String getKey() {
+        return key;
+    }
 
-    @Override public String toString()
-    {
+    public String getSecret() {
+        return secret;
+    }
+
+    @Override
+    public String toString() {
         StringBuilder sb = new StringBuilder("{ key=");
         appendValue(sb, key);
         sb.append(", secret=");
@@ -44,9 +47,8 @@ public class RequestToken
         sb.append("}");
         return sb.toString();
     }
-    
-    private void appendValue(StringBuilder sb, String value)
-    {
+
+    private void appendValue(StringBuilder sb, String value) {
         if (value == null) {
             sb.append("null");
         } else {
@@ -56,12 +58,13 @@ public class RequestToken
         }
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return key.hashCode() + secret.hashCode();
     }
-    
-    @Override public boolean equals(Object o)
-    {
+
+    @Override
+    public boolean equals(Object o) {
         if (o == this) return true;
         if (o == null || o.getClass() != getClass()) return false;
         RequestToken other = (RequestToken) o;

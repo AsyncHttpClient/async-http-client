@@ -19,22 +19,25 @@ package com.ning.http.client.oauth;
 /**
  * Value class for OAuth consumer keys.
  */
-public class ConsumerKey
-{
+public class ConsumerKey {
     private final String key;
     private final String secret;
 
-    public ConsumerKey(String key, String secret)
-    {
+    public ConsumerKey(String key, String secret) {
         this.key = key;
         this.secret = secret;
     }
 
-    public String getKey() { return key; }
-    public String getSecret() { return secret; }
+    public String getKey() {
+        return key;
+    }
 
-    @Override public String toString()
-    {
+    public String getSecret() {
+        return secret;
+    }
+
+    @Override
+    public String toString() {
         StringBuilder sb = new StringBuilder("{Consumer key, key=");
         appendValue(sb, key);
         sb.append(", secret=");
@@ -42,9 +45,8 @@ public class ConsumerKey
         sb.append("}");
         return sb.toString();
     }
-    
-    private void appendValue(StringBuilder sb, String value)
-    {
+
+    private void appendValue(StringBuilder sb, String value) {
         if (value == null) {
             sb.append("null");
         } else {
@@ -54,12 +56,13 @@ public class ConsumerKey
         }
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return key.hashCode() + secret.hashCode();
     }
-    
-    @Override public boolean equals(Object o)
-    {
+
+    @Override
+    public boolean equals(Object o) {
         if (o == this) return true;
         if (o == null || o.getClass() != getClass()) return false;
         ConsumerKey other = (ConsumerKey) o;
