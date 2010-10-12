@@ -55,7 +55,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      * {@inheritDoc}
      */
     /* @Override */
-    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+    public final STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         bodies.add(content);
         return STATE.CONTINUE;
     }
@@ -83,14 +83,16 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      */
     /* @Override */
     public final T onCompleted() throws Exception {
-
-        Response response = status.provider().prepareResponse(status, headers, bodies);
-        Document document = null;
-        if (status.getStatusCode() == 207) {
-            document = readXMLResponse(response.getResponseBodyAsStream());
+        if (status != null) {
+            Response response = status.provider().prepareResponse(status, headers, bodies);
+            Document document = null;
+            if (status.getStatusCode() == 207) {
+                document = readXMLResponse(response.getResponseBodyAsStream());
+            }
+            return onCompleted(new WebDavResponse(status.provider().prepareResponse(status, headers, bodies), document));
+        } else {
+            throw new IllegalStateException("Status is null");
         }
-        return onCompleted(status == null ? null :
-                new WebDavResponse(status.provider().prepareResponse(status, headers, bodies), document));
     }
 
     /**
