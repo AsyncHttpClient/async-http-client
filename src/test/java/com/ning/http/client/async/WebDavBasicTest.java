@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutionException;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
+
 
 public class WebDavBasicTest extends AbstractBasicTest {
 
@@ -121,7 +123,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         Request putRequest = new RequestBuilder("PUT").setUrl("http://127.0.0.1:8080/folder1/Test.txt").setBody("this is a test").build();
         response =  c.executeRequest(putRequest).get();
         assertEquals(response.getStatusCode(), 201);
-        
+
         Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://127.0.0.1:8080/folder1/Test.txt").build();
         response =  c.executeRequest(propFindRequest).get();
 
@@ -148,6 +150,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
             }
         }).get();
 
+        assertNotNull(webDavResponse);
         assertEquals(webDavResponse.getStatusCode(), 200);
     }
 
