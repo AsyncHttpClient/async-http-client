@@ -42,7 +42,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         return proxy;
     }
 
-    @Test
+    @Test(groups = "online")
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);
@@ -71,7 +71,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         
     }
 
-    @Test
+    @Test(groups = "online")
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);

@@ -599,13 +599,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     executeRequest(channel, config, f, nettyRequest);
                     return f;
                 } catch (ConnectException ex) {
-                    // The connection failed because the channel got remotely closed
-                    // Let continue the normal processing.
-                    connectionsPool.removeAllConnections(channel);
                 }
-            } else {
-                connectionsPool.removeAllConnections(channel);
-            }
+            } 
         }
 
         if (!connectionsPool.canCacheConnection() ||
@@ -940,23 +935,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        if (future.getState() != NettyResponseFuture.STATE.NEW) {
+        if (future != null && future.getState() != NettyResponseFuture.STATE.NEW) {
             return true;
         }
         return false;
     }
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean releaseFuture) throws MalformedURLException {
-        if (future.getKeepAlive()) {
-            connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
-        }
-
         if (releaseFuture) {
             future.done();
 
             if (!future.getKeepAlive()) {
                 closeChannel(ctx);
             }
+        }
+
+        if (future.getKeepAlive()) {
+            connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
         }
     }
 

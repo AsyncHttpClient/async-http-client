@@ -16,6 +16,7 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
@@ -31,13 +32,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
@@ -298,9 +297,14 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         client.close();
     }
 
+    /**
+     * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception.
+     * The onComplete method must be only called once.
+     *
+     * @throws Throwable if something wrong happens.
+     */
     @Test(groups = "standalone")
     public void win7DisconnectTest() throws Throwable {
-        final AtomicBoolean isThrown = new AtomicBoolean(false);
         final AtomicInteger count = new AtomicInteger(0);
 
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
@@ -311,22 +315,41 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                     public Response onCompleted(Response response) throws
                             Exception {
 
-                        count.incrementAndGet();                        
-                        if (!isThrown.getAndSet(true)) {
-                            StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
-                            IOException t = new IOException();
-                            t.setStackTrace(new StackTraceElement[]{e});
-                            throw t;
-                        }
-                        return response;
+                        count.incrementAndGet();
+                        StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
+                        IOException t = new IOException();
+                        t.setStackTrace(new StackTraceElement[]{e});
+                        throw t;
                     }
                 };
 
         Response response = client.prepareGet(getTargetUrl()).execute(handler).get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertTrue(isThrown.get());
-        assertEquals(count.get(), 2);
+        assertNull(response);
+        assertEquals(count.get(), 1);
     }
 
+    @Test
+    public void asyncHandlerOnThrowableTest() throws IOException {
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        final AtomicInteger count = new AtomicInteger();
+
+        for (int i = 0; i < 16; i++) {
+            client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    throw new Exception("");
+                }
+            });
+
+            client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    // Any exception is a failure.
+                    count.incrementAndGet();
+                }
+            });
+        }
+        assertEquals(count.get(), 0);
+    }
 }
+

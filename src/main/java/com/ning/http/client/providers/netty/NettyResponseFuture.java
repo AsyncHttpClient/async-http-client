@@ -66,6 +66,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
+    private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -171,7 +172,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     V getContent() {
         V update = content.get();
-        if (update == null) {
+        if (!contentProcessed.getAndSet(true)) {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
