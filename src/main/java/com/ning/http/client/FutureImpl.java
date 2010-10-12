@@ -15,6 +15,7 @@
  */
 package com.ning.http.client;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 /**
@@ -23,7 +24,11 @@ import java.util.concurrent.Future;
  */
 public interface FutureImpl<V> extends Future<V> {
 
-    void done();
+    /**
+     * Execute a {@link Callable}  and if there is no exception, mark this Future as done and release the internal lock.
+     * @param callable
+     */
+    void done(Callable callable);
 
     void abort(Throwable t);
 

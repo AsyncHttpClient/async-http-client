@@ -19,6 +19,7 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -47,7 +48,7 @@ public class JDKFuture<V> implements FutureImpl<V> {
         this.innerFuture = innerFuture;
     }
 
-    public void done() {
+    public void done(Callable callable) {
         isDone.set(true);
     }
 

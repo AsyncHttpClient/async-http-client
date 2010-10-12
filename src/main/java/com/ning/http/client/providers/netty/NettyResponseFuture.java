@@ -23,6 +23,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -187,7 +188,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return update;
     }
 
-    public final void done() {
+    public final void done(Callable callable) {
         try {
             if (exEx.get() != null){
                 return;
@@ -195,6 +196,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             if (reaperFuture != null) reaperFuture.cancel(true);
             isDone.set(true);
             getContent();
+            if (callable != null) {
+                try {
+                    callable.call();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         } finally {
             latch.countDown();
         }

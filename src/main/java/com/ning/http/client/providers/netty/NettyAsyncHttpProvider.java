@@ -94,6 +94,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -943,14 +944,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean releaseFuture) throws MalformedURLException {
         if (releaseFuture) {
-            future.done();
+            // We need to make sure everything is OK before adding the connection back to the pool.
+            future.done(new Callable<Boolean>() {
+                public Boolean call() throws Exception {
+                    if (future.getKeepAlive()) {
+                        return connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                    }
+                    return false;
+                }
+            });
 
             if (!future.getKeepAlive()) {
                 closeChannel(ctx);
             }
-        }
-
-        if (future.getKeepAlive()) {
+        } else {
             connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
         }
     }

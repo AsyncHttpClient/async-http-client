@@ -1322,7 +1322,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             @Override
             public void onThrowable(Throwable t) {
-                Assert.assertFalse(true);
+                t.printStackTrace();
             }
         };
 
