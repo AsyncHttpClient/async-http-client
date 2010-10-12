@@ -34,9 +34,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
-        System.setProperty("org.atmosphere.useNative", "true");
-
-        int port = findFreePort();
+        port1 = findFreePort();
         embedded = new Embedded();
         String path = new File(".").getAbsolutePath();
         embedded.setCatalinaHome(path);
@@ -60,18 +58,22 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.addChild(w);
         host.addChild(c);
 
-        Connector connector = embedded.createConnector("127.0.0.1", port, Http11NioProtocol.class.getName());
+        Connector connector = embedded.createConnector("127.0.0.1", port1, Http11NioProtocol.class.getName());
         connector.setContainer(host);
         embedded.addEngine(engine);
         embedded.addConnector(connector);
         embedded.start();
+    }
+    
+    protected String getTargetUrl() {
+        return String.format("http://127.0.0.1:%s/folder1", port1);
     }
 
     @AfterMethod(alwaysRun = true)
     public void clean() throws InterruptedException, Exception {
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Request deleteRequest = new RequestBuilder("DELETE").setUrl("http://127.0.0.1:8080/folder1").build();
+        Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
         c.executeRequest(deleteRequest).get();
     }
 
@@ -84,7 +86,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://127.0.0.1:8080/folder1").build();
+        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response =  c.executeRequest(mkcolRequest).get();
 
         assertEquals(response.getStatusCode(), 201);
@@ -96,7 +98,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://127.0.0.1:8080/folder1/folder2").build();
+        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() +"/folder2").build();
         Response response =  c.executeRequest(mkcolRequest).get();
         assertEquals(response.getStatusCode(), 409);
     }
@@ -105,7 +107,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://127.0.0.1:8080/folder1").build();
+        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
         Response response =  c.executeRequest(propFindRequest).get();
 
         assertEquals(response.getStatusCode(), 404);
@@ -116,15 +118,15 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://127.0.0.1:8080/folder1").build();
+        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response =  c.executeRequest(mkcolRequest).get();
         assertEquals(response.getStatusCode(), 201);
 
-        Request putRequest = new RequestBuilder("PUT").setUrl("http://127.0.0.1:8080/folder1/Test.txt").setBody("this is a test").build();
+        Request putRequest = new RequestBuilder("PUT").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
         response =  c.executeRequest(putRequest).get();
         assertEquals(response.getStatusCode(), 201);
 
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://127.0.0.1:8080/folder1/Test.txt").build();
+        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).build();
         response =  c.executeRequest(propFindRequest).get();
 
         assertEquals(response.getStatusCode(), 207);
@@ -137,11 +139,11 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         AsyncHttpClient c = new AsyncHttpClient();
 
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://127.0.0.1:8080/folder1").build();
+        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response =  c.executeRequest(mkcolRequest).get();
         assertEquals(response.getStatusCode(), 201);
 
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://127.0.0.1:8080/folder1/").build();
+        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
         WebDavResponse webDavResponse =  c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
 
             @Override

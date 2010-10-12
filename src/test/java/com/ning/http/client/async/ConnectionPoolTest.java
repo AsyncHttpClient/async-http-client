@@ -55,15 +55,18 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
         String url = getTargetUrl();
         int i;
+        Exception exception = null;
         for (i = 0; i < 3; i++) {
             try {
                 log.info(String.format("%d requesting url [%s]...", i, url));
                 Response response = client.prepareGet(url).execute().get();
                 log.info(String.format("%d response [%s].", i, response));
-            } catch (Exception e) {
-                fail("ConnectionsCache Broken");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
             }
         }
+        assertNull(exception);        
     }
 
     @Test(groups = {"standalone", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)
@@ -248,9 +251,10 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         try {
             response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            fail("Should throw exception. Too many connections issued.");
-
+            ex.printStackTrace();
+            exception = ex;
         }
+        assertNull(exception);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
     }
