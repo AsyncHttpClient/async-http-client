@@ -328,27 +328,36 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         assertEquals(count.get(), 1);
     }
 
-    @Test
-    public void asyncHandlerOnThrowableTest() throws IOException {
+    @Test(groups = "standalone")
+    public void asyncHandlerOnThrowableTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final AtomicInteger count = new AtomicInteger();
-
+        final String THIS_IS_NOT_FOR_YOU = "This is not for you";
+        final CountDownLatch latch = new CountDownLatch(16);
         for (int i = 0; i < 16; i++) {
             client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
                 @Override
                 public Response onCompleted(Response response) throws Exception {
-                    throw new Exception("");
+                    throw new Exception(THIS_IS_NOT_FOR_YOU);
                 }
             });
 
             client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
                 /* @Override */
                 public void onThrowable(Throwable t) {
-                    // Any exception is a failure.
-                    count.incrementAndGet();
+                    if (t.getMessage() != null && t.getMessage().equalsIgnoreCase(THIS_IS_NOT_FOR_YOU)) {
+                        count.incrementAndGet();
+                    }
+                }
+
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    latch.countDown();
+                    return response;
                 }
             });
         }
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals(count.get(), 0);
     }
 }
