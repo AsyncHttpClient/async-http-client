@@ -172,7 +172,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
         // Test if the internal channel is downgraded to clean http.
         response = c.preparePost(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2())
+                .setHeader("X-redirect", getTargetUrl2() + "/foo2")
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
