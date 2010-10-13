@@ -769,9 +769,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         log.debug(String.format(currentThread() + "Sending proxy authentication to %s", request.getUrl()));
                     }
 
-                    //Cache our current connection so we don't have to re-open it.
-                    future.attachChannel(ctx.getChannel());
-
                     if (response.isChunked()) {
                         ctx.setAttachment(new Callable<Object>(){
                             public Object call() throws Exception {
