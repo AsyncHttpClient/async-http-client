@@ -18,6 +18,7 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Request;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
@@ -68,6 +69,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
+    private Channel channel;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -288,6 +290,24 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     protected NettyAsyncHttpProvider provider() {
         return asyncHttpProvider;
+    }
+
+    /**
+     * Attach a Channel for further re-use. This usually happens when the request gets redirected (301, 302, 401, 407)
+     * but we haven't consumed all the body bytes yet.
+     *
+     * @param channel The Channel to later re-use.
+     */
+    protected void attachChannel(Channel channel) {
+        this.channel = channel;
+    }
+
+    /**
+     * Return the channel that was previously used. This usually means the request has been redirected.
+     * @return the previously used channel.
+     */
+    protected Channel channel() {
+        return channel;
     }
 
     @Override

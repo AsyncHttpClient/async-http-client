@@ -439,7 +439,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
             Assert.fail("Timeout");
             return;
         }
-        Integer status = statusCode.get(1, TimeUnit.SECONDS);
+        Integer status = statusCode.get(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertEquals((int) status, 200, "Expected status code failed.");
 
         if (!whatCalled[STATUS]) {
