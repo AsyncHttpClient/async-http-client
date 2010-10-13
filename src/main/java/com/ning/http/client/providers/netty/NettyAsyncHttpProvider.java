@@ -922,6 +922,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (ctx.getAttachment() instanceof Callable<?>) {
             ((Callable)ctx.getAttachment()).call();
+            ctx.setAttachment(null);
             return;
         }
 
