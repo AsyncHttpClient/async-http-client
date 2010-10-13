@@ -692,6 +692,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (chunk.isLast()) {
                ((Callable)ctx.getAttachment()).call();
             }
+            ctx.setAttachment(null);            
             return;
         } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
             // The IdleStateHandler times out and he is calling us.
@@ -921,6 +922,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (log.isDebugEnabled()) {
             log.debug(String.format(currentThread() + "Channel Closed: %s", e.getChannel()));
+        }
+
+        if (ctx.getAttachment() instanceof Callable<?>) {
+            ((Callable)ctx.getAttachment()).call();
+            return;
         }
 
         connectionsPool.removeAllConnections(ctx.getChannel());
