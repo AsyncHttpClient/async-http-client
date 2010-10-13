@@ -196,8 +196,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                 return;
             }
             if (reaperFuture != null) reaperFuture.cancel(true);
-            isDone.set(true);
             getContent();
+            isDone.set(true);            
             if (callable != null) {
                 try {
                     callable.call();
