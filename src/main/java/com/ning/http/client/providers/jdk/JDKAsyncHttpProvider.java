@@ -263,7 +263,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     }
                 }
 
-                if (statusCode == 401 && !isAuth.getAndSet(true)) {
+                if (statusCode == 401 && !isAuth.getAndSet(true) && request.getRealm() != null) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
                     if (logger.isDebugEnabled()) {
