@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
@@ -140,6 +141,7 @@ public class AsyncHttpClient {
     private final AsyncHttpProvider<?> httpProvider;
     private final AsyncHttpClientConfig config;
     private final static Logger logger = LogManager.getLogger(AsyncHttpClient.class);
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     /**
      * Default signature calculator to use for all requests constructed by this client instance.
@@ -351,11 +353,14 @@ public class AsyncHttpClient {
      */
     public void close() {
         httpProvider.close();
+        isClosed.set(true);
     }
 
     @Override
     protected void finalize() throws Throwable {
-        close();
+        if (!isClosed.get()) {
+            close();
+        }
         super.finalize();
     }
 
