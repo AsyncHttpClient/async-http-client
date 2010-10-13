@@ -34,6 +34,8 @@ public class WebDavBasicTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
+        setUpLogger();
+
         port1 = findFreePort();
         embedded = new Embedded();
         String path = new File(".").getAbsolutePath();
