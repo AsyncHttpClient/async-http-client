@@ -244,7 +244,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
                 if (log.isDebugEnabled()) {
-                    log.warn(currentThread(), ex);
+                    log.warn(ex);
                 }
             }
         }
@@ -520,10 +520,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setContent(b);
             } else if (request.getFile() != null) {
                 File file = request.getFile();
-                if (file.isHidden() || !file.exists() || !file.isFile()) {
-                    throw new IOException(String.format(currentThread() + "File %s is not a file, is hidden or doesn't exist", file.getAbsolutePath()));
+                if (!file.isFile()) {
+                    throw new IOException(String.format(currentThread() + "File %s is not a file or doesn't exist", file.getAbsolutePath()));
                 }
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, new RandomAccessFile(file, "r").length());
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, file.length());
             }
         }
         return nettyRequest;
@@ -612,6 +612,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     executeRequest(channel, config, f, nettyRequest);
                     return f;
                 } catch (ConnectException ex) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(currentThread() + ex.getMessage());
+                        log.debug(ex);
+                    }
                 }
             } 
         }
