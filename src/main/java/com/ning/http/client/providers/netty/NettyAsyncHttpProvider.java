@@ -691,8 +691,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             HttpChunk chunk = (HttpChunk) e.getMessage();
             if (chunk.isLast()) {
                ((Callable)ctx.getAttachment()).call();
+                ctx.setAttachment(null);                            
             }
-            ctx.setAttachment(null);            
             return;
         } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
             // The IdleStateHandler times out and he is calling us.
@@ -819,7 +819,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             }
                             final RequestBuilder builder = new RequestBuilder(future.getRequest());
                             future.setURI(uri);
-
                             final String newUrl = uri.toString();
 
                             if (log.isDebugEnabled()) {
