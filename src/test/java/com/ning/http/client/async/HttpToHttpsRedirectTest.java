@@ -141,7 +141,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsRedirect() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
@@ -161,7 +161,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsProperConfig() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumConnectionsPerHost(10).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
@@ -184,7 +184,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
