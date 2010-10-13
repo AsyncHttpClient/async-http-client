@@ -285,7 +285,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     // ignored
                 }
             }
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
+            connectionsPool.removeAllConnections(channel);
             throw new ConnectException(String.format(currentThread() + "Connection refused to %s", url));
         }
 
@@ -552,14 +552,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /* @Override */
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return doConnect(request, asyncHandler, null);
+        return doConnect(request, asyncHandler, null, true);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        doConnect(request, f.getAsyncHandler(), f);
+        doConnect(request, f.getAsyncHandler(), f, true);
     }
 
-    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f) throws IOException {
+    private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache) throws IOException {
+        doConnect(request, f.getAsyncHandler(), f, useCache);
+    }
+
+    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache) throws IOException {
 
         if (isClose.get()) {
             throw new IOException("Closed");
@@ -578,10 +582,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         URI uri = AsyncHttpProviderUtils.createUri(request.getUrl());
         Channel channel = null;
 
-        if (f != null && f.channel() != null) {
-            channel = f.channel();
-        } else {
-            channel = lookupInCache(uri);
+        if (useCache) {
+            if (f != null && f.channel() != null) {
+                channel = f.channel();
+            } else {
+                channel = lookupInCache(uri);
+            }
         }
 
         if (channel != null && channel.isOpen()) {
@@ -829,12 +835,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             if (response.isChunked()) {
                                 ctx.setAttachment(new Callable<Object>(){
                                     public Object call() throws Exception {
-                                        execute(builder.setUrl(newUrl).build(), future);
+                                        execute(builder.setUrl(newUrl).build(), future, false);
                                         return null;
                                     }
                                 });
                             } else {
-                                execute(builder.setUrl(newUrl).build(), future);
+                                execute(builder.setUrl(newUrl).build(), future, false);
                             }
                             return;
                         }
