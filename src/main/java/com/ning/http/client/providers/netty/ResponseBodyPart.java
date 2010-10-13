@@ -70,7 +70,9 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     public int writeTo(OutputStream outputStream) throws IOException {
         ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
         int read = b.readableBytes();
-        b.readBytes(outputStream, read);
+        if (read > 0) {
+            b.readBytes(outputStream, read);
+        }
         return read;
     }
 

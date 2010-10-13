@@ -895,7 +895,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
 
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                    markAsDoneAndCacheConnection(future, ctx);
+                    markAsDoneAndCacheConnection(future, ctx, ctx.getChannel().isReadable());
                 }
 
             } else if (e.getMessage() instanceof HttpChunk) {
@@ -1022,12 +1022,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         return false;
     }
 
-    private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
+    private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx,
+                                              final boolean cache) throws MalformedURLException {
         // We need to make sure everything is OK before adding the connection back to the pool.
         try {
             future.done(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
-                    if (future.getKeepAlive()) {
+                    if (future.getKeepAlive() && cache) {
                         return connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
                     }
                     return false;
@@ -1049,24 +1050,25 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (isChunked && future.getKeepAlive()) {
             ctx.setAttachment(new AsyncCallable(future){
                 public Object call() throws Exception {
-                    markAsDoneAndCacheConnection(future, ctx);
+                    markAsDoneAndCacheConnection(future, ctx, ctx.getChannel().isReadable());
                     return null;
                 }
             });
         } else {
-            markChannelNotReadable(ctx);
-            markAsDoneAndCacheConnection(future, ctx);
+            markAsDoneAndCacheConnection(future, ctx, markChannelNotReadable(ctx));
         }
     }
 
-    private static void markChannelNotReadable(ChannelHandlerContext ctx) {
+    private static boolean markChannelNotReadable(ChannelHandlerContext ctx) {
         // Catch any unexpected exception when marking the channel.        
         ctx.setAttachment(new DiscardEvent());
         try {
             ctx.getChannel().setReadable(false);
         } catch (Exception ex) {
             log.debug(ex);
+            return false;
         }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
