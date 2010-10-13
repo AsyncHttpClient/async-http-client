@@ -54,7 +54,12 @@ final class ConnectListener<T> implements ChannelFutureListener {
 
     public final void operationComplete(ChannelFuture f) throws Exception {
         try {
-            future.provider().executeRequest(f.getChannel(), config, future, nettyRequest);
+            if (f.isSuccess()) {
+                f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
+                future.provider().executeRequest(f.getChannel(), config, future, nettyRequest);
+            } else {
+                future.abort(new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString()));
+            }
         } catch (ConnectException ex) {
             future.abort(ex);
         }
