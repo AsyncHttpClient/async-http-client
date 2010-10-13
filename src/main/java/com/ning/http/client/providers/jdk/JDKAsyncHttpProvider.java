@@ -128,10 +128,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
         Proxy proxy = null;
-        if (proxyServer != null || request.getRealm() != null) {
+        if (proxyServer != null || realm != null) {
             try {
-                proxy = configureProxyAndAuth(proxyServer, request.getRealm());
+                proxy = configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
                 throw new IOException(e.getMessage());
             }
@@ -147,10 +148,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
     private HttpURLConnection createUrlConnection(Request request) throws IOException {
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
         Proxy proxy = null;
-        if (proxyServer != null || request.getRealm() != null) {
+        if (proxyServer != null || realm != null) {
             try {
-                proxy = configureProxyAndAuth(proxyServer, request.getRealm());
+                proxy = configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
                 throw new IOException(e.getMessage());
             }
@@ -263,7 +265,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     }
                 }
 
-                if (statusCode == 401 && !isAuth.getAndSet(true) && request.getRealm() != null) {
+                Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+                if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null ) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
                     if (logger.isDebugEnabled()) {
@@ -271,15 +274,15 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                                 + "Sending authentication to %s", request.getUrl()));
                     }
                     
-                    Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
+                    Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getReqType())
-                            .setScheme(request.getRealm().getAuthScheme())
+                            .setScheme(realm.getAuthScheme())
                             .setUsePreemptiveAuth(true)
                             .build();
                     RequestBuilder builder = new RequestBuilder(request);
-                    request = builder.setRealm(realm).build();
+                    request = builder.setRealm(nr).build();
                     urlConnection = createUrlConnection(request);
                     return call();
                 }
@@ -402,7 +405,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             }
 
-            Realm realm = request.getRealm();
+            Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
             if (realm != null && realm.getUsePreemptiveAuth()) {
                 switch (realm.getAuthScheme()) {
                     case BASIC:

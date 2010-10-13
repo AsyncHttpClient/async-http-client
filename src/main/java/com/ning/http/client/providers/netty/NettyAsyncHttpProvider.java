@@ -395,7 +395,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        Realm realm = request.getRealm();
+        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
         if (realm != null && realm.getUsePreemptiveAuth()) {
             switch (realm.getAuthScheme()) {
                 case BASIC:
@@ -571,7 +571,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         /**
          * Netty doesn't support NTLM, so fall back to the JDK in that case.
          */
-        if (request.getRealm() != null && request.getRealm().getScheme() == Realm.AuthScheme.NTLM) {
+        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+        if (realm != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
             if (log.isDebugEnabled()) {
                 log.debug(currentThread() + "NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
             }
@@ -709,10 +710,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (log.isDebugEnabled()) {
             log.debug(String.format(currentThread() + "Message Received %s. Attachment Type is %s", 
-                                    e.getClass().getName(),  ctx.getAttachment() != null ? ctx.getAttachment().getClass().getName() : "No attach"));
+                                    e.getClass().getName(),  ctx.getAttachment() != null ?
+                                        ctx.getAttachment().getClass().getName() : "No attach"));
 
             if (ctx.getAttachment()  == null) {
-                log.error(currentThread() + "ChannelHandlerContext wasn't having any attachment");
+                log.warn(currentThread() + "ChannelHandlerContext wasn't having any attachment");
             }
         }
 
@@ -758,16 +760,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 String wwwAuth = response.getHeader(HttpHeaders.Names.WWW_AUTHENTICATE);
                 Request request = future.getRequest();
+                Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
                 if (statusCode == 401
                         && wwwAuth != null
-                        && future.getRequest().getRealm() != null
+                        && realm != null
                         && !future.getAndSetAuth(true)) {
 
-                    final Realm realm = new Realm.RealmBuilder().clone(request.getRealm())
+                    final Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getReqType())
-                            .setScheme(request.getRealm().getAuthScheme())
+                            .setScheme(realm.getAuthScheme())
                             .setUsePreemptiveAuth(true)
                             .build();
 
@@ -784,12 +787,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     if (response.isChunked()) {
                         ctx.setAttachment(new AsyncCallable(future){
                             public Object call() throws Exception {
-                                execute(builder.setRealm(realm).build(), future);
+                                execute(builder.setRealm(nr).build(), future);
                                 return null;
                             }
                         });
                     } else {
-                        execute(builder.setRealm(realm).build(), future);
+                        execute(builder.setRealm(nr).build(), future);
                     }
                     return;
                 }
@@ -980,7 +983,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     maxConnections.decrementAndGet();
                 }
                 try {
-                    future.getAsyncHandler().onThrowable(exception != null ? exception : new IOException("No response received. Connection timed out"));
+                    future.getAsyncHandler().onThrowable(exception != null ? exception :
+                            new IOException(String.format("No response received after %s", config.getRequestTimeoutInMs())));
                 } catch (Throwable t) {
                     log.error(String.format(currentThread() + "Channel Closed"), t);
                 }

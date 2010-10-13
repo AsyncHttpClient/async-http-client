@@ -61,6 +61,7 @@ public class AsyncHttpClientConfig {
     private final SSLEngineFactory sslEngineFactory;
     private final AsyncHttpProviderConfig<?, ?> providerConfig;
     private final ConnectionsPool<?, ?> connectionsPool;
+    private final Realm realm;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -77,8 +78,8 @@ public class AsyncHttpClientConfig {
                                   ProxyServer proxyServer,
                                   SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
-                                  AsyncHttpProviderConfig<?,?> providerConfig,
-                                  ConnectionsPool<?, ?> connectionsPool) {
+                                  AsyncHttpProviderConfig<?, ?> providerConfig,
+                                  ConnectionsPool<?, ?> connectionsPool, Realm realm) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -94,6 +95,7 @@ public class AsyncHttpClientConfig {
         this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
         this.connectionsPool = connectionsPool;
+        this.realm = realm;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -280,6 +282,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the current {@link Realm}}
+     * @return  the current {@link Realm}}
+     */
+    public Realm getRealm(){
+        return realm;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -305,6 +315,7 @@ public class AsyncHttpClientConfig {
         private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?,?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
+        private Realm realm;
 
         public Builder() {
         }
@@ -491,6 +502,7 @@ public class AsyncHttpClientConfig {
         /**
          * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
          * @param providerConfig
+         * @return a {@link Builder}
          */
         public Builder setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
             this.providerConfig = providerConfig;
@@ -500,11 +512,23 @@ public class AsyncHttpClientConfig {
         /**
          * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
          * @param connectionsPool
+         * @return a {@link Builder}
          */
         public Builder setConnectionsPool(ConnectionsPool<?, ?> connectionsPool) {
             this.connectionsPool = connectionsPool;
             return this;
         }
+
+        /**
+         * Set the {@link Realm}  that will be used for all requests.
+         * @param realm   the {@link Realm}
+         * @return a {@link Builder}
+         */
+        public Builder setRealm(Realm realm) {
+            this.realm = realm;
+            return this;
+        }
+
 
         /**
          * Build an {@link AsyncHttpClientConfig}
@@ -528,9 +552,9 @@ public class AsyncHttpClientConfig {
                     sslContext,
                     sslEngineFactory,
                     providerConfig,
-                    connectionsPool);
+                    connectionsPool,
+                    realm);
         }
-
     }
 }
 

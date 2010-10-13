@@ -247,6 +247,25 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
+    public void basicAuthAsyncConfigTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
+                .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build()).build());
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file);
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+    }
+
+    @Test(groups = "standalone")
     public void basicAuthFileNoKeepAliveTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setKeepAlive(false).build());
         ClassLoader cl = getClass().getClassLoader();
