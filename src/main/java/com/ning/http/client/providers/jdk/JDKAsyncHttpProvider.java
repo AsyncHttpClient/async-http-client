@@ -521,9 +521,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     request.getEntityWriter().writeEntity(urlConnection.getOutputStream());
                 } else if (request.getFile() != null) {
                     File file = request.getFile();
-                    if (file.isHidden() || !file.exists() || !file.isFile()) {
-                        throw new IOException(String.format("[" + Thread.currentThread().getName()
-                                + "] File %s is not a file, is hidden or doesn't exist", file.getAbsolutePath()));
+                    if (!file.isFile()) {
+                        throw new IOException(String.format(Thread.currentThread()
+                                + "File %s is not a file or doesn't exist", file.getAbsolutePath()));
                     }
                     long lenght = new RandomAccessFile(file, "r").length();
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
