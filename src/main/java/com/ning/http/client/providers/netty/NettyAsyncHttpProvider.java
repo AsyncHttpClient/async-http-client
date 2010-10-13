@@ -244,6 +244,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
                 if (log.isDebugEnabled()) {
+                    log.warn(currentThread() + "Connect exception. May be able to recover");
                     log.warn(ex);
                 }
             }
@@ -288,8 +289,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             connectionsPool.removeAllConnections(channel);
             throw new ConnectException(String.format(currentThread() + "Connection refused to %s", url));
         }
-
-        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
 
         channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler()));
 
@@ -608,6 +607,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
                 f.setState(NettyResponseFuture.STATE.POOLED);
 
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format(currentThread()
+                            + "\n\nCached Request %s\n", request.toString()));
+                }
+                channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
+
                 try {
                     executeRequest(channel, config, f, nettyRequest);
                     return f;
@@ -616,8 +621,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         log.debug(currentThread() + ex.getMessage());
                         log.debug(ex);
                     }
-                }
+                }                                   
             } 
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(currentThread()
+                    + "\n\nNon cached Request %s\n", request.toString()));
         }
 
         if (!connectionsPool.canCacheConnection() ||
@@ -655,6 +665,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return c.future();
         }
         channelFuture.addListener(c);
+        channelFuture.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(c.future());
+
         openChannels.add(channelFuture.getChannel());
         return c.future();
     }
@@ -695,13 +707,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         //call super to reset the read timeout
         super.messageReceived(ctx, e);
 
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(currentThread() + "Message Received %s. Attachment Type is %s", 
+                                    e.getClass().getName(), ctx.getAttachment().getClass().getName()));
+        }
+
         if (ctx.getAttachment() instanceof DiscardEvent) {
             ctx.getChannel().setReadable(false);
             return;
-        } else if (ctx.getAttachment() instanceof Callable<?>) {
+        } else if (ctx.getAttachment() instanceof AsyncCallable) {
             HttpChunk chunk = (HttpChunk) e.getMessage();
             if (chunk.isLast()) {
-               ((Callable)ctx.getAttachment()).call();
+               ((AsyncCallable)ctx.getAttachment()).call();
                 ctx.setAttachment(null);                            
             }
             return;
@@ -758,7 +775,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     // We must consume the body first in order to re-use the connection.
                     if (response.isChunked()) {
-                        ctx.setAttachment(new Callable<Object>(){
+                        ctx.setAttachment(new AsyncCallable(future){
                             public Object call() throws Exception {
                                 execute(builder.setRealm(realm).build(), future);
                                 return null;
@@ -781,7 +798,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
 
                     if (response.isChunked()) {
-                        ctx.setAttachment(new Callable<Object>(){
+                        ctx.setAttachment(new AsyncCallable(future){
                             public Object call() throws Exception {
                                 execute(future.getRequest(), future);
                                 return null;
@@ -828,6 +845,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             if (location.startsWith("https")) {
                                 upgradeProtocol(ctx.getChannel().getPipeline(), "https");
                             }
+
                             final RequestBuilder builder = new RequestBuilder(future.getRequest());
                             future.setURI(uri);
                             final String newUrl = uri.toString();
@@ -837,7 +855,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             }
 
                             if (response.isChunked()) {
-                                ctx.setAttachment(new Callable<Object>(){
+                                ctx.setAttachment(new AsyncCallable(future){
                                     public Object call() throws Exception {
                                         execute(builder.setUrl(newUrl).build(), future, false);
                                         return null;
@@ -931,8 +949,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             log.debug(String.format(currentThread() + "Channel Closed: %s", e.getChannel()));
         }
 
-        if (ctx.getAttachment() instanceof Callable<?>) {
-            ((Callable)ctx.getAttachment()).call();
+        if (ctx.getAttachment() instanceof AsyncCallable) {
+            ((AsyncCallable)ctx.getAttachment()).call();
             ctx.setAttachment(null);
             return;
         }
@@ -1066,8 +1084,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Channel channel = e.getChannel();
         Throwable cause = e.getCause();
 
+        NettyResponseFuture<?> future = null;
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+            future = (NettyResponseFuture<?>) ctx.getAttachment();
             future.attachChannel(null);
             
             if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
@@ -1082,17 +1101,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return;
             }
 
-            if (future != null) {
-                try {
-                    abort(future, cause);
-                } catch (Throwable t) {
-                    log.error(currentThread(), t);
-                }
+        } else if (ctx.getAttachment() instanceof AsyncCallable) {
+            future = ((AsyncCallable)ctx.getAttachment()).future();
+        }
+
+        if (future != null) {
+            try {
+                abort(future, cause);
+            } catch (Throwable t) {
+                log.error(currentThread(), t);
             }
         }
 
         if (log.isDebugEnabled()) {
-            log.error(currentThread() + String.format("Exception Caught: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
+            log.error(currentThread() + String.format("Exception Caught: %s Attachment was %s",
+                                                      cause != null ? cause.getMessage() : "unavailable cause",
+                                                      ctx.getAttachment()));
             log.error(cause);
         }
     }
@@ -1266,6 +1290,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 this.nettyResponseFuture = null;
                 this.channel = null;
             }
+        }
+    }
+
+    private abstract class AsyncCallable implements Callable<Object> {
+
+        private final NettyResponseFuture<?> future;
+
+        public AsyncCallable(NettyResponseFuture<?> future) {
+            this.future = future;
+        }
+
+        abstract public Object call() throws Exception;
+
+        public NettyResponseFuture<?> future(){
+            return future;
         }
     }
 }
