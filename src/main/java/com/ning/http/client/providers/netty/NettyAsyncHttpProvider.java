@@ -813,7 +813,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             location = AsyncHttpProviderUtils.getBaseUrl(future.getURI()) + location;
                         }
 
-                        if (!location.equals(future.getURI().toString())) {
+                        if (!location.equalsIgnoreCase(future.getURI().toString())) {
                             URI uri = AsyncHttpProviderUtils.createUri(location);
 
                             if (location.startsWith("https")) {
@@ -1079,7 +1079,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (log.isDebugEnabled()) {
             log.error(currentThread() + String.format("Exception Caught: %s ", cause != null ? cause.getMessage() : "unavailable cause"));
-            log.error(currentThread(), cause);
+            log.error(cause);
         }
     }
 
