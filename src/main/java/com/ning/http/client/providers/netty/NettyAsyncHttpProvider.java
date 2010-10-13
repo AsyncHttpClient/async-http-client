@@ -925,6 +925,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (config.getMaxTotalConnections() != -1) {
             maxConnections.decrementAndGet();
         }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(currentThread() + "abording Future %s", future));
+            log.debug(t);
+        }
+
         future.abort(t);
     }
 
