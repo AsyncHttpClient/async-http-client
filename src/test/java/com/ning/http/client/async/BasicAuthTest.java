@@ -18,6 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -244,7 +245,26 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Content-Lenght"), "26");
     }
-    
+
+    @Test(groups = "standalone")
+    public void basicAuthFileNoKeepAliveTest() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setKeepAlive(false).build());
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl())
+                .setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+    }
+
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
