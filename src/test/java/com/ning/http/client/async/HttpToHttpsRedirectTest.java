@@ -145,11 +145,16 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
-                .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
+                .setHeader("X-redirect", getTargetUrl() )
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+    }
+
+    @Override
+    public String getTargetUrl(){
+        return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
     @Test(groups = "standalone")
@@ -160,7 +165,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
-                .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
+                .setHeader("X-redirect", getTargetUrl())
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
@@ -168,7 +173,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
         // Test if the internal channel is downgraded to clean http.
         response = c.preparePost(getTargetUrl())
-                .setHeader("X-redirect", String.format("https://127.0.0.1:%d/foo/test", port2))
+                .setHeader("X-redirect", getTargetUrl())
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
@@ -182,11 +187,11 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        Response response = c.preparePost(String.format("https://127.0.0.1:%d/foo/test", port2))
+        Response response = c.preparePost(getTargetUrl())
                 .setHeader("X-redirect", "/foo/test")
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(),302);
-        assertEquals(response.getUri().toString(), String.format("https://127.0.0.1:%d/foo/test", port2));
+        assertEquals(response.getUri().toString(), getTargetUrl());
     }
 }
