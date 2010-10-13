@@ -197,7 +197,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             }
             if (reaperFuture != null) reaperFuture.cancel(true);
             getContent();
-            isDone.set(true);            
+            isDone.set(true);
             if (callable != null) {
                 try {
                     callable.call();
@@ -205,6 +205,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                     throw new RuntimeException(ex);
                 }
             }
+        } catch (RuntimeException t) {
+            exEx.compareAndSet(null, new ExecutionException(t));
         } finally {
             latch.countDown();
         }

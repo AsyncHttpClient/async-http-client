@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -327,9 +328,15 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                     }
                 };
 
-        Response response = client.prepareGet(getTargetUrl()).execute(handler).get();
-        assertNull(response);
-        assertEquals(count.get(), 1);
+        try {
+            client.prepareGet(getTargetUrl()).execute(handler).get();
+            fail("Must have received an exception");
+        } catch (ExecutionException ex) {
+            assertNotNull(ex);
+            assertNotNull(ex.getCause());
+            assertEquals(ex.getCause().getCause().getClass(), IOException.class);
+            assertEquals(count.get(), 1);
+        }
     }
 
     @Test(groups = "standalone")
