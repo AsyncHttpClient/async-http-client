@@ -285,6 +285,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     // ignored
                 }
             }
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
             throw new ConnectException(String.format(currentThread() + "Connection refused to %s", url));
         }
 

@@ -164,7 +164,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2())
+                .setHeader("X-redirect", getTargetUrl2() + "/test2")
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
