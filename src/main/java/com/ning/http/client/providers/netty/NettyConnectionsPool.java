@@ -22,6 +22,8 @@ import com.ning.http.client.logging.Logger;
 import org.jboss.netty.channel.Channel;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,10 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
-    private final ConcurrentHashMap<String, Channel> connectionsPool =
-            new ConcurrentHashMap<String, Channel>();
-    private final ConcurrentHashMap<String, AtomicInteger> connectionsPerHost =
-            new ConcurrentHashMap<String, AtomicInteger>();
+    private final ConcurrentHashMap<String, List<Channel>> connectionsPool =
+            new ConcurrentHashMap<String, List<Channel>>();
+    private final AtomicInteger totalConnections = new AtomicInteger(0);
     private final AsyncHttpClientConfig config;
 
 
@@ -51,46 +52,64 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             log.debug(String.format(NettyAsyncHttpProvider.currentThread() + "Adding uri: %s for channel %s", uri, connection));
         }
 
-        AtomicInteger connectionPerHost = connectionsPerHost.get(uri);
-        if (connectionPerHost == null) {
-            connectionPerHost = new AtomicInteger(1);
-            connectionsPerHost.put(uri, connectionPerHost);
+        List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
+        if(pooledConnectionForHost == null)
+        {
+        	List<Channel> newPool = new LinkedList<Channel>();
+        	connectionsPool.putIfAbsent(uri, newPool);
+        	pooledConnectionForHost = connectionsPool.get(uri);
         }
-
-        if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.get() < config.getMaxConnectionPerHost()) {
-            boolean added = connectionsPool.put(uri, connection) == null ? true : false;
-            if (added) {
-                connectionPerHost.incrementAndGet();
+        
+        synchronized(pooledConnectionForHost)
+        {
+        	int size = pooledConnectionForHost.size();
+        	if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
+                boolean added = pooledConnectionForHost.add(connection);
+                if(added)
+                {
+                	totalConnections.incrementAndGet();
+                }
+                return added;
+            } else {
+                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+                return false;
             }
-        } else {
-            log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
-            return false;
         }
-        return true;
     }
 
     /**
      * {@inheritDoc}
      */
     public Channel getConnection(String uri) {
-        Channel channel = connectionsPool.get(uri);
-        if (channel != null && !channel.isOpen()) {
-            removeConnection(uri);
-            return null;
-        }
-        return channel;
+        return removeConnection(uri);
     }
 
     /**
      * {@inheritDoc}
      */
     public Channel removeConnection(String uri) {
-        Channel channel = connectionsPool.remove(uri);
-        if (channel != null && (!channel.isConnected() || !channel.isOpen())) {
-            removeAllConnections(channel);
-            return null;
+    	
+        List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
+        if(pooledConnectionForHost!=null)
+        {
+	        synchronized (pooledConnectionForHost) {
+	        	while(pooledConnectionForHost.size() > 0)
+	        	{
+	        		Channel channel = pooledConnectionForHost.remove(0);
+	        		if (channel != null && (!channel.isConnected() || !channel.isOpen())) {
+	        			channel.close();
+	        			removeAllConnections(channel);
+	        		}
+	        		else
+	        		{
+	        			totalConnections.decrementAndGet();
+	        			return channel;
+	        		}
+	        	}
+	        	return null;
+			}
         }
-        return channel;
+        return null;
     }
 
     /**
@@ -98,17 +117,17 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean removeAllConnections(Channel connection) {
         boolean isRemoved = false;
-        Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
+        Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
-            Map.Entry<String,Channel> e = i.next();
-            if (e.getValue().equals(connection)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format(NettyAsyncHttpProvider.currentThread()
-                            + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
-                }
-                i.remove();
-                isRemoved = true;
-            }
+            Map.Entry<String,List<Channel>> e = i.next();
+            synchronized (e.getValue()) {
+            	boolean removed = e.getValue().remove(connection);
+            	if(removed)
+            	{
+            		totalConnections.decrementAndGet();
+            	}
+            	isRemoved |= removed;
+			}
         }
         return isRemoved;
     }
@@ -117,7 +136,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (config.getMaxTotalConnections() != -1 && connectionsPool.size() >= config.getMaxTotalConnections()) {
+        if (config.getMaxTotalConnections() != -1 && totalConnections.get() >= config.getMaxTotalConnections()) {
             return false;
         } else {
             return true;
@@ -129,11 +148,17 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public void destroy() {
         try {
-            Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
+            Iterator<Map.Entry<String,List<Channel>>> i = connectionsPool.entrySet().iterator();
             while (i.hasNext()) {
-                Channel channel = i.next().getValue();
-                removeAllConnections(channel);
-                channel.close();
+            	List<Channel> list = i.next().getValue();
+            	synchronized (list) {
+					for(int j=0; j<list.size();j++)
+					{
+    	                Channel channel = list.remove(0);
+    	                removeAllConnections(channel);
+    	                channel.close();
+                    }
+				}           	
             }
         } finally {
             connectionsPool.clear();
