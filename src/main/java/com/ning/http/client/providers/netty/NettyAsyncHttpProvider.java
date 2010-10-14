@@ -725,6 +725,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             HttpChunk chunk = (HttpChunk) e.getMessage();
             if (chunk.isLast()) {
                AsyncCallable ac = (AsyncCallable)ctx.getAttachment();
+               ctx.setAttachment(new DiscardEvent());
                ac.call();
             }
             return;
