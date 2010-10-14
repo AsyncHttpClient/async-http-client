@@ -25,7 +25,7 @@ public class JulLogger implements Logger {
     }
 
     public boolean isDebugEnabled() {
-        return true;
+        return logger.isLoggable(Level.FINE);
     }
 
     public void debug(String msg, Object... msgArgs) {
