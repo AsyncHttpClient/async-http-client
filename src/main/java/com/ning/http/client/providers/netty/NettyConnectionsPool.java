@@ -58,6 +58,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
 
         if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.get() < config.getMaxConnectionPerHost()) {
+            connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
             boolean added = connectionsPool.put(uri, connection) == null ? true : false;
             if (added) {
                 connectionPerHost.incrementAndGet();

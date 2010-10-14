@@ -703,7 +703,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    public void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         //call super to reset the read timeout
         super.messageReceived(ctx, e);
 
@@ -725,7 +725,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             HttpChunk chunk = (HttpChunk) e.getMessage();
             if (chunk.isLast()) {
                AsyncCallable ac = (AsyncCallable)ctx.getAttachment();
-               ctx.setAttachment(new DiscardEvent());
                ac.call();
             }
             return;
@@ -782,6 +781,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         future.attachChannel(ctx.getChannel());
                     }
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
+                    future.setState(NettyResponseFuture.STATE.NEW);
 
                     // We must consume the body first in order to re-use the connection.
                     if (response.isChunked()) {
@@ -807,6 +807,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         log.debug(String.format(currentThread() + "Sending proxy authentication to %s", request.getUrl()));
                     }
 
+                    future.setState(NettyResponseFuture.STATE.NEW);
+                    
                     if (response.isChunked()) {
                         ctx.setAttachment(new AsyncCallable(future){
                             public Object call() throws Exception {
@@ -856,6 +858,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                             final RequestBuilder builder = new RequestBuilder(future.getRequest());
                             future.setURI(uri);
+                            future.setState(NettyResponseFuture.STATE.NEW);
                             final String newUrl = uri.toString();
 
                             if (log.isDebugEnabled()) {
@@ -866,11 +869,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 ctx.setAttachment(new AsyncCallable(future){
                                     public Object call() throws Exception {
                                         execute(builder.setUrl(newUrl).build(), future);
+                                        if (future.getKeepAlive()) {
+                                            connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                        } else {
+                                            closeChannel(ctx);
+                                        }
                                         return null;
                                     }
                                 });
                             } else {
                                 execute(builder.setUrl(newUrl).build(), future);
+                                if (future.getKeepAlive()) {
+                                    connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                } else {
+                                    closeChannel(ctx);
+                                }
+
                             }
                             return;
                         }
@@ -1005,6 +1019,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 NettyResponseFuture<?> f = (NettyResponseFuture<?>)
                         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+
+                if (f.getState() != NettyResponseFuture.STATE.POOLED) {
+                    return false;
+                }
+
                 f.setState(NettyResponseFuture.STATE.RECONNECTED);
 
                 if (log.isDebugEnabled()) {
@@ -1094,7 +1113,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     //Simple marker for stopping publishing bytes.
 
-    private final static class DiscardEvent {
+    final static class DiscardEvent {
     }
 
     //Simple marker for closed events
