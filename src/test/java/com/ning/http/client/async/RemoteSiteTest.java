@@ -130,7 +130,7 @@ public class RemoteSiteTest {
         b.await();
         Thread.sleep(20000); // Wait for timeout
         if (t != null){
-            Assert.fail("timeout?!");            
+            Assert.fail("timeout?!");
         }
     }
 
@@ -155,8 +155,8 @@ public class RemoteSiteTest {
 
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
-        }
-
+       }
     }
+    
 }
 

@@ -185,7 +185,7 @@ public class AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    public void setUpLogger() {
+    public static void setUpLogger() {
         final java.util.logging.Logger logger = java.util.logging.Logger.getLogger("UnitTest");
         LogManager.setProvider(new LoggerProvider() {
 

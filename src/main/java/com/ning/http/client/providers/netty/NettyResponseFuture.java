@@ -148,18 +148,19 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /* @Override */
     public V get(long l, TimeUnit tu) throws InterruptedException, TimeoutException, ExecutionException {
         if (!isDone() && !isCancelled()) {
-            boolean failed = false;
+            boolean expired = false;
             if (l == -1) {
                 latch.await();
             } else {
-                failed = !latch.await(l, tu);
-                if (responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+                expired = !latch.await(l, tu);
+                if (!contentProcessed.get() && expired && l != -1 && ((System.currentTimeMillis() - touch.get()) <= l)) {
                     return get(l,tu);
                 }
             }
-            if (failed) {
+            
+            if (expired) {
                 isCancelled.set(true);
-                TimeoutException te = new TimeoutException(String.format("No response received after %", responseTimeoutInMs));
+                TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
                 try {
                     asyncHandler.onThrowable(te);
                 } finally {
