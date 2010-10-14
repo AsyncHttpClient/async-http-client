@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * This {@link AsyncFilter} throttles requests and block when the number of permits is reached, waiting for
  * the response to arrives before executing the next request.
- * 
  */
 public class ThrottleRequestAsyncFilter implements AsyncFilter {
     private final static Logger logger = LogManager.getLogger(ThrottleRequestAsyncFilter.class);
@@ -99,6 +98,4 @@ public class ThrottleRequestAsyncFilter implements AsyncFilter {
             return asyncHandler.onCompleted();
         }
     }
-
-
 }

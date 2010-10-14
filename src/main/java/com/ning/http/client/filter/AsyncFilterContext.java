@@ -18,7 +18,6 @@ package com.ning.http.client.filter;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;
 
-
 /**
  * A simple object that hold reference to an {@link AsyncHandler} and  {@link Request}
  */
