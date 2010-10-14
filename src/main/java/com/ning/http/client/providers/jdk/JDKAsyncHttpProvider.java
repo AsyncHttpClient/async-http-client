@@ -525,13 +525,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         throw new IOException(String.format(Thread.currentThread()
                                 + "File %s is not a file or doesn't exist", file.getAbsolutePath()));
                     }
-                    long lenght = new RandomAccessFile(file, "r").length();
-                    urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
-                    urlConnection.setFixedLengthStreamingMode((int) lenght);
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(file.length()));
+                    urlConnection.setFixedLengthStreamingMode((int) file.length());
 
                     FileInputStream fis = new FileInputStream(file);
                     try {
-                        final byte[] buffer = new byte[(int) lenght];
+                        final byte[] buffer = new byte[(int) file.length()];
                         fis.read(buffer);
                         urlConnection.getOutputStream().write(buffer);
                     } finally {
