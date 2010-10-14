@@ -153,10 +153,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                 latch.await();
             } else {
                 failed = !latch.await(l, tu);
+                if (responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+                    return get(l,tu);
+                }
             }
             if (failed) {
                 isCancelled.set(true);
-                TimeoutException te = new TimeoutException("No response received");
+                TimeoutException te = new TimeoutException(String.format("No response received after %", responseTimeoutInMs));
                 try {
                     asyncHandler.onThrowable(te);
                 } finally {

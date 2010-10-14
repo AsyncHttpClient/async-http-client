@@ -88,7 +88,7 @@ public class JDKFuture<V> implements FutureImpl<V> {
             content = innerFuture.get(timeout, unit);
         } catch (TimeoutException t) {
             timedOut.set(true);
-            throw new TimeoutException("Request timed out.");
+            throw new TimeoutException((String.format("No response received after %", responseTimeoutInMs)));
         } catch (CancellationException ce) {
         }
 
