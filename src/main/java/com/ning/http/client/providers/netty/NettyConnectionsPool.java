@@ -104,7 +104,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
             Map.Entry<String,Channel> e = i.next();
-            if (e.getValue().equals(connection)) {
+            if (e != null && e.getValue().equals(connection)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(NettyAsyncHttpProvider.currentThread()
                             + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
