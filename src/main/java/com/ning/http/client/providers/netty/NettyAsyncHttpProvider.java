@@ -58,7 +58,9 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
@@ -122,7 +124,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final AtomicBoolean isClose = new AtomicBoolean(false);
 
-    private final NioClientSocketChannelFactory socketChannelFactory;
+    private final ClientSocketChannelFactory socketChannelFactory;
 
     private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
 
@@ -136,9 +138,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
-        socketChannelFactory = new NioClientSocketChannelFactory(
+
+        if (config.getAsyncHttpProviderConfig() != null
+                && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
+            asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
+        } else {
+            asyncHttpProviderConfig = null;
+        }
+
+        if (asyncHttpProviderConfig != null && asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
+            socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
+        } else {
+            socketChannelFactory = new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(),
                 config.executorService());
+        }
+        
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
 
@@ -150,13 +165,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             cp = new NettyConnectionsPool(config);
         }
         this.connectionsPool = cp;
-
-        if (config.getAsyncHttpProviderConfig() != null
-                && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
-            asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
-        } else {
-            asyncHttpProviderConfig = null;
-        }
 
         configureNetty();
         ntlmProvider = new JDKAsyncHttpProvider(config);

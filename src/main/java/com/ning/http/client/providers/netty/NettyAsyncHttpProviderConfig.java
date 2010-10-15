@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
 
+    public final static String USE_BLOCKING_IO = "useBlockingIO";
 
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
