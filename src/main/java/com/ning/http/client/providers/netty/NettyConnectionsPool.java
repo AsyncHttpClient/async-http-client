@@ -64,7 +64,9 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 connectionPerHost.incrementAndGet();
             }
         } else {
-            log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+            if (log.isDebugEnabled()) {
+                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+            }
             return false;
         }
         return true;
