@@ -46,6 +46,6 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      * @param total The total number of bytes transferred
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
-    STATE onContentWriteProgess(long amount, long current, long total);
+    STATE onContentWriteProgress(long amount, long current, long total);
 
 }
