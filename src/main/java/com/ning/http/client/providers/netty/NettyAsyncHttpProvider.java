@@ -150,10 +150,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
         } else {
             socketChannelFactory = new NioClientSocketChannelFactory(
-                Executors.newCachedThreadPool(),
-                config.executorService());
+                    Executors.newCachedThreadPool(),
+                    config.executorService());
         }
-        
+
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
 
@@ -219,7 +219,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
-        
+
         if (asyncHttpProviderConfig != null) {
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
                 secureBootstrap.setOption(entry.getKey(), entry.getValue());
@@ -409,7 +409,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         if (realm != null && realm.getUsePreemptiveAuth()) {
             switch (realm.getAuthScheme()) {
                 case BASIC:
@@ -585,7 +585,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         /**
          * Netty doesn't support NTLM, so fall back to the JDK in that case.
          */
-        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         if (realm != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
             if (log.isDebugEnabled()) {
                 log.debug(currentThread() + "NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
@@ -637,7 +637,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         log.debug(ex);
                     }
                 }
-            } 
+            }
         }
 
         if (log.isDebugEnabled()) {
@@ -664,7 +664,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (config.getMaxTotalConnections() != -1) {
             maxConnections.incrementAndGet();
         }
-        
+
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         try {
@@ -723,11 +723,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format(currentThread() + "Message Received %s. Attachment Type is %s", 
-                                    e.getClass().getName(),  ctx.getAttachment() != null ?
-                                        ctx.getAttachment().getClass().getName() : "No attach"));
+            log.debug(String.format(currentThread() + "Message Received %s. Attachment Type is %s",
+                    e.getClass().getName(), ctx.getAttachment() != null ?
+                            ctx.getAttachment().getClass().getName() : "No attach"));
 
-            if (ctx.getAttachment()  == null) {
+            if (ctx.getAttachment() == null) {
                 log.warn(currentThread() + "ChannelHandlerContext wasn't having any attachment");
             }
         }
@@ -738,9 +738,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } else if (ctx.getAttachment() instanceof AsyncCallable) {
             HttpChunk chunk = (HttpChunk) e.getMessage();
             if (chunk.isLast()) {
-               AsyncCallable ac = (AsyncCallable)ctx.getAttachment();
-               ctx.setAttachment(new DiscardEvent());
-               ac.call();
+                AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
+                ctx.setAttachment(new DiscardEvent());
+                ac.call();
             }
             return;
         } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
@@ -774,7 +774,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 String wwwAuth = response.getHeader(HttpHeaders.Names.WWW_AUTHENTICATE);
                 Request request = future.getRequest();
-                Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+                Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
                 if (statusCode == 401
                         && wwwAuth != null
                         && realm != null
@@ -800,7 +800,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     // We must consume the body first in order to re-use the connection.
                     if (response.isChunked()) {
-                        ctx.setAttachment(new AsyncCallable(future){
+                        ctx.setAttachment(new AsyncCallable(future) {
                             public Object call() throws Exception {
                                 execute(builder.setRealm(nr).build(), future);
                                 return null;
@@ -823,9 +823,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
 
                     future.setState(NettyResponseFuture.STATE.NEW);
-                    
+
                     if (response.isChunked()) {
-                        ctx.setAttachment(new AsyncCallable(future){
+                        ctx.setAttachment(new AsyncCallable(future) {
                             public Object call() throws Exception {
                                 execute(future.getRequest(), future);
                                 return null;
@@ -881,7 +881,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             }
 
                             if (response.isChunked()) {
-                                ctx.setAttachment(new AsyncCallable(future){
+                                ctx.setAttachment(new AsyncCallable(future) {
                                     public Object call() throws Exception {
                                         execute(builder.setUrl(newUrl).build(), future);
                                         if (future.getKeepAlive()) {
@@ -996,7 +996,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (ctx.getAttachment() instanceof AsyncCallable) {
-            AsyncCallable ac = (AsyncCallable)ctx.getAttachment();
+            AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
             ctx.setAttachment(new DiscardEvent());
             ac.call();
             return;
@@ -1053,7 +1053,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } catch (IOException iox) {
                     f.setState(NettyResponseFuture.STATE.CLOSED);
                     f.abort(iox);
-                    log.error(String.format(currentThread() + "Remotely Closed"),iox);
+                    log.error(String.format(currentThread() + "Remotely Closed"), iox);
                 }
             }
         }
@@ -1081,7 +1081,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } catch (Throwable t) {
             // Never propagate exception once we know we are done.
             if (log.isDebugEnabled()) {
-                log.debug(currentThread(),t);
+                log.debug(currentThread(), t);
             }
         }
 
@@ -1092,7 +1092,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean isChunked) throws IOException {
         if (isChunked && future.getKeepAlive()) {
-            ctx.setAttachment(new AsyncCallable(future){
+            ctx.setAttachment(new AsyncCallable(future) {
                 public Object call() throws Exception {
                     markAsDoneAndCacheConnection(future, ctx, ctx.getChannel().isReadable());
                     return null;
@@ -1150,21 +1150,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             future = (NettyResponseFuture<?>) ctx.getAttachment();
             future.attachChannel(null);
-            
+
             if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
                 // We will recover from a badly cached connection.
                 return;
             }
 
             // Windows only.
-            if (abortOnRemoteCloseException(cause)){
+            if (abortOnRemoteCloseException(cause)) {
                 log.debug(currentThread() + String.format("Trying to recover from dead Channel: %s ", channel));
                 remotelyClosed(channel, null);
                 return;
             }
 
         } else if (ctx.getAttachment() instanceof AsyncCallable) {
-            future = ((AsyncCallable)ctx.getAttachment()).future();
+            future = ((AsyncCallable) ctx.getAttachment()).future();
         }
 
         if (future != null) {
@@ -1177,8 +1177,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (log.isDebugEnabled()) {
             log.error(currentThread() + String.format("Exception Caught: %s Attachment was %s",
-                                                      cause != null ? cause.getMessage() : "unavailable cause",
-                                                      ctx.getAttachment()));
+                    cause != null ? cause.getMessage() : "unavailable cause",
+                    ctx.getAttachment()));
             log.error(cause);
         }
     }
@@ -1186,28 +1186,29 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /**
      * On Windows, there is scenario where the connection get broken and the only way we can find it is by inspecting
      * the stack trace in order to catch the following exception:
-     *
+     * <p/>
      * java.io.IOException: An established connection was aborted by the software in your host machine
-        at sun.nio.ch.SocketDispatcher.read0(Native Method)
-        at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:25)
-        at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:233)
-        at sun.nio.ch.IOUtil.read(IOUtil.java:200)
-        at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:207)
-        at org.jboss.netty.channel.socket.nio.NioWorker.read(NioWorker.java:322)
-        at org.jboss.netty.channel.socket.nio.NioWorker.processSelectedKeys(NioWorker.java:281)
-        at org.jboss.netty.channel.socket.nio.NioWorker.run(NioWorker.java:201)
-        at org.jboss.netty.util.internal.IoWorkerRunnable.run(IoWorkerRunnable.java:46)
-        at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:651)
-        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:676)
-        at java.lang.Thread.run(Thread.java:595)
-     *
+     * at sun.nio.ch.SocketDispatcher.read0(Native Method)
+     * at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:25)
+     * at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:233)
+     * at sun.nio.ch.IOUtil.read(IOUtil.java:200)
+     * at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:207)
+     * at org.jboss.netty.channel.socket.nio.NioWorker.read(NioWorker.java:322)
+     * at org.jboss.netty.channel.socket.nio.NioWorker.processSelectedKeys(NioWorker.java:281)
+     * at org.jboss.netty.channel.socket.nio.NioWorker.run(NioWorker.java:201)
+     * at org.jboss.netty.util.internal.IoWorkerRunnable.run(IoWorkerRunnable.java:46)
+     * at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:651)
+     * at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:676)
+     * at java.lang.Thread.run(Thread.java:595)
+     * <p/>
      * We can't look at the exception's message because it is localized.
-     * @param cause  The {@Throwable}
+     *
+     * @param cause The {@Throwable}
      * @return true if found.
      */
     private boolean abortOnRemoteCloseException(Throwable cause) {
 
-        for(StackTraceElement element: cause.getStackTrace()) {
+        for (StackTraceElement element : cause.getStackTrace()) {
             if (element.getClassName().equals("sun.nio.ch.SocketDispatcher")
                     && element.getMethodName().equals("read0")) {
                 return true;
@@ -1274,9 +1275,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     final static String currentThread() {
-       return AsyncHttpProviderUtils.currentThread();
+        return AsyncHttpProviderUtils.currentThread();
     }
-    
+
     /**
      * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run
      * them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future
@@ -1365,7 +1366,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         abstract public Object call() throws Exception;
 
-        public NettyResponseFuture<?> future(){
+        public NettyResponseFuture<?> future() {
             return future;
         }
     }
