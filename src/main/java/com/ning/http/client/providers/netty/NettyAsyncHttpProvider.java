@@ -1269,7 +1269,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
             if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
-                ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgess(amount, current, total);
+                ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
             }
         }
     }
