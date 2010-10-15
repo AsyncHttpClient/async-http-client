@@ -877,7 +877,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                     public Object call() throws Exception {
                                         execute(builder.setUrl(newUrl).build(), future);
                                         if (future.getKeepAlive()) {
-                                            connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                            boolean added = connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                            if (!added) closeChannel(ctx);
                                         } else {
                                             closeChannel(ctx);
                                         }
@@ -887,7 +888,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             } else {
                                 execute(builder.setUrl(newUrl).build(), future);
                                 if (future.getKeepAlive()) {
-                                    connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                    boolean added = connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                                    if (!added) closeChannel(ctx);
                                 } else {
                                     closeChannel(ctx);
                                 }
@@ -1061,7 +1063,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.done(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
                     if (future.getKeepAlive() && cache) {
-                        return connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                        boolean added = connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                        if (!added) closeChannel(ctx);
+                        return added;
                     }
                     return false;
                 }
