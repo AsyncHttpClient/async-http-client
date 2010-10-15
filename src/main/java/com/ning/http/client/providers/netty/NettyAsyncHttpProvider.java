@@ -211,7 +211,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
-
+        
         if (asyncHttpProviderConfig != null) {
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
                 secureBootstrap.setOption(entry.getKey(), entry.getValue());
@@ -292,9 +292,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler()));
 
+        RandomAccessFile raf = null;
         if (future.getRequest().getFile() != null) {
             final File file = future.getRequest().getFile();
-            RandomAccessFile raf;
             long fileLength = 0;
 
             try {
@@ -317,6 +317,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
+            } finally {
+                if (raf != null)
+                    try {
+                        raf.close();
+                    } catch (IOException e) {
+                    }
             }
         }
 
