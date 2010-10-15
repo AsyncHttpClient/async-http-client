@@ -63,13 +63,13 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             if (added) {
                 connectionPerHost.incrementAndGet();
             }
+            return added;
         } else {
             if (log.isDebugEnabled()) {
                 log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
             }
             return false;
         }
-        return true;
     }
 
     /**
