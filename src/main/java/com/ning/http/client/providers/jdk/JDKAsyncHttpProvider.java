@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.net.Authenticator;
@@ -525,15 +526,19 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         throw new IOException(String.format(Thread.currentThread()
                                 + "File %s is not a file or doesn't exist", file.getAbsolutePath()));
                     }
-                    long lenght = new RandomAccessFile(file, "r").length();
-                    urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
-                    urlConnection.setFixedLengthStreamingMode((int) lenght);
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(file.length()));
+                    urlConnection.setFixedLengthStreamingMode((int) file.length());
 
                     FileInputStream fis = new FileInputStream(file);
                     try {
-                        final byte[] buffer = new byte[(int) lenght];
-                        fis.read(buffer);
-                        urlConnection.getOutputStream().write(buffer);
+                        OutputStream os = urlConnection.getOutputStream();
+                        for (final byte[] buffer = new byte[1024 * 16];;) {
+                            int read = fis.read(buffer);
+                            if (read < 0) {
+                                break;
+                            }
+                            os.write(buffer, 0, read);
+                        }
                     } finally {
                         fis.close();
                     }

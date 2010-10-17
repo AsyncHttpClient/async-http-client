@@ -135,7 +135,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * @param total The total number of bytes transferred
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
-    public STATE onContentWriteProgess(long amount, long current, long total) {
+    public STATE onContentWriteProgress(long amount, long current, long total) {
         return STATE.CONTINUE;
     }
 }

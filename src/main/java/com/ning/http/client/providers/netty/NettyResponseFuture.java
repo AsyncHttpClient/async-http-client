@@ -124,7 +124,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /**
      * Is the Future still valid
      *
-     * @return <code>true</code> iff response has expired and should be terminated.
+     * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired(){
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
@@ -267,6 +267,9 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public void setReaperFuture(Future<?> reaperFuture) {
+        if (this.reaperFuture != null) {
+            this.reaperFuture.cancel(true);
+        }
         this.reaperFuture = reaperFuture;
     }
 

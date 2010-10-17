@@ -58,15 +58,18 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
 
         if (config.getMaxConnectionPerHost() == -1 || connectionPerHost.get() < config.getMaxConnectionPerHost()) {
+            connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
             boolean added = connectionsPool.put(uri, connection) == null ? true : false;
             if (added) {
                 connectionPerHost.incrementAndGet();
             }
+            return added;
         } else {
-            log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+            if (log.isDebugEnabled()) {
+                log.warn("Maximum connections per hosts reached " + config.getMaxConnectionPerHost());
+            }
             return false;
         }
-        return true;
     }
 
     /**
@@ -101,7 +104,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         Iterator<Map.Entry<String,Channel>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
             Map.Entry<String,Channel> e = i.next();
-            if (e.getValue().equals(connection)) {
+            if (e != null && e.getValue().equals(connection)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(NettyAsyncHttpProvider.currentThread()
                             + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
