@@ -51,18 +51,14 @@ import com.ning.http.client.logging.Logger;
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
 
     private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
-
-    private final Collection<HttpResponseBodyPart> bodies =
-            Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
-    private HttpResponseStatus status;
-    private HttpResponseHeaders headers;
-
+    private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
+    
     /**
      * {@inheritDoc}
      */
     /* @Override */
     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-        bodies.add(content);
+        builder.accumulate(content);
         return STATE.CONTINUE;
     }
 
@@ -71,7 +67,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      */
     /* @Override */
     public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-        this.status = status;
+        builder.accumulate(status);
         return STATE.CONTINUE;
     }
 
@@ -80,7 +76,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      */
     /* @Override */
     public final STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
-        this.headers = headers;
+        builder.accumulate(headers);
         return STATE.CONTINUE;
     }
 
@@ -89,7 +85,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      */
     /* @Override */
     public final T onCompleted() throws Exception {
-        return onCompleted(status == null? null : status.provider().prepareResponse(status, headers, bodies));
+        return onCompleted(builder.build());
     }
 
     /**

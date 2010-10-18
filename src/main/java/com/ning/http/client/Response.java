@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -135,4 +138,38 @@ public interface Response {
      * @return true if the response's body has been computed by an {@link AsyncHandler}
      */
     public boolean hasResponseBody();
+
+
+    public static class ResponseBuilder {
+
+        private final Collection<HttpResponseBodyPart> bodies =
+                Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
+        private HttpResponseStatus status;
+        private HttpResponseHeaders headers;
+
+        /**
+         * Accumulate {@link HttpContent} in order to build a {@link Response}
+         * @param httpContent {@link HttpContent}
+         * @return this
+         */
+        public ResponseBuilder accumulate(HttpContent httpContent) {
+            if (httpContent instanceof HttpResponseStatus) {
+                status = (HttpResponseStatus) httpContent;
+            } else if (httpContent instanceof HttpResponseHeaders) {
+                headers = (HttpResponseHeaders) httpContent;
+            } else if (httpContent instanceof HttpResponseBodyPart) {
+                bodies.add((HttpResponseBodyPart)httpContent);
+            }
+            return this;
+        }
+
+        /**
+         * Build a {@link Response} instance
+         * @return a {@link Response} instance
+         */
+        public Response build() {
+            return status == null ? null : status.provider().prepareResponse(status, headers, bodies);
+        }
+    }
+
 }
