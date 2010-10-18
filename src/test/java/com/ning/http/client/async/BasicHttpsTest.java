@@ -45,6 +45,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.ConnectException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -343,7 +344,10 @@ public class BasicHttpsTest {
             }
             catch (final ExecutionException e)
             {
-                assertEquals(e.getCause().getClass(), SSLHandshakeException.class);
+                assertEquals(e.getCause().getClass(), ConnectException.class);
+                assertNotNull(e.getCause());
+                assertEquals(e.getCause().getCause().getClass(), SSLHandshakeException.class);
+
             }
 
             TRUST_SERVER_CERT.set(true);

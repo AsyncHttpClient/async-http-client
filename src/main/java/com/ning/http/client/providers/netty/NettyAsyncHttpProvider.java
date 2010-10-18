@@ -110,7 +110,7 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final static String HTTP_HANDLER = "httpHandler";
-    private final static String SSL_HANDLER = "sslHandler";
+    final static String SSL_HANDLER = "sslHandler";
 
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
@@ -195,7 +195,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         });
     }
 
-    void constructSSLPipeline(final ConnectListener<?> cl) {
+    void constructSSLPipeline(final NettyConnectListener<?> cl) {
 
         secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
@@ -650,7 +650,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
 
-        ConnectListener<T> c = new ConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
+        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase("https") == 0
