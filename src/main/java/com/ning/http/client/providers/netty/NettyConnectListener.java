@@ -25,22 +25,25 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.ssl.SslHandler;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
  * Non Blocking connect.
  */
-final class ConnectListener<T> implements ChannelFutureListener {
+final class NettyConnectListener<T> implements ChannelFutureListener {
 
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
     private final HttpRequest nettyRequest;
+    private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
 
-    private ConnectListener(AsyncHttpClientConfig config,
+    private NettyConnectListener(AsyncHttpClientConfig config,
                             NettyResponseFuture<T> future,
                             HttpRequest nettyRequest) {
         this.config = config;
@@ -55,10 +58,18 @@ final class ConnectListener<T> implements ChannelFutureListener {
     public final void operationComplete(ChannelFuture f) throws Exception {
         try {
             if (f.isSuccess()) {
-                f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
+                if (!handshakeDone.getAndSet(true) && f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER) != null ){
+                    ((SslHandler)f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
+                    return;
+                }
+                f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).
+
+                setAttachment(future);
                 future.provider().executeRequest(f.getChannel(), config, future, nettyRequest);
             } else {
-                future.abort(new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString()));
+                ConnectException e = new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString());
+                e.initCause(f.getCause());
+                future.abort(e);
             }
         } catch (ConnectException ex) {
             future.abort(ex);
@@ -90,14 +101,14 @@ final class ConnectListener<T> implements ChannelFutureListener {
             this.provider = provider;
         }
 
-        public ConnectListener<T> build() throws IOException {
+        public NettyConnectListener<T> build() throws IOException {
             URI uri = AsyncHttpProviderUtils.createUri(request.getRawUrl().replace(" ", "%20"));
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, null);
             if (future == null) {
                 future = new NettyResponseFuture<T>(uri, request, asyncHandler,
                         nettyRequest, NettyAsyncHttpProvider.requestTimeout(config, request.getPerRequestConfig()), provider);
             }
-            return new ConnectListener<T>(config, future, nettyRequest);
+            return new NettyConnectListener<T>(config, future, nettyRequest);
         }
     }
 }
