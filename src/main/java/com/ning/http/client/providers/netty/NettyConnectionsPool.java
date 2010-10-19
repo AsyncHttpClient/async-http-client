@@ -51,21 +51,21 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         if (log.isDebugEnabled()) {
             log.debug(String.format(NettyAsyncHttpProvider.currentThread() + "Adding uri: %s for channel %s", uri, connection));
         }
+        connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
         List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
-        if(pooledConnectionForHost == null) {
-        	List<Channel> newPool = new LinkedList<Channel>();
-        	connectionsPool.putIfAbsent(uri, newPool);
-        	pooledConnectionForHost = connectionsPool.get(uri);
+        if (pooledConnectionForHost == null) {
+            List<Channel> newPool = new LinkedList<Channel>();
+            connectionsPool.putIfAbsent(uri, newPool);
+            pooledConnectionForHost = connectionsPool.get(uri);
         }
-        
-        synchronized(pooledConnectionForHost) {
-        	int size = pooledConnectionForHost.size();
-        	if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
-        		connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+
+        synchronized (pooledConnectionForHost) {
+            int size = pooledConnectionForHost.size();
+            if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
                 boolean added = pooledConnectionForHost.add(connection);
-                if(added) {
-                	totalConnections.incrementAndGet();
+                if (added) {
+                    totalConnections.incrementAndGet();
                 }
                 return added;
             } else {
@@ -86,25 +86,25 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public Channel removeConnection(String uri) {
-    	Channel channel = null;
+        Channel channel = null;
         List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
-        if(pooledConnectionForHost != null) {
-        	boolean poolEmpty = false;
-        	while(!poolEmpty && channel == null) {
-        		synchronized (pooledConnectionForHost) {
-		        	if(pooledConnectionForHost.size() > 0) {
-		        		channel = pooledConnectionForHost.remove(0);		        		
-		        	}
-	        	}
-        		if (channel == null) {
-        			poolEmpty = true;
-        		} else if (!channel.isConnected() || !channel.isOpen()) {
-        			removeAllConnections(channel);
-        			channel = null;
-        		} else {
-        			totalConnections.decrementAndGet();
-        		}
-			}
+        if (pooledConnectionForHost != null) {
+            boolean poolEmpty = false;
+            while (!poolEmpty && channel == null) {
+                synchronized (pooledConnectionForHost) {
+                    if (pooledConnectionForHost.size() > 0) {
+                        channel = pooledConnectionForHost.remove(0);
+                    }
+                }
+                if (channel == null) {
+                    poolEmpty = true;
+                } else if (!channel.isConnected() || !channel.isOpen()) {
+                    removeAllConnections(channel);
+                    channel = null;
+                } else {
+                    totalConnections.decrementAndGet();
+                }
+            }
         }
         return channel;
     }
@@ -116,19 +116,19 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         boolean isRemoved = false;
         Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
-            Map.Entry<String,List<Channel>> e = i.next();
+            Map.Entry<String, List<Channel>> e = i.next();
             synchronized (e.getValue()) {
-            	boolean removed = e.getValue().remove(connection);
-            	if(removed) {
-            		if (log.isDebugEnabled()) {
+                boolean removed = e.getValue().remove(connection);
+                if (removed) {
+                    if (log.isDebugEnabled()) {
                         log.debug(String.format(NettyAsyncHttpProvider.currentThread()
                                 + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
                     }
-            		totalConnections.decrementAndGet();
-            		
-            	}
-            	isRemoved |= removed;
-			}
+                    totalConnections.decrementAndGet();
+
+                }
+                isRemoved |= removed;
+            }
         }
         connection.close();
         return isRemoved;
@@ -150,16 +150,16 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public void destroy() {
         try {
-            Iterator<Map.Entry<String,List<Channel>>> i = connectionsPool.entrySet().iterator();
+            Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
             while (i.hasNext()) {
-            	List<Channel> list = i.next().getValue();
-            	synchronized (list) {
-					for(int j=0; j<list.size();j++) {
-    	                Channel channel = list.remove(0);
-    	                removeAllConnections(channel);
-    	                channel.close();
+                List<Channel> list = i.next().getValue();
+                synchronized (list) {
+                    for (int j = 0; j < list.size(); j++) {
+                        Channel channel = list.remove(0);
+                        removeAllConnections(channel);
+                        channel.close();
                     }
-				}           	
+                }
             }
         } finally {
             connectionsPool.clear();
