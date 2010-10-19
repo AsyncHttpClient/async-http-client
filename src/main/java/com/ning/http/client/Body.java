@@ -22,32 +22,31 @@ import java.nio.ByteBuffer;
 /**
  * A request body.
  */
-public interface Body
-{
+public interface Body {
 
     /**
      * Gets the length of the body.
-     * 
+     *
      * @return The length of the body in bytes, or negative if unknown.
      */
     long getLength();
 
     /**
      * Reads the next chunk of bytes from the body.
-     * 
+     *
      * @param buffer The buffer to store the chunk in, must not be {@code null}.
      * @return The non-negative number of bytes actually read or {@code -1} if the body has been read completely.
      * @throws IOException If the chunk could not be read.
      */
-    long read( ByteBuffer buffer )
-        throws IOException;
+    long read(ByteBuffer buffer)
+            throws IOException;
 
     /**
      * Releases any resources associated with this body.
-     * 
+     *
      * @throws IOException
      */
     void close()
-        throws IOException;
+            throws IOException;
 
 }

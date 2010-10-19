@@ -27,29 +27,24 @@ import java.nio.channels.WritableByteChannel;
  * Creates a request body from the contents of a file.
  */
 public class FileBodyGenerator
-    implements BodyGenerator
-{
+        implements BodyGenerator {
 
     private final File file;
 
-    public FileBodyGenerator( File file )
-    {
-        if ( file == null )
-        {
-            throw new IllegalArgumentException( "no file specified" );
+    public FileBodyGenerator(File file) {
+        if (file == null) {
+            throw new IllegalArgumentException("no file specified");
         }
         this.file = file;
     }
 
     public RandomAccessBody createBody()
-        throws IOException
-    {
-        return new FileBody( file );
+            throws IOException {
+        return new FileBody(file);
     }
 
     protected static class FileBody
-        implements RandomAccessBody
-    {
+            implements RandomAccessBody {
 
         private final RandomAccessFile file;
 
@@ -57,34 +52,29 @@ public class FileBodyGenerator
 
         private final long length;
 
-        public FileBody( File file )
-            throws IOException
-        {
-            this.file = new RandomAccessFile( file, "r" );
+        public FileBody(File file)
+                throws IOException {
+            this.file = new RandomAccessFile(file, "r");
             channel = this.file.getChannel();
             length = this.file.length();
         }
 
-        public long getLength()
-        {
+        public long getLength() {
             return length;
         }
 
-        public long read( ByteBuffer buffer )
-            throws IOException
-        {
-            return channel.read( buffer );
+        public long read(ByteBuffer buffer)
+                throws IOException {
+            return channel.read(buffer);
         }
 
-        public long transferTo( long position, long count, WritableByteChannel target )
-            throws IOException
-        {
-            return channel.transferTo( position, count, target );
+        public long transferTo(long position, long count, WritableByteChannel target)
+                throws IOException {
+            return channel.transferTo(position, count, target);
         }
 
         public void close()
-            throws IOException
-        {
+                throws IOException {
             file.close();
         }
 

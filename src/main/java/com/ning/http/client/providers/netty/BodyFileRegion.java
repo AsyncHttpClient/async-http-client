@@ -16,55 +16,45 @@
  */
 package com.ning.http.client.providers.netty;
 
-import java.io.IOException;
-import java.nio.channels.WritableByteChannel;
-
+import com.ning.http.client.RandomAccessBody;
 import org.jboss.netty.channel.FileRegion;
 
-import com.ning.http.client.RandomAccessBody;
+import java.io.IOException;
+import java.nio.channels.WritableByteChannel;
 
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
 class BodyFileRegion
-    implements FileRegion
-{
+        implements FileRegion {
 
     private final RandomAccessBody body;
 
-    public BodyFileRegion( RandomAccessBody body )
-    {
-        if ( body == null )
-        {
-            throw new IllegalArgumentException( "no body specified" );
+    public BodyFileRegion(RandomAccessBody body) {
+        if (body == null) {
+            throw new IllegalArgumentException("no body specified");
         }
         this.body = body;
     }
 
-    public long getPosition()
-    {
+    public long getPosition() {
         return 0;
     }
 
-    public long getCount()
-    {
+    public long getCount() {
         return body.getLength();
     }
 
-    public long transferTo( WritableByteChannel target, long position )
-        throws IOException
-    {
-        return body.transferTo( position, Long.MAX_VALUE, target );
+    public long transferTo(WritableByteChannel target, long position)
+            throws IOException {
+        return body.transferTo(position, Long.MAX_VALUE, target);
     }
 
-    public void releaseExternalResources()
-    {
-        try
-        {
+    public void releaseExternalResources() {
+        try {
             body.close();
         }
-        catch ( IOException e )
-        {
+        catch (IOException e) {
             // we tried
         }
     }

@@ -16,20 +16,18 @@
  */
 package com.ning.http.client.providers.netty;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
+import com.ning.http.client.Body;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.stream.ChunkedInput;
 
-import com.ning.http.client.Body;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
  */
 class BodyChunkedInput
-    implements ChunkedInput
-{
+        implements ChunkedInput {
 
     private final Body body;
 
@@ -37,29 +35,22 @@ class BodyChunkedInput
 
     private ByteBuffer nextChunk;
 
-    private static final ByteBuffer EOF = ByteBuffer.allocate( 0 );
+    private static final ByteBuffer EOF = ByteBuffer.allocate(0);
 
-    public BodyChunkedInput( Body body )
-    {
-        if ( body == null )
-        {
-            throw new IllegalArgumentException( "no body specified" );
+    public BodyChunkedInput(Body body) {
+        if (body == null) {
+            throw new IllegalArgumentException("no body specified");
         }
         this.body = body;
     }
 
     private ByteBuffer peekNextChuck()
-        throws IOException
-    {
-        if ( nextChunk == null )
-        {
-            ByteBuffer buffer = ByteBuffer.allocate( chunkSize );
-            if ( body.read( buffer ) < 0 )
-            {
+            throws IOException {
+        if (nextChunk == null) {
+            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+            if (body.read(buffer) < 0) {
                 nextChunk = EOF;
-            }
-            else
-            {
+            } else {
                 buffer.flip();
                 nextChunk = buffer;
             }
@@ -68,32 +59,27 @@ class BodyChunkedInput
     }
 
     public boolean hasNextChunk()
-        throws Exception
-    {
+            throws Exception {
         return !isEndOfInput();
     }
 
     public Object nextChunk()
-        throws Exception
-    {
+            throws Exception {
         ByteBuffer buffer = peekNextChuck();
-        if ( buffer == EOF )
-        {
+        if (buffer == EOF) {
             return null;
         }
         nextChunk = null;
-        return ChannelBuffers.wrappedBuffer( buffer );
+        return ChannelBuffers.wrappedBuffer(buffer);
     }
 
     public boolean isEndOfInput()
-        throws Exception
-    {
+            throws Exception {
         return peekNextChuck() == EOF;
     }
 
     public void close()
-        throws Exception
-    {
+            throws Exception {
         body.close();
     }
 
