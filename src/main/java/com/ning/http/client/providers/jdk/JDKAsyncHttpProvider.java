@@ -48,6 +48,7 @@ import javax.naming.AuthenticationException;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -89,8 +90,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
     private final AtomicBoolean isClose = new AtomicBoolean(false);
 
-    private final ConnectionsPool<String, URLConnection> connectionsPool;
-
     private final static int MAX_BUFFERED_BYTES = 8192;
 
     private final AtomicInteger maxConnections = new AtomicInteger();
@@ -102,14 +101,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     public JDKAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         this.config = config;
-
-        // This is dangerous as we can't catch a wrong typed ConnectionsPool
-        ConnectionsPool<String, URLConnection> cp = (ConnectionsPool<String, URLConnection>) config.getConnectionsPool();
-        if (cp == null) {
-            cp = new JDKConnectionsPool(config);
-        }
-        this.connectionsPool = cp;
-
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
         if (providerConfig != null && JDKAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
             configure(JDKAsyncHttpProviderConfig.class.cast(providerConfig));
@@ -142,6 +133,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         HttpURLConnection urlConnection = createUrlConnection(request);
         JDKFuture f = new JDKFuture<T>(handler, config.getRequestTimeoutInMs());
+        f.touch();
+
         f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));
         maxConnections.incrementAndGet();
         
@@ -307,7 +300,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (lengthWrapper[0] > 0) {
                         byte[] body = new byte[lengthWrapper[0]];
                         System.arraycopy(bytes, 0, body, 0, lengthWrapper[0]);
-
+                        future.touch();
                         asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, body, JDKAsyncHttpProvider.this));
                     }
                 }
@@ -316,8 +309,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
                     ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
                 }
-                return asyncHandler.onCompleted();
-
+                try {
+                    return asyncHandler.onCompleted();
+                } catch (Throwable t) {
+                    RuntimeException ex = new RuntimeException();
+                    ex.initCause(t);
+                    throw ex;
+                }
             } catch (Throwable t) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(t);
@@ -347,7 +345,18 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             }
 
             if (SocketTimeoutException.class.isAssignableFrom(t.getClass())) {
-                t = new TimeoutException("Request timed out.");
+                int responseTimeoutInMs = config.getRequestTimeoutInMs();
+
+                if (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
+                    responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
+                }
+                t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+            }
+
+            if (SSLHandshakeException.class.isAssignableFrom(t.getClass())) {
+                Throwable t2 = new ConnectException();
+                t2.initCause(t);
+                t = t2;
             }
 
             return t;

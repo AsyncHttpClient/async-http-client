@@ -26,6 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -38,6 +39,8 @@ public class JDKFuture<V> implements FutureImpl<V> {
     private final AtomicBoolean timedOut = new AtomicBoolean(false);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+    private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
 
     public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs) {
         this.asyncHandler = asyncHandler;
@@ -53,12 +56,11 @@ public class JDKFuture<V> implements FutureImpl<V> {
     }
 
     public void abort(Throwable t) {
+        innerFuture.cancel(true);
         exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
             asyncHandler.onThrowable(t);
-        }
-
-        innerFuture.cancel(true);
+        }     
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -71,6 +73,7 @@ public class JDKFuture<V> implements FutureImpl<V> {
     }
 
     public boolean isDone() {
+        contentProcessed.set(true);
         return innerFuture.isDone();
     }
 
@@ -87,8 +90,11 @@ public class JDKFuture<V> implements FutureImpl<V> {
         try {
             content = innerFuture.get(timeout, unit);
         } catch (TimeoutException t) {
+            if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+                return get(timeout,unit);
+            }
             timedOut.set(true);
-            throw new TimeoutException((String.format("No response received after %", responseTimeoutInMs)));
+            throw new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
         } catch (CancellationException ce) {
         }
 
@@ -96,5 +102,18 @@ public class JDKFuture<V> implements FutureImpl<V> {
             throw new ExecutionException(exception.get());
         }
         return content;
+    }
+
+    /**
+     * Is the Future still valid
+     *
+     * @return <code>true</code> if response has expired and should be terminated.
+     */
+    public boolean hasExpired(){
+        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
+    }
+
+    protected void touch() {
+        touch.set(System.currentTimeMillis());
     }
 }

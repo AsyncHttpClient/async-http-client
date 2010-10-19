@@ -1369,7 +1369,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (log.isDebugEnabled()) {
                     log.debug(currentThread() + "Request Timeout expired for " + this.nettyResponseFuture);
                 }
-                abort(this.nettyResponseFuture, new TimeoutException("Request timed out."));
+                int requestTimeout = config.getRequestTimeoutInMs();
+                PerRequestConfig p = this.nettyResponseFuture.getRequest().getPerRequestConfig();
+                if (p != null && p.getRequestTimeoutInMs() != -1) {
+                    requestTimeout = p.getRequestTimeoutInMs();
+                }
+                this.nettyResponseFuture.getRequest().getPerRequestConfig();
+
+                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
                 markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
 
                 this.nettyResponseFuture = null;

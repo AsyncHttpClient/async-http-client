@@ -384,6 +384,10 @@ public class Realm {
          * TODO: A Pattern/Matcher may be better.
          */
         private String match(String headerLine, String token) {
+            if (headerLine == null) {
+                return "";
+            }
+
             int match = headerLine.indexOf(token);
             if (match <= 0) return "";
 
