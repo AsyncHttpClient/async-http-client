@@ -55,7 +55,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.ConnectException;
@@ -547,7 +546,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 } else if (request.getBodyGenerator() != null) {
                     Body body = request.getBodyGenerator().createBody();
                     try {
-                        int length = (int) body.getLength();
+                        int length = (int) body.getContentLength();
                         if (length < 0) {
                             length = (int) request.getLength();
                         }

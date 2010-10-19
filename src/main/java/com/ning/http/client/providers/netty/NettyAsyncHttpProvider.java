@@ -307,7 +307,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
-            long length = body.getLength();
+            long length = body.getContentLength();
             if (length >= 0) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
             }

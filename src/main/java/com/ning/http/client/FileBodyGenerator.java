@@ -59,7 +59,7 @@ public class FileBodyGenerator
             length = this.file.length();
         }
 
-        public long getLength() {
+        public long getContentLength() {
             return length;
         }
 

@@ -42,7 +42,7 @@ class BodyFileRegion
     }
 
     public long getCount() {
-        return body.getLength();
+        return body.getContentLength();
     }
 
     public long transferTo(WritableByteChannel target, long position)

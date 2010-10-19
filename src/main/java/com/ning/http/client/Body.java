@@ -29,7 +29,7 @@ public interface Body {
      *
      * @return The length of the body in bytes, or negative if unknown.
      */
-    long getLength();
+    long getContentLength();
 
     /**
      * Reads the next chunk of bytes from the body.
