@@ -1374,8 +1374,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
-                this.nettyResponseFuture.getRequest().getPerRequestConfig();
-
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
                 markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
 
