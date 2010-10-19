@@ -46,6 +46,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private String stringData;
         private InputStream streamData;
         private EntityWriter entityWriter;
+        private BodyGenerator bodyGenerator;
         private FluentStringsMap params;
         private List<Part> parts;
         private String virtualHost;
@@ -71,6 +72,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
+                this.bodyGenerator = prototype.getBodyGenerator();
                 this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
                 this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
@@ -179,6 +181,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         /* @Override */
         public EntityWriter getEntityWriter() {
             return entityWriter;
+        }
+
+        /* @Override */
+        public BodyGenerator getBodyGenerator() {
+            return bodyGenerator;
         }
 
         /* @Override */
@@ -388,6 +395,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetMultipartData();
         request.entityWriter = dataWriter;
         request.length = length;
+        return derived.cast(this);
+    }
+
+    public T setBody(BodyGenerator bodyGenerator) {
+        request.bodyGenerator = bodyGenerator;
         return derived.cast(this);
     }
 

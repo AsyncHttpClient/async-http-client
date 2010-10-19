@@ -20,6 +20,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Body;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -67,6 +68,7 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
@@ -541,6 +543,32 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         }
                     } finally {
                         fis.close();
+                    }
+                } else if (request.getBodyGenerator() != null) {
+                    Body body = request.getBodyGenerator().createBody();
+                    try {
+                        int length = (int) body.getLength();
+                        if (length < 0) {
+                            length = (int) request.getLength();
+                        }
+                        if (length >= 0) {
+                            urlConnection.setRequestProperty("Content-Length", String.valueOf(length));
+                            urlConnection.setFixedLengthStreamingMode(length);
+                        }
+                        OutputStream os = urlConnection.getOutputStream();
+                        for (ByteBuffer buffer = ByteBuffer.allocate( 1024 * 8 );;) {
+                            buffer.clear();
+                            if (body.read(buffer) < 0) {
+                                break;
+                            }
+                            os.write( buffer.array(), buffer.arrayOffset(), buffer.position() );
+                        }
+                    } finally {
+                        try {
+                            body.close();
+                        } catch (IOException e) {
+                            logger.warn( e, "Failed to close request body: %s", e.getMessage() );
+                        }
                     }
                 }
             }

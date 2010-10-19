@@ -97,6 +97,12 @@ public interface Request {
     public EntityWriter getEntityWriter();
 
     /**
+     * Return the current request's body generator.
+     * @return A generator for the request body.
+     */
+    public BodyGenerator getBodyGenerator();
+
+    /**
      * Return the current size of the content-lenght header based on the body's size.
      * @return the current size of the content-lenght header based on the body's size.
      */

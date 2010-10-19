@@ -19,6 +19,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.Body;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -29,6 +30,7 @@ import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
+import com.ning.http.client.RandomAccessBody;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
@@ -298,6 +300,21 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new ConnectException(String.format(currentThread() + "Not Connected to %s", url));
         }
 
+        final Body body;
+        if (future.getRequest().getBodyGenerator() != null) {
+            try {
+                body = future.getRequest().getBodyGenerator().createBody();
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+            long length = body.getLength();
+            if (length >= 0) {
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
+            }
+        } else {
+            body = null;
+        }
+
         channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler()));
 
         RandomAccessFile raf = null;
@@ -332,6 +349,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     } catch (IOException e) {
                     }
             }
+        } else if (body != null) {
+            ChannelFuture writeFuture;
+            if (channel.getPipeline().get(SslHandler.class) == null && (body instanceof RandomAccessBody)) {
+                writeFuture = channel.write(new BodyFileRegion((RandomAccessBody)body));
+            } else {
+                writeFuture = channel.write(new BodyChunkedInput(body));
+            }
+            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler()) {
+                public void operationComplete(ChannelFuture cf) {
+                    try {
+                        body.close();
+                    } catch (IOException e) {
+                        log.warn( e, "Failed to close request body: %s", e.getMessage() );
+                    }
+                    super.operationComplete(cf);
+                }
+            });
         }
 
         try {
