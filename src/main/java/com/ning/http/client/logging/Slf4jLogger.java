@@ -27,7 +27,7 @@ public class Slf4jLogger implements Logger {
     }
 
     public void debug(String msg, Object... msgArgs) {
-        logger.debug(String.format(msg, msgArgs));
+        logger.debug(msg, msgArgs);
     }
 
     public void debug(Throwable t) {
@@ -35,11 +35,11 @@ public class Slf4jLogger implements Logger {
     }
 
     public void debug(Throwable t, String msg, Object... msgArgs) {
-        logger.debug(String.format(msg, msgArgs), t);
+        logger.debug(msg, msgArgs, t);
     }
 
     public void info(String msg, Object... msgArgs) {
-        logger.info(String.format(msg, msgArgs));
+        logger.info(msg, msgArgs);
     }
 
     public void info(Throwable t) {
@@ -47,11 +47,11 @@ public class Slf4jLogger implements Logger {
     }
 
     public void info(Throwable t, String msg, Object... msgArgs) {
-        logger.info(String.format(msg, msgArgs), t);
+        logger.info(msg, msgArgs, t);
     }
 
     public void warn(String msg, Object... msgArgs) {
-        logger.warn(String.format(msg, msgArgs));
+        logger.warn(msg, msgArgs);
     }
 
     public void warn(Throwable t) {
@@ -59,11 +59,11 @@ public class Slf4jLogger implements Logger {
     }
 
     public void warn(Throwable t, String msg, Object... msgArgs) {
-        logger.warn(String.format(msg, msgArgs), t);
+        logger.warn(msg, msgArgs, t);
     }
 
     public void error(String msg, Object... msgArgs) {
-        logger.error(String.format(msg, msgArgs));
+        logger.error(msg, msgArgs);
     }
 
     public void error(Throwable t) {
@@ -71,6 +71,6 @@ public class Slf4jLogger implements Logger {
     }
 
     public void error(Throwable t, String msg, Object... msgArgs) {
-        logger.error(String.format(msg, msgArgs), t);
+        logger.error(msg, msgArgs, t);
     }
 }
