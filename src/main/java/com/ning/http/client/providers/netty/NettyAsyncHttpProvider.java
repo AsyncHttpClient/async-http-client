@@ -83,7 +83,7 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.internal.IoWorkerRunnable;
+import org.jboss.netty.util.internal.ThreadLocalBoolean;
 
 import javax.net.ssl.SSLEngine;
 import java.io.File;
@@ -141,6 +141,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
 
     private boolean executeConnectAsync = false;
+
+    public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();    
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -621,6 +623,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /* @Override */
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+        IN_IO_THREAD.set(Boolean.TRUE);
         return doConnect(request, asyncHandler, null, true);
     }
 
@@ -730,7 +733,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         boolean directInvokation = true;
-        if (IoWorkerRunnable.IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker()) {
+        if (IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker()) {
             directInvokation = false;
         }
 
