@@ -24,9 +24,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
 
+    /**
+     * Use Netty's blocking IO stategy.
+     */
     public final static String USE_BLOCKING_IO = "useBlockingIO";
+
+    /**
+     * Use direct {@link java.nio.ByteBuffer}
+     */
     public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
 
+    /**
+     * Execute the connect operation asynchronously.
+     */
+    public final static String EXECUTE_ASYNC_CONNECT = "asyncConnect";
+
+    /**
+     * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
+     */
+    public final static String ALLOW_NESTED_REQUEST = "allowNestedRequest";
 
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 

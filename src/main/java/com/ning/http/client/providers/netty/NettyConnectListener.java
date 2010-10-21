@@ -30,6 +30,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -56,23 +57,23 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     public final void operationComplete(ChannelFuture f) throws Exception {
-        try {
-            if (f.isSuccess()) {
-                if (!handshakeDone.getAndSet(true) && f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER) != null ){
-                    ((SslHandler)f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
+        if (f.isSuccess()) {
+            if (!handshakeDone.getAndSet(true) && f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER) != null ){
+                ((SslHandler)f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
+                return;
+            }
+            f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
+            future.provider().writeRequest(f.getChannel(), config, future, nettyRequest);
+        } else {
+            if (ClosedChannelException.class.isAssignableFrom(f.getCause().getClass()) || future.getState() != NettyResponseFuture.STATE.NEW) {
+                if (future.provider().remotelyClosed(f.getChannel(), future)){
                     return;
                 }
-                f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).
-
-                setAttachment(future);
-                future.provider().executeRequest(f.getChannel(), config, future, nettyRequest);
-            } else {
-                ConnectException e = new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString());
-                e.initCause(f.getCause());
-                future.abort(e);
             }
-        } catch (ConnectException ex) {
-            future.abort(ex);
+
+            ConnectException e = new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString());
+            e.initCause(f.getCause());
+            future.abort(e);
         }
     }
 

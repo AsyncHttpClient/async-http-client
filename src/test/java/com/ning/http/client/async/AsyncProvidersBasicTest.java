@@ -19,6 +19,8 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.MaxRedirectException;
@@ -1296,12 +1298,14 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"online", "async"})
     public void asyncDoGetNestedTest() throws Throwable {
-        final AsyncHttpClient client = new AsyncHttpClient(new Builder().build());
+        AsyncHttpProviderConfig<String,Object> pc = new NettyAsyncHttpProviderConfig();
+        pc.addProperty(NettyAsyncHttpProviderConfig.ALLOW_NESTED_REQUEST, true);
+        final AsyncHttpClient client = new AsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
 
         // Use a l in case the assert fail
         final CountDownLatch l = new CountDownLatch(2);
 
-        final AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
+        final AsyncCompletionHandlerAdapter handler = new AsyncCompletionHandlerAdapter() {
 
             private final static int MAX_NESTED = 2;
 
@@ -1311,8 +1315,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             public Response onCompleted(Response response) throws Exception {
                 try {
                     if (nestedCount.getAndIncrement() < MAX_NESTED) {
-                        System.out.println("Executing a nested request: " + nestedCount);
-                        client.prepareGet("http://google.com/").execute(this);
+                       System.out.println("Executing a nested request: " + nestedCount);
+                       client.prepareGet("http://google.com/").execute(this);
                     }
                 } finally {
                     l.countDown();
@@ -1325,6 +1329,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 t.printStackTrace();
             }
         };
+
 
         client.prepareGet("http://www.google.com/").execute(handler);
 

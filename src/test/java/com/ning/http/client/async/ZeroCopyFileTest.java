@@ -68,7 +68,6 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
 
             httpResponse.setStatus(200);
             httpResponse.getOutputStream().flush();
-            httpResponse.getOutputStream().close();
         }
     }
 
@@ -82,7 +81,6 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         File file = new File(url.toURI());
         final AtomicBoolean headerSent = new AtomicBoolean(false);
         final AtomicBoolean operationCompleted = new AtomicBoolean(false);
-
 
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler() {
 
@@ -107,6 +105,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         assertEquals(resp.getResponseBody(), "This is a simple test file");
         assertTrue(operationCompleted.get());
         assertTrue(headerSent.get());
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -123,6 +122,8 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBody(), "This is a simple test file");
+        client.close();
+
     }
 
     @Override
@@ -161,8 +162,10 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
             }
         });
         Response resp = f.get();
-        stream.close();        
+        stream.close();
         assertNull(resp);
         assertEquals(file.length(), tmp.length());
+        client.close();
+
     }
 }

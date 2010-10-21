@@ -119,6 +119,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                 response.setStatus(401);
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
+
                 return;
             }
             response.addHeader("X-Auth", request.getHeader("Authorization"));
@@ -126,6 +127,7 @@ public class BasicAuthTest extends AbstractBasicTest {
             response.setStatus(200);
             response.getOutputStream().flush();
             response.getOutputStream().close();
+            
         }
     }
 

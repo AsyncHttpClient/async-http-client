@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
+    public final static String MAX_RETRY = "com.ning.http.client.providers.netty.maxRetry";
     enum STATE {
         NEW,
         POOLED,
@@ -70,6 +71,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private Channel channel;
+    private final AtomicInteger currentRetry = new AtomicInteger(0);
+    private int maxRetry = 5;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -84,6 +87,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.nettyRequest = nettyRequest;
         this.uri = uri;
         this.asyncHttpProvider = asyncHttpProvider;
+
+        if (System.getProperty(MAX_RETRY) != null) {
+            int i =  Integer.valueOf(System.getProperty(MAX_RETRY));
+            maxRetry = 5;
+        }
     }
 
     public URI getURI() throws MalformedURLException {
@@ -317,6 +325,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      */
     protected Channel channel() {
         return channel;
+    }
+
+    public boolean canRetry(){
+        if (currentRetry.getAndIncrement() > maxRetry) {
+            return false;
+        }
+        return true;
     }
 
     @Override

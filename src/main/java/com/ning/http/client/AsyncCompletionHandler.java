@@ -52,7 +52,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
     private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
-    
+
     /**
      * {@inheritDoc}
      */

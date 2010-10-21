@@ -130,7 +130,6 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 isRemoved |= removed;
             }
         }
-        connection.close();
         return isRemoved;
     }
 
