@@ -622,7 +622,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /* @Override */
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        IN_IO_THREAD.set(Boolean.TRUE);
         return doConnect(request, asyncHandler, null, true);
     }
 
@@ -793,6 +792,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         //call super to reset the read timeout
         super.messageReceived(ctx, e);
 
+        IN_IO_THREAD.set(Boolean.TRUE);        
         if (log.isDebugEnabled()) {
             log.debug(String.format(currentThread() + "Message Received %s. Attachment Type is %s",
                     e.getClass().getName(), ctx.getAttachment() != null ?
