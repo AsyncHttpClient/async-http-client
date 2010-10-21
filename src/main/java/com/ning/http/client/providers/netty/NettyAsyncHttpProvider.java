@@ -83,7 +83,6 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.internal.ThreadLocalBoolean;
 
 import javax.net.ssl.SSLEngine;
 import java.io.File;
@@ -1496,6 +1495,24 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         public NettyResponseFuture<?> future() {
             return future;
+        }
+    }
+
+    public static class ThreadLocalBoolean extends ThreadLocal<Boolean> {
+
+        private final boolean defaultValue;
+
+        public ThreadLocalBoolean() {
+            this(false);
+        }
+
+        public ThreadLocalBoolean(boolean defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        protected Boolean initialValue() {
+            return defaultValue? Boolean.TRUE : Boolean.FALSE;
         }
     }
 }
