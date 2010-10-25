@@ -38,6 +38,7 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -49,6 +50,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +65,8 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     private final static String user = "user";
     private final static String admin = "admin";
+
+    private Server server2;
 
     @BeforeClass(alwaysRun = true)
     @Override
@@ -102,11 +106,45 @@ public class BasicAuthTest extends AbstractBasicTest {
         security.setAuthenticator(new BasicAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
-
         security.setHandler(configureHandler());
+
         server.setHandler(security);
         server.start();
         log.info("Local HTTP server started successfully");
+    }
+
+    private void setUpSecondServer() throws Exception {
+        server2 = new Server();
+        port2 = findFreePort();
+        Connector listener = new SelectChannelConnector();
+
+        listener.setHost("127.0.0.1");
+        listener.setPort(port2);
+
+        server2.addConnector(listener);
+        server2.setHandler(new RedirectHandler());
+        server2.start();
+    }
+
+    private void stopSecondServer() throws Exception{
+        server2.stop();
+    }
+
+    private class RedirectHandler extends AbstractHandler {
+        public void handle(String s,
+                           Request r,
+                           HttpServletRequest request,
+                           HttpServletResponse response) throws IOException, ServletException {
+
+            if (request.getHeader("X-302") != null) {
+                response.setStatus(302);
+                response.setHeader("Location", request.getHeader("X-302"));
+                response.getOutputStream().flush();
+                response.getOutputStream().close();
+
+                return;
+            }
+        }
     }
 
     private class SimpleHandler extends AbstractHandler {
@@ -144,8 +182,31 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
     }
 
+    @Test(groups = "standalone")
+    public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
+        try {
+            setUpSecondServer();
+            AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
+                    .setHeader("X-302", getTargetUrl())
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+
+            Future<Response> f = r.execute();
+            Response resp = f.get(30, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertNotNull(resp.getHeader("X-Auth"));
+         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            stopSecondServer();
+        }
+    }
+
     protected String getTargetUrl(){
         return "http://127.0.0.1:" + port1 + "/";
+    }
+
+    protected String getTargetUrl2(){
+        return "http://127.0.0.1:" + port2 + "/";
     }
 
     @Test(groups = "standalone")
