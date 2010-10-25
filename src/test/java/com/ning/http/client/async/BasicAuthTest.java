@@ -15,7 +15,6 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -38,7 +37,6 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -50,13 +48,13 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -122,27 +120,76 @@ public class BasicAuthTest extends AbstractBasicTest {
         listener.setPort(port2);
 
         server2.addConnector(listener);
-        server2.setHandler(new RedirectHandler());
+
+        LoginService loginService = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
+        server2.addBean(loginService);
+
+        Constraint constraint = new Constraint();
+        constraint.setName(Constraint.__BASIC_AUTH);
+        constraint.setRoles(new String[]{user, admin});
+        constraint.setAuthenticate(true);
+
+        ConstraintMapping mapping = new ConstraintMapping();
+        mapping.setConstraint(constraint);
+        mapping.setPathSpec("/*");
+
+        Set<String> knownRoles = new HashSet<String>();
+        knownRoles.add(user);
+        knownRoles.add(admin);
+
+        ConstraintSecurityHandler security = new ConstraintSecurityHandler() {
+
+            @Override
+            public void handle(String arg0, Request arg1, HttpServletRequest arg2, HttpServletResponse arg3)
+                    throws IOException, ServletException {
+                System.err.println("request in security handler");
+                System.err.println("Authorization: " + arg2.getHeader("Authorization"));
+                System.err.println("RequestUri: " + arg2.getRequestURI());
+                super.handle(arg0, arg1, arg2, arg3);
+            }
+        };
+        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setAuthenticator(new BasicAuthenticator());
+        security.setLoginService(loginService);
+        security.setStrict(true);
+        security.setHandler(new RedirectHandler());
+
+        server2.setHandler(security);
         server2.start();
     }
 
-    private void stopSecondServer() throws Exception{
+    private void stopSecondServer() throws Exception {
         server2.stop();
     }
 
     private class RedirectHandler extends AbstractHandler {
+
+        private AtomicBoolean redirectOnce = new AtomicBoolean(false);
+
         public void handle(String s,
                            Request r,
                            HttpServletRequest request,
                            HttpServletResponse response) throws IOException, ServletException {
 
-            if (request.getHeader("X-302") != null) {
-                response.setStatus(302);
-                response.setHeader("Location", request.getHeader("X-302"));
+            System.err.println(request.getRequestURI());
+            if (!redirectOnce.getAndSet(true) && !"/bla".equals(request.getRequestURI())) {
+                System.err.println("redirecting to " + request.getHeader("X-302"));
+                if (request.getHeader("X-302") != null) {
+                    response.setStatus(302);
+                    response.setHeader("Location", request.getHeader("X-302"));
+                    response.getOutputStream().flush();
+                    response.getOutputStream().close();
+
+                    return;
+                }
+            } else {
+                System.err.println("got redirected" + request.getRequestURI());
+                response.addHeader("X-Auth", request.getHeader("Authorization"));
+                response.addHeader("X-Content-Lenght", String.valueOf(request.getContentLength()));
+                response.setStatus(200);
+                response.getOutputStream().write("content".getBytes("UTF-8"));
                 response.getOutputStream().flush();
                 response.getOutputStream().close();
-
-                return;
             }
         }
     }
@@ -165,7 +212,7 @@ public class BasicAuthTest extends AbstractBasicTest {
             response.setStatus(200);
             response.getOutputStream().flush();
             response.getOutputStream().close();
-            
+
         }
     }
 
@@ -188,24 +235,25 @@ public class BasicAuthTest extends AbstractBasicTest {
             setUpSecondServer();
             AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
-                    .setHeader("X-302", getTargetUrl())
+                    .setHeader("X-302", "/bla")
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(30, TimeUnit.SECONDS);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
-         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         } finally {
             stopSecondServer();
         }
     }
 
-    protected String getTargetUrl(){
+    @Override
+    protected String getTargetUrl() {
         return "http://127.0.0.1:" + port1 + "/";
     }
 
-    protected String getTargetUrl2(){
+    protected String getTargetUrl2() {
         return "http://127.0.0.1:" + port2 + "/";
     }
 
@@ -215,7 +263,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl())
                 .setHeader("X-401", "401").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
-        Future<Integer> f = r.execute(new AsyncHandler<Integer>(){
+        Future<Integer> f = r.execute(new AsyncHandler<Integer>() {
 
             private HttpResponseStatus status;
 
@@ -234,7 +282,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                 if (status.getStatusCode() != 200) {
                     return STATE.ABORT;
                 }
-                return STATE.CONTINUE;                
+                return STATE.CONTINUE;
             }
 
             public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {

@@ -946,6 +946,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
 
+                        // We must allow 401 handling again.
+                        future.getAndSetAuth(false);
+
                         String location = response.getHeader(HttpHeaders.Names.LOCATION);
                         if (location.startsWith("/")) {
                             location = AsyncHttpProviderUtils.getBaseUrl(future.getURI()) + location;
