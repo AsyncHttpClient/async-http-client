@@ -130,6 +130,21 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = "standalone")
+    public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
+                .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
+                        .setPassword(admin)
+                        .setRealmName("MyRealm").build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(60, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertNotNull(resp.getHeader("X-Auth"));
+    }
+
+    @Test(groups = "standalone")
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")

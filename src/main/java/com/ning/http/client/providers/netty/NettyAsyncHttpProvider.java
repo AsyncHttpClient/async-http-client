@@ -865,11 +865,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         && !future.getAndSetAuth(true)) {
 
                     final Realm nr = new Realm.RealmBuilder().clone(realm)
-                            .parseWWWAuthenticateHeader(wwwAuth)
+                            .setScheme(realm.getAuthScheme())                            
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getReqType())
-                            .setScheme(realm.getAuthScheme())
                             .setUsePreemptiveAuth(true)
+                            .parseWWWAuthenticateHeader(wwwAuth)                            
                             .build();
 
                     if (log.isDebugEnabled()) {

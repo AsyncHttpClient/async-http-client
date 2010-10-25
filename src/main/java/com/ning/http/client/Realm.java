@@ -352,7 +352,7 @@ public class Realm {
             setNonce(match(headerLine, "nonce"));
             setAlgorithm(match(headerLine, "algorithm"));
             setQop(match(headerLine, "qop"));
-            if (getNonce() != null) {
+            if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
                 setScheme(AuthScheme.DIGEST);
             }
             return this;
