@@ -883,7 +883,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     future.setState(NettyResponseFuture.STATE.NEW);
 
-                    if (future.getURI().getPath() != realm.getUri()) {
+                    if (!future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
                         builder.setUrl(future.getURI().toString());        
                     }
 
