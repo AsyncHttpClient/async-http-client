@@ -114,6 +114,8 @@ import static org.jboss.netty.channel.Channels.pipeline;
 public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
     private final static String HTTP_HANDLER = "httpHandler";
     final static String SSL_HANDLER = "sslHandler";
+    private final static String HTTPS = "https";
+    private final static String HTTP = "http";
 
     private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
 
@@ -297,11 +299,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
 
-        if (channel.getPipeline().get(SSL_HANDLER) != null && "http".equalsIgnoreCase(scheme)) {
+        if (channel.getPipeline().get(SSL_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
             channel.getPipeline().remove(SSL_HANDLER);
-        } else if (channel.getPipeline().get(HTTP_HANDLER) != null && "http".equalsIgnoreCase(scheme)) {
+        } else if (channel.getPipeline().get(HTTP_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
             return channel;
-        } else if (channel.getPipeline().get(SSL_HANDLER) == null && "https".equalsIgnoreCase(scheme)) {
+        } else if (channel.getPipeline().get(SSL_HANDLER) == null && HTTPS.equalsIgnoreCase(scheme)) {
             channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
         }
         return channel;
@@ -410,7 +412,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                                     boolean allowConnect, ChannelBuffer buffer) throws IOException {
 
         String method = request.getReqType();
-        if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && "https".equalsIgnoreCase(uri.getScheme()))) {
+        if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && HTTPS.equalsIgnoreCase(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, buffer);
@@ -703,9 +705,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
-        boolean useSSl = uri.getScheme().compareToIgnoreCase("https") == 0
+        boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0
                 && (proxyServer == null
-                || !proxyServer.getProtocolAsString().equals("https"));
+                || !proxyServer.getProtocolAsString().equals(HTTPS));
 
         if (useSSl) {
             constructSSLPipeline(c);
@@ -927,8 +929,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)
                         && statusCode == 200) {
 
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format(currentThread() + "Connected to %s", request.getUrl()));
+                    ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+                    if (log.isDebugEnabled() && proxyServer != null) {
+                        log.debug(String.format(currentThread() + "Connected to %s:%s", proxyServer.getHost(), proxyServer.getPort()));
                     }
 
                     if (config.getKeepAlive()) {
@@ -937,7 +940,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     try {
-                        upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl());
+                        upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl(), proxyServer);
                     } catch (Throwable ex) {
                         abort(future, ex);
                     }
@@ -1071,12 +1074,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         future.abort(t);
     }
 
-    private void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
+    private void upgradeProtocol(ChannelPipeline p, String scheme, ProxyServer proxyServer) throws IOException, GeneralSecurityException {
         if (p.get(HTTP_HANDLER) != null) {
             p.remove(HTTP_HANDLER);
         }
 
-        if (scheme.startsWith("https")) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Connecting to proxy %s for scheme %s", proxyServer, scheme));
+        }
+
+        if (scheme.startsWith(HTTPS) && proxyServer != null && proxyServer.getProtocolAsString().equalsIgnoreCase(HTTPS)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, new HttpClientCodec());
                 p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
