@@ -33,6 +33,7 @@ import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -114,18 +115,18 @@ public class BasicAuthTest extends AbstractBasicTest {
     private void setUpSecondServer() throws Exception {
         server2 = new Server();
         port2 = findFreePort();
-        Connector listener = new SelectChannelConnector();
 
-        listener.setHost("127.0.0.1");
-        listener.setPort(port2);
+        SelectChannelConnector connector = new SelectChannelConnector();
+        connector.setHost("127.0.0.1");
+        connector.setPort(port2);
 
-        server2.addConnector(listener);
+        server2.addConnector(connector);
 
         LoginService loginService = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
         server2.addBean(loginService);
 
         Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__BASIC_AUTH);
+        constraint.setName(Constraint.__DIGEST_AUTH);
         constraint.setRoles(new String[]{user, admin});
         constraint.setAuthenticate(true);
 
@@ -149,7 +150,7 @@ public class BasicAuthTest extends AbstractBasicTest {
             }
         };
         security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
-        security.setAuthenticator(new BasicAuthenticator());
+        security.setAuthenticator(new DigestAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(true);
         security.setHandler(new RedirectHandler());
@@ -171,17 +172,18 @@ public class BasicAuthTest extends AbstractBasicTest {
                            HttpServletRequest request,
                            HttpServletResponse response) throws IOException, ServletException {
 
-            System.err.println(request.getRequestURI());
-            if (!redirectOnce.getAndSet(true) && !"/bla".equals(request.getRequestURI())) {
-                System.err.println("redirecting to " + request.getHeader("X-302"));
-                if (request.getHeader("X-302") != null) {
-                    response.setStatus(302);
-                    response.setHeader("Location", request.getHeader("X-302"));
-                    response.getOutputStream().flush();
-                    response.getOutputStream().close();
+            System.err.println("redirecthandler");
+            System.err.println("request: " + request.getRequestURI());
+            if ("/uff".equals(request.getRequestURI())) {
 
-                    return;
-                }
+                System.err.println("redirect to /bla");
+                response.setStatus(302);
+                response.setHeader("Location", "/bla");
+                response.getOutputStream().flush();
+                response.getOutputStream().close();
+
+                return;
+
             } else {
                 System.err.println("got redirected" + request.getRequestURI());
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
@@ -233,9 +235,9 @@ public class BasicAuthTest extends AbstractBasicTest {
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         try {
             setUpSecondServer();
-            AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+            AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumNumberOfRedirects(10).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
-                    .setHeader("X-302", "/bla")
+                    // .setHeader( "X-302", "/bla" )
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
             Future<Response> f = r.execute();
@@ -254,7 +256,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     protected String getTargetUrl2() {
-        return "http://127.0.0.1:" + port2 + "/";
+        return "http://127.0.0.1:" + port2 + "/uff";
     }
 
     @Test(groups = "standalone")

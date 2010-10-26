@@ -172,6 +172,7 @@
                 <configuration>
                     <manifestLocation>META-INF</manifestLocation>
                     <instructions>
+                        <Bundle-Vendor>Sonatype</Bundle-Vendor>
                         <Import-Package>
                             !com.ning.http.*,
                             *

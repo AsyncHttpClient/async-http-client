@@ -851,6 +851,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 // Required if there is some trailing headers.
                 future.setHttpResponse(response);
+
                 int statusCode = response.getStatus().getCode();
 
                 String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
@@ -881,6 +882,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     future.setState(NettyResponseFuture.STATE.NEW);
+
+                    if (future.getURI().getPath() != realm.getUri()) {
+                        builder.setUrl(future.getURI().toString());        
+                    }
 
                     // We must consume the body first in order to re-use the connection.
                     if (response.isChunked()) {
@@ -932,7 +937,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     try {
-                        upgradeProtocol(ctx.getChannel().getPipeline(), (request.getUrl()));
+                        upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl());
                     } catch (Throwable ex) {
                         abort(future, ex);
                     }
@@ -945,7 +950,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
-
                         // We must allow 401 handling again.
                         future.getAndSetAuth(false);
 
@@ -970,22 +974,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             if (response.isChunked()) {
                                 ctx.setAttachment(new AsyncCallable(future) {
                                     public Object call() throws Exception {
-                                        nextRequest(builder.setUrl(newUrl).build(), future);
                                         if (initialConnectionKeepAlive) {
                                             connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
                                         } else {
                                             closeChannel(ctx);
                                         }
+                                        nextRequest(builder.setUrl(newUrl).build(), future);
                                         return null;
                                     }
                                 });
                             } else {
-                                nextRequest(builder.setUrl(newUrl).build(), future);
                                 if (initialConnectionKeepAlive) {
                                     connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
                                 } else {
                                     closeChannel(ctx);
                                 }
+                                nextRequest(builder.setUrl(newUrl).build(), future);                                
                             }
                             return;
                         }
