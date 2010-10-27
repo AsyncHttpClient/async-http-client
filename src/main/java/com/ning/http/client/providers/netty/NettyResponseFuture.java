@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public final static String MAX_RETRY = "com.ning.http.client.providers.netty.maxRetry";
+
     enum STATE {
         NEW,
         POOLED,
@@ -89,7 +90,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.asyncHttpProvider = asyncHttpProvider;
 
         if (System.getProperty(MAX_RETRY) != null) {
-            int i =  Integer.valueOf(System.getProperty(MAX_RETRY));
+            int i = Integer.valueOf(System.getProperty(MAX_RETRY));
             maxRetry = 5;
         }
     }
@@ -98,7 +99,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return uri;
     }
 
-    public void setURI(URI uri){
+    public void setURI(URI uri) {
         this.uri = uri;
     }
 
@@ -134,7 +135,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      *
      * @return <code>true</code> if response has expired and should be terminated.
      */
-    public boolean hasExpired(){
+    public boolean hasExpired() {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 
@@ -142,7 +143,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      * {@inheritDoc}
      */
     /* @Override */
-    public V get() throws InterruptedException, ExecutionException{
+    public V get() throws InterruptedException, ExecutionException {
         try {
             return get(responseTimeoutInMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -162,10 +163,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             } else {
                 expired = !latch.await(l, tu);
                 if (!contentProcessed.get() && expired && l != -1 && ((System.currentTimeMillis() - touch.get()) <= l)) {
-                    return get(l,tu);
+                    return get(l, tu);
                 }
             }
-            
+
             if (expired) {
                 isCancelled.set(true);
                 TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
@@ -178,7 +179,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             isDone.set(true);
 
             ExecutionException e = exEx.getAndSet(null);
-            if (e != null){
+            if (e != null) {
                 throw e;
             }
         }
@@ -204,7 +205,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     public final void done(Callable callable) {
         try {
-            if (exEx.get() != null){
+            if (exEx.get() != null) {
                 return;
             }
             if (reaperFuture != null) reaperFuture.cancel(true);
@@ -270,7 +271,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.httpResponse = httpResponse;
     }
 
-    public int incrementAndGetCurrentRedirectCount(){
+    public int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
     }
 
@@ -321,13 +322,14 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
     /**
      * Return the channel that was previously used. This usually means the request has been redirected.
+     *
      * @return the previously used channel.
      */
     protected Channel channel() {
         return channel;
     }
 
-    public boolean canRetry(){
+    public boolean canRetry() {
         if (currentRetry.getAndIncrement() > maxRetry) {
             return false;
         }
