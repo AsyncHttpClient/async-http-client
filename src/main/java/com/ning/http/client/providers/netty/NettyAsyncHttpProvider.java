@@ -1154,7 +1154,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return false;
         }
 
-        if (!config.getKeepAlive() || future.isDone() || !future.canRetry() || future.isCancelled()) {
+        if (!config.getKeepAlive() || future.isDone() || !future.canRetry() || future.isCancelled() || future.channel() != null) {
             return false;
         }
 
