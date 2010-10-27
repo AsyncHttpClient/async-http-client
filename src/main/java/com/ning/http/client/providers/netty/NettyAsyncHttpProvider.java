@@ -538,7 +538,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if ("POST".equals(reqType) || "PUT".equals(reqType)) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
                 // We already have processed the body.
-                if (buffer != null) {
+                if (buffer != null && buffer.writerIndex() != 0) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
                     nettyRequest.setContent(buffer);
                 } else if (request.getByteData() != null) {
@@ -677,7 +677,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (channel.isConnected()) {
 
                 ChannelBuffer b = null;
-                if (f != null && f.getRequest().getFile() == null && !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
+                if (f != null && f.getRequest().getFile() == null &&
+                        !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
                     b = f.getNettyRequest().getContent();
                 }
 
