@@ -503,7 +503,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (proxyServer != null) {
             nettyRequest.setHeader("Proxy-Connection", ka);
             if (proxyServer.getPrincipal() != null) {
-                nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+                nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
+                        AuthenticatorUtils.computeBasicAuthentication(proxyServer));
             }
         }
 
@@ -516,7 +517,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
         }
 
-        if (!m.equals(HttpMethod.CONNECT)) {        
+        if (!m.equals(HttpMethod.CONNECT)) {
             if (request.getCookies() != null && !request.getCookies().isEmpty()) {
                 CookieEncoder httpCookieEncoder = new CookieEncoder(false);
                 Iterator<Cookie> ic = request.getCookies().iterator();
@@ -607,7 +608,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
         }
-        return nettyRequest;        
+        return nettyRequest;
     }
 
     public void close() {
@@ -676,7 +677,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (channel.isConnected()) {
 
                 ChannelBuffer b = null;
-                if (f != null && f.getRequest().getFile() == null) {
+                if (f != null && f.getRequest().getFile() == null && !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
                     b = f.getNettyRequest().getContent();
                 }
 
@@ -779,7 +780,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
         NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
-        abort(future, new IOException("No response received. Connection timed out after " + config.getIdleConnectionTimeoutInMs()));
+        abort(future, new IOException("No response received. Connection timed out after "
+                + config.getIdleConnectionTimeoutInMs()));
         closeChannel(ctx);
     }
 
@@ -938,7 +940,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
                     if (log.isDebugEnabled() && proxyServer != null) {
-                        log.debug(String.format(currentThread() + "Connected to %s:%s", proxyServer.getHost(), proxyServer.getPort()));
+                        log.debug(String.format(currentThread()
+                                + "Connected to %s:%s", proxyServer.getHost(), proxyServer.getPort()));
                     }
 
                     if (config.getKeepAlive()) {
