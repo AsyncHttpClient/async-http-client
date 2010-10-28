@@ -1444,10 +1444,13 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         h.add("Content-Type", "application/x-www-form-urlencoded");
         h.add("LockThread", "true");
 
+        long t1 = System.currentTimeMillis();
         try {
             c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
             Assert.fail();
-        } catch (RuntimeException ex) {
+        } catch (Throwable ex) {
+            
+            System.out.println("EXPIRED: "  + (System.currentTimeMillis() - t1));
             Assert.assertEquals(ex.getCause().getMessage(),"No response received after 20000");
         }
         c.close();
