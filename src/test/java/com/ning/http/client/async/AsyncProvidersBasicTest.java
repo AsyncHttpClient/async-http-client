@@ -1435,4 +1435,20 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         c.close();
     }
+
+    @Test(groups = "standalone")
+    public void idleRequestTimeoutTest() throws Exception {
+        AsyncHttpClient c =  new AsyncHttpClient(
+                        new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(10000).setRequestTimeoutInMs(20000).build());
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+        h.add("Content-Type", "application/x-www-form-urlencoded");
+        h.add("LockThread", "true");
+
+        try {
+            c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
+        } catch (RuntimeException ex) {
+            Assert.assertEquals(ex.getCause().getMessage(),"No response received after 20000");
+        }
+        c.close();
+    }
 }
