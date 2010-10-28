@@ -141,7 +141,6 @@ public interface Response {
 
 
     public static class ResponseBuilder {
-
         private final Collection<HttpResponseBodyPart> bodies =
                 Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
         private HttpResponseStatus status;

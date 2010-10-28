@@ -186,9 +186,14 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return getContent();
     }
 
-    V getContent() {
+    V getContent() throws ExecutionException {
+        ExecutionException e = exEx.getAndSet(null);
+        if (e != null) {
+            throw e;
+        }
+        
         V update = content.get();
-        if (!contentProcessed.getAndSet(true)) {
+        if (exEx.get() == null && !contentProcessed.getAndSet(true)) {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
@@ -218,6 +223,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                     throw new RuntimeException(ex);
                 }
             }
+        } catch (ExecutionException t) {
+            return;
         } catch (RuntimeException t) {
             exEx.compareAndSet(null, new ExecutionException(t));
         } finally {

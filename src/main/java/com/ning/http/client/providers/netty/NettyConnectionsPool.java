@@ -20,6 +20,7 @@ import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.ssl.SslHandler;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -52,7 +53,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             log.debug(String.format(NettyAsyncHttpProvider.currentThread() + "Adding uri: %s for channel %s", uri, connection));
         }
         connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
-
+      
         List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
         if (pooledConnectionForHost == null) {
             List<Channel> newPool = new LinkedList<Channel>();

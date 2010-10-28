@@ -53,6 +53,7 @@ import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.DefaultFileRegion;
@@ -337,7 +338,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
 
-            channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
+            try {
+                channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
+            } catch(Throwable cause) {
+                if (log.isDebugEnabled()) {
+                    log.debug(cause);
+                }
+
+                if (future.provider().remotelyClosed(channel, future)) {
+                    return;
+                } else {
+                    future.abort(cause);
+                }
+            }
 
             if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
                 RandomAccessFile raf = null;
@@ -1129,11 +1142,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
 
-        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?> ) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             if (future != null && !future.isDone()) {
                 remotelyClosed(ctx.getChannel(), future);
-            }
+            } 
+        } else {
+            closeChannel(ctx);
         }
     }
 
@@ -1386,6 +1401,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             Throwable cause = cf.getCause();
             if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
 
+                if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {                    
+                    if (log.isDebugEnabled()) {
+                        log.debug(cause);
+                    }
+                    if (future.provider().remotelyClosed(cf.getChannel(), future)) {
+                        return;
+                    } else {
+                        future.abort(cause);
+                    }
+                }
+
                 if (ClosedChannelException.class.isAssignableFrom(cause.getClass())
                         || abortOnReadCloseException(cause)
                         || abortOnWriteCloseException(cause)) {
@@ -1404,6 +1430,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
                 return;
             }
+            future.touch();
 
             if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
                 if (notifyHeaders) {
