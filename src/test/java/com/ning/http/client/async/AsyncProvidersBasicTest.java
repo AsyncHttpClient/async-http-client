@@ -19,7 +19,6 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -66,18 +65,18 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
         Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
-                @Override
-                public String onCompleted(Response response) throws Exception {
-                    return response.getUri().toString();
-                }
+            @Override
+            public String onCompleted(Response response) throws Exception {
+                return response.getUri().toString();
+            }
 
-                /* @Override */
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
-                }
+            /* @Override */
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+                Assert.fail("Unexpected exception: " + t.getMessage(), t);
+            }
 
-            });
+        });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/foo.html?q=+%20x");
     }
@@ -90,18 +89,18 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .build();
 
         Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
-                @Override
-                public String onCompleted(Response response) throws Exception {
-                    return response.getUri().toString();
-                }
-        
-                /* @Override */
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
-                }
+            @Override
+            public String onCompleted(Response response) throws Exception {
+                return response.getUri().toString();
+            }
 
-            });
+            /* @Override */
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+                Assert.fail("Unexpected exception: " + t.getMessage(), t);
+            }
+
+        });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/foo.html?q=a%20b");
     }
@@ -113,18 +112,18 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .build();
 
         Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
-                @Override
-                public String onCompleted(Response response) throws Exception {
-                    return response.getUri().toString();
-                }
+            @Override
+            public String onCompleted(Response response) throws Exception {
+                return response.getUri().toString();
+            }
 
-                /* @Override */
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
-                }
+            /* @Override */
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+                Assert.fail("Unexpected exception: " + t.getMessage(), t);
+            }
 
-            });
+        });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/");
     }
@@ -1298,7 +1297,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"online", "async"})
     public void asyncDoGetNestedTest() throws Throwable {
-        AsyncHttpProviderConfig<String,Object> pc = new NettyAsyncHttpProviderConfig();
+        AsyncHttpProviderConfig<String, Object> pc = new NettyAsyncHttpProviderConfig();
         pc.addProperty(NettyAsyncHttpProviderConfig.ALLOW_NESTED_REQUEST, true);
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
 
@@ -1315,8 +1314,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             public Response onCompleted(Response response) throws Exception {
                 try {
                     if (nestedCount.getAndIncrement() < MAX_NESTED) {
-                       System.out.println("Executing a nested request: " + nestedCount);
-                       client.prepareGet("http://google.com/").execute(this);
+                        System.out.println("Executing a nested request: " + nestedCount);
+                        client.prepareGet("http://google.com/").execute(this);
                     }
                 } finally {
                     l.countDown();
@@ -1366,7 +1365,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().build());
         Response r = client.prepareOptions("http://www.apache.org/").execute().get();
 
-        assertEquals(r.getStatusCode(),200);
+        assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("Allow"), "GET,HEAD,POST,OPTIONS,TRACE");
 
         client.close();
@@ -1377,7 +1376,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().build());
         Response r = client.prepareOptions("http://www.google.com/").execute().get();
 
-        assertEquals(r.getStatusCode(),405);
+        assertEquals(r.getStatusCode(), 405);
         assertEquals(r.getHeader("Allow"), null);
 
         client.close();
