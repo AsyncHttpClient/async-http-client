@@ -1446,6 +1446,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         try {
             c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
+            Assert.fail();
         } catch (RuntimeException ex) {
             Assert.assertEquals(ex.getCause().getMessage(),"No response received after 20000");
         }
