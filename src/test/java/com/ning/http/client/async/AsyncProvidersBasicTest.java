@@ -945,6 +945,30 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "async"})
+    public void asyncConnectInvalidFuture() throws Throwable {
+
+        AsyncHttpClient c = new AsyncHttpClient();
+        final AtomicInteger count = new AtomicInteger();
+        for (int i = 0; i < 20; i++) {
+            try {
+                Response response = c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
+                    /* @Override */
+                    public void onThrowable(Throwable t) {
+                        count.incrementAndGet();
+                    }
+                }).get();
+                assertNull(response, "Should have thrown ExecutionException");
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (!(cause instanceof ConnectException)) {
+                    fail("Should have been caused by ConnectException, not by " + cause.getClass().getName());
+                }
+            }
+        }
+        assertEquals(count.get(), 20);
+    }
+
+    @Test(groups = {"standalone", "async"})
     public void asyncConnectInvalidPortFuture() throws Throwable {
 
         AsyncHttpClient c = new AsyncHttpClient();
