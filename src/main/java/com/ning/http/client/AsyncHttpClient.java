@@ -363,10 +363,13 @@ public class AsyncHttpClient {
 
     @Override
     protected void finalize() throws Throwable {
-        if (!isClosed.get()) {
-            close();
+        try {
+            if (!isClosed.get()) {
+                close();
+            }
+        } finally {
+            super.finalize();
         }
-        super.finalize();
     }
 
     /**
