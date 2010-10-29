@@ -111,6 +111,10 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         cancelled.set(true);
+        if (reaperFuture != null) {
+            reaperFuture.cancel(true);
+        }
+
         if (innerFuture != null) {
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {

@@ -4,18 +4,21 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.Body;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
 import com.ning.http.client.logging.LogManager;
@@ -55,8 +58,8 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.util.IdleConnectionTimeoutThread;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpRequest;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -64,16 +67,19 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.swing.text.AbstractDocument;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -94,7 +100,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Provides a generic http client.
  */
-public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClient> {
+public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     private final static Logger logger = LogManager.getLogger(JDKAsyncHttpProvider.class);
 
 
@@ -130,7 +136,7 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
         }, 443));
     }
 
-    public ApacheAsyncHttpClientProvider(AsyncHttpClientConfig config) throws IOException {
+    public ApacheAsyncHttpProvider(AsyncHttpClientConfig config) throws IOException {
         this.config = config;
         connectionManager = new MultiThreadedHttpConnectionManager();
 
@@ -213,7 +219,6 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
             EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());
             post.getParams().setContentCharset("UTF-8");
-            post.setRequestHeader("Content-Length", String.valueOf(request.getLength()));
             if (request.getByteData() != null) {
                 post.setRequestEntity(new ByteArrayRequestEntity(request.getByteData()));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getByteData().length));
@@ -249,10 +254,54 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
                 MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), post.getParams());
                 post.setRequestEntity(mre);
                 post.setRequestHeader("Content-Type", mre.getContentType());
-                post.setRequestHeader("Content-Lenght", String.valueOf(mre.getContentLength()));
+                post.setRequestHeader("Content-Length", String.valueOf(mre.getContentLength()));
             } else if (request.getEntityWriter() != null) {
-                post.setRequestEntity(new EntityWriterRequestEntity(request.getEntityWriter(), request.getLength()));
+                post.setRequestEntity(new EntityWriterRequestEntity(request.getEntityWriter(), computeAndSetContentLength(request, post)));
+            } else if (request.getFile() != null) {
+                File file = request.getFile();
+                if (!file.isFile()) {
+                    throw new IOException(String.format(Thread.currentThread()
+                            + "File %s is not a file or doesn't exist", file.getAbsolutePath()));
+                }
+                post.setRequestHeader("Content-Length", String.valueOf(file.length()));
+
+                FileInputStream fis = new FileInputStream(file);
+                try {
+                    InputStreamRequestEntity r = new InputStreamRequestEntity(fis);
+                    post.setRequestEntity(r);
+                    post.setRequestHeader("Content-Length", String.valueOf(r.getContentLength()));
+                } finally {
+                    fis.close();
+                }
+            } else if (request.getBodyGenerator() != null) {
+                Body body = request.getBodyGenerator().createBody();
+                try {
+                    int length = (int) body.getContentLength();
+                    if (length < 0) {
+                        length = (int) request.getLength();
+                    }
+                    if (length >= 0) {
+                        post.setRequestHeader("Content-Length", String.valueOf(length));
+                    }
+                    // This is totally sub optimal
+                    byte[] bytes = new byte[length];
+                    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                    for (;;) {
+                        buffer.clear();
+                        if (body.read(buffer) < 0) {
+                            break;
+                        }
+                    }
+                    post.setRequestEntity(new ByteArrayRequestEntity(bytes));
+                } finally {
+                    try {
+                        body.close();
+                    } catch (IOException e) {
+                        logger.warn( e, "Failed to close request body: %s", e.getMessage() );
+                    }
+                }
             }
+
             method = post;
         } else if (methodName.equalsIgnoreCase("DELETE")) {
             method = new DeleteMethod(request.getUrl());
@@ -316,15 +365,29 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
         return method;
     }
 
+    private final static int computeAndSetContentLength(Request request, HttpMethodBase m) {
+        int lenght = (int) request.getLength();
+        if (lenght == -1 && m.getRequestHeader("Content-Length") != null) {
+            lenght = Integer.valueOf(m.getRequestHeader("Content-Length").getValue());
+        }
+
+        if (lenght != -1) {
+            m.setRequestHeader("Content-Length", String.valueOf(lenght));
+        }
+        return lenght;
+    }
 
     public class ApacheClientRunnable<T> implements Callable<T> {
 
         private final AsyncHandler<T> asyncHandler;
-        private final HttpMethodBase method;
+        private HttpMethodBase method;
         private final ApacheResponseFuture<T> future;
         private Request request;
         private final HttpClient httpClient;
         private int currentRedirectCount;
+        private AtomicBoolean isAuth = new AtomicBoolean(false);
+        private byte[] cachedBytes;
+        private int cachedBytesLenght;
 
         public ApacheClientRunnable(Request request, AsyncHandler<T> asyncHandler, HttpMethodBase method, ApacheResponseFuture<T> future, HttpClient httpClient) {
             this.asyncHandler = asyncHandler;
@@ -347,15 +410,50 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
                 int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
                 if (delay != -1) {
                     ReaperFuture reaperFuture = new ReaperFuture(future);
-                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                     reaperFuture.setScheduledFuture(scheduledFuture);
                     future.setReaperFuture(reaperFuture);
                 }
 
                 int statusCode = httpClient.executeMethod(method);
-                state = asyncHandler.onStatusReceived(new ApacheResponseStatus(uri, method, ApacheAsyncHttpClientProvider.this));
+                
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format(currentThread()
+                            + "\n\nRequest %s\n\nResponse %s\n", request.toString(), method.toString()));
+                }
+
+                boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
+                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
+
+                    isAuth.set(false);
+
+                    if (currentRedirectCount++ < config.getMaxRedirects()) {
+                        String location = method.getResponseHeader("Location").getValue();
+                        if (location.startsWith("/")) {
+                            location = AsyncHttpProviderUtils.getBaseUrl(uri) + location;
+                        }
+
+                        if (!location.equals(uri.toString())) {
+                            URI newUri = AsyncHttpProviderUtils.createUri(location);
+
+                            RequestBuilder builder = new RequestBuilder(request);
+                            String newUrl = newUri.toString();
+
+                            if (logger.isDebugEnabled()) {
+                                logger.debug(String.format(AsyncHttpProviderUtils.currentThread() + "Redirecting to %s", newUrl));
+                            }
+                            request = builder.setUrl(newUrl).build();
+                            method = createMethod(httpClient, request);
+                            return call();
+                        }
+                    } else {
+                        throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+                    }
+                }
+
+                state = asyncHandler.onStatusReceived(new ApacheResponseStatus(uri, method, ApacheAsyncHttpProvider.this));
                 if (state == AsyncHandler.STATE.CONTINUE) {
-                    state = asyncHandler.onHeadersReceived(new ApacheResponseHeaders(uri, method, ApacheAsyncHttpClientProvider.this));
+                    state = asyncHandler.onHeadersReceived(new ApacheResponseHeaders(uri, method, ApacheAsyncHttpProvider.this));
                 }
 
                 if (state == AsyncHandler.STATE.CONTINUE) {
@@ -376,7 +474,7 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
                             byte[] body = new byte[lengthWrapper[0]];
                             System.arraycopy(bytes, 0, body, 0, lengthWrapper[0]);
                             future.touch();
-                            asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, body, ApacheAsyncHttpClientProvider.this));
+                            asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, body, ApacheAsyncHttpProvider.this));
                         }
                     }
                 }
@@ -411,6 +509,7 @@ public class ApacheAsyncHttpClientProvider implements AsyncHttpProvider<HttpClie
                 if (config.getMaxTotalConnections() != -1) {
                     maxConnections.decrementAndGet();
                 }
+                future.done(null);
                 method.releaseConnection();
             }
             return null;

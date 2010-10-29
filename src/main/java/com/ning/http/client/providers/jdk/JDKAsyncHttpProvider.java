@@ -198,7 +198,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         private Request request;
         private final AsyncHandler<T> asyncHandler;
         private final JDKFuture future;
-        // We kept a reference to the original one for debugging purpose
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;

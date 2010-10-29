@@ -286,7 +286,7 @@ public class BasicHttpsTest {
     }
 
     @Test(groups = "standalone")
-    public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+    public void zeroCopyPostTest() throws Throwable {
 
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 

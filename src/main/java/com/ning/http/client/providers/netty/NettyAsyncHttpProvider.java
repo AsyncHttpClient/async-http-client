@@ -53,7 +53,6 @@ import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.DefaultFileRegion;
@@ -1470,9 +1469,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final class ReaperFuture implements Future, Runnable {
         private Future scheduledFuture;
         private Channel channel;
-        private NettyResponseFuture nettyResponseFuture;
+        private NettyResponseFuture<?> nettyResponseFuture;
 
-        public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
+        public ReaperFuture(Channel channel, NettyResponseFuture<?> nettyResponseFuture) {
             this.channel = channel;
             this.nettyResponseFuture = nettyResponseFuture;
         }

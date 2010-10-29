@@ -53,6 +53,8 @@ public class JDKFuture<V> implements FutureImpl<V> {
 
     public void done(Callable callable) {
         isDone.set(true);
+        if (innerFuture != null) {
+        }
     }
 
     public void abort(Throwable t) {
