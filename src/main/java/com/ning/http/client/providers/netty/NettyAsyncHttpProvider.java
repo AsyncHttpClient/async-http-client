@@ -799,7 +799,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
 
-            abort(future, new IOException("No response received. Connection timed out after "
+            abort(future, new TimeoutException("No response received. Connection timed out after "
                     + config.getIdleConnectionTimeoutInMs()));
         }
         if (log.isDebugEnabled()) {
