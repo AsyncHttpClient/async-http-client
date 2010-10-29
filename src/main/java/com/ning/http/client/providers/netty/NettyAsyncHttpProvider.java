@@ -147,7 +147,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();    
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
-        super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
+        super(new HashedWheelTimer(), 0, config.getIdleConnectionTimeoutInMs(), 0, TimeUnit.MILLISECONDS);
 
         if (config.getAsyncHttpProviderConfig() != null
                 && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
