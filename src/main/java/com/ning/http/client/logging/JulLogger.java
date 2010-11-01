@@ -25,31 +25,31 @@ public class JulLogger implements Logger {
     }
 
     public boolean isDebugEnabled() {
-        return logger.isLoggable(Level.INFO);
+        return logger.isLoggable(Level.FINE);
     }
 
     public void debug(String msg, Object... msgArgs) {
-        logger.log(Level.INFO, msg, msgArgs);
+        logger.log(Level.FINE, msg, msgArgs);
     }
 
     public void debug(Throwable t) {
-        logger.log(Level.INFO, t.getMessage(), t);
+        logger.log(Level.FINE, t.getMessage(), t);
     }
 
     public void debug(Throwable t, String msg, Object... msgArgs) {
-        logger.log(Level.INFO, String.format(msg, msgArgs), t);
+        logger.log(Level.FINE, String.format(msg, msgArgs), t);
     }
 
-    public void info(String msg, Object... msgArgs) {
-        logger.log(Level.INFO, msg, msgArgs);
+    public void FINE(String msg, Object... msgArgs) {
+        logger.log(Level.FINE, msg, msgArgs);
     }
 
-    public void info(Throwable t) {
-        logger.log(Level.INFO, t.getMessage(), t);
+    public void FINE(Throwable t) {
+        logger.log(Level.FINE, t.getMessage(), t);
     }
 
-    public void info(Throwable t, String msg, Object... msgArgs) {
-        logger.log(Level.INFO, String.format(msg, msgArgs), t);
+    public void FINE(Throwable t, String msg, Object... msgArgs) {
+        logger.log(Level.FINE, String.format(msg, msgArgs), t);
     }
 
     public void warn(String msg, Object... msgArgs) {
