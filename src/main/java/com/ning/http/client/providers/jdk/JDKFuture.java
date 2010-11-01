@@ -53,23 +53,35 @@ public class JDKFuture<V> implements FutureImpl<V> {
 
     public void done(Callable callable) {
         isDone.set(true);
+        if (innerFuture != null) {
+        }
     }
 
     public void abort(Throwable t) {
-        innerFuture.cancel(true);
+        if (innerFuture != null) {
+            innerFuture.cancel(true);
+        }
         exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
             asyncHandler.onThrowable(t);
-        }     
+        }
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         cancelled.set(true);
-        return innerFuture.cancel(mayInterruptIfRunning);
+        if (innerFuture != null) {
+            return innerFuture.cancel(mayInterruptIfRunning);
+        } else {
+            return false;
+        }
     }
 
     public boolean isCancelled() {
-        return innerFuture.isCancelled();
+        if (innerFuture != null) {
+            return innerFuture.isCancelled();
+        } else {
+            return false;
+        }
     }
 
     public boolean isDone() {
@@ -88,7 +100,9 @@ public class JDKFuture<V> implements FutureImpl<V> {
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         V content = null;
         try {
-            content = innerFuture.get(timeout, unit);
+            if (innerFuture != null) {
+                content = innerFuture.get(timeout, unit);
+            }
         } catch (TimeoutException t) {
             if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
                 return get(timeout,unit);

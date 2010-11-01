@@ -40,6 +40,7 @@ public class Realm {
     private final String uri;
     private final String methodName;
     private final boolean usePreemptiveAuth;
+    private final String enc;
 
     private final String domain;
 
@@ -62,7 +63,7 @@ public class Realm {
                   String uri,
                   String method,
                   boolean usePreemptiveAuth,
-                  String domain) {
+                  String domain, String enc) {
 
         this.principal = principal;
         this.password = password;
@@ -78,6 +79,7 @@ public class Realm {
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.domain = domain;
+        this.enc = enc;
     }
 
     public String getPrincipal() {
@@ -127,6 +129,10 @@ public class Realm {
 
     public String getUri() {
         return uri;
+    }
+
+    public String getEncoding(){
+        return enc;
     }
 
     public String getMethodName() {
@@ -229,6 +235,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive = false;
         private String domain = "";
+        private String enc = "UTF-8";
 
         public String getDomain() {
             return domain;
@@ -402,6 +409,15 @@ public class Realm {
             return value.startsWith("\"") ? value.substring(1) : value;
         }
 
+        public String getEncoding() {
+            return enc;
+        }
+
+        public RealmBuilder setEnconding(String enc) {
+            this.enc = enc;
+            return this;
+        }        
+
         private void newResponse() throws UnsupportedEncodingException {
             MessageDigest md = null;
             try {
@@ -494,7 +510,7 @@ public class Realm {
                     uri,
                     methodName,
                     usePreemptive,
-                    domain);
+                    domain, enc);
         }
     }
 

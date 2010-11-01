@@ -23,14 +23,14 @@ import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
 
-    public static String computeBasicAuthentication(Realm realm) {
+    public static String computeBasicAuthentication(Realm realm) throws UnsupportedEncodingException {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
-        return "Basic " + Base64.encode(s.getBytes());
+        return "Basic " + Base64.encode(s.getBytes(realm.getEncoding()));
     }
 
-    public static String computeBasicAuthentication(ProxyServer proxyServer) {
+    public static String computeBasicAuthentication(ProxyServer proxyServer) throws UnsupportedEncodingException {
         String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
-        return "Basic " + Base64.encode(s.getBytes());
+        return "Basic " + Base64.encode(s.getBytes(proxyServer.getEncoding()));
     }
 
     public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException, UnsupportedEncodingException {

@@ -53,7 +53,6 @@ import org.jboss.netty.channel.ChannelFutureProgressListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.DefaultFileRegion;
@@ -147,7 +146,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();    
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
-        super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionTimeoutInMs(), TimeUnit.MILLISECONDS);
+        super(new HashedWheelTimer(), 0, config.getIdleConnectionTimeoutInMs(), 0, TimeUnit.MILLISECONDS);
 
         if (config.getAsyncHttpProviderConfig() != null
                 && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
@@ -417,7 +416,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
                 ReaperFuture reaperFuture = new ReaperFuture(channel, future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
 
@@ -789,13 +788,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     @Override
     protected void channelIdle(ChannelHandlerContext ctx, IdleState state, long lastActivityTimeMillis) throws Exception {
+
+        if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
+            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+
+            if (config.getIdleConnectionTimeoutInMs() < config.getRequestTimeoutInMs()) {
+                if (!future.isDone() && !future.isCancelled()) {
+                    return;
+                }
+            }
+
+            abort(future, new TimeoutException("No response received. Connection timed out after "
+                    + config.getIdleConnectionTimeoutInMs()));
+        }
         if (log.isDebugEnabled()) {
             log.debug(String.format(currentThread() + "Channel Idle: %s", ctx.getChannel()));
         }
-        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-
-        abort(future, new IOException("No response received. Connection timed out after "
-                + config.getIdleConnectionTimeoutInMs()));
         closeChannel(ctx);
     }
 
@@ -1170,7 +1178,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return false;
         }
 
-        if (!config.getKeepAlive() || future.isDone() || !future.canRetry() || future.isCancelled() || future.channel() != null) {
+        if (!config.getKeepAlive() || future.isDone() || !future.canRetry() || future.isCancelled()
+                || (future.channel() != null && future.channel().isOpen())) {
             return false;
         }
 
@@ -1461,9 +1470,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final class ReaperFuture implements Future, Runnable {
         private Future scheduledFuture;
         private Channel channel;
-        private NettyResponseFuture nettyResponseFuture;
+        private NettyResponseFuture<?> nettyResponseFuture;
 
-        public ReaperFuture(Channel channel, NettyResponseFuture nettyResponseFuture) {
+        public ReaperFuture(Channel channel, NettyResponseFuture<?> nettyResponseFuture) {
             this.channel = channel;
             this.nettyResponseFuture = nettyResponseFuture;
         }

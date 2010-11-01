@@ -24,6 +24,8 @@ import java.net.SocketAddress;
  * Represents a proxy server.
  */
 public class ProxyServer {
+    private String encoding = "UTF-8";
+
     public enum Protocol {
         HTTP("http"), HTTPS("https");
 
@@ -124,6 +126,14 @@ public class ProxyServer {
         }
     }
 
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+    
     @Override
     public String toString() {
         return String.format("%s://%s:%d", protocol.toString(), host, port);
