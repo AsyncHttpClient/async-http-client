@@ -120,7 +120,7 @@ public class AuthTimeoutTest
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = "standalone", enabled = false)
     public void basicAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -176,7 +176,7 @@ public class AuthTimeoutTest
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = "standalone", enabled=false)
     public void digestAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
