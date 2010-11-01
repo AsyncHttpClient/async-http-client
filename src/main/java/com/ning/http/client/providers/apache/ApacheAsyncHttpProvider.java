@@ -411,7 +411,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
                 if (delay != -1) {
                     ReaperFuture reaperFuture = new ReaperFuture(future);
-                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
+                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                     reaperFuture.setScheduledFuture(scheduledFuture);
                     future.setReaperFuture(reaperFuture);
                 }
