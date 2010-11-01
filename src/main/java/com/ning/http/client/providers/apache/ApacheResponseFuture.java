@@ -170,7 +170,7 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired(){
-        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
+        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) >= responseTimeoutInMs);
     }
 
     protected void touch() {
