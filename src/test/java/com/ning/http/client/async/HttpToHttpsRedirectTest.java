@@ -144,7 +144,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        Response response = c.preparePost(getTargetUrl())
+        Response response = c.prepareGet(getTargetUrl())
                 .setHeader("X-redirect", getTargetUrl2() )
                 .execute().get();
         assertNotNull(response);
@@ -163,7 +163,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        Response response = c.preparePost(getTargetUrl())
+        Response response = c.prepareGet(getTargetUrl())
                 .setHeader("X-redirect", getTargetUrl2() + "/test2")
                 .execute().get();
         assertNotNull(response);
@@ -171,7 +171,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
 
         // Test if the internal channel is downgraded to clean http.
-        response = c.preparePost(getTargetUrl())
+        response = c.prepareGet(getTargetUrl())
                 .setHeader("X-redirect", getTargetUrl2() + "/foo2")
                 .execute().get();
         assertNotNull(response);
@@ -186,7 +186,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
-        Response response = c.preparePost(getTargetUrl())
+        Response response = c.prepareGet(getTargetUrl())
                 .setHeader("X-redirect", "/foo/test")
                 .execute().get();
         assertNotNull(response);

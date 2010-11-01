@@ -27,6 +27,7 @@ import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProviderConfig;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
@@ -415,7 +416,15 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     future.setReaperFuture(reaperFuture);
                 }
 
-                int statusCode = httpClient.executeMethod(method);
+
+                int statusCode = 200;
+                try {
+                    statusCode = httpClient.executeMethod(method);
+                } catch (CircularRedirectException ex) {
+                    // Quite ugly, but this is needed to unify 
+                    statusCode = 302;
+                    currentRedirectCount = config.getMaxRedirects();
+                }
                 
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format(currentThread()

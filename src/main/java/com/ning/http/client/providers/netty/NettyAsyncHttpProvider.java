@@ -416,7 +416,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
                 ReaperFuture reaperFuture = new ReaperFuture(channel, future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
 
