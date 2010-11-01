@@ -40,15 +40,15 @@ public class JulLogger implements Logger {
         logger.log(Level.FINE, String.format(msg, msgArgs), t);
     }
 
-    public void FINE(String msg, Object... msgArgs) {
+    public void info(String msg, Object... msgArgs) {
         logger.log(Level.FINE, msg, msgArgs);
     }
 
-    public void FINE(Throwable t) {
+    public void info(Throwable t) {
         logger.log(Level.FINE, t.getMessage(), t);
     }
 
-    public void FINE(Throwable t, String msg, Object... msgArgs) {
+    public void info(Throwable t, String msg, Object... msgArgs) {
         logger.log(Level.FINE, String.format(msg, msgArgs), t);
     }
 
