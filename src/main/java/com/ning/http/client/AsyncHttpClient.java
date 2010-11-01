@@ -141,7 +141,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AsyncHttpClient {
 
-    private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.apache.ApacheAsyncHttpProvider";
+    private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.netty.NettyAsyncHttpProvider";
     private final AsyncHttpProvider<?> httpProvider;
     private final AsyncHttpClientConfig config;
     private final static Logger logger = LogManager.getLogger(AsyncHttpClient.class);

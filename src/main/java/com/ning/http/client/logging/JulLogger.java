@@ -25,19 +25,19 @@ public class JulLogger implements Logger {
     }
 
     public boolean isDebugEnabled() {
-        return logger.isLoggable(Level.FINE);
+        return logger.isLoggable(Level.INFO);
     }
 
     public void debug(String msg, Object... msgArgs) {
-        logger.log(Level.FINE, msg, msgArgs);
+        logger.log(Level.INFO, msg, msgArgs);
     }
 
     public void debug(Throwable t) {
-        logger.log(Level.FINE, t.getMessage(), t);
+        logger.log(Level.INFO, t.getMessage(), t);
     }
 
     public void debug(Throwable t, String msg, Object... msgArgs) {
-        logger.log(Level.FINE, String.format(msg, msgArgs), t);
+        logger.log(Level.INFO, String.format(msg, msgArgs), t);
     }
 
     public void info(String msg, Object... msgArgs) {
