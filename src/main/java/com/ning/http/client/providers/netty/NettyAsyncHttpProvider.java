@@ -248,7 +248,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (channel != null) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format(currentThread() + "Using cached Channel %s", uri, channel));
+                log.debug(String.format(currentThread() + "Using cached Channel %s for uri %s", channel, uri));
             }
 
             if (channel.isOpen() && channel.isBound()) {
@@ -708,7 +708,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(currentThread()
-                            + "\n\nCached Request %s\n", request.toString()));
+                            + "\n\nCached Request %s\n", channel));
                 }
                 channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
@@ -748,7 +748,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
-            bootstrap.setOption("connectTimeout", config.getConnectionTimeoutInMs());
+            bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
             log.error(String.format(currentThread() + "doConnect"), t);
             abort(c.future(), t.getCause());
