@@ -49,7 +49,7 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
 
     public ApacheResponseFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, Request request, HttpMethodBase method) {
         this.asyncHandler = asyncHandler;
-        this.responseTimeoutInMs = responseTimeoutInMs;
+        this.responseTimeoutInMs = responseTimeoutInMs == -1 ? Integer.MAX_VALUE : responseTimeoutInMs;
         this.request = request;
         this.method = method;
     }

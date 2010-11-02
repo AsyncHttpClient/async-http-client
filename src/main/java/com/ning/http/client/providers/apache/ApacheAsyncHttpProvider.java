@@ -59,8 +59,6 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.util.IdleConnectionTimeoutThread;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -68,7 +66,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -106,28 +103,21 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
 
 
     private final AsyncHttpClientConfig config;
-
     private final AtomicBoolean isClose = new AtomicBoolean(false);
-
-    private final static int MAX_BUFFERED_BYTES = 8192;
     private IdleConnectionTimeoutThread idleConnectionTimeoutThread;
     private final AtomicInteger maxConnections = new AtomicInteger();
-
     private final MultiThreadedHttpConnectionManager connectionManager;
-
     private final HttpClientParams params;
-
-    // we do this here because HttpMethodBase access a static map if the URI is absolute
 
     static {
         final SocketFactory factory = new TrustingSSLSocketFactory();
         Protocol.registerProtocol("https", new Protocol("https", new ProtocolSocketFactory() {
-            public Socket createSocket(String string, int i, InetAddress inetAddress, int i1) throws IOException, UnknownHostException {
+            public Socket createSocket(String string, int i, InetAddress inetAddress, int i1) throws IOException {
                 return factory.createSocket(string, i, inetAddress, i1);
             }
 
             public Socket createSocket(String string, int i, InetAddress inetAddress, int i1, HttpConnectionParams httpConnectionParams)
-                    throws IOException, ConnectTimeoutException {
+                    throws IOException {
                 return factory.createSocket(string, i, inetAddress, i1);
             }
 
@@ -170,8 +160,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         int requestTimeout = requestTimeout(config, request.getPerRequestConfig());
-
-        if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
+        if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout != -1 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
             idleConnectionTimeoutThread = new IdleConnectionTimeoutThread();
             idleConnectionTimeoutThread.setConnectionTimeout(config.getIdleConnectionTimeoutInMs());
             idleConnectionTimeoutThread.addConnectionManager(connectionManager);
@@ -188,7 +177,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         HttpMethodBase method = createMethod(httpClient, request);
-        ApacheResponseFuture f = new ApacheResponseFuture<T>(handler, config.getRequestTimeoutInMs(), request, method);
+        ApacheResponseFuture f = new ApacheResponseFuture<T>(handler, requestTimeout, request, method);
         f.touch();
 
         f.setInnerFuture(config.executorService().submit(new ApacheClientRunnable(request, handler, method, f, httpClient)));
@@ -287,7 +276,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     // This is totally sub optimal
                     byte[] bytes = new byte[length];
                     ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                    for (;;) {
+                    for (; ;) {
                         buffer.clear();
                         if (body.read(buffer) < 0) {
                             break;
@@ -298,7 +287,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     try {
                         body.close();
                     } catch (IOException e) {
-                        logger.warn( e, "Failed to close request body: %s", e.getMessage() );
+                        logger.warn(e, "Failed to close request body: %s", e.getMessage());
                     }
                 }
             }
@@ -318,11 +307,17 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         if (proxyServer != null) {
+
+            if (proxyServer.getPrincipal() != null) {
+                Credentials defaultcreds = new UsernamePasswordCredentials(proxyServer.getPrincipal(), proxyServer.getPassword());
+                client.getState().setCredentials(new AuthScope(null, -1, AuthScope.ANY_REALM), defaultcreds);
+            }
+                        
             ProxyHost proxyHost = proxyServer == null ? null : new ProxyHost(proxyServer.getHost(), proxyServer.getPort());
             client.getHostConfiguration().setProxyHost(proxyHost);
         }
 
-        method.setFollowRedirects(config.isRedirectEnabled());
+        method.setFollowRedirects(false);
         if ((request.getCookies() != null) && !request.getCookies().isEmpty()) {
             for (Cookie cookie : request.getCookies()) {
                 method.setRequestHeader("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
@@ -416,7 +411,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     future.setReaperFuture(reaperFuture);
                 }
 
-
                 int statusCode = 200;
                 try {
                     statusCode = httpClient.executeMethod(method);
@@ -425,7 +419,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     statusCode = 302;
                     currentRedirectCount = config.getMaxRedirects();
                 }
-                
+
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format(currentThread()
                             + "\n\nRequest %s\n\nResponse %s\n", request.toString(), method.toString()));
