@@ -335,7 +335,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
-            method.setRequestHeader("User-Agent", config.getUserAgent() + " (ApacheAsyncHttpProvider)");
+            method.setRequestHeader("User-Agent", config.getUserAgent());
+        } else {
+            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(ApacheAsyncHttpProvider.class));
         }
 
         if (config.isCompressionEnabled()) {

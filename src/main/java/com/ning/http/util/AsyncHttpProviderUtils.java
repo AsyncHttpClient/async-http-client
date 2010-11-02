@@ -30,6 +30,8 @@
  */
 package com.ning.http.util;
 
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
@@ -328,5 +330,22 @@ public class AsyncHttpProviderUtils {
         sb.append((char) EQUALS);
         sb.append(val);
         sb.append((char) SEMICOLON);
+    }
+
+    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider) {
+        StringBuffer b = new StringBuffer("AsyncHttpClient/1.0")
+                .append(" ")
+                .append("(")
+                .append(httpProvider.getSimpleName())
+                .append(" - ")
+                .append(System.getProperty("os.name"))
+                .append(" - ")
+                .append(System.getProperty("os.version"))
+                .append(" - ")
+                .append(System.getProperty("java.version"))
+                .append(" - ")
+                .append(Runtime.getRuntime().availableProcessors())
+                .append(" core(s))");
+        return b.toString();
     }
 }

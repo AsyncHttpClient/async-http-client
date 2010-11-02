@@ -36,6 +36,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -449,7 +450,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             }
 
             if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
-                urlConnection.setRequestProperty("User-Agent", config.getUserAgent() + " (JDKAsyncHttpProvider)");
+                urlConnection.setRequestProperty("User-Agent", config.getUserAgent());
+            } else {
+                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.class));
             }
 
             if (request.getCookies() != null && !request.getCookies().isEmpty()) {
