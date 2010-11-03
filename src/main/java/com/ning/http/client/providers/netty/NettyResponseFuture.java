@@ -90,8 +90,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.asyncHttpProvider = asyncHttpProvider;
 
         if (System.getProperty(MAX_RETRY) != null) {
-            int i = Integer.valueOf(System.getProperty(MAX_RETRY));
-            maxRetry = 5;
+            maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));;
         }
     }
 
