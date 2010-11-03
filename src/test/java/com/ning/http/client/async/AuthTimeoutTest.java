@@ -104,6 +104,8 @@ public class AuthTimeoutTest
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response)
                 throws IOException, ServletException {
 
+            // NOTE: handler sends less bytes than are given in Content-Length, which should lead to timeout
+
             OutputStream out = response.getOutputStream();
             if (request.getHeader("X-Content") != null) {
                 String content = request.getHeader("X-Content");
