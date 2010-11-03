@@ -336,7 +336,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public boolean canRetry() {
-        if (currentRetry.getAndIncrement() > maxRetry) {
+        if (currentRetry.incrementAndGet() > maxRetry) {
             return false;
         }
         return true;
