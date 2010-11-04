@@ -53,7 +53,7 @@ public class AsyncHttpClientConfig {
     private final int maxDefaultRedirects;
     private final boolean compressionEnabled;
     private final String userAgent;
-    private final boolean keepAlive;
+    private final boolean allowPoolingConnection;
     private final ScheduledExecutorService reaper;
     private final ExecutorService applicationThreadPool;
     private final ProxyServer proxyServer;
@@ -90,7 +90,7 @@ public class AsyncHttpClientConfig {
         this.maxDefaultRedirects = maxDefaultRedirects;
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
-        this.keepAlive = keepAlive;
+        this.allowPoolingConnection = keepAlive;
         this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
@@ -188,12 +188,12 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Is HTTP keep-alive enabled.
+     * Is the {@link ConnectionsPool} support enabled.
      *
      * @return true if keep-alive is enabled
      */
-    public boolean getKeepAlive() {
-        return keepAlive;
+    public boolean getAllowPoolingConnection() {
+        return allowPoolingConnection;
     }
 
     /**
@@ -302,7 +302,7 @@ public class AsyncHttpClientConfig {
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
-        private boolean keepAlive = true;
+        private boolean allowPoolingConnection = true;
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),
                 new ThreadFactory() {
                     public Thread newThread(Runnable r) {
@@ -421,13 +421,13 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set HTTP keep-alive value.
+         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.
          *
-         * @param keepAlive true if keep-alive is enabled
+         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}
          * @return a {@link Builder}
          */
-        public Builder setKeepAlive(boolean keepAlive) {
-            this.keepAlive = keepAlive;
+        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
+            this.allowPoolingConnection = allowPoolingConnection;
             return this;
         }
 
@@ -545,7 +545,7 @@ public class AsyncHttpClientConfig {
                     maxDefaultRedirects,
                     compressionEnabled,
                     userAgent,
-                    keepAlive,
+                    allowPoolingConnection,
                     reaper,
                     applicationThreadPool,
                     proxyServer,

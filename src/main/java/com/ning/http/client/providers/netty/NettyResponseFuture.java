@@ -73,7 +73,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private Channel channel;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
-    private int maxRetry = 5;
+    private final int maxRetry;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -91,14 +91,16 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
         if (System.getProperty(MAX_RETRY) != null) {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));;
+        } else {
+            maxRetry = 5;
         }
     }
 
-    public URI getURI() throws MalformedURLException {
+    protected URI getURI() throws MalformedURLException {
         return uri;
     }
 
-    public void setURI(URI uri) {
+    protected void setURI(URI uri) {
         this.uri = uri;
     }
 
@@ -245,11 +247,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         }
     }
 
-    public final Request getRequest() {
+    protected final Request getRequest() {
         return request;
     }
 
-    public final HttpRequest getNettyRequest() {
+    protected final HttpRequest getNettyRequest() {
         return nettyRequest;
     }
 
@@ -257,50 +259,50 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.nettyRequest = nettyRequest;
     }
 
-    public final AsyncHandler<V> getAsyncHandler() {
+    protected final AsyncHandler<V> getAsyncHandler() {
         return asyncHandler;
     }
 
-    public final boolean getKeepAlive() {
+    protected final boolean getKeepAlive() {
         return keepAlive;
     }
 
-    public final void setKeepAlive(final boolean keepAlive) {
+    protected final void setKeepAlive(final boolean keepAlive) {
         this.keepAlive = keepAlive;
     }
 
-    public final HttpResponse getHttpResponse() {
+    protected final HttpResponse getHttpResponse() {
         return httpResponse;
     }
 
-    public final void setHttpResponse(final HttpResponse httpResponse) {
+    protected final void setHttpResponse(final HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
 
-    public int incrementAndGetCurrentRedirectCount() {
+    protected int incrementAndGetCurrentRedirectCount() {
         return redirectCount.incrementAndGet();
     }
 
-    public void setReaperFuture(Future<?> reaperFuture) {
+    protected void setReaperFuture(Future<?> reaperFuture) {
         if (this.reaperFuture != null) {
             this.reaperFuture.cancel(true);
         }
         this.reaperFuture = reaperFuture;
     }
 
-    public boolean isInAuth() {
+    protected boolean isInAuth() {
         return inAuth.get();
     }
 
-    public boolean getAndSetAuth(boolean inDigestAuth) {
+    protected boolean getAndSetAuth(boolean inDigestAuth) {
         return inAuth.getAndSet(inDigestAuth);
     }
 
-    public STATE getState() {
+    protected STATE getState() {
         return state.get();
     }
 
-    public void setState(STATE state) {
+    protected void setState(STATE state) {
         this.state.set(state);
     }
 
@@ -335,11 +337,25 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return channel;
     }
 
-    public boolean canRetry() {
+    protected boolean canRetry() {
         if (currentRetry.incrementAndGet() > maxRetry) {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be
+     * closed by an unexpected IOException, and in some situation we can recover from that exception.
+     *
+     * @return true if that {@link Future} cannot be recovered.
+     */
+    public boolean cannotBeReplay(){
+         return isDone()
+                 || !canRetry()
+                 || isCancelled()
+                 || (channel() != null && channel().isOpen())
+                 || isInAuth();
     }
 
     @Override

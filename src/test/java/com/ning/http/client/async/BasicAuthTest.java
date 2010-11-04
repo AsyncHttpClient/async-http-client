@@ -70,6 +70,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     @Override
     public void setUpGlobal() throws Exception {
+        setUpLogger();
         server = new Server();
         Logger root = Logger.getRootLogger();
         root.setLevel(Level.DEBUG);
@@ -333,7 +334,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                 .setBody(is).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
         Future<Response> f = r.execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
+        Response resp = f.get(30, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -380,7 +381,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void basicAuthFileNoKeepAliveTest() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setKeepAlive(false).build());
+        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(false).build());
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
         URL url = cl.getResource("SimpleTextFile.txt");

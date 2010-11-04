@@ -21,7 +21,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
-import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -36,7 +35,6 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -67,7 +65,6 @@ import java.net.Proxy;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -406,7 +403,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             }
 
-            String ka = config.getKeepAlive() ? "keep-alive" : "close";
+            String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
             urlConnection.setRequestProperty("Connection", ka);
             ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
             if (proxyServer != null) {

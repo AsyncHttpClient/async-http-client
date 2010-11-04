@@ -509,7 +509,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        String ka = config.getKeepAlive() ? "keep-alive" : "close";
+        String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         if (proxyServer != null) {
@@ -687,34 +687,31 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        if (channel != null && channel.isOpen()) {
-            if (channel.isConnected()) {
+        ChannelBuffer bufferedBytes = null;
+        if (f != null && f.getRequest().getFile() == null &&
+                !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
+            bufferedBytes = f.getNettyRequest().getContent();
+        }
 
-                ChannelBuffer b = null;
-                if (f != null && f.getRequest().getFile() == null &&
-                        !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
-                    b = f.getNettyRequest().getContent();
-                }
+        if (channel != null && channel.isOpen() && channel.isConnected()) {
+            HttpRequest nettyRequest = buildRequest(config, request, uri, false, bufferedBytes);
 
-                HttpRequest nettyRequest = buildRequest(config, request, uri, false, b);
-
-                if (f == null) {
-                    f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                            requestTimeout(config, request.getPerRequestConfig()), this);
-                } else {
-                    f.setNettyRequest(nettyRequest);
-                }
-                f.setState(NettyResponseFuture.STATE.POOLED);
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format(currentThread()
-                            + "\n\nCached Request %s\n", channel));
-                }
-                channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
-
-                writeRequest(channel, config, f, nettyRequest);
-                return f;
+            if (f == null) {
+                f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
+                        requestTimeout(config, request.getPerRequestConfig()), this);
+            } else {
+                f.setNettyRequest(nettyRequest);
             }
+            f.setState(NettyResponseFuture.STATE.POOLED);
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format(currentThread()
+                        + "\n\nCached Request %s\n", channel));
+            }
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
+
+            writeRequest(channel, config, f, nettyRequest);
+            return f;
         }
 
         if (log.isDebugEnabled()) {
@@ -727,7 +724,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
 
-        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this).build();
+        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build();
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
@@ -911,10 +908,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     if (log.isDebugEnabled()) {
                         log.debug(String.format(currentThread() + "Sending authentication to %s", request.getUrl()));
                     }
-
-                    if (config.getKeepAlive()) {
+                    
+                    if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
                     }
+
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     future.setState(NettyResponseFuture.STATE.NEW);
 
@@ -968,7 +966,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 + "Connected to %s:%s", proxyServer.getHost(), proxyServer.getPort()));
                     }
 
-                    if (config.getKeepAlive()) {
+                    if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
                     }
 
@@ -1076,13 +1074,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
     }
-
     private void nextRequest(final Request request, final NettyResponseFuture<?> future) throws IOException {
+        nextRequest(request, future, true);
+    }
+
+    private void nextRequest(final Request request, final NettyResponseFuture<?> future, final boolean useCache) throws IOException {
         if (!executeConnectAsync && request.getFile() == null) {
             config.executorService().submit(new Runnable(){
                 public void run() {
                     try {
-                        execute(request, future);
+                        execute(request, future, useCache);
                     } catch (IOException e) {
                         if (log.isDebugEnabled()) {
                             log.debug(e);
@@ -1091,7 +1092,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             });
         } else {
-            execute(request, future);
+            execute(request, future, useCache);
         }
     }
 
@@ -1176,12 +1177,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
         }
 
-        if (future == null) {
-            return false;
-        }
-
-        if (!config.getKeepAlive() || future.isDone() || !future.canRetry() || future.isCancelled()
-                || (future.channel() != null && future.channel().isOpen())) {
+        if (future == null || future.cannotBeReplay()) {
             return false;
         }
 

@@ -60,7 +60,7 @@ public class NoNullResponseTest
             .setCompressionEnabled(true)
             .setFollowRedirects(true)
             .setSSLContext(getSSLContext())
-            .setKeepAlive(true)
+            .setAllowPoolingConnection(true)
             .setConnectionTimeoutInMs(10000)
             .setIdleConnectionTimeoutInMs(60000)
             .setRequestTimeoutInMs(10000)

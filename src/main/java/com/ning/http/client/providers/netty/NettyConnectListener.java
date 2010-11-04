@@ -22,6 +22,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -45,8 +46,8 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
 
     private NettyConnectListener(AsyncHttpClientConfig config,
-                            NettyResponseFuture<T> future,
-                            HttpRequest nettyRequest) {
+                                 NettyResponseFuture<T> future,
+                                 HttpRequest nettyRequest) {
         this.config = config;
         this.future = future;
         this.nettyRequest = nettyRequest;
@@ -84,27 +85,33 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         private final AsyncHandler<T> asyncHandler;
         private NettyResponseFuture<T> future;
         private final NettyAsyncHttpProvider provider;
+        private final ChannelBuffer buffer;
 
-        public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler, NettyAsyncHttpProvider provider) {
+        public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler,
+                       NettyAsyncHttpProvider provider, ChannelBuffer buffer) {
+
             this.config = config;
             this.request = request;
             this.asyncHandler = asyncHandler;
             this.future = null;
             this.provider = provider;
+            this.buffer = buffer;
         }
 
         public Builder(AsyncHttpClientConfig config, Request request, AsyncHandler<T> asyncHandler,
-                       NettyResponseFuture<T> future, NettyAsyncHttpProvider provider) {
+                       NettyResponseFuture<T> future, NettyAsyncHttpProvider provider, ChannelBuffer buffer) {
+
             this.config = config;
             this.request = request;
             this.asyncHandler = asyncHandler;
             this.future = future;
             this.provider = provider;
+            this.buffer = buffer;            
         }
 
         public NettyConnectListener<T> build() throws IOException {
             URI uri = AsyncHttpProviderUtils.createUri(request.getRawUrl().replace(" ", "%20"));
-            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, null);
+            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer);
             if (future == null) {
                 future = new NettyResponseFuture<T>(uri, request, asyncHandler,
                         nettyRequest, NettyAsyncHttpProvider.requestTimeout(config, request.getPerRequestConfig()), provider);

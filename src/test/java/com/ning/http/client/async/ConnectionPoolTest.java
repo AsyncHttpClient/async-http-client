@@ -49,7 +49,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionTimeoutInMs(100)
                         .setRequestTimeoutInMs(100)
-                        .setKeepAlive(true)
+                        .setAllowPoolingConnection(true)
                         .setMaximumConnectionsTotal(1)
                         .build()
         );
@@ -206,7 +206,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void multipleMaxConnectionOpenTest() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
@@ -234,7 +234,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setKeepAlive(true)
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
