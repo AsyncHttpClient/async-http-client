@@ -242,7 +242,7 @@ public class BasicAuthTest extends AbstractBasicTest {
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
 
             Future<Response> f = r.execute();
-            Response resp = f.get(30, TimeUnit.SECONDS);
+            Response resp = f.get(3, TimeUnit.SECONDS);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
