@@ -197,6 +197,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Is the {@link ConnectionsPool} support enabled.
+     *
+     * @return true if keep-alive is enabled
+     * @Deprecated - Use {@link AsyncHttpClientConfig#getAllowPoolingConnection()}
+     */
+    public boolean getKeepAlive() {
+        return allowPoolingConnection;
+    }
+
+    /**
      * Return the USER_AGENT header value
      *
      * @return the USER_AGENT header value
@@ -427,6 +437,18 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
+            this.allowPoolingConnection = allowPoolingConnection;
+            return this;
+        }
+
+        /**
+         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.
+         *
+         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}
+         * @return a {@link Builder}
+         * @Deprecated - Use {@link com.ning.http.client.AsyncHttpClientConfig.Builder#setAllowPoolingConnection(boolean)}
+         */
+        public Builder setKeepAlive(boolean allowPoolingConnection) {
             this.allowPoolingConnection = allowPoolingConnection;
             return this;
         }
