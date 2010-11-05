@@ -22,7 +22,6 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -33,6 +32,9 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * Unit tests for remote site.
@@ -156,6 +158,28 @@ public class RemoteSiteTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
        }
+    }
+
+    @Test(groups = "online")
+    public void invalidStreamTest2() throws Throwable {
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+                .setRequestTimeoutInMs(10000)
+                .setFollowRedirects(true)
+                .setAllowPoolingConnection(false)
+                .setMaximumNumberOfRedirects(6)
+                .build();
+
+        AsyncHttpClient c = new AsyncHttpClient(config);
+        try {
+            Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();
+            if (response != null) {
+                System.out.println(response);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            assertNotNull(t.getCause());
+            assertEquals(t.getCause().getMessage(), "invalid version format: ICY");
+        }
     }
     
 }

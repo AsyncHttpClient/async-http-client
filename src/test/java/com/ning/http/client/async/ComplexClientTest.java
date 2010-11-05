@@ -60,7 +60,7 @@ public class ComplexClientTest extends AbstractBasicTest {
                 .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        assertEquals(response.getResponseBody(),body);
+        assertEquals(response.getResponseBody(), body);
     }
 
     @Test(groups = "standalone")
@@ -74,4 +74,5 @@ public class ComplexClientTest extends AbstractBasicTest {
 
         assertEquals(response.getHeader("X-queryString"), query);
     }
+
 }
