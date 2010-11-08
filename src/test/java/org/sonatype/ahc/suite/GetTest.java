@@ -1,4 +1,4 @@
-package com.ning.http.client.suite;
+package org.sonatype.ahc.suite;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -27,8 +27,8 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.suite.util.AssertingAsyncHandler;
-import com.ning.http.client.suite.util.AsyncSuiteConfiguration;
+import org.sonatype.ahc.suite.util.AssertingAsyncHandler;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 
 /**
  * @author Benjamin Hanzelmann

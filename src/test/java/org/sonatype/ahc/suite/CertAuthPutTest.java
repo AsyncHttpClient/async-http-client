@@ -1,4 +1,4 @@
-package com.ning.http.client.suite;
+package org.sonatype.ahc.suite;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -20,14 +20,14 @@ import org.sonatype.tests.http.server.api.ServerProvider;
 import org.sonatype.tests.http.server.jetty.configurations.CertAuthSuiteConfigurator;
 
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import com.ning.http.client.suite.util.CertUtil;
+import org.sonatype.ahc.suite.util.CertUtil;
 
 /**
  * @author Benjamin Hanzelmann
  */
 @Configurators( CertAuthSuiteConfigurator.class )
-public class CertAuthGetTest
-    extends GetTest
+public class CertAuthPutTest
+    extends PutTest
 {
 
     private String keystorePath = "src/test/resources/client.keystore";

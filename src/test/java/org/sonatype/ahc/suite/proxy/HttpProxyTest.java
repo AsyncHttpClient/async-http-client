@@ -1,4 +1,4 @@
-package com.ning.http.client.suite.proxy;
+package org.sonatype.ahc.suite.proxy;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -27,7 +27,7 @@ import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Response;
-import com.ning.http.client.suite.util.AsyncSuiteConfiguration;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 
 /**
  * @author Benjamin Hanzelmann

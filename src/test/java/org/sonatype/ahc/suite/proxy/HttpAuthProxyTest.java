@@ -1,7 +1,10 @@
-package com.ning.http.client.suite;
+package org.sonatype.ahc.suite.proxy;
 
-import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
-import org.testng.annotations.BeforeMethod;
+import org.sonatype.tests.http.runner.annotations.Configurators;
+import org.sonatype.tests.http.server.jetty.configurations.HttpProxyAuthConfigurator;
+
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.ProxyServer;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -16,20 +19,21 @@ import org.testng.annotations.BeforeMethod;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+
+
 /**
  * @author Benjamin Hanzelmann
  */
-@ConfiguratorList( { "DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list" } )
-public class PreemptiveAuthGetTest
-    extends GetTest
+@Configurators( HttpProxyAuthConfigurator.class )
+public class HttpAuthProxyTest
+    extends HttpProxyTest
 {
 
     @Override
-    @BeforeMethod
-    public void before()
-        throws Exception
+    protected Builder settings( Builder rb )
     {
-        super.before();
-        setAuthentication( "user", "password", true );
+        return super.settings( rb ).setProxyServer( new ProxyServer( "localhost", provider().getPort(), "puser",
+                                                                     "password" ) );
     }
+
 }

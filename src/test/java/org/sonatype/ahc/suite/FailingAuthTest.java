@@ -1,4 +1,4 @@
-package com.ning.http.client.suite;
+package org.sonatype.ahc.suite;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -15,27 +15,43 @@ package com.ning.http.client.suite;
 
 import static org.testng.AssertJUnit.*;
 
+import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.suite.util.AsyncSuiteConfiguration;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 
 /**
  * @author Benjamin Hanzelmann
  */
-public class HeadTest
+@ConfiguratorList( "AuthSuiteConfigurator.list" )
+public class FailingAuthTest
     extends AsyncSuiteConfiguration
 {
 
+    private boolean preemptive = true;
+
     @Test( groups="standalone" )
-    public void testSimple()
+    public void testSuccessful()
         throws Exception
     {
-        BoundRequestBuilder rb = client().prepareHead( url( "content", "something" ) );
-        Response response = execute( rb );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "0", response.getHeader( "Content-Length" ) );
-        assertEquals( "", response.getResponseBody() );
+        setAuthentication( "user", "password", preemptive );
+        String content = "someContent";
+        String url = url( "content", content );
+        Response response = executeGet( url );
+        String body = response.getResponseBody();
+
+        assertEquals( content, body );
+    }
+
+    @Test( groups="standalone" )
+    public void testNoRealm()
+        throws Exception
+    {
+        String content = "someContent";
+        String url = url( "content", content );
+        Response response = executeGet( url );
+
+        assertEquals( 401, response.getStatusCode() );
     }
 }

@@ -1,4 +1,4 @@
-package com.ning.http.client.suite.redirect;
+package org.sonatype.ahc.suite.redirect;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -24,7 +24,7 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Response;
-import com.ning.http.client.suite.util.AsyncSuiteConfiguration;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 
 /**
  * @author Benjamin Hanzelmann

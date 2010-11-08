@@ -1,4 +1,4 @@
-package com.ning.http.client.suite.util;
+package org.sonatype.ahc.suite.util;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.

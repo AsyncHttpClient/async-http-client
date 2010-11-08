@@ -1,7 +1,4 @@
-package com.ning.http.client.suite;
-
-import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
-import org.testng.annotations.BeforeMethod;
+package org.sonatype.ahc.suite;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -16,20 +13,29 @@ import org.testng.annotations.BeforeMethod;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+import static org.testng.AssertJUnit.*;
+
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
+import com.ning.http.client.Response;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+
 /**
  * @author Benjamin Hanzelmann
  */
-@ConfiguratorList( { "DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list" } )
-public class NonPreemptiveAuthGetTest
-    extends GetTest
+public class HeadTest
+    extends AsyncSuiteConfiguration
 {
 
-    @Override
-    @BeforeMethod
-    public void before()
+    @Test( groups="standalone" )
+    public void testSimple()
         throws Exception
     {
-        super.before();
-        setAuthentication( "user", "password", false );
+        BoundRequestBuilder rb = client().prepareHead( url( "content", "something" ) );
+        Response response = execute( rb );
+        assertEquals( 200, response.getStatusCode() );
+        assertEquals( "0", response.getHeader( "Content-Length" ) );
+        assertEquals( "", response.getResponseBody() );
     }
 }

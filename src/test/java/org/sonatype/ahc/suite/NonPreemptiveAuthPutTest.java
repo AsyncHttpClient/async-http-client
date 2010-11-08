@@ -1,4 +1,4 @@
-package com.ning.http.client.suite;
+package org.sonatype.ahc.suite;
 
 import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
 import org.testng.annotations.BeforeMethod;
