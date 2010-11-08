@@ -1309,8 +1309,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         } catch (Throwable t) {
             cause = t;
         }
-        closeChannel(ctx);
-
         if (future != null) {
             try {
                 abort(future, cause);
@@ -1325,6 +1323,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     ctx.getAttachment()));
             log.error(cause);
         }
+        closeChannel(ctx);        
         ctx.sendUpstream(e);        
     }
 
