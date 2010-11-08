@@ -160,6 +160,20 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+        	<groupId>org.sonatype.http-testing-harness</groupId>
+        	<artifactId>testng-runner</artifactId>
+        	<version>0.3-SNAPSHOT</version>
+        	<type>jar</type>
+        	<scope>compile</scope>
+        </dependency>
+        <dependency>
+        	<groupId>org.sonatype.http-testing-harness</groupId>
+        	<artifactId>server-provider</artifactId>
+        	<version>0.3-SNAPSHOT</version>
+        	<type>jar</type>
+        	<scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <defaultGoal>install</defaultGoal>
