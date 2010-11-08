@@ -163,14 +163,14 @@
         <dependency>
         	<groupId>org.sonatype.http-testing-harness</groupId>
         	<artifactId>testng-runner</artifactId>
-        	<version>0.3-SNAPSHOT</version>
+        	<version>0.3</version>
         	<type>jar</type>
         	<scope>compile</scope>
         </dependency>
         <dependency>
         	<groupId>org.sonatype.http-testing-harness</groupId>
         	<artifactId>server-provider</artifactId>
-        	<version>0.3-SNAPSHOT</version>
+        	<version>0.3</version>
         	<type>jar</type>
         	<scope>compile</scope>
         </dependency>

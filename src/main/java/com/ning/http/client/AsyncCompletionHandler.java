@@ -87,7 +87,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     */
     /* @Override */
     public void onThrowable(Throwable t) {
         log.debug(t);
