@@ -16,10 +16,6 @@
  */
 package com.ning.http.client;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 
