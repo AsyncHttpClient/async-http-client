@@ -67,6 +67,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      */
     /* @Override */
     public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+        builder.reset();
         builder.accumulate(status);
         return STATE.CONTINUE;
     }

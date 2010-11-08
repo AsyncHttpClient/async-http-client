@@ -169,6 +169,15 @@ public interface Response {
         public Response build() {
             return status == null ? null : status.provider().prepareResponse(status, headers, bodies);
         }
+
+        /**
+         * Reset the internal state of this builder.
+         */
+        public void reset() {
+            bodies.clear();
+            status = null;
+            headers = null;
+        }
     }
 
 }
