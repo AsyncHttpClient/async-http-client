@@ -20,8 +20,10 @@ import com.ning.http.util.UTF8UrlEncoder;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -284,13 +286,18 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
             String[] queries = uri.getRawQuery().split("&");
-            int pos = 0;
+            int pos;
             for( String query : queries) {
                 pos = query.indexOf("=");
                 if (pos <= 0) {
                     addQueryParameter(query, null);
                 }else{
-                    addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
+                    try {
+                        addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8") , URLDecoder.decode(query.substring(pos +1), "UTF-8"));
+                    }
+                    catch ( UnsupportedEncodingException e ) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }
