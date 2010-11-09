@@ -232,59 +232,6 @@ public class BasicHttpsTest {
 
     }
 
-    @Test(groups = "online")
-    public void multipleJavaDotDeadKeystoreTest() throws Throwable {
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        System.setProperty("javax.net.ssl.keyStore",keystoreUrl.toString().substring("file:".length()));
-        keystoreUrl = cl.getResource("ssltest-cacerts.jks");
-        System.setProperty("javax.net.ssl.trustStore",keystoreUrl.toString().substring("file:".length()));
-
-        AsyncHttpClient c = new AsyncHttpClient();
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getStatusCode(), 200);
-
-        // twice
-        response = c.preparePost("https://grizzly.dev.java.net:443/")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getStatusCode(), 200);
-    }
-
-    @Test(groups = "standalone")
-    public void multipleRequestsTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-        // twice
-        response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")                
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-    }
-
     @Test(groups = "standalone")
     public void zeroCopyPostTest() throws Throwable {
 
