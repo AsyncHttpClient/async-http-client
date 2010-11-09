@@ -209,29 +209,6 @@ public class BasicHttpsTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = "online")
-    public void multipleJavaDotDeadSSLTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost("https://atmosphere.dev.java.net:443/")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-
-        // twice
-        response = c.preparePost("https://grizzly.dev.java.net:443/")
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getStatusCode(), 200);
-
-    }
-
     @Test(groups = "standalone")
     public void zeroCopyPostTest() throws Throwable {
 
