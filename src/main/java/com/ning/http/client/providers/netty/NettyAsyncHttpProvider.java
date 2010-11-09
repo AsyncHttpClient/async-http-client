@@ -739,13 +739,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
+        bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
+        bootstrap.setOption("reuseAddress", true);        
         try {
             if (proxyServer == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
-            bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
         } catch (Throwable t) {
             log.error(String.format(currentThread() + "doConnect"), t);
             abort(c.future(), t.getCause());
