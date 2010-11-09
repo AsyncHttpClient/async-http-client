@@ -165,14 +165,14 @@
         	<artifactId>testng-runner</artifactId>
         	<version>0.3</version>
         	<type>jar</type>
-        	<scope>compile</scope>
+        	<scope>test</scope>
         </dependency>
         <dependency>
         	<groupId>org.sonatype.http-testing-harness</groupId>
         	<artifactId>server-provider</artifactId>
         	<version>0.3</version>
         	<type>jar</type>
-        	<scope>compile</scope>
+        	<scope>test</scope>
         </dependency>
     </dependencies>
     <build>
