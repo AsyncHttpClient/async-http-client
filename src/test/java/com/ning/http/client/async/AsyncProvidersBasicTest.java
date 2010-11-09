@@ -64,6 +64,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest() throws Throwable {
         AsyncHttpClient p = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
+        String requestUrl = request.getUrl();
+        Assert.assertEquals(requestUrl, "http://foo.com/foo.html?q=%20%20x");
         Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
             @Override
             public String onCompleted(Response response) throws Exception {
@@ -78,7 +80,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         });
         String url = responseFuture.get();
-        Assert.assertEquals(url, "http://foo.com/foo.html?q=+%20x");
+        Assert.assertEquals(url, "http://foo.com/foo.html?q=%20%20x");
     }
 
     @Test(groups = {"standalone", "async"})
