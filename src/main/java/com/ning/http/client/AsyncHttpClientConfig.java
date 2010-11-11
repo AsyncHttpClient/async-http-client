@@ -15,10 +15,15 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-
 import java.security.GeneralSecurityException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,6 +67,8 @@ public class AsyncHttpClientConfig {
     private final AsyncHttpProviderConfig<?, ?> providerConfig;
     private final ConnectionsPool<?, ?> connectionsPool;
     private final Realm realm;
+    private final LinkedList<RequestFilter> requestFilters;
+    private final LinkedList<ResponseFilter> responseFilters;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -79,7 +86,9 @@ public class AsyncHttpClientConfig {
                                   SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
-                                  ConnectionsPool<?, ?> connectionsPool, Realm realm) {
+                                  ConnectionsPool<?, ?> connectionsPool, Realm realm,
+                                  LinkedList<RequestFilter> requestFilters,
+                                  LinkedList<ResponseFilter> responseFilters) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -96,6 +105,8 @@ public class AsyncHttpClientConfig {
         this.providerConfig = providerConfig;
         this.connectionsPool = connectionsPool;
         this.realm = realm;
+        this.requestFilters = requestFilters;
+        this.responseFilters = responseFilters;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -300,6 +311,22 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the list of {@link RequestFilter}
+     * @return Unmmodifiable list of {@link ResponseFilter}
+     */
+    public List<RequestFilter>  getRequestFilters(){
+        return Collections.unmodifiableList(requestFilters);
+    }
+
+    /**
+     * Return the list of {@link ResponseFilter}
+     * @return Unmmodifiable list of {@link ResponseFilter}
+     */
+    public List<ResponseFilter>  getResponseFilters(){
+        return Collections.unmodifiableList(responseFilters);
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -326,6 +353,8 @@ public class AsyncHttpClientConfig {
         private AsyncHttpProviderConfig<?,?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
+        private final LinkedList<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
+        private final LinkedList<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
 
         public Builder() {
         }
@@ -551,6 +580,47 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        /**
+         * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
+         * @param asyncFilter
+         * @return this
+         */
+        public Builder addRequestFilter(RequestFilter asyncFilter) {
+            requestFilters.add(asyncFilter);
+            return this;
+        }
+
+        /**
+         * Remove an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
+         * @param asyncFilter
+         * @return this
+         */
+        public Builder removeRequestFilter(RequestFilter asyncFilter) {
+            requestFilters.remove(asyncFilter);
+            return this;
+        }
+
+        /**
+         * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before the request is sent.
+         * @param responseFilter
+         * @return this
+         */
+        public Builder addRequestFilter(ResponseFilter responseFilter) {
+            responseFilters.add(responseFilter);
+            return this;
+        }
+
+        /**
+         * Remove an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
+         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}. 
+         * @param responseFilter
+         * @return this
+         */
+        public Builder removeResponseFilter(ResponseFilter responseFilter) {
+            responseFilters.remove(responseFilter);
+            return this;
+        }
+
 
         /**
          * Build an {@link AsyncHttpClientConfig}
@@ -575,7 +645,9 @@ public class AsyncHttpClientConfig {
                     sslEngineFactory,
                     providerConfig,
                     connectionsPool,
-                    realm);
+                    realm,
+                    requestFilters,
+                    responseFilters);
         }
     }
 }

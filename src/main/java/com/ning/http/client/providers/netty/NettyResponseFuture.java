@@ -54,7 +54,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-    private final AsyncHandler<V> asyncHandler;
+    private AsyncHandler<V> asyncHandler;
     private final int responseTimeoutInMs;
     private final Request request;
     private HttpRequest nettyRequest;
@@ -118,6 +118,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /* @Override */
     public boolean isCancelled() {
         return isCancelled.get();
+    }
+
+    void setAsyncHandler(AsyncHandler<V> asyncHandler) {
+        this.asyncHandler = asyncHandler;
     }
 
     /**

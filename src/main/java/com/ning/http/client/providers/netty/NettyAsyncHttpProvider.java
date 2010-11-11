@@ -35,6 +35,10 @@ import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
@@ -43,7 +47,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
-import java.util.logging.Level;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
@@ -627,7 +630,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /* @Override */
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return doConnect(request, asyncHandler, null, true);
+
+        FilterContext ctx = new FilterContext(asyncHandler, request);
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
+            try {
+                ctx = asyncFilter.filter(ctx);
+            } catch (FilterException e) {
+                IOException ex = new IOException();
+                ex.initCause(e);
+                throw ex;
+            }
+        }
+
+        return doConnect(ctx.getRequest(), ctx.getAsyncHandler(), null, true);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
@@ -859,6 +874,36 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 String wwwAuth = response.getHeader(HttpHeaders.Names.WWW_AUTHENTICATE);
                 Request request = future.getRequest();
                 Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+
+                HttpResponseStatus status = new ResponseStatus(future.getURI(), response, this);
+                FilterContext fc = new FilterContext(future.getAsyncHandler(), request, status );
+                for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                    try {
+                        fc = asyncFilter.filter(fc);
+                    } catch (FilterException efe) {
+                        abort(future, efe);
+                    }
+                }
+
+                // The request has changed
+                if (fc.replayRequest()) {
+                    final Request newRequest = fc.getRequest();
+                    future.setAsyncHandler(fc.getAsyncHandler());
+                    future.setState(NettyResponseFuture.STATE.NEW);
+                    
+                    // We must consume the body first in order to re-use the connection.
+                    if (response.isChunked()) {
+                        ctx.setAttachment(new AsyncCallable(future) {
+                            public Object call() throws Exception {
+                                nextRequest(newRequest, future);
+                                return null;
+                            }
+                        });
+                    } else {
+                        nextRequest(request, future);
+                    }
+                }
+
                 if (statusCode == 401
                         && wwwAuth != null
                         && realm != null
@@ -1000,7 +1045,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     }
                 }
 
-                if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, new ResponseStatus(future.getURI(), response, this))) {
+                if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
                     finishUpdate(future, ctx, response.isChunked());
 
                     return;

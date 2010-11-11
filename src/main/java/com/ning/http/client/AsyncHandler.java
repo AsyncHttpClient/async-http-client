@@ -51,14 +51,16 @@ package com.ning.http.client;
 public interface AsyncHandler<T> {
 
     public static enum STATE {
+
         /**
          * Stop the processing.
          */
-        ABORT,
+        ABORT(),
         /**
          * Continue the processing
          */
-        CONTINUE
+        CONTINUE(),
+
     }
     
     /**

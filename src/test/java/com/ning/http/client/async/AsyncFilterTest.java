@@ -16,9 +16,10 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.filter.AsyncFilterException;
-import com.ning.http.client.filter.ThrottleRequestAsyncFilter;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.ThrottleRequestFilter;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -57,10 +58,12 @@ public class AsyncFilterTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void basicTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
 
-        Response response = c.addAsyncFilter(new ThrottleRequestAsyncFilter(100)).preparePost(getTargetUrl())
+        Response response = c.preparePost(getTargetUrl())
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
@@ -68,9 +71,10 @@ public class AsyncFilterTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void loadThrottleTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        AsyncHttpClient c = new AsyncHttpClient();
-        c.addAsyncFilter(new ThrottleRequestAsyncFilter(10));
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
 
         List<Future<Response>> futures = new ArrayList<Future<Response>>();
         for (int i =0; i < 200; i ++) {
@@ -87,16 +91,17 @@ public class AsyncFilterTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void maxConnectionsText() throws Throwable {
-
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
 
         try {
-            Response response = c.addAsyncFilter(new ThrottleRequestAsyncFilter(0, 1000)).preparePost(getTargetUrl())
+            Response response = c.preparePost(getTargetUrl())
                     .execute().get();
             fail("Should have timed out");
         } catch (IOException ex) {
             assertNotNull(ex);
-            assertEquals(ex.getCause().getClass(), AsyncFilterException.class);
+            assertEquals(ex.getCause().getClass(), FilterException.class);
         }
     }
 

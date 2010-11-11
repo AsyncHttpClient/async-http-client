@@ -17,9 +17,6 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.client.filter.AsyncFilter;
-import com.ning.http.client.filter.AsyncFilterContext;
-import com.ning.http.client.filter.AsyncFilterException;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
@@ -28,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -146,7 +142,6 @@ public class AsyncHttpClient {
     private final AsyncHttpClientConfig config;
     private final static Logger logger = LogManager.getLogger(AsyncHttpClient.class);
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final ConcurrentLinkedQueue<AsyncFilter> filters = new ConcurrentLinkedQueue<AsyncFilter>();
 
     /**
      * Default signature calculator to use for all requests constructed by this client instance.
@@ -469,19 +464,7 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
-
-        AsyncFilterContext ctx = new AsyncFilterContext(handler, request);
-        for (AsyncFilter asyncFilter : filters) {
-            try {
-                ctx = asyncFilter.filter(ctx);
-            } catch (AsyncFilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
-            }
-        }
-
-        return httpProvider.execute(ctx.getRequest(), ctx.getAsyncHandler());
+        return httpProvider.execute(request, handler);
     }
 
      /**
@@ -516,25 +499,5 @@ public class AsyncHttpClient {
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {
         return new BoundRequestBuilder(prototype).setSignatureCalculator(signatureCalculator);
-    }
-
-    /**
-     * Add an {@link AsyncFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
-     * @param asyncFilter
-     * @return this
-     */
-    public AsyncHttpClient addAsyncFilter(AsyncFilter asyncFilter) {
-        filters.add(asyncFilter);
-        return this;
-    }
-
-    /**
-     * Remove an {@link AsyncFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
-     * @param asyncFilter
-     * @return this
-     */
-    public AsyncHttpClient removeAsyncFilter(AsyncFilter asyncFilter) {
-        filters.remove(asyncFilter);
-        return this;
     }
 }
