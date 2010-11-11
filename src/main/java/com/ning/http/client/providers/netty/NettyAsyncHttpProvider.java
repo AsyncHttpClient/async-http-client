@@ -208,7 +208,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT) != null) {
                 executeConnectAsync = true;
             } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
-                DefaultChannelFuture.setUseDeadLockChecker(false);
+                DefaultChannelFuture.setUseDeadLockChecker(true);
             }
         }
     }
