@@ -15,9 +15,8 @@ package org.sonatype.ahc.suite.auth;
 
 import static org.testng.AssertJUnit.*;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-
-import javax.net.ssl.SSLException;
 
 import org.sonatype.tests.http.runner.annotations.Configurators;
 import org.sonatype.tests.http.server.api.ServerProvider;
@@ -79,7 +78,7 @@ public class CertAuthTest
             boolean seen = false;
             while ( ( cause = cause.getCause() ) != null )
             {
-                if ( cause instanceof SSLException )
+                if ( cause instanceof IOException)
                 {
                     seen = true;
                     break;
