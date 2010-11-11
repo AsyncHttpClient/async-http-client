@@ -791,10 +791,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
-            if (config.getIdleConnectionTimeoutInMs() < config.getRequestTimeoutInMs()) {
-                if (!future.isDone() && !future.isCancelled()) {
-                    return;
-                }
+
+            if (!future.hasExpired() && !future.isDone() && !future.isCancelled()) {
+                return;
             }
 
             abort(future, new TimeoutException("No response received. Connection timed out after "
