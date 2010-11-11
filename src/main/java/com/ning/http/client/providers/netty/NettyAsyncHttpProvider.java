@@ -43,6 +43,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+import java.util.logging.Level;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
@@ -143,7 +144,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private boolean executeConnectAsync = false;
 
-    public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();    
+    public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, config.getIdleConnectionTimeoutInMs(), 0, TimeUnit.MILLISECONDS);
@@ -201,11 +202,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return pipeline;
             }
         });
-
+        DefaultChannelFuture.setUseDeadLockChecker(false);
+        
         if (asyncHttpProviderConfig != null){
             if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT) != null) {
                 executeConnectAsync = true;
-            } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.ALLOW_NESTED_REQUEST) != null) {
+            } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(false);
             }
         }
@@ -244,34 +246,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private Channel lookupInCache(URI uri) {
-        final Channel channel = connectionsPool.removeConnection(AsyncHttpProviderUtils.getBaseUrl(uri));
+        final Channel channel = connectionsPool.poll(AsyncHttpProviderUtils.getBaseUrl(uri));
 
         if (channel != null) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(currentThread() + "Using cached Channel %s for uri %s", channel, uri));
-            }
-
-            if (channel.isOpen() && channel.isBound()) {
-                try {
-                 return config.executorService().submit(new Callable<Boolean>() {
-                    public Boolean call() {
-                        try {
-                           channel.setReadable(true);
-                        } catch (Exception ex) {
-                            if (log.isDebugEnabled()) {
-                                log.debug(ex);
-                            }
-                            connectionsPool.removeAllConnections(channel);
-                            return new Boolean(false);
-                        }
-                        return new Boolean(true);
-                    }
-
-                }).get().booleanValue() ? channel : null;
-        } catch (Throwable e) {
-        }
-            } else {
-                return null;
             }
 
             try {
@@ -732,7 +711,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (useSSl) {
             constructSSLPipeline(c);
         }
-
+                                                                                      
         if (config.getMaxTotalConnections() != -1) {
             maxConnections.incrementAndGet();
         }
@@ -811,13 +790,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (config.getMaxTotalConnections() != -1) {
             maxConnections.decrementAndGet();
         }
-        connectionsPool.removeAllConnections(ctx.getChannel());
+        connectionsPool.removeAll(ctx.getChannel());
         ctx.setAttachment(new DiscardEvent());
-        config.executorService().submit(new Runnable() {
-            public void run() {
-                ctx.getChannel().close().awaitUninterruptibly();
-            }
-        });
+        ctx.getChannel().close();
     }
 
     @Override
@@ -837,20 +812,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (ctx.getAttachment() instanceof DiscardEvent) {
-             config.executorService().submit(new Callable<Boolean>() {
-                    public Boolean call() {
-                        try {
-                           ctx.getChannel().setReadable(true);
-                        } catch (Exception ex) {
-                            if (log.isDebugEnabled()) {
-                                log.debug(ex);
-                            }
-                            connectionsPool.removeAllConnections(ctx.getChannel());
-                            return new Boolean(false);
-                        }
-                        return new Boolean(true);
-                    }
-                }).get();
             return;
         } else if (ctx.getAttachment() instanceof AsyncCallable) {
             HttpChunk chunk = (HttpChunk) e.getMessage();
@@ -1011,7 +972,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 ctx.setAttachment(new AsyncCallable(future) {
                                     public Object call() throws Exception {
                                         if (initialConnectionKeepAlive) {
-                                            connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
+                                            connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
                                         } else {
                                             closeChannel(ctx);
                                         }
@@ -1021,7 +982,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 });
                             } else {
                                 if (initialConnectionKeepAlive) {
-                                    connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
+                                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
                                 } else {
                                     closeChannel(ctx);
                                 }
@@ -1080,21 +1041,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void nextRequest(final Request request, final NettyResponseFuture<?> future, final boolean useCache) throws IOException {
-        if (!executeConnectAsync && request.getFile() == null) {
-            config.executorService().submit(new Runnable(){
-                public void run() {
-                    try {
-                        execute(request, future, useCache);
-                    } catch (IOException e) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(e);
-                        }
-                    }
-                }
-            });
-        } else {
-            execute(request, future, useCache);
-        }
+        execute(request, future, useCache);
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
@@ -1134,7 +1081,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 
-        connectionsPool.removeAllConnections(ctx.getChannel());        
+        connectionsPool.removeAll(ctx.getChannel());
 
         Exception exception = null;
         try {
@@ -1169,7 +1116,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return false;
         }
 
-        connectionsPool.removeAllConnections(channel);
+        connectionsPool.removeAll(channel);
 
         if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() != null
                 && NettyResponseFuture.class.isAssignableFrom(
@@ -1206,7 +1153,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.done(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
                     if (future.getKeepAlive() && cache) {
-                        connectionsPool.addConnection(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                        connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
                     }
                     return false;
                 }
@@ -1239,26 +1186,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private boolean markChannelNotReadable(final ChannelHandlerContext ctx) {
         // Catch any unexpected exception when marking the channel.        
         ctx.setAttachment(new DiscardEvent());
-        try {
-            return config.executorService().submit(new Callable<Boolean>() {
-                    public Boolean call() {
-                        try {
-                            ctx.getChannel().setReadable(false);
-                        } catch (Exception ex) {
-                            if (log.isDebugEnabled()) {
-                                log.debug(ex);
-                            }
-                            connectionsPool.removeAllConnections(ctx.getChannel());
-                            return new Boolean(false);
-                        }
-                        return new Boolean(true);
-                    }
-
-                }).get().booleanValue();
-        } catch (Throwable e) {
-        }
-
-        return false;
+        return true;
     }
 
     @SuppressWarnings("unchecked")

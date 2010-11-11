@@ -42,7 +42,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     /**
      * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
      */
-    public final static String ALLOW_NESTED_REQUEST = "allowNestedRequest";
+    public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
 
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 

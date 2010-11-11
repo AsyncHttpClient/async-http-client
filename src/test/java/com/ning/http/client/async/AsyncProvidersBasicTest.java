@@ -1324,7 +1324,6 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"online", "async"})
     public void asyncDoGetNestedTest() throws Throwable {
         AsyncHttpProviderConfig<String, Object> pc = new NettyAsyncHttpProviderConfig();
-        pc.addProperty(NettyAsyncHttpProviderConfig.ALLOW_NESTED_REQUEST, true);
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
 
         // Use a l in case the assert fail

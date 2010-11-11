@@ -115,19 +115,15 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
 
-            public boolean addConnection(String key, Channel connection) {
+            public boolean offer(String key, Channel connection) {
                 return false;
             }
 
-            public Channel getConnection(String key) {
+            public Channel poll(String connection) {
                 return null;
             }
 
-            public Channel removeConnection(String connection) {
-                return null;
-            }
-
-            public boolean removeAllConnections(Channel connection) {
+            public boolean removeAll(Channel connection) {
                 return false;
             }
 
@@ -162,19 +158,15 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
 
-            public boolean addConnection(String key, Channel connection) {
+            public boolean offer(String key, Channel connection) {
                 return true;
             }
 
-            public Channel getConnection(String key) {
+            public Channel poll(String connection) {
                 return null;
             }
 
-            public Channel removeConnection(String connection) {
-                return null;
-            }
-
-            public boolean removeAllConnections(Channel connection) {
+            public boolean removeAll(Channel connection) {
                 return false;
             }
 
