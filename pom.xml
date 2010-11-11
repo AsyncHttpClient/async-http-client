@@ -209,11 +209,15 @@
                     <instructions>
                         <Bundle-Vendor>Sonatype</Bundle-Vendor>
                         <Import-Package>
-                            !com.ning.http.*,
+                            org.jboss.netty.*;resolution:=optional,
+                            org.apache.commons.httpclient;resolution:=optional,
+                            org.apache.commons.httpclient.*;resolution:=optional,
+                            org.apache.log4j;resolution:=optional,
+                            org.slf4j;resolution:=optional,
                             *
                         </Import-Package>
                         <Export-Package>
-                            com.ning.http.*
+                            com.ning.http.*;version="1.3.4"
                         </Export-Package>
                     </instructions>
                 </configuration>
