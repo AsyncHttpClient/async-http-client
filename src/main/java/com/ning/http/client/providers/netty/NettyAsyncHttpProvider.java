@@ -719,7 +719,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = useSSl ? secureBootstrap : plainBootstrap;
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
-        bootstrap.setOption("reuseAddress", true);        
+
+        // Do no enable this with win.
+        if (System.getProperty("os.name").toLowerCase().indexOf( "win" ) == -1) {
+            bootstrap.setOption("reuseAddress", true);
+        }
+
         try {
             if (proxyServer == null) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
