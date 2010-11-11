@@ -55,11 +55,11 @@ public interface AsyncHandler<T> {
         /**
          * Stop the processing.
          */
-        ABORT(),
+        ABORT,
         /**
          * Continue the processing
          */
-        CONTINUE(),
+        CONTINUE,
 
     }
     
