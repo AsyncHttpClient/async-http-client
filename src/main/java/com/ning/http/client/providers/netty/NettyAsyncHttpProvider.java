@@ -346,11 +346,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         ChannelFuture writeFuture;
                         if (channel.getPipeline().get(SslHandler.class) != null) {
                             writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
-                                public void operationComplete(ChannelFuture cf) {
-                                    super.operationComplete(cf);
-                                }
-                            });
+                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
                         } else {
                             final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
                             writeFuture = channel.write(region);
