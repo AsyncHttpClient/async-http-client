@@ -55,7 +55,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                            Request r,
                            HttpServletRequest httpRequest,
                            HttpServletResponse httpResponse) throws IOException, ServletException {
-            
+
             int size = 10 * 1024;
             if (httpRequest.getContentLength() > 0) {
                 size = httpRequest.getContentLength();

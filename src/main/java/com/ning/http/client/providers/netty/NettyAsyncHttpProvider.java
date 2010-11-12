@@ -59,7 +59,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelFuture;
-import org.jboss.netty.channel.DefaultFileRegion;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
@@ -97,6 +96,8 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
@@ -212,7 +213,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 executeConnectAsync = true;
             } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
-            }
+            } 
         }
     }
 
@@ -334,36 +335,41 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
-                RandomAccessFile raf = null;
                 if (future.getRequest().getFile() != null) {
                     final File file = future.getRequest().getFile();
                     long fileLength = 0;
+                    final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
                     try{
-                        raf = new RandomAccessFile(file, "r");
                         fileLength = raf.length();
 
                         ChannelFuture writeFuture;
                         if (channel.getPipeline().get(SslHandler.class) != null) {
                             writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+                                public void operationComplete(ChannelFuture cf) {
+                                    super.operationComplete(cf);
+                                }
+                            });
                         } else {
-                            final FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+                            final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
                             writeFuture = channel.write(region);
                             writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
                                 public void operationComplete(ChannelFuture cf) {
-                                    region.releaseExternalResources();
                                     super.operationComplete(cf);
                                 }
                             });
                         }
 
-                    } finally {
-                        if (raf != null)
+                    } catch (IOException ex) {
+                        if (raf != null) {
                             try {
+
                                 raf.close();
                             } catch (IOException e) {
                             }
+                        }
+                        throw ex;
                     }
                 } else if (body != null) {
                     ChannelFuture writeFuture;
@@ -1554,6 +1560,63 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         @Override
         protected Boolean initialValue() {
             return defaultValue? Boolean.TRUE : Boolean.FALSE;
+        }
+    }
+
+    public static class OptimizedFileRegion implements FileRegion {
+
+        private final FileChannel file;
+        private final RandomAccessFile raf;
+        private final long position;
+        private final long count;
+        private long byteWritten;
+
+        public OptimizedFileRegion(RandomAccessFile raf, long position, long count) {
+            this.raf = raf;
+            this.file = raf.getChannel();
+            this.position = position;
+            this.count = count;
+        }
+
+        public long getPosition() {
+            return position;
+        }
+
+        public long getCount() {
+            return count;
+        }
+
+        public long transferTo(WritableByteChannel target, long position) throws IOException {
+            long count = this.count - position;
+            if (count < 0 || position < 0) {
+                throw new IllegalArgumentException(
+                        "position out of range: " + position +
+                                " (expected: 0 - " + (this.count - 1) + ")");
+            }
+            if (count == 0) {
+                return 0L;
+            }
+
+            long bw = file.transferTo(this.position + position, count, target);
+            byteWritten += bw;
+            if (byteWritten == raf.length()) {
+                releaseExternalResources();
+            }
+            return bw;
+        }
+
+        public void releaseExternalResources() {
+            try {
+                file.close();
+            } catch (IOException e) {
+                log.warn("Failed to close a file.", e);
+            }
+
+            try {
+                raf.close();
+            } catch (IOException e) {
+                log.warn("Failed to close a file.", e);
+            }
         }
     }
 }

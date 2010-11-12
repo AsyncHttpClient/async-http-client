@@ -39,7 +39,7 @@ public class PutLargeFileTest
 
     private File largeFile;
 
-    @Test(groups = "standalone", enabled = false)
+    @Test(groups = "standalone", enabled = true)
     public void testPutLargeFile()
             throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
@@ -101,7 +101,7 @@ public class PutLargeFileTest
                 resp.setStatus(200);
                 resp.getOutputStream().flush();
                 resp.getOutputStream().close();
-                
+
                 arg1.setHandled(true);
 
             }
