@@ -209,7 +209,7 @@ public class BasicHttpsTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = "online")
+    @Test(groups = "online", enabled = false)
     public void multipleJavaDotDeadSSLTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -232,7 +232,7 @@ public class BasicHttpsTest {
 
     }
 
-    @Test(groups = "online")
+    @Test(groups = "online", enabled = false)
     public void multipleJavaDotDeadKeystoreTest() throws Throwable {
 
         ClassLoader cl = getClass().getClassLoader();
