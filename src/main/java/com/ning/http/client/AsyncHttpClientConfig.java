@@ -605,7 +605,7 @@ public class AsyncHttpClientConfig {
          * @param responseFilter
          * @return this
          */
-        public Builder addRequestFilter(ResponseFilter responseFilter) {
+        public Builder addResponseFilter(ResponseFilter responseFilter) {
             responseFilters.add(responseFilter);
             return this;
         }
