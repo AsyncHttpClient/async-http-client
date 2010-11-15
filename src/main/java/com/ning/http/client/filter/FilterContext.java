@@ -28,7 +28,7 @@ import com.ning.http.client.Request;
  * <p/>
  * Invoking {@link com.ning.http.client.filter.FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
  * that can be used to decide if the response processing should continue or not. You can stop the current response processing
- * and replay the request but creating a {@link FilterContext(AsyncHandler<T>, Request, boolean)}. The {@link com.ning.http.client.AsyncHttpProvider}
+ * and replay the request but creating a {@link FilterContext}. The {@link com.ning.http.client.AsyncHttpProvider}
  * will interrupt the processing and "replay" the associated {@link Request} instance.
  */
 public class FilterContext<T> {

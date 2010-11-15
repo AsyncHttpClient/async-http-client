@@ -211,7 +211,7 @@ public class AsyncHttpClientConfig {
      * Is the {@link ConnectionsPool} support enabled.
      *
      * @return true if keep-alive is enabled
-     * @Deprecated - Use {@link AsyncHttpClientConfig#getAllowPoolingConnection()}
+     * @deprecated - Use {@link AsyncHttpClientConfig#getAllowPoolingConnection()}
      */
     public boolean getKeepAlive() {
         return allowPoolingConnection;
@@ -475,7 +475,7 @@ public class AsyncHttpClientConfig {
          *
          * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}
          * @return a {@link Builder}
-         * @Deprecated - Use {@link com.ning.http.client.AsyncHttpClientConfig.Builder#setAllowPoolingConnection(boolean)}
+         * @deprecated - Use {@link com.ning.http.client.AsyncHttpClientConfig.Builder#setAllowPoolingConnection(boolean)}
          */
         public Builder setKeepAlive(boolean allowPoolingConnection) {
             this.allowPoolingConnection = allowPoolingConnection;
@@ -552,7 +552,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
-         * @param providerConfig
+         * @param providerConfig the {@link com.ning.http.client.AsyncHttpProviderConfig}
          * @return a {@link Builder}
          */
         public Builder setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
@@ -561,8 +561,8 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
-         * @param connectionsPool
+         * Set the {@link ConnectionsPool}
+         * @param connectionsPool the {@link ConnectionsPool}
          * @return a {@link Builder}
          */
         public Builder setConnectionsPool(ConnectionsPool<?, ?> connectionsPool) {
@@ -582,28 +582,28 @@ public class AsyncHttpClientConfig {
 
         /**
          * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
-         * @param asyncFilter
+         * @param requestFilter  {@link com.ning.http.client.filter.RequestFilter}
          * @return this
          */
-        public Builder addRequestFilter(RequestFilter asyncFilter) {
-            requestFilters.add(asyncFilter);
+        public Builder addRequestFilter(RequestFilter requestFilter) {
+            requestFilters.add(requestFilter);
             return this;
         }
 
         /**
          * Remove an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
-         * @param asyncFilter
+         * @param requestFilter {@link com.ning.http.client.filter.RequestFilter}
          * @return this
          */
-        public Builder removeRequestFilter(RequestFilter asyncFilter) {
-            requestFilters.remove(asyncFilter);
+        public Builder removeRequestFilter(RequestFilter requestFilter) {
+            requestFilters.remove(requestFilter);
             return this;
         }
 
         /**
          * Add an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
          * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
-         * @return
+         * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}
          * @return this
          */
         public Builder addResponseFilter(ResponseFilter responseFilter) {
@@ -614,7 +614,7 @@ public class AsyncHttpClientConfig {
         /**
          * Remove an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
          * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}. 
-         * @param responseFilter
+         * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}
          * @return this
          */
         public Builder removeResponseFilter(ResponseFilter responseFilter) {

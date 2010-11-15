@@ -38,20 +38,22 @@ import java.util.concurrent.atomic.AtomicLong;
        TransferCompletionHandler tl = new TransferCompletionHandler();
        tl.addTransferListener(new TransferListener() {
 
-            public void onStart() {
-
+            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
             }
 
-            public void onBytesTransfered(ByteBuffer buffer) {
-                // Do something with the bytes
+            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
             }
 
-            public void onEnd() {
+            public void onBytesReceived(ByteBuffer buffer) {
+            }
 
+            public void onBytesSent(ByteBuffer buffer) {
+            }
+
+            public void onRequestResponseCompleted() {
             }
 
             public void onThrowable(Throwable t) {
-
             }
         });
 
