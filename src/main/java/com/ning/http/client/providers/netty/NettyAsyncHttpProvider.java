@@ -300,8 +300,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         try {
 
             if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+
+                FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+                for (String s : future.getNettyRequest().getHeaderNames()) {
+                    for (String header : future.getNettyRequest().getHeaders(s)) {
+                        h.add(s, header);
+                    }
+                }
+
                 TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(
-                        new NettyTransferAdapter(future.getRequest().getHeaders(), nettyRequest.getContent(), future.getRequest().getFile()));
+                        new NettyTransferAdapter(h, nettyRequest.getContent(), future.getRequest().getFile()));
             }
 
             if (!channel.isOpen() || !channel.isConnected()) {

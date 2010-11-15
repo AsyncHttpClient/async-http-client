@@ -26,6 +26,7 @@ import com.ning.http.client.logging.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -143,6 +144,11 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      * {@inheritDoc}
      */
     public STATE onHeaderWriteCompleted() {
+        List<String> list = transferAdapter.getHeaders().get("Content-Length");
+        if (list != null && list.size() > 0 && list.get(0) != "") {
+            totalBytesToTransfer.set(Long.valueOf(list.get(0)));
+        }
+
         fireOnHeadersSent(transferAdapter.getHeaders());
         return STATE.CONTINUE;
     }
