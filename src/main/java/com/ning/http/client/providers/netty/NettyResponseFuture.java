@@ -90,7 +90,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.asyncHttpProvider = asyncHttpProvider;
 
         if (System.getProperty(MAX_RETRY) != null) {
-            maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));;
+            maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
+            ;
         } else {
             maxRetry = 5;
         }
@@ -196,7 +197,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (e != null) {
             throw e;
         }
-        
+
         V update = content.get();
         if (exEx.get() == null && !contentProcessed.getAndSet(true)) {
             try {
@@ -354,12 +355,12 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      *
      * @return true if that {@link Future} cannot be recovered.
      */
-    public boolean cannotBeReplay(){
-         return isDone()
-                 || !canRetry()
-                 || isCancelled()
-                 || (channel() != null && channel().isOpen())
-                 || isInAuth();
+    public boolean cannotBeReplay() {
+        return isDone()
+                || !canRetry()
+                || isCancelled()
+                || (channel() != null && channel().isOpen())
+                || isInAuth();
     }
 
     @Override

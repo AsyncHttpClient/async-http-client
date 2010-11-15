@@ -36,6 +36,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     /**
      * Return the response status code
+     *
      * @return the response status code
      */
     public int getStatusCode() {
@@ -44,6 +45,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     /**
      * Return the response status text
+     *
      * @return the response status text
      */
     public String getStatusText() {

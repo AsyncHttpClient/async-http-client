@@ -24,6 +24,7 @@ import com.ning.http.client.Response;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -59,16 +60,19 @@ public class NettyAsyncResponse implements Response {
     }
 
     /* @Override */
+
     public int getStatusCode() {
         return status.getStatusCode();
     }
 
     /* @Override */
+
     public String getStatusText() {
         return status.getStatusText();
     }
 
     /* @Override */
+
     public String getResponseBody() throws IOException {
         String contentType = getContentType();
         String charset = "UTF-8";
@@ -83,7 +87,7 @@ public class NettyAsyncResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        checkBodyParts(); 
+        checkBodyParts();
 
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
@@ -93,9 +97,10 @@ public class NettyAsyncResponse implements Response {
     }
 
     /* @Override */
+
     public InputStream getResponseBodyAsStream() throws IOException {
         checkBodyParts();
-        
+
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp : bodyParts) {
             // Ugly. TODO
@@ -116,6 +121,7 @@ public class NettyAsyncResponse implements Response {
     }
 
     /* @Override */
+
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         String contentType = getContentType();
         String charset = "UTF-8";
@@ -131,50 +137,57 @@ public class NettyAsyncResponse implements Response {
     }
 
     /* @Override */
+
     public URI getUri() throws MalformedURLException {
         return uri;
     }
 
     /* @Override */
+
     public String getContentType() {
-        if (headers == null ) {
+        if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);
         }
         return headers.getHeaders().getFirstValue("Content-Type");
     }
 
     /* @Override */
+
     public String getHeader(String name) {
-        if (headers == null ) {
+        if (headers == null) {
             throw new IllegalStateException();
         }
         return headers.getHeaders().getFirstValue(name);
     }
 
     /* @Override */
+
     public List<String> getHeaders(String name) {
-        if (headers == null ) {
+        if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);
         }
         return headers.getHeaders().get(name);
     }
 
     /* @Override */
+
     public FluentCaseInsensitiveStringsMap getHeaders() {
-         if (headers == null ) {
+        if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);
         }
         return headers.getHeaders();
     }
 
     /* @Override */
+
     public boolean isRedirected() {
         return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
     }
-    
+
     /* @Override */
+
     public List<Cookie> getCookies() {
-        if (headers == null ) {
+        if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);
         }
         if (cookies.isEmpty()) {
@@ -227,7 +240,7 @@ public class NettyAsyncResponse implements Response {
     public boolean hasResponseHeaders() {
         return (headers != null ? true : false);
     }
-    
+
     /**
      * {@inheritDoc}
      */

@@ -207,13 +207,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         });
         DefaultChannelFuture.setUseDeadLockChecker(false);
-        
-        if (asyncHttpProviderConfig != null){
+
+        if (asyncHttpProviderConfig != null) {
             if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT) != null) {
                 executeConnectAsync = true;
             } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
-            } 
+            }
         }
     }
 
@@ -322,7 +322,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             try {
                 channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
-            } catch(Throwable cause) {
+            } catch (Throwable cause) {
                 if (log.isDebugEnabled()) {
                     log.debug(cause);
                 }
@@ -340,7 +340,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     long fileLength = 0;
                     final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
-                    try{
+                    try {
                         fileLength = raf.length();
 
                         ChannelFuture writeFuture;
@@ -369,7 +369,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 } else if (body != null) {
                     ChannelFuture writeFuture;
                     if (channel.getPipeline().get(SslHandler.class) == null && (body instanceof RandomAccessBody)) {
-                        writeFuture = channel.write(new BodyFileRegion((RandomAccessBody)body));
+                        writeFuture = channel.write(new BodyFileRegion((RandomAccessBody) body));
                     } else {
                         writeFuture = channel.write(new BodyChunkedInput(body));
                     }
@@ -380,7 +380,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             try {
                                 b.close();
                             } catch (IOException e) {
-                                log.warn( e, "Failed to close request body: %s", e.getMessage() );
+                                log.warn(e, "Failed to close request body: %s", e.getMessage());
                             }
                             super.operationComplete(cf);
                         }
@@ -512,7 +512,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
         } else if (config.getUserAgent() != null) {
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
-        } else if (request.getHeaders().getFirstValue("User-Agent") != null){
+        } else if (request.getHeaders().getFirstValue("User-Agent") != null) {
             nettyRequest.setHeader("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
         } else {
             nettyRequest.setHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
@@ -730,7 +730,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (useSSl) {
             constructSSLPipeline(c);
         }
-                                                                                      
+
         if (config.getMaxTotalConnections() != -1) {
             maxConnections.incrementAndGet();
         }
@@ -740,7 +740,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
-        if (System.getProperty("os.name").toLowerCase().indexOf( "win" ) == -1) {
+        if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
             bootstrap.setOption("reuseAddress", true);
         }
 
@@ -795,7 +795,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (state.equals(IdleState.READER_IDLE)) {
             return;
         }
-               
+
         if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
@@ -883,7 +883,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
                 HttpResponseStatus status = new ResponseStatus(future.getURI(), response, this);
-                FilterContext fc = new FilterContext(future.getAsyncHandler(), request, status );
+                FilterContext fc = new FilterContext(future.getAsyncHandler(), request, status);
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
@@ -900,7 +900,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     final Request newRequest = fc.getRequest();
                     future.setAsyncHandler(fc.getAsyncHandler());
                     future.setState(NettyResponseFuture.STATE.NEW);
-                    
+
                     // We must consume the body first in order to re-use the connection.
                     if (response.isChunked()) {
                         ctx.setAttachment(new AsyncCallable(future) {
@@ -931,7 +931,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     if (log.isDebugEnabled()) {
                         log.debug(String.format(currentThread() + "Sending authentication to %s", request.getUrl()));
                     }
-                    
+
                     if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
                     }
@@ -1097,6 +1097,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
     }
+
     private void nextRequest(final Request request, final NettyResponseFuture<?> future) throws IOException {
         nextRequest(request, future, true);
     }
@@ -1162,11 +1163,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
 
-        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?> ) {
+        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             if (future != null && !future.isDone()) {
                 remotelyClosed(ctx.getChannel(), future);
-            } 
+            }
         } else {
             closeChannel(ctx);
         }
@@ -1313,8 +1314,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     ctx.getAttachment()));
             log.error(cause);
         }
-        closeChannel(ctx);        
-        ctx.sendUpstream(e);        
+        closeChannel(ctx);
+        ctx.sendUpstream(e);
     }
 
 
@@ -1331,7 +1332,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return abortOnConnectCloseException(cause.getCause());
             }
 
-        } catch (Throwable t) {}
+        } catch (Throwable t) {
+        }
         return false;
     }
 
@@ -1398,7 +1400,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             Throwable cause = cf.getCause();
             if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
 
-                if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {                    
+                if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {
                     if (log.isDebugEnabled()) {
                         log.debug(cause);
                     }
@@ -1561,7 +1563,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         @Override
         protected Boolean initialValue() {
-            return defaultValue? Boolean.TRUE : Boolean.FALSE;
+            return defaultValue ? Boolean.TRUE : Boolean.FALSE;
         }
     }
 
