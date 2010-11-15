@@ -17,10 +17,13 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.filter.ThrottleRequestFilter;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -29,21 +32,30 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-public class AsyncFilterTest extends AbstractBasicTest {
+public class FilterTest extends AbstractBasicTest {
 
     private class BasicHandler extends AbstractHandler {
 
         public void handle(String s,
-                           Request r,
+                           org.eclipse.jetty.server.Request r,
                            HttpServletRequest httpRequest,
                            HttpServletResponse httpResponse) throws IOException, ServletException {
+
+            Enumeration<?> e = httpRequest.getHeaderNames();
+            String param;
+            while (e.hasMoreElements()) {
+                param = e.nextElement().toString();
+                httpResponse.addHeader(param, httpRequest.getHeader(param));
+            }
 
             httpResponse.setStatus(200);
             httpResponse.getOutputStream().flush();
@@ -109,5 +121,88 @@ public class AsyncFilterTest extends AbstractBasicTest {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
+    @Test(groups = "standalone")
+    public void basicResponseFilterTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        b.addResponseFilter(new ResponseFilter(){
 
+            public FilterContext filter(FilterContext ctx) throws FilterException {
+                return ctx;
+            }
+
+        });
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
+
+        try {
+            Response response = c.preparePost(getTargetUrl())
+                    .execute().get();
+            
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+        } catch (IOException ex) {
+            fail("Should have timed out");
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void replayResponseFilterTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        final AtomicBoolean replay = new AtomicBoolean(true);
+
+        b.addResponseFilter(new ResponseFilter(){
+
+            public FilterContext filter(FilterContext ctx) throws FilterException {
+
+                if (replay.getAndSet(false)) {
+                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay","true").build();
+                    return new FilterContext(ctx.getAsyncHandler(), request, true);
+                }
+                return ctx;
+            }
+
+        });
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
+
+        try {
+            Response response = c.preparePost(getTargetUrl())
+                    .execute().get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("X-Replay"), "true");
+        } catch (IOException ex) {
+            fail("Should have timed out");
+        }
+    }
+
+    @Test(groups = "standalone")
+    public void replayStatusCodeResponseFilterTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        final AtomicBoolean replay = new AtomicBoolean(true);
+
+        b.addResponseFilter(new ResponseFilter(){
+
+            public FilterContext filter(FilterContext ctx) throws FilterException {
+
+                if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
+                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay","true").build();
+                    return new FilterContext(ctx.getAsyncHandler(), request, true);
+                }
+                return ctx;
+            }
+
+        });
+        AsyncHttpClient c = new AsyncHttpClient(b.build());
+
+        try {
+            Response response = c.preparePost(getTargetUrl())
+                    .execute().get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("X-Replay"), "true");
+        } catch (IOException ex) {
+            fail("Should have timed out");
+        }
+    }
 }

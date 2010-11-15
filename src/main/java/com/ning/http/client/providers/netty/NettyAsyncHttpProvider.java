@@ -636,10 +636,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
 
-        FilterContext ctx = new FilterContext(asyncHandler, request);
+        FilterContext fc = new FilterContext(asyncHandler, request);
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
-                ctx = asyncFilter.filter(ctx);
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
             } catch (FilterException e) {
                 IOException ex = new IOException();
                 ex.initCause(e);
@@ -647,11 +650,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        return doConnect(ctx.getRequest(), ctx.getAsyncHandler(), null, true);
-    }
-
-    private <T> void execute(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        doConnect(request, f.getAsyncHandler(), f, true);
+        return doConnect(fc.getRequest(), fc.getAsyncHandler(), null, true);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache) throws IOException {
@@ -888,6 +887,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
+                        if (fc == null) {
+                            throw new NullPointerException("FilterContext is null");
+                        }
                     } catch (FilterException efe) {
                         abort(future, efe);
                     }
@@ -910,6 +912,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     } else {
                         nextRequest(newRequest, future);
                     }
+                    return;
                 }
 
                 if (statusCode == 401

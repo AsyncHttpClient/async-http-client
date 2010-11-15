@@ -26,7 +26,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This {@link RequestFilter} throttles requests and block when the number of permits is reached, waiting for
+ * A {@link RequestFilter} throttles requests and block when the number of permits is reached, waiting for
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {

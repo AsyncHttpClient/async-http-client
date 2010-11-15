@@ -16,10 +16,19 @@
 package com.ning.http.client.filter;
 
 /**
- *  A Filter interface that gets invoked before making an actual request.
+ * A Filter interface that gets invoked before making an actual request.
  */
 public interface RequestFilter {
 
+    /**
+     * An {@link com.ning.http.client.AsyncHttpProvider} will invoke {@link RequestFilter#filter} and will use the
+     * returned {@link FilterContext#getRequest()} and {@link FilterContext#getAsyncHandler()} to continue the request
+     * processing.
+     *
+     * @param ctx a {@link FilterContext}
+     * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
+     * @throws FilterException to interrupt the filter processing.
+     */
     public FilterContext filter(FilterContext ctx) throws FilterException;
 
 }

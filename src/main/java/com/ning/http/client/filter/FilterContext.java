@@ -20,7 +20,16 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 
 /**
- * A simple object that hold reference to an {@link AsyncHandler} and  {@link Request}
+ * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
+ * {@link RequestFilter} gets executed before the HTTP request is made to the remote server. Once the response bytes are
+ * received, a {@link FilterContext} is then passed to the list of {@link ResponseFilter}. {@link ResponseFilter}
+ * gets invoked before the response gets processed, e.g. before authorization, redirection and invokation of {@link AsyncHandler}
+ * gets processed.
+ * <p/>
+ * Invoking {@link com.ning.http.client.filter.FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
+ * that can be used to decide if the response processing should continue or not. You can stop the current response processing
+ * and replay the request but creating a {@link FilterContext(AsyncHandler<T>, Request, boolean)}. The {@link com.ning.http.client.AsyncHttpProvider}
+ * will interrupt the processing and "replay" the associated {@link Request} instance.
  */
 public class FilterContext<T> {
 
@@ -29,6 +38,12 @@ public class FilterContext<T> {
     private final HttpResponseStatus responseStatus;
     private final boolean replayRequest;
 
+    /**
+     * Create a new {@link FilterContext}
+     *
+     * @param asyncHandler an {@link AsyncHandler}
+     * @param request      a {@link Request}
+     */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request) {
         this.asyncHandler = asyncHandler;
         this.request = request;
@@ -36,6 +51,13 @@ public class FilterContext<T> {
         this.replayRequest = false;
     }
 
+    /**
+     * Create a new {@link FilterContext}
+     *
+     * @param asyncHandler   an {@link AsyncHandler}
+     * @param request        a {@link Request}
+     * @param responseStatus a {@link HttpResponseStatus}
+     */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request, HttpResponseStatus responseStatus) {
         this.asyncHandler = asyncHandler;
         this.request = request;
@@ -43,6 +65,13 @@ public class FilterContext<T> {
         this.replayRequest = false;
     }
 
+    /**
+     * Create a new {@link FilterContext}
+     *
+     * @param asyncHandler  an {@link AsyncHandler}
+     * @param request       a {@link Request}
+     * @param replayRequest true if the current response processing needs to be interrupted, and a new {@link Request} be processed.
+     */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request, boolean replayRequest) {
         this.asyncHandler = asyncHandler;
         this.request = request;
@@ -50,18 +79,36 @@ public class FilterContext<T> {
         this.responseStatus = null;
     }
 
+    /**
+     * Return the original or decorated {@link AsyncHandler}
+     *
+     * @return the original or decorated {@link AsyncHandler}
+     */
     public AsyncHandler<T> getAsyncHandler() {
         return asyncHandler;
     }
 
+    /**
+     * Return the original or decorated {@link Request}
+     *
+     * @return the original or decorated {@link Request}
+     */
     public Request getRequest() {
         return request;
     }
 
+    /**
+     * Return the unprocessed response's {@link HttpResponseStatus}
+     * @return the unprocessed response's {@link HttpResponseStatus}
+     */
     public HttpResponseStatus getResponseStatus() {
         return responseStatus;
     }
 
+    /**
+     * Return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
+     * @return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
+     */
     public boolean replayRequest() {
         return replayRequest;
     }

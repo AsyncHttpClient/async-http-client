@@ -601,8 +601,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before the request is sent.
-         * @param responseFilter
+         * Add an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
+         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
+         * @return
          * @return this
          */
         public Builder addResponseFilter(ResponseFilter responseFilter) {
