@@ -908,7 +908,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             }
                         });
                     } else {
-                        nextRequest(request, future);
+                        nextRequest(newRequest, future);
                     }
                 }
 
