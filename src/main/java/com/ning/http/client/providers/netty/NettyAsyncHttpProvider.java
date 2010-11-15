@@ -39,6 +39,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
@@ -89,6 +90,8 @@ import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.net.ssl.SSLEngine;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.ConnectException;
@@ -296,6 +299,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                           final NettyResponseFuture<T> future, final HttpRequest nettyRequest) {
         try {
 
+            if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(
+                        new NettyTransferAdapter(future.getRequest().getHeaders(), nettyRequest.getContent(), future.getRequest().getFile()));
+            }
+
             if (!channel.isOpen() || !channel.isConnected()) {
                 if (!remotelyClosed(channel, future)) {
                     abort(future, new ConnectException());
@@ -350,13 +358,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         } else {
                             final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
                             writeFuture = channel.write(region);
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
-                                public void operationComplete(ChannelFuture cf) {
-                                    super.operationComplete(cf);
-                                }
-                            });
+                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
                         }
-
                     } catch (IOException ex) {
                         if (raf != null) {
                             try {
@@ -1077,7 +1080,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             } else if (e.getMessage() instanceof HttpChunk) {
                 HttpChunk chunk = (HttpChunk) e.getMessage();
-
+                
                 if (handler != null) {
                     if (chunk.isLast() || updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), null, this, chunk))) {
                         if (chunk instanceof DefaultHttpChunkTrailer) {
@@ -1620,6 +1623,37 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 raf.close();
             } catch (IOException e) {
                 log.warn("Failed to close a file.", e);
+            }
+        }
+    }
+
+    private static class NettyTransferAdapter extends TransferCompletionHandler.TransferAdapter {
+
+        private final ChannelBuffer content;
+        private final FileInputStream file;
+        private int byteRead = 0;
+
+        public NettyTransferAdapter(FluentCaseInsensitiveStringsMap headers, ChannelBuffer content, File file) throws IOException {
+            super(headers);
+            this.content = content;
+            if (file != null) {
+                this.file = new FileInputStream(file);
+            } else {
+                this.file = null;
+            }
+        }
+
+        @Override
+        public void getBytes(byte[] bytes) {
+            if (content.writableBytes() != 0) {
+                content.getBytes(byteRead, bytes);
+                byteRead += bytes.length;
+            } else if (file != null) {
+                try {
+                    byteRead += file.read(bytes);
+                } catch (IOException e) {
+                    log.error(e);
+                }
             }
         }
     }

@@ -62,7 +62,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * {@inheritDoc}
      */
     /* @Override */
-    public final STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+    public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         builder.reset();
         builder.accumulate(status);
         return STATE.CONTINUE;
@@ -72,7 +72,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
      * {@inheritDoc}
      */
     /* @Override */
-    public final STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+    public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         builder.accumulate(headers);
         return STATE.CONTINUE;
     }

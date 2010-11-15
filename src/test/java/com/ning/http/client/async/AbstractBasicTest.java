@@ -122,11 +122,9 @@ public class AbstractBasicTest {
                 httpResponse.getOutputStream().write(bytes);
             }
 
-
             httpResponse.setStatus(200);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
-
         }
     }
 

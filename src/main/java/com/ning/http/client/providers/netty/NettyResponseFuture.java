@@ -256,7 +256,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return request;
     }
 
-    protected final HttpRequest getNettyRequest() {
+    public final HttpRequest getNettyRequest() {
         return nettyRequest;
     }
 
