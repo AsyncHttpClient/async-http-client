@@ -485,6 +485,16 @@ public class AsyncHttpClient {
             return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
                     new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
         } catch (Throwable t){
+
+            // Let's try with another classloader
+            try {
+                Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>)
+                        AsyncHttpClient.class.getClassLoader().loadClass(className);
+                return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
+                        new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
+            } catch (Throwable t2) {
+            }
+
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Default provider not found %s. Using the %s", DEFAULT_PROVIDER,
                         JDKAsyncHttpProvider.class.getName()));
