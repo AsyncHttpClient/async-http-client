@@ -153,7 +153,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         try {
             return get(responseTimeoutInMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            throw new RuntimeException(e);
+            throw new ExecutionException(e);
         }
     }
 
