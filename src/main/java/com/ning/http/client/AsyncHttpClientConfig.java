@@ -67,8 +67,8 @@ public class AsyncHttpClientConfig {
     private final AsyncHttpProviderConfig<?, ?> providerConfig;
     private final ConnectionsPool<?, ?> connectionsPool;
     private final Realm realm;
-    private final LinkedList<RequestFilter> requestFilters;
-    private final LinkedList<ResponseFilter> responseFilters;
+    private final List<RequestFilter> requestFilters;
+    private final List<ResponseFilter> responseFilters;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -87,8 +87,8 @@ public class AsyncHttpClientConfig {
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
                                   ConnectionsPool<?, ?> connectionsPool, Realm realm,
-                                  LinkedList<RequestFilter> requestFilters,
-                                  LinkedList<ResponseFilter> responseFilters) {
+                                  List<RequestFilter> requestFilters, 
+                                  List<ResponseFilter> responseFilters ) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -353,8 +353,10 @@ public class AsyncHttpClientConfig {
         private AsyncHttpProviderConfig<?,?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
-        private final LinkedList<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
-        private final LinkedList<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
+
+        private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
+
+        private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
 
         public Builder() {
         }
