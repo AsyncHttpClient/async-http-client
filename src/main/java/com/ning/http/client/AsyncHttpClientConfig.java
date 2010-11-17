@@ -624,6 +624,36 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        /**
+         * Create a config builder with values taken from the given prototype configuration.
+         * 
+         * @param prototype the configuration to use as a prototype.
+         */
+        public Builder( AsyncHttpClientConfig prototype )
+        {
+            allowPoolingConnection = prototype.getAllowPoolingConnection();
+            providerConfig = prototype.getAsyncHttpProviderConfig();
+            connectionsPool = prototype.getConnectionsPool();
+            defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
+            defaultIdleConnectionTimeoutInMs = prototype.getIdleConnectionTimeoutInMs();
+            allowPoolingConnection = prototype.getKeepAlive();
+            defaultMaxConnectionPerHost = prototype.getMaxConnectionPerHost();
+            maxDefaultRedirects = prototype.getMaxRedirects();
+            defaultMaxTotalConnections = prototype.getMaxTotalConnections();
+            proxyServer = prototype.getProxyServer();
+            realm = prototype.getRealm();
+            defaultRequestTimeoutInMs = prototype.getRequestTimeoutInMs();
+            sslContext = prototype.getSSLContext();
+            sslEngineFactory = prototype.getSSLEngineFactory();
+            userAgent = prototype.getUserAgent();
+
+            requestFilters.clear();
+            responseFilters.clear();
+
+            requestFilters.addAll( prototype.getRequestFilters() );
+            responseFilters.addAll( prototype.getResponseFilters() );
+        }
+
 
         /**
          * Build an {@link AsyncHttpClientConfig}
