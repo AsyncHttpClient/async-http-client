@@ -252,6 +252,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         }
     }
 
+    public void content(V v) {
+        content.set(v);
+    }
+
     protected final Request getRequest() {
         return request;
     }
@@ -315,7 +319,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return statusReceived.getAndSet(sr);
     }
 
-    protected void touch() {
+    public void touch() {
         touch.set(System.currentTimeMillis());
     }
 

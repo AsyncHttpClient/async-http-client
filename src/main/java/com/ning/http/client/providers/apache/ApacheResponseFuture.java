@@ -65,6 +65,13 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
         }
     }
 
+    /**
+     * TODO.
+     * @param v The new content
+     */
+    public void content(V v) {
+    }
+
     protected void setReaperFuture(Future<?> reaperFuture) {
         if (this.reaperFuture != null) {
             this.reaperFuture.cancel(true);
@@ -173,7 +180,7 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) >= responseTimeoutInMs);
     }
 
-    protected void touch() {
+    public void touch() {
         touch.set(System.currentTimeMillis());
     }
 

@@ -22,6 +22,7 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.FutureImpl;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -35,6 +36,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
+import com.ning.http.client.providers.netty.NettyResponseFuture;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -106,9 +108,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     }
 
     private void configure(JDKAsyncHttpProviderConfig config) {
+        for(Map.Entry<String,String> e: config.propertiesSet()) {
+            System.setProperty(e.getKey(), e.getValue());
+        }
     }
-    
     public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
+        return execute(request, handler, null);
+    }
+    public <T> Future<T> execute(Request request, AsyncHandler<T> handler, FutureImpl<?> future) throws IOException {
 
         if (isClose.get()) {
             throw new IOException("Closed");
@@ -129,8 +136,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             }
         }
 
+        JDKDelegateFuture delegate = null;
+        if (future != null) {
+            delegate = new JDKDelegateFuture(handler, config.getRequestTimeoutInMs(), future);
+        }
+
         HttpURLConnection urlConnection = createUrlConnection(request);
-        JDKFuture f = new JDKFuture<T>(handler, config.getRequestTimeoutInMs());
+        JDKFuture f = delegate == null ? new JDKFuture<T>(handler, config.getRequestTimeoutInMs()) : delegate;
         f.touch();
 
         f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));
@@ -181,7 +193,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         return urlConnection;
     }
 
-
     public void close() {
         isClose.set(true);
     }
@@ -195,13 +206,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         private HttpURLConnection urlConnection;
         private Request request;
         private final AsyncHandler<T> asyncHandler;
-        private final JDKFuture future;
+        private final FutureImpl<T> future;
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;
         private int cachedBytesLenght;
 
-        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, JDKFuture future) {
+        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, FutureImpl<T> future) {
             this.urlConnection = urlConnection;
             this.request = request;
             this.asyncHandler = asyncHandler;
@@ -307,7 +318,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
                 }
                 try {
-                    return asyncHandler.onCompleted();
+                    T t = asyncHandler.onCompleted();
+                    future.content(t);
+                    future.done(null);
+                    return t;
                 } catch (Throwable t) {
                     RuntimeException ex = new RuntimeException();
                     ex.initCause(t);
@@ -414,7 +428,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             }
 
             Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
-            if (realm != null && realm.getUsePreemptiveAuth()) {
+            if (realm != null && realm.getUsePreemptiveAuth() ) {
                 switch (realm.getAuthScheme()) {
                     case BASIC:
                         urlConnection.setRequestProperty("Authorization",
@@ -430,15 +444,15 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             }
                         }
                         break;
+                    case NTLM:
+                        jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+                        System.setProperty(NTLM_DOMAIN, realm.getDomain());
+                        break;
                     default:
                         throw new IllegalStateException(String.format(AsyncHttpProviderUtils.currentThread()
                                 + "Invalid Authentication %s", realm.toString()));
                 }
-            }
 
-            if (realm != null && realm.getDomain() != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
-                jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
-                System.setProperty(NTLM_DOMAIN, realm.getDomain());
             }
             
             // Add default accept headers.
@@ -607,6 +621,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             } catch (NoSuchFieldException e) {
             } catch (IllegalAccessException e) {
             }
+
 
             Authenticator.setDefault(new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {

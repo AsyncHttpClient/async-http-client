@@ -43,6 +43,7 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.logging.LogManager;
 import com.ning.http.client.logging.Logger;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
+import com.ning.http.client.providers.jdk.JDKDelegateFuture;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -103,6 +104,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -678,7 +680,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          * Netty doesn't support NTLM, so fall back to the JDK in that case.
          */
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        if (realm != null && realm.getScheme() == Realm.AuthScheme.NTLM) {
+        if (realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM) {
             if (log.isDebugEnabled()) {
                 log.debug(currentThread() + "NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
             }
@@ -889,7 +891,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
                 future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
 
-                String wwwAuth = response.getHeader(HttpHeaders.Names.WWW_AUTHENTICATE);
+                List<String> wwwAuth = getWwwAuth(response.getHeaders());
                 Request request = future.getRequest();
                 Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
@@ -927,16 +929,30 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
 
                 if (statusCode == 401
-                        && wwwAuth != null
+                        && wwwAuth.size() > 0
                         && realm != null
                         && !future.getAndSetAuth(true)) {
+
+                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
+                    future.setState(NettyResponseFuture.STATE.NEW);
+
+                    if (!future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
+                        builder.setUrl(future.getURI().toString());
+                    }
+
+                    // NTLM
+                    if (wwwAuth.contains("Negotiate") && wwwAuth.contains("NTLM")) {
+                        final Realm nr = new Realm.RealmBuilder().clone(realm).setUsePreemptiveAuth(true).build();
+                        ntlmProvider.execute(builder.setRealm(nr).build(), future.getAsyncHandler(), future);
+                        return;
+                    }
 
                     final Realm nr = new Realm.RealmBuilder().clone(realm)
                             .setScheme(realm.getAuthScheme())
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getReqType())
                             .setUsePreemptiveAuth(true)
-                            .parseWWWAuthenticateHeader(wwwAuth)
+                            .parseWWWAuthenticateHeader(wwwAuth.get(0))
                             .build();
 
                     if (log.isDebugEnabled()) {
@@ -945,13 +961,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
-                    }
-
-                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
-                    future.setState(NettyResponseFuture.STATE.NEW);
-
-                    if (!future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
-                        builder.setUrl(future.getURI().toString());
                     }
 
                     // We must consume the body first in order to re-use the connection.
@@ -1107,6 +1116,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 throw t;
             }
         }
+    }
+
+    private List<String> getWwwAuth(List<Entry<String,String>> list) {
+        ArrayList<String> l = new ArrayList<String>();
+        for (Entry<String, String> e: list) {
+            if (e.getKey().equalsIgnoreCase("WWW-Authenticate")) {
+                l.add(e.getValue());
+            }
+        }  
+        return l;
     }
 
     private void nextRequest(final Request request, final NettyResponseFuture<?> future) throws IOException {

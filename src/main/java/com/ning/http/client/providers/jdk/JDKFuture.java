@@ -32,15 +32,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class JDKFuture<V> implements FutureImpl<V> {
 
-    private Future<V> innerFuture;
-    private final AsyncHandler<V> asyncHandler;
-    private final int responseTimeoutInMs;
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-    private final AtomicBoolean timedOut = new AtomicBoolean(false);
-    private final AtomicBoolean isDone = new AtomicBoolean(false);
-    private final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-    private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
-    private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
+    protected Future<V> innerFuture;
+    protected final AsyncHandler<V> asyncHandler;
+    protected final int responseTimeoutInMs;
+    protected final AtomicBoolean cancelled = new AtomicBoolean(false);
+    protected final AtomicBoolean timedOut = new AtomicBoolean(false);
+    protected final AtomicBoolean isDone = new AtomicBoolean(false);
+    protected final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+    protected final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    protected final AtomicBoolean contentProcessed = new AtomicBoolean(false);
 
     public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs) {
         this.asyncHandler = asyncHandler;
@@ -53,8 +53,6 @@ public class JDKFuture<V> implements FutureImpl<V> {
 
     public void done(Callable callable) {
         isDone.set(true);
-        if (innerFuture != null) {
-        }
     }
 
     public void abort(Throwable t) {
@@ -65,6 +63,9 @@ public class JDKFuture<V> implements FutureImpl<V> {
         if (!timedOut.get() && !cancelled.get()) {
             asyncHandler.onThrowable(t);
         }     
+    }
+
+    public void content(V v) {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -127,7 +128,7 @@ public class JDKFuture<V> implements FutureImpl<V> {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 
-    protected void touch() {
+    public void touch() {
         touch.set(System.currentTimeMillis());
     }
 }
