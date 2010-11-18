@@ -217,9 +217,24 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         long count = bytesTransferred.getAndSet(-1);
         if (count != totalBytesToTransfer.get()) {
             if (transferAdapter != null) {
-                byte[] bytes = new byte[(int) (totalBytesToTransfer.get() - count)];
-                transferAdapter.getBytes(bytes);
-                fireOnBytesSent(bytes);
+                byte[] bytes = new byte[8192];
+                int leftBytes = (int) (totalBytesToTransfer.get() - count);
+                int length = 8192;
+                while (leftBytes > 0) {
+                    if (leftBytes > 8192) {
+                        leftBytes -= 8192;
+                    } else {
+                        length = leftBytes;
+                        leftBytes = 0;
+                    }
+
+                    if (length < 8192) {
+                        bytes = new byte[length];
+                    }
+
+                    transferAdapter.getBytes(bytes);
+                    fireOnBytesSent(bytes);
+                }
             }
         }
 
