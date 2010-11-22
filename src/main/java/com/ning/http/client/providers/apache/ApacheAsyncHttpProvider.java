@@ -421,7 +421,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("\n\nRequest %s\n\nResponse %s\n", request.toString(), method.toString()));
+                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request.toString(), method.toString());
                 }
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());

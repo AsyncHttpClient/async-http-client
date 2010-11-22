@@ -1040,7 +1040,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             final String newUrl = uri.toString();
 
                             if (log.isDebugEnabled()) {
-                                log.debug(String.format("Redirecting to %s", newUrl));
+                                log.debug("Redirecting to {}", newUrl);
                             }
 
                             if (response.isChunked()) {
@@ -1177,7 +1177,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Channel Closed: %s", e.getChannel()));
+            log.debug("Channel Closed: {}", e.getChannel());
         }
 
         if (ctx.getAttachment() instanceof AsyncCallable) {
@@ -1538,7 +1538,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         public synchronized void run() {
             if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Request Timeout expired for " + this.nettyResponseFuture);
+                    log.debug("Request Timeout expired for {}", this.nettyResponseFuture);
                 }
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.nettyResponseFuture.getRequest().getPerRequestConfig();
