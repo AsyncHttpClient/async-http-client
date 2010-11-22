@@ -75,7 +75,12 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.6.1</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        
         <!-- Test dependencies -->
          <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -318,11 +323,14 @@
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
-                            <artifactSet>
+                            <artifactSet>                  
                                 <excludes>
+                                    <exclude>commons-codec:commons-codec</exclude>                                                                                                            
+                                    <exclude>commons-lang:commons-lang</exclude>                                                                        
+                                    <exclude>commons-logging:commons-logging</exclude>                                    
                                     <exclude>junit:junit</exclude>
                                     <exclude>log4j:log4j</exclude>
-                                    <excluse>org.slf4j:slf4j-api</excluse>
+                                    <exclude>commons-httpclient:commons-httpclient</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
