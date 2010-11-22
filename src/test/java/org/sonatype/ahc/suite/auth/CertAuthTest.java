@@ -13,30 +13,28 @@ package org.sonatype.ahc.suite.auth;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import org.sonatype.tests.http.runner.annotations.Configurators;
-import org.sonatype.tests.http.server.api.ServerProvider;
-import org.sonatype.tests.http.server.jetty.configurations.CertAuthSuiteConfigurator;
-import org.testng.annotations.Test;
-
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 import org.sonatype.ahc.suite.util.CertUtil;
+import org.sonatype.tests.http.runner.annotations.Configurators;
+import org.sonatype.tests.http.server.api.ServerProvider;
+import org.sonatype.tests.http.server.jetty.configurations.CertAuthSuiteConfigurator;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
 
 /**
  * @author Benjamin Hanzelmann
- *
  */
-@Configurators( CertAuthSuiteConfigurator.class )
+@Configurators(CertAuthSuiteConfigurator.class)
 public class CertAuthTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
     private String keystorePath = "src/test/resources/client.keystore";
 
@@ -45,46 +43,39 @@ public class CertAuthTest
     private String alias = "client";
 
     @Override
-    public void configureProvider( ServerProvider provider )
-    {
-        super.configureProvider( provider );
-        provider.addUser( alias, CertUtil.getCertificate( alias, keystorePath, keystorePass ) );
+    public void configureProvider(ServerProvider provider) {
+        super.configureProvider(provider);
+        provider.addUser(alias, CertUtil.getCertificate(alias, keystorePath, keystorePass));
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testCertAuth()
-        throws Exception
-    {
+            throws Exception {
         AsyncHttpClientConfig cfg =
-            super.builder().setSSLContext( CertUtil.sslContext( keystorePath, keystorePass, alias ) ).build();
-        AsyncHttpClient client = new AsyncHttpClient( cfg );
+                super.builder().setSSLContext(CertUtil.sslContext(keystorePath, keystorePass, alias)).build();
+        AsyncHttpClient client = new AsyncHttpClient(cfg);
 
-        Response response = execute( client.prepareGet( url( "content", "test" ) ) );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "test", response.getResponseBody() );
+        Response response = execute(client.prepareGet(url("content", "test")));
+        assertEquals(200, response.getStatusCode());
+        assertEquals("test", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testCertAuthFail()
-        throws Exception
-    {
-        try
-        {
-            execute( client().prepareGet( url( "content", "test" ) ) );
+            throws Exception {
+        try {
+            execute(client().prepareGet(url("content", "test")));
         }
-        catch ( ExecutionException e )
-        {
+        catch (ExecutionException e) {
             Throwable cause = e;
             boolean seen = false;
-            while ( ( cause = cause.getCause() ) != null )
-            {
-                if ( cause instanceof IOException)
-                {
+            while ((cause = cause.getCause()) != null) {
+                if (cause instanceof IOException) {
                     seen = true;
                     break;
                 }
             }
-            assertTrue( "No SSLException mentioned as cause", seen );
+            assertTrue("No SSLException mentioned as cause", seen);
         }
 
     }

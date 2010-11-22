@@ -16,8 +16,8 @@
 package com.ning.http.multipart;
 
 import com.ning.http.client.FluentStringsMap;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -51,7 +51,7 @@ public class MultipartRequestEntity implements RequestEntity {
         return bytes;
     }
 
-    private final Logger log = LogManager.getLogger(MultipartRequestEntity.class);
+    private final Logger log = LoggerFactory.getLogger(MultipartRequestEntity.class);
 
     /** The MIME parts as set by the constructor */
     protected Part[] parts;
@@ -123,7 +123,7 @@ public class MultipartRequestEntity implements RequestEntity {
         try {
             return Part.getLengthOfParts(parts, getMultipartBoundary());
         } catch (Exception e) {
-            log.error(e, "An exception occurred while getting the length of the parts");
+            log.error("An exception occurred while getting the length of the parts", e);
             return 0;
         }
     }

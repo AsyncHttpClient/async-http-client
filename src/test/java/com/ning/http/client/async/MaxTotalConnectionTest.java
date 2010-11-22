@@ -18,8 +18,8 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
-    protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
+    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test
     public void testMaxTotalConnectionsExceedingException() {

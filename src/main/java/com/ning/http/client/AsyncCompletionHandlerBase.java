@@ -16,8 +16,8 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *  Simple {@link AsyncHandler} of type {@link Response}
@@ -42,7 +42,7 @@ import com.ning.http.client.logging.Logger;
  * }
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
-    private final Logger log = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+    private final Logger log = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
     @Override
     public Response onCompleted(Response response) throws Exception {
@@ -51,6 +51,6 @@ public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>
 
     /* @Override */
     public void onThrowable(Throwable t) {
-        log.debug(t);
+        log.debug(t.getMessage(), t);
     }
 }

@@ -34,9 +34,6 @@ import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
-import com.ning.http.client.providers.netty.NettyResponseFuture;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -44,6 +41,8 @@ import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import javax.net.ssl.HostnameVerifier;
@@ -82,7 +81,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
 public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection> {
-    private final static Logger logger = LogManager.getLogger(JDKAsyncHttpProvider.class);
+    private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
 
     private final static String NTLM_DOMAIN = "http.auth.ntlm.domain";
 
@@ -237,8 +236,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 int statusCode = urlConnection.getResponseCode();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format(AsyncHttpProviderUtils.currentThread()
-                            + "\n\nRequest %s\n\nResponse %s\n", request, statusCode));
+                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
                 }
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
@@ -257,7 +255,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             String newUrl = newUri.toString();
 
                             if (logger.isDebugEnabled()) {
-                                logger.debug(String.format(AsyncHttpProviderUtils.currentThread() + "Redirecting to %s", newUrl));
+                                logger.debug("Redirecting to {}", newUrl);
                             }
                             request = builder.setUrl(newUrl).build();
                             urlConnection = createUrlConnection(request);
@@ -273,8 +271,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
                     if (logger.isDebugEnabled()) {
-                        logger.debug(String.format(AsyncHttpProviderUtils.currentThread() 
-                                + "Sending authentication to %s", request.getUrl()));
+                        logger.debug("Sending authentication to {}", request.getUrl());
                     }
                     
                     Realm nr = new Realm.RealmBuilder().clone(realm)
@@ -329,13 +326,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             } catch (Throwable t) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(t);
+                    logger.debug(t.getMessage(), t);
                 }
 
                 try {
                     future.abort(filterException(t));
                 } catch (Throwable t2) {
-                    logger.error(t2);
+                    logger.error(t2.getMessage(), t2);
                 }
             } finally {
                 if (config.getMaxTotalConnections() != -1) {
@@ -449,8 +446,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         System.setProperty(NTLM_DOMAIN, realm.getDomain());
                         break;
                     default:
-                        throw new IllegalStateException(String.format(AsyncHttpProviderUtils.currentThread()
-                                + "Invalid Authentication %s", realm.toString()));
+                        throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
                 }
 
             }
@@ -588,7 +584,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         try {
                             body.close();
                         } catch (IOException e) {
-                            logger.warn( e, "Failed to close request body: %s", e.getMessage() );
+                            logger.warn("Failed to close request body: {}", e.getMessage(), e);
                         }
                     }
                 }

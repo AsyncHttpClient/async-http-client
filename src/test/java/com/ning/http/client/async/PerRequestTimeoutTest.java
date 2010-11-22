@@ -66,9 +66,9 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
                         response.getOutputStream().print(MSG);
                         response.getOutputStream().flush();
                     } catch (InterruptedException e) {
-                        log.error(e);
+                        log.error(e.getMessage(), e);
                     } catch (IOException e) {
-                        log.error(e);
+                        log.error(e.getMessage(), e);
                     }
                 }
             }).start();
@@ -80,9 +80,9 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
                         response.getOutputStream().flush();
                         continuation.complete();
                     } catch (InterruptedException e) {
-                        log.error(e);
+                        log.error(e.getMessage(), e);
                     } catch (IOException e) {
-                        log.error(e);
+                        log.error(e.getMessage(), e);
                     }
                 }
             }).start();

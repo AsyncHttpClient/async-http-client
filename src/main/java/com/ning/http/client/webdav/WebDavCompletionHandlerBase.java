@@ -22,8 +22,8 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -44,7 +44,7 @@ import java.util.Collections;
  * @param <T>
  */
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
-    private final Logger logger = LogManager.getLogger(AsyncCompletionHandlerBase.class);
+    private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
     private final Collection<HttpResponseBodyPart> bodies =
             Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
@@ -100,7 +100,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      */
     /* @Override */
     public void onThrowable(Throwable t) {
-        logger.debug(t);
+        logger.debug(t.getMessage(), t);
     }
 
     /**

@@ -13,59 +13,54 @@ package org.sonatype.ahc.suite.auth;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
+import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
+import com.ning.http.client.Response;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 import org.sonatype.tests.http.server.jetty.behaviour.BasicAuth;
 import org.sonatype.tests.http.server.jetty.behaviour.Content;
 import org.sonatype.tests.http.server.jetty.behaviour.Fail;
 import org.sonatype.tests.http.server.jetty.behaviour.Realm;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
-import com.ning.http.client.Response;
-import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+import static org.testng.AssertJUnit.assertEquals;
 
 /**
  * @author Benjamin Hanzelmann
- *
  */
 public class AuthMethodsTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testNonPreemptiveAuth()
-        throws Exception
-    {
-        Fail fail = new Fail( 1, 401, "not authorized" );
-        BasicAuth auth = new BasicAuth( "user", "password" );
-        provider().addBehaviour( "/auth/*", new Realm( "Test server" ), fail, auth, new Content() );
-        setAuthentication( "user", "password", false );
+            throws Exception {
+        Fail fail = new Fail(1, 401, "not authorized");
+        BasicAuth auth = new BasicAuth("user", "password");
+        provider().addBehaviour("/auth/*", new Realm("Test server"), fail, auth, new Content());
+        setAuthentication("user", "password", false);
 
-        String url = url( "auth", "test" );
-        BoundRequestBuilder rb = client().prepareGet( url );
-        Response response = execute( rb );
+        String url = url("auth", "test");
+        BoundRequestBuilder rb = client().prepareGet(url);
+        Response response = execute(rb);
 
-        assertEquals( "test", response.getResponseBody() );
-        assertEquals( 1, fail.getFailedCount() );
-        assertEquals( 0, auth.getFailedCount() );
+        assertEquals("test", response.getResponseBody());
+        assertEquals(1, fail.getFailedCount());
+        assertEquals(0, auth.getFailedCount());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testPreemptiveAuth()
-        throws Exception
-    {
-        BasicAuth auth = new BasicAuth( "user", "password" );
-        provider().addBehaviour( "/auth/*", auth,
-                                 new Content() );
-        setAuthentication( "user", "password", true );
+            throws Exception {
+        BasicAuth auth = new BasicAuth("user", "password");
+        provider().addBehaviour("/auth/*", auth,
+                new Content());
+        setAuthentication("user", "password", true);
 
-        String url = url( "auth", "test" );
-        BoundRequestBuilder rb = client().prepareGet( url );
-        Response response = execute( rb );
+        String url = url("auth", "test");
+        BoundRequestBuilder rb = client().prepareGet(url);
+        Response response = execute(rb);
 
-        assertEquals( "test", response.getResponseBody() );
-        assertEquals( 0, auth.getFailedCount() );
+        assertEquals("test", response.getResponseBody());
+        assertEquals(0, auth.getFailedCount());
     }
 
 }

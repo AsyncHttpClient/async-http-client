@@ -21,14 +21,11 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProviderConfig;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.apache.commons.httpclient.CircularRedirectException;
-import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.Header;
@@ -59,6 +56,8 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.util.IdleConnectionTimeoutThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -99,8 +98,7 @@ import java.util.zip.GZIPInputStream;
  * Provides a generic http client.
  */
 public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
-    private final static Logger logger = LogManager.getLogger(JDKAsyncHttpProvider.class);
-
+    private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
 
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
@@ -287,7 +285,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     try {
                         body.close();
                     } catch (IOException e) {
-                        logger.warn(e, "Failed to close request body: %s", e.getMessage());
+                        logger.warn("Failed to close request body: {}", e.getMessage(), e);
                     }
                 }
             }
@@ -312,7 +310,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 Credentials defaultcreds = new UsernamePasswordCredentials(proxyServer.getPrincipal(), proxyServer.getPassword());
                 client.getState().setCredentials(new AuthScope(null, -1, AuthScope.ANY_REALM), defaultcreds);
             }
-                        
+
             ProxyHost proxyHost = proxyServer == null ? null : new ProxyHost(proxyServer.getHost(), proxyServer.getPort());
             client.getHostConfiguration().setProxyHost(proxyHost);
         }
@@ -423,8 +421,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format(currentThread()
-                            + "\n\nRequest %s\n\nResponse %s\n", request.toString(), method.toString()));
+                    logger.debug(String.format("\n\nRequest %s\n\nResponse %s\n", request.toString(), method.toString()));
                 }
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
@@ -445,7 +442,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             String newUrl = newUri.toString();
 
                             if (logger.isDebugEnabled()) {
-                                logger.debug(String.format(AsyncHttpProviderUtils.currentThread() + "Redirecting to %s", newUrl));
+                                logger.debug("Redirecting to {}", newUrl);
                             }
                             request = builder.setUrl(newUrl).build();
                             method = createMethod(httpClient, request);
@@ -502,13 +499,13 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug(t);
+                    logger.debug(t.getMessage(), t);
                 }
 
                 try {
                     future.abort(filterException(t));
                 } catch (Throwable t2) {
-                    logger.error(t2);
+                    logger.error(t2.getMessage(), t2);
                 }
             } finally {
                 if (config.getMaxTotalConnections() != -1) {
@@ -543,12 +540,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
             return t;
         }
     }
-
-
-    final static String currentThread() {
-        return AsyncHttpProviderUtils.currentThread();
-    }
-
 
     private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, HttpMethodParams methodParams) throws FileNotFoundException {
         org.apache.commons.httpclient.methods.multipart.Part[] parts = new org.apache.commons.httpclient.methods.multipart.Part[params.size()];
@@ -733,7 +724,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         public synchronized void run() {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(currentThread() + "Request Timeout expired for " + this.apacheResponseFuture);
+                    logger.debug("Request Timeout expired for " + this.apacheResponseFuture);
                 }
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.apacheResponseFuture.getRequest().getPerRequestConfig();

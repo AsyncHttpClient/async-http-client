@@ -13,26 +13,25 @@ package org.sonatype.ahc.suite.util;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.Response;
+import org.testng.Assert;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.testng.Assert;
-
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.Response;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNotNull;
 
 /**
  * @author Benjamin Hanzelmann
  */
 public class AssertingAsyncHandler
-    extends AsyncCompletionHandler<Response>
-    implements AsyncHandler<Response>
-{
+        extends AsyncCompletionHandler<Response>
+        implements AsyncHandler<Response> {
 
     private Queue<String> bodyParts = new LinkedList<String>();
 
@@ -40,66 +39,55 @@ public class AssertingAsyncHandler
 
     private Queue<Throwable> expectedThrowables;
 
-    public void addBodyParts( String... parts )
-    {
-        for ( String part : parts )
-        {
-            bodyParts.add( part );
+    public void addBodyParts(String... parts) {
+        for (String part : parts) {
+            bodyParts.add(part);
         }
     }
 
     @Override
-    public Response onCompleted( Response response )
-        throws Exception
-    {
+    public Response onCompleted(Response response)
+            throws Exception {
         return response;
     }
 
     @Override
-    public com.ning.http.client.AsyncHandler.STATE onBodyPartReceived( HttpResponseBodyPart content )
-        throws Exception
-    {
-        com.ning.http.client.AsyncHandler.STATE ret = super.onBodyPartReceived( content );
-        try
-        {
+    public com.ning.http.client.AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart content)
+            throws Exception {
+        com.ning.http.client.AsyncHandler.STATE ret = super.onBodyPartReceived(content);
+        try {
             String head = bodyParts.poll();
-            assertNotNull( "no more bodyParts expected", head );
+            assertNotNull("no more bodyParts expected", head);
             String msg = "bodyPart did not match (expected: " + head + ")";
-            byte[] actual = head.getBytes( "UTF-8" );
-            Assert.assertEquals( content.getBodyPartBytes(), actual, msg );
+            byte[] actual = head.getBytes("UTF-8");
+            Assert.assertEquals(content.getBodyPartBytes(), actual, msg);
             return ret;
         }
-        catch ( Error t )
-        {
+        catch (Error t) {
             this.assertionError = t;
-            throw new Exception( t );
+            throw new Exception(t);
         }
     }
 
     @Override
-    public void onThrowable( Throwable t )
-    {
-        try
-        {
-            super.onThrowable( t );
+    public void onThrowable(Throwable t) {
+        try {
+            super.onThrowable(t);
             Throwable expectedThrowable = expectedThrowables.poll();
-            assertNotNull( "Encountered more errors than expected: " + t.getClass() + "\n" + t.getMessage(),
-                           expectedThrowable );
-            assertEquals( "expected different type of error", expectedThrowable.getClass(), t.getClass() );
+            assertNotNull("Encountered more errors than expected: " + t.getClass() + "\n" + t.getMessage(),
+                    expectedThrowable);
+            assertEquals("expected different type of error", expectedThrowable.getClass(), t.getClass());
         }
-        catch ( Error assertionError )
-        {
+        catch (Error assertionError) {
             this.assertionError = assertionError;
         }
     }
 
-    public void setExpectedThrowables( Throwable... expectedThrowables )
-    {
-        this.expectedThrowables = new LinkedList<Throwable>( Arrays.asList( expectedThrowables ) );
+    public void setExpectedThrowables(Throwable... expectedThrowables) {
+        this.expectedThrowables = new LinkedList<Throwable>(Arrays.asList(expectedThrowables));
     }
 
-    public Error getAssertionError()
-    {
+    public Error getAssertionError() {
         return assertionError;
     }
 

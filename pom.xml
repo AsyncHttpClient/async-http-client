@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -69,21 +70,25 @@
             </exclusions>
         </dependency>
 
-        <!-- Provided logging implementations (aside from java.util.logging) -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>0.9.26</version>
+             <scope>test</scope>
+        </dependency>       
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.13</version>
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.5.6</version>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Test dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
@@ -113,12 +118,6 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
             <version>7.1.4.v20100610</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -161,18 +160,18 @@
         </dependency>
 
         <dependency>
-        	<groupId>org.sonatype.http-testing-harness</groupId>
-        	<artifactId>testng-runner</artifactId>
-        	<version>0.3</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>org.sonatype.http-testing-harness</groupId>
+            <artifactId>testng-runner</artifactId>
+            <version>0.3</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>org.sonatype.http-testing-harness</groupId>
-        	<artifactId>server-provider</artifactId>
-        	<version>0.3</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>org.sonatype.http-testing-harness</groupId>
+            <artifactId>server-provider</artifactId>
+            <version>0.3</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -272,15 +271,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>
-                        -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
-                    </argLine>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.1</version>
             </plugin>
@@ -336,9 +326,12 @@
                                 </excludes>
                             </artifactSet>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" />
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -394,9 +387,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone</groups>
-                            <argLine>
-                                -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
-                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -411,9 +401,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone, online</groups>
-                            <argLine>
-                                -Dcom.ning.http.client.logging.LoggerProvider.class=com.ning.http.client.logging.Slf4jLoggerProvider
-                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>

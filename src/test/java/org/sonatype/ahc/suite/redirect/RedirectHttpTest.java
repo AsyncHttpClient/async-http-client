@@ -13,119 +13,109 @@ package org.sonatype.ahc.suite.redirect;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
-import java.util.concurrent.ExecutionException;
-
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Response;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 import org.sonatype.tests.http.server.jetty.behaviour.Pause;
 import org.sonatype.tests.http.server.jetty.behaviour.Redirect;
 import org.sonatype.tests.http.server.jetty.impl.JettyServerProvider;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Response;
-import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+import java.util.concurrent.ExecutionException;
+
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.fail;
 
 /**
  * @author Benjamin Hanzelmann
  */
 public class RedirectHttpTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
-    @Test( groups="standalone", expectedExceptions = MaxRedirectException.class )
+    @Test(groups = "standalone", expectedExceptions = MaxRedirectException.class)
     public void testTooManyRedirects()
-        throws Throwable
-    {
-        String url = url( "redirect", String.valueOf( client().getConfig().getMaxRedirects() + 1 ), "foo" );
-        try
-        {
-            executeGet( url );
-            fail( "expected error" );
+            throws Throwable {
+        String url = url("redirect", String.valueOf(client().getConfig().getMaxRedirects() + 1), "foo");
+        try {
+            executeGet(url);
+            fail("expected error");
         }
-        catch ( ExecutionException e )
-        {
+        catch (ExecutionException e) {
             throw e.getCause();
         }
     }
 
-    @Test( groups = "standalone", enabled = false )
+    @Test(groups = "standalone", enabled = false)
     // TODO: "Redirects == connection attempts? (first connect counts as a redirection?)" )
     public void testMaxRedirects()
-        throws Exception
-    {
-        String url = url( "redirect", String.valueOf( client().getConfig().getMaxRedirects() ), "foo" );
-        Response response = executeGet( url );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "foo", response.getResponseBody() );
+            throws Exception {
+        String url = url("redirect", String.valueOf(client().getConfig().getMaxRedirects()), "foo");
+        Response response = executeGet(url);
+        assertEquals(200, response.getStatusCode());
+        assertEquals("foo", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testMaxRedirectsOffByOne()
-        throws Exception
-    {
-        String url = url( "redirect", String.valueOf( client().getConfig().getMaxRedirects() - 1 ), "foo" );
-        Response response = executeGet( url );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "foo", response.getResponseBody() );
+            throws Exception {
+        String url = url("redirect", String.valueOf(client().getConfig().getMaxRedirects() - 1), "foo");
+        Response response = executeGet(url);
+        assertEquals(200, response.getStatusCode());
+        assertEquals("foo", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testRedirectAbsolute()
-        throws Exception
-    {
-        provider().addBehaviour( "/absolute/*", new Redirect( url( "content", "someContent" ) ) );
-        String url = url( "absolute", "foo" );
-        Response response = executeGet( url );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "someContent", response.getResponseBody() );
+            throws Exception {
+        provider().addBehaviour("/absolute/*", new Redirect(url("content", "someContent")));
+        String url = url("absolute", "foo");
+        Response response = executeGet(url);
+        assertEquals(200, response.getStatusCode());
+        assertEquals("someContent", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testRedirectOtherServer()
-        throws Exception
-    {
+            throws Exception {
         JettyServerProvider p = new JettyServerProvider();
         p.addDefaultServices();
         p.start();
 
-        provider().addBehaviour( "/external/*", new Redirect( "http://localhost:" + p.getPort() + "/content/foo" ) );
-        Response response = executeGet( url( "external", "bar" ) );
+        provider().addBehaviour("/external/*", new Redirect("http://localhost:" + p.getPort() + "/content/foo"));
+        Response response = executeGet(url("external", "bar"));
 
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "foo", response.getResponseBody() );
+        assertEquals(200, response.getStatusCode());
+        assertEquals("foo", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testRedirectToSSL()
-        throws Exception
-    {
+            throws Exception {
         JettyServerProvider p = new JettyServerProvider();
-        p.setSSL( "keystore", "password" );
+        p.setSSL("keystore", "password");
         p.addDefaultServices();
         p.start();
 
-        provider().addBehaviour( "/external/*", new Redirect( p.getUrl() + "/content/foo" ) );
-        Response response = executeGet( url( "external", "bar" ) );
+        provider().addBehaviour("/external/*", new Redirect(p.getUrl() + "/content/foo"));
+        Response response = executeGet(url("external", "bar"));
 
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "foo", response.getResponseBody() );
+        assertEquals(200, response.getStatusCode());
+        assertEquals("foo", response.getResponseBody());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testTimeoutAfterRedirect()
-        throws Exception
-    {
+            throws Exception {
         JettyServerProvider p = new JettyServerProvider();
         p.addDefaultServices();
         p.start();
 
-        provider().addBehaviour( "/external/*", new Redirect( "http://localhost:" + p.getPort() + "/content/foo" ),
-                                 new Pause( 10000 ) );
-        Response response = executeGet( url( "external", "bar" ) );
+        provider().addBehaviour("/external/*", new Redirect("http://localhost:" + p.getPort() + "/content/foo"),
+                new Pause(10000));
+        Response response = executeGet(url("external", "bar"));
 
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "foo", response.getResponseBody() );
+        assertEquals(200, response.getStatusCode());
+        assertEquals("foo", response.getResponseBody());
     }
 
 }

@@ -21,8 +21,8 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
-    private final static Logger logger = LogManager.getLogger(TransferCompletionHandler.class);
+    private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<TransferListener>();
     private final boolean accumulateResponseBytes;
     private TransferAdapter transferAdapter;
@@ -272,7 +272,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
             try {
                 l.onThrowable(t);
             } catch (Throwable t2) {
-                logger.error(t2);
+                logger.warn("onThrowable", t2);
             }
         }
     }

@@ -13,22 +13,20 @@ package org.sonatype.ahc.suite;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import javax.net.ssl.SSLContext;
-
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import org.sonatype.ahc.suite.util.CertUtil;
 import org.sonatype.tests.http.runner.annotations.Configurators;
 import org.sonatype.tests.http.server.api.ServerProvider;
 import org.sonatype.tests.http.server.jetty.configurations.CertAuthSuiteConfigurator;
 
-import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import org.sonatype.ahc.suite.util.CertUtil;
+import javax.net.ssl.SSLContext;
 
 /**
  * @author Benjamin Hanzelmann
  */
-@Configurators( CertAuthSuiteConfigurator.class )
+@Configurators(CertAuthSuiteConfigurator.class)
 public class CertAuthPutTest
-    extends PutTest
-{
+        extends PutTest {
 
     private String keystorePath = "src/test/resources/client.keystore";
 
@@ -37,21 +35,18 @@ public class CertAuthPutTest
     private String alias = "client";
 
     @Override
-    protected Builder builder()
-    {
-        return super.builder().setSSLContext( sslContext() );
+    protected Builder builder() {
+        return super.builder().setSSLContext(sslContext());
 
     }
 
-    private SSLContext sslContext()
-    {
-        return CertUtil.sslContext( keystorePath, keystorePass, alias );
+    private SSLContext sslContext() {
+        return CertUtil.sslContext(keystorePath, keystorePass, alias);
     }
 
     @Override
-    public void configureProvider( ServerProvider provider )
-    {
-        super.configureProvider( provider );
-        provider.addUser( alias, CertUtil.getCertificate( alias, keystorePath, keystorePass ) );
+    public void configureProvider(ServerProvider provider) {
+        super.configureProvider(provider);
+        provider.addUser(alias, CertUtil.getCertificate(alias, keystorePath, keystorePass));
     }
 }

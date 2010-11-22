@@ -19,8 +19,8 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
-    private final static Logger logger = LogManager.getLogger(ThrottleRequestFilter.class);
+    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
     private final int maxConnections;
     private final Semaphore available;
     private final int maxWait;
@@ -51,7 +51,7 @@ public class ThrottleRequestFilter implements RequestFilter {
 
         try {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Current Throttling Status %s", available.availablePermits()));
+                logger.debug("Current Throttling Status {}", available.availablePermits());
             }
             if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
                 throw new FilterException(
@@ -93,7 +93,7 @@ public class ThrottleRequestFilter implements RequestFilter {
         public T onCompleted() throws Exception {
             available.release();
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Current Throttling Status %s", available.availablePermits()));
+                logger.debug("Current Throttling Status {}", available.availablePermits());
             }
             return asyncHandler.onCompleted();
         }

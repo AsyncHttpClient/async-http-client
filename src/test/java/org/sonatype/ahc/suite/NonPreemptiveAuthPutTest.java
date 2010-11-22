@@ -19,17 +19,15 @@ import org.testng.annotations.BeforeMethod;
 /**
  * @author Benjamin Hanzelmann
  */
-@ConfiguratorList( { "DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list" } )
+@ConfiguratorList({"DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list"})
 public class NonPreemptiveAuthPutTest
-    extends PutTest
-{
+        extends PutTest {
 
     @Override
     @BeforeMethod
     public void before()
-        throws Exception
-    {
+            throws Exception {
         super.before();
-        setAuthentication( "user", "password", false );
+        setAuthentication("user", "password", false);
     }
 }

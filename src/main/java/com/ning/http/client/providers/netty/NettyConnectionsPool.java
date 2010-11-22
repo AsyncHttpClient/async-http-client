@@ -17,8 +17,8 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import java.util.Iterator;
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
-    private final static Logger log = LogManager.getLogger(NettyAsyncHttpProvider.class);
+    private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
     private final ConcurrentHashMap<String, List<Channel>> connectionsPool =
             new ConcurrentHashMap<String, List<Channel>>();
     private final AtomicInteger totalConnections = new AtomicInteger(0);
@@ -49,7 +49,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean offer(String uri, Channel connection) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format(NettyAsyncHttpProvider.currentThread() + "Adding uri: %s for channel %s", uri, connection));
+            log.debug("Adding uri: {} for channel {}", uri, connection);
         }
         connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
@@ -116,8 +116,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 boolean removed = e.getValue().remove(connection);
                 if (removed) {
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format(NettyAsyncHttpProvider.currentThread()
-                                + "Removing uri: %s for channel %s", e.getKey(), e.getValue()));
+                        log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
                     }
                     totalConnections.decrementAndGet();
 

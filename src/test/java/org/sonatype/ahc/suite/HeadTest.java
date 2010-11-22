@@ -13,29 +13,26 @@ package org.sonatype.ahc.suite;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
-import org.testng.annotations.Test;
-
 import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
 import com.ning.http.client.Response;
 import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+import org.testng.annotations.Test;
+
+import static org.testng.AssertJUnit.assertEquals;
 
 /**
  * @author Benjamin Hanzelmann
  */
 public class HeadTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testSimple()
-        throws Exception
-    {
-        BoundRequestBuilder rb = client().prepareHead( url( "content", "something" ) );
-        Response response = execute( rb );
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( "0", response.getHeader( "Content-Length" ) );
-        assertEquals( "", response.getResponseBody() );
+            throws Exception {
+        BoundRequestBuilder rb = client().prepareHead(url("content", "something"));
+        Response response = execute(rb);
+        assertEquals(200, response.getStatusCode());
+        assertEquals("0", response.getHeader("Content-Length"));
+        assertEquals("", response.getResponseBody());
     }
 }

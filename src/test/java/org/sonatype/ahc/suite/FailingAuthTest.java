@@ -13,45 +13,41 @@ package org.sonatype.ahc.suite;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
+import com.ning.http.client.Response;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.Response;
-import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+import static org.testng.AssertJUnit.assertEquals;
 
 /**
  * @author Benjamin Hanzelmann
  */
-@ConfiguratorList( "AuthSuiteConfigurator.list" )
+@ConfiguratorList("AuthSuiteConfigurator.list")
 public class FailingAuthTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
     private boolean preemptive = true;
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testSuccessful()
-        throws Exception
-    {
-        setAuthentication( "user", "password", preemptive );
+            throws Exception {
+        setAuthentication("user", "password", preemptive);
         String content = "someContent";
-        String url = url( "content", content );
-        Response response = executeGet( url );
+        String url = url("content", content);
+        Response response = executeGet(url);
         String body = response.getResponseBody();
 
-        assertEquals( content, body );
+        assertEquals(content, body);
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testNoRealm()
-        throws Exception
-    {
+            throws Exception {
         String content = "someContent";
-        String url = url( "content", content );
-        Response response = executeGet( url );
+        String url = url("content", content);
+        Response response = executeGet(url);
 
-        assertEquals( 401, response.getStatusCode() );
+        assertEquals(401, response.getStatusCode());
     }
 }

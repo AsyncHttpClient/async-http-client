@@ -13,12 +13,12 @@ package org.sonatype.ahc.suite;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.testng.AssertJUnit.*;
-
-import java.io.File;
-import java.io.IOException;
-
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
+import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.Response;
 import org.slf4j.Logger;
+import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
 import org.sonatype.tests.http.runner.annotations.ConfiguratorList;
 import org.sonatype.tests.http.server.api.ServerProvider;
 import org.sonatype.tests.http.server.jetty.behaviour.Consumer;
@@ -28,21 +28,19 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
-import com.ning.http.client.AsyncHttpClientConfig.Builder;
-import com.ning.http.client.Response;
-import org.sonatype.ahc.suite.util.AsyncSuiteConfiguration;
+import java.io.File;
+import java.io.IOException;
+
+import static org.testng.AssertJUnit.assertEquals;
 
 /**
  * @author Benjamin Hanzelmann
  */
-@ConfiguratorList( { "DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list" } )
+@ConfiguratorList({"DefaultSuiteConfigurator.list", "AuthSuiteConfigurator.list"})
 public class PutTest
-    extends AsyncSuiteConfiguration
-{
+        extends AsyncSuiteConfiguration {
 
-    private static Logger logger = org.slf4j.LoggerFactory.getLogger( PutTest.class );
+    private static Logger logger = org.slf4j.LoggerFactory.getLogger(PutTest.class);
 
     private static File largeFile;
 
@@ -50,112 +48,102 @@ public class PutTest
 
     @AfterClass
     public static void afterClass()
-        throws IOException
-    {
-        FileUtil.delete( largeFile );
+            throws IOException {
+        FileUtil.delete(largeFile);
         largeFile = null;
     }
 
     @Override
     @BeforeMethod
     public void before()
-        throws Exception
-    {
+            throws Exception {
         super.before();
-        setAuthentication( "user", "password", false );
+        setAuthentication("user", "password", false);
     }
 
-    @Test( groups = "standalone", enabled = false )
+    @Test(groups = "standalone", enabled = false)
     public void testPutLargeFile()
-        throws Exception
-    {
-        if ( largeFile == null )
-        {
-            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes( "UTF-16" );
+            throws Exception {
+        if (largeFile == null) {
+            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
             heapSize = Runtime.getRuntime().maxMemory();
-            logger.debug( "creating file of size ~" + heapSize );
-            long repeats = ( heapSize / bytes.length ) + 1;
-            largeFile = FileUtil.createTempFile( bytes, (int) repeats );
-            logger.debug( "created file of size " + largeFile.length() );
+            logger.debug("creating file of size ~" + heapSize);
+            long repeats = (heapSize / bytes.length) + 1;
+            largeFile = FileUtil.createTempFile(bytes, (int) repeats);
+            logger.debug("created file of size " + largeFile.length());
         }
         Consumer consumer = new Consumer();
-        provider().addBehaviour( "/consume/*", consumer );
+        provider().addBehaviour("/consume/*", consumer);
 
-        String url = url( "consume", "foo" );
+        String url = url("consume", "foo");
 
         Builder cfg = new Builder();
-        cfg.setIdleConnectionTimeoutInMs( (int) heapSize );
-        cfg.setConnectionTimeoutInMs( (int) heapSize );
-        cfg.setRequestTimeoutInMs( (int) heapSize );
-        AsyncHttpClient c = new AsyncHttpClient( cfg.build() );
+        cfg.setIdleConnectionTimeoutInMs((int) heapSize);
+        cfg.setConnectionTimeoutInMs((int) heapSize);
+        cfg.setRequestTimeoutInMs((int) heapSize);
+        AsyncHttpClient c = new AsyncHttpClient(cfg.build());
 
-        BoundRequestBuilder put = c.preparePut( url );
-        put.setBody( largeFile );
+        BoundRequestBuilder put = c.preparePut(url);
+        put.setBody(largeFile);
 
-        execute( put );
+        execute(put);
 
-        assertEquals( largeFile.length(), consumer.getTotal() );
+        assertEquals(largeFile.length(), consumer.getTotal());
 
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testPutFile()
-        throws Exception
-    {
+            throws Exception {
         Consumer consumer = new Consumer();
-        provider().addBehaviour( "/testPutFile/*", consumer );
+        provider().addBehaviour("/testPutFile/*", consumer);
 
-        String url = url( "testPutFile", "foo" );
+        String url = url("testPutFile", "foo");
 
-        BoundRequestBuilder put = client().preparePut( url );
-        File f = FileUtil.createTempFile( "This is a file." );
-        put.setBody( f );
-        execute( put );
+        BoundRequestBuilder put = client().preparePut(url);
+        File f = FileUtil.createTempFile("This is a file.");
+        put.setBody(f);
+        execute(put);
 
-        try
-        {
-            assertEquals( f.length(), consumer.getTotal() );
+        try {
+            assertEquals(f.length(), consumer.getTotal());
         }
-        finally
-        {
-            FileUtil.delete( f );
+        finally {
+            FileUtil.delete(f);
         }
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testPutBytes()
-        throws Exception
-    {
+            throws Exception {
         Consumer consumer = new Consumer();
-        provider().addBehaviour( "/put/*", consumer );
-        String url = url( "put", "someData" );
-        BoundRequestBuilder rb = client().preparePut( url );
-        byte[] bytes = "datavalue".getBytes( "UTF-8" );
-        rb.setBody( bytes );
+        provider().addBehaviour("/put/*", consumer);
+        String url = url("put", "someData");
+        BoundRequestBuilder rb = client().preparePut(url);
+        byte[] bytes = "datavalue".getBytes("UTF-8");
+        rb.setBody(bytes);
 
-        Response response = execute( rb );
+        Response response = execute(rb);
 
-        assertEquals( 200, response.getStatusCode() );
-        assertEquals( bytes.length, consumer.getTotal() );
+        assertEquals(200, response.getStatusCode());
+        assertEquals(bytes.length, consumer.getTotal());
     }
 
-    @Test( groups="standalone" )
+    @Test(groups = "standalone")
     public void testPutError()
-        throws Exception
-    {
+            throws Exception {
 
-        String url = url( "methodsupported", "501", "errormsg" );
-        BoundRequestBuilder rb = client().preparePut( url );
-        Response response = execute( rb );
+        String url = url("methodsupported", "501", "errormsg");
+        BoundRequestBuilder rb = client().preparePut(url);
+        Response response = execute(rb);
 
-        assertEquals( 501, response.getStatusCode() );
-        assertEquals( "errormsg", response.getStatusText() );
+        assertEquals(501, response.getStatusCode());
+        assertEquals("errormsg", response.getStatusText());
     }
 
     @Override
-    public void configureProvider( ServerProvider provider )
-    {
-        super.configureProvider( provider );
-        provider.addBehaviour( "/methodsupported/*", new ErrorBehaviour( 501, "errormsg" ) );
+    public void configureProvider(ServerProvider provider) {
+        super.configureProvider(provider);
+        provider.addBehaviour("/methodsupported/*", new ErrorBehaviour(501, "errormsg"));
     }
 }

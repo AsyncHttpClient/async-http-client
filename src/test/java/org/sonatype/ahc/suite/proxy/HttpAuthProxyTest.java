@@ -1,10 +1,9 @@
 package org.sonatype.ahc.suite.proxy;
 
-import org.sonatype.tests.http.runner.annotations.Configurators;
-import org.sonatype.tests.http.server.jetty.configurations.HttpProxyAuthConfigurator;
-
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.ProxyServer;
+import org.sonatype.tests.http.runner.annotations.Configurators;
+import org.sonatype.tests.http.server.jetty.configurations.HttpProxyAuthConfigurator;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -20,20 +19,17 @@ import com.ning.http.client.ProxyServer;
  */
 
 
-
 /**
  * @author Benjamin Hanzelmann
  */
-@Configurators( HttpProxyAuthConfigurator.class )
+@Configurators(HttpProxyAuthConfigurator.class)
 public class HttpAuthProxyTest
-    extends HttpProxyTest
-{
+        extends HttpProxyTest {
 
     @Override
-    protected Builder settings( Builder rb )
-    {
-        return super.settings( rb ).setProxyServer( new ProxyServer( "localhost", provider().getPort(), "puser",
-                                                                     "password" ) );
+    protected Builder settings(Builder rb) {
+        return super.settings(rb).setProxyServer(new ProxyServer("localhost", provider().getPort(), "puser",
+                "password"));
     }
 
 }

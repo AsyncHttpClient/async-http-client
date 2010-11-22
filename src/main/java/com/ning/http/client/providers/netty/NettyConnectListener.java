@@ -19,8 +19,8 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelFuture;
@@ -79,7 +79,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     public static class Builder<T> {
-        private final Logger log = LogManager.getLogger(Builder.class);
+        private final Logger log = LoggerFactory.getLogger(Builder.class);
         private final AsyncHttpClientConfig config;
         private final Request request;
         private final AsyncHandler<T> asyncHandler;

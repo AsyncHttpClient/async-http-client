@@ -15,20 +15,20 @@
  */
 package com.ning.http.client.async;
 
+import ch.qos.logback.classic.BasicConfigurator;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
-import com.ning.http.client.logging.LoggerProvider;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -41,8 +41,7 @@ import java.net.ServerSocket;
 import java.util.Enumeration;
 
 public class AbstractBasicTest {
-
-    protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
+    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected Server server;
     protected int port1;
     protected int port2;
@@ -160,8 +159,6 @@ public class AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         server = new Server();
 
-        setUpLogger();
-
         port1 = findFreePort();
         port2 = findFreePort();
 
@@ -181,74 +178,6 @@ public class AbstractBasicTest {
         server.setHandler(configureHandler());
         server.start();
         log.info("Local HTTP server started successfully");
-    }
-
-    public static void setUpLogger() {
-        final java.util.logging.Logger logger = java.util.logging.Logger.getLogger("UnitTest");
-        LogManager.setProvider(new LoggerProvider() {
-
-            public com.ning.http.client.logging.Logger getLogger(final Class<?> clazz) {
-                return new com.ning.http.client.logging.Logger() {
-
-                    public boolean isDebugEnabled() {
-                        return true;
-                    }
-
-                    public void debug(final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                    }
-
-                    public void debug(final Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    public void debug(final Throwable t, final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                        t.printStackTrace();
-                    }
-
-                    public void info(final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                    }
-
-                    public void info(final Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    public void info(final Throwable t, final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                        t.printStackTrace();
-                    }
-
-                    public void warn(final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                    }
-
-                    public void warn(final Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    public void warn(final Throwable t, final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                        t.printStackTrace();
-                    }
-
-                    public void error(final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-
-                    }
-
-                    public void error(final Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    public void error(final Throwable t, final String msg, final Object... msgArgs) {
-                        System.out.println(msg);
-                        t.printStackTrace();
-                    }
-                };
-            }
-        });
     }
 
     public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {

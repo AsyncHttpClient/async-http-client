@@ -57,7 +57,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
 
             public void onThrowable(Throwable t) {
                 t.printStackTrace();
-                log.debug(t);
+                log.debug(t.getMessage(), t);
             }
 
             @Override
@@ -87,7 +87,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
 
             public void onThrowable(Throwable t) {
                 t.printStackTrace();
-                log.debug(t);
+                log.debug(t.getMessage(), t);
             }
 
             @Override

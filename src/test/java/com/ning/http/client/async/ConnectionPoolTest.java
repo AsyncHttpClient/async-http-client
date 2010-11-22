@@ -21,9 +21,9 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Response;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
 import org.jboss.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -41,7 +41,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
-    protected final Logger log = LogManager.getLogger(AbstractBasicTest.class);
+    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
     @Test(groups = "standalone")
     public void testMaxTotalConnections() {

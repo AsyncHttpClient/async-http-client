@@ -70,7 +70,6 @@ public class BasicAuthTest extends AbstractBasicTest {
     @BeforeClass(alwaysRun = true)
     @Override
     public void setUpGlobal() throws Exception {
-        setUpLogger();
         server = new Server();
         Logger root = Logger.getRootLogger();
         root.setLevel(Level.DEBUG);

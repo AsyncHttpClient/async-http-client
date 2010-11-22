@@ -21,7 +21,6 @@ import org.apache.commons.httpclient.HttpClient;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.ByteBuffer;
 

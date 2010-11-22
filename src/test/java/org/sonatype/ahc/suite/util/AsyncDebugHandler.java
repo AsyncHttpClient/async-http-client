@@ -13,56 +13,49 @@ package org.sonatype.ahc.suite.util;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import java.nio.ByteBuffer;
-
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.Response;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author Benjamin Hanzelmann
- *
  */
 public class AsyncDebugHandler
-    extends AsyncCompletionHandler<Response>
-{
+        extends AsyncCompletionHandler<Response> {
 
     private long start;
 
-    public AsyncDebugHandler()
-    {
+    public AsyncDebugHandler() {
         super();
         start = System.currentTimeMillis();
     }
 
     @Override
-    public Response onCompleted( Response response )
-        throws Exception
-    {
-        System.err.println( "Completed after " + ( System.currentTimeMillis() - start ) + "ms" );
+    public Response onCompleted(Response response)
+            throws Exception {
+        System.err.println("Completed after " + (System.currentTimeMillis() - start) + "ms");
         return response;
     }
 
     @Override
-    public com.ning.http.client.AsyncHandler.STATE onBodyPartReceived( HttpResponseBodyPart content )
-        throws Exception
-    {
+    public com.ning.http.client.AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart content)
+            throws Exception {
         ByteBuffer buf = content.getBodyByteBuffer();
         String ret = "";
-        while ( buf.remaining() > 1 )
-        {
+        while (buf.remaining() > 1) {
             ret += buf.getChar();
         }
-        System.err.println( "Body Part received after " + ( System.currentTimeMillis() - start ) + "ms:\n" + buf );
-        return super.onBodyPartReceived( content );
+        System.err.println("Body Part received after " + (System.currentTimeMillis() - start) + "ms:\n" + buf);
+        return super.onBodyPartReceived(content);
     }
 
     @Override
-    public void onThrowable( Throwable t )
-    {
-        System.err.println( "throwable received after " + ( System.currentTimeMillis() - start ) + "ms:\n"
-            + t.getMessage() );
+    public void onThrowable(Throwable t) {
+        System.err.println("throwable received after " + (System.currentTimeMillis() - start) + "ms:\n"
+                + t.getMessage());
         t.printStackTrace();
-        super.onThrowable( t );
+        super.onThrowable(t);
     }
 }

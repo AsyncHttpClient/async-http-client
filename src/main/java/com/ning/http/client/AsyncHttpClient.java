@@ -17,8 +17,8 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.client.logging.LogManager;
-import com.ning.http.client.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 
 import java.io.IOException;
@@ -140,7 +140,7 @@ public class AsyncHttpClient {
     private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.netty.NettyAsyncHttpProvider";
     private final AsyncHttpProvider<?> httpProvider;
     private final AsyncHttpClientConfig config;
-    private final static Logger logger = LogManager.getLogger(AsyncHttpClient.class);
+    private final static Logger logger = LoggerFactory.getLogger(AsyncHttpClient.class);
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     /**
@@ -482,7 +482,7 @@ public class AsyncHttpClient {
         try {
             Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>) Thread.currentThread()
                     .getContextClassLoader().loadClass(className);
-            return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
+            return providerClass.getDeclaredConstructor(
                     new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
         } catch (Throwable t){
 
@@ -490,14 +490,14 @@ public class AsyncHttpClient {
             try {
                 Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>)
                         AsyncHttpClient.class.getClassLoader().loadClass(className);
-                return (AsyncHttpProvider<?>) providerClass.getDeclaredConstructor(
+                return providerClass.getDeclaredConstructor(
                         new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
             } catch (Throwable t2) {
             }
 
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Default provider not found %s. Using the %s", DEFAULT_PROVIDER,
-                        JDKAsyncHttpProvider.class.getName()));
+                logger.debug("Default provider not found {}. Using the {}", DEFAULT_PROVIDER,
+                        JDKAsyncHttpProvider.class.getName());
             }
             return new JDKAsyncHttpProvider(config);
         }
