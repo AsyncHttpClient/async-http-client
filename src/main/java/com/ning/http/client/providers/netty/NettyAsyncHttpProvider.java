@@ -731,7 +731,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
 
-        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build();
+        NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
