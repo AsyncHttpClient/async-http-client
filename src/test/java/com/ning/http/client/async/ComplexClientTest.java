@@ -16,9 +16,12 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
+import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import org.testng.annotations.Test;
 
+import java.net.URLEncoder;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -61,18 +64,6 @@ public class ComplexClientTest extends AbstractBasicTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
-    }
-
-    @Test(groups = "standalone")
-    public void urlWithColonTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
-
-        String query = "q=test:colon:";
-        Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?%s", port1, query))
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getHeader("X-queryString"), query);
     }
 
 }

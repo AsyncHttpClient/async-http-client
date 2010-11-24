@@ -16,15 +16,20 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
+import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -81,4 +86,45 @@ public class QueryParametersTest extends AbstractBasicTest {
         assertEquals(resp.getHeader("a"), "1");
         assertEquals(resp.getHeader("b"), "2");
     }
+
+    @Test(groups = "standalone")
+    public void testUrlRequestParametersEncoding() throws IOException, ExecutionException, InterruptedException {
+        String URL = getTargetUrl() + "?q=";
+        String REQUEST_PARAM = "github github \ngithub";
+
+        AsyncHttpClient client = new AsyncHttpClient(new JDKAsyncHttpProvider(
+                new AsyncHttpClientConfig.Builder().build()));
+        String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
+        LoggerFactory.getLogger(QueryParametersTest.class).info(String.format("Executing request [%s] ...", requestUrl2));
+        Response response = client.prepareGet(requestUrl2).execute().get();
+        String s = URLDecoder.decode(response.getHeader("q"), "UTF-8");
+        assertEquals(s, REQUEST_PARAM);
+    }
+
+
+    @Test(groups = "standalone")
+    public void urlWithColonTest_Netty() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        String query = "test:colon:";
+        Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query))
+                .setHeader("Content-Type", "text/html")
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
+    }
+
+    @Test(groups = "standalone")
+    public void urlWithColonTest_JDK() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new JDKAsyncHttpProvider(
+                new AsyncHttpClientConfig.Builder().build()));
+
+        String query = "test:colon:";
+        Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query))
+                .setHeader("Content-Type", "text/html")
+                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
+    }
+    
 }

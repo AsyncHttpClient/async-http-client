@@ -19,14 +19,13 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -109,8 +108,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             this.buffer = buffer;
         }
 
-        public NettyConnectListener<T> build() throws IOException {
-            URI uri = AsyncHttpProviderUtils.createUri(request.getRawUrl().replace(" ", "%20"));
+        public NettyConnectListener<T> build(final URI uri) throws IOException {
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer);
             if (future == null) {
                 future = new NettyResponseFuture<T>(uri, request, asyncHandler,
