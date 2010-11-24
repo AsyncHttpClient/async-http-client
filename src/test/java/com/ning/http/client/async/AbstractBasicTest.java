@@ -15,7 +15,6 @@
  */
 package com.ning.http.client.async;
 
-import ch.qos.logback.classic.BasicConfigurator;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
