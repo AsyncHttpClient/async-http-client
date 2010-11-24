@@ -1125,6 +1125,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
 
+        if (log.isDebugEnabled()) {
+            log.debug("\n\nReaplyed Request {}\n", newRequest);
+        }
+                
         // We must consume the body first in order to re-use the connection.
         if (response != null && response.isChunked()) {
             ctx.setAttachment(new AsyncCallable(future) {
@@ -1227,8 +1231,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     return;
                 }
             }
-
-
 
             if (future != null && !future.isDone()) {
                 remotelyClosed(ctx.getChannel(), future);
