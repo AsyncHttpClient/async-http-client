@@ -1126,7 +1126,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         future.setState(NettyResponseFuture.STATE.NEW);
 
         if (log.isDebugEnabled()) {
-            log.debug("\n\nReaplyed Request {}\n", newRequest);
+            log.debug("\n\nReplayed Request {}\n", newRequest);
         }
                 
         // We must consume the body first in order to re-use the connection.
