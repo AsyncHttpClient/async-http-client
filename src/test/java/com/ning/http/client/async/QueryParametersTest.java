@@ -111,7 +111,7 @@ public class QueryParametersTest extends AbstractBasicTest {
                 .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        assertEquals(response.getHeader("X-queryString"), "q=" + URLEncoder.encode(query, "UTF-8"));
+        assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
     }
 
     @Test(groups = "standalone")
@@ -124,7 +124,7 @@ public class QueryParametersTest extends AbstractBasicTest {
                 .setHeader("Content-Type", "text/html")
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        assertEquals(response.getHeader("X-queryString"), "q=" + URLEncoder.encode(query, "UTF-8"));
+        assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
     }
     
 }
