@@ -18,6 +18,7 @@ package com.ning.http.client.listener;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -40,7 +41,7 @@ public interface TransferListener {
      *
      * @param buffer a {@link ByteBuffer}
      */
-    public void onBytesReceived(ByteBuffer buffer);
+    public void onBytesReceived(ByteBuffer buffer) throws IOException;
 
     /**
      * Invoked every time request's chunk are sent.

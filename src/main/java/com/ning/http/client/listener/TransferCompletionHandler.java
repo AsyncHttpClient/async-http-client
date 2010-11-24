@@ -104,7 +104,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      * @param t a {@link com.ning.http.client.listener.TransferListener}
      * @return this
      */
-    public TransferCompletionHandler remove(TransferListener t) {
+    public TransferCompletionHandler removeTransferListener(TransferListener t) {
         listeners.remove(t);
         return this;
     }

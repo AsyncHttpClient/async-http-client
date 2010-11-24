@@ -15,6 +15,7 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 
@@ -69,6 +70,7 @@ public class AsyncHttpClientConfig {
     private final Realm realm;
     private final List<RequestFilter> requestFilters;
     private final List<ResponseFilter> responseFilters;
+    private final List<IOExceptionFilter> ioExceptionFilters;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -87,8 +89,9 @@ public class AsyncHttpClientConfig {
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
                                   ConnectionsPool<?, ?> connectionsPool, Realm realm,
-                                  List<RequestFilter> requestFilters, 
-                                  List<ResponseFilter> responseFilters ) {
+                                  List<RequestFilter> requestFilters,
+                                  List<ResponseFilter> responseFilters,
+                                  List<IOExceptionFilter> ioExceptionFilters) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -107,6 +110,7 @@ public class AsyncHttpClientConfig {
         this.realm = realm;
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
+        this.ioExceptionFilters = ioExceptionFilters;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -304,7 +308,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return the current {@link Realm}}
-     * @return  the current {@link Realm}}
+     * @return the current {@link Realm}}
      */
     public Realm getRealm(){
         return realm;
@@ -312,18 +316,26 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return the list of {@link RequestFilter}
-     * @return Unmmodifiable list of {@link ResponseFilter}
+     * @return Unmodifiable list of {@link ResponseFilter}
      */
-    public List<RequestFilter>  getRequestFilters(){
+    public List<RequestFilter> getRequestFilters(){
         return Collections.unmodifiableList(requestFilters);
     }
 
     /**
      * Return the list of {@link ResponseFilter}
-     * @return Unmmodifiable list of {@link ResponseFilter}
+     * @return Unmodifiable list of {@link ResponseFilter}
      */
-    public List<ResponseFilter>  getResponseFilters(){
+    public List<ResponseFilter> getResponseFilters(){
         return Collections.unmodifiableList(responseFilters);
+    }
+
+    /**
+     * Return the list of {@link java.io.IOException}
+     * @return Unmodifiable list of {@link java.io.IOException}
+     */
+    public List<IOExceptionFilter> getIOExceptionFilters(){
+        return Collections.unmodifiableList(ioExceptionFilters);
     }
 
     /**
@@ -355,8 +367,9 @@ public class AsyncHttpClientConfig {
         private Realm realm;
 
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
-
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
+        private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
+
 
         public Builder() {
         }
@@ -615,12 +628,37 @@ public class AsyncHttpClientConfig {
 
         /**
          * Remove an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
-         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}. 
+         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
+         *
          * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}
          * @return this
          */
         public Builder removeResponseFilter(ResponseFilter responseFilter) {
             responseFilters.remove(responseFilter);
+            return this;
+        }
+
+        /**
+         * Add an {@link com.ning.http.client.filter.IOExceptionFilter} that will be invoked when an {@link java.io.IOException}
+         * occurs during the download/upload operations.
+         *
+         * @param ioExceptionFilter an {@link com.ning.http.client.filter.ResponseFilter}
+         * @return this
+         */
+        public Builder addIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
+            ioExceptionFilters.add(ioExceptionFilter);
+            return this;
+        }
+
+        /**
+         * Remove an {@link com.ning.http.client.filter.IOExceptionFilter} tthat will be invoked when an {@link java.io.IOException}
+         * occurs during the download/upload operations.
+         * 
+         * @param ioExceptionFilter an {@link com.ning.http.client.filter.ResponseFilter}
+         * @return this
+         */
+        public Builder removeIOExceptionFilter(IOExceptionFilter ioExceptionFilter) {
+            ioExceptionFilters.remove(ioExceptionFilter);
             return this;
         }
 
@@ -680,7 +718,8 @@ public class AsyncHttpClientConfig {
                     connectionsPool,
                     realm,
                     requestFilters,
-                    responseFilters);
+                    responseFilters,
+                    ioExceptionFilters);
         }
     }
 }

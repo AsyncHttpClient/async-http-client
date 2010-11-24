@@ -37,6 +37,7 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
@@ -69,6 +70,7 @@ import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
+import org.jboss.netty.handler.codec.http.DefaultHttpMessage;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -647,7 +649,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
 
-        FilterContext fc = new FilterContext(asyncHandler, request);
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).build();
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
@@ -808,7 +810,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
-
             if (!future.isDone() && !future.isCancelled()) {
                 return;
             }
@@ -838,10 +839,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         IN_IO_THREAD.set(Boolean.TRUE);
         if (log.isDebugEnabled()) {
-            log.debug("Message Received {}. Attachment Type is {}",
-                    e.getClass().getName(), ctx.getAttachment() != null ?
-                            ctx.getAttachment().getClass().getName() : "No attach");
-
             if (ctx.getAttachment() == null) {
                 log.warn("ChannelHandlerContext wasn't having any attachment");
             }
@@ -869,10 +866,11 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
-
+        Request request = future.getRequest();
+        HttpResponse response = null;
         try {
             if (e.getMessage() instanceof HttpResponse) {
-                HttpResponse response = (HttpResponse) e.getMessage();
+                response = (HttpResponse) e.getMessage();
 
                 if (log.isDebugEnabled()) {
                     log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest.toString(), response.toString());
@@ -887,11 +885,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
 
                 List<String> wwwAuth = getWwwAuth(response.getHeaders());
-                Request request = future.getRequest();
                 Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
                 HttpResponseStatus status = new ResponseStatus(future.getURI(), response, this);
-                FilterContext fc = new FilterContext(future.getAsyncHandler(), request, status);
+                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
@@ -905,21 +902,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 // The request has changed
                 if (fc.replayRequest()) {
-                    final Request newRequest = fc.getRequest();
-                    future.setAsyncHandler(fc.getAsyncHandler());
-                    future.setState(NettyResponseFuture.STATE.NEW);
-
-                    // We must consume the body first in order to re-use the connection.
-                    if (response.isChunked()) {
-                        ctx.setAttachment(new AsyncCallable(future) {
-                            public Object call() throws Exception {
-                                nextRequest(newRequest, future);
-                                return null;
-                            }
-                        });
-                    } else {
-                        nextRequest(newRequest, future);
-                    }
+                    replayRequest(future, fc, response, ctx);
                     return;
                 }
 
@@ -1103,6 +1086,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
         } catch (Exception t) {
+            if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                        .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
+                fc = handleIoException(fc, future);
+
+                if (fc.replayRequest()) {
+                    replayRequest(future, fc, response, ctx);
+                    return;
+                }
+            }
+
             try {
                 abort(future, t);
             } finally {
@@ -1110,6 +1104,39 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 throw t;
             }
         }
+    }
+
+    private FilterContext handleIoException(FilterContext fc, NettyResponseFuture<?> future) {
+        for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            } catch (FilterException efe) {
+                abort(future, efe);
+            }
+        }
+        return fc;
+    }
+
+    private void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, HttpResponse response, ChannelHandlerContext ctx) throws IOException {
+        final Request newRequest = fc.getRequest();
+        future.setAsyncHandler(fc.getAsyncHandler());
+        future.setState(NettyResponseFuture.STATE.NEW);
+
+        // We must consume the body first in order to re-use the connection.
+        if (response != null && response.isChunked()) {
+            ctx.setAttachment(new AsyncCallable(future) {
+                public Object call() throws Exception {
+                    nextRequest(newRequest, future);
+                    return null;
+                }
+            });
+        } else {
+            nextRequest(newRequest, future);
+        }
+        return;
     }
 
     private List<String> getWwwAuth(List<Entry<String, String>> list) {
@@ -1189,6 +1216,20 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+
+            if (config.getIOExceptionFilters().size() > 0) {
+                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                        .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                fc = handleIoException(fc, future);
+
+                if (fc.replayRequest()) {
+                    replayRequest(future, fc, null, ctx);
+                    return;
+                }
+            }
+
+
+
             if (future != null && !future.isDone()) {
                 remotelyClosed(ctx.getChannel(), future);
             }
@@ -1311,6 +1352,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) ctx.getAttachment();
                 future.attachChannel(null);
+
+                if (IOException.class.isAssignableFrom(cause.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                        .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                    fc = handleIoException(fc, future);
+
+                    if (fc.replayRequest()) {
+                        replayRequest(future, fc, null, ctx);
+                        return;
+                    }
+                }
 
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
                     log.debug("Trying to recover from dead Channel: {}", channel);

@@ -13,12 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.ning.http.client.filter;
+package com.ning.http.client.extra;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +29,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A {@link RequestFilter} throttles requests and block when the number of permits is reached, waiting for
+ * A {@link com.ning.http.client.filter.RequestFilter} throttles requests and block when the number of permits is reached, waiting for
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
@@ -63,7 +66,7 @@ public class ThrottleRequestFilter implements RequestFilter {
                     String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
-        return new FilterContext(new AsyncHandlerWrapper(ctx.getAsyncHandler()), ctx.getRequest());
+        return new FilterContext.FilterContextBuilder(ctx).build();
     }
 
     private class AsyncHandlerWrapper<T> implements AsyncHandler {

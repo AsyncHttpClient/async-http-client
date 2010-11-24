@@ -23,7 +23,7 @@ import com.ning.http.client.Response;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.filter.ThrottleRequestFilter;
+import com.ning.http.client.extra.ThrottleRequestFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 

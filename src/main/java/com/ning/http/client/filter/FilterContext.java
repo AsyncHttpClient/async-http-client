@@ -19,6 +19,8 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 
+import java.io.IOException;
+
 /**
  * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
  * {@link RequestFilter} gets executed before the HTTP request is made to the remote server. Once the response bytes are
@@ -37,18 +39,29 @@ public class FilterContext<T> {
     private final Request request;
     private final HttpResponseStatus responseStatus;
     private final boolean replayRequest;
+    private final IOException ioException;
 
     /**
      * Create a new {@link FilterContext}
      *
      * @param asyncHandler an {@link AsyncHandler}
      * @param request      a {@link Request}
+     * @deprecated use {@link FilterContextBuilder} instead
      */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request) {
-        this.asyncHandler = asyncHandler;
-        this.request = request;
-        this.responseStatus = null;
-        this.replayRequest = false;
+        this(asyncHandler, request, null, false, null);
+    }
+
+    /**
+     * Create a new {@link FilterContext}
+     *
+     * @param asyncHandler an {@link AsyncHandler}
+     * @param request      a {@link Request}
+     * @param ioException  an {@link IOException}
+     * @deprecated use {@link FilterContextBuilder} instead
+     */
+    public FilterContext(AsyncHandler<T> asyncHandler, Request request, IOException ioException) {
+        this(asyncHandler, request, null, false, ioException);
     }
 
     /**
@@ -57,12 +70,20 @@ public class FilterContext<T> {
      * @param asyncHandler   an {@link AsyncHandler}
      * @param request        a {@link Request}
      * @param responseStatus a {@link HttpResponseStatus}
+     * @deprecated use {@link FilterContextBuilder} instead
      */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request, HttpResponseStatus responseStatus) {
+        this(asyncHandler, request, responseStatus, false, null);
+
+    }
+
+    private FilterContext(AsyncHandler<T> asyncHandler, Request request, HttpResponseStatus responseStatus,
+                          boolean replayRequest, IOException ioException) {
         this.asyncHandler = asyncHandler;
         this.request = request;
         this.responseStatus = responseStatus;
-        this.replayRequest = false;
+        this.replayRequest = replayRequest;
+        this.ioException = ioException;
     }
 
     /**
@@ -71,12 +92,10 @@ public class FilterContext<T> {
      * @param asyncHandler  an {@link AsyncHandler}
      * @param request       a {@link Request}
      * @param replayRequest true if the current response processing needs to be interrupted, and a new {@link Request} be processed.
+     * @deprecated use {@link FilterContextBuilder} instead
      */
     public FilterContext(AsyncHandler<T> asyncHandler, Request request, boolean replayRequest) {
-        this.asyncHandler = asyncHandler;
-        this.request = request;
-        this.replayRequest = replayRequest;
-        this.responseStatus = null;
+        this(asyncHandler, request, null, replayRequest, null);
     }
 
     /**
@@ -99,6 +118,7 @@ public class FilterContext<T> {
 
     /**
      * Return the unprocessed response's {@link HttpResponseStatus}
+     *
      * @return the unprocessed response's {@link HttpResponseStatus}
      */
     public HttpResponseStatus getResponseStatus() {
@@ -107,10 +127,88 @@ public class FilterContext<T> {
 
     /**
      * Return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
+     *
      * @return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
      */
     public boolean replayRequest() {
         return replayRequest;
+    }
+
+    /**
+     * Return the {@link IOException}
+     *
+     * @return the {@link IOException}
+     */
+    public IOException getIOException() {
+        return ioException;
+    }
+
+    public static class FilterContextBuilder<T> {
+        private AsyncHandler<T> asyncHandler = null;
+        private Request request = null;
+        private HttpResponseStatus responseStatus = null;
+        private boolean replayRequest = false;
+        private IOException ioException = null;
+
+        public FilterContextBuilder(){
+        }
+
+        public FilterContextBuilder(FilterContext clone) {
+            asyncHandler = clone.getAsyncHandler();
+            request = clone.getRequest();
+            responseStatus = clone.getResponseStatus();
+            replayRequest = clone.replayRequest();
+            ioException = clone.getIOException();
+        }
+
+        public AsyncHandler<T> getAsyncHandler() {
+            return asyncHandler;
+        }
+
+        public FilterContextBuilder asyncHandler(AsyncHandler<T> asyncHandler) {
+            this.asyncHandler = asyncHandler;
+            return this;
+        }
+
+        public Request getRequest() {
+            return request;
+        }
+
+        public FilterContextBuilder request(Request request) {
+            this.request = request;
+            return this;
+        }
+
+        public HttpResponseStatus getResponseStatus() {
+            return responseStatus;
+        }
+
+        public FilterContextBuilder responseStatus(HttpResponseStatus responseStatus) {
+            this.responseStatus = responseStatus;
+            return this;
+        }
+
+        public boolean replayRequest() {
+            return replayRequest;
+        }
+
+        public FilterContextBuilder replayRequest(boolean replayRequest) {
+            this.replayRequest = replayRequest;
+            return this;
+        }
+
+        public IOException getIoException() {
+            return ioException;
+        }
+
+        public FilterContextBuilder ioException(IOException ioException) {
+            this.ioException = ioException;
+            return this;
+        }
+
+        public FilterContext build() {
+            return new FilterContext(asyncHandler, request, responseStatus, replayRequest, ioException);
+        }
     }
 
 }
