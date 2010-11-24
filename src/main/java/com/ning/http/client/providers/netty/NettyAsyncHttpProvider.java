@@ -75,6 +75,7 @@ import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
+import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -202,6 +203,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 ChannelPipeline pipeline = pipeline();
 
                 pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+
+                if (config.getRequestCompressionLevel() > 0) {
+                    pipeline.addLast("deflater", new HttpContentCompressor(config.getRequestCompressionLevel()));
+                }
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());

@@ -71,6 +71,7 @@ public class AsyncHttpClientConfig {
     private final List<RequestFilter> requestFilters;
     private final List<ResponseFilter> responseFilters;
     private final List<IOExceptionFilter> ioExceptionFilters;
+    private final int requestCompressionLevel;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -91,7 +92,8 @@ public class AsyncHttpClientConfig {
                                   ConnectionsPool<?, ?> connectionsPool, Realm realm,
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
-                                  List<IOExceptionFilter> ioExceptionFilters) {
+                                  List<IOExceptionFilter> ioExceptionFilters,
+                                  int requestCompressionLevel) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -111,6 +113,7 @@ public class AsyncHttpClientConfig {
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
+        this.requestCompressionLevel = requestCompressionLevel;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -339,6 +342,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the compression level, or -1 if no compression is used.
+     * @return the compression level, or -1 if no compression is use
+     */
+    public int getRequestCompressionLevel() {
+        return requestCompressionLevel;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -365,6 +376,7 @@ public class AsyncHttpClientConfig {
         private AsyncHttpProviderConfig<?,?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
+        private int requestCompressionLevel = -1;
 
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
@@ -663,6 +675,25 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Return the compression level, or -1 if no compression is used.
+         *
+         * @return the compression level, or -1 if no compression is use
+         */
+        public int getRequestCompressionLevel() {
+            return requestCompressionLevel;
+        }
+
+        /**
+         * Set the compression level, or -1 if no compression is used.
+         *
+         * @param requestCompressionLevel compression level, or -1 if no compression is use
+         */
+        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
+            this.requestCompressionLevel = requestCompressionLevel;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          * 
          * @param prototype the configuration to use as a prototype.
@@ -719,7 +750,8 @@ public class AsyncHttpClientConfig {
                     realm,
                     requestFilters,
                     responseFilters,
-                    ioExceptionFilters);
+                    ioExceptionFilters,
+                    requestCompressionLevel);
         }
     }
 }
