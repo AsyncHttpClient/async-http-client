@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
  * A {@link com.ning.http.client.listener.TransferListener} which use a {@link RandomAccessFile} for storing the received bytes.
  */
 public class ResumableRandomAccessFileHandler implements TransferListener {
-    private RandomAccessFile file;
+    private final RandomAccessFile file;
     private long byteTransferred = 0;
 
     public ResumableRandomAccessFileHandler(RandomAccessFile file) {

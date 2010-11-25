@@ -264,7 +264,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         final Channel channel = connectionsPool.poll(AsyncHttpProviderUtils.getBaseUrl(uri));
 
         if (channel != null) {
-            log.debug("Using cached Channel {} for uri {}", channel, uri);
+            log.debug("Using cached Channel %s for uri {}", channel, uri);
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
@@ -272,9 +272,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 // https.
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
-                if (log.isDebugEnabled()) {
-                    log.debug(ex.getMessage(), ex);
-                }
+                log.debug(ex.getMessage(), ex);
             }
         }
         return null;
@@ -344,9 +342,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             try {
                 channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
             } catch (Throwable cause) {
-                if (log.isDebugEnabled()) {
-                    log.debug(cause.getMessage(), cause);
-                }
+                log.debug(cause.getMessage(), cause);
 
                 if (future.provider().remotelyClosed(channel, future)) {
                     return;
@@ -688,9 +684,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          */
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         if (realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM) {
-            if (log.isDebugEnabled()) {
-                log.debug("NTLM not supported by this provider. Using the {}", JDKAsyncHttpProvider.class.getName());
-            }
+            log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
             return ntlmProvider.execute(request, asyncHandler);
         }
 
@@ -722,18 +716,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
             f.setState(NettyResponseFuture.STATE.POOLED);
 
-            if (log.isDebugEnabled()) {
-                log.debug("\n\nCached Request {}\n", channel);
-            }
+            log.debug("\n\nCached Request {}\n", channel);
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
             writeRequest(channel, config, f, nettyRequest);
             return f;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("\n\nNon cached Request {}\n", request);
-        }
+        log.debug("\n\nNon cached Request {}\n", request);
 
         if (!connectionsPool.canCacheConnection() ||
                 (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
@@ -769,7 +759,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
         } catch (Throwable t) {
-            log.error("doConnect", t);
+            log.error("bootstrap.connect", t);
             abort(c.future(), t.getCause());
             return c.future();
         }
@@ -824,9 +814,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             abort(future, new TimeoutException("No response received. Connection timed out after "
                     + config.getIdleConnectionTimeoutInMs()));
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Channel Idle: {}", ctx.getChannel());
-        }
+
+        log.debug("Channel Idle: {}", ctx.getChannel());
         closeChannel(ctx);
     }
 
@@ -845,10 +834,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         super.messageReceived(ctx, e);
 
         IN_IO_THREAD.set(Boolean.TRUE);
-        if (log.isDebugEnabled()) {
-            if (ctx.getAttachment() == null) {
-                log.warn("ChannelHandlerContext wasn't having any attachment");
-            }
+        if (ctx.getAttachment() == null) {
+            log.warn("ChannelHandlerContext wasn't having any attachment");
         }
 
         if (ctx.getAttachment() instanceof DiscardEvent) {
@@ -879,10 +866,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (e.getMessage() instanceof HttpResponse) {
                 response = (HttpResponse) e.getMessage();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
-                }
-
+                log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
+                
                 // Required if there is some trailing headers.
                 future.setHttpResponse(response);
 
@@ -940,9 +925,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             .parseWWWAuthenticateHeader(wwwAuth.get(0))
                             .build();
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Sending authentication to {}", request.getUrl());
-                    }
+                    log.debug("Sending authentication to {}", request.getUrl());
 
                     if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
@@ -968,9 +951,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         && future.getRequest().getRealm() != null
                         && !future.getAndSetAuth(true)) {
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Sending proxy authentication to {}", request.getUrl());
-                    }
+                    log.debug("Sending proxy authentication to {}", request.getUrl());
 
                     if (response.isChunked()) {
                         ctx.setAttachment(new AsyncCallable(future) {
@@ -989,9 +970,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         && statusCode == 200) {
 
                     ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-                    if (log.isDebugEnabled() && proxyServer != null) {
-                        log.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
-                    }
+                    log.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
 
                     if (future.getKeepAlive()) {
                         future.attachChannel(ctx.getChannel());
@@ -1169,10 +1148,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             maxConnections.decrementAndGet();
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("abording Future {}", future);
-            log.debug(t.getMessage(), t);
-        }
+        log.debug("abording Future {}", future);
+        log.debug(t.getMessage(), t);
 
         future.abort(t);
     }
@@ -1208,9 +1185,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             exception = ex;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Channel Closed: {}", e.getChannel());
-        }
+        log.debug("Channel Closed: {}", e.getChannel());
 
         if (ctx.getAttachment() instanceof AsyncCallable) {
             AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
@@ -1261,9 +1236,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
 
-        if (log.isDebugEnabled()) {
-            log.debug("Trying to recover request {}", future.getNettyRequest());
-        }
+        log.debug("Trying to recover request {}", future.getNettyRequest());
 
         try {
             nextRequest(future.getRequest(), future);
@@ -1290,9 +1263,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             });
         } catch (Throwable t) {
             // Never propagate exception once we know we are done.
-            if (log.isDebugEnabled()) {
-                log.debug("", t);
-            }
+            log.debug(t.getMessage(), t);
         }
 
         if (!future.getKeepAlive()) {
@@ -1383,7 +1354,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             try {
                 abort(future, cause);
             } catch (Throwable t) {
-                log.error("", t);
+                log.error(t.getMessage(), t);
             }
         }
 
@@ -1480,9 +1451,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
 
                 if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(cause.getMessage(), cause);
-                    }
+                    log.debug(cause.getMessage(), cause);
                     if (future.provider().remotelyClosed(cf.getChannel(), future)) {
                         return;
                     } else {
@@ -1495,7 +1464,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         || abortOnWriteCloseException(cause)) {
 
                     if (log.isDebugEnabled()) {
-                        log.debug("", cf.getCause());
+                        log.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
                     }
 
                     if (future.provider().remotelyClosed(cf.getChannel(), future)) {
@@ -1592,9 +1561,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          */
         public synchronized void run() {
             if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Request Timeout expired for {}", this.nettyResponseFuture);
-                }
+                log.debug("Request Timeout expired for {}", this.nettyResponseFuture);
+
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.nettyResponseFuture.getRequest().getPerRequestConfig();
                 if (p != null && p.getRequestTimeoutInMs() != -1) {

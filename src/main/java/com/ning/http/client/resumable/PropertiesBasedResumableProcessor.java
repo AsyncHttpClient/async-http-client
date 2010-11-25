@@ -58,7 +58,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             os = new FileOutputStream(f);
             properties.store(os, "Resumable Index");
         } catch (Throwable e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         } finally {
             if (os != null) {
                 try {

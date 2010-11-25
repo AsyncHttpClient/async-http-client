@@ -235,9 +235,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                 int statusCode = urlConnection.getResponseCode();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
-                }
+                logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
@@ -254,9 +252,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             RequestBuilder builder = new RequestBuilder(request);
                             String newUrl = newUri.toString();
 
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Redirecting to {}", newUrl);
-                            }
+                            logger.debug("Redirecting to {}", newUrl);
+
                             request = builder.setUrl(newUrl).build();
                             urlConnection = createUrlConnection(request);
                             return call();
@@ -270,10 +267,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null ) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Sending authentication to {}", request.getUrl());
-                    }
-                    
+                    logger.debug("Sending authentication to {}", request.getUrl());
+
                     Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
@@ -325,10 +320,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     throw ex;
                 }
             } catch (Throwable t) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(t.getMessage(), t);
-                }
-
+                logger.debug(t.getMessage(), t);
+                
                 try {
                     future.abort(filterException(t));
                 } catch (Throwable t2) {

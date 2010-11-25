@@ -48,9 +48,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel connection) {
-        if (log.isDebugEnabled()) {
-            log.debug("Adding uri: {} for channel {}", uri, connection);
-        }
+        log.debug("Adding uri: {} for channel {}", uri, connection);
         connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
         List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
@@ -69,9 +67,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 }
                 return added;
             } else {
-                if (log.isDebugEnabled()) {
-                    log.warn("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
-                }
+                log.warn("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
                 return false;
             }
         }
@@ -115,9 +111,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             synchronized (e.getValue()) {
                 boolean removed = e.getValue().remove(connection);
                 if (removed) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
-                    }
+                    log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
                     totalConnections.decrementAndGet();
 
                 }

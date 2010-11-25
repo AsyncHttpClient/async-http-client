@@ -420,9 +420,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     currentRedirectCount = config.getMaxRedirects();
                 }
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request, method);
-                }
+                logger.debug("\n\nRequest {}\n\nResponse {}\n", request, method);
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
@@ -441,9 +439,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             RequestBuilder builder = new RequestBuilder(request);
                             String newUrl = newUri.toString();
 
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Redirecting to {}", newUrl);
-                            }
+                            logger.debug("Redirecting to {}", newUrl);
+
                             request = builder.setUrl(newUrl).build();
                             method = createMethod(httpClient, request);
                             return call();
@@ -498,9 +495,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     return null;
                 }
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug(t.getMessage(), t);
-                }
+                logger.debug(t.getMessage(), t);
 
                 try {
                     future.abort(filterException(t));
@@ -723,9 +718,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
          */
         public synchronized void run() {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Request Timeout expired for {}", this.apacheResponseFuture);
-                }
+                logger.debug("Request Timeout expired for " + this.apacheResponseFuture);
+
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.apacheResponseFuture.getRequest().getPerRequestConfig();
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
