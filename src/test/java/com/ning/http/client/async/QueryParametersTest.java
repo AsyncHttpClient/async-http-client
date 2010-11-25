@@ -95,7 +95,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         AsyncHttpClient client = new AsyncHttpClient(new JDKAsyncHttpProvider(
                 new AsyncHttpClientConfig.Builder().build()));
         String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
-        LoggerFactory.getLogger(QueryParametersTest.class).info(String.format("Executing request [%s] ...", requestUrl2));
+        LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
         Response response = client.prepareGet(requestUrl2).execute().get();
         String s = URLDecoder.decode(response.getHeader("q"), "UTF-8");
         assertEquals(s, REQUEST_PARAM);

@@ -264,9 +264,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         final Channel channel = connectionsPool.poll(AsyncHttpProviderUtils.getBaseUrl(uri));
 
         if (channel != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Using cached Channel %s for uri {}", channel, uri);
-            }
+            log.debug("Using cached Channel {} for uri {}", channel, uri);
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
@@ -275,7 +273,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
                 if (log.isDebugEnabled()) {
-                    log.debug(ex.getMessage());
                     log.debug(ex.getMessage(), ex);
                 }
             }
@@ -692,7 +689,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         if (realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM) {
             if (log.isDebugEnabled()) {
-                log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
+                log.debug("NTLM not supported by this provider. Using the {}", JDKAsyncHttpProvider.class.getName());
             }
             return ntlmProvider.execute(request, asyncHandler);
         }
@@ -735,7 +732,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("\n\nNon cached Request {}\n", request.toString());
+            log.debug("\n\nNon cached Request {}\n", request);
         }
 
         if (!connectionsPool.canCacheConnection() ||
@@ -883,7 +880,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 response = (HttpResponse) e.getMessage();
 
                 if (log.isDebugEnabled()) {
-                    log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest.toString(), response.toString());
+                    log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
                 }
 
                 // Required if there is some trailing headers.
@@ -1032,9 +1029,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             future.setURI(uri);
                             final String newUrl = uri.toString();
 
-                            if (log.isDebugEnabled()) {
-                                log.debug("Redirecting to {}", newUrl);
-                            }
+                            log.debug("Redirecting to {}", newUrl);
 
                             if (response.isChunked()) {
                                 ctx.setAttachment(new AsyncCallable(future) {
@@ -1135,10 +1130,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
 
-        if (log.isDebugEnabled()) {
-            log.debug("\n\nReplayed Request {}\n", newRequest);
-        }
-                
+        log.debug("\n\nReplayed Request {}\n", newRequest);
+
         // We must consume the body first in order to re-use the connection.
         if (response != null && response.isChunked()) {
             ctx.setAttachment(new AsyncCallable(future) {
@@ -1189,9 +1182,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             p.remove(HTTP_HANDLER);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
-        }
+        log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
 
         if (scheme.startsWith(HTTPS)) {
             if (p.get(SSL_HANDLER) == null) {

@@ -187,7 +187,7 @@ public class BasicHttpsTest {
         connector.setTrustPassword("changeit");
         connector.setTruststoreType("JKS");
 
-        log.info("SSL certs path: " + trustStoreFile);
+        log.info("SSL certs path: {}", trustStoreFile);
 
         // override system properties
         URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
@@ -196,7 +196,7 @@ public class BasicHttpsTest {
         connector.setKeyPassword("changeit");
         connector.setKeystoreType("JKS");
 
-        log.info("SSL keystore path: " + keyStoreFile);
+        log.info("SSL keystore path: {}", keyStoreFile);
 
         server.addConnector(connector);
 

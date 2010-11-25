@@ -421,7 +421,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request.toString(), method.toString());
+                    logger.debug("\n\nRequest {}\n\nResponse {}\n", request, method);
                 }
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
@@ -724,7 +724,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         public synchronized void run() {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Request Timeout expired for " + this.apacheResponseFuture);
+                    logger.debug("Request Timeout expired for {}", this.apacheResponseFuture);
                 }
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.apacheResponseFuture.getRequest().getPerRequestConfig();

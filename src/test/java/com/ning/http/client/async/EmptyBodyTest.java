@@ -78,7 +78,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
 
             public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                 String s = new String(e.getBodyPartBytes());
-                log.info("got part: " + s);
+                log.info("got part: {}", s);
                 if (s.equals("")) {
                     //noinspection ThrowableInstanceNeverThrown
                     log.warn("Sampling stacktrace.",

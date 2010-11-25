@@ -59,9 +59,9 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         Exception exception = null;
         for (i = 0; i < 3; i++) {
             try {
-                log.info(String.format("%d requesting url [%s]...", i, url));
+                log.info("{} requesting url [{}]...", i, url);
                 Response response = client.prepareGet(url).execute().get();
-                log.info(String.format("%d response [%s].", i, response));
+                log.info("{} response [{}].", i, response);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 exception = ex;
