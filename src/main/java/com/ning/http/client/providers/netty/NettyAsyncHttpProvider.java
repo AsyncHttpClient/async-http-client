@@ -1368,12 +1368,29 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ctx.sendUpstream(e);
     }
 
-
     protected static boolean abortOnConnectCloseException(Throwable cause) {
         try {
             for (StackTraceElement element : cause.getStackTrace()) {
                 if (element.getClassName().equals("sun.nio.ch.SocketChannelImpl")
                         && element.getMethodName().equals("checkConnect")) {
+                    return true;
+                }
+            }
+
+            if (cause.getCause() != null) {
+                return abortOnConnectCloseException(cause.getCause());
+            }
+
+        } catch (Throwable t) {
+        }
+        return false;
+    }
+
+    protected static boolean abortOnDisconnectException(Throwable cause) {
+        try {
+            for (StackTraceElement element : cause.getStackTrace()) {
+                if (element.getClassName().equals("org.jboss.netty.handler.ssl.SslHandler")
+                        && element.getMethodName().equals("channelDisconnected")) {
                     return true;
                 }
             }
