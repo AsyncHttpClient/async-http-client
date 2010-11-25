@@ -20,31 +20,46 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Properties;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A {@link com.ning.http.client.resumable.ResumableAsyncHandler.ResumableProcessor} which use a {@link Properties}
+ * A {@link com.ning.http.client.resumable.ResumableAsyncHandler.ResumableProcessor} which use a properties file
  * to store the download index information.
  */
 public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.ResumableProcessor {
     private final static Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
     private final static File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
     private final static String storeName = "ResumableAsyncHandler.properties";
+    private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<String, Long>();
 
-    private final Properties properties = new Properties();
-
-    public void put(String url, String transferredBytes) {
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public void put(String url, long transferredBytes) {
         properties.put(url, transferredBytes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void remove(String uri) {
-        properties.remove(uri);
+        if (uri != null) {
+            properties.remove(uri);
+        }
     }
 
-    public void save(Properties properties) {
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public void save(Map<String, Long> map) {
         log.debug("Saving current download state {}", properties);
         FileOutputStream os = null;
         try {
@@ -57,7 +72,11 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             }
 
             os = new FileOutputStream(f);
-            properties.store(os, "Resumable Index");
+
+            for (Map.Entry<String, Long> e : properties.entrySet()) {
+                os.write(append(e).getBytes("UTF-8"));
+            }
+            os.flush();
         } catch (Throwable e) {
             log.warn(e.getMessage(), e);
         } finally {
@@ -70,22 +89,32 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         }
     }
 
-    public Properties load() {
-        File f = new File(TMP, storeName);
-        if (f.exists()) {
-            FileInputStream is = null;
-            try {
-                is = new FileInputStream(f);
-                properties.load(new FileInputStream(f));
-                log.debug("Loading previous download state {}", properties);
-            } catch (IOException e) {
-                log.error(e.getMessage(),e);
-            } finally {
-                try {
-                    if (is != null) is.close();
-                } catch (IOException e) {
-                }
+    private static String append(Map.Entry<String, Long> e) {
+        return new StringBuffer(e.getKey()).append("=").append(e.getValue()).toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public Map<String, Long> load() {
+        try {
+            Scanner scan = new Scanner(new File(TMP, storeName), "UTF-8");
+            scan.useDelimiter("=");
+
+            String key;
+            String value;
+            while (scan.hasNext()) {
+                key = scan.next();
+                value = scan.next();
+                properties.put(key, Long.valueOf(value));
             }
+            log.debug("Loading previous download state {}", properties);
+        } catch (FileNotFoundException ex) {
+            log.debug("Missing {}", storeName);
+        } catch (Throwable ex) {
+            // Survive any exceptions
+            log.warn(ex.getMessage(), ex);
         }
         return properties;
     }

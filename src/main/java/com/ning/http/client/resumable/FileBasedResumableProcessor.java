@@ -16,10 +16,10 @@
  */
 package com.ning.http.client.resumable;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A {@link com.ning.http.client.resumable.ResumableAsyncHandler.ResumableProcessor} which use a {@link RandomAccessFile}
@@ -35,19 +35,19 @@ public class FileBasedResumableProcessor implements ResumableAsyncHandler.Resuma
         this.name = name;
     }
 
-    public void put(String key, String transferredBytes) {
+    public void put(String key, long transferredBytes) {
     }
 
     public void remove(String key) {
     }
 
-    public void save(Properties properties) {
+    public void save(Map<String, Long> map) {
     }
 
-    public Properties load() {
-        Properties p = new Properties();
+    public Map<String, Long> load() {
+        HashMap<String, Long> p = new HashMap<String, Long>();
         try {
-            p.put(name, String.valueOf(watchFile.length()));
+            p.put(name, watchFile.length());
         } catch (IOException e) {
         }
         return p;

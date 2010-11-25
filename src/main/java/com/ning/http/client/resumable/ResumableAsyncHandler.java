@@ -27,10 +27,9 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -47,19 +46,21 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
     private final AtomicLong byteTransferred;
     private Integer contentLenght;
     private String url;
-    private final Properties resumableIndex;
-    private final ResumableProcessor resumableHandler;
+    private final ResumableProcessor resumableProcessor;
 
-    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableHandler) {
+    private static Map<String, Long> resumableIndex;
+    private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
+
+    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor) {
         this.byteTransferred = new AtomicLong(byteTransferred);
 
-        if (resumableHandler == null) {
-            resumableHandler = new NULLResumableHandler();
+        if (resumableProcessor == null) {
+            resumableProcessor = new NULLResumableHandler();
         }
-        this.resumableHandler = resumableHandler;
-        resumableIndex = resumableHandler.load();
-        
-        Runtime.getRuntime().addShutdownHook(new ResumableIndexThread(resumableHandler));
+        this.resumableProcessor = resumableProcessor;
+
+        resumableIndex = resumableProcessor.load();
+        resumeIndexThread.addResumableProcessor(resumableProcessor);
     }
 
     public ResumableAsyncHandler(long byteTransferred) {
@@ -70,8 +71,15 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
         this(0);
     }
 
-    public ResumableAsyncHandler(ResumableProcessor resumableHandler) {
-        this(0, resumableHandler);
+    public ResumableAsyncHandler(ResumableProcessor resumableProcessor) {
+        this(0, resumableProcessor);
+    }
+
+    public ResumableAsyncHandler(boolean accumulateResponseBytes){
+        super(accumulateResponseBytes);
+        this.byteTransferred = new AtomicLong(0);
+        resumableProcessor = new NULLResumableHandler();
+        resumableIndex = resumableProcessor.load();
     }
 
     /**
@@ -102,7 +110,7 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
     public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         AsyncHandler.STATE state = super.onBodyPartReceived(bodyPart);
         byteTransferred.addAndGet(bodyPart.getBodyPartBytes().length);
-        resumableHandler.put(url, byteTransferred.toString());
+        resumableProcessor.put(url, byteTransferred.get());
         return state;
     }
 
@@ -111,7 +119,7 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
      */
     /* @Override */
     public Response onCompleted(Response response) throws Exception {
-        resumableHandler.remove(url);
+        resumableProcessor.remove(url);
         return super.onCompleted(response);
     }
 
@@ -139,7 +147,7 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
     public Request adjustRequestRange(Request request) {
 
         if (resumableIndex.get(request.getUrl()) != null) {
-            byteTransferred.set(Long.valueOf((String)resumableIndex.get(request.getUrl())));
+            byteTransferred.set(resumableIndex.get(request.getUrl()));
         }
 
         RequestBuilder builder = new RequestBuilder(request);
@@ -148,18 +156,23 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
     }
 
 
-    private class ResumableIndexThread extends Thread {
+    private static class ResumableIndexThread extends Thread {
 
-        public final ResumableProcessor resumableHandler;
+        public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<ResumableProcessor>();
 
-        public ResumableIndexThread(ResumableProcessor resumableHandler) {
-            this.resumableHandler = resumableHandler;
+        public ResumableIndexThread() {
+            Runtime.getRuntime().addShutdownHook(this);
+        }
+
+        public void addResumableProcessor(ResumableProcessor p) {
+            resumableProcessors.offer(p);
         }
 
         public void run() {
-            resumableHandler.save(resumableIndex);
+            for (ResumableProcessor p : resumableProcessors) {
+                p.save(resumableIndex);
+            }
         }
-
     }
 
     /**
@@ -169,46 +182,49 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
 
         /**
          * Associate a key with the number of bytes sucessfully transferred.
-         * @param key a key. The recommended way is to use an url.
-         * @param transferredBytes  The number of bytes sucessfully transferred.
+         *
+         * @param key              a key. The recommended way is to use an url.
+         * @param transferredBytes The number of bytes sucessfully transferred.
          */
-        public void put(String key, String transferredBytes);
+        public void put(String key, long transferredBytes);
 
         /**
          * Remove the key associate value.
+         *
          * @param key key from which the value will be discarted
          */
         public void remove(String key);
 
         /**
-         * Save the current {@link Properties} instance which contains information about the current transfer state.
+         * Save the current {@link Map} instance which contains information about the current transfer state.
          * This method *only* invoked when the JVM is shutting down.
          *
-         * @param properties {@link Properties}
+         * @param map
          */
-        public void save(Properties properties);
+        public void save(Map<String, Long> map);
 
         /**
-         * Load the {@link Properties} in memory
-         * @return {@link Properties}
+         * Load the {@link Map} in memory, contains information about the transferred bytes.
+         *
+         * @return {@link Map}
          */
-        public Properties load();
+        public Map<String, Long> load();
 
     }
 
     private static class NULLResumableHandler implements ResumableProcessor {
 
-        public void put(String url, String transferredBytes) {
+        public void put(String url, long transferredBytes) {
         }
 
         public void remove(String uri) {
         }
 
-        public void save(Properties properties) {
+        public void save(Map<String, Long> map) {
         }
 
-        public Properties load() {
-            return new Properties();
+        public Map<String, Long> load() {
+            return new HashMap<String, Long>();
         }
     }
 }
