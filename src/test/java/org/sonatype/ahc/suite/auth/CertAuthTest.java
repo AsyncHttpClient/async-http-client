@@ -21,6 +21,8 @@ import org.sonatype.ahc.suite.util.CertUtil;
 import org.sonatype.tests.http.runner.annotations.Configurators;
 import org.sonatype.tests.http.server.api.ServerProvider;
 import org.sonatype.tests.http.server.jetty.configurations.CertAuthSuiteConfigurator;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -42,10 +44,20 @@ public class CertAuthTest
 
     private String alias = "client";
 
+    private AsyncHttpClient client;
+
     @Override
     public void configureProvider(ServerProvider provider) {
         super.configureProvider(provider);
         provider.addUser(alias, CertUtil.getCertificate(alias, keystorePath, keystorePass));
+    }
+
+    @AfterMethod
+    public void after()
+            throws Exception {
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Test(groups = "standalone")
@@ -53,7 +65,7 @@ public class CertAuthTest
             throws Exception {
         AsyncHttpClientConfig cfg =
                 super.builder().setSSLContext(CertUtil.sslContext(keystorePath, keystorePass, alias)).build();
-        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        client = new AsyncHttpClient(cfg);
 
         Response response = execute(client.prepareGet(url("content", "test")));
         assertEquals(200, response.getStatusCode());

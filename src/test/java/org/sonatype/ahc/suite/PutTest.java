@@ -25,6 +25,7 @@ import org.sonatype.tests.http.server.jetty.behaviour.Consumer;
 import org.sonatype.tests.http.server.jetty.behaviour.ErrorBehaviour;
 import org.sonatype.tests.http.server.jetty.util.FileUtil;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -46,11 +47,21 @@ public class PutTest
 
     private static long heapSize;
 
+    private AsyncHttpClient c = null;
+
     @AfterClass
     public static void afterClass()
             throws IOException {
         FileUtil.delete(largeFile);
         largeFile = null;
+    }
+
+    @AfterMethod
+    public void after()
+            throws Exception {
+        if (c != null) {
+            c.close();
+        }
     }
 
     @Override
@@ -81,7 +92,7 @@ public class PutTest
         cfg.setIdleConnectionTimeoutInMs((int) heapSize);
         cfg.setConnectionTimeoutInMs((int) heapSize);
         cfg.setRequestTimeoutInMs((int) heapSize);
-        AsyncHttpClient c = new AsyncHttpClient(cfg.build());
+        c = new AsyncHttpClient(cfg.build());
 
         BoundRequestBuilder put = c.preparePut(url);
         put.setBody(largeFile);

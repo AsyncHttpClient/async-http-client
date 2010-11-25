@@ -22,6 +22,7 @@ import com.ning.http.client.Response;
 import org.sonatype.tests.http.runner.testng.TestNGSuiteConfiguration;
 import org.sonatype.tests.http.server.api.ServerProvider;
 import org.sonatype.tests.http.server.jetty.impl.JettyServerProvider;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Factory;
 
 /**
@@ -34,8 +35,11 @@ public class AsyncSuiteConfiguration
 
     private int timeout = 2000;
 
+    private AsyncHttpClient client;
+
     protected AsyncHttpClient client() {
-        return new AsyncHttpClient(settings(builder()).build());
+        client = new AsyncHttpClient(settings(builder()).build());
+        return client;
     }
 
     /**
@@ -43,6 +47,16 @@ public class AsyncSuiteConfiguration
      */
     protected Builder builder() {
         return new Builder();
+    }
+
+    @AfterMethod
+    public void after()
+        throws Exception
+    {
+        super.after();
+        if (client != null) {
+            client.close();
+        }
     }
 
     protected Response executeGet(String url)
