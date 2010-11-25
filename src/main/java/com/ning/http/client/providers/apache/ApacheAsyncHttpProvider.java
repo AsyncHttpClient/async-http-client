@@ -21,8 +21,15 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProviderConfig;
+import com.ning.http.client.providers.jdk.JDKFuture;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.apache.commons.httpclient.CircularRedirectException;
@@ -146,6 +153,27 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
+        }
+
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            } catch (FilterException e) {
+                IOException ex = new IOException();
+                ex.initCause(e);
+                throw ex;
+            }
+        }
+
+        request = fc.getRequest();
+        handler = fc.getAsyncHandler();
+
+        if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
+            request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
         }
 
         if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
@@ -420,6 +448,22 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     currentRedirectCount = config.getMaxRedirects();
                 }
 
+                ApacheResponseStatus status = new ApacheResponseStatus(uri, method, ApacheAsyncHttpProvider.this);
+                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
+                for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                    fc = asyncFilter.filter(fc);
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                }
+
+                // The request has changed
+                if (fc.replayRequest()) {
+                    request = fc.getRequest();
+                    method = createMethod(httpClient, request);                    
+                    return call();
+                }
+
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, method);
 
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
@@ -450,7 +494,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     }
                 }
 
-                state = asyncHandler.onStatusReceived(new ApacheResponseStatus(uri, method, ApacheAsyncHttpProvider.this));
+                state = asyncHandler.onStatusReceived(status);
                 if (state == AsyncHandler.STATE.CONTINUE) {
                     state = asyncHandler.onHeadersReceived(new ApacheResponseHeaders(uri, method, ApacheAsyncHttpProvider.this));
                 }
@@ -491,6 +535,27 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     throw ex;
                 }
             } catch (Throwable t) {
+
+                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
+                        .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
+
+                    try {
+                        fc = handleIoException(fc);
+                    } catch (FilterException e) {
+                        if (config.getMaxTotalConnections() != -1) {
+                            maxConnections.decrementAndGet();
+                        }
+                        future.done(null);
+                        method.releaseConnection();
+                    }
+
+                    if (fc.replayRequest()) {
+                        request = fc.getRequest();
+                        return call();
+                    }
+                }
+
                 if (method.isAborted()) {
                     return null;
                 }
@@ -533,6 +598,16 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
             }
 
             return t;
+        }
+
+        private FilterContext handleIoException(FilterContext fc) throws FilterException {
+            for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            }
+            return fc;
         }
     }
 

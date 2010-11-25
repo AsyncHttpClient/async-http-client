@@ -34,6 +34,12 @@ import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -115,10 +121,31 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         return execute(request, handler, null);
     }
     public <T> Future<T> execute(Request request, AsyncHandler<T> handler, FutureImpl<?> future) throws IOException {
-
         if (isClose.get()) {
             throw new IOException("Closed");
         }
+
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            } catch (FilterException e) {
+                IOException ex = new IOException();
+                ex.initCause(e);
+                throw ex;
+            }
+        }
+
+        request = fc.getRequest();
+        handler = fc.getAsyncHandler();
+
+        if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
+            request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
+        }
+
 
         if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
@@ -237,6 +264,22 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
+                ResponseStatus status = new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this);
+                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
+                for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                    fc = asyncFilter.filter(fc);
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                }
+
+                // The request has changed
+                if (fc.replayRequest()) {
+                    request = fc.getRequest();
+                    urlConnection = createUrlConnection(request);
+                    return call();
+                }
+
                 boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
 
@@ -282,7 +325,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     return call();
                 }
 
-                state = asyncHandler.onStatusReceived(new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this));
+                state = asyncHandler.onStatusReceived(status);
                 if (state == AsyncHandler.STATE.CONTINUE) {
                     state = asyncHandler.onHeadersReceived(new ResponseHeaders(uri, urlConnection, JDKAsyncHttpProvider.this));
                 }
@@ -321,7 +364,27 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             } catch (Throwable t) {
                 logger.debug(t.getMessage(), t);
-                
+
+                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
+                            .request(request).ioException(IOException.class.cast(t)).build();
+
+                    try {
+                        fc = handleIoException(fc);
+                    } catch (FilterException e) {
+                        if (config.getMaxTotalConnections() != -1) {
+                            maxConnections.decrementAndGet();
+                        }
+                        future.done(null);
+                    }
+
+                    if (fc.replayRequest()) {
+                        request = fc.getRequest();
+                        urlConnection = createUrlConnection(request);                        
+                        return call();
+                    }
+                }
+
                 try {
                     future.abort(filterException(t));
                 } catch (Throwable t2) {
@@ -338,6 +401,16 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 Authenticator.setDefault(jdkAuthenticator);
             }
             return null;
+        }
+
+        private FilterContext handleIoException(FilterContext fc) throws FilterException {
+            for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            }
+            return fc;
         }
 
         private Throwable filterException(Throwable t) {
