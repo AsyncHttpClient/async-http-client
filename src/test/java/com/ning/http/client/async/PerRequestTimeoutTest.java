@@ -43,12 +43,13 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
-* Per request timeout configuration test.
-*
-* @author Hubert Iwaniuk
-*/
+ * Per request timeout configuration test.
+ *
+ * @author Hubert Iwaniuk
+ */
 public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
+
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
@@ -153,7 +154,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void testGlobalIdleTimeout() throws IOException {
-        final long times[] = new long[] {-1, -1};
+        final long times[] = new long[]{-1, -1};
 
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(2000).build());
         Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {

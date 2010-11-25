@@ -1478,26 +1478,26 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = "standalone")
     public void idleRequestTimeoutTest() throws Exception {
-        AsyncHttpClient c =  new AsyncHttpClient(
-                        new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(5000).setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = new AsyncHttpClient(
+                new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(5000).setRequestTimeoutInMs(10000).build());
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         h.add("LockThread", "true");
 
         long t1 = System.currentTimeMillis();
         try {
-            c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute(new AsyncHandlerAdapter(){
+            c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                 /* @Override */
                 public void onThrowable(Throwable t) {
 //                    t.printStackTrace();
-                }    
+                }
 
             }).get();
             Assert.fail();
-        } catch (Throwable ex) {           
-            System.out.println("EXPIRED: "  + (System.currentTimeMillis() - t1));
-            Assert.assertEquals(ex.getCause().getMessage(),"No response received after 10000");
+        } catch (Throwable ex) {
+            System.out.println("EXPIRED: " + (System.currentTimeMillis() - t1));
+            Assert.assertEquals(ex.getCause().getMessage(), "No response received after 10000");
         }
         c.close();
     }

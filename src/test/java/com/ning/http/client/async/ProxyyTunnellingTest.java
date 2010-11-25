@@ -68,7 +68,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("server"), "nginx");
-        
+
         asyncHttpClient.close();
     }
 

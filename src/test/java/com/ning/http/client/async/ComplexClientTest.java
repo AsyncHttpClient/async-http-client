@@ -16,12 +16,9 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import org.testng.annotations.Test;
 
-import java.net.URLEncoder;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;

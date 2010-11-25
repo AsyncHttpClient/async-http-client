@@ -145,7 +145,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2() )
+                .setHeader("X-redirect", getTargetUrl2())
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
@@ -153,7 +153,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         c.close();
     }
 
-    public String getTargetUrl2(){
+    public String getTargetUrl2() {
         return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
@@ -192,7 +192,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
                 .setHeader("X-redirect", "/foo/test")
                 .execute().get();
         assertNotNull(response);
-        assertEquals(response.getStatusCode(),302);
+        assertEquals(response.getStatusCode(), 302);
         assertEquals(response.getUri().toString(), getTargetUrl());
         c.close();
     }

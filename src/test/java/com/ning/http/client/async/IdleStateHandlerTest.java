@@ -51,8 +51,8 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
                 e.printStackTrace();
             }
             httpResponse.setStatus(200);
-                httpResponse.getOutputStream().flush();
-                httpResponse.getOutputStream().close();
+            httpResponse.getOutputStream().flush();
+            httpResponse.getOutputStream().close();
         }
     }
 
@@ -81,7 +81,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
         try {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getMessage(),"No response received. Connection timed out after 10000");
+            assertEquals(e.getCause().getMessage(), "No response received. Connection timed out after 10000");
         }
 
         c.close();

@@ -147,7 +147,7 @@ public class BasicHttpsTest {
         System.clearProperty("javax.net.ssl.keyStore");
         System.clearProperty("javax.net.ssl.trustStore");
     }
-    
+
     protected String getTargetUrl() {
         return String.format("https://127.0.0.1:%d/foo/test", port1);
     }
@@ -155,13 +155,13 @@ public class BasicHttpsTest {
     public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
     }
-    
+
     protected int findFreePort() throws IOException {
         ServerSocket socket = null;
 
         try {
             socket = new ServerSocket(0);
-    
+
             return socket.getLocalPort();
         }
         finally {
@@ -245,7 +245,7 @@ public class BasicHttpsTest {
         assertEquals(response.getResponseBody(), body);
         c.close();
     }
-    
+
     @Test(groups = "standalone")
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
         final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
@@ -253,18 +253,15 @@ public class BasicHttpsTest {
         final String body = "hello there";
 
         TRUST_SERVER_CERT.set(false);
-        try
-        {
+        try {
             // first request fails because server certificate is rejected
-            try
-            {
+            try {
                 c.preparePost(getTargetUrl())
-                    .setBody(body)
-                    .setHeader("Content-Type", "text/html")
-                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
+                        .setBody(body)
+                        .setHeader("Content-Type", "text/html")
+                        .execute().get(TIMEOUT, TimeUnit.SECONDS);
             }
-            catch (final ExecutionException e)
-            {
+            catch (final ExecutionException e) {
                 assertEquals(e.getCause().getClass(), ConnectException.class);
                 assertNotNull(e.getCause());
                 assertEquals(e.getCause().getCause().getClass(), SSLHandshakeException.class);
@@ -275,41 +272,38 @@ public class BasicHttpsTest {
 
             // second request should succeed
             final Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+                    .setBody(body)
+                    .setHeader("Content-Type", "text/html")
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         }
-        finally
-        {
+        finally {
             TRUST_SERVER_CERT.set(true);
         }
         c.close();
     }
 
-    private static SSLContext createSSLContext()
-    {
-        try
-        {
+    private static SSLContext createSSLContext() {
+        try {
             InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
             char[] keyStorePassword = "changeit".toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(keyStoreStream, keyStorePassword);
-    
+
             // Set up key manager factory to use our key store
             char[] certificatePassword = "changeit".toCharArray();
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, certificatePassword);
-    
+
             // Initialize the SSLContext to work with our key managers.
             KeyManager[] keyManagers = kmf.getKeyManagers();
             TrustManager[] trustManagers = new TrustManager[]{DUMMY_TRUST_MANAGER};
             SecureRandom secureRandom = new SecureRandom();
-            
+
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagers, trustManagers, secureRandom);
-    
+
             return sslContext;
         }
         catch (Exception e) {

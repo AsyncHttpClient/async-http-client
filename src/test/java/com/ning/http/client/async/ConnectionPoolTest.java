@@ -67,7 +67,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 exception = ex;
             }
         }
-        assertNull(exception);        
+        assertNull(exception);
     }
 
     @Test(groups = {"standalone", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)

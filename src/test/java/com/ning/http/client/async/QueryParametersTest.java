@@ -130,5 +130,5 @@ public class QueryParametersTest extends AbstractBasicTest {
         assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
         c.close();
     }
-    
+
 }

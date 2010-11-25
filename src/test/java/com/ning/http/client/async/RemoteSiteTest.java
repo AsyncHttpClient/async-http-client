@@ -38,8 +38,9 @@ import static org.testng.Assert.assertNotNull;
 
 /**
  * Unit tests for remote site.
- *
+ * <p/>
  * see http://github.com/MSch/ning-async-http-client-bug/tree/master
+ *
  * @author Martin Schurrer
  */
 public class RemoteSiteTest {
@@ -89,7 +90,7 @@ public class RemoteSiteTest {
     public void checkThrowable() {
         if (c != null)
             c.close();
-        
+
         if (t != null) {
             t.printStackTrace();
             Assert.fail("timeout?!");
@@ -134,7 +135,7 @@ public class RemoteSiteTest {
         c.prepareGet("http://google.com/").execute(h);
         b.await();
         Thread.sleep(20000); // Wait for timeout
-        if (t != null){
+        if (t != null) {
             Assert.fail("timeout?!");
         }
     }
@@ -160,8 +161,8 @@ public class RemoteSiteTest {
 
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
-       }
-       p.close();
+        }
+        p.close();
     }
 
     @Test(groups = "online")
@@ -186,6 +187,6 @@ public class RemoteSiteTest {
         }
         c.close();
     }
-    
+
 }
 

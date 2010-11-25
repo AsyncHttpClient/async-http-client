@@ -13,20 +13,10 @@
  */
 package com.ning.http.client.async;
 
-import static org.testng.Assert.*;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Response;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -44,10 +34,20 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Response;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 public class AuthTimeoutTest
         extends AbstractBasicTest {
@@ -124,12 +124,12 @@ public class AuthTimeoutTest
         }
     }
 
-    @Test( groups = "standalone" )
+    @Test(groups = "standalone")
     public void basicAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
 
-        Future<Response> f = execute( false );
+        Future<Response> f = execute(false);
         try {
             f.get();
             fail("expected timeout");
@@ -141,7 +141,7 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
@@ -151,7 +151,7 @@ public class AuthTimeoutTest
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
 
-        Future<Response> f = execute( true );
+        Future<Response> f = execute(true);
         try {
             f.get();
             fail("expected timeout");
@@ -163,17 +163,17 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
 
-    @Test( groups = "standalone" )
+    @Test(groups = "standalone")
     public void digestAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
 
-        Future<Response> f = execute( false );
+        Future<Response> f = execute(false);
         try {
             f.get();
             fail("expected timeout");
@@ -185,7 +185,7 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
@@ -195,7 +195,7 @@ public class AuthTimeoutTest
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
 
-        Future<Response> f = execute( true );
+        Future<Response> f = execute(true);
         try {
             f.get();
             fail("expected timeout");
@@ -207,19 +207,19 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
 
-    @Test( groups = "standalone" )
+    @Test(groups = "standalone")
     public void basicFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-    
-        Future<Response> f = execute( false );
+
+        Future<Response> f = execute(false);
         try {
-            f.get( 1, TimeUnit.SECONDS );
+            f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         }
         catch (Exception e) {
@@ -229,7 +229,7 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
@@ -238,10 +238,10 @@ public class AuthTimeoutTest
     public void basicFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-    
-        Future<Response> f = execute( true );
+
+        Future<Response> f = execute(true);
         try {
-            f.get( 1, TimeUnit.SECONDS );
+            f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         }
         catch (Exception e) {
@@ -251,19 +251,19 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
 
-    @Test( groups = "standalone" )
+    @Test(groups = "standalone")
     public void digestFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-    
-        Future<Response> f = execute( false );
+
+        Future<Response> f = execute(false);
         try {
-            f.get( 1, TimeUnit.SECONDS );
+            f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         }
         catch (Exception e) {
@@ -273,7 +273,7 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
@@ -282,10 +282,10 @@ public class AuthTimeoutTest
     public void digestFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-    
-        Future<Response> f = execute( true );
+
+        Future<Response> f = execute(true);
         try {
-            f.get( 1, TimeUnit.SECONDS );
+            f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
         }
         catch (Exception e) {
@@ -295,26 +295,24 @@ public class AuthTimeoutTest
                 assertNotNull(e.getCause(), "real exception was null");
                 t = e.getCause();
             }
-            assertEquals( t.getClass(), TimeoutException.class );
+            assertEquals(t.getClass(), TimeoutException.class);
         }
         client.close();
     }
 
-    private Future<Response> execute( boolean preemptive )
-        throws IOException
-    {
+    private Future<Response> execute(boolean preemptive)
+            throws IOException {
         client =
                 new AsyncHttpClient(
-                                 new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs( 2000 ).setConnectionTimeoutInMs( 20000 ).setRequestTimeoutInMs( 2000 ).build() );
+                        new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
         AsyncHttpClient.BoundRequestBuilder r =
-                client.prepareGet(getTargetUrl()).setRealm(realm( preemptive )).setHeader("X-Content",
+                client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content",
                         "Test");
         Future<Response> f = r.execute();
         return f;
     }
 
-    private Realm realm( boolean preemptive )
-    {
+    private Realm realm(boolean preemptive) {
         return (new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(preemptive).build();
     }
 

@@ -125,7 +125,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         Future<Response> f = r.execute();
         Response resp = f.get(60, TimeUnit.SECONDS);
         assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);        
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertNotNull(resp.getHeader("X-Auth"));
         client.close();
     }

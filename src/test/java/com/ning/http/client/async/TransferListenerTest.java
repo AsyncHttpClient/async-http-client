@@ -16,7 +16,6 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import com.ning.http.client.listener.TransferCompletionHandler;
@@ -38,13 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 public class TransferListenerTest extends AbstractBasicTest {
     private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-"
-                + UUID.randomUUID().toString().substring(0, 8));
+            + UUID.randomUUID().toString().substring(0, 8));
 
     private class BasicHandler extends AbstractHandler {
 
@@ -59,7 +58,7 @@ public class TransferListenerTest extends AbstractBasicTest {
                 param = e.nextElement().toString();
                 httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
             }
-            
+
             int size = 10 * 1024;
             if (httpRequest.getContentLength() > 0) {
                 size = httpRequest.getContentLength();
@@ -147,7 +146,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-        long repeats = (1024 * 100 * 10/ bytes.length) + 1;
+        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
         File largeFile = createTempFile(bytes, (int) repeats);
 
         TransferCompletionHandler tl = new TransferCompletionHandler();

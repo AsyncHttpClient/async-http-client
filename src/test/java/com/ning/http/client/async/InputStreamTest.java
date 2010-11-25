@@ -42,7 +42,7 @@ public class InputStreamTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 byte[] b = new byte[3];
-                request.getInputStream().read(b,0,3);
+                request.getInputStream().read(b, 0, 3);
 
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.addHeader("X-Param", new String(b));

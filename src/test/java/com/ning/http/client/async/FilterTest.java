@@ -20,10 +20,10 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.extra.ThrottleRequestFilter;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.extra.ThrottleRequestFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
@@ -90,11 +90,11 @@ public class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = new AsyncHttpClient(b.build());
 
         List<Future<Response>> futures = new ArrayList<Future<Response>>();
-        for (int i =0; i < 200; i ++) {
+        for (int i = 0; i < 200; i++) {
             futures.add(c.preparePost(getTargetUrl()).execute());
         }
 
-        for (Future<Response> f: futures) {
+        for (Future<Response> f : futures) {
             Response r = f.get();
             assertNotNull(f.get());
             assertEquals(r.getStatusCode(), 200);
@@ -120,14 +120,14 @@ public class FilterTest extends AbstractBasicTest {
         c.close();
     }
 
-    public String getTargetUrl(){
+    public String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
     @Test(groups = "standalone")
     public void basicResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
-        b.addResponseFilter(new ResponseFilter(){
+        b.addResponseFilter(new ResponseFilter() {
 
             public FilterContext filter(FilterContext ctx) throws FilterException {
                 return ctx;
@@ -139,7 +139,7 @@ public class FilterTest extends AbstractBasicTest {
         try {
             Response response = c.preparePost(getTargetUrl())
                     .execute().get();
-            
+
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } catch (IOException ex) {
@@ -153,12 +153,12 @@ public class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
 
-        b.addResponseFilter(new ResponseFilter(){
+        b.addResponseFilter(new ResponseFilter() {
 
             public FilterContext filter(FilterContext ctx) throws FilterException {
 
                 if (replay.getAndSet(false)) {
-                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay","true").build();
+                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
                     return new FilterContext(ctx.getAsyncHandler(), request, true);
                 }
                 return ctx;
@@ -185,12 +185,12 @@ public class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
 
-        b.addResponseFilter(new ResponseFilter(){
+        b.addResponseFilter(new ResponseFilter() {
 
             public FilterContext filter(FilterContext ctx) throws FilterException {
 
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
-                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay","true").build();
+                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
                     return new FilterContext(ctx.getAsyncHandler(), request, true);
                 }
                 return ctx;

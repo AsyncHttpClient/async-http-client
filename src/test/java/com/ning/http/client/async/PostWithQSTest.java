@@ -42,7 +42,9 @@ import static org.testng.Assert.assertNotNull;
  */
 public class PostWithQSTest extends AbstractBasicTest {
 
-    /** POST with QS server part. */
+    /**
+     * POST with QS server part.
+     */
     private class PostWithQSHandler extends AbstractHandler {
         public void handle(String s,
                            Request r,

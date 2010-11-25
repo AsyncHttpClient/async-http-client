@@ -46,7 +46,6 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link com.ning.http.client.async.BasicHttpsTest}
- *
  */
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
@@ -152,10 +151,12 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
             }
 
             public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                return STATE.CONTINUE;              }
+                return STATE.CONTINUE;
+            }
 
             public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                return STATE.CONTINUE;              }
+                return STATE.CONTINUE;
+            }
 
             public Response onCompleted() throws Exception {
                 return null;

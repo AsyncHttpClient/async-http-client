@@ -84,7 +84,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
                     log.warn("Sampling stacktrace.",
                             new Throwable("trace that, we should not get called for empty body."));
                 }
-                queue.put(s);                                    
+                queue.put(s);
                 return STATE.CONTINUE;
             }
 

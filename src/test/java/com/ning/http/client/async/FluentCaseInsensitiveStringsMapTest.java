@@ -1,8 +1,7 @@
 package com.ning.http.client.async;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,12 +10,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-
-public class FluentCaseInsensitiveStringsMapTest
-{
+public class FluentCaseInsensitiveStringsMapTest {
     @Test
     public void emptyTest() {
         FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
@@ -131,7 +129,7 @@ public class FluentCaseInsensitiveStringsMapTest
     public void nullValueTest() {
         FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
 
-        map.add("foo", (String)null);
+        map.add("foo", (String) null);
 
         assertTrue(map.keySet().isEmpty());
         assertNull(map.getFirstValue("foo"));
@@ -167,7 +165,7 @@ public class FluentCaseInsensitiveStringsMapTest
 
     @Test
     public void mapConstructorNullTest() {
-        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap((Map<String, Collection<String>>)null);
+        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap((Map<String, Collection<String>>) null);
 
         assertEquals(map.keySet().size(), 0);
     }
@@ -201,7 +199,7 @@ public class FluentCaseInsensitiveStringsMapTest
 
     @Test
     public void copyConstructorNullTest() {
-        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap((FluentCaseInsensitiveStringsMap)null);
+        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap((FluentCaseInsensitiveStringsMap) null);
 
         assertEquals(map.keySet().size(), 0);
     }
@@ -351,7 +349,7 @@ public class FluentCaseInsensitiveStringsMapTest
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.deleteAll((String[])null);
+        map.deleteAll((String[]) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -377,7 +375,7 @@ public class FluentCaseInsensitiveStringsMapTest
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.deleteAll((Collection<String>)null);
+        map.deleteAll((Collection<String>) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -484,7 +482,7 @@ public class FluentCaseInsensitiveStringsMapTest
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replace("baZ", (Collection<String>)null);
+        map.replace("baZ", (Collection<String>) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -587,7 +585,7 @@ public class FluentCaseInsensitiveStringsMapTest
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replaceAll((FluentCaseInsensitiveStringsMap)null);
+        map.replaceAll((FluentCaseInsensitiveStringsMap) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");
@@ -620,7 +618,7 @@ public class FluentCaseInsensitiveStringsMapTest
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
 
-        map.replaceAll((Map<String, Collection<String>>)null);
+        map.replaceAll((Map<String, Collection<String>>) null);
 
         assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("foo", "bar", "baz")));
         assertEquals(map.getFirstValue("foo"), "bar");

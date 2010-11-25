@@ -40,7 +40,9 @@ import java.util.concurrent.TimeoutException;
  * @author Hubert Iwaniuk
  */
 public class Head302Test extends AbstractBasicTest {
-    /** Handler that does Found (302) in response to HEAD method. */
+    /**
+     * Handler that does Found (302) in response to HEAD method.
+     */
     private class Head302handler extends AbstractHandler {
         public void handle(String s,
                            org.eclipse.jetty.server.Request r,

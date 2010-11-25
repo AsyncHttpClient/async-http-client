@@ -29,13 +29,12 @@ import static org.testng.Assert.assertEquals;
 public class RequestBuilderTest {
 
     private final static String SAFE_CHARS =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.";
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.";
     private final static String HEX_CHARS = "0123456789ABCDEF";
-    
+
     @Test(groups = "standalone")
-    public void testEncodesQueryParameters() throws UnsupportedEncodingException
-    {
-        String[] values = new String[] {
+    public void testEncodesQueryParameters() throws UnsupportedEncodingException {
+        String[] values = new String[]{
                 "abcdefghijklmnopqrstuvwxyz",
                 "ABCDEFGHIJKQLMNOPQRSTUVWXYZ",
                 "1234567890", "1234567890",
@@ -70,7 +69,7 @@ public class RequestBuilderTest {
             }
             String expValue = sb.toString();
             Request request = builder.build();
-            assertEquals(request.getUrl(), "http://example.com/?name="+expValue);
+            assertEquals(request.getUrl(), "http://example.com/?name=" + expValue);
         }
     }
 
@@ -100,7 +99,7 @@ public class RequestBuilderTest {
         assertEquals(params.get("param2").get(0), "value2");
     }
 
-    @Test(groups="standalone")
+    @Test(groups = "standalone")
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getReqType(), "ABC");
