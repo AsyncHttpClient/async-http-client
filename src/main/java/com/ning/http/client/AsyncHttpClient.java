@@ -360,7 +360,7 @@ public class AsyncHttpClient {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed.get()) {
-                close();
+                logger.warn("AsyncHttpClient.close() hasn't been invoked, which may produce file descriptor leaks");
             }
         } finally {
             super.finalize();
