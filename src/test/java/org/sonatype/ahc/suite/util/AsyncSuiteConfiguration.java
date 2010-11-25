@@ -51,8 +51,7 @@ public class AsyncSuiteConfiguration
 
     @AfterMethod
     public void after()
-        throws Exception
-    {
+            throws Exception {
         super.after();
         if (client != null) {
             client.close();

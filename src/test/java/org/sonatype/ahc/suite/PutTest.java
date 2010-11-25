@@ -78,7 +78,7 @@ public class PutTest
         if (largeFile == null) {
             byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
             heapSize = Runtime.getRuntime().maxMemory();
-            logger.debug("creating file of size ~{}",  heapSize);
+            logger.debug("creating file of size ~{}", heapSize);
             long repeats = (heapSize / bytes.length) + 1;
             largeFile = FileUtil.createTempFile(bytes, (int) repeats);
             logger.debug("created file of size {}", largeFile.length());
