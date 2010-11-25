@@ -31,7 +31,8 @@ import java.util.Properties;
  */
 public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.ResumableProcessor {
     private final static Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
+    private final static File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
+    private final static String storeName = "ResumableAsyncHandler.properties";
 
     private final Properties properties = new Properties();
 
@@ -49,7 +50,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         try {
 
             TMP.mkdirs();
-            File f = new File(TMP, "ResumableAsyncHandler.properties");
+            File f = new File(TMP, storeName);
             f.createNewFile();
             if (!f.canWrite()) {
                 throw new IllegalStateException();
@@ -70,7 +71,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     }
 
     public Properties load() {
-        File f = new File(TMP, "ResumableAsyncHandler.properties");
+        File f = new File(TMP, storeName);
         if (f.exists()) {
             FileInputStream is = null;
             try {
