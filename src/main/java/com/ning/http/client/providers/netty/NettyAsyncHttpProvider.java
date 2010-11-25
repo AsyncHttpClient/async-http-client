@@ -42,6 +42,7 @@ import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -652,7 +653,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     /* @Override */
 
-    public <T> Future<T> execute(final Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+    public <T> Future<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
 
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).build();
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
@@ -666,6 +667,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 ex.initCause(e);
                 throw ex;
             }
+        }
+
+        if (ResumableAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+            request = ResumableAsyncHandler.class.cast(asyncHandler).adjustRequestRange(request);
         }
 
         return doConnect(fc.getRequest(), fc.getAsyncHandler(), null, true);

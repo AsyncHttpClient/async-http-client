@@ -19,12 +19,18 @@ package com.ning.http.client.resumable;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,20 +39,52 @@ import java.util.concurrent.atomic.AtomicLong;
  * download the entire file again. Implementation of {@link com.ning.http.client.listener.TransferListener} are used to handle the received bytes, and those
  * listeners are guarantee to get the bytes in the right order, without duplication. It's the responsibility of the {@link com.ning.http.client.listener.TransferListener}
  * to track how many bytes has been transferred and to properly adjust the file's write position.
- *
+ * <p/>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.
  */
 public class ResumableAsyncHandler extends TransferCompletionHandler {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final AtomicLong byteTransferred;
     private Integer contentLenght;
+    private String url;
+    private final Properties resumableIndex;
+    private final ResumableProcessor resumableHandler;
+
+    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableHandler) {
+        this.byteTransferred = new AtomicLong(byteTransferred);
+
+        if (resumableHandler == null) {
+            resumableHandler = new NULLResumableHandler();
+        }
+        this.resumableHandler = resumableHandler;
+        resumableIndex = resumableHandler.load();
+        
+        Runtime.getRuntime().addShutdownHook(new ResumableIndexThread(resumableHandler));
+    }
 
     public ResumableAsyncHandler(long byteTransferred) {
-        this.byteTransferred = new AtomicLong(byteTransferred);
+        this(byteTransferred, null);
     }
 
     public ResumableAsyncHandler() {
-        byteTransferred = new AtomicLong();
+        this(0);
+    }
+
+    public ResumableAsyncHandler(ResumableProcessor resumableHandler) {
+        this(0, resumableHandler);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+        if (status.getStatusCode() == 200) {
+            url = status.getUrl().toURL().toString();
+            return super.onStatusReceived(status);
+        } else {
+            return AsyncHandler.STATE.ABORT;
+        }
     }
 
     /**
@@ -64,7 +102,17 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
     public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         AsyncHandler.STATE state = super.onBodyPartReceived(bodyPart);
         byteTransferred.addAndGet(bodyPart.getBodyPartBytes().length);
+        resumableHandler.put(url, byteTransferred.toString());
         return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public Response onCompleted(Response response) throws Exception {
+        resumableHandler.remove(url);
+        return super.onCompleted(response);
     }
 
     /**
@@ -89,12 +137,78 @@ public class ResumableAsyncHandler extends TransferCompletionHandler {
      * @return a {@link Request} with the Range header properly set.
      */
     public Request adjustRequestRange(Request request) {
-        if (byteTransferred.get() == 0) {
-            throw new IllegalStateException("No bytes transferred");
+
+        if (resumableIndex.get(request.getUrl()) != null) {
+            byteTransferred.set(Long.valueOf((String)resumableIndex.get(request.getUrl())));
         }
 
         RequestBuilder builder = new RequestBuilder(request);
         builder.setHeader("Range", "bytes=" + byteTransferred.get() + "-");
         return builder.build();
+    }
+
+
+    private class ResumableIndexThread extends Thread {
+
+        public final ResumableProcessor resumableHandler;
+
+        public ResumableIndexThread(ResumableProcessor resumableHandler) {
+            this.resumableHandler = resumableHandler;
+        }
+
+        public void run() {
+            resumableHandler.save(resumableIndex);
+        }
+
+    }
+
+    /**
+     * An interface to implement in order to manage the way the incomplete file management are handled.
+     */
+    public static interface ResumableProcessor {
+
+        /**
+         * Associate a key with the number of bytes sucessfully transferred.
+         * @param key a key. The recommended way is to use an url.
+         * @param transferredBytes  The number of bytes sucessfully transferred.
+         */
+        public void put(String key, String transferredBytes);
+
+        /**
+         * Remove the key associate value.
+         * @param key key from which the value will be discarted
+         */
+        public void remove(String key);
+
+        /**
+         * Save the current {@link Properties} instance which contains information about the current transfer state.
+         * This method *only* invoked when the JVM is shutting down.
+         *
+         * @param properties {@link Properties}
+         */
+        public void save(Properties properties);
+
+        /**
+         * Load the {@link Properties} in memory
+         * @return {@link Properties}
+         */
+        public Properties load();
+
+    }
+
+    private static class NULLResumableHandler implements ResumableProcessor {
+
+        public void put(String url, String transferredBytes) {
+        }
+
+        public void remove(String uri) {
+        }
+
+        public void save(Properties properties) {
+        }
+
+        public Properties load() {
+            return new Properties();
+        }
     }
 }
