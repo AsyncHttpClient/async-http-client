@@ -84,5 +84,6 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
             assertEquals(e.getCause().getMessage(),"No response received. Connection timed out after 10000");
         }
 
+        c.close();
     }
 }

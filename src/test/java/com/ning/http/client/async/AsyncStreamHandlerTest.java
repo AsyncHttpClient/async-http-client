@@ -71,6 +71,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -115,6 +116,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(10, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -158,6 +160,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
         l.await(5, TimeUnit.SECONDS);
         Assert.assertTrue(a.get());
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -203,6 +206,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         } catch (TimeoutException ex) {
             Assert.fail();
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -235,6 +239,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(10, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -314,6 +319,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(20, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = "online")
@@ -349,6 +355,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(20, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = "online")
@@ -385,6 +392,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(20, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone", timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
@@ -451,6 +459,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (whatCalled[OTHER]) {
             Assert.fail("Other method of AsyncHandler got called.");
         }
+        client.close();
     }
 
     @Test(groups = "online")
@@ -485,5 +494,6 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(20, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 }

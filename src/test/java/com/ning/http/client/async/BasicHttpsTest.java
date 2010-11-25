@@ -243,6 +243,7 @@ public class BasicHttpsTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
+        c.close();
     }
     
     @Test(groups = "standalone")
@@ -284,6 +285,7 @@ public class BasicHttpsTest {
         {
             TRUST_SERVER_CERT.set(true);
         }
+        c.close();
     }
 
     private static SSLContext createSSLContext()

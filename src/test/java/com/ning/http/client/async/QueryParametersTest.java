@@ -85,6 +85,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("a"), "1");
         assertEquals(resp.getHeader("b"), "2");
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -99,6 +100,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         Response response = client.prepareGet(requestUrl2).execute().get();
         String s = URLDecoder.decode(response.getHeader("q"), "UTF-8");
         assertEquals(s, REQUEST_PARAM);
+        client.close();
     }
 
 
@@ -112,6 +114,7 @@ public class QueryParametersTest extends AbstractBasicTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -125,6 +128,7 @@ public class QueryParametersTest extends AbstractBasicTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getHeader("q"), URLEncoder.encode(query, "UTF-8"));
+        c.close();
     }
     
 }

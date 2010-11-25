@@ -131,6 +131,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -190,6 +191,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         }
+        c.close();
     }
 
     public String getTargetUrl() {

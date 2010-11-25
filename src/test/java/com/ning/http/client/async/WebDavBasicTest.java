@@ -91,6 +91,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         assertEquals(response.getStatusCode(), 201);
 
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -101,6 +102,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() +"/folder2").build();
         Response response =  c.executeRequest(mkcolRequest).get();
         assertEquals(response.getStatusCode(), 409);
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -111,6 +113,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         Response response =  c.executeRequest(propFindRequest).get();
 
         assertEquals(response.getStatusCode(), 404);
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -131,6 +134,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         assertEquals(response.getStatusCode(), 207);
         assertTrue(response.getResponseBody().contains("<status>HTTP/1.1 200 OK</status>"));
+        c.close();
 
     }
 
@@ -162,6 +166,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
         assertNotNull(webDavResponse);
         assertEquals(webDavResponse.getStatusCode(), 200);
+        c.close();
     }
 
 }

@@ -59,6 +59,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
             }
         }
         Assert.assertTrue(caughtError);
+        client.close();
     }
 
     @Test
@@ -84,6 +85,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
                 Assert.fail("Smth wrong with connections handling!");
             }
         }
+        client.close();
     }
 
 
@@ -146,6 +148,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
             }
         }
         Assert.assertTrue(caughtError);
+        client.close();
     }
 }
 

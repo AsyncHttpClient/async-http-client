@@ -108,6 +108,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
 
         assertEquals(remoteAddresses.size(), 2);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -151,6 +152,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
         assertNotNull(exception);
         assertEquals(exception.getMessage(), "Too many connections -1");
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -193,6 +195,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             exception = ex;
         }
         assertNull(exception);
+        client.close();
     }
 
 
@@ -222,6 +225,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
         assertNotNull(exception);
         assertEquals(exception.getMessage(), "Too many connections 1");
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -250,6 +254,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         assertNull(exception);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        c.close();
     }
 
     @Test(groups = {"online", "async"})
@@ -329,6 +334,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             assertEquals(ex.getCause().getCause().getClass(), IOException.class);
             assertEquals(count.get(), 1);
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -362,6 +368,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals(count.get(), 0);
+        client.close();
     }
 }
 

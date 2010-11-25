@@ -114,5 +114,6 @@ public class EmptyBodyTest extends AbstractBasicTest {
         assertEquals(queue.size(), 0);
         assertTrue(status.get());
         assertEquals(headers.get(), 1);
+        ahc.close();
     }
 }

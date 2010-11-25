@@ -79,6 +79,7 @@ public class FilterTest extends AbstractBasicTest {
                 .execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -99,6 +100,7 @@ public class FilterTest extends AbstractBasicTest {
             assertEquals(r.getStatusCode(), 200);
         }
 
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -115,6 +117,7 @@ public class FilterTest extends AbstractBasicTest {
             assertNotNull(ex);
             assertEquals(ex.getCause().getClass(), FilterException.class);
         }
+        c.close();
     }
 
     public String getTargetUrl(){
@@ -142,6 +145,7 @@ public class FilterTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -173,6 +177,7 @@ public class FilterTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -204,5 +209,6 @@ public class FilterTest extends AbstractBasicTest {
         } catch (IOException ex) {
             fail("Should have timed out");
         }
+        c.close();
     }
 }

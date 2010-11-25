@@ -155,5 +155,6 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
         assertTrue(queue.contains("part2"));
         assertTrue(status.get());
         assertEquals(headers.get(), 1);
+        ahc.close();
     }
 }

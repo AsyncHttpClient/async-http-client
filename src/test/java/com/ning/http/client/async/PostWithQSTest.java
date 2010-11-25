@@ -75,6 +75,7 @@ public class PostWithQSTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
     }
 
     @Override

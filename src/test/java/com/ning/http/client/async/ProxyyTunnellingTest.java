@@ -69,6 +69,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("server"), "nginx");
         
+        asyncHttpClient.close();
     }
 
     @Test(groups = "online")
@@ -99,6 +100,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("server"), "nginx");
 
+        asyncHttpClient.close();
     }
 }
 

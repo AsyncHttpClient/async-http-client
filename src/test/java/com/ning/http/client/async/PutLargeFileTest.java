@@ -54,6 +54,7 @@ public class PutLargeFileTest
 
         Response response = rb.execute().get();
         Assert.assertEquals(200, response.getStatusCode());
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -72,6 +73,7 @@ public class PutLargeFileTest
 
         Response response = rb.execute().get();
         Assert.assertEquals(200, response.getStatusCode());
+        client.close();
     }
 
     @AfterMethod

@@ -49,6 +49,7 @@ public class ComplexClientTest extends AbstractBasicTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -64,6 +65,7 @@ public class ComplexClientTest extends AbstractBasicTest {
                 .execute().get(TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(response.getResponseBody(), body);
+        c.close();
     }
 
 }

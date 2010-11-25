@@ -73,5 +73,6 @@ public class ErrorResponseTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), 400);
         String respStr = resp.getResponseBody();
         assertEquals(BAD_REQUEST_STR, respStr);
+        client.close();
     }
 }

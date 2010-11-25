@@ -99,6 +99,7 @@ public class MultipleHeaderTest {
             Assert.assertEquals(xffHeaders[1], "abc");
             Assert.assertEquals(xffHeaders[0], "def");
         }
+        ahc.close();
     }
 
 
@@ -154,6 +155,7 @@ public class MultipleHeaderTest {
             Assert.assertEquals(clHeaders[0], "1");
             Assert.assertEquals(clHeaders[1], "2");
         }
+        ahc.close();
 
     }
 

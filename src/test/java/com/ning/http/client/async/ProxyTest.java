@@ -73,6 +73,7 @@ public class ProxyTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("target"), target);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -88,6 +89,7 @@ public class ProxyTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("target"), target);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -104,5 +106,6 @@ public class ProxyTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("target"), target);
+        client.close();
     }
 }

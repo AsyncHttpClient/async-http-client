@@ -104,6 +104,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertEquals(response.getStatusCode(),200);
 
         assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com:80");
+        c.close();
     }
 
     private String getBaseUrl(URI uri){
@@ -141,6 +142,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -157,5 +159,6 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(),302);
         assertEquals(response.getUri().toString(), getTargetUrl());
+        c.close();
     }
 }

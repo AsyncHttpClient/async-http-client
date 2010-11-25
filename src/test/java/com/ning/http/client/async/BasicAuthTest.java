@@ -229,13 +229,15 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
     }
 
     @Test(groups = "standalone")
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = null;
         try {
             setUpSecondServer();
-            AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumNumberOfRedirects(10).build());
+            client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumNumberOfRedirects(10).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
                     // .setHeader( "X-302", "/bla" )
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
@@ -245,7 +247,9 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
+
         } finally {
+            if (client != null) client.close();
             stopSecondServer();
         }
     }
@@ -298,6 +302,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         Integer statusCode = f.get(10, TimeUnit.SECONDS);
         assertNotNull(statusCode);
         assertEquals(statusCode.intValue(), 401);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -311,6 +316,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -323,6 +329,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), 401);
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -338,6 +345,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Content-Lenght"), "4");
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -357,6 +365,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -376,6 +385,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -395,6 +405,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        client.close();
     }
 
     @Override

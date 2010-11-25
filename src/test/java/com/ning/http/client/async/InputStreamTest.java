@@ -90,6 +90,7 @@ public class InputStreamTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Param"), "abc");
+        c.close();
     }
 
     @Override

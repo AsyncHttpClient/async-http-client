@@ -109,6 +109,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -128,6 +129,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
             assertTrue(e.getCause() instanceof TimeoutException);
             assertEquals(e.getCause().getMessage(), "No response received after 100");
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -146,6 +148,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -182,5 +185,6 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
                     times[0], times[1], (times[1] - times[0])));
             fail("Timeouted on idle.", e);
         }
+        client.close();
     }
 }

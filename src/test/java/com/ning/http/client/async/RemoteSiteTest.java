@@ -87,6 +87,9 @@ public class RemoteSiteTest {
 
     @AfterClass
     public void checkThrowable() {
+        if (c != null)
+            c.close();
+        
         if (t != null) {
             t.printStackTrace();
             Assert.fail("timeout?!");
@@ -158,6 +161,7 @@ public class RemoteSiteTest {
         if (!l.await(5, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
        }
+       p.close();
     }
 
     @Test(groups = "online")
@@ -180,6 +184,7 @@ public class RemoteSiteTest {
             assertNotNull(t.getCause());
             assertEquals(t.getCause().getMessage(), "invalid version format: ICY");
         }
+        c.close();
     }
     
 }

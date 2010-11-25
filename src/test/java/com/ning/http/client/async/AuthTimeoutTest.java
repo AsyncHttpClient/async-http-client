@@ -56,6 +56,8 @@ public class AuthTimeoutTest
 
     private final static String admin = "admin";
 
+    AsyncHttpClient client;
+
     public void setUpServer(String auth)
             throws Exception {
         server = new Server();
@@ -141,6 +143,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -162,6 +165,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test( groups = "standalone" )
@@ -183,6 +187,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -204,6 +209,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test( groups = "standalone" )
@@ -225,6 +231,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -246,6 +253,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test( groups = "standalone" )
@@ -267,6 +275,7 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -288,12 +297,13 @@ public class AuthTimeoutTest
             }
             assertEquals( t.getClass(), TimeoutException.class );
         }
+        client.close();
     }
 
     private Future<Response> execute( boolean preemptive )
         throws IOException
     {
-        AsyncHttpClient client =
+        client =
                 new AsyncHttpClient(
                                  new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs( 2000 ).setConnectionTimeoutInMs( 20000 ).setRequestTimeoutInMs( 2000 ).build() );
         AsyncHttpClient.BoundRequestBuilder r =

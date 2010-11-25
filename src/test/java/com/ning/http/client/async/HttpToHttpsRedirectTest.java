@@ -150,6 +150,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+        c.close();
     }
 
     public String getTargetUrl2(){
@@ -177,6 +178,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+        c.close();
     }
 
     @Test(groups = "standalone")
@@ -192,5 +194,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(),302);
         assertEquals(response.getUri().toString(), getTargetUrl());
+        c.close();
     }
 }

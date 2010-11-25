@@ -115,6 +115,7 @@ public class RC10KTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.intValue(), i++);
         }
+        ahc.close();
     }
 
     private class MyAsyncHandler implements AsyncHandler<Integer> {

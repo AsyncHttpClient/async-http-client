@@ -53,6 +53,7 @@ public class NoNullResponseTest
         }
         Assert.assertNotNull(response1);
         Assert.assertNotNull(response2);
+        client.close();
     }
 
     private AsyncHttpClient create() throws GeneralSecurityException {

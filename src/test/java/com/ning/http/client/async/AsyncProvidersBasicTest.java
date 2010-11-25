@@ -81,6 +81,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/foo.html?q=%20%20x");
+        p.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -105,6 +106,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/foo.html?q=a%20b");
+        p.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -128,6 +130,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         });
         String url = responseFuture.get();
         Assert.assertEquals(url, "http://foo.com/");
+        p.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -224,7 +227,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-
+        n.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -260,7 +263,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
-
+        n.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -297,6 +300,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        n.close();
 
     }
 
@@ -322,6 +326,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        n.close();
 
     }
 
@@ -358,6 +363,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(10 * 5 * 1000, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        n.close();
 
     }
 
@@ -371,6 +377,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         } catch (IllegalArgumentException ex) {
             Assert.assertTrue(true);
         }
+        c.close();
 
     }
 
@@ -396,6 +403,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
 
     }
 
@@ -427,6 +435,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
 
     }
 
@@ -461,6 +470,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -486,6 +496,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -525,6 +536,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -565,6 +577,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -605,6 +618,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -652,6 +666,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -682,6 +697,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -718,6 +734,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
 
     }
 
@@ -753,6 +770,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-Proxy-Connection"), "keep-alive");
+        c.close();
     }
 
 
@@ -778,6 +796,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-Host"), "localhost:" + port1);
+        n.close();
 
     }
 
@@ -800,6 +819,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Response response = c.preparePut(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter()).get();
 
         assertEquals(response.getStatusCode(), 200);
+        c.close();
 
     }
 
@@ -841,6 +861,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
 
     }
 
@@ -909,6 +930,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         Response response = future.get();
         Assert.assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        c.close();
 
     }
 
@@ -944,6 +966,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Latch time out");
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -968,6 +991,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }
         assertEquals(count.get(), 20);
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -988,6 +1012,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
                 fail("Should have been caused by ConnectException, not by " + cause.getClass().getName());
             }
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1008,6 +1033,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1030,6 +1056,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        c.close();
     }
 
     @Test(groups = {"online", "async"})
@@ -1048,6 +1075,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        c.close();
     }
 
 
@@ -1076,6 +1104,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         assertTrue(called.get(), "onThrowable should get called.");
         assertTrue(rightCause.get(), "onThrowable should get called with ConnectionException");
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1091,6 +1120,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         Assert.assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1105,6 +1135,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }).get();
 
         Assert.assertNotNull(response.getResponseBodyExcerpt(Integer.MAX_VALUE));
+        c.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1119,6 +1150,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         }).get();
 
         Assert.assertNotNull(response.getResponseBody());
+        c.close();
     }
 
     @Test(groups = {"standalone", "asyncAPI"})
@@ -1149,6 +1181,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        client.close();
     }
 
     @Test(groups = {"standalone", "asyncAPI"})
@@ -1180,6 +1213,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        client.close();
+
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1220,6 +1255,8 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        client.close();
+
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1251,6 +1288,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        client.close();
     }
 
     @Test(groups = {"standalone", "async"})
@@ -1285,6 +1323,7 @@ public class AsyncProvidersBasicTest extends AbstractBasicTest {
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
         }
+        client.close();
     }
 
     @Test(groups = {"online", "async"})

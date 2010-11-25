@@ -127,6 +127,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);        
         assertNotNull(resp.getHeader("X-Auth"));
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -142,6 +143,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertNotNull(resp.getHeader("X-Auth"));
+        client.close();
     }
 
     @Test(groups = "standalone")
@@ -154,6 +156,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         Response resp = f.get(20, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), 401);
+        client.close();
     }
 
     @Override

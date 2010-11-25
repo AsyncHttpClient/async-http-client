@@ -69,6 +69,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("X-Param"), value.trim());
+        client.close();
     }
 
     @Override
