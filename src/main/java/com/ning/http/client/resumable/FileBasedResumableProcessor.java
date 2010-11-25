@@ -22,7 +22,7 @@ import java.io.RandomAccessFile;
 import java.util.Properties;
 
 /**
- * A {@link com.ning.http.client.resumable.ResumableAsyncHandler.ResumableProcessor} which use a {@link File}
+ * A {@link com.ning.http.client.resumable.ResumableAsyncHandler.ResumableProcessor} which use a {@link RandomAccessFile}
  * to store the download index information.
  */
 public class FileBasedResumableProcessor implements ResumableAsyncHandler.ResumableProcessor {
