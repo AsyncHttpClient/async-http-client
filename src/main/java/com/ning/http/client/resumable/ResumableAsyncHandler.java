@@ -22,7 +22,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 import com.ning.http.client.Response.ResponseBuilder;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import org.slf4j.Logger;
@@ -54,8 +53,13 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     private static Map<String, Long> resumableIndex;
     private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private ResponseBuilder responseBuilder = new ResponseBuilder();
+    private final boolean accumulateBody;
 
-    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor, AsyncHandler<T> decoratedAsyncHandler) {
+    private ResumableAsyncHandler(long byteTransferred,
+                                  ResumableProcessor resumableProcessor,
+                                  AsyncHandler<T> decoratedAsyncHandler,
+                                  boolean accumulateBody) {
+
         this.byteTransferred = new AtomicLong(byteTransferred);
 
         if (resumableProcessor == null) {
@@ -67,22 +71,31 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         resumeIndexThread.addResumableProcessor(resumableProcessor);
 
         this.decoratedAsyncHandler = decoratedAsyncHandler;
+        this.accumulateBody = accumulateBody;
     }
 
     public ResumableAsyncHandler(long byteTransferred) {
-        this(byteTransferred, null, null);
+        this(byteTransferred, null, null, false);
+    }
+
+    public ResumableAsyncHandler(boolean accumulateBody) {
+        this(0, null, null, accumulateBody);
     }
 
     public ResumableAsyncHandler() {
-        this(0);
+        this(0, null, null, false);
     }
 
     public ResumableAsyncHandler(AsyncHandler<T> decoratedAsyncHandler) {
-        this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler);
+        this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
 
     public ResumableAsyncHandler(ResumableProcessor resumableProcessor) {
-        this(0, resumableProcessor, null);
+        this(0, resumableProcessor, null, false);
+    }
+
+    public ResumableAsyncHandler(ResumableProcessor resumableProcessor, boolean accumulateBody) {
+        this(0, resumableProcessor, null, accumulateBody);
     }
 
     /**
@@ -94,7 +107,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         if (status.getStatusCode() == 200) {
             url = status.getUrl().toURL().toString();
         } else {
-            return AsyncHandler.STATE.ABORT;            
+            return AsyncHandler.STATE.ABORT;
         }
 
         if (decoratedAsyncHandler != null) {
@@ -120,10 +133,15 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
      */
     /* @Override */
     public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+
+        if (accumulateBody) {
+            responseBuilder.accumulate(bodyPart);
+        }
+ 
         byteTransferred.addAndGet(bodyPart.getBodyPartBytes().length);
         resumableProcessor.put(url, byteTransferred.get());
         fireOnBytesReceived(bodyPart.getBodyByteBuffer());
-        
+
         if (decoratedAsyncHandler != null) {
             return decoratedAsyncHandler.onBodyPartReceived(bodyPart);
         }
@@ -150,7 +168,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
      */
     /* @Override */
     public AsyncHandler.STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-        responseBuilder.accumulate(headers);        
+        responseBuilder.accumulate(headers);
         if (headers.getHeaders().getFirstValue("Content-Length") != null) {
             contentLength = Integer.valueOf(headers.getHeaders().getFirstValue("Content-Length"));
             if (contentLength == null || contentLength == -1) {
@@ -181,6 +199,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         builder.setHeader("Range", "bytes=" + byteTransferred.get() + "-");
         return builder.build();
     }
+
     private void fireOnBytesReceived(ByteBuffer byteBuffer) throws IOException {
         for (ResumableListener l : listeners) {
             l.onBytesReceived(byteBuffer);
@@ -193,8 +212,9 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         }
     }
 
-     /**
+    /**
      * Add a {@link ResumableListener}
+     *
      * @param t a {@link ResumableListener}
      * @return this
      */
@@ -205,6 +225,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
 
     /**
      * Remove a {@link ResumableListener}
+     *
      * @param t a {@link ResumableListener}
      * @return this
      */
