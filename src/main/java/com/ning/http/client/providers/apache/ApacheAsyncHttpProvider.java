@@ -297,19 +297,22 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     if (length < 0) {
                         length = (int) request.getLength();
                     }
+
+                    // TODO: This is suboptimal
                     if (length >= 0) {
                         post.setRequestHeader("Content-Length", String.valueOf(length));
-                    }
-                    // This is totally sub optimal
-                    byte[] bytes = new byte[length];
-                    ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                    for (; ;) {
-                        buffer.clear();
-                        if (body.read(buffer) < 0) {
-                            break;
+
+                        // This is totally sub optimal
+                        byte[] bytes = new byte[length];
+                        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                        for (; ;) {
+                            buffer.clear();
+                            if (body.read(buffer) < 0) {
+                                break;
+                            }
                         }
+                        post.setRequestEntity(new ByteArrayRequestEntity(bytes));
                     }
-                    post.setRequestEntity(new ByteArrayRequestEntity(bytes));
                 } finally {
                     try {
                         body.close();
@@ -518,7 +521,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             int[] lengthWrapper = new int[1];
                             byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
                             stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);
-                            byteToRead = lengthWrapper[0];                            
+                            byteToRead = lengthWrapper[0];
                         }
 
                         if (byteToRead > 0) {
