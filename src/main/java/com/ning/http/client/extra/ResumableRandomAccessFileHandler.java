@@ -15,8 +15,7 @@
  */
 package com.ning.http.client.extra;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.listener.TransferListener;
+import com.ning.http.client.resumable.ResumableListener;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -25,24 +24,12 @@ import java.nio.ByteBuffer;
 /**
  * A {@link com.ning.http.client.listener.TransferListener} which use a {@link RandomAccessFile} for storing the received bytes.
  */
-public class ResumableRandomAccessFileHandler implements TransferListener {
+public class ResumableRandomAccessFileHandler implements ResumableListener {
     private final RandomAccessFile file;
     private long byteTransferred = 0;
 
     public ResumableRandomAccessFileHandler(RandomAccessFile file) {
         this.file = file;
-    }
-
-    public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
-    }
-
-    public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
-    }
-
-    public void onBytesSent(ByteBuffer buffer) {
-    }
-        
-    public void onThrowable(Throwable t) {
     }
 
     /**
@@ -54,11 +41,11 @@ public class ResumableRandomAccessFileHandler implements TransferListener {
      */
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
         file.seek(byteTransferred);
-        file.getChannel().write(buffer);
+        file.write(buffer.array());
         byteTransferred += buffer.capacity();
     }
 
-    public void onRequestResponseCompleted() {
+    public void onAllBytesReceived() {
         if (file != null) {
             try {
                 file.close();
@@ -67,4 +54,5 @@ public class ResumableRandomAccessFileHandler implements TransferListener {
             }
         }
     }
+
 }
