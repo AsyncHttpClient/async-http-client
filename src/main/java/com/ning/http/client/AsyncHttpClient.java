@@ -17,6 +17,7 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
@@ -220,11 +221,11 @@ public class AsyncHttpClient {
         }
 
         public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), handler);
+            return AsyncHttpClient.this.executeRequest(build(), decorate(handler));
         }
 
         public Future<Response> execute() throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
+            return AsyncHttpClient.this.executeRequest(build(), decorate(new AsyncCompletionHandlerBase()));
         }
 
         // Note: For now we keep the delegates in place even though they are not needed
@@ -339,6 +340,7 @@ public class AsyncHttpClient {
             return this;
         }
     }
+
 
     /**
      * Return the asynchronous {@link com.ning.http.client.AsyncHttpProvider}
@@ -464,7 +466,7 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
-        return httpProvider.execute(request, handler);
+        return httpProvider.execute(request, decorate(handler));
     }
 
      /**
@@ -474,7 +476,22 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public Future<Response> executeRequest(Request request) throws IOException {
-        return httpProvider.execute(request, new AsyncCompletionHandlerBase());
+        return httpProvider.execute(request, decorate(new AsyncCompletionHandlerBase()));
+    }
+
+    /**
+     * Decorate the current {@link AsyncHandler} with the {@link com.ning.http.client.resumable.ResumableAsyncHandler}
+     * in order to transparently support resumable download.
+     *
+     * @param handler {@link AsyncHandler}
+     * @param <T>
+     * @return {@link com.ning.http.client.resumable.ResumableAsyncHandler}
+     */
+    private <T> AsyncHandler<T> decorate(AsyncHandler<T> handler) {
+        if (config.isResumableDownloadEnabled()) {
+            return new ResumableAsyncHandler(handler);
+        }
+        return handler;
     }
 
     @SuppressWarnings("unchecked")

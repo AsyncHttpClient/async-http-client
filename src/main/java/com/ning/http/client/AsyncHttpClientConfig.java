@@ -72,6 +72,7 @@ public class AsyncHttpClientConfig {
     private final List<ResponseFilter> responseFilters;
     private final List<IOExceptionFilter> ioExceptionFilters;
     private final int requestCompressionLevel;
+    private final boolean resumableDownload;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -93,7 +94,8 @@ public class AsyncHttpClientConfig {
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
-                                  int requestCompressionLevel) {
+                                  int requestCompressionLevel,
+                                  boolean resumableDownload) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -114,6 +116,7 @@ public class AsyncHttpClientConfig {
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
         this.requestCompressionLevel = requestCompressionLevel;
+        this.resumableDownload = resumableDownload;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -136,7 +139,7 @@ public class AsyncHttpClientConfig {
     /**
      * A {@link ScheduledExecutorService} used to expire idle connections.
      *
-     * @return {@link ScheduledExecutorService} 
+     * @return {@link ScheduledExecutorService}
      */
     public ScheduledExecutorService reaper() {
         return reaper;
@@ -277,7 +280,7 @@ public class AsyncHttpClientConfig {
     public ConnectionsPool<?, ?> getConnectionsPool(){
         return connectionsPool;
     }
-    
+
     /**
      * Return an instance of {@link SSLEngineFactory} used for SSL connection.
      * @return an instance of {@link SSLEngineFactory} used for SSL connection.
@@ -350,6 +353,15 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Is the resumable download features enabled.
+     *
+     * @return true if enabled. Default is false;
+     */
+    public boolean isResumableDownloadEnabled() {
+        return resumableDownload;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -381,7 +393,7 @@ public class AsyncHttpClientConfig {
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
-
+        private boolean resumableDownload = false;
 
         public Builder() {
         }
@@ -687,6 +699,8 @@ public class AsyncHttpClientConfig {
          * Set the compression level, or -1 if no compression is used.
          *
          * @param requestCompressionLevel compression level, or -1 if no compression is use
+         * @return this
+
          */
         public Builder setRequestCompressionLevel(int requestCompressionLevel) {
             this.requestCompressionLevel = requestCompressionLevel;
@@ -723,6 +737,30 @@ public class AsyncHttpClientConfig {
             responseFilters.addAll( prototype.getResponseFilters() );
         }
 
+        /**
+         * Is the resumable download features enabled.
+         * @return true if enabled. Default is false;
+         */
+        public boolean isResumableDownload() {
+            return resumableDownload;
+        }
+
+        /**
+         * Set to true to enabled resumable download. Be aware that if you enable this mechanism, an {@link AsyncHandler#onBodyPartReceived(HttpResponseBodyPart)}
+         * will ALWAYS be invoked, in case of a JVM crash, with the remaining bytes and will never receive the bytes it already digested. An application
+         * not taking care of that fact may digest corrupted bytes or produce corrupted file.
+         *          *
+         * See {@link com.ning.http.client.resumable.ResumableAsyncHandler}
+         * description for more information about the mechanism and how it can be customized and used as a normal
+         * {@link AsyncHandler}. 
+         *
+         * @param resumableDownload true to enabled it.
+         * @return this
+         */
+        public Builder setResumableDownload(boolean resumableDownload) {
+            this.resumableDownload = resumableDownload;
+            return this;
+        }
 
         /**
          * Build an {@link AsyncHttpClientConfig}
@@ -751,7 +789,8 @@ public class AsyncHttpClientConfig {
                     requestFilters,
                     responseFilters,
                     ioExceptionFilters,
-                    requestCompressionLevel);
+                    requestCompressionLevel,
+                    resumableDownload);
         }
     }
 }
