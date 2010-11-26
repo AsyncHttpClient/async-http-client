@@ -169,4 +169,51 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         client.close();
 
     }
+
+
+    @Test(groups = "standalone")
+    public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+        final FileOutputStream stream = new FileOutputStream(tmp);
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
+            public void onThrowable(Throwable t) {
+            }
+
+            public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                bodyPart.writeTo(stream);
+
+                if (bodyPart.getBodyPartBytes().length == 0) {
+                    return STATE.ABORT;
+                }
+                          
+                return STATE.CONTINUE;
+            }
+
+            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                return STATE.CONTINUE;
+            }
+
+            public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                return STATE.CONTINUE;
+            }
+
+            public Response onCompleted() throws Exception {
+                return null;
+            }
+        });
+        Response resp = f.get();
+        stream.close();
+        assertNull(resp);
+        assertEquals(file.length(), tmp.length());
+        client.close();
+
+    }
+
 }
