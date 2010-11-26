@@ -230,7 +230,7 @@ public class NettyAsyncResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseStatus() {
-        return (bodyParts != null ? true : false);
+        return (status != null ? true : false);
     }
 
     /**
