@@ -146,7 +146,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
         }
 
-
         if (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()) {
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
@@ -338,13 +337,38 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         is = new GZIPInputStream(is);
                     }
 
-                    int[] lengthWrapper = new int[1];
-                    byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
-                    if (lengthWrapper[0] > 0) {
-                        byte[] body = new byte[lengthWrapper[0]];
-                        System.arraycopy(bytes, 0, body, 0, lengthWrapper[0]);
-                        future.touch();
-                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, body, JDKAsyncHttpProvider.this));
+                    int byteToRead = urlConnection.getContentLength();
+                    InputStream stream = is;
+                    if (byteToRead <= 0) {
+                        int[] lengthWrapper = new int[1];
+                        byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
+                        stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);
+                        byteToRead = lengthWrapper[0];
+                    }
+
+                    if (byteToRead > 0) {
+                        int minBytes = Math.min(8192, byteToRead);
+                        byte[] bytes = new byte[minBytes];
+                        int leftBytes = minBytes < 8192 ? 0 : byteToRead - 8192;
+                        int read = 0;
+                        while (leftBytes > -1) {
+
+                            read = stream.read(bytes);
+                            if (read == -1) {
+                                break;
+                            }
+
+                            future.touch();
+                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, bytes, JDKAsyncHttpProvider.this));
+
+                            if (leftBytes > 8192) {
+                                leftBytes -= 8192;
+                            } else if (leftBytes < 8192 && leftBytes > 0) {
+                                bytes = new byte[leftBytes];
+                                leftBytes = 0;
+                            }
+
+                        }
                     }
                 }
 
@@ -395,7 +419,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     maxConnections.decrementAndGet();
                 }
                 urlConnection.disconnect();
-                if (jdkNtlmDomain != null) {
+                if (jdkNtlmDomain != null) {                                                                     
                     System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
                 }
                 Authenticator.setDefault(jdkAuthenticator);

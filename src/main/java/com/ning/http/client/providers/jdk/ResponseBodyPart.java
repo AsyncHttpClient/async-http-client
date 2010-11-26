@@ -23,7 +23,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A callback class used when an HTTP response body is received.

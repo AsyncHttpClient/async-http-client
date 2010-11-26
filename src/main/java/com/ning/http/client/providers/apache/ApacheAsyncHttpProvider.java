@@ -27,8 +27,8 @@ import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProviderConfig;
-import com.ning.http.client.providers.jdk.JDKFuture;
+import com.ning.http.client.providers.jdk.ResponseBodyPart;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -72,6 +72,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -105,7 +106,7 @@ import java.util.zip.GZIPInputStream;
  * Provides a generic http client.
  */
 public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
-    private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
+    private final static Logger logger = LoggerFactory.getLogger(ApacheAsyncHttpProvider.class);
 
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
@@ -142,7 +143,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(0, false));
 
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig != null && JDKAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
+        if (providerConfig != null && ApacheAsyncHttpProvider.class.isAssignableFrom(providerConfig.getClass())) {
             configure(ApacheAsyncHttpProviderConfig.class.cast(providerConfig));
         }
     }
@@ -511,13 +512,38 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             }
                         }
 
-                        int[] lengthWrapper = new int[1];
-                        byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
-                        if (lengthWrapper[0] > 0) {
-                            byte[] body = new byte[lengthWrapper[0]];
-                            System.arraycopy(bytes, 0, body, 0, lengthWrapper[0]);
-                            future.touch();
-                            asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, body, ApacheAsyncHttpProvider.this));
+                        int byteToRead = (int) method.getResponseContentLength();
+                        InputStream stream = is;
+                        if (byteToRead <= 0) {
+                            int[] lengthWrapper = new int[1];
+                            byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
+                            stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);
+                            byteToRead = lengthWrapper[0];                            
+                        }
+
+                        if (byteToRead > 0) {
+                            int minBytes = Math.min(8192, byteToRead);
+                            byte[] bytes = new byte[minBytes];
+                            int leftBytes = minBytes < 8192 ? 0 : byteToRead - 8192;
+                            int read = 0;
+                            while (leftBytes > -1) {
+
+                                read = stream.read(bytes);
+                                if (read == -1) {
+                                    break;
+                                }
+
+                                future.touch();
+                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, bytes, ApacheAsyncHttpProvider.this));
+
+                                if (leftBytes > 8192) {
+                                    leftBytes -= 8192;
+                                } else if (leftBytes < 8192 && leftBytes > 0) {
+                                    bytes = new byte[leftBytes];
+                                    leftBytes = 0;
+                                }
+
+                            }
                         }
                     }
                 }
@@ -572,7 +598,14 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     maxConnections.decrementAndGet();
                 }
                 future.done(null);
-                method.releaseConnection();
+
+                // Crappy Apache HttpClient who blocks forever here with large files.
+                config.executorService().submit(new Runnable() {
+
+                    public void run() {
+                        method.releaseConnection();                       
+                    }
+                });
             }
             return null;
         }
