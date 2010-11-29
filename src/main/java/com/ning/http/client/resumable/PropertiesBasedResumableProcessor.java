@@ -60,7 +60,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
      */
     /* @Override */
     public void save(Map<String, Long> map) {
-        log.debug("Saving current download state {}", properties);
+        log.debug("Saving current download state {}", properties.toString());
         FileOutputStream os = null;
         try {
 
@@ -74,7 +74,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
             os = new FileOutputStream(f);
 
             for (Map.Entry<String, Long> e : properties.entrySet()) {
-                os.write(append(e).getBytes("UTF-8"));
+                os.write((append(e)).getBytes("UTF-8"));
             }
             os.flush();
         } catch (Throwable e) {
@@ -90,7 +90,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     }
 
     private static String append(Map.Entry<String, Long> e) {
-        return new StringBuffer(e.getKey()).append("=").append(e.getValue()).toString();
+        return new StringBuffer(e.getKey()).append("=").append(e.getValue()).append( "\n" ).toString();
     }
 
     /**
@@ -100,16 +100,16 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         try {
             Scanner scan = new Scanner(new File(TMP, storeName), "UTF-8");
-            scan.useDelimiter("=");
+            scan.useDelimiter("[=\n]");
 
             String key;
             String value;
             while (scan.hasNext()) {
-                key = scan.next();
-                value = scan.next();
+                key = scan.next().trim();
+                value = scan.next().trim();
                 properties.put(key, Long.valueOf(value));
             }
-            log.debug("Loading previous download state {}", properties);
+            log.debug("Loading previous download state {}", properties.toString());
         } catch (FileNotFoundException ex) {
             log.debug("Missing {}", storeName);
         } catch (Throwable ex) {
