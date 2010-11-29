@@ -30,6 +30,14 @@ public class ResumableRandomAccessFileHandler implements ResumableListener {
 
     public ResumableRandomAccessFileHandler(RandomAccessFile file) {
         this.file = file;
+        try
+        {
+            this.byteTransferred = file.length();
+        }
+        catch ( IOException e )
+        {
+            throw new IllegalArgumentException( "Could not access the file: " + e.getMessage(), e );
+        }
     }
 
     /**
