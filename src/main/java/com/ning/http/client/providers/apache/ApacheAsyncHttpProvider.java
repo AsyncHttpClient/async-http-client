@@ -541,11 +541,12 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
 
                                 if (leftBytes > 8192) {
                                     leftBytes -= 8192;
-                                } else if (leftBytes < 8192 && leftBytes > 0) {
+                                } else if (leftBytes <= 8192 && leftBytes > 0) {
                                     bytes = new byte[leftBytes];
                                     leftBytes = 0;
+                                } else {
+                                    leftBytes = -1;
                                 }
-
                             }
                         }
                     }
