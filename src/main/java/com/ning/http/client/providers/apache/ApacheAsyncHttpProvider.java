@@ -26,9 +26,6 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
-import com.ning.http.client.providers.jdk.ResponseBodyPart;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -524,31 +521,27 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             byteToRead = lengthWrapper[0];
                         }
 
-                        if (byteToRead > 0) {
-                            int minBytes = Math.min(8192, byteToRead);
-                            byte[] bytes = new byte[minBytes];
-                            int leftBytes = minBytes < 8192 ? 0 : byteToRead - 8192;
-                            int read = 0;
-                            while (leftBytes > -1) {
+                    if (byteToRead > 0) {
+                        int minBytes = Math.min(8192, byteToRead);
+                        byte[] bytes = new byte[minBytes];
+                        int leftBytes = minBytes < 8192 ? 0 : byteToRead;
+                        int read = 0;
+                        while (leftBytes > -1) {
 
-                                read = stream.read(bytes);
-                                if (read == -1) {
-                                    break;
-                                }
-
-                                future.touch();
-                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, bytes, ApacheAsyncHttpProvider.this));
-
-                                if (leftBytes > 8192) {
-                                    leftBytes -= 8192;
-                                } else if (leftBytes <= 8192 && leftBytes > 0) {
-                                    bytes = new byte[leftBytes];
-                                    leftBytes = 0;
-                                } else {
-                                    leftBytes = -1;
-                                }
+                            read = stream.read(bytes);
+                            if (read == -1) {
+                                break;
                             }
+
+                            future.touch();
+
+                            byte[] b = new byte[read];
+                            System.arraycopy(bytes, 0, b, 0, read);
+                            asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this));
+
+                            leftBytes -= read;
                         }
+                    }
                     }
                 }
 

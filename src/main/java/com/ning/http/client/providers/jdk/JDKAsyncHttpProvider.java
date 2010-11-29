@@ -349,7 +349,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (byteToRead > 0) {
                         int minBytes = Math.min(8192, byteToRead);
                         byte[] bytes = new byte[minBytes];
-                        int leftBytes = minBytes < 8192 ? 0 : byteToRead - 8192;
+                        int leftBytes = minBytes < 8192 ? 0 : byteToRead;
                         int read = 0;
                         while (leftBytes > -1) {
 
@@ -359,16 +359,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             }
 
                             future.touch();
-                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, bytes, JDKAsyncHttpProvider.this));
 
-                            if (leftBytes > 8192) {
-                                leftBytes -= 8192;
-                            } else if (leftBytes <= 8192 && leftBytes > 0) {
-                                bytes = new byte[leftBytes];
-                                leftBytes = 0;
-                            } else {
-                                leftBytes = -1;
-                            }
+                            byte[] b = new byte[read];
+                            System.arraycopy(bytes, 0, b, 0, read);
+                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, JDKAsyncHttpProvider.this));
+
+                            leftBytes -= read;
                         }
                     }
                 }
