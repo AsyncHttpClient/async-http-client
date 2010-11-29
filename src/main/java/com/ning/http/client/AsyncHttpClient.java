@@ -221,11 +221,11 @@ public class AsyncHttpClient {
         }
 
         public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), decorate(handler));
+            return AsyncHttpClient.this.executeRequest(build(), handler);
         }
 
         public Future<Response> execute() throws IOException {
-            return AsyncHttpClient.this.executeRequest(build(), decorate(new AsyncCompletionHandlerBase()));
+            return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
         }
 
         // Note: For now we keep the delegates in place even though they are not needed
