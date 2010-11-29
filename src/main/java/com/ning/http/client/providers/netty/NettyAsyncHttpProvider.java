@@ -661,12 +661,14 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 throw ex;
             }
         }
+        
+        request = fc.getRequest();
 
         if (ResumableAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
             request = ResumableAsyncHandler.class.cast(asyncHandler).adjustRequestRange(request);
         }
 
-        return doConnect(fc.getRequest(), fc.getAsyncHandler(), null, true);
+        return doConnect(request, fc.getAsyncHandler(), null, true);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache) throws IOException {
