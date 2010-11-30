@@ -16,7 +16,6 @@
 package com.ning.http.client.resumable;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 
 /**
@@ -27,7 +26,7 @@ public interface ResumableListener {
     /**
      * Invoked when some bytes are available to digest.
      *
-     * @param byteBuffer           the current bytes
+     * @param byteBuffer the current bytes
      * @throws IOException
      */
     public void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
@@ -39,6 +38,7 @@ public interface ResumableListener {
 
     /**
      * Return the length of previously downloaded bytes.
+     *
      * @return the length of previously downloaded bytes
      */
     public long length();
