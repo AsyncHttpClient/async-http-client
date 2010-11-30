@@ -17,6 +17,9 @@
 package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -466,7 +469,7 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
-        return httpProvider.execute(request, decorate(handler));
+        return httpProvider.execute(request, preProcessRequest(request, handler));
     }
 
      /**
@@ -476,21 +479,43 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public Future<Response> executeRequest(Request request) throws IOException {
-        return httpProvider.execute(request, decorate(new AsyncCompletionHandlerBase()));
+        return httpProvider.execute(request, preProcessRequest(request, new AsyncCompletionHandlerBase()));
     }
 
     /**
      * Decorate the current {@link AsyncHandler} with the {@link com.ning.http.client.resumable.ResumableAsyncHandler}
-     * in order to transparently support resumable download.
+     * in order to transparently support resumable download. Also execute {@link com.ning.http.client.filter.RequestFilter}
      *
      * @param handler {@link AsyncHandler}
      * @param <T>
      * @return {@link com.ning.http.client.resumable.ResumableAsyncHandler}
      */
-    private <T> AsyncHandler<T> decorate(AsyncHandler<T> handler) {
+    private <T> AsyncHandler<T> preProcessRequest(Request request, AsyncHandler<T> handler) throws IOException {
+
         if (config.isResumableDownloadEnabled()) {
             return new ResumableAsyncHandler(handler);
         }
+
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
+                }
+            } catch (FilterException e) {
+                IOException ex = new IOException();
+                ex.initCause(e);
+                throw ex;
+            }
+        }
+
+        request = fc.getRequest();
+
+        if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
+            request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
+        }
+
         return handler;
     }
 

@@ -153,23 +153,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
             throw new IOException("Closed");
         }
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
-        for (RequestFilter asyncFilter : config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
-            }
-        }
-
-        request = fc.getRequest();
-        handler = fc.getAsyncHandler();
-
         if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
             request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
         }

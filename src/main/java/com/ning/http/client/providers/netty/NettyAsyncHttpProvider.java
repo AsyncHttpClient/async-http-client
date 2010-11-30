@@ -647,28 +647,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     /* @Override */
 
     public <T> Future<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).build();
-        for (RequestFilter asyncFilter : config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
-            }
-        }
-        
-        request = fc.getRequest();
-
-        if (ResumableAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
-            request = ResumableAsyncHandler.class.cast(asyncHandler).adjustRequestRange(request);
-        }
-
-        return doConnect(request, fc.getAsyncHandler(), null, true);
+        return doConnect(request, asyncHandler, null, true);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache) throws IOException {
