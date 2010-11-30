@@ -13,11 +13,6 @@ package org.sonatype.ahc.suite.resumable;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.concurrent.ExecutionException;
-
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
@@ -26,35 +21,38 @@ import com.ning.http.client.extra.ResumableRandomAccessFileHandler;
 import com.ning.http.client.resumable.PropertiesBasedResumableProcessor;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.concurrent.ExecutionException;
+
 /**
  * @author Benjamin Hanzelmann
  */
 public class ResumingExternalDownload
-    extends ForkJvm
-{
+        extends ForkJvm {
 
-    public static void main( String[] args )
-        throws IOException, InterruptedException, ExecutionException
-    {
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ExecutionException {
         String url = args[0];
         String fPath = args[1];
-        final int timeout = Integer.valueOf( args[2] ).intValue();
+        final int timeout = Integer.valueOf(args[2]).intValue();
 
-        killAfter( timeout );
+        killAfter(timeout);
 
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
-        builder.setConnectionTimeoutInMs( 60000 ).setIdleConnectionTimeoutInMs( 60000 ).setRequestTimeoutInMs( 60000 );
+        builder.setConnectionTimeoutInMs(60000).setIdleConnectionTimeoutInMs(60000).setRequestTimeoutInMs(60000);
 
         AsyncHttpClientConfig cfg = builder.build();
-        AsyncHttpClient client = new AsyncHttpClient( cfg );
+        AsyncHttpClient client = new AsyncHttpClient(cfg);
 
-        Request request = client.prepareGet( url ).build();
-        RandomAccessFile target = new RandomAccessFile( new File( fPath ), "rw" );
+        Request request = client.prepareGet(url).build();
+        RandomAccessFile target = new RandomAccessFile(new File(fPath), "rw");
         ResumableAsyncHandler<Response> handler =
-            new ResumableAsyncHandler<Response>( new PropertiesBasedResumableProcessor() );
-        handler.setResumableListener( new ResumableRandomAccessFileHandler( target ) );
-        Response response = client.executeRequest( request, handler ).get();
-        System.err.println( response.toString() );
+                new ResumableAsyncHandler<Response>(new PropertiesBasedResumableProcessor());
+        handler.setResumableListener(new ResumableRandomAccessFileHandler(target));
+        Response response = client.executeRequest(request, handler).get();
+        System.err.println(response.toString());
     }
 
 }
