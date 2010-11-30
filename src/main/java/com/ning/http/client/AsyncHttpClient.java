@@ -469,7 +469,11 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
-        return httpProvider.execute(request, preProcessRequest(request, handler));
+
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+        fc  = preProcessRequest(fc);
+
+        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
 
      /**
@@ -479,24 +483,24 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public Future<Response> executeRequest(Request request) throws IOException {
-        return httpProvider.execute(request, preProcessRequest(request, new AsyncCompletionHandlerBase()));
-    }
+        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
+        fc  = preProcessRequest(fc);
+        return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
+     }
 
     /**
-     * Decorate the current {@link AsyncHandler} with the {@link com.ning.http.client.resumable.ResumableAsyncHandler}
-     * in order to transparently support resumable download. Also execute {@link com.ning.http.client.filter.RequestFilter}
+     * Configure and execute the {@link Request} and {@link RequestFilter}
      *
-     * @param handler {@link AsyncHandler}
-     * @param <T>
-     * @return {@link com.ning.http.client.resumable.ResumableAsyncHandler}
+     * @param fc {@link FilterContext}
+     * @return {@link FilterContext}
      */
-    private <T> AsyncHandler<T> preProcessRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    private FilterContext preProcessRequest(FilterContext fc) throws IOException {
 
         if (config.isResumableDownloadEnabled()) {
-            return new ResumableAsyncHandler(handler);
+            fc = new FilterContext.FilterContextBuilder(fc).asyncHandler(new ResumableAsyncHandler(fc.getAsyncHandler())).build();
+            return fc;
         }
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
@@ -510,13 +514,12 @@ public class AsyncHttpClient {
             }
         }
 
-        request = fc.getRequest();
+        Request request = fc.getRequest();
+        if (ResumableAsyncHandler.class.isAssignableFrom(fc.getAsyncHandler().getClass())) {
+            request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
+        } 
 
-        if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
-            request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
-        }
-
-        return handler;
+        return fc;
     }
 
     @SuppressWarnings("unchecked")
