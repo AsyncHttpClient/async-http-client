@@ -53,7 +53,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private ResponseBuilder responseBuilder = new ResponseBuilder();
     private final boolean accumulateBody;
-    private ResumableListener resumableListener;
+    private ResumableListener resumableListener = new NULLResumableListener();
 
     private ResumableAsyncHandler(long byteTransferred,
                                   ResumableProcessor resumableProcessor,
@@ -295,5 +295,23 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         public Map<String, Long> load() {
             return new HashMap<String, Long>();
         }
+    }
+    
+    private static class NULLResumableListener implements ResumableListener {
+        
+        private long length = 0L;
+
+        public void onBytesReceived( ByteBuffer byteBuffer ) throws IOException {
+            length += byteBuffer.remaining();
+        }
+
+        public void onAllBytesReceived() {
+        }
+
+        public long length()
+        {
+            return length;
+        }
+        
     }
 }
