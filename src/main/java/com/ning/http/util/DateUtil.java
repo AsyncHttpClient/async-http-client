@@ -223,7 +223,7 @@ public class DateUtil {
     private DateUtil() {
     }
 
-    private static class DateParseException extends Exception {
+    public static class DateParseException extends Exception {
 
         /**
          *
