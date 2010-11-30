@@ -489,18 +489,12 @@ public class AsyncHttpClient {
      }
 
     /**
-     * Configure and execute the {@link Request} and {@link RequestFilter}
+     * Configure and execute the associated @link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
      *
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
      */
     private FilterContext preProcessRequest(FilterContext fc) throws IOException {
-
-        if (config.isResumableDownloadEnabled()) {
-            fc = new FilterContext.FilterContextBuilder(fc).asyncHandler(new ResumableAsyncHandler(fc.getAsyncHandler())).build();
-            return fc;
-        }
-
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
@@ -517,8 +511,14 @@ public class AsyncHttpClient {
         Request request = fc.getRequest();
         if (ResumableAsyncHandler.class.isAssignableFrom(fc.getAsyncHandler().getClass())) {
             request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
-        } 
+        }
 
+        if (request.getRangeHeaderValue() != 0) {
+            RequestBuilder builder = new RequestBuilder(request);
+            builder.setHeader("Range", "bytes=" + request.getRangeHeaderValue() + "-");
+            request = builder.build();
+        }
+        fc = new FilterContext.FilterContextBuilder(fc).request(request).build();        
         return fc;
     }
 

@@ -59,6 +59,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private File file;
         private boolean followRedirects;
         private PerRequestConfig perRequestConfig;
+        private long rangeHeaderValue = 0;
 
         public RequestImpl() {
         }
@@ -85,6 +86,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.file = prototype.getFile();
                 this.followRedirects = prototype.isRedirectEnabled();
                 this.perRequestConfig = prototype.getPerRequestConfig();
+                this.rangeHeaderValue = prototype.getRangeHeaderValue();
             }
         }
 
@@ -232,6 +234,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public PerRequestConfig getPerRequestConfig() {
             return perRequestConfig;
+        }
+
+        public long getRangeHeaderValue() {
+            return rangeHeaderValue;
         }
 
         @Override
@@ -481,6 +487,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setPerRequestConfig(PerRequestConfig perRequestConfig) {
         request.perRequestConfig = perRequestConfig;
+        return derived.cast(this);
+    }
+
+    public T setRangeHeaderValue(long rangeHeaderValue) {
+        request.rangeHeaderValue = rangeHeaderValue;
         return derived.cast(this);
     }
 

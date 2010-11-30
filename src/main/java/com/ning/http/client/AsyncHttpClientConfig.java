@@ -72,7 +72,6 @@ public class AsyncHttpClientConfig {
     private final List<ResponseFilter> responseFilters;
     private final List<IOExceptionFilter> ioExceptionFilters;
     private final int requestCompressionLevel;
-    private final boolean resumableDownload;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -94,8 +93,7 @@ public class AsyncHttpClientConfig {
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
-                                  int requestCompressionLevel,
-                                  boolean resumableDownload) {
+                                  int requestCompressionLevel) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -116,7 +114,6 @@ public class AsyncHttpClientConfig {
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
         this.requestCompressionLevel = requestCompressionLevel;
-        this.resumableDownload = resumableDownload;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -350,15 +347,6 @@ public class AsyncHttpClientConfig {
      */
     public int getRequestCompressionLevel() {
         return requestCompressionLevel;
-    }
-
-    /**
-     * Is the resumable download features enabled.
-     *
-     * @return true if enabled. Default is false;
-     */
-    public boolean isResumableDownloadEnabled() {
-        return resumableDownload;
     }
 
     /**
@@ -789,8 +777,7 @@ public class AsyncHttpClientConfig {
                     requestFilters,
                     responseFilters,
                     ioExceptionFilters,
-                    requestCompressionLevel,
-                    resumableDownload);
+                    requestCompressionLevel);
         }
     }
 }
