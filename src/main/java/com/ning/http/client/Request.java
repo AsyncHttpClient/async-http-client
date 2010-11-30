@@ -168,7 +168,7 @@ public interface Request {
      * Return the HTTP Range header value, or 
      * @return the range header value, or 0 is not set.
      */
-    public long getRangeHeaderValue();
+    public long getRangeOffset();
 
 
 }

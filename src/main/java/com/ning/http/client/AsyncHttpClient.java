@@ -513,9 +513,9 @@ public class AsyncHttpClient {
             request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
         }
 
-        if (request.getRangeHeaderValue() != 0) {
+        if (request.getRangeOffset() != 0) {
             RequestBuilder builder = new RequestBuilder(request);
-            builder.setHeader("Range", "bytes=" + request.getRangeHeaderValue() + "-");
+            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
             request = builder.build();
         }
         fc = new FilterContext.FilterContextBuilder(fc).request(request).build();        
