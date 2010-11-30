@@ -16,28 +16,23 @@
 package com.ning.http.client.extra;
 
 import com.ning.http.client.resumable.ResumableListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A {@link com.ning.http.client.listener.TransferListener} which use a {@link RandomAccessFile} for storing the received bytes.
  */
 public class ResumableRandomAccessFileHandler implements ResumableListener {
     private final RandomAccessFile file;
-    private long byteTransferred = 0;
+    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
 
     public ResumableRandomAccessFileHandler(RandomAccessFile file) {
         this.file = file;
-        try
-        {
-            this.byteTransferred = file.length();
-        }
-        catch ( IOException e )
-        {
-            throw new IllegalArgumentException( "Could not access the file: " + e.getMessage(), e );
-        }
     }
 
     /**
@@ -48,11 +43,13 @@ public class ResumableRandomAccessFileHandler implements ResumableListener {
      * @throws IOException
      */
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
-        file.seek(byteTransferred);
+        file.seek(file.length());
         file.write(buffer.array());
-        byteTransferred += buffer.capacity();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void onAllBytesReceived() {
         if (file != null) {
             try {
@@ -61,6 +58,18 @@ public class ResumableRandomAccessFileHandler implements ResumableListener {
                 ;
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public long length() {
+        try {
+            return file.length();
+        } catch (IOException e) {
+            ;
+        }
+        return 0;
     }
 
 }

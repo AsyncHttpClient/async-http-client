@@ -49,11 +49,11 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     private String url;
     private final ResumableProcessor resumableProcessor;
     private final AsyncHandler<T> decoratedAsyncHandler;
-    private final ConcurrentLinkedQueue<ResumableListener> listeners = new ConcurrentLinkedQueue<ResumableListener>();
     private static Map<String, Long> resumableIndex;
     private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private ResponseBuilder responseBuilder = new ResponseBuilder();
     private final boolean accumulateBody;
+    private ResumableListener resumableListener;
 
     private ResumableAsyncHandler(long byteTransferred,
                                   ResumableProcessor resumableProcessor,
@@ -104,7 +104,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     /* @Override */
     public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
-        if (status.getStatusCode() == 200) {
+        if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
             url = status.getUrl().toURL().toString();
         } else {
             return AsyncHandler.STATE.ABORT;
@@ -137,15 +137,22 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         if (accumulateBody) {
             responseBuilder.accumulate(bodyPart);
         }
- 
+
+        STATE state = STATE.CONTINUE;
+        try {
+            resumableListener.onBytesReceived(bodyPart.getBodyByteBuffer());
+        } catch (IOException ex) {
+            return AsyncHandler.STATE.ABORT;
+        }
+        
+        if (decoratedAsyncHandler != null) {
+            state = decoratedAsyncHandler.onBodyPartReceived(bodyPart);
+        }
+
         byteTransferred.addAndGet(bodyPart.getBodyPartBytes().length);
         resumableProcessor.put(url, byteTransferred.get());
-        fireOnBytesReceived(bodyPart.getBodyByteBuffer());
 
-        if (decoratedAsyncHandler != null) {
-            return decoratedAsyncHandler.onBodyPartReceived(bodyPart);
-        }
-        return STATE.CONTINUE;
+        return state;
     }
 
     /**
@@ -154,7 +161,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     /* @Override */
     public T onCompleted() throws Exception {
         resumableProcessor.remove(url);
-        fireOnComplete();
+        resumableListener.onAllBytesReceived();
 
         if (decoratedAsyncHandler != null) {
             decoratedAsyncHandler.onCompleted();
@@ -194,48 +201,29 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         if (resumableIndex.get(request.getUrl()) != null) {
             byteTransferred.set(resumableIndex.get(request.getUrl()));
         }
+        
+        // The Resumbale
+        if (resumableListener != null && resumableListener.length() > 0 && byteTransferred.get() != resumableListener.length()) {
+            byteTransferred.set(resumableListener.length());
+        }
 
         RequestBuilder builder = new RequestBuilder(request);
-        if (byteTransferred.get() != 0) {
+        if (request.getHeaders().get("Range") == null && byteTransferred.get() != 0) {
             builder.setHeader("Range", "bytes=" + byteTransferred.get() + "-");
         }
         return builder.build();
     }
 
-    private void fireOnBytesReceived(ByteBuffer byteBuffer) throws IOException {
-        for (ResumableListener l : listeners) {
-            l.onBytesReceived(byteBuffer);
-        }
-    }
-
-    private void fireOnComplete() {
-        for (ResumableListener l : listeners) {
-            l.onAllBytesReceived();
-        }
-    }
-
     /**
-     * Add a {@link ResumableListener}
+     * Set a {@link ResumableListener}
      *
-     * @param t a {@link ResumableListener}
+     * @param resumableListener a {@link ResumableListener}
      * @return this
      */
-    public ResumableAsyncHandler addResumableListener(ResumableListener t) {
-        listeners.offer(t);
+    public ResumableAsyncHandler setResumableListener(ResumableListener resumableListener) {
+        this.resumableListener = resumableListener;
         return this;
     }
-
-    /**
-     * Remove a {@link ResumableListener}
-     *
-     * @param t a {@link ResumableListener}
-     * @return this
-     */
-    public ResumableAsyncHandler removeResumableListener(ResumableListener t) {
-        listeners.remove(t);
-        return this;
-    }
-
 
     private static class ResumableIndexThread extends Thread {
 

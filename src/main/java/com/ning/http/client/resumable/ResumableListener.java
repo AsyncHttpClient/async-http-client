@@ -37,4 +37,10 @@ public interface ResumableListener {
      */
     public void onAllBytesReceived();
 
+    /**
+     * Return the length of previously downloaded bytes.
+     * @return the length of previously downloaded bytes
+     */
+    public long length();
+
 }
