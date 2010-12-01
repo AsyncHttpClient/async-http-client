@@ -65,9 +65,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
             future.provider().writeRequest(f.getChannel(), config, future, nettyRequest);
         } else {
-            if (NettyAsyncHttpProvider.abortOnDisconnectException(f.getCause())
+            if (future.canRetry() && (NettyAsyncHttpProvider.abortOnDisconnectException(f.getCause())
                     || ClosedChannelException.class.isAssignableFrom(f.getCause().getClass())
-                    || future.getState() != NettyResponseFuture.STATE.NEW) {
+                    || future.getState() != NettyResponseFuture.STATE.NEW)) {
                 
                 if (future.provider().remotelyClosed(f.getChannel(), future)) {
                     return;
