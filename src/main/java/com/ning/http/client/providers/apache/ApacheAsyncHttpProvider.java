@@ -130,7 +130,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }, 443));
     }
 
-    public ApacheAsyncHttpProvider(AsyncHttpClientConfig config) throws IOException {
+    public ApacheAsyncHttpProvider(AsyncHttpClientConfig config) {
         this.config = config;
         connectionManager = new MultiThreadedHttpConnectionManager();
 
