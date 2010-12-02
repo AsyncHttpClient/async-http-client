@@ -33,7 +33,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
- * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link BasicHttpsTest}
+ * Test the Expect: 100-Continue.
  */
 public class Expect100ContinueTest extends AbstractBasicTest {
 
