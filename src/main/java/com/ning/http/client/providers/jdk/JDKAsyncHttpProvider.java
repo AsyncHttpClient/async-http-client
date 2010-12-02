@@ -474,6 +474,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         if (!"host".equalsIgnoreCase(name)) {
                             for (String value : h.get(name)) {
                                 urlConnection.setRequestProperty(name, value);
+                                if (name.equalsIgnoreCase("Expect")) {
+                                    throw new IllegalStateException("Expect: 100-Continue not supported");
+                                }
                             }
                         }
                     }

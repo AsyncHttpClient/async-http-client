@@ -41,10 +41,14 @@ public class JDKFuture<V> implements FutureImpl<V> {
     protected final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
     protected final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
     protected final AtomicBoolean contentProcessed = new AtomicBoolean(false);
+    private boolean writeHeaders;
+    private boolean writeBody;
 
     public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs) {
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
+        writeHeaders = true;
+        writeBody = true;
     }
 
     protected void setInnerFuture(Future<V> innerFuture) {
@@ -128,7 +132,31 @@ public class JDKFuture<V> implements FutureImpl<V> {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override  */
     public void touch() {
         touch.set(System.currentTimeMillis());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override  */
+    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
+        boolean b = this.writeHeaders;
+        this.writeHeaders = writeHeaders;
+        return b;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean getAndSetWriteBody(boolean writeBody) {
+        boolean b = this.writeBody;
+        this.writeBody = writeBody;
+        return b;
     }
 }

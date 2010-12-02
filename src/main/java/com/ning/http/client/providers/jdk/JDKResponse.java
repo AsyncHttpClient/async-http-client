@@ -45,6 +45,8 @@ public class JDKResponse implements Response {
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
+    private boolean writeHeaders;
+    private boolean writeBody;
 
     public JDKResponse(HttpResponseStatus status,
                        HttpResponseHeaders headers,
@@ -55,6 +57,8 @@ public class JDKResponse implements Response {
         this.status = status;
 
         uri = this.status.getUrl();
+        writeHeaders = true;
+        writeBody = true;
     }
 
     /* @Override */

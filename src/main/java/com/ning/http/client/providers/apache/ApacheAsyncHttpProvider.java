@@ -302,6 +302,10 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
             }
 
+            if (request.getHeaders().getFirstValue("Expect") != null
+                    && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
+                post.setUseExpectHeader(true);
+            }
             method = post;
         } else if (methodName.equalsIgnoreCase("DELETE")) {
             method = new DeleteMethod(request.getUrl());
@@ -370,6 +374,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         if (request.getVirtualHost() != null) {
             method.getParams().setVirtualHost(request.getVirtualHost());
         }
+
         return method;
     }
 

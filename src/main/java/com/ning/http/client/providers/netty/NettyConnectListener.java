@@ -114,8 +114,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         public NettyConnectListener<T> build(final URI uri) throws IOException {
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer);
             if (future == null) {
-                future = new NettyResponseFuture<T>(uri, request, asyncHandler,
-                        nettyRequest, NettyAsyncHttpProvider.requestTimeout(config, request.getPerRequestConfig()), provider);
+                future = NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider);
             }
             return new NettyConnectListener<T>(config, future, nettyRequest);
         }

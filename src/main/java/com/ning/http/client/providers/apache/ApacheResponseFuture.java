@@ -46,12 +46,16 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
     private final Request request;
     private final HttpMethodBase method;
     private Future<?> reaperFuture;
+    private boolean writeHeaders;
+    private boolean writeBody;
 
     public ApacheResponseFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, Request request, HttpMethodBase method) {
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs == -1 ? Integer.MAX_VALUE : responseTimeoutInMs;
         this.request = request;
         this.method = method;
+        writeHeaders = true;
+        writeBody = true;
     }
 
     protected void setInnerFuture(Future<V> innerFuture) {
@@ -186,5 +190,26 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
 
     public Request getRequest() {
         return request;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
+        boolean b = this.writeHeaders;
+        this.writeHeaders = writeHeaders;
+        return b;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean getAndSetWriteBody(boolean writeBody) {
+        boolean b = this.writeBody;
+        this.writeBody = writeBody;
+        return b;
     }
 }

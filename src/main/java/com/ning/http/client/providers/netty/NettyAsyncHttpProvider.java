@@ -295,8 +295,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         return channel;
     }
 
-    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config,
-                                          final NettyResponseFuture<T> future, final HttpRequest nettyRequest) {
+    protected final <T> void writeRequest(final Channel channel,
+                                          final AsyncHttpClientConfig config,
+                                          final NettyResponseFuture<T> future,
+                                          final HttpRequest nettyRequest) {
         try {
 
             if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
@@ -336,64 +338,69 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
             }
 
-            try {
-                channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
-            } catch (Throwable cause) {
-                log.debug(cause.getMessage(), cause);
+            // Leave it to true.
+            if (future.getAndSetWriteHeaders(true)) {
+                try {
+                    channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
+                } catch (Throwable cause) {
+                    log.debug(cause.getMessage(), cause);
 
-                if (future.provider().remotelyClosed(channel, future)) {
-                    return;
-                } else {
-                    future.abort(cause);
+                    if (future.provider().remotelyClosed(channel, future)) {
+                        return;
+                    } else {
+                        future.abort(cause);
+                    }
                 }
             }
 
-            if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
-                if (future.getRequest().getFile() != null) {
-                    final File file = future.getRequest().getFile();
-                    long fileLength = 0;
-                    final RandomAccessFile raf = new RandomAccessFile(file, "r");
+            if (future.getAndSetWriteBody(true)) {
+                if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+                    if (future.getRequest().getFile() != null) {
+                        final File file = future.getRequest().getFile();
+                        long fileLength = 0;
+                        final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
-                    try {
-                        fileLength = raf.length();
+                        try {
+                            fileLength = raf.length();
 
+                            ChannelFuture writeFuture;
+                            if (channel.getPipeline().get(SslHandler.class) != null) {
+                                writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
+                                writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                            } else {
+                                final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
+                                writeFuture = channel.write(region);
+                                writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                            }
+                        } catch (IOException ex) {
+                            if (raf != null) {
+                                try {
+                                    raf.close();
+                                } catch (IOException e) {
+                                }
+                            }
+                            throw ex;
+                        }
+                    } else if (body != null) {
                         ChannelFuture writeFuture;
-                        if (channel.getPipeline().get(SslHandler.class) != null) {
-                            writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                        if (channel.getPipeline().get(SslHandler.class) == null && (body instanceof RandomAccessBody)) {
+                            writeFuture = channel.write(new BodyFileRegion((RandomAccessBody) body));
                         } else {
-                            final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
-                            writeFuture = channel.write(region);
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                            writeFuture = channel.write(new BodyChunkedInput(body));
                         }
-                    } catch (IOException ex) {
-                        if (raf != null) {
-                            try {
-                                raf.close();
-                            } catch (IOException e) {
-                            }
-                        }
-                        throw ex;
-                    }
-                } else if (body != null) {
-                    ChannelFuture writeFuture;
-                    if (channel.getPipeline().get(SslHandler.class) == null && (body instanceof RandomAccessBody)) {
-                        writeFuture = channel.write(new BodyFileRegion((RandomAccessBody) body));
-                    } else {
-                        writeFuture = channel.write(new BodyChunkedInput(body));
-                    }
 
-                    final Body b = body;
-                    writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
-                        public void operationComplete(ChannelFuture cf) {
-                            try {
-                                b.close();
-                            } catch (IOException e) {
-                                log.warn("Failed to close request body: {}", e.getMessage(), e);
+                        final Body b = body;
+                        writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+                            public void operationComplete(ChannelFuture cf) {
+                                try {
+                                    b.close();
+                                } catch (IOException e) {
+                                    log.warn("Failed to close request body: {}", e.getMessage(), e);
+                                }
+                                super.operationComplete(cf);
                             }
-                            super.operationComplete(cf);
-                        }
-                    });
+                        });
+                    }
                 }
             }
         } catch (Throwable ioe) {
@@ -687,8 +694,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             HttpRequest nettyRequest = buildRequest(config, request, uri, false, bufferedBytes);
 
             if (f == null) {
-                f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                        requestTimeout(config, request.getPerRequestConfig()), this);
+                f = newFuture(uri, request, asyncHandler, nettyRequest, config, this);
             } else {
                 f.setNettyRequest(nettyRequest);
             }
@@ -920,6 +926,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     } else {
                         nextRequest(builder.setRealm(nr).build(), future);
                     }
+                    return;
+                }
+
+                if (statusCode == 100) {
+                    future.getAndSetWriteHeaders(false);
+                    future.getAndSetWriteBody(true);
+                    writeRequest(ctx.getChannel(), config, future, nettyRequest);
                     return;
                 }
 
@@ -1426,6 +1439,22 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         return lenght;
     }
 
+    public static <T> NettyResponseFuture<T> newFuture(URI uri,
+                                                       Request request,
+                                                       AsyncHandler<T> asyncHandler,
+                                                       HttpRequest nettyRequest,
+                                                       AsyncHttpClientConfig config,
+                                                       NettyAsyncHttpProvider provider) {
+
+        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
+                requestTimeout(config, request.getPerRequestConfig()), provider);
+
+        if (request.getHeaders().getFirstValue("Expect") != null
+                && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
+            f.getAndSetWriteBody(false);
+        }
+        return f;
+    }
 
     private static class ProgressListener implements ChannelFutureProgressListener {
 

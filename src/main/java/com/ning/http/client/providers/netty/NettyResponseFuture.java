@@ -74,6 +74,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private Channel channel;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
     private final int maxRetry;
+    private boolean writeHeaders;
+    private boolean writeBody;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -95,6 +97,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         } else {
             maxRetry = 5;
         }
+        writeHeaders = true;
+        writeBody = true;
     }
 
     protected URI getURI() throws MalformedURLException {
@@ -319,8 +323,32 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return statusReceived.getAndSet(sr);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void touch() {
         touch.set(System.currentTimeMillis());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
+        boolean b = this.writeHeaders;
+        this.writeHeaders = writeHeaders;
+        return b;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
+    public boolean getAndSetWriteBody(boolean writeBody) {
+        boolean b = this.writeBody;
+        this.writeBody = writeBody;
+        return b;
     }
 
     protected NettyAsyncHttpProvider provider() {

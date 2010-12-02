@@ -46,5 +46,14 @@ public interface FutureImpl<V> extends Future<V> {
      * Touch the current instance to prevent external service to times out.
      */
     void touch();
-   
+
+    /**
+     * Write the {@link Request} headers
+     */
+    boolean getAndSetWriteHeaders(boolean writeHeader);
+
+    /**
+     * Write the {@link Request} body
+     */
+    boolean getAndSetWriteBody(boolean writeBody);
 }
