@@ -167,7 +167,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         int requestTimeout = requestTimeout(config, request.getPerRequestConfig());
-        if (config.getIdleConnectionTimeoutInMs() > 0) {
+        if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout != -1 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
             idleConnectionTimeoutThread = new IdleConnectionTimeoutThread();
             idleConnectionTimeoutThread.setConnectionTimeout(config.getIdleConnectionTimeoutInMs());
             idleConnectionTimeoutThread.addConnectionManager(connectionManager);
