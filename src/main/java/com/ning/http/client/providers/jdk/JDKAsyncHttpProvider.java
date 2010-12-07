@@ -215,6 +215,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;
         private int cachedBytesLenght;
+        private boolean terminate = true;
 
         public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, FutureImpl<T> future) {
             this.urlConnection = urlConnection;
@@ -255,6 +256,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 if (fc.replayRequest()) {
                     request = fc.getRequest();
                     urlConnection = createUrlConnection(request);
+                    terminate = false;
                     return call();
                 }
 
@@ -277,6 +279,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                             request = builder.setUrl(newUrl).build();
                             urlConnection = createUrlConnection(request);
+                            terminate = false;
                             return call();
                         }
                     } else {
@@ -300,6 +303,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     RequestBuilder builder = new RequestBuilder(request);
                     request = builder.setRealm(nr).build();
                     urlConnection = createUrlConnection(request);
+                    terminate = false;
                     return call();
                 }
 
@@ -391,14 +395,16 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     logger.error(t2.getMessage(), t2);
                 }
             } finally {
-                if (config.getMaxTotalConnections() != -1) {
-                    maxConnections.decrementAndGet();
+                if (terminate) {
+                    if (config.getMaxTotalConnections() != -1) {
+                        maxConnections.decrementAndGet();
+                    }
+                    urlConnection.disconnect();
+                    if (jdkNtlmDomain != null) {
+                        System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
+                    }
+                    Authenticator.setDefault(jdkAuthenticator);
                 }
-                urlConnection.disconnect();
-                if (jdkNtlmDomain != null) {                                                                     
-                    System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
-                }
-                Authenticator.setDefault(jdkAuthenticator);
             }
             return null;
         }

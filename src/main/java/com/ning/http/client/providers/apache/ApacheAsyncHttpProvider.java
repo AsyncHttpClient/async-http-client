@@ -137,7 +137,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         params = new HttpClientParams();
         params.setParameter(HttpMethodParams.SINGLE_COOKIE_HEADER, Boolean.TRUE);
         params.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(0, false));
+        params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler());
 
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
         if (providerConfig != null && ApacheAsyncHttpProvider.class.isAssignableFrom(providerConfig.getClass())) {
@@ -167,7 +167,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         int requestTimeout = requestTimeout(config, request.getPerRequestConfig());
-        if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout != -1 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
+        if (config.getIdleConnectionTimeoutInMs() > 0) {
             idleConnectionTimeoutThread = new IdleConnectionTimeoutThread();
             idleConnectionTimeoutThread.setConnectionTimeout(config.getIdleConnectionTimeoutInMs());
             idleConnectionTimeoutThread.addConnectionManager(connectionManager);
@@ -401,6 +401,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;
         private int cachedBytesLenght;
+        private boolean terminate = true;
 
         public ApacheClientRunnable(Request request, AsyncHandler<T> asyncHandler, HttpMethodBase method, ApacheResponseFuture<T> future, HttpClient httpClient) {
             this.asyncHandler = asyncHandler;
@@ -411,6 +412,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         public T call() {
+            terminate = true;
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
                 URI uri = null;
@@ -449,7 +451,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 // The request has changed
                 if (fc.replayRequest()) {
                     request = fc.getRequest();
-                    method = createMethod(httpClient, request);                    
+                    method = createMethod(httpClient, request);
+                    terminate = false;
                     return call();
                 }
 
@@ -476,6 +479,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
 
                             request = builder.setUrl(newUrl).build();
                             method = createMethod(httpClient, request);
+                            terminate = false;
                             return call();
                         }
                     } else {
@@ -509,27 +513,33 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             byteToRead = lengthWrapper[0];
                         }
 
-                    if (byteToRead > 0) {
-                        int minBytes = Math.min(8192, byteToRead);
-                        byte[] bytes = new byte[minBytes];
-                        int leftBytes = minBytes < 8192 ? 0 : byteToRead;
-                        int read = 0;
-                        while (leftBytes > -1) {
+                        if (byteToRead > 0) {
+                            int minBytes = Math.min(8192, byteToRead);
+                            byte[] bytes = new byte[minBytes];
+                            int leftBytes = minBytes < 8192 ? 0 : byteToRead;
+                            int read = 0;
+                            while (leftBytes > -1) {
 
-                            read = stream.read(bytes);
-                            if (read == -1) {
-                                break;
+                                try {
+                                    read = stream.read(bytes);
+                                } catch (IOException ex) {
+                                    logger.warn("Connection closed", ex);
+                                    read = -1;
+                                }
+
+                                if (read == -1) {
+                                    break;
+                                }
+
+                                future.touch();
+
+                                byte[] b = new byte[read];
+                                System.arraycopy(bytes, 0, b, 0, read);
+                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this));
+
+                                leftBytes -= read;
                             }
-
-                            future.touch();
-
-                            byte[] b = new byte[read];
-                            System.arraycopy(bytes, 0, b, 0, read);
-                            asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this));
-
-                            leftBytes -= read;
                         }
-                    }
                     }
                 }
 
@@ -579,18 +589,20 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     logger.error(t2.getMessage(), t2);
                 }
             } finally {
-                if (config.getMaxTotalConnections() != -1) {
-                    maxConnections.decrementAndGet();
-                }
-                future.done(null);
-
-                // Crappy Apache HttpClient who blocks forever here with large files.
-                config.executorService().submit(new Runnable() {
-
-                    public void run() {
-                        method.releaseConnection();                       
+                if (terminate) {
+                    if (config.getMaxTotalConnections() != -1) {
+                        maxConnections.decrementAndGet();
                     }
-                });
+                    future.done(null);
+
+                    // Crappy Apache HttpClient who blocks forever here with large files.
+                    config.executorService().submit(new Runnable() {
+
+                        public void run() {
+                            method.releaseConnection();
+                        }
+                    });
+                }
             }
             return null;
         }
