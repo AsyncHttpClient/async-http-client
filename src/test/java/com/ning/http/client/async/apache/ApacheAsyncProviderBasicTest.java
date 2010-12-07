@@ -31,4 +31,13 @@ public class ApacheAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Test(enabled = false)
     public void idleRequestTimeoutTest() throws Exception {
     }
+
+
+    @Test(enabled = false)
+    public void asyncConnectInvalidFuture() throws Throwable {
+    }
+
+    @Test(enabled = false)
+    public void asyncConnectInvalidPortFuture() throws Throwable {
+    }
 }
