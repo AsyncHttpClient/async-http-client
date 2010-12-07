@@ -49,7 +49,6 @@ import java.util.concurrent.TimeoutException;
 public abstract class MultipleHeaderTest extends AbstractBasicTest{
     private ExecutorService executorService;
     private ServerSocket serverSocket;
-    private static final int PORT = 2929;
     private Future<?> voidFuture;
 
     @Test(groups = {"standalone", "default_provider"})
@@ -58,7 +57,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
         final String[] xffHeaders = new String[]{null, null};
 
         AsyncHttpClient ahc = new AsyncHttpClient();
-        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + PORT + "/MultiOther").build();
+        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {
@@ -109,7 +108,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
         final String[] clHeaders = new String[]{null, null};
 
         AsyncHttpClient ahc = new AsyncHttpClient();
-        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + PORT + "/MultiEnt").build();
+        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {
             public void onThrowable(Throwable t) {
@@ -161,7 +160,9 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        serverSocket = new ServerSocket(PORT);
+        port1 = findFreePort();
+
+        serverSocket = new ServerSocket(port1);
         executorService = Executors.newFixedThreadPool(1);
         voidFuture = executorService.submit(new Callable<Void>() {
             public Void call() throws Exception {
