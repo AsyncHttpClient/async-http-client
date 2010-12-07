@@ -976,11 +976,12 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider", "async"})
     public void asyncConnectInvalidFuture() throws Throwable {
 
+        int dummyPort = findFreePort();
         AsyncHttpClient c = getAsyncHttpClient(null);
         final AtomicInteger count = new AtomicInteger();
         for (int i = 0; i < 20; i++) {
             try {
-                Response response = c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
+                Response response = c.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
                     /* @Override */
                     public void onThrowable(Throwable t) {
                         count.incrementAndGet();
@@ -1001,9 +1002,10 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider", "async"})
     public void asyncConnectInvalidPortFuture() throws Throwable {
 
+        int dummyPort = findFreePort();
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Response response = c.preparePost("http://127.0.0.1:9999/").execute(new AsyncCompletionHandlerAdapter() {
+            Response response = c.preparePost(String.format("http://127.0.0.1:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
                 /* @Override */
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
