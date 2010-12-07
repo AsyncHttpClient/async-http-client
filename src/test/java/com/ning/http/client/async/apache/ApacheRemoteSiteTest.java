@@ -18,11 +18,11 @@ package com.ning.http.client.async.apache;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.async.ResumableFileTest;
+import com.ning.http.client.async.RemoteSiteTest;
 
-public class ApacheResumableFileTest extends ResumableFileTest {
+public class ApacheRemoteSiteTest extends RemoteSiteTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.apacheProvider(config);
+        return ProviderUtil.jdkProvider(config);
     }
 }
