@@ -28,16 +28,23 @@ public class ApacheAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         return ProviderUtil.apacheProvider(config);
     }
 
+    @Override
     @Test(enabled = false)
     public void idleRequestTimeoutTest() throws Exception {
     }
 
-
+    @Override
     @Test(enabled = false)
     public void asyncConnectInvalidFuture() throws Throwable {
     }
 
+    @Override
     @Test(enabled = false)
     public void asyncConnectInvalidPortFuture() throws Throwable {
+    }
+
+    @Override
+    @Test(enabled = false)
+    public void asyncConnectInvalidFuturePort() throws Throwable {
     }
 }

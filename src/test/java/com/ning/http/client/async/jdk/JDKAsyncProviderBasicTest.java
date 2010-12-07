@@ -32,11 +32,18 @@ public class JDKAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     public void asyncDoGetKeepAliveHandlerTest() throws Throwable {
     }
 
+    @Override
     @Test(enabled = false)
     public void asyncConnectInvalidFuture() throws Throwable {
     }
 
+    @Override
     @Test(enabled = false)
     public void asyncConnectInvalidPortFuture() throws Throwable {
+    }
+
+    @Override
+    @Test(enabled = false)
+    public void asyncConnectInvalidFuturePort() throws Throwable {
     }
 }
