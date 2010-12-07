@@ -412,4 +412,5 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
+
 }
