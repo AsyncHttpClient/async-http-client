@@ -34,12 +34,12 @@ import java.util.UUID;
 /**
  * @author Benjamin Hanzelmann
  */
-public class PutLargeFileTest
+public abstract class PutLargeFileTest
         extends AbstractBasicTest {
 
     private File largeFile;
 
-    @Test(groups = "standalone", enabled = true)
+    @Test(groups = {"standalone", "default_provider"}, enabled = true)
     public void testPutLargeFile()
             throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
@@ -57,7 +57,7 @@ public class PutLargeFileTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testPutSmallFile()
             throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");

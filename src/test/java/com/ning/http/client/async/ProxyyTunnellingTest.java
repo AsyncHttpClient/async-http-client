@@ -35,14 +35,14 @@ import static org.testng.Assert.assertEquals;
 /**
  * Proxy usage tests.
  */
-public class ProxyyTunnellingTest extends AbstractBasicTest {
+public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
 
     public AbstractHandler configureHandler() throws Exception {
         ProxyHandler proxy = new ProxyHandler();
         return proxy;
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);
@@ -72,7 +72,7 @@ public class ProxyyTunnellingTest extends AbstractBasicTest {
         asyncHttpClient.close();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);

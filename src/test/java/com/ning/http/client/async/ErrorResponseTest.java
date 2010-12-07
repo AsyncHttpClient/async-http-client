@@ -38,7 +38,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Tatu Saloranta
  */
-public class ErrorResponseTest extends AbstractBasicTest {
+public abstract class ErrorResponseTest extends AbstractBasicTest {
     final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
     private static class ErrorHandler extends AbstractHandler {
@@ -61,9 +61,9 @@ public class ErrorResponseTest extends AbstractBasicTest {
         return new ErrorHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testQueryParameters() throws Exception {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         Future<Response> f = client
                 .prepareGet("http://127.0.0.1:" + port1 + "/foo")
                 .addHeader("Accepts", "*/*")

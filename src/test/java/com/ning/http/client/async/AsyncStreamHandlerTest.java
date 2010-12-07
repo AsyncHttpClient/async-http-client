@@ -35,14 +35,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AsyncStreamHandlerTest extends AbstractBasicTest {
+public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     private final static String RESPONSE = "param_1_";
     private final static String UTF8 = "text/html;charset=utf-8";
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamGETTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -74,7 +74,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamPOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
@@ -82,7 +82,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
@@ -119,7 +119,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamInterruptTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
@@ -129,7 +129,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         m.put("param_1", Arrays.asList("value_1"));
 
         final AtomicBoolean a = new AtomicBoolean(true);
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
 
@@ -163,11 +163,11 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamFutureTest() throws Throwable {
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         Future<String> f = c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
@@ -209,11 +209,11 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamThrowableRefusedTest() throws Throwable {
 
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -242,7 +242,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncStreamReusePOSTTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
@@ -250,7 +250,7 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
 
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
@@ -322,10 +322,10 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void asyncStream301WithBody() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
         c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
@@ -358,10 +358,10 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void asyncStream301RedirectWithBody() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
             private StringBuilder builder = new StringBuilder();
 
@@ -395,14 +395,14 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone", timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
+    @Test(groups = {"standalone", "default_provider"}, timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
     public void asyncStreamJustStatusLine() throws Throwable {
         final int STATUS = 0;
         final int COMPLETED = 1;
         final int OTHER = 2;
         final boolean[] whatCalled = new boolean[]{false, false, false};
         final CountDownLatch latch = new CountDownLatch(1);
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
             private int status = -1;
 
@@ -462,10 +462,10 @@ public class AsyncStreamHandlerTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void asyncOptionsTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
         c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
             @Override

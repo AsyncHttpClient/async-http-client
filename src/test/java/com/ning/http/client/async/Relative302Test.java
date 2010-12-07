@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class Relative302Test extends AbstractBasicTest {
+public abstract class Relative302Test extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
@@ -88,7 +88,7 @@ public class Relative302Test extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void redirected302Test() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
@@ -124,7 +124,7 @@ public class Relative302Test extends AbstractBasicTest {
     }
 
     // TODO: Netty Only.
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
@@ -144,7 +144,7 @@ public class Relative302Test extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 

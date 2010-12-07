@@ -32,7 +32,7 @@ public class RequestBuilderTest {
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.";
     private final static String HEX_CHARS = "0123456789ABCDEF";
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testEncodesQueryParameters() throws UnsupportedEncodingException {
         String[] values = new String[]{
                 "abcdefghijklmnopqrstuvwxyz",
@@ -73,7 +73,7 @@ public class RequestBuilderTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testChaining() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com")
@@ -85,7 +85,7 @@ public class RequestBuilderTest {
         assertEquals(request2.getUrl(), request.getUrl());
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
@@ -99,7 +99,7 @@ public class RequestBuilderTest {
         assertEquals(params.get("param2").get(0), "value2");
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getReqType(), "ABC");

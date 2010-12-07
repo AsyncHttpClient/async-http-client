@@ -49,7 +49,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-public class AuthTimeoutTest
+public abstract class AuthTimeoutTest
         extends AbstractBasicTest {
 
     private final static String user = "user";
@@ -124,7 +124,7 @@ public class AuthTimeoutTest
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -146,7 +146,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicPreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -168,7 +168,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -190,7 +190,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestPreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -212,7 +212,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -234,7 +234,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -256,7 +256,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -278,7 +278,7 @@ public class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -303,7 +303,7 @@ public class AuthTimeoutTest
     private Future<Response> execute(boolean preemptive)
             throws IOException {
         client =
-                new AsyncHttpClient(
+                getAsyncHttpClient(
                         new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
         AsyncHttpClient.BoundRequestBuilder r =
                 client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content",

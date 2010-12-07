@@ -21,7 +21,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.async.AbstractBasicTest.AsyncCompletionHandlerAdapter;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -43,7 +42,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Martin Schurrer
  */
-public class RemoteSiteTest {
+public abstract class RemoteSiteTest extends AbstractBasicTest{
     private AsyncHttpClient c;
     private CyclicBarrier b;
     private AsyncCompletionHandler<Response> h;
@@ -97,39 +96,39 @@ public class RemoteSiteTest {
         }
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://www.google.com/").execute(h);
         b.await();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testMailGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://mail.google.com/").execute(h);
         b.await();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testWwwMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://www.microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testUpdateMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
         c.prepareGet("http://update.microsoft.com/").execute(h);
         b.await();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void testGoogleComWithTimeout() throws IOException, BrokenBarrierException, InterruptedException {
         // Works
         c.prepareGet("http://google.com/").execute(h);
@@ -140,7 +139,7 @@ public class RemoteSiteTest {
         }
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
         AsyncHttpClient p = new AsyncHttpClient(
                 new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
@@ -165,7 +164,7 @@ public class RemoteSiteTest {
         p.close();
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void invalidStreamTest2() throws Throwable {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
                 .setRequestTimeoutInMs(10000)

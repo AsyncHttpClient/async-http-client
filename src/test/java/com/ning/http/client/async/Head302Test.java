@@ -21,6 +21,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.omg.CORBA.TIMEOUT;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Hubert Iwaniuk
  */
-public class Head302Test extends AbstractBasicTest {
+public abstract class Head302Test extends AbstractBasicTest {
     /**
      * Handler that does Found (302) in response to HEAD method.
      */
@@ -61,7 +62,7 @@ public class Head302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClient client = new AsyncHttpClient();
         final CountDownLatch l = new CountDownLatch(1);

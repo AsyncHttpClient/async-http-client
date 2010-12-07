@@ -40,10 +40,10 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
-public class ConnectionPoolTest extends AbstractBasicTest {
+public abstract class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testMaxTotalConnections() {
         AsyncHttpClient client = new AsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
@@ -70,7 +70,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         assertNull(exception);
     }
 
-    @Test(groups = {"standalone", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)
+    @Test(groups = {"standalone", "default_provider", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient();
 
@@ -111,7 +111,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testInvalidConnectionsPool() {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
@@ -155,7 +155,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testValidConnectionsPool() {
 
         ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
@@ -199,7 +199,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     }
 
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void multipleMaxConnectionOpenTest() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
@@ -228,7 +228,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
@@ -257,7 +257,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = {"online", "async"})
+    @Test(groups = {"online", "default_provider", "async"})
     public void asyncDoGetMaxConnectionsTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsTotal(2).build());
 
@@ -305,7 +305,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
      *
      * @throws Throwable if something wrong happens.
      */
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void win7DisconnectTest() throws Throwable {
         final AtomicInteger count = new AtomicInteger(0);
 
@@ -337,7 +337,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void asyncHandlerOnThrowableTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final AtomicInteger count = new AtomicInteger();

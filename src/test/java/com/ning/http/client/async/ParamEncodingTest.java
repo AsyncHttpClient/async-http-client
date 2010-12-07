@@ -33,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class ParamEncodingTest extends AbstractBasicTest {
+public abstract class ParamEncodingTest extends AbstractBasicTest {
 
     private class ParamEncoding extends AbstractHandler {
         public void handle(String s,
@@ -56,7 +56,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";

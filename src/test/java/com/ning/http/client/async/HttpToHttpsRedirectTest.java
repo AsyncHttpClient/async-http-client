@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class HttpToHttpsRedirectTest extends AbstractBasicTest {
+public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
@@ -137,7 +137,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         return port;
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void httpToHttpsRedirect() throws Throwable {
         isSet.getAndSet(false);
 
@@ -157,7 +157,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void httpToHttpsProperConfig() throws Throwable {
         isSet.getAndSet(false);
 
@@ -181,7 +181,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 

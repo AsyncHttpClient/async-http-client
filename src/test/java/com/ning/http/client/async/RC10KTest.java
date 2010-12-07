@@ -49,7 +49,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Hubert Iwaniuk
  */
-public class RC10KTest extends AbstractBasicTest {
+public abstract class RC10KTest extends AbstractBasicTest {
     private static final int C10K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;

@@ -13,30 +13,28 @@ package com.ning.http.client.resumable;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+import org.testng.annotations.Test;
+
 import java.util.Map;
 
-import static org.testng.Assert.*;
-
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 /**
  * @author Benjamin Hanzelmann
  */
-public class PropertiesBasedResumableProcesserTest
-{
+public class PropertiesBasedResumableProcesserTest {
     @Test
     public void testSaveLoad()
-        throws Exception
-    {
+            throws Exception {
         PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
-        p.put( "http://localhost/test.url", 15L );
-        p.put( "http://localhost/test2.url", 50L );
-        p.save( null );
+        p.put("http://localhost/test.url", 15L);
+        p.put("http://localhost/test2.url", 50L);
+        p.save(null);
         p = new PropertiesBasedResumableProcessor();
         Map<String, Long> m = p.load();
-        assertEquals( m.size(), 2 );
-        assertEquals( m.get( "http://localhost/test.url" ), Long.valueOf( 15L ) );
-        assertEquals( m.get( "http://localhost/test2.url" ), Long.valueOf( 50L ) );
+        assertEquals(m.size(), 2);
+        assertEquals(m.get("http://localhost/test.url"), Long.valueOf(15L));
+        assertEquals(m.get("http://localhost/test2.url"), Long.valueOf(50L));
     }
 
 }

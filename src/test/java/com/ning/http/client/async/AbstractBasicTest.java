@@ -17,6 +17,9 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -39,7 +42,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Enumeration;
 
-public class AbstractBasicTest {
+public abstract class AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected Server server;
     protected int port1;
@@ -225,4 +228,7 @@ public class AbstractBasicTest {
         }
 
     }
+
+    public abstract AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config);
+
 }

@@ -33,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class InputStreamTest extends AbstractBasicTest {
+public abstract class InputStreamTest extends AbstractBasicTest {
 
     private class InputStreamHandler extends AbstractHandler {
         public void handle(String s,
@@ -54,7 +54,7 @@ public class InputStreamTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         AsyncHttpClient c = new AsyncHttpClient();

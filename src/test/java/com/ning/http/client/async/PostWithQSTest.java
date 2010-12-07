@@ -40,7 +40,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Hubert Iwaniuk
  */
-public class PostWithQSTest extends AbstractBasicTest {
+public abstract class PostWithQSTest extends AbstractBasicTest {
 
     /**
      * POST with QS server part.
@@ -70,7 +70,7 @@ public class PostWithQSTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();

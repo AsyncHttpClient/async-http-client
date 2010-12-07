@@ -54,15 +54,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ning.http.client.async.AbstractBasicTest.TIMEOUT;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class BasicHttpsTest {
+public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     protected final Logger log = LoggerFactory.getLogger(BasicHttpsTest.class);
-    protected Server server;
-    int port1;
 
     public static class EchoHandler extends AbstractHandler {
 
@@ -205,7 +202,7 @@ public class BasicHttpsTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPostTest() throws Throwable {
 
         final AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
@@ -222,7 +219,7 @@ public class BasicHttpsTest {
         assertEquals(resp.getResponseBody(), "This is a simple test file");
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void multipleSSLRequestsTest() throws Throwable {
         final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 
@@ -246,7 +243,7 @@ public class BasicHttpsTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
         final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 

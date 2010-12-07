@@ -44,7 +44,7 @@ import static org.testng.Assert.fail;
  *
  * @author Hubert Iwaniuk
  */
-public class EmptyBodyTest extends AbstractBasicTest {
+public abstract class EmptyBodyTest extends AbstractBasicTest {
     private class NoBodyResponseHandler extends AbstractHandler {
         public void handle(
                 String s,
@@ -62,9 +62,9 @@ public class EmptyBodyTest extends AbstractBasicTest {
         return new NoBodyResponseHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testEmptyBody() throws IOException {
-        AsyncHttpClient ahc = new AsyncHttpClient();
+        AsyncHttpClient ahc = getAsyncHttpClient(null);
         final AtomicBoolean err = new AtomicBoolean(false);
         final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
         final AtomicBoolean status = new AtomicBoolean(false);

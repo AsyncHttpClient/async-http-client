@@ -47,7 +47,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link com.ning.http.client.async.BasicHttpsTest}
  */
-public class ZeroCopyFileTest extends AbstractBasicTest {
+public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     private class ZeroCopyHandler extends AbstractHandler {
         public void handle(String s,
@@ -70,7 +70,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = new AsyncHttpClient();
 
@@ -107,7 +107,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = new AsyncHttpClient();
 
@@ -130,7 +130,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = new AsyncHttpClient();
 
@@ -171,7 +171,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     }
 
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = new AsyncHttpClient();
 

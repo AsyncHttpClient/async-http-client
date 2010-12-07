@@ -13,37 +13,33 @@ package com.ning.http.client.resumable;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import java.util.List;
-
-import static org.testng.Assert.*;
-
-import org.testng.annotations.Test;
-
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * @author Benjamin Hanzelmann
  */
-public class ResumableAsyncHandlerTest
-{
+public class ResumableAsyncHandlerTest {
     @Test
-    public void testAdjustRange()
-    {
+    public void testAdjustRange() {
         MapResumableProcessor proc = new MapResumableProcessor();
-        
+
         ResumableAsyncHandler<Response> h = new ResumableAsyncHandler<Response>(proc);
-        Request request = new RequestBuilder( "GET" ).setUrl( "http://test/url" ).build();
-        Request newRequest = h.adjustRequestRange( request );
+        Request request = new RequestBuilder("GET").setUrl("http://test/url").build();
+        Request newRequest = h.adjustRequestRange(request);
         assertEquals(newRequest.getUrl(), request.getUrl());
-        String rangeHeader = newRequest.getHeaders().getFirstValue( "Range" );
-        assertNull( rangeHeader );
-        
-        proc.put( "http://test/url", 5000 );
-        newRequest = h.adjustRequestRange( request );
+        String rangeHeader = newRequest.getHeaders().getFirstValue("Range");
+        assertNull(rangeHeader);
+
+        proc.put("http://test/url", 5000);
+        newRequest = h.adjustRequestRange(request);
         assertEquals(newRequest.getUrl(), request.getUrl());
-        rangeHeader = newRequest.getHeaders().getFirstValue( "Range" );
-        assertEquals( rangeHeader, "bytes=5000-" );
+        rangeHeader = newRequest.getHeaders().getFirstValue("Range");
+        assertEquals(rangeHeader, "bytes=5000-");
     }
 }

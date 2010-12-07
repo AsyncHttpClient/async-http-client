@@ -29,9 +29,9 @@ import java.util.concurrent.Future;
 
 import static org.testng.Assert.assertEquals;
 
-public class BodyChunkTest extends AbstractBasicTest {
+public abstract class BodyChunkTest extends AbstractBasicTest {
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void negativeContentTypeTest() throws Throwable {
 
         AsyncHttpClientConfig.Builder confbuilder = new AsyncHttpClientConfig.Builder();
@@ -40,7 +40,7 @@ public class BodyChunkTest extends AbstractBasicTest {
         confbuilder = confbuilder.setRequestTimeoutInMs(5 * 60 * 1000); // 5 minutes
 
         // Create client
-        AsyncHttpClient client = new AsyncHttpClient(confbuilder.build());
+        AsyncHttpClient client = getAsyncHttpClient(confbuilder.build());
 
         RequestBuilder requestBuilder = new RequestBuilder("POST")
                 .setUrl(getTargetUrl())

@@ -35,7 +35,7 @@ import static org.testng.Assert.assertNotNull;
 /**
  * Test the Expect: 100-Continue.
  */
-public class Expect100ContinueTest extends AbstractBasicTest {
+public abstract class Expect100ContinueTest extends AbstractBasicTest {
 
     private class ZeroCopyHandler extends AbstractHandler {
         public void handle(String s,
@@ -58,9 +58,9 @@ public class Expect100ContinueTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void Expect100Continue() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         ClassLoader cl = getClass().getClassLoader();
         URL url = cl.getResource("SimpleTextFile.txt");

@@ -41,7 +41,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
-public class TransferListenerTest extends AbstractBasicTest {
+public abstract class TransferListenerTest extends AbstractBasicTest {
     private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-"
             + UUID.randomUUID().toString().substring(0, 8));
 
@@ -80,7 +80,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicGetTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -133,7 +133,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicPutTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 

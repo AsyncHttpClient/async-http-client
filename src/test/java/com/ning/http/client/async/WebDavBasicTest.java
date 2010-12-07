@@ -42,7 +42,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 
-public class WebDavBasicTest extends AbstractBasicTest {
+public abstract class WebDavBasicTest extends AbstractBasicTest {
 
     public Embedded embedded;
 
@@ -97,7 +97,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         embedded.stop();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
@@ -109,7 +109,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
@@ -120,7 +120,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
@@ -131,7 +131,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();
@@ -153,7 +153,7 @@ public class WebDavBasicTest extends AbstractBasicTest {
 
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = new AsyncHttpClient();

@@ -50,7 +50,7 @@ import java.util.concurrent.TimeoutException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class DigestAuthTest extends AbstractBasicTest {
+public abstract class DigestAuthTest extends AbstractBasicTest {
 
     private final static String user = "user";
     private final static String admin = "admin";
@@ -113,9 +113,9 @@ public class DigestAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
                 .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
                         .setPassword(admin)
@@ -130,9 +130,9 @@ public class DigestAuthTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
                 .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
                         .setPassword(admin)
@@ -146,9 +146,9 @@ public class DigestAuthTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
                 .setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).setScheme(Realm.AuthScheme.DIGEST).build());
 

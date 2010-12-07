@@ -30,10 +30,10 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-public class NoNullResponseTest {
+public abstract class NoNullResponseTest extends AbstractBasicTest {
     private static final String VERISIGN_HTTPS_URL = "https://www.verisign.com";
 
-    @Test(invocationCount = 4, groups = "online")
+    @Test(invocationCount = 4, groups = {"online", "default_provider"})
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Throwable {
         final AsyncHttpClient client = create();
         final BoundRequestBuilder builder = client.prepareGet(VERISIGN_HTTPS_URL);

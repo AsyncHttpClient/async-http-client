@@ -23,11 +23,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 
-public class ComplexClientTest extends AbstractBasicTest {
+public abstract class ComplexClientTest extends AbstractBasicTest {
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void multipleRequestsTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         String body = "hello there";
 
@@ -49,9 +49,9 @@ public class ComplexClientTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void urlWithoutSlashTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         String body = "hello there";
 

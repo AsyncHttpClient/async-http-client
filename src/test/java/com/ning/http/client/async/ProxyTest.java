@@ -40,7 +40,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Hubert Iwaniuk
  */
-public class ProxyTest extends AbstractBasicTest {
+public abstract class ProxyTest extends AbstractBasicTest {
     private class ProxyHandler extends AbstractHandler {
         public void handle(String s,
                            Request r,
@@ -61,7 +61,7 @@ public class ProxyTest extends AbstractBasicTest {
         return new ProxyHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         String target = "http://127.0.0.1:1234/";
@@ -76,7 +76,7 @@ public class ProxyTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg
                 = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
@@ -92,7 +92,7 @@ public class ProxyTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg
                 = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();

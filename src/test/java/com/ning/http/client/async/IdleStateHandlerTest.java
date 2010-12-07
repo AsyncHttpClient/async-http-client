@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 
-public class IdleStateHandlerTest extends AbstractBasicTest {
+public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class IdleStateHandler extends AbstractHandler {
@@ -72,7 +72,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = "online")
+    @Test(groups = {"online", "default_provider"})
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(10 * 1000).build();

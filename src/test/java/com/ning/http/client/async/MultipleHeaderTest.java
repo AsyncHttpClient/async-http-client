@@ -46,13 +46,13 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Hubert Iwaniuk
  */
-public class MultipleHeaderTest {
+public abstract class MultipleHeaderTest extends AbstractBasicTest{
     private ExecutorService executorService;
     private ServerSocket serverSocket;
     private static final int PORT = 2929;
     private Future<?> voidFuture;
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testMultipleOtherHeaders()
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[]{null, null};
@@ -103,7 +103,7 @@ public class MultipleHeaderTest {
     }
 
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testMultipleEntityHeaders()
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[]{null, null};

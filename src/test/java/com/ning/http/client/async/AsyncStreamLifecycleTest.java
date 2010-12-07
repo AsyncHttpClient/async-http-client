@@ -50,7 +50,7 @@ import static org.testng.Assert.fail;
  *
  * @author Hubert Iwaniuk
  */
-public class AsyncStreamLifecycleTest extends AbstractBasicTest {
+public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     @AfterClass
@@ -102,9 +102,9 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     //TODO Netty only.
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testStream() throws IOException {
-        AsyncHttpClient ahc = new AsyncHttpClient();
+        AsyncHttpClient ahc = getAsyncHttpClient(null);
         final AtomicBoolean err = new AtomicBoolean(false);
         final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
         final AtomicBoolean status = new AtomicBoolean(false);

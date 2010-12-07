@@ -43,7 +43,7 @@ import static org.testng.Assert.assertNotNull;
  *
  * @author Hubert Iwaniuk
  */
-public class QueryParametersTest extends AbstractBasicTest {
+public abstract class QueryParametersTest extends AbstractBasicTest {
     private class QueryStringHandler extends AbstractHandler {
         public void handle(String s,
                            Request r,
@@ -72,7 +72,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         return new QueryStringHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         Future<Response> f = client
@@ -88,7 +88,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testUrlRequestParametersEncoding() throws IOException, ExecutionException, InterruptedException {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
@@ -104,7 +104,7 @@ public class QueryParametersTest extends AbstractBasicTest {
     }
 
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void urlWithColonTest_Netty() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 
@@ -117,7 +117,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void urlWithColonTest_JDK() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient(new JDKAsyncHttpProvider(
                 new AsyncHttpClientConfig.Builder().build()));

@@ -41,7 +41,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-public class FilterTest extends AbstractBasicTest {
+public abstract class FilterTest extends AbstractBasicTest {
 
     private class BasicHandler extends AbstractHandler {
 
@@ -68,7 +68,7 @@ public class FilterTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
@@ -82,7 +82,7 @@ public class FilterTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void loadThrottleTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
@@ -103,7 +103,7 @@ public class FilterTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void maxConnectionsText() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
@@ -124,7 +124,7 @@ public class FilterTest extends AbstractBasicTest {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void basicResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addResponseFilter(new ResponseFilter() {
@@ -148,7 +148,7 @@ public class FilterTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void replayResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -180,7 +180,7 @@ public class FilterTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void replayStatusCodeResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);

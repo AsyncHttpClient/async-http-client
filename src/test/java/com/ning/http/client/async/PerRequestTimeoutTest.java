@@ -47,7 +47,7 @@ import static org.testng.Assert.fail;
  *
  * @author Hubert Iwaniuk
  */
-public class PerRequestTimeoutTest extends AbstractBasicTest {
+public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
     @Override
@@ -91,7 +91,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testRequestTimeout() throws IOException {
         AsyncHttpClient client = new AsyncHttpClient();
         PerRequestConfig requestConfig = new PerRequestConfig();
@@ -113,7 +113,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         PerRequestConfig requestConfig = new PerRequestConfig();
@@ -133,7 +133,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testGlobalRequestTimeout() throws IOException {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -152,7 +152,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = "standalone")
+    @Test(groups = {"standalone", "default_provider"})
     public void testGlobalIdleTimeout() throws IOException {
         final long times[] = new long[]{-1, -1};
 
