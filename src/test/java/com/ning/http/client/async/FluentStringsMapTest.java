@@ -104,10 +104,9 @@ public class FluentStringsMapTest {
 
         map.add("foo", (String) null);
 
-        assertTrue(map.keySet().isEmpty());
-        assertNull(map.getFirstValue("foo"));
-        assertNull(map.getJoinedValue("foo", ", "));
-        assertNull(map.get("foo"));
+        assertEquals(map.getFirstValue("foo"), "");
+        assertEquals(map.getJoinedValue("foo", ", "), "");
+        assertEquals(map.get("foo").size(), 1);
     }
 
     @Test

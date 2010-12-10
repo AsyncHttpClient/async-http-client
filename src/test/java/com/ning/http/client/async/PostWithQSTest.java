@@ -15,7 +15,9 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -74,6 +76,46 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = new AsyncHttpClient();
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = new AsyncHttpClient();
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+
+            /* @Override */
+            public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a")) {
+                    throw new IOException(status.getUrl().toURL().toString());
+                }
+                return super.onStatusReceived(status);
+            }
+
+        });
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = new AsyncHttpClient();
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+
+            /* @Override */
+            public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                    throw new IOException("failed to parse the query properly");
+                }
+                return super.onStatusReceived(status);
+            }
+
+        });
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);

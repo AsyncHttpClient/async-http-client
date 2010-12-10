@@ -3,6 +3,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,30 +37,6 @@ public class FluentCaseInsensitiveStringsMapTest {
         assertEquals(map.getFirstValue("baz"), "foo");
         assertEquals(map.getJoinedValue("baz", ", "), "foo, bar");
         assertEquals(map.get("baz"), Arrays.asList("foo", "bar"));
-    }
-
-    @Test
-    public void addNullTest() {
-        FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
-
-        map.add("fOO", "bAr");
-        map.add(null, Arrays.asList("fOo", "bar"));
-
-        assertEquals(map.keySet(), new LinkedHashSet<String>(Arrays.asList("fOO")));
-
-        assertEquals(map.getFirstValue("fOO"), "bAr");
-        assertEquals(map.getJoinedValue("fOO", ", "), "bAr");
-        assertEquals(map.get("fOO"), Arrays.asList("bAr"));
-        assertEquals(map.getFirstValue("foo"), "bAr");
-        assertEquals(map.getJoinedValue("foo", ", "), "bAr");
-        assertEquals(map.get("foo"), Arrays.asList("bAr"));
-        assertEquals(map.getFirstValue("FOO"), "bAr");
-        assertEquals(map.getJoinedValue("FOO", ", "), "bAr");
-        assertEquals(map.get("FOO"), Arrays.asList("bAr"));
-
-        assertNull(map.getFirstValue(null));
-        assertNull(map.getJoinedValue("Baz", ", "));
-        assertNull(map.get(null));
     }
 
     @Test
@@ -131,10 +108,9 @@ public class FluentCaseInsensitiveStringsMapTest {
 
         map.add("foo", (String) null);
 
-        assertTrue(map.keySet().isEmpty());
-        assertNull(map.getFirstValue("foo"));
-        assertNull(map.getJoinedValue("foo", ", "));
-        assertNull(map.get("foo"));
+        assertEquals(map.getFirstValue("foo"), "");
+        assertEquals(map.getJoinedValue("foo", ", "), "");
+        assertEquals(map.get("foo").size(), 1);
     }
 
     @Test

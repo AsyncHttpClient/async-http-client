@@ -72,19 +72,19 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         return this;
     }
 
-    private List<String> getNonNullValues(Collection<String> values) {
+    private List<String> fetchValues( Collection<String> values ) {
         List<String> result = null;
 
         if (values != null) {
             for (String value : values) {
-                if (value != null) {
-                    if (result == null) {
-                        // lazy initialization
-                        result = new ArrayList<String>();
-                    }
-                    result.add(value);
+                if (value == null) {
+                    value = "";
                 }
-            }
+                if (result == null) {
+                    // lazy initialization
+                    result = new ArrayList<String>();
+                }
+                result.add(value);            }
         }
         return result;
     }
@@ -99,7 +99,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap add(String key, Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = getNonNullValues(values);
+            List<String> nonNullValues = fetchValues( values );
     
             if (nonNullValues != null) {
                 String       lcKey     = key.toLowerCase();
@@ -174,7 +174,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap replace(final String key, final Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = getNonNullValues(values);
+            List<String> nonNullValues = fetchValues( values );
             String       lcKkey        = key.toLowerCase();
             String       realKey       = keyLookup.get(lcKkey);
     

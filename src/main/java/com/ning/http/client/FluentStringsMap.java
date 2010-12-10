@@ -67,18 +67,19 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         return this;
     }
 
-    private List<String> getNonNullValues(Collection<String> values) {
+    private List<String> fetchValues( Collection<String> values ) {
         List<String> result = null;
 
         if (values != null) {
             for (String value : values) {
-                if (value != null) {
-                    if (result == null) {
-                        // lazy initialization
-                        result = new ArrayList<String>();
-                    }
-                    result.add(value);
+                if (value == null) {
+                    value = "";
                 }
+                if (result == null) {
+                    // lazy initialization
+                    result = new ArrayList<String>();
+                }
+                result.add(value);
             }
         }
         return result;
@@ -94,7 +95,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      */
     public FluentStringsMap add(String key, Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = getNonNullValues(values);
+            List<String> nonNullValues = fetchValues( values );
     
             if (nonNullValues != null) {
                 List<String> curValues = this.values.get(key);
@@ -159,7 +160,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      */
     public FluentStringsMap replace(final String key, final Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = getNonNullValues(values);
+            List<String> nonNullValues = fetchValues( values );
     
             if (nonNullValues == null) {
                 this.values.remove(key);
