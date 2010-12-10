@@ -1503,6 +1503,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             Assert.fail();
         } catch (Throwable ex) {
             System.out.println("EXPIRED: " + (System.currentTimeMillis() - t1));
+            Assert.assertNull(ex.getCause());
             Assert.assertEquals(ex.getCause().getMessage(), "No response received after 10000");
         }
         c.close();
