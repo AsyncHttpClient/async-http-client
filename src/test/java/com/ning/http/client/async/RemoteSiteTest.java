@@ -21,12 +21,14 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -185,6 +187,26 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
             assertEquals(t.getCause().getMessage(), "invalid version format: ICY");
         }
         c.close();
+    }
+
+    @Test(groups = {"online", "default_provider"})
+    public void asyncFullBodyProperlyRead() throws Throwable {
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
+
+        InputStream stream = r.getResponseBodyAsStream();
+        int available = stream.available();
+        int[] lengthWrapper = new int[1];
+        byte[] bytes = AsyncHttpProviderUtils.readFully(stream, lengthWrapper);
+        int byteToRead = lengthWrapper[0];
+
+        Assert.assertEquals(available, byteToRead);
+
+        String page = new String(bytes, 0, byteToRead, "UTF-8");
+        Assert.assertEquals(page.length(), r.getResponseBody().length());
+
+
+        client.close();
     }
 
 }

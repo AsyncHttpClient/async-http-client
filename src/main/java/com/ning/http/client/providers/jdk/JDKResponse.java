@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class JDKResponse implements Response {
@@ -47,6 +48,8 @@ public class JDKResponse implements Response {
     private final List<Cookie> cookies = new ArrayList<Cookie>();
     private boolean writeHeaders;
     private boolean writeBody;
+    private AtomicBoolean contentComputed = new AtomicBoolean(false);
+    private String content;
 
     public JDKResponse(HttpResponseStatus status,
                        HttpResponseHeaders headers,
@@ -85,7 +88,11 @@ public class JDKResponse implements Response {
                 }
             }
         }
-        return contentToString(charset);
+
+        if (!contentComputed.get()) {
+            contentToString(charset);
+        }
+        return content;
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
@@ -95,18 +102,68 @@ public class JDKResponse implements Response {
         for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
         }
-        return b.toString();
+        content = b.toString();
+        return content;
     }
 
     /* @Override */
 
     public InputStream getResponseBodyAsStream() throws IOException {
         checkBodyParts();
-        return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
+
+        if (contentComputed.get()) {
+            return new ByteArrayInputStream(content.getBytes("UTF-8"));
+        }
+
+        return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
+    }
+
+    private static class ByteArrayCollectionInputStream extends InputStream {
+
+        private final HttpResponseBodyPart[] parts;
+
+        private int currentPos = 0;
+        private int bytePos = -1;
+        private byte[] active;
+        private int available = 0;
+
+        public ByteArrayCollectionInputStream(HttpResponseBodyPart[] parts) {
+            this.parts = parts;
+            active = parts[0].getBodyPartBytes();
+            computeLength(parts);
+        }
+
+        private void computeLength(HttpResponseBodyPart[] parts){
+            if (available == 0) {
+                for (HttpResponseBodyPart p : parts) {
+                    available += p.getBodyPartBytes().length;
+                }
+            }
+        }
+
+        @Override
+        public int available() throws IOException {
+            return available;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (++bytePos >= active.length) {
+                // No more bytes, so step to the next array.
+                if (++currentPos >= parts.length) {
+                    return -1;
+                }
+
+                bytePos = 0;
+                active = parts[currentPos].getBodyPartBytes();
+            }
+
+            return active[bytePos];
+        }
     }
 
     private void checkBodyParts() {
-        if (bodyParts == null && bodyParts.size() > 0) {
+        if (bodyParts == null || bodyParts.size() == 0) {
             throw new IllegalStateException(BODY_NOT_COMPUTED);
         }
     }
@@ -123,8 +180,12 @@ public class JDKResponse implements Response {
                 }
             }
         }
-        String response = contentToString(charset);
-        return response.length() <= maxLength ? response : response.substring(0, maxLength);
+
+        if (!contentComputed.get()) {
+            contentToString(charset);
+        }
+
+        return content.length() <= maxLength ? content : content.substring(0, maxLength);
     }
 
     /* @Override */
