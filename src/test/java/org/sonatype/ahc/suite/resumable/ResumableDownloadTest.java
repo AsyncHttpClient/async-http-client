@@ -37,7 +37,7 @@ import static org.testng.AssertJUnit.assertEquals;
 public class ResumableDownloadTest
         extends AsyncSuiteConfiguration {
 
-    @Test(groups = "standalone")
+    @Test(groups = "standalone", enabled = false)
     public void testResumeDownloadForkVM()
             throws IOException, InterruptedException {
         final int length = 128 * 1024;
