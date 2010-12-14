@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -80,10 +81,11 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
 
         try {
             c.prepareGet(getTargetUrl()).execute().get();
+            fail("Expected to throw Idle t/o exception.");
         } catch (ExecutionException e) {
             assertEquals(e.getCause().getMessage(), "No response received. Connection timed out after 10000");
+        } finally {
+            c.close();
         }
-
-        c.close();
     }
 }
