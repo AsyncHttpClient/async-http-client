@@ -201,11 +201,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         int byteToRead = lengthWrapper[0];
 
         Assert.assertEquals(available, byteToRead);
-
-        String page = new String(bytes, 0, byteToRead, "UTF-8");
-        Assert.assertEquals(page.length(), r.getResponseBody().length());
-
-
         client.close();
     }
 
