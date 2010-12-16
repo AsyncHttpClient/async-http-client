@@ -53,7 +53,7 @@ public class AsyncHttpClientConfig {
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
     private final int connectionTimeOutInMs;
-    private final int idleConnectionInPollTimeoutInMs;
+    private final int idleConnectionInPoolTimeoutInMs;
     private final int requestTimeoutInMs;
     private final boolean redirectEnabled;
     private final int maxDefaultRedirects;
@@ -76,7 +76,7 @@ public class AsyncHttpClientConfig {
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
                                   int connectionTimeOutInMs,
-                                  int idleConnectionInPollTimeoutInMs,
+                                  int idleConnectionInPoolTimeoutInMs,
                                   int requestTimeoutInMs,
                                   boolean redirectEnabled,
                                   int maxDefaultRedirects,
@@ -98,7 +98,7 @@ public class AsyncHttpClientConfig {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.connectionTimeOutInMs = connectionTimeOutInMs;
-        this.idleConnectionInPollTimeoutInMs = idleConnectionInPollTimeoutInMs;
+        this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
         this.redirectEnabled = redirectEnabled;
         this.maxDefaultRedirects = maxDefaultRedirects;
@@ -176,7 +176,7 @@ public class AsyncHttpClientConfig {
      * @deprecated Please use {@link com.ning.http.client.AsyncHttpClientConfig#getIdleConnectionInPoolTimeoutInMs()}
      */
     public int getIdleConnectionTimeoutInMs() {
-        return idleConnectionInPollTimeoutInMs;
+        return idleConnectionInPoolTimeoutInMs;
     }
 
     /**
@@ -187,7 +187,7 @@ public class AsyncHttpClientConfig {
      *         in pool.
      */
     public int getIdleConnectionInPoolTimeoutInMs() {
-        return idleConnectionInPollTimeoutInMs;
+        return idleConnectionInPoolTimeoutInMs;
     }
 
     /**
@@ -368,7 +368,7 @@ public class AsyncHttpClientConfig {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
         private int defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
-        private int defaultIdleConnectionInPollTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
+        private int defaultIdleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
         private boolean redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
@@ -440,7 +440,7 @@ public class AsyncHttpClientConfig {
          * @deprecated Please use {@link Builder#setIdleConnectionInPoolTimeoutInMs(int)}
          */
         public Builder setIdleConnectionTimeoutInMs(int defaultIdleConnectionTimeoutInMs) {
-            this.defaultIdleConnectionInPollTimeoutInMs = defaultIdleConnectionTimeoutInMs;
+            this.defaultIdleConnectionInPoolTimeoutInMs = defaultIdleConnectionTimeoutInMs;
             return this;
         }
 
@@ -448,13 +448,13 @@ public class AsyncHttpClientConfig {
          * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
          * idle in pool.
          *
-         * @param defaultIdleConnectionInPollTimeoutInMs
+         * @param defaultIdleConnectionInPoolTimeoutInMs
          *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
          *         idle in pool.
          * @return a {@link Builder}
          */
-        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPollTimeoutInMs) {
-            this.defaultIdleConnectionInPollTimeoutInMs = defaultIdleConnectionInPollTimeoutInMs;
+        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPoolTimeoutInMs) {
+            this.defaultIdleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs;
             return this;
         }
         /**
@@ -732,7 +732,7 @@ public class AsyncHttpClientConfig {
             providerConfig = prototype.getAsyncHttpProviderConfig();
             connectionsPool = prototype.getConnectionsPool();
             defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
-            defaultIdleConnectionInPollTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
+            defaultIdleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
             allowPoolingConnection = prototype.getKeepAlive();
             defaultMaxConnectionPerHost = prototype.getMaxConnectionPerHost();
             maxDefaultRedirects = prototype.getMaxRedirects();
@@ -785,7 +785,7 @@ public class AsyncHttpClientConfig {
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
                     defaultMaxConnectionPerHost,
                     defaultConnectionTimeOutInMs,
-                    defaultIdleConnectionInPollTimeoutInMs,
+                    defaultIdleConnectionInPoolTimeoutInMs,
                     defaultRequestTimeoutInMs,
                     redirectEnabled,
                     maxDefaultRedirects,
