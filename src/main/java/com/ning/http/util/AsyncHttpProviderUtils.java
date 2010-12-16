@@ -122,10 +122,10 @@ public class AsyncHttpProviderUtils {
 
     public final static URI createUri(String u) {
         URI uri = URI.create(u);
-        final String scheme = uri.getScheme().toLowerCase();
-        if (scheme == null || !scheme.equals("http") && !scheme.equals("https")) {
+        final String scheme = uri.getScheme();
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + u
-                    + ", must be equal (ignoring case) to 'http'");
+                    + ", must be equal (ignoring case) to 'http' or 'https'");
         }
 
         String path = uri.getPath();
