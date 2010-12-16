@@ -304,7 +304,7 @@ public abstract class AuthTimeoutTest
             throws IOException {
         client =
                 getAsyncHttpClient(
-                        new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+                        new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
         AsyncHttpClient.BoundRequestBuilder r =
                 client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content",
                         "Test");

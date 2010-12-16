@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadFactory;
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxTotalConnections
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxConnectionsPerHost
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultConnectionTimeoutInMS
- * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultIdleConnectionTimeoutInMS
+ * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultIdleConnectionInPoolTimeoutInMS
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultRequestTimeoutInMS
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultRedirectsEnabled
  * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxRedirects
@@ -53,7 +53,7 @@ public class AsyncHttpClientConfig {
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
     private final int connectionTimeOutInMs;
-    private final int idleConnectionTimeoutInMs;
+    private final int idleConnectionInPollTimeoutInMs;
     private final int requestTimeoutInMs;
     private final boolean redirectEnabled;
     private final int maxDefaultRedirects;
@@ -76,7 +76,7 @@ public class AsyncHttpClientConfig {
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
                                   int connectionTimeOutInMs,
-                                  int idleConnectionTimeoutInMs,
+                                  int idleConnectionInPollTimeoutInMs,
                                   int requestTimeoutInMs,
                                   boolean redirectEnabled,
                                   int maxDefaultRedirects,
@@ -98,7 +98,7 @@ public class AsyncHttpClientConfig {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.connectionTimeOutInMs = connectionTimeOutInMs;
-        this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+        this.idleConnectionInPollTimeoutInMs = idleConnectionInPollTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
         this.redirectEnabled = redirectEnabled;
         this.maxDefaultRedirects = maxDefaultRedirects;
@@ -173,9 +173,21 @@ public class AsyncHttpClientConfig {
      * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
+     * @deprecated Please use {@link com.ning.http.client.AsyncHttpClientConfig#getIdleConnectionInPoolTimeoutInMs()}
      */
     public int getIdleConnectionTimeoutInMs() {
-        return idleConnectionTimeoutInMs;
+        return idleConnectionInPollTimeoutInMs;
+    }
+
+    /**
+     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
+     * in pool.
+     *
+     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
+     *         in pool.
+     */
+    public int getIdleConnectionInPoolTimeoutInMs() {
+        return idleConnectionInPollTimeoutInMs;
     }
 
     /**
@@ -356,7 +368,7 @@ public class AsyncHttpClientConfig {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
         private int defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
-        private int defaultIdleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
+        private int defaultIdleConnectionInPollTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
         private boolean redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
@@ -425,12 +437,26 @@ public class AsyncHttpClientConfig {
          * @param defaultIdleConnectionTimeoutInMs
          *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.
          * @return a {@link Builder}
+         * @deprecated Please use {@link Builder#setIdleConnectionInPoolTimeoutInMs(int)}
          */
         public Builder setIdleConnectionTimeoutInMs(int defaultIdleConnectionTimeoutInMs) {
-            this.defaultIdleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs;
+            this.defaultIdleConnectionInPollTimeoutInMs = defaultIdleConnectionTimeoutInMs;
             return this;
         }
 
+        /**
+         * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
+         * idle in pool.
+         *
+         * @param defaultIdleConnectionInPollTimeoutInMs
+         *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection
+         *         idle in pool.
+         * @return a {@link Builder}
+         */
+        public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPollTimeoutInMs) {
+            this.defaultIdleConnectionInPollTimeoutInMs = defaultIdleConnectionInPollTimeoutInMs;
+            return this;
+        }
         /**
          * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response
          *
@@ -706,7 +732,7 @@ public class AsyncHttpClientConfig {
             providerConfig = prototype.getAsyncHttpProviderConfig();
             connectionsPool = prototype.getConnectionsPool();
             defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
-            defaultIdleConnectionTimeoutInMs = prototype.getIdleConnectionTimeoutInMs();
+            defaultIdleConnectionInPollTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
             allowPoolingConnection = prototype.getKeepAlive();
             defaultMaxConnectionPerHost = prototype.getMaxConnectionPerHost();
             maxDefaultRedirects = prototype.getMaxRedirects();
@@ -759,7 +785,7 @@ public class AsyncHttpClientConfig {
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
                     defaultMaxConnectionPerHost,
                     defaultConnectionTimeOutInMs,
-                    defaultIdleConnectionTimeoutInMs,
+                    defaultIdleConnectionInPollTimeoutInMs,
                     defaultRequestTimeoutInMs,
                     redirectEnabled,
                     maxDefaultRedirects,

@@ -69,7 +69,7 @@ public class AsyncSuiteConfiguration
     protected Builder settings(Builder rb) {
         rb.setFollowRedirects(true);
         rb.setConnectionTimeoutInMs(timeout);
-        rb.setIdleConnectionTimeoutInMs(timeout);
+        rb.setIdleConnectionInPoolTimeoutInMs(timeout);
         rb.setRequestTimeoutInMs(timeout);
         rb.setMaximumNumberOfRedirects(5);
         return rb;

@@ -89,7 +89,7 @@ public class PutTest
         String url = url("consume", "foo");
 
         Builder cfg = new Builder();
-        cfg.setIdleConnectionTimeoutInMs((int) heapSize);
+        cfg.setIdleConnectionInPoolTimeoutInMs((int) heapSize);
         cfg.setConnectionTimeoutInMs((int) heapSize);
         cfg.setRequestTimeoutInMs((int) heapSize);
         c = new AsyncHttpClient(cfg.build());
