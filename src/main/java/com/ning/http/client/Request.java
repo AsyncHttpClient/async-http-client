@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * The Request class can be used to construct HTTP request:
  * {@code
- *   Request r = new RequestBuilder().setUrl("url)
+ *   Request r = new RequestBuilder().setUrl("url")
  *                      .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
  *                      .setPassword(admin)
  *                      .setRealmName("MyRealm")
