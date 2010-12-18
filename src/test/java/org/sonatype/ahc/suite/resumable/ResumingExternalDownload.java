@@ -41,7 +41,7 @@ public class ResumingExternalDownload
         killAfter(timeout);
 
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
-        builder.setConnectionTimeoutInMs(60000).setIdleConnectionTimeoutInMs(60000).setRequestTimeoutInMs(60000);
+        builder.setConnectionTimeoutInMs(60000).setIdleConnectionInPoolTimeoutInMs(60000).setRequestTimeoutInMs(60000);
 
         AsyncHttpClientConfig cfg = builder.build();
         AsyncHttpClient client = new AsyncHttpClient(cfg);
