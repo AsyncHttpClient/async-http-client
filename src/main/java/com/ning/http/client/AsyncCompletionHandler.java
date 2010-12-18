@@ -21,26 +21,27 @@ import org.slf4j.LoggerFactory;
 
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
- * when the {@link Response} has been fully received.
+ * when the {@link Response} processing is finished.
+ * <p/>
  *
- * <strong>NOTE:<strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
+ * <strong>NOTE:</strong>: Sending another asynchronous request from an {@link AsyncHandler} must be done using
  * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
  *
- * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link com.ning.http.client.AsyncHttpClientConfig}:
+ * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link AsyncHttpClientConfig#executorService()}:
+ * <pre>
  * {@code
- *         &#64;Override
- *         public T onCompleted(Response response) throws Exception
+ * &#64;Override
+ *     public T onCompleted(Response response) throws Exception &#123;
+ *       asyncHttpClient.getConfig().executorService().execute(new Runnable() &#123;
+ *         public void run()
  *         &#123;
- *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
- *             &#123;
- *                 public void run()
- *                 &#123;
- *                     asyncHttpClient.prepareGet(...);
- *                 &#125;
- *             &#125;);
- *            return T;
+ *           asyncHttpClient.prepareGet(...);
  *         &#125;
+ *       &#125;);
+ *       return T;
+ *     &#125;
  * }
+ * </pre>
  *
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
@@ -51,8 +52,8 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
+     * @Override
      */
-    /* @Override */
     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         builder.accumulate(content);
         return STATE.CONTINUE;
@@ -60,8 +61,8 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
+     * @Override
      */
-    /* @Override */
     public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         builder.reset();
         builder.accumulate(status);
@@ -70,8 +71,8 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
+     * @Override
      */
-    /* @Override */
     public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         builder.accumulate(headers);
         return STATE.CONTINUE;
@@ -79,24 +80,29 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
+     * @Override
      */
-    /* @Override */
     public final T onCompleted() throws Exception {
         return onCompleted(builder.build());
     }
 
     /**
      * {@inheritDoc}
-    /* @Override */
+     * @Override
+     */
     public void onThrowable(Throwable t) {
         log.debug(t.getMessage(), t);
     }
 
     /**
-     * Invoked once the HTTP response has been fully read.
+     * Invoked once the HTTP response processing is finished.
+     * <p/>
+     *
+     * Gets always invoked as last callback method.
      *
      * @param response The {@link Response}
-     * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @throws Exception if something wrong happens
      */
     abstract public T onCompleted(Response response) throws Exception;
 
