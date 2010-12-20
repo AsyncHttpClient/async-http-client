@@ -788,17 +788,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
 
-        if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-
-            if (!future.isDone() && !future.isCancelled()) {
-                return;
+        Object attachment = ctx.getAttachment();
+        
+        if (attachment != null) {
+            if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
+                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+    
+                if (!future.isDone() && !future.isCancelled()) {
+                    return;
+                }
+    
+                abort(future, new TimeoutException("No response received. Connection timed out after "
+                        + config.getIdleConnectionTimeoutInMs()));
             }
-
-            abort(future, new TimeoutException("No response received. Connection timed out after "
-                    + config.getIdleConnectionTimeoutInMs()));
+        } else {
+          log.warn("null attachment on ChannelHandlerContext {}", ctx);
         }
-
+        
         log.debug("Channel Idle: {}", ctx.getChannel());
         closeChannel(ctx);
     }
