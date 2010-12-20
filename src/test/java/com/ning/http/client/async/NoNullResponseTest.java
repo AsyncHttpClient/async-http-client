@@ -57,7 +57,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
                 .setSSLContext(getSSLContext())
                 .setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(10000)
-                .setIdleConnectionTimeoutInMs(60000)
+                .setIdleConnectionInPoolTimeoutInMs(60000)
                 .setRequestTimeoutInMs(10000)
                 .setMaximumConnectionsPerHost(-1)
                 .setMaximumConnectionsTotal(-1);

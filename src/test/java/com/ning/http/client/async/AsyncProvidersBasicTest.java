@@ -1485,7 +1485,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void idleRequestTimeoutTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(5000).setRequestTimeoutInMs(10000).build());
+                new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(5000).setRequestTimeoutInMs(10000).build());
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
         h.add("LockThread", "true");

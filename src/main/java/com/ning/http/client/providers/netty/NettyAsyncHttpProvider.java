@@ -784,6 +784,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     @Override
     protected void channelIdle(ChannelHandlerContext ctx, IdleState state, long lastActivityTimeMillis) throws Exception {
 
+        if (log.isDebugEnabled()) {
+            log.debug("Idle state {}, last activity {}ms ago",
+                    new Object[] {state, System.currentTimeMillis() - lastActivityTimeMillis});
+        }
         if (state.equals(IdleState.READER_IDLE)) {
             return;
         }
