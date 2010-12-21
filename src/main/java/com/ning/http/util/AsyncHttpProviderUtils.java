@@ -151,6 +151,19 @@ public class AsyncHttpProviderUtils {
         }
         return url;
     }
+    
+    public final static URI getRedirectUri(URI uri, String location) {
+      URI newUri = uri.resolve(location);
+      
+      String scheme = newUri.getScheme();
+      
+      if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
+          throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
+                + ", must be equal (ignoring case) to 'http' or 'https'");
+      }
+      
+      return newUri;
+    }
 
     public final static int getPort(URI uri) {
         int port = uri.getPort();

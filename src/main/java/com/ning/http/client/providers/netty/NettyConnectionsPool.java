@@ -58,19 +58,31 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             pooledConnectionForHost = connectionsPool.get(uri);
         }
 
+        boolean added;
         synchronized (pooledConnectionForHost) {
             int size = pooledConnectionForHost.size();
             if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
-                boolean added = pooledConnectionForHost.add(connection);
+                added = pooledConnectionForHost.add(connection);
                 if (added) {
                     totalConnections.incrementAndGet();
                 }
-                return added;
             } else {
                 log.warn("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
-                return false;
+                added = false;
             }
         }
+        
+        if (! added) {
+            log.debug("closing a connection that was not added to the pool: {}", connection);
+            
+            try {
+              connection.close();
+            } catch (Throwable e) {
+              log.error("error closing a connection", e);
+            }
+        }
+        
+        return added;
     }
 
     /**
