@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -75,15 +75,15 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     @Test(groups = {"online", "default_provider"})
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionTimeoutInMs(10 * 1000).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
         try {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getMessage(), "No response received. Connection timed out after 10000");
+            fail("Should allow to finish processing request.", e);
+        } finally {
+            c.close();
         }
-
-        c.close();
     }
 }

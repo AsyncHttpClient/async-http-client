@@ -16,23 +16,28 @@
 package com.ning.http.client;
 
 /**
- * An asynchronous handler or callback which gets invoked as soon as some data are available when
- * processing an asynchronous response. Callbacks method gets invoked in the following order:
- * (1) {@link #onStatusReceived(HttpResponseStatus)}
- * (2) {@link #onHeadersReceived(HttpResponseHeaders)}
- * (3) {@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times
- * (4) {@link #onCompleted()}, once the response has been fully read.
+ * An asynchronous handler or callback which gets invoked as soon as some data is available when
+ * processing an asynchronous response.<br/>
+ * Callback methods get invoked in the following order:
+ * <ol>
+ * <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
+ * <li>{@link #onHeadersReceived(HttpResponseHeaders)},</li>
+ * <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
+ * <li>{@link #onCompleted()}, once the response has been fully read.</li>
+ * </ol>
  *
- * Interrupting the process of the asynchronous response can be achieved by
- * returning a {@link AsyncHandler.STATE#ABORT} at any moment during the
- * processing of the asynchronous response.
+ * Returning a {@link AsyncHandler.STATE#ABORT} from any of those callback methods will interrupt asynchronous response
+ * processing, after that only {@link #onCompleted()} is going to be called.
+ * <p/>
  *
- * <strong>NOTE:<strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
+ * <strong>NOTE:</strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
  * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
+ * <p/>
  *
- * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link com.ning.http.client.AsyncHttpClientConfig}:
+ * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link AsyncHttpClientConfig#executorService()}:
+ * <pre>
  * {@code
- *         &#64;Override
+ *     &#64;Override
  *         public T onCompleted() throws Exception
  *         &#123;
  *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
@@ -45,6 +50,7 @@ package com.ning.http.client;
  *            return T;
  *         &#125;
  * }
+ * </pre>
  *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
@@ -95,8 +101,12 @@ public interface AsyncHandler<T> {
     STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception;
 
     /**
-     * Invoked once the HTTP response has been fully received
-     * @return T Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * Invoked once the HTTP response processing is finished.
+     * <p/>
+     *
+     * Gets always invoked as last callback method.
+     *
+     * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
      * @throws Exception if something wrong happens
      */
     T onCompleted() throws Exception;

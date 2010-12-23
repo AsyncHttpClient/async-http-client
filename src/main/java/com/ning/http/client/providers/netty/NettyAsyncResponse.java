@@ -123,6 +123,8 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
+        checkBodyParts();
+
         String contentType = getContentType();
         String charset = "UTF-8";
         if (contentType != null) {
