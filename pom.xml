@@ -6,7 +6,7 @@
         <version>5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.clojars.vgeshel</groupId>
+    <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>async-http-client</name>
     <version>1.5.0-SNAPSHOT</version>
