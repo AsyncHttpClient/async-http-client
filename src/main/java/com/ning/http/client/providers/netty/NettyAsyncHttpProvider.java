@@ -744,7 +744,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         } catch (Throwable t) {
             log.error("bootstrap.connect", t);
-            abort(c.future(), t.getCause());
+            abort(c.future(), t.getCause() == null ? t : t.getCause());
             return c.future();
         }
 
