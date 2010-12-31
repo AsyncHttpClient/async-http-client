@@ -174,7 +174,7 @@
     </dependencies>
     <build>
       <extensions>
-        <!-- Enabling the use of FTP -->
+        <!-- Enabling the use of SSH -->
         <extension>
           <groupId>org.apache.maven.wagon</groupId>
           <artifactId>wagon-ssh-external</artifactId>
