@@ -17,7 +17,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
-import com.ning.http.client.extra.ResumableRandomAccessFileHandler;
+import com.ning.http.client.extra.ResumableRandomAccessFileListener;
 import com.ning.http.client.resumable.PropertiesBasedResumableProcessor;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 
@@ -50,7 +50,7 @@ public class ResumingExternalDownload
         RandomAccessFile target = new RandomAccessFile(new File(fPath), "rw");
         ResumableAsyncHandler<Response> handler =
                 new ResumableAsyncHandler<Response>(new PropertiesBasedResumableProcessor());
-        handler.setResumableListener(new ResumableRandomAccessFileHandler(target));
+        handler.setResumableListener(new ResumableRandomAccessFileListener(target));
         Response response = client.executeRequest(request, handler).get();
         System.err.println(response.toString());
     }
