@@ -173,6 +173,14 @@
         </dependency>
     </dependencies>
     <build>
+      <extensions>
+        <!-- Enabling the use of SSH -->
+        <extension>
+          <groupId>org.apache.maven.wagon</groupId>
+          <artifactId>wagon-ssh-external</artifactId>
+          <version>1.0-beta-6</version>
+        </extension>
+      </extensions>
         <defaultGoal>install</defaultGoal>
         <plugins>
             <!--<plugin>-->

@@ -15,3 +15,4 @@ nbproject
 .DS_Store
 target
 test-output
+/META-INF/MANIFEST.MF

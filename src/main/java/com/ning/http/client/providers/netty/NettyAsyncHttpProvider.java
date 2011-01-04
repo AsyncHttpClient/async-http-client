@@ -794,17 +794,23 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             return;
         }
 
-        if (NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
-            NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-
-            if (!future.isDone() && !future.isCancelled()) {
-                return;
+        Object attachment = ctx.getAttachment();
+        
+        if (attachment != null) {
+            if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
+                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+    
+                if (!future.isDone() && !future.isCancelled()) {
+                    return;
+                }
+    
+                abort(future, new TimeoutException("No response received. Connection timed out after "
+                        + config.getIdleConnectionTimeoutInMs()));
             }
-
-            abort(future, new TimeoutException("No response received. Connection timed out after "
-                    + config.getIdleConnectionTimeoutInMs()));
+        } else {
+          log.warn("null attachment on ChannelHandlerContext {}", ctx);
         }
-
+        
         log.debug("Channel Idle: {}", ctx.getChannel());
         closeChannel(ctx);
     }
@@ -992,13 +998,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         future.getAndSetAuth(false);
 
                         String location = response.getHeader(HttpHeaders.Names.LOCATION);
-                        if (location.startsWith("/")) {
-                            location = AsyncHttpProviderUtils.getBaseUrl(future.getURI()) + location;
-                        }
+                        URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
 
-                        if (!location.equalsIgnoreCase(future.getURI().toString())) {
-                            URI uri = AsyncHttpProviderUtils.createUri(location);
-
+                        if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
                             final RequestBuilder builder = new RequestBuilder(future.getRequest());
                             final URI initialConnectionUri = future.getURI();
                             final boolean initialConnectionKeepAlive = future.getKeepAlive();
