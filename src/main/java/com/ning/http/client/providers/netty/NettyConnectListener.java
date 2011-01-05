@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Non Blocking connect.
  */
 final class NettyConnectListener<T> implements ChannelFutureListener {
-
+    private final static Logger logger = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
     private final HttpRequest nettyRequest;
@@ -65,8 +65,10 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
             future.provider().writeRequest(f.getChannel(), config, future, nettyRequest);
         } else {
-            if (future.canRetry() && (NettyAsyncHttpProvider.abortOnDisconnectException(f.getCause())
-                    || ClosedChannelException.class.isAssignableFrom(f.getCause().getClass())
+            Throwable cause = f.getCause();
+
+            if (future.canRetry() && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
+                    || ClosedChannelException.class.isAssignableFrom(cause.getClass())
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
                 
                 if (future.provider().remotelyClosed(f.getChannel(), future)) {
@@ -74,14 +76,17 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 }
             }
 
-            ConnectException e = new ConnectException(f.getCause() != null ? f.getCause().getMessage() : future.getURI().toString());
-            e.initCause(f.getCause());
+            logger.warn("Connect exception: {}", cause);
+
+            ConnectException e = new ConnectException(f.getCause() != null ? cause.getMessage() : future.getURI().toString());
+            if (cause != null) {
+                e.initCause(cause);
+            }
             future.abort(e);
         }
     }
 
     public static class Builder<T> {
-        private final Logger log = LoggerFactory.getLogger(Builder.class);
         private final AsyncHttpClientConfig config;
         private final Request request;
         private final AsyncHandler<T> asyncHandler;
