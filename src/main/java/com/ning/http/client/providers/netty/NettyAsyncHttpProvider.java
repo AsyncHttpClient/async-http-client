@@ -822,8 +822,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             maxConnections.decrementAndGet();
         }
         connectionsPool.removeAll(ctx.getChannel());
+        finishChannel(ctx);
+    }
+
+    private void finishChannel(final ChannelHandlerContext ctx) {
         ctx.setAttachment(new DiscardEvent());
-        ctx.getChannel().close();
+        try {
+            ctx.getChannel().close();
+        } catch (Throwable t) {
+             log.error("error closing a connection", t);
+        }
+        openChannels.remove((ctx.getChannel()));
     }
 
     @Override
@@ -1015,7 +1024,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 ctx.setAttachment(new AsyncCallable(future) {
                                     public Object call() throws Exception {
                                         if (initialConnectionKeepAlive) {
-                                            connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
+                                            if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                                finishChannel(ctx);
+                                            }
                                         } else {
                                             closeChannel(ctx);
                                         }
@@ -1025,7 +1036,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 });
                             } else {
                                 if (initialConnectionKeepAlive) {
-                                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel());
+                                    if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                        finishChannel(ctx);
+                                    }
                                 } else {
                                     closeChannel(ctx);
                                 }
@@ -1257,7 +1270,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.done(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
                     if (future.getKeepAlive() && cache) {
-                        connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel());
+                        if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel()) ) {
+                            finishChannel(ctx);
+                        }
                     }
                     return false;
                 }
