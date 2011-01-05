@@ -266,12 +266,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = urlConnection.getHeaderField("Location");
                         URI redirUri = AsyncHttpProviderUtils.getRedirectUri(uri, location);
+                        String newUrl = redirUri.toString();
 
-                        if (!redirUri.toString().equals(uri.toString())) {
-                            URI newUri = AsyncHttpProviderUtils.createUri(location);
-
+                        if (!newUrl.equals(uri.toString())) {
                             RequestBuilder builder = new RequestBuilder(request);
-                            String newUrl = newUri.toString();
 
                             logger.debug("Redirecting to {}", newUrl);
 
