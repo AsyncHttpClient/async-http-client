@@ -21,28 +21,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
- * when the {@link Response} processing is finished.
- * <p/>
- *
- * <strong>NOTE:</strong>: Sending another asynchronous request from an {@link AsyncHandler} must be done using
- * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
- *
- * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link AsyncHttpClientConfig#executorService()}:
- * <pre>
- * {@code
- * &#64;Override
- *     public T onCompleted(Response response) throws Exception &#123;
- *       asyncHttpClient.getConfig().executorService().execute(new Runnable() &#123;
- *         public void run()
- *         &#123;
- *           asyncHttpClient.prepareGet(...);
- *         &#125;
- *       &#125;);
- *       return T;
- *     &#125;
- * }
- * </pre>
- *
+ * when the {@link Response} processing is finished.  This class also implement the {@link ProgressAsyncHandler} callback,
+ * all doing nothing except returning {@link com.ning.http.client.AsyncHandler.STATE#CONTINUE}
+ *  
  * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
@@ -52,7 +33,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     * @Override
      */
     public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
         builder.accumulate(content);
@@ -61,7 +41,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     * @Override
      */
     public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         builder.reset();
@@ -71,7 +50,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     * @Override
      */
     public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
         builder.accumulate(headers);
@@ -80,7 +58,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     * @Override
      */
     public final T onCompleted() throws Exception {
         return onCompleted(builder.build());
@@ -88,7 +65,6 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * {@inheritDoc}
-     * @Override
      */
     public void onThrowable(Throwable t) {
         log.debug(t.getMessage(), t);

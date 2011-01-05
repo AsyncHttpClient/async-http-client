@@ -22,7 +22,7 @@ import com.ning.http.client.filter.IOExceptionFilter;
 
 /**
  * Simple {@link IOExceptionFilter} that replay the current {@link com.ning.http.client.Request} using
- * a {@link ResumableAsyncHandler} 
+ * a {@link ResumableAsyncHandler}
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
     public FilterContext filter(FilterContext ctx) throws FilterException {

@@ -21,25 +21,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  *  Simple {@link AsyncHandler} of type {@link Response}
- *
- * <strong>NOTE:<strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
- * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
- *
- * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link com.ning.http.client.AsyncHttpClientConfig}:
- * {@code
- *         &#64;Override
- *         public Response onCompleted(Response response) throws Exception
- *         &#123;
- *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
- *             &#123;
- *                 public void run()
- *                 &#123;
- *                     asyncHttpClient.prepareGet(...);
- *                 &#125;
- *             &#125;);
- *            return response;
- *         &#125;
- * }
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
     private final Logger log = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);

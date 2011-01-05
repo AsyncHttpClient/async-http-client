@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
  * By default, the {@link com.ning.http.client.providers.netty.NettyAsyncHttpProvider} is used.
- * 
  */
 public interface AsyncHttpProvider<A> {
 
@@ -36,7 +35,7 @@ public interface AsyncHttpProvider<A> {
     public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
 
     /**
-     * Close the current underlying TCP/HTTP connection.s
+     * Close the current underlying TCP/HTTP connection.
      */
     public void close();
 

@@ -30,28 +30,6 @@ package com.ning.http.client;
  * processing, after that only {@link #onCompleted()} is going to be called.
  * <p/>
  *
- * <strong>NOTE:</strong> Sending another asynchronous request from an {@link AsyncHandler} must be done using
- * another thread to avoid potential deadlock inside the {@link com.ning.http.client.AsyncHttpProvider}
- * <p/>
- *
- * The recommended way is to use the {@link java.util.concurrent.ExecutorService} from the {@link AsyncHttpClientConfig#executorService()}:
- * <pre>
- * {@code
- *     &#64;Override
- *         public T onCompleted() throws Exception
- *         &#123;
- *             asyncHttpClient.getConfig().executorService().execute(new Runnable()
- *             &#123;
- *                 public void run()
- *                 &#123;
- *                     asyncHttpClient.prepareGet(...);
- *                 &#125;
- *             &#125;);
- *            return T;
- *         &#125;
- * }
- * </pre>
- *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
  */
 public interface AsyncHandler<T> {
@@ -70,14 +48,15 @@ public interface AsyncHandler<T> {
     }
     
     /**
-     * Invoked when an unexpected exception occurs during the processing of the response
+     * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
+     * produced by implementation of onXXXReceived method invokation.
      *
      * @param t a {@link Throwable}
      */
     void onThrowable(Throwable t);
 
     /**
-     * Invoked as soon as some response body part are received.
+     * Invoked as soon as some response body part are received. Could be invoked many times.
      * @param bodyPart response's body part.
      * @throws Exception if something wrong happens
      * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
@@ -93,7 +72,8 @@ public interface AsyncHandler<T> {
     STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
-     * Invoked as soon as the HTTP headers has been received.
+     * Invoked as soon as the HTTP headers has been received. Can potentially be invoked morethan once if a broken server
+     * sent trailling headers.
      * @param headers the HTTP headers.
      * @throws Exception if something wrong happens
      * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.

@@ -763,7 +763,7 @@ public class AsyncHttpClientConfig {
          * Set to true to enabled resumable download. Be aware that if you enable this mechanism, an {@link AsyncHandler#onBodyPartReceived(HttpResponseBodyPart)}
          * will ALWAYS be invoked, in case of a JVM crash, with the remaining bytes and will never receive the bytes it already digested. An application
          * not taking care of that fact may digest corrupted bytes or produce corrupted file.
-         *          *
+         *
          * See {@link com.ning.http.client.resumable.ResumableAsyncHandler}
          * description for more information about the mechanism and how it can be customized and used as a normal
          * {@link AsyncHandler}. 
