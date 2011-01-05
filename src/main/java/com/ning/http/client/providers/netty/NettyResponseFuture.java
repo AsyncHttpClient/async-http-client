@@ -251,7 +251,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         try {
             asyncHandler.onThrowable(t);
         } finally {
-            isDone.set(true);
+            isCancelled.set(true);
             latch.countDown();
         }
     }
