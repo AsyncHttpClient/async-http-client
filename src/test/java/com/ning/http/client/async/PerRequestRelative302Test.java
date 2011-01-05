@@ -103,7 +103,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
 
-        assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com:80");
+        assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com/en/us/default.asp:80");
         c.close();
     }
 
