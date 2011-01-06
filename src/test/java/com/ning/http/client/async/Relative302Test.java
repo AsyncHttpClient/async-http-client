@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.util.Enumeration;
+import java.util.Formatter;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -96,13 +97,13 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
         // once
         Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", "http://www.microsoft.com/")
+                .setHeader("X-redirect", "http://www.google.com/")
                 .execute().get();
 
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
 
-        assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com:80");
+        assertEquals(getBaseUrl(response.getUri()), "http://www.google.com:80");
         c.close();
     }
 
@@ -145,18 +146,46 @@ public abstract class Relative302Test extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "default_provider"})
-    public void relativeLocationUrl() throws Throwable {
+    public void absolutePathRedirectTest() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = new AsyncHttpClient(cg);
 
+        String redirectTarget = "/bar/test";
+        String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
+        
         Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", "/foo/test")
+                .setHeader("X-redirect", redirectTarget)
                 .execute().get();
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), 302);
-        assertEquals(response.getUri().toString(), getTargetUrl());
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(response.getUri().toString(), destinationUrl);
+        
+        log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        
+        c.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void relativePathRedirectTest() throws Throwable {
+        isSet.getAndSet(false);
+
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        String redirectTarget = "bar/test1";
+        String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
+        
+        Response response = c.prepareGet(getTargetUrl())
+                .setHeader("X-redirect", redirectTarget)
+                .execute().get();
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(response.getUri().toString(), destinationUrl);
+
+        log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        
         c.close();
     }
 }
