@@ -3,7 +3,8 @@ Copyright 2010 Ning Inc
 
 DESCRIPTION
 -----------
-Getting started: http://is.gd/ja6My
+Getting started: http://is.gd/kexrN (PDF)
+                 http://is.gd/ja6My (HTML)
 
 Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and asynchronously process the HTTP responses. The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add this dependency:
 
