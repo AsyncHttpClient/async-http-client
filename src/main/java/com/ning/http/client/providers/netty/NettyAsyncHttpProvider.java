@@ -754,7 +754,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         if (directInvokation && !executeConnectAsync && request.getFile() == null) {
-            if (! channelFuture.awaitUninterruptibly(config.getConnectionTimeoutInMs(), TimeUnit.MILLISECONDS) ) {
+            int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
+            if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS) ) {
                 abort(c.future(), new ConnectException("Connect times out"));
             };
             try {
