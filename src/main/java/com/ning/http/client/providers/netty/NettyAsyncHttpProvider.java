@@ -161,7 +161,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
             asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
         } else {
-            asyncHttpProviderConfig = null;
+            asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
         }
 
         if (asyncHttpProviderConfig != null && asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
@@ -733,7 +733,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         // Do no enable this with win.
         if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
-            bootstrap.setOption("reuseAddress", true);
+            bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.REUSE_ADDRESS));
         }
 
         try {

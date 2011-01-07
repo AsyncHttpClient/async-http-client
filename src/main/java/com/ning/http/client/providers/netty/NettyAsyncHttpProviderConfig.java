@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
+ */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
 
     /**
@@ -44,7 +47,16 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
 
+    /**
+     * See {@link java.net.Socket#setReuseAddress(boolean)}
+     */
+    public final static String REUSE_ADDRESS = "reuseAddress";
+
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
+
+    public NettyAsyncHttpProviderConfig(){
+        properties.put(REUSE_ADDRESS, "false");
+    }
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
