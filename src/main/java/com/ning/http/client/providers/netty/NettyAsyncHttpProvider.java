@@ -769,7 +769,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             channelFuture.addListener(c);
         }
 
-        if (!c.future().isCancelled()) {
+        if (!c.future().isCancelled() || !c.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
         }
         return c.future();
