@@ -24,7 +24,6 @@ import com.ning.http.client.StringPart;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
@@ -211,7 +210,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     }
 
     private HttpMethodBase createMethod(HttpClient client, Request request) throws IOException, FileNotFoundException {
-        String methodName = request.getReqType();
+        String methodName = request.getMethod();
         HttpMethodBase method = null;
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
             EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());

@@ -23,6 +23,9 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Response;
+import com.ning.http.client.SimpleAsyncHttpClient;
+import com.ning.http.client.consumers.StringBufferBodyConsumer;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -62,8 +65,9 @@ import static org.testng.Assert.assertNotNull;
 
 public abstract class BasicAuthTest extends AbstractBasicTest {
 
-    private final static String user = "user";
-    private final static String admin = "admin";
+    protected final static String MY_MESSAGE = "my message";
+    protected final static String user = "user";
+    protected final static String admin = "admin";
 
     private Server server2;
 
@@ -212,9 +216,21 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             response.addHeader("X-Auth", request.getHeader("Authorization"));
             response.addHeader("X-Content-Lenght", String.valueOf(request.getContentLength()));
             response.setStatus(200);
+
+
+            int size = 10 * 1024;
+            if (request.getContentLength() > 0) {
+                size = request.getContentLength();
+            }
+            byte[] bytes = new byte[size];
+            if (bytes.length > 0) {
+                int read = request.getInputStream().read(bytes);
+                if (read > 0) {
+                    response.getOutputStream().write(bytes, 0, read);
+                }
+            }
             response.getOutputStream().flush();
             response.getOutputStream().close();
-
         }
     }
 
@@ -413,4 +429,26 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         return new SimpleHandler();
     }
 
+    @Test(groups = {"standalone", "default_provider"})
+    public void StringBufferBodyConsumerTest() throws Throwable {
+
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+                .setRealmPrincipal(user)
+                .setRealmPassword(admin)
+                .setUrl(getTargetUrl())
+                .setHeader("Content-Type", "text/html").build();
+
+        StringBuffer s = new StringBuffer();
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBufferBodyConsumer(s));
+
+        System.out.println("waiting for response");
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(s.toString(), MY_MESSAGE);
+        assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+        assertNotNull(response.getHeader("X-Auth"));
+
+        client.close();
+    }
 }
+

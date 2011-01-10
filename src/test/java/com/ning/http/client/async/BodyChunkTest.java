@@ -17,19 +17,19 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
 
 import static org.testng.Assert.assertEquals;
 
 public abstract class BodyChunkTest extends AbstractBasicTest {
+
+    private final static String MY_MESSAGE = "my message";
 
     @Test(groups = {"standalone", "default_provider"})
     public void negativeContentTypeTest() throws Throwable {
@@ -46,51 +46,18 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl())
                 .setHeader("Content-Type", "message/rfc822");
 
-        requestBuilder.setBody(new StaticBodyGenerator("my message"));
+        requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
         Future<Response> future = client.executeRequest(requestBuilder.build());
 
         System.out.println("waiting for response");
         Response response = future.get();
         assertEquals(response.getStatusCode(), 200);
+        assertEquals(response.getResponseBody(), MY_MESSAGE);
+        
         client.close();
     }
 
-    private static class StaticBodyGenerator implements BodyGenerator {
-        private final byte[] bytes;
-
-        public StaticBodyGenerator(String message) {
-            bytes = message.getBytes();
-        }
-
-        public Body createBody()
-                throws IOException {
-            return new Body() {
-
-                public long getContentLength() {
-                    return -1;
-                }
-
-                boolean done;
-
-                public long read(ByteBuffer buffer)
-                        throws IOException {
-                    if (done) {
-                        return -1;
-                    }
-
-                    buffer.put(bytes);
-                    done = true;
-                    return bytes.length;
-                }
-
-                public void close()
-                        throws IOException {
-                    done = true;
-                }
-            };
-        }
-    }
 }
 
 

@@ -208,7 +208,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
-                }
+                }                
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
@@ -330,8 +330,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         throw new IllegalStateException(ex);
                     }
                     long length = body.getContentLength();
-                    if (length >= 0) {
+                    if (length > 0) {
                         nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
+                    } else {
+                        nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
                     }
                 } else {
                     body = null;
@@ -429,7 +431,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri,
                                                     boolean allowConnect, ChannelBuffer buffer) throws IOException {
 
-        String method = request.getReqType();
+        String method = request.getMethod();
         if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && HTTPS.equalsIgnoreCase(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
@@ -551,9 +553,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.COOKIE, httpCookieEncoder.encode());
             }
 
-            String reqType = request.getReqType();
+            String reqType = request.getMethod();
             if ("POST".equals(reqType) || "PUT".equals(reqType)) {
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, "0");
                 // We already have processed the body.
                 if (buffer != null && buffer.writerIndex() != 0) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
@@ -570,7 +571,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(bytes, 0, length));
-                } else if (request.getParams() != null) {
+               } else if (request.getParams() != null) {
                     StringBuilder sb = new StringBuilder();
                     for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                         final String key = paramEntry.getKey();
@@ -928,7 +929,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     final Realm nr = new Realm.RealmBuilder().clone(realm)
                             .setScheme(realm.getAuthScheme())
                             .setUri(URI.create(request.getUrl()).getPath())
-                            .setMethodName(request.getReqType())
+                            .setMethodName(request.getMethod())
                             .setUsePreemptiveAuth(true)
                             .parseWWWAuthenticateHeader(wwwAuth.get(0))
                             .build();

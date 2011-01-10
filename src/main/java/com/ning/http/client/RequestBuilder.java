@@ -25,8 +25,12 @@ import java.util.Map;
  * Builder for a {@link Request}.
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
-    public RequestBuilder(String reqType) {
-        super(RequestBuilder.class, reqType);
+    public RequestBuilder() {
+        super(RequestBuilder.class, "GET");
+    }
+
+    public RequestBuilder(String method) {
+        super(RequestBuilder.class, method);
     }
 
     public RequestBuilder(Request prototype) {
@@ -82,7 +86,14 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         return super.setBody(dataWriter);
     }
 
+    /**
+     * Deprecated - Use setBody(new InputStreamBodyGenerator(inputStream)).
+     * @param stream
+     * @return
+     * @throws IllegalArgumentException
+     */
     @Override
+    @Deprecated
     public RequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
         return super.setBody(stream);
     }
@@ -115,6 +126,11 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     @Override
     public RequestBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
         return super.setParameters(parameters);
+    }
+
+    @Override
+    public RequestBuilder setMethod(String method) {
+        return super.setMethod(method);
     }
 
     @Override

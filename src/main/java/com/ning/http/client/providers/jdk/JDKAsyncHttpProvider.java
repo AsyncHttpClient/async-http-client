@@ -37,9 +37,7 @@ import com.ning.http.client.Response;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -292,7 +290,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
-                            .setMethodName(request.getReqType())
+                            .setMethodName(request.getMethod())
                             .setScheme(realm.getAuthScheme())
                             .setUsePreemptiveAuth(true)
                             .build();
@@ -451,7 +449,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
             urlConnection.setInstanceFollowRedirects(false);
             String host = uri.getHost();
-            String method = request.getReqType();
+            String method = request.getMethod();
 
             if (request.getVirtualHost() != null) {
                 host = request.getVirtualHost();
@@ -537,7 +535,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
             }
 
-            String reqType = request.getReqType();
+            String reqType = request.getMethod();
             urlConnection.setRequestMethod(reqType);
 
             if ("POST".equals(reqType) || "PUT".equals(reqType)) {

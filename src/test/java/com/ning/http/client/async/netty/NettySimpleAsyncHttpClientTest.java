@@ -17,25 +17,18 @@ package com.ning.http.client.async.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Response;
-import com.ning.http.client.SimpleAsyncHttpClient;
-import com.ning.http.client.async.BasicAuthTest;
-import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.consumers.StringBufferBodyConsumer;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
-import org.testng.annotations.Test;
+import com.ning.http.client.async.SimpleAsyncHttpClientTest;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.util.concurrent.Future;
+public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-public class NettyBasicAuthTest extends BasicAuthTest {
-
+    /**
+     * Not Used with {@link com.ning.http.client.SimpleAsyncHttpClient}
+     * @param config
+     * @return
+     */
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return null;
     }
+
 }

@@ -84,7 +84,7 @@ public class OAuthSignatureCalculator
     //@Override // silly 1.5; doesn't allow this for interfaces
 
     public void calculateAndAddSignature(String baseURL, Request request, RequestBuilderBase<?> requestBuilder) {
-        String method = request.getReqType().toString(); // POST etc
+        String method = request.getMethod().toString(); // POST etc
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
         String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());

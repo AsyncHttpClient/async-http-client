@@ -21,16 +21,23 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.SimpleAsyncHttpClient;
+import com.ning.http.client.consumers.StringBufferBodyConsumer;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ProxyHandler;
 import org.testng.annotations.Test;
+import sun.java2d.pipe.SpanShapeRenderer;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * Proxy usage tests.
@@ -101,6 +108,26 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         assertEquals(r.getHeader("server"), "nginx");
 
         asyncHttpClient.close();
+    }
+
+    @Test(groups = {"online", "default_provider"})
+    public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+                .setProxyProtocol(ProxyServer.Protocol.HTTPS)
+                .setProxyHost("127.0.0.1")
+                .setProxyPort(port1)
+                .setFollowRedirects(true)
+                .setUrl("https://twitpic.com:443")
+                .setHeader("Content-Type", "text/html").build();
+
+        StringBuffer s = new StringBuffer();
+        Response r = client.get().get();
+
+        assertEquals(r.getStatusCode(), 200);
+        assertEquals(r.getHeader("server"), "nginx");
+
+        client.close();
     }
 }
 

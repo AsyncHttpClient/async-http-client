@@ -102,7 +102,7 @@ public class RequestBuilderTest {
     @Test(groups = {"standalone", "default_provider"})
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
-        assertEquals(req.getReqType(), "ABC");
+        assertEquals(req.getMethod(), "ABC");
         assertEquals(req.getUrl(), "http://foo.com");
     }
 }

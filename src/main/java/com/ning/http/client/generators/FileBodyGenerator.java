@@ -14,7 +14,10 @@
  * under the License.
  *
  */
-package com.ning.http.client;
+package com.ning.http.client.generators;
+
+import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.RandomAccessBody;
 
 import java.io.File;
 import java.io.IOException;

@@ -12,19 +12,17 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
  * License for the specific language governing permissions and limitations
  * under the License.
+ *
  */
-package com.ning.http.client.async.netty;
+package com.ning.http.client;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.AsyncProvidersBasicTest;
-import com.ning.http.client.async.ProviderUtil;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
-public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
+public interface BodyConsumer {
 
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
-    }
+    void consume(ByteBuffer byteBuffer) throws IOException;
+
+    void close() throws IOException;
 
 }

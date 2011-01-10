@@ -46,6 +46,7 @@ class BodyChunkedInput
 
     private ByteBuffer peekNextChuck()
             throws IOException {
+        
         if (nextChunk == null) {
             ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
             if (body.read(buffer) < 0) {
