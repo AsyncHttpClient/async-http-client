@@ -88,8 +88,8 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 
     /**
      * Deprecated - Use setBody(new InputStreamBodyGenerator(inputStream)).
-     * @param stream
-     * @return
+     * @param stream - An {@link InputStream}
+     * @return a {@link RequestBuilder}
      * @throws IllegalArgumentException
      */
     @Override
