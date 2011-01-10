@@ -245,18 +245,18 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setIdleConnectionTimeoutInMs(int defaultIdleConnectionTimeoutInMs) {
-            configBuilder.setConnectionTimeoutInMs(defaultIdleConnectionTimeoutInMs);
+        public Builder setConnectionTimeoutInMs(int connectionTimeuot) {
+            configBuilder.setConnectionTimeoutInMs(connectionTimeuot);
             return this;
         }
 
         public Builder setIdleConnectionInPoolTimeoutInMs(int defaultIdleConnectionInPoolTimeoutInMs) {
-            configBuilder.setConnectionTimeoutInMs(defaultIdleConnectionInPoolTimeoutInMs);
+            configBuilder.setIdleConnectionInPoolTimeoutInMs(defaultIdleConnectionInPoolTimeoutInMs);
             return this;
         }
 
         public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
-            configBuilder.setConnectionTimeoutInMs(defaultRequestTimeoutInMs);
+            configBuilder.setRequestTimeoutInMs(defaultRequestTimeoutInMs);
             return this;
         }
 

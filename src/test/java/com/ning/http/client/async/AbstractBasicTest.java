@@ -120,9 +120,9 @@ public abstract class AbstractBasicTest {
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
                 int read = httpRequest.getInputStream().read(bytes);
-                //if (read > 0) {
+                if (read > 0) {
                     httpResponse.getOutputStream().write(bytes, 0, read);
-                //}
+                }
             }
 
             httpResponse.setStatus(200);
