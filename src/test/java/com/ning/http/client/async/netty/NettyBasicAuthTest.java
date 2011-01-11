@@ -17,17 +17,8 @@ package com.ning.http.client.async.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Response;
-import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.async.BasicAuthTest;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.consumers.StringBufferBodyConsumer;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
-import org.testng.annotations.Test;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.util.concurrent.Future;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;

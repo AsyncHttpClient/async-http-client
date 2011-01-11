@@ -21,23 +21,23 @@ import com.ning.http.client.BodyConsumer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class StringBufferBodyConsumer implements BodyConsumer {
+public class StringBuilderBodyConsumer implements BodyConsumer {
 
-    private final StringBuffer stringBuffer;
+    private final StringBuilder stringBuilder;
     private final String encoding;
 
-    public StringBufferBodyConsumer(StringBuffer stringBuffer, String encoding) {
-        this.stringBuffer = stringBuffer;
+    public StringBuilderBodyConsumer(StringBuilder stringBuilder, String encoding) {
+        this.stringBuilder = stringBuilder;
         this.encoding = encoding;
     }
 
-    public StringBufferBodyConsumer(StringBuffer stringBuffer) {
-        this.stringBuffer = stringBuffer;
+    public StringBuilderBodyConsumer(StringBuilder stringBuilder) {
+        this.stringBuilder = stringBuilder;
         this.encoding = "UTF-8";
     }
 
     public void consume(ByteBuffer byteBuffer) throws IOException {
-        stringBuffer.append(new String(byteBuffer.array(), encoding));
+        stringBuilder.append(new String(byteBuffer.array(), encoding));
     }
 
     public void close() throws IOException {

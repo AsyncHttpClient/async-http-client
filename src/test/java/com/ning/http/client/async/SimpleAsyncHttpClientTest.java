@@ -15,11 +15,10 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.OutputStreamBodyConsumer;
-import com.ning.http.client.consumers.StringBufferBodyConsumer;
+import com.ning.http.client.consumers.StringBuilderBodyConsumer;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
 
@@ -63,8 +62,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl())
                 .setHeader("Content-Type", "text/html").build();
 
-        StringBuffer s = new StringBuffer();
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBufferBodyConsumer(s));
+        StringBuilder s = new StringBuilder();
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBuilderBodyConsumer(s));
 
         System.out.println("waiting for response");
         Response response = future.get();

@@ -43,8 +43,8 @@ import java.util.concurrent.ScheduledExecutorService;
                 .setUrl(getTargetUrl())
                 .setHeader("Content-Type", "text/html").build();
 
-        StringBuffer s = new StringBuffer();
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBufferBodyConsumer(s));
+        StringBuilder s = new StringBuilder();
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBuilderBodyConsumer(s));
  * }
  * or
  * {@code

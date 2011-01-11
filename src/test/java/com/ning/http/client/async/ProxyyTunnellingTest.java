@@ -22,15 +22,10 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
-import com.ning.http.client.consumers.StringBufferBodyConsumer;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ProxyHandler;
 import org.testng.annotations.Test;
-import sun.java2d.pipe.SpanShapeRenderer;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
