@@ -35,8 +35,6 @@ import java.nio.ByteBuffer;
 public class InputStreamBodyGenerator implements BodyGenerator {
 
     private final InputStream inputStream;
-    private byte[] chunk;
-    private boolean eof = false;
     private final static Logger logger = LoggerFactory.getLogger(InputStreamBodyGenerator.class);
 
     public InputStreamBodyGenerator(InputStream inputStream) {
@@ -54,6 +52,8 @@ public class InputStreamBodyGenerator implements BodyGenerator {
     }
 
     protected class ISBody implements Body {
+        private boolean eof = false;
+        private byte[] chunk;        
 
         public long getContentLength() {
             return -1;

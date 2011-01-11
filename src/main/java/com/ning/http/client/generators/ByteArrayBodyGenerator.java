@@ -28,21 +28,21 @@ import java.nio.ByteBuffer;
 public class ByteArrayBodyGenerator implements BodyGenerator {
 
     private final byte[] bytes;
-    private boolean eof = false;
-    private int lastPosition = 0;
 
     public ByteArrayBodyGenerator(byte[] bytes) {
         this.bytes = bytes;
     }
 
     protected final class ByteBody implements Body {
+        private boolean eof = false;
+        private int lastPosition = 0;
 
         public long getContentLength() {
             return bytes.length;
         }
 
         public long read(ByteBuffer byteBuffer) throws IOException {
-            
+
             if (eof) {
                 return -1;
             }
