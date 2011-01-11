@@ -62,10 +62,9 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         public long read(ByteBuffer buffer) throws IOException {
 
             // To be safe.
-            chunk = new byte[buffer.capacity() - 5];
+            chunk = new byte[buffer.capacity() - 10];
 
             int read = -1;
-
             try {
                 read = inputStream.read(chunk);
             } catch (IOException ex) {
