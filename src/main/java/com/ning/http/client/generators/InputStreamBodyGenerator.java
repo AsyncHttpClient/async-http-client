@@ -18,6 +18,8 @@ package com.ning.http.client.generators;
 
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,16 +28,25 @@ import java.nio.ByteBuffer;
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire
  * stream in memory.
+ *
+ * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation.
+ * If not, mechanisms like authentication, redirect, or resumable download will not works.
  */
 public class InputStreamBodyGenerator implements BodyGenerator {
 
     private final InputStream inputStream;
     private byte[] chunk;
     private boolean eof = false;
+    private final static Logger logger = LoggerFactory.getLogger(InputStreamBodyGenerator.class);
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this.inputStream = inputStream;
-        inputStream.mark(0);
+
+        if (inputStream.markSupported()) {
+            inputStream.mark(0);
+        } else {
+            logger.warn("inputStream.markSupported() not supported. Some features will not works");
+        }
     }
 
     public Body createBody() throws IOException {
@@ -53,7 +64,14 @@ public class InputStreamBodyGenerator implements BodyGenerator {
             // To be safe.
             chunk = new byte[buffer.capacity() - 5];
 
-            int read = inputStream.read(chunk);
+            int read = -1;
+
+            try {
+                read = inputStream.read(chunk);
+            } catch (IOException ex) {
+                logger.warn("Unable to read", ex);
+            }
+
             if (read == -1) {
                 // Since we are chuncked, we must output extra bytes before considering the input stream closed.
                 if (!eof) {
