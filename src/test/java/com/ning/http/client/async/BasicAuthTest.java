@@ -24,7 +24,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
-import com.ning.http.client.consumers.StringBuilderBodyConsumer;
+import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
@@ -439,7 +439,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 .setHeader("Content-Type", "text/html").build();
 
         StringBuilder s = new StringBuilder();
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new StringBuilderBodyConsumer(s));
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
 
         System.out.println("waiting for response");
         Response response = future.get();
