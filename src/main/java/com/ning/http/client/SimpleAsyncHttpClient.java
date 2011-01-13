@@ -605,7 +605,7 @@ public class SimpleAsyncHttpClient {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
         }
-                                                                                                    x
+                                                                                                    
         @Override
         public void onThrowable(Throwable t) {
             if (exceptionHandler != null) {
