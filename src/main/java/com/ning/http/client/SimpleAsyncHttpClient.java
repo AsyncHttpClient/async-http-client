@@ -67,11 +67,15 @@ public class SimpleAsyncHttpClient {
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
     private final ThrowableHandler defaultThrowableHandler;
+    private final boolean keepErrorDocumentsInMemory;
+    private boolean ignoreErrorDocuments = false;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, boolean keepErrorDocumentsInMemory, boolean ignoreErrorDocuments) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
+        this.keepErrorDocumentsInMemory = keepErrorDocumentsInMemory;
+        this.ignoreErrorDocuments = ignoreErrorDocuments;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -355,7 +359,7 @@ public class SimpleAsyncHttpClient {
         {
             throwableHandler = defaultThrowableHandler;
         }
-        return asyncHttpClient().executeRequest(rb.build(), new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler));
+        return asyncHttpClient().executeRequest(rb.build(), new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments ));
     }
 
     private AsyncHttpClient asyncHttpClient() {
@@ -382,6 +386,8 @@ public class SimpleAsyncHttpClient {
         private String proxyPassword = null;
         private int proxyPort = 80;
         private ThrowableHandler defaultThrowableHandler = null;
+        private boolean keepErrorDocumentsInMemory = false;
+        private boolean ignoreErrorDocuments = false;
 
         public Builder() {
         }
@@ -586,6 +592,28 @@ public class SimpleAsyncHttpClient {
             this.defaultThrowableHandler = throwableHandler;
             return this;
         }
+        
+        /**
+         * This setting controls whether an error document should be written via
+         * the {@link BodyConsumer} after an error status code was received (e.g.
+         * 404). With this setting, the document will be accumulated in memory and
+         * accessible by {@link Response#getResponseBody()}.
+         */
+        public Builder setKeepErrorDocumentsInMemory(boolean keepErrorDocumentsInMemory) {
+            this.keepErrorDocumentsInMemory = keepErrorDocumentsInMemory;
+            return this;
+        }
+        
+        /**
+         * This setting controls whether an error document should be written via
+         * the {@link BodyConsumer} or accumulated in memory after an error status code was received (e.g.
+         * 404). With this setting, the document will be discarded and not be accessible after completion
+         * of a request. 
+         */
+        public Builder setIgnoreErrorDocuments(boolean ignoreErrorDocuments) {
+            this.ignoreErrorDocuments = ignoreErrorDocuments;
+            return this;
+        }
 
         private Realm.RealmBuilder realm() {
             if (realmBuilder == null) {
@@ -604,7 +632,7 @@ public class SimpleAsyncHttpClient {
                 configBuilder.setProxyServer(new ProxyServer(proxyProtocol, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
             }
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments);
             return sc;
         }
     }
@@ -613,10 +641,16 @@ public class SimpleAsyncHttpClient {
 
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
+        private boolean skipConsumeBodyOnError;
+        private boolean skipConsumeBody = false;
+        private boolean omitBody = false;
+        private boolean omitBodyOnError = false;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, boolean skipConsumeBodyOnError, boolean omitBodyOnError) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
+            this.skipConsumeBodyOnError = skipConsumeBodyOnError;
+            this.omitBodyOnError = omitBodyOnError;
         }
                                                                                                     
         @Override
@@ -633,7 +667,11 @@ public class SimpleAsyncHttpClient {
          * {@inheritDoc}
          */
         public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-            if (bodyConsumer != null) {
+            if ( omitBody  ) {
+	            return STATE.CONTINUE;
+            }
+                
+            if (! skipConsumeBody && bodyConsumer != null) {
                 bodyConsumer.consume(content.getBodyByteBuffer());
             } else {
                 return super.onBodyPartReceived(content);
@@ -655,6 +693,26 @@ public class SimpleAsyncHttpClient {
                 logger.warn("Unable to close a BodyConsumer {}", bodyConsumer);
             }
             return super.onCompleted(response);
+        }
+
+        @Override
+        public STATE onStatusReceived( HttpResponseStatus status )
+            throws Exception
+        {
+            if (isErrorStatus(status)) {
+	            if (skipConsumeBodyOnError) { 
+	                skipConsumeBody  = true;
+	            } 
+	            if (omitBodyOnError) {
+	                omitBody = true;
+	            }
+	        }
+            return super.onStatusReceived( status );
+        }
+
+        private boolean isErrorStatus( HttpResponseStatus status )
+        {
+            return status.getStatusCode() >= 400;
         }
     }
 
