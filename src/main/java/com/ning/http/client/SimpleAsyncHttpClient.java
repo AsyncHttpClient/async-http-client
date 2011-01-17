@@ -66,10 +66,12 @@ public class SimpleAsyncHttpClient {
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
+    private final ThrowableHandler defaultThrowableHandler;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler) {
         this.config = config;
         this.requestBuilder = requestBuilder;
+        this.defaultThrowableHandler = defaultThrowableHandler;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -349,7 +351,11 @@ public class SimpleAsyncHttpClient {
     }
 
     private Future<Response> execute(RequestBuilder rb, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
-        return asyncHttpClient().executeRequest(rb.build(), new BodyConsumerAsyncHandler(bodyConsumer, null));
+        if ( throwableHandler == null )
+        {
+            throwableHandler = defaultThrowableHandler;
+        }
+        return asyncHttpClient().executeRequest(rb.build(), new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler));
     }
 
     private AsyncHttpClient asyncHttpClient() {
@@ -375,6 +381,7 @@ public class SimpleAsyncHttpClient {
         private String proxyPrincipal = null;
         private String proxyPassword = null;
         private int proxyPort = 80;
+        private ThrowableHandler defaultThrowableHandler = null;
 
         public Builder() {
         }
@@ -573,6 +580,12 @@ public class SimpleAsyncHttpClient {
             this.proxyPort = port;
             return this;
         }
+        
+        public Builder setDefaultThrowableHandler(ThrowableHandler throwableHandler)
+        {
+            this.defaultThrowableHandler = throwableHandler;
+            return this;
+        }
 
         private Realm.RealmBuilder realm() {
             if (realmBuilder == null) {
@@ -591,7 +604,7 @@ public class SimpleAsyncHttpClient {
                 configBuilder.setProxyServer(new ProxyServer(proxyProtocol, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
             }
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler);
             return sc;
         }
     }
