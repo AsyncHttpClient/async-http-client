@@ -115,7 +115,10 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    /**
+     * See https://issues.sonatype.org/browse/AHC-5
+     */
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void testPutZeroBytesFileTest() throws Throwable {
         System.err.println("setting up client");
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
