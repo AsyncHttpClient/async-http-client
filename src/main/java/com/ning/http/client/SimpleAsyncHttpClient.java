@@ -16,16 +16,20 @@
  */
 package com.ning.http.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+
+import javax.net.ssl.SSLContext;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.resumable.ResumableAsyncHandler;
+import com.ning.http.client.resumable.ResumableIOExceptionFilter;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link com.ning.http.client.AsyncHttpClientConfig},
@@ -69,13 +73,16 @@ public class SimpleAsyncHttpClient {
     private final ThrowableHandler defaultThrowableHandler;
     private final boolean keepErrorDocumentsInMemory;
     private boolean ignoreErrorDocuments = false;
+    private boolean resumeEnabled = false;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, boolean keepErrorDocumentsInMemory, boolean ignoreErrorDocuments) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, boolean keepErrorDocumentsInMemory,
+                                    boolean ignoreErrorDocuments, boolean resumeEnabled ) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
         this.keepErrorDocumentsInMemory = keepErrorDocumentsInMemory;
         this.ignoreErrorDocuments = ignoreErrorDocuments;
+        this.resumeEnabled = resumeEnabled;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -359,7 +366,21 @@ public class SimpleAsyncHttpClient {
         {
             throwableHandler = defaultThrowableHandler;
         }
-        return asyncHttpClient().executeRequest(rb.build(), new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments ));
+
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler( bodyConsumer, throwableHandler, 
+                                                                       keepErrorDocumentsInMemory, ignoreErrorDocuments ) ;
+        Request request = rb.build();
+        
+        if ( resumeEnabled && request.getMethod().equals( "GET" ) && 
+                        bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer )
+        {
+            ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer)bodyConsumer;
+            long length = fileBodyConsumer.getTransferredBytes();
+            fileBodyConsumer.resume();
+            handler = new ResumableBodyConsumerAsyncHandler( length, handler );
+        }
+        
+        return asyncHttpClient().executeRequest( request, handler );
     }
 
     private AsyncHttpClient asyncHttpClient() {
@@ -388,6 +409,7 @@ public class SimpleAsyncHttpClient {
         private ThrowableHandler defaultThrowableHandler = null;
         private boolean keepErrorDocumentsInMemory = false;
         private boolean ignoreErrorDocuments = false;
+        private boolean enableResumableDownload;
 
         public Builder() {
         }
@@ -615,6 +637,16 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
+        /**
+         * Enable resumable downloads for the SimpleAHC. Resuming downloads will only work for GET requests 
+         * with an instance of {@link ResumableBodyConsumer}.
+         */
+        public Builder setResumableDownload( boolean enableResumableDownload )
+        {
+            this.enableResumableDownload = enableResumableDownload;
+            return this;
+        }
+
         private Realm.RealmBuilder realm() {
             if (realmBuilder == null) {
                 realmBuilder = new Realm.RealmBuilder();
@@ -632,10 +664,42 @@ public class SimpleAsyncHttpClient {
                 configBuilder.setProxyServer(new ProxyServer(proxyProtocol, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
             }
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments);
+            configBuilder.addIOExceptionFilter( new ResumableIOExceptionFilter() );
+
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments, enableResumableDownload );
+
             return sc;
         }
     }
+
+    private final static class ResumableBodyConsumerAsyncHandler
+	    extends ResumableAsyncHandler<Response>
+        implements ProgressAsyncHandler<Response>
+    {
+        
+        private final ProgressAsyncHandler<Response> delegate;
+
+        public ResumableBodyConsumerAsyncHandler( long byteTransferred, ProgressAsyncHandler<Response> delegate )
+        {
+            super( byteTransferred, delegate );
+            this.delegate = delegate;
+        }
+
+        public com.ning.http.client.AsyncHandler.STATE onHeaderWriteCompleted()
+        {
+            return delegate.onHeaderWriteCompleted();
+        }
+
+        public com.ning.http.client.AsyncHandler.STATE onContentWriteCompleted()
+        {
+            return delegate.onContentWriteCompleted();
+        }
+
+        public com.ning.http.client.AsyncHandler.STATE onContentWriteProgress( long amount, long current, long total )
+        {
+            return delegate.onContentWriteProgress( amount, current, total );
+        }
+    }        
 
     private final static class BodyConsumerAsyncHandler extends AsyncCompletionHandlerBase {
 

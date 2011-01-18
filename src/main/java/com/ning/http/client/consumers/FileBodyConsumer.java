@@ -16,13 +16,13 @@
  */
 package com.ning.http.client.consumers;
 
-import com.ning.http.client.BodyConsumer;
+import com.ning.http.client.ResumableBodyConsumer;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
-public class FileBodyConsumer implements BodyConsumer {
+public class FileBodyConsumer implements ResumableBodyConsumer {
 
     private final RandomAccessFile file;
 
@@ -37,5 +37,14 @@ public class FileBodyConsumer implements BodyConsumer {
 
     public void close() throws IOException {
         file.close();
+    }
+
+    public long getTransferredBytes() throws IOException {
+        return file.length();
+    }
+    
+    public void resume() throws IOException
+    {
+        file.seek( getTransferredBytes() );
     }
 }

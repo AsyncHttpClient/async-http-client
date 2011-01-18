@@ -89,6 +89,10 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     public ResumableAsyncHandler(AsyncHandler<T> decoratedAsyncHandler) {
         this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
+    
+    public ResumableAsyncHandler(long byteTransferred, AsyncHandler<T> decoratedAsyncHandler) {
+        this(byteTransferred, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
+    }
 
     public ResumableAsyncHandler(ResumableProcessor resumableProcessor) {
         this(0, resumableProcessor, null, false);
