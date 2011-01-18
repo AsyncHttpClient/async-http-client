@@ -393,7 +393,6 @@ public class AsyncHttpClientConfig {
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
-        private boolean resumableDownload = false;
 
         public Builder() {
         }
@@ -749,31 +748,6 @@ public class AsyncHttpClientConfig {
 
             requestFilters.addAll( prototype.getRequestFilters() );
             responseFilters.addAll( prototype.getResponseFilters() );
-        }
-
-        /**
-         * Is the resumable download features enabled.
-         * @return true if enabled. Default is false;
-         */
-        public boolean isResumableDownload() {
-            return resumableDownload;
-        }
-
-        /**
-         * Set to true to enabled resumable download. Be aware that if you enable this mechanism, an {@link AsyncHandler#onBodyPartReceived(HttpResponseBodyPart)}
-         * will ALWAYS be invoked, in case of a JVM crash, with the remaining bytes and will never receive the bytes it already digested. An application
-         * not taking care of that fact may digest corrupted bytes or produce corrupted file.
-         *
-         * See {@link com.ning.http.client.resumable.ResumableAsyncHandler}
-         * description for more information about the mechanism and how it can be customized and used as a normal
-         * {@link AsyncHandler}. 
-         *
-         * @param resumableDownload true to enabled it.
-         * @return this
-         */
-        public Builder setResumableDownload(boolean resumableDownload) {
-            this.resumableDownload = resumableDownload;
-            return this;
         }
 
         /**
