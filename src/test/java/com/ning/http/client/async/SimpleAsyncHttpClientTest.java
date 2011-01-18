@@ -21,11 +21,13 @@ import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.consumers.OutputStreamBodyConsumer;
+import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.concurrent.Future;
 
 import static org.testng.Assert.assertEquals;
@@ -110,6 +112,31 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         assertEquals(response.getStatusCode(), 200);
         assertEquals(o.toString(), MY_MESSAGE);
 
+        client.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testPutZeroBytesFileTest() throws Throwable {
+        System.err.println("setting up client");
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+                .setIdleConnectionInPoolTimeoutInMs(100)
+                .setMaximumConnectionsTotal(50)
+                .setRequestTimeoutInMs(5 *  1000)
+                .setUrl(getTargetUrl() + "/testPutZeroBytesFileTest.txt")
+                .setHeader("Content-Type", "text/plain").build();
+        
+        File tmpfile = File.createTempFile( "testPutZeroBytesFile", ".tmp" );
+        tmpfile.deleteOnExit();
+    
+        Future<Response> future = client.put(new FileBodyGenerator( tmpfile ));
+    
+        System.out.println("waiting for response");
+        Response response = future.get();
+        
+        tmpfile.delete();
+        
+        assertEquals(response.getStatusCode(), 200);
+        
         client.close();
     }
 
