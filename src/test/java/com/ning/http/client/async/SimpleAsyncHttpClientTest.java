@@ -15,22 +15,30 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.SimpleAsyncHttpClient;
-import com.ning.http.client.consumers.AppendableBodyConsumer;
-import com.ning.http.client.consumers.OutputStreamBodyConsumer;
-import com.ning.http.client.generators.FileBodyGenerator;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Future;
 
-import static org.testng.Assert.assertEquals;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.SimpleAsyncHttpClient;
+import com.ning.http.client.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
+import com.ning.http.client.consumers.AppendableBodyConsumer;
+import com.ning.http.client.consumers.OutputStreamBodyConsumer;
+import com.ning.http.client.generators.FileBodyGenerator;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
 
 public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
@@ -140,6 +148,69 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         
         assertEquals(response.getStatusCode(), 200);
         
+        client.close();
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void testAccumulateErrorBody() throws Throwable {
+        
+        server.stop();
+        server.setHandler( new AbstractHandler() {
+
+            public void handle( String target, org.eclipse.jetty.server.Request baseRequest,
+                                HttpServletRequest request, HttpServletResponse response )
+                throws IOException, ServletException
+            {
+                response.sendError( 404 );
+                baseRequest.setHandled( true );
+            }
+        } );
+        server.start();
+        
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setErrorDocumentBehaviour( ErrorDocumentBehaviour.ACCUMULATE ).build();
+
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "/nonexistent").build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        Future<Response> future = client.get(request, new OutputStreamBodyConsumer(o));
+
+        System.out.println("waiting for response");
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 404);
+        assertEquals(o.toString(), "");
+        assertTrue(response.getResponseBody().startsWith("<html>"));
+
+        client.close();
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void testOmitErrorBody() throws Throwable {
+        
+        server.stop();
+        server.setHandler( new AbstractHandler() {
+
+            public void handle( String target, org.eclipse.jetty.server.Request baseRequest,
+                                HttpServletRequest request, HttpServletResponse response )
+                throws IOException, ServletException
+            {
+                response.getWriter().write( "error message" );
+                response.sendError( 404 );
+                baseRequest.setHandled( true );
+            }
+        } );
+        server.start();
+        
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setErrorDocumentBehaviour( ErrorDocumentBehaviour.OMIT ).build();
+
+        Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "/nonexistent").build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        Future<Response> future = client.get(request, new OutputStreamBodyConsumer(o));
+
+        System.out.println("waiting for response");
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 404);
+        assertEquals(o.toString(), "");
+        assertEquals(response.getResponseBody(), "");
+
         client.close();
     }
 

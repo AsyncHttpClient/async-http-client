@@ -71,18 +71,15 @@ public class SimpleAsyncHttpClient {
     private final RequestBuilder requestBuilder;
     private AsyncHttpClient asyncHttpClient;
     private final ThrowableHandler defaultThrowableHandler;
-    private final boolean keepErrorDocumentsInMemory;
-    private boolean ignoreErrorDocuments = false;
-    private boolean resumeEnabled = false;
+    private final boolean resumeEnabled;
+    private final ErrorDocumentBehaviour errorDocumentBehaviour;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, boolean keepErrorDocumentsInMemory,
-                                    boolean ignoreErrorDocuments, boolean resumeEnabled ) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled ) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
-        this.keepErrorDocumentsInMemory = keepErrorDocumentsInMemory;
-        this.ignoreErrorDocuments = ignoreErrorDocuments;
         this.resumeEnabled = resumeEnabled;
+        this.errorDocumentBehaviour = errorDocumentBehaviour;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -371,8 +368,7 @@ public class SimpleAsyncHttpClient {
             throwableHandler = defaultThrowableHandler;
         }
 
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler( bodyConsumer, throwableHandler, 
-                                                                       keepErrorDocumentsInMemory, ignoreErrorDocuments ) ;
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler( bodyConsumer, throwableHandler, errorDocumentBehaviour ) ;
         Request request = rb.build();
         
         if ( resumeEnabled && request.getMethod().equals( "GET" ) && 
@@ -535,9 +531,26 @@ public class SimpleAsyncHttpClient {
         r.setMethod("OPTIONS");
         return execute(r, bodyConsumer, throwableHandler);
     }
+    
+    public enum ErrorDocumentBehaviour {
+        /**
+         * Write error documents as usual via {@link BodyConsumer#consume(java.nio.ByteBuffer)}. 
+         */
+	    WRITE, 
+	    
+	    /**
+	     * Accumulate error documents in memory but do not consume.
+	     */
+	    ACCUMULATE, 
+	    
+	    /**
+	     * Omit error documents. An error document will neither be available in the response nor written via a {@link BodyConsumer}.
+	     */
+	    OMIT; 
+    }
 
     public final static class Builder {
-
+        
         private final RequestBuilder requestBuilder = new RequestBuilder("GET");
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
         private Realm.RealmBuilder realmBuilder;
@@ -547,9 +560,8 @@ public class SimpleAsyncHttpClient {
         private String proxyPassword = null;
         private int proxyPort = 80;
         private ThrowableHandler defaultThrowableHandler = null;
-        private boolean keepErrorDocumentsInMemory = false;
-        private boolean ignoreErrorDocuments = false;
-        private boolean enableResumableDownload;
+        private boolean enableResumableDownload = false;
+        private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
 
         public Builder() {
         }
@@ -758,25 +770,14 @@ public class SimpleAsyncHttpClient {
         /**
          * This setting controls whether an error document should be written via
          * the {@link BodyConsumer} after an error status code was received (e.g.
-         * 404). With this setting, the document will be accumulated in memory and
-         * accessible by {@link Response#getResponseBody()}.
+         * 404). Default is {@link ErrorDocumentBehaviour#WRITE}.
          */
-        public Builder setKeepErrorDocumentsInMemory(boolean keepErrorDocumentsInMemory) {
-            this.keepErrorDocumentsInMemory = keepErrorDocumentsInMemory;
+        public Builder setErrorDocumentBehaviour(ErrorDocumentBehaviour behaviour)
+        {
+            this.errorDocumentBehaviour = behaviour;
             return this;
         }
         
-        /**
-         * This setting controls whether an error document should be written via
-         * the {@link BodyConsumer} or accumulated in memory after an error status code was received (e.g.
-         * 404). With this setting, the document will be discarded and not be accessible after completion
-         * of a request. 
-         */
-        public Builder setIgnoreErrorDocuments(boolean ignoreErrorDocuments) {
-            this.ignoreErrorDocuments = ignoreErrorDocuments;
-            return this;
-        }
-
         /**
          * Enable resumable downloads for the SimpleAHC. Resuming downloads will only work for GET requests 
          * with an instance of {@link ResumableBodyConsumer}.
@@ -806,7 +807,7 @@ public class SimpleAsyncHttpClient {
 
             configBuilder.addIOExceptionFilter( new ResumableIOExceptionFilter() );
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, keepErrorDocumentsInMemory, ignoreErrorDocuments, enableResumableDownload );
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload );
 
             return sc;
         }
@@ -842,19 +843,17 @@ public class SimpleAsyncHttpClient {
     }        
 
     private final static class BodyConsumerAsyncHandler extends AsyncCompletionHandlerBase {
-
+        
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
-        private boolean skipConsumeBodyOnError;
-        private boolean skipConsumeBody = false;
+        private boolean accumulateBody = false;
         private boolean omitBody = false;
-        private boolean omitBodyOnError = false;
+        private ErrorDocumentBehaviour errorDocumentBehaviour;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, boolean skipConsumeBodyOnError, boolean omitBodyOnError) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
-            this.skipConsumeBodyOnError = skipConsumeBodyOnError;
-            this.omitBodyOnError = omitBodyOnError;
+            this.errorDocumentBehaviour = errorDocumentBehaviour;
         }
                                                                                                     
         @Override
@@ -875,7 +874,7 @@ public class SimpleAsyncHttpClient {
 	            return STATE.CONTINUE;
             }
                 
-            if (! skipConsumeBody && bodyConsumer != null) {
+            if (! accumulateBody && bodyConsumer != null) {
                 bodyConsumer.consume(content.getBodyByteBuffer());
             } else {
                 return super.onBodyPartReceived(content);
@@ -904,12 +903,16 @@ public class SimpleAsyncHttpClient {
             throws Exception
         {
             if (isErrorStatus(status)) {
-	            if (skipConsumeBodyOnError) { 
-	                skipConsumeBody  = true;
-	            } 
-	            if (omitBodyOnError) {
-	                omitBody = true;
-	            }
+                switch (errorDocumentBehaviour) {
+                    case ACCUMULATE:
+                        accumulateBody = true;
+                        break;
+                    case OMIT:
+                        omitBody = true;
+                        break;
+                    default:
+                        break;
+                }
 	        }
             return super.onStatusReceived( status );
         }
