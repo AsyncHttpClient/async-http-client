@@ -112,7 +112,7 @@ public class SimpleAsyncHttpClient {
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, throwableHandler);
     }
-
+    
     public Future<Response> post(Request request, BodyGenerator bodyGenerator) throws IOException {
         RequestBuilder r = rebuildRequest(request);
         r.setMethod("POST");
@@ -126,21 +126,21 @@ public class SimpleAsyncHttpClient {
         r.setBody(bodyGenerator);
         return execute(r, null, throwableHandler);
     }
-
+    
     public Future<Response> post(Request request, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
         RequestBuilder r = rebuildRequest(request);
         r.setMethod("POST");
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, null);
     }
-
+    
     public Future<Response> post(Request request, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
         RequestBuilder r = rebuildRequest(request);
         r.setMethod("POST");
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, throwableHandler);
     }
-
+    
     public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
@@ -360,6 +360,10 @@ public class SimpleAsyncHttpClient {
     private RequestBuilder rebuildRequest(Request rb) {
         return new RequestBuilder(rb);
     }
+    
+    private RequestBuilder rebuildRequest(String url) {
+        return new RequestBuilder(requestBuilder.build()).setUrl( url );
+    }
 
     private Future<Response> execute(RequestBuilder rb, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
         if ( throwableHandler == null )
@@ -394,6 +398,142 @@ public class SimpleAsyncHttpClient {
 
     public void close() {
         asyncHttpClient().close();
+    }
+
+    public Future<Response> post(String url, BodyGenerator bodyGenerator) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("POST");
+        r.setBody(bodyGenerator);
+        return execute(r, null, null);
+    }
+
+    public Future<Response> post(String url, BodyGenerator bodyGenerator, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("POST");
+        r.setBody(bodyGenerator);
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> post(String url, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("POST");
+        r.setBody(bodyGenerator);
+        return execute(r, bodyConsumer, null);
+    }
+
+    public Future<Response> post(String url, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("POST");
+        r.setBody(bodyGenerator);
+        return execute(r, bodyConsumer, throwableHandler);
+    }
+
+    public Future<Response> put(String url, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("PUT");
+        r.setBody(bodyGenerator);
+        return execute(r, bodyConsumer, null);
+    }
+
+    public Future<Response> put(String url, BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("PUT");
+        r.setBody(bodyGenerator);
+        return execute(r, bodyConsumer, throwableHandler);
+    }
+
+    public Future<Response> put(String url, BodyGenerator bodyGenerator) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("PUT");
+        r.setBody(bodyGenerator);
+        return execute(r, null, null);
+    }
+
+    public Future<Response> put(String url, BodyGenerator bodyGenerator, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("PUT");
+        r.setBody(bodyGenerator);
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> get(String url) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        return execute(r, null, null);
+    }
+
+    public Future<Response> get(String url, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> get(String url, BodyConsumer bodyConsumer) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        return execute(r, bodyConsumer, null);
+    }
+
+    public Future<Response> get(String url, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        return execute(r, bodyConsumer, throwableHandler);
+    }
+
+    public Future<Response> delete(String url) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("DELETE");
+        return execute(r, null, null);
+    }
+
+    public Future<Response> delete(String url, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("DELETE");
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> delete(String url, BodyConsumer bodyConsumer) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("DELETE");
+        return execute(r, bodyConsumer, null);
+    }
+
+    public Future<Response> delete(String url, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("DELETE");
+        return execute(r, bodyConsumer, throwableHandler);
+    }
+
+    public Future<Response> head(String url) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("HEAD");
+        return execute(r, null, null);
+    }
+
+    public Future<Response> head(String url, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("HEAD");
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> options(String url) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("OPTIONS");
+        return execute(r, null, null);
+    }
+
+    public Future<Response> options(String url, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("OPTIONS");
+        return execute(r, null, throwableHandler);
+    }
+
+    public Future<Response> options(String url, BodyConsumer bodyConsumer) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("OPTIONS");
+        return execute(r, bodyConsumer, null);
+    }
+
+    public Future<Response> options(String url, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+        RequestBuilder r = rebuildRequest(url);
+        r.setMethod("OPTIONS");
+        return execute(r, bodyConsumer, throwableHandler);
     }
 
     public final static class Builder {
