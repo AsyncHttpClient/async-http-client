@@ -330,7 +330,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         throw new IllegalStateException(ex);
                     }
                     long length = body.getContentLength();
-                    if (length > 0) {
+                    if (length != -1) {
                         nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
                     } else {
                         nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
