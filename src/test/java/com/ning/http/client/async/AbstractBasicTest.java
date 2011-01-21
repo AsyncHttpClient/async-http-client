@@ -62,7 +62,12 @@ public abstract class AbstractBasicTest {
                 httpResponse.setContentLength(1);
             }
 
-            httpResponse.setContentType("text/html; charset=utf-8");
+            if (httpRequest.getHeader("X-ISO") != null) {
+                httpResponse.setContentType("text/html; charset=ISO-8859-1");
+            } else {
+                httpResponse.setContentType("text/html; charset=utf-8");
+
+            }
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {

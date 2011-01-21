@@ -500,6 +500,16 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "default_provider", "async"})
+    public void asyncDoPostBodyIsoTest() throws Throwable {
+
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        final CountDownLatch l = new CountDownLatch(1);
+        Response r = c.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("ŽŽŽŽŽŽ").execute().get();
+        assertEquals(r.getResponseBody().getBytes("ISO-8859-1"),"ŽŽŽŽŽŽ".getBytes("ISO-8859-1"));
+        c.close();
+    }
+    
+    @Test(groups = {"standalone", "default_provider", "async"})
     public void asyncDoPostBytesTest() throws Throwable {
 
         AsyncHttpClient c = getAsyncHttpClient(null);

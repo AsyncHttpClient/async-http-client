@@ -154,6 +154,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
+    private final static String DEFAULT_CHARSET = "ISO-8859-1";
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
 
@@ -330,7 +332,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         throw new IllegalStateException(ex);
                     }
                     long length = body.getContentLength();
-                    if (length != -1) {
+                    if (length >= 0) {
                         nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, length);
                     } else {
                         nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
@@ -564,7 +566,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
                 } else if (request.getStringData() != null) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), "UTF-8"));
+
+                    //TODO: check for the charset as well.
+                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), DEFAULT_CHARSET));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
                     byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
@@ -585,7 +589,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         }
                     }
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes("UTF-8")));
+                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes(DEFAULT_CHARSET)));
 
                     if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                         nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/x-www-form-urlencoded");
@@ -1460,7 +1464,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             lenght = Integer.valueOf(r.getHeader(HttpHeaders.Names.CONTENT_LENGTH));
         }
 
-        if (lenght != -1) {
+        if (lenght >= 0) {
             r.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(lenght));
         }
         return lenght;
