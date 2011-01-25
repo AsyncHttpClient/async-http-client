@@ -33,12 +33,12 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.util.Enumeration;
-import java.util.Formatter;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 public abstract class Relative302Test extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -102,13 +102,12 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        
+        String anyGoogleSubdomain = "http://www.google.[a-z]{1,}:80";
+        String baseUrl = getBaseUrl( response.getUri() );
+        
+        assertTrue(baseUrl.matches( anyGoogleSubdomain ), "response does not show redirection to " + anyGoogleSubdomain);
 
-        try {
-            assertEquals(getBaseUrl(response.getUri()), "http://www.google.com:80");
-        } catch (java.lang.AssertionError e ) {
-            // Ugly
-            assertEquals(getBaseUrl(response.getUri()), "http://www.google.ca:80");
-        }
         c.close();
     }
 

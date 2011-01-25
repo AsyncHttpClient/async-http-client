@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
@@ -103,8 +104,12 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
 
-        assertEquals(getBaseUrl(response.getUri()), "http://www.microsoft.com/en/us/default.asp:80");
+        String anyMicrosoftPage = "http://www.microsoft.com[^:]*:80";
+        String baseUrl = getBaseUrl(response.getUri());
+        
         c.close();
+        
+        assertTrue(baseUrl.matches(anyMicrosoftPage), "response does not show redirection to " + anyMicrosoftPage);
     }
 
     private String getBaseUrl(URI uri) {
