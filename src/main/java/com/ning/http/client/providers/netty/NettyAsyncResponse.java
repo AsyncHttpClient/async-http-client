@@ -15,26 +15,30 @@
  */
 package com.ning.http.client.providers.netty;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.buffer.ChannelBuffers;
+
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
@@ -42,13 +46,20 @@ import java.util.Map;
 public class NettyAsyncResponse implements Response {
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
+    private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS = 
+        {
+          new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US), 
+          new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
+          new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US), 
+          new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
+        };
 
     private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
-
+    
     public NettyAsyncResponse(HttpResponseStatus status,
                               HttpResponseHeaders headers,
                               Collection<HttpResponseBodyPart> bodyParts) {
@@ -195,36 +206,93 @@ public class NettyAsyncResponse implements Response {
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    for (String value : header.getValue()) {
-                        String[] fields = value.split(";\\s*");
-                        String[] cookie = fields[0].split("=");
-                        String cookieName = cookie[0];
-                        String cookieValue = cookie[1];
-                        String expires = "-1";
-                        String path = null;
-                        String domain = null;
-                        boolean secure = false; // Parse each field
-                        for (int j = 1; j < fields.length; j++) {
-                            if ("secure".equalsIgnoreCase(fields[j])) {
-                                secure = true;
-                            } else if (fields[j].indexOf('=') > 0) {
-                                String[] f = fields[j].split("=");
-                                if ("expires".equalsIgnoreCase(f[0])) {
-                                    expires = f[1];
-                                } else if ("domain".equalsIgnoreCase(f[0])) {
-                                    domain = f[1];
-                                } else if ("path".equalsIgnoreCase(f[0])) {
-                                    path = f[1];
-                                }
-                            }
-                        }
-                        cookies.add(new Cookie(domain, cookieName, cookieValue, path, Integer.valueOf(expires), secure));
+			        // TODO: ask for parsed header
+                    List<String> v = header.getValue();
+                    for (String value : v) {
+                        Cookie cookie = parseCookie( value );
+                        cookies.add(cookie);
                     }
                 }
             }
         }
         return Collections.unmodifiableList(cookies);
+    }
+
+    private Cookie parseCookie( String value )
+    {
+        String[] fields = value.split(";\\s*");
+        String[] cookie = fields[0].split("=");
+        String cookieName = cookie[0];
+        String cookieValue = cookie[1];
+        int maxAge = -1;
+        String path = null;
+        String domain = null;
+        boolean secure = false; 
+        
+        boolean maxAgeSet = false;
+        boolean expiresSet = false;
+        
+        for (int j = 1; j < fields.length; j++) {
+            if ("secure".equalsIgnoreCase(fields[j])) {
+                secure = true;
+            } else if (fields[j].indexOf('=') > 0) {
+                String[] f = fields[j].split("=");
+                
+                // favor 'max-age' field over 'expires'
+                if ( !maxAgeSet && "max-age".equalsIgnoreCase( f[0] )) {
+                    try
+                    {
+                        maxAge = Integer.valueOf( f[1] );
+                    }
+                    catch ( NumberFormatException e1 )
+                    {
+                        // ignore failure to parse -> treat as session cookie
+                        // invalidate a previously parsed expires-field
+                        maxAge = -1;
+                    }
+                    maxAgeSet = true;
+                } else if (!maxAgeSet && !expiresSet && "expires".equalsIgnoreCase(f[0])) {
+                    try
+                    {
+                        maxAge = convertExpireField(f[1]);
+                    }
+                    catch ( ParseException e )
+                    {
+                        // original behavior, is this correct at all (expires field with max-age semantics)? 
+                        try
+                        {
+                            maxAge = Integer.valueOf( f[1] );
+                        }
+                        catch ( NumberFormatException e1 )
+                        {
+                            // ignore failure to parse -> treat as session cookie
+                        }
+                    }
+                    expiresSet = true;
+                } else if ("domain".equalsIgnoreCase(f[0])) {
+                    domain = f[1];
+                } else if ("path".equalsIgnoreCase(f[0])) {
+                    path = f[1];
+                }
+            }
+        }
+        
+        return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
+    }
+
+    private int convertExpireField( String timestring ) throws ParseException 
+    {
+        ParseException exception = null;
+        for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
+            try {
+		        long expire = sdf.parse( timestring ).getTime();
+		        return (int) ( expire - System.currentTimeMillis() )/1000;
+            } catch (ParseException e) {
+                exception = e;
+            }
+        }
+        
+        throw exception;
     }
 
     /**
