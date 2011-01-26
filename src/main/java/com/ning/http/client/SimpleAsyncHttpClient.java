@@ -24,6 +24,7 @@ import javax.net.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ning.http.client.SimpleAsyncHttpClient.DerivedBuilder;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.resumable.ResumableIOExceptionFilter;
 
@@ -529,6 +530,10 @@ public class SimpleAsyncHttpClient {
         return execute(r, bodyConsumer, throwableHandler);
     }
     
+    public DerivedBuilder derive() {
+        return new Builder(this);
+    }
+
     public enum ErrorDocumentBehaviour {
         /**
          * Write error documents as usual via {@link BodyConsumer#consume(java.nio.ByteBuffer)}. 
@@ -546,11 +551,37 @@ public class SimpleAsyncHttpClient {
 	    OMIT; 
     }
     
-    public Builder derive() {
-        return new Builder(this);
+    public interface DerivedBuilder {
+    
+        Builder setFollowRedirects(boolean followRedirects);
+    
+        Builder setVirtualHost(String virtualHost);
+    
+        Builder setUrl(String url);
+    
+        Builder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
+    
+        Builder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
+    
+        Builder setHeaders(Map<String, Collection<String>> headers);
+    
+        Builder setHeaders(FluentCaseInsensitiveStringsMap headers);
+    
+        Builder setHeader(String name, String value);
+    
+        Builder addQueryParameter(String name, String value);
+    
+        Builder addParameter(String key, String value) throws IllegalArgumentException;
+    
+        Builder addHeader(String name, String value);
+    
+        Builder addCookie(Cookie cookie);
+    
+        Builder addBodyPart(Part part) throws IllegalArgumentException;
+    
     }
 
-    public final static class Builder {
+    public final static class Builder implements DerivedBuilder {
         
         private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
@@ -574,18 +605,6 @@ public class SimpleAsyncHttpClient {
             this.defaultThrowableHandler = client.defaultThrowableHandler;
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
-            
-            ProxyServer proxy = client.config.getProxyServer();
-            this.proxyHost = proxy.getHost();
-            this.proxyPassword = proxy.getPassword();
-            this.proxyPort = proxy.getPort();
-            this.proxyPrincipal = proxy.getPrincipal();
-            this.proxyProtocol = proxy.getProtocol();
-            
-            Realm realm = client.config.getRealm();
-            if ( realm != null ) {
-                realmBuilder = new Realm.RealmBuilder().clone(realm);
-            }
             
             this.ahc = client.asyncHttpClient;
         }
@@ -660,12 +679,12 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
+        public DerivedBuilder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
             configBuilder.setMaximumConnectionsPerHost(defaultMaxConnectionPerHost);
             return this;
         }
 
-        public Builder setConnectionTimeoutInMs(int connectionTimeuot) {
+        public DerivedBuilder setConnectionTimeoutInMs(int connectionTimeuot) {
             configBuilder.setConnectionTimeoutInMs(connectionTimeuot);
             return this;
         }
@@ -680,52 +699,52 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setMaximumNumberOfRedirects(int maxDefaultRedirects) {
+        public DerivedBuilder setMaximumNumberOfRedirects(int maxDefaultRedirects) {
             configBuilder.setMaximumNumberOfRedirects(maxDefaultRedirects);
             return this;
         }
 
-        public Builder setCompressionEnabled(boolean compressionEnabled) {
+        public DerivedBuilder setCompressionEnabled(boolean compressionEnabled) {
             configBuilder.setCompressionEnabled(compressionEnabled);
             return this;
         }
 
-        public Builder setUserAgent(String userAgent) {
+        public DerivedBuilder setUserAgent(String userAgent) {
             configBuilder.setUserAgent(userAgent);
             return this;
         }
 
-        public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
+        public DerivedBuilder setAllowPoolingConnection(boolean allowPoolingConnection) {
             configBuilder.setAllowPoolingConnection(allowPoolingConnection);
             return this;
         }
 
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
+        public DerivedBuilder setScheduledExecutorService(ScheduledExecutorService reaper) {
             configBuilder.setScheduledExecutorService(reaper);
             return this;
         }
 
-        public Builder setExecutorService(ExecutorService applicationThreadPool) {
+        public DerivedBuilder setExecutorService(ExecutorService applicationThreadPool) {
             configBuilder.setExecutorService(applicationThreadPool);
             return this;
         }
 
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
+        public DerivedBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
             configBuilder.setSSLEngineFactory(sslEngineFactory);
             return this;
         }
 
-        public Builder setSSLContext(final SSLContext sslContext) {
+        public DerivedBuilder setSSLContext(final SSLContext sslContext) {
             configBuilder.setSSLContext(sslContext);
             return this;
         }
 
-        public Builder setRequestCompressionLevel(int requestCompressionLevel) {
+        public DerivedBuilder setRequestCompressionLevel(int requestCompressionLevel) {
             configBuilder.setRequestCompressionLevel(requestCompressionLevel);
             return this;
         }
 
-        public Builder setRealmDomain(String domain) {
+        public DerivedBuilder setRealmDomain(String domain) {
             realm().setDomain(domain);
             return this;
         }
@@ -735,27 +754,27 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setRealmPassword(String password) {
+        public DerivedBuilder setRealmPassword(String password) {
             realm().setPassword(password);
             return this;
         }
 
-        public Builder setRealmScheme(Realm.AuthScheme scheme) {
+        public DerivedBuilder setRealmScheme(Realm.AuthScheme scheme) {
             realm().setScheme(scheme);
             return this;
         }
 
-        public Builder setRealmName(String realmName) {
+        public DerivedBuilder setRealmName(String realmName) {
             realm().setRealmName(realmName);
             return this;
         }
 
-        public Builder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
+        public DerivedBuilder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth) {
             realm().setUsePreemptiveAuth(usePreemptiveAuth);
             return this;
         }
 
-        public Builder setRealmEnconding(String enc) {
+        public DerivedBuilder setRealmEnconding(String enc) {
             realm().setEnconding(enc);
             return this;
         }
@@ -770,22 +789,22 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setProxyPrincipal(String principal) {
+        public DerivedBuilder setProxyPrincipal(String principal) {
             this.proxyPrincipal = principal;
             return this;
         }
 
-        public Builder setProxyPassword(String password) {
+        public DerivedBuilder setProxyPassword(String password) {
             this.proxyPassword = password;
             return this;
         }
 
-        public Builder setProxyPort(int port) {
+        public DerivedBuilder setProxyPort(int port) {
             this.proxyPort = port;
             return this;
         }
         
-        public Builder setDefaultThrowableHandler(ThrowableHandler throwableHandler)
+        public DerivedBuilder setDefaultThrowableHandler(ThrowableHandler throwableHandler)
         {
             this.defaultThrowableHandler = throwableHandler;
             return this;
