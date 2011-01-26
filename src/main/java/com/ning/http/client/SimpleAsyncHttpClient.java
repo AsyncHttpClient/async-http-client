@@ -70,12 +70,13 @@ public class SimpleAsyncHttpClient {
     private final boolean resumeEnabled;
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled ) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc ) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
         this.resumeEnabled = resumeEnabled;
         this.errorDocumentBehaviour = errorDocumentBehaviour;
+        this.asyncHttpClient = ahc;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -544,12 +545,16 @@ public class SimpleAsyncHttpClient {
 	     */
 	    OMIT; 
     }
+    
+    public Builder derive() {
+        return new Builder(this);
+    }
 
     public final static class Builder {
         
-        private final RequestBuilder requestBuilder = new RequestBuilder("GET");
+        private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
-        private Realm.RealmBuilder realmBuilder;
+        private Realm.RealmBuilder realmBuilder = null;
         private ProxyServer.Protocol proxyProtocol = null;
         private String proxyHost = null;
         private String proxyPrincipal = null;
@@ -558,8 +563,31 @@ public class SimpleAsyncHttpClient {
         private ThrowableHandler defaultThrowableHandler = null;
         private boolean enableResumableDownload = false;
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
+        private AsyncHttpClient ahc = null;
 
         public Builder() {
+            requestBuilder = new RequestBuilder("GET");
+        }
+
+        private Builder(SimpleAsyncHttpClient client) {
+            this.requestBuilder = new RequestBuilder(client.requestBuilder.build());
+            this.defaultThrowableHandler = client.defaultThrowableHandler;
+            this.errorDocumentBehaviour = client.errorDocumentBehaviour;
+            this.enableResumableDownload = client.resumeEnabled;
+            
+            ProxyServer proxy = client.config.getProxyServer();
+            this.proxyHost = proxy.getHost();
+            this.proxyPassword = proxy.getPassword();
+            this.proxyPort = proxy.getPort();
+            this.proxyPrincipal = proxy.getPrincipal();
+            this.proxyProtocol = proxy.getProtocol();
+            
+            Realm realm = client.config.getRealm();
+            if ( realm != null ) {
+                realmBuilder = new Realm.RealmBuilder().clone(realm);
+            }
+            
+            this.ahc = client.asyncHttpClient;
         }
 
         public Builder addBodyPart(Part part) throws IllegalArgumentException {
@@ -803,7 +831,7 @@ public class SimpleAsyncHttpClient {
 
             configBuilder.addIOExceptionFilter( new ResumableIOExceptionFilter() );
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload );
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc );
 
             return sc;
         }
