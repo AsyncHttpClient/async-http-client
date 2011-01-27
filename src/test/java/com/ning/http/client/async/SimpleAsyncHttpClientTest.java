@@ -19,11 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.concurrent.Future;
 
-
 import org.testng.annotations.Test;
 
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
@@ -100,11 +97,10 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void RequestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
 
-        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
         ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.post(request, new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
         System.out.println("waiting for response");
         Response response = future.get();
@@ -141,5 +137,57 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         
         client.close();
     }
+  
+  
+    @Test(groups = {"standalone", "default_provider"})
+    public void testDerive() throws Exception 
+    {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        SimpleAsyncHttpClient derived = client.derive().build();
+        
+        assertNotSame(derived, client);
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void testDeriveOverrideURL() throws Exception 
+    {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
+        
+        
+        SimpleAsyncHttpClient derived = client.derive().setUrl(getTargetUrl()).build();
+        
+        Future<Response> future = derived.post(generator, consumer);
 
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(o.toString(), MY_MESSAGE);
+
+        client.close();
+        derived.close();
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testDeriveDoNotCloseAHCImmediately() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
+        
+        SimpleAsyncHttpClient derived = client.derive().build();
+        
+        client.close();
+        
+        Future<Response> future = derived.post(generator, consumer);
+
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(o.toString(), MY_MESSAGE);
+
+        derived.close();
+    }
 }
