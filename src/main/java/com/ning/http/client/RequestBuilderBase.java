@@ -429,9 +429,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addParameter(String key, String value) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
-        }
         resetNonMultipartData();
         resetMultipartData();
         if (request.params == null) {
@@ -442,9 +439,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
-        }
         resetNonMultipartData();
         resetMultipartData();
         request.params = new FluentStringsMap(parameters);
@@ -452,9 +446,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for form parameters");
-        }
         resetNonMultipartData();
         resetMultipartData();
         request.params = new FluentStringsMap(parameters);
@@ -462,9 +453,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addBodyPart(Part part) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for parts");
-        }
         resetParameters();
         resetNonMultipartData();
         if (request.parts == null) {
