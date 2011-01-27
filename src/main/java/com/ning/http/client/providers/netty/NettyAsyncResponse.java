@@ -85,7 +85,7 @@ public class NettyAsyncResponse implements Response {
 
     public String getResponseBody() throws IOException {
         String contentType = getContentType();
-        String charset = "UTF-8";
+        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {
@@ -125,7 +125,7 @@ public class NettyAsyncResponse implements Response {
     }
 
     private void checkBodyParts() {
-        if (bodyParts == null && bodyParts.size() > 0) {
+        if (bodyParts == null || bodyParts.size() == 0) {
             throw new IllegalStateException(BODY_NOT_COMPUTED);
         }
     }
@@ -136,7 +136,7 @@ public class NettyAsyncResponse implements Response {
         checkBodyParts();
 
         String contentType = getContentType();
-        String charset = "UTF-8";
+        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {

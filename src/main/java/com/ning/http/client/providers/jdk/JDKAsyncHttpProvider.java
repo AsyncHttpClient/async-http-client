@@ -550,7 +550,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     urlConnection.getOutputStream().write(request.getByteData());
                 } else if (request.getStringData() != null) {
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(request.getStringData().length()));
-                    urlConnection.getOutputStream().write(request.getStringData().getBytes("UTF-8"));
+                    byte[] b = request.getStringData().getBytes("UTF-8");
+                    urlConnection.setFixedLengthStreamingMode(b.length);
+
+                    urlConnection.getOutputStream().write(b);
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
                     cachedBytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
@@ -578,7 +581,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (!request.getHeaders().containsKey("Content-Type")) {
                         urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     }
-                    urlConnection.getOutputStream().write(sb.toString().getBytes("UTF-8"));
+                    urlConnection.getOutputStream().write(sb.toString().getBytes("ISO-8859-1"));
                 } else if (request.getParts() != null) {
                     int lenght = (int) request.getLength();
                     if (lenght != -1) {

@@ -56,6 +56,8 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import static org.testng.Assert.assertNotNull;
+
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
@@ -1142,7 +1144,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider", "async"})
     public void asyncResponseBodyTooLarge() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
-        Response response = c.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
+        Response response = c.preparePost(getTargetUrl()).setBody("0123456789").execute(new AsyncCompletionHandlerAdapter() {
 
             @Override
             public void onThrowable(Throwable t) {
@@ -1155,7 +1157,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "default_provider", "async"})
-    public void asyncResponseBody() throws Throwable {
+    public void asyncResponseEmptyBody() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
         Response response = c.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -1165,7 +1167,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        Assert.assertNotNull(response.getResponseBody());
+        try {
+            response.getResponseBody();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e.getMessage());
+            assertEquals(e.getMessage(), "Response's body hasn't been computed by your AsyncHandler.");
+        }
         c.close();
     }
 

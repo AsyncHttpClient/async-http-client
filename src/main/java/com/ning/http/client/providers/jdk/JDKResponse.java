@@ -42,8 +42,6 @@ public class JDKResponse implements Response {
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
-    private boolean writeHeaders;
-    private boolean writeBody;
     private AtomicBoolean contentComputed = new AtomicBoolean(false);
     private String content;
 
@@ -56,8 +54,6 @@ public class JDKResponse implements Response {
         this.status = status;
 
         uri = this.status.getUrl();
-        writeHeaders = true;
-        writeBody = true;
     }
 
     /* @Override */
@@ -76,7 +72,7 @@ public class JDKResponse implements Response {
 
     public String getResponseBody() throws IOException {
         String contentType = getContentType();
-        String charset = "UTF-8";
+        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {
@@ -108,7 +104,7 @@ public class JDKResponse implements Response {
         checkBodyParts();
 
         if (contentComputed.get()) {
-            return new ByteArrayInputStream(content.getBytes("UTF-8"));
+            return new ByteArrayInputStream(content.getBytes("ISO-8859-1"));
         }
 
         return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
@@ -168,7 +164,7 @@ public class JDKResponse implements Response {
 
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         String contentType = getContentType();
-        String charset = "UTF-8";
+        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {

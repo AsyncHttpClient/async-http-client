@@ -69,8 +69,14 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
         Response response = future.get();
         assertEquals(response.getStatusCode(), 404);
         assertEquals(o.toString(), "");
-        assertEquals(response.getResponseBody(), "");
-    
+        try {
+            response.getResponseBody();
+            fail();
+        } catch (IllegalStateException e) {
+            assertNotNull(e.getMessage());
+            assertEquals(e.getMessage(), "Response's body hasn't been computed by your AsyncHandler.");
+        }
+        
         client.close();
     }
 
