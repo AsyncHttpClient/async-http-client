@@ -279,31 +279,33 @@ public class SimpleAsyncHttpClient {
     
     public interface DerivedBuilder {
     
-        Builder setFollowRedirects(boolean followRedirects);
+        DerivedBuilder setFollowRedirects(boolean followRedirects);
     
-        Builder setVirtualHost(String virtualHost);
+        DerivedBuilder setVirtualHost(String virtualHost);
     
-        Builder setUrl(String url);
+        DerivedBuilder setUrl(String url);
     
-        Builder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
+        DerivedBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
     
-        Builder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
+        DerivedBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
     
-        Builder setHeaders(Map<String, Collection<String>> headers);
+        DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
     
-        Builder setHeaders(FluentCaseInsensitiveStringsMap headers);
+        DerivedBuilder setHeaders(FluentCaseInsensitiveStringsMap headers);
     
-        Builder setHeader(String name, String value);
+        DerivedBuilder setHeader(String name, String value);
     
-        Builder addQueryParameter(String name, String value);
+        DerivedBuilder addQueryParameter(String name, String value);
     
-        Builder addParameter(String key, String value) throws IllegalArgumentException;
+        DerivedBuilder addParameter(String key, String value) throws IllegalArgumentException;
     
-        Builder addHeader(String name, String value);
+        DerivedBuilder addHeader(String name, String value);
     
-        Builder addCookie(Cookie cookie);
+        DerivedBuilder addCookie(Cookie cookie);
     
-        Builder addBodyPart(Part part) throws IllegalArgumentException;
+        DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
+        
+        SimpleAsyncHttpClient build();
     
     }
 
