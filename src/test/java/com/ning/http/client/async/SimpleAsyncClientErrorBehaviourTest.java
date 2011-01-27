@@ -42,11 +42,10 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testAccumulateErrorBody() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setErrorDocumentBehaviour( ErrorDocumentBehaviour.ACCUMULATE ).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour( ErrorDocumentBehaviour.ACCUMULATE ).build();
     
-        Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "/nonexistent").build();
         ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.get(request, new OutputStreamBodyConsumer(o));
+        Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
     
         System.out.println("waiting for response");
         Response response = future.get();
@@ -59,11 +58,10 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testOmitErrorBody() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setErrorDocumentBehaviour( ErrorDocumentBehaviour.OMIT ).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour( ErrorDocumentBehaviour.OMIT ).build();
     
-        Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "/nonexistent").build();
         ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.get(request, new OutputStreamBodyConsumer(o));
+        Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
     
         System.out.println("waiting for response");
         Response response = future.get();

@@ -100,11 +100,10 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void RequestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
 
-        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
         ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.post(request, new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
+        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
         System.out.println("waiting for response");
         Response response = future.get();
