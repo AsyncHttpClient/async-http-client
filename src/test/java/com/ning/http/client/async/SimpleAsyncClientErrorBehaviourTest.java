@@ -27,8 +27,6 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
