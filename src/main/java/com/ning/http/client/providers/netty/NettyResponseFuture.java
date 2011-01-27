@@ -25,6 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -72,6 +73,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private Channel channel;
+    private Channel openChannel;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
     private final int maxRetry;
     private boolean writeHeaders;
@@ -134,6 +136,9 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
      */
     /* @Override */
     public boolean cancel(boolean force) {
+        if (isCancelled.get()) return false;
+        asyncHttpProvider.discardChannel(openChannel);
+        asyncHandler.onThrowable(new CancellationException());              
         latch.countDown();
         isCancelled.set(true);
         if (reaperFuture != null) reaperFuture.cancel(true);
@@ -365,6 +370,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         this.channel = channel;
     }
 
+    protected void attachOpenChannel(Channel channel) {
+        this.openChannel = channel;
+    }
+    
     /**
      * Return the channel that was previously used. This usually means the request has been redirected.
      *

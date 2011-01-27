@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -51,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -891,7 +893,11 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         StringBuilder sb = new StringBuilder();
         sb.append("LockThread=true");
 
-        Future<Response> future = c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
+        Future<Response> future = c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter(){
+            @Override
+            public void onThrowable(Throwable t) {
+            }
+        });
         future.cancel(true);
         Response response = future.get(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNull(response);
@@ -1526,4 +1532,38 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
         c.close();
     }
+
+    @Test(groups = {"standalone", "default_provider", "async"})
+    public void asyncDoPostCancelTest() throws Throwable {
+
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+        h.add("Content-Type", "application/x-www-form-urlencoded");
+        h.add("LockThread", "true");
+        StringBuilder sb = new StringBuilder();
+        sb.append("LockThread=true");
+
+        final AtomicReference<CancellationException> ex = new AtomicReference<CancellationException>();
+        ex.set(null);
+        try {
+            Future<Response> future = c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
+
+                @Override
+                public void onThrowable(Throwable t) {
+                    if (t instanceof CancellationException) {
+                        ex.set((CancellationException)t);
+                    }
+                    t.printStackTrace();
+                }
+                
+            });
+
+            future.cancel(true);
+        } catch (IllegalStateException ise) {
+            fail();
+        }
+        Assert.assertNotNull(ex.get());
+        c.close();
+    }
+
 }

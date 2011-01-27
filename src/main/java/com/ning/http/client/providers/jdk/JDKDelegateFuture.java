@@ -15,6 +15,7 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 
+import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -24,8 +25,8 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
 
     private final FutureImpl<V> delegateFuture;
 
-    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, FutureImpl<V> delegateFuture) {
-        super(asyncHandler, responseTimeoutInMs);
+    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, FutureImpl<V> delegateFuture, HttpURLConnection urlConnection) {
+        super(asyncHandler, responseTimeoutInMs, urlConnection);
         this.delegateFuture = delegateFuture;
     }
 

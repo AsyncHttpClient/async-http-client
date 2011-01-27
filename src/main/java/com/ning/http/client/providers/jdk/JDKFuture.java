@@ -15,6 +15,7 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.FutureImpl;
 
+import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -37,12 +38,14 @@ public class JDKFuture<V> implements FutureImpl<V> {
     protected final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
     protected final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
     protected final AtomicBoolean contentProcessed = new AtomicBoolean(false);
+    protected final HttpURLConnection urlConnection;
     private boolean writeHeaders;
     private boolean writeBody;
 
-    public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs) {
+    public JDKFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, HttpURLConnection urlConnection) {
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
+        this.urlConnection = urlConnection;
         writeHeaders = true;
         writeBody = true;
     }
@@ -69,8 +72,10 @@ public class JDKFuture<V> implements FutureImpl<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        cancelled.set(true);
-        if (innerFuture != null) {
+        if (!cancelled.get() && innerFuture != null) {
+            urlConnection.disconnect();
+            asyncHandler.onThrowable(new CancellationException());
+            cancelled.set(true);
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
             return false;

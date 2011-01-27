@@ -776,6 +776,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (!c.future().isCancelled() || !c.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
+            c.future().attachOpenChannel(channelFuture.getChannel());
         }
         return c.future();
     }
@@ -833,12 +834,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private void finishChannel(final ChannelHandlerContext ctx) {
         ctx.setAttachment(new DiscardEvent());
+        discardChannel(ctx.getChannel());
+    }
+
+    protected void discardChannel(Channel channel) {
         try {
-            ctx.getChannel().close();
+            channel.close();
         } catch (Throwable t) {
-             log.error("error closing a connection", t);
+            log.error("error closing a connection", t);
         }
-        openChannels.remove((ctx.getChannel()));
+        openChannels.remove(channel);
     }
 
     @Override

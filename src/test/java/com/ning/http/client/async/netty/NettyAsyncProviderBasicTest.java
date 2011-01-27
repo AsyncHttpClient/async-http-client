@@ -23,4 +23,5 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
     }
+
 }
