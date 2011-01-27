@@ -226,12 +226,12 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         HttpMethodBase method = null;
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
             EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());
-            post.getParams().setContentCharset("UTF-8");
+            post.getParams().setContentCharset("ISO-8859-1");
             if (request.getByteData() != null) {
                 post.setRequestEntity(new ByteArrayRequestEntity(request.getByteData()));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getByteData().length));
             } else if (request.getStringData() != null) {
-                post.setRequestEntity(new StringRequestEntity(request.getStringData(), "text/xml", "UTF-8"));
+                post.setRequestEntity(new StringRequestEntity(request.getStringData(), "text/xml", "ISO-8859-1"));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getStringData().length()));
             } else if (request.getStreamData() != null) {
                 InputStreamRequestEntity r = new InputStreamRequestEntity(request.getStreamData());
@@ -253,7 +253,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 }
 
                 post.setRequestHeader("Content-Length", String.valueOf(sb.length()));
-                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", "UTF-8"));
+                post.setRequestEntity(new StringRequestEntity(sb.toString(), "text/xml", "ISO-8859-1"));
 
                 if (!request.getHeaders().containsKey("Content-Type")) {
                     post.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -656,7 +656,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
             if (part instanceof StringPart) {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.StringPart(part.getName(),
                         ((StringPart) part).getValue(),
-                        "UTF-8");
+                        "ISO-8859-1");
             } else if (part instanceof FilePart) {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),
