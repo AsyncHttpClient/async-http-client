@@ -17,6 +17,8 @@ import static org.testng.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 
@@ -26,6 +28,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
+import com.ning.http.client.SimpleAsyncHttpClient.DerivedBuilder;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.consumers.OutputStreamBodyConsumer;
 import com.ning.http.client.generators.FileBodyGenerator;
@@ -140,5 +143,35 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         
         client.close();
     }
+  
+  
+    @Test(groups = {"standalone", "default_provider"})
+    public void testDerive() throws Exception 
+    {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        SimpleAsyncHttpClient derived = client.derive().build();
+        
+        assertNotSame(derived, client);
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void testDeriveOverrideURL() throws Exception 
+    {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
+        
+        
+        SimpleAsyncHttpClient derived = client.derive().setUrl(getTargetUrl()).build();
+        
+        Future<Response> future = derived.post(generator, consumer);
 
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(o.toString(), MY_MESSAGE);
+
+        client.close();
+    }
 }
