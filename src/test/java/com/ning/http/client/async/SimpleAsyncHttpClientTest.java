@@ -167,5 +167,27 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         assertEquals(o.toString(), MY_MESSAGE);
 
         client.close();
+        derived.close();
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testDeriveDoNotCloseAHCImmediately() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
+        
+        SimpleAsyncHttpClient derived = client.derive().build();
+        
+        client.close();
+        
+        Future<Response> future = derived.post(generator, consumer);
+
+        Response response = future.get();
+        assertEquals(response.getStatusCode(), 200);
+        assertEquals(o.toString(), MY_MESSAGE);
+
+        derived.close();
     }
 }

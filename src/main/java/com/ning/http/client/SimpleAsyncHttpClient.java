@@ -18,13 +18,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.SimpleAsyncHttpClient.DerivedBuilder;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.resumable.ResumableIOExceptionFilter;
 
@@ -71,13 +71,17 @@ public class SimpleAsyncHttpClient {
     private final boolean resumeEnabled;
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc ) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, SharedAsyncHttpClient ahc ) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
         this.resumeEnabled = resumeEnabled;
         this.errorDocumentBehaviour = errorDocumentBehaviour;
         this.asyncHttpClient = ahc;
+        
+        if (ahc != null) {
+            ahc.shared();
+        }
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -244,7 +248,7 @@ public class SimpleAsyncHttpClient {
     private AsyncHttpClient asyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
-                asyncHttpClient = new AsyncHttpClient(config);
+                asyncHttpClient = new SharedAsyncHttpClient(config);
             }
         }
         return asyncHttpClient;
@@ -253,9 +257,39 @@ public class SimpleAsyncHttpClient {
     public void close() {
         asyncHttpClient().close();
     }
-
+    
+    /**
+     * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
+     * instance of {@link AsyncHttpClient} to execute requests.
+     * 
+     * @return a Builder for a derived SimpleAsyncHttpClient that uses the same
+     *         instance of {@link AsyncHttpClient} to execute requests, never
+     *         {@code null}.
+     */
     public DerivedBuilder derive() {
         return new Builder(this);
+    }
+
+    private class SharedAsyncHttpClient extends AsyncHttpClient {
+        
+        AtomicInteger refCounter = new AtomicInteger(1);
+        
+        public SharedAsyncHttpClient(AsyncHttpClientConfig config) {
+            super(config);
+        }
+
+        @Override
+        public synchronized void close() {
+            if ( refCounter.decrementAndGet() == 0 )
+            {
+                super.close();
+            }
+        }
+        
+        public synchronized void shared() {
+            refCounter.incrementAndGet();
+        }
+        
     }
 
     public enum ErrorDocumentBehaviour {
@@ -277,6 +311,11 @@ public class SimpleAsyncHttpClient {
         OMIT;
     }
     
+    /**
+     * This interface contains possible configuration changes for a derived SimpleAsyncHttpClient.
+     * 
+     * @see SimpleAsyncHttpClient#derive()
+     */
     public interface DerivedBuilder {
     
         DerivedBuilder setFollowRedirects(boolean followRedirects);
@@ -306,7 +345,6 @@ public class SimpleAsyncHttpClient {
         DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
         
         SimpleAsyncHttpClient build();
-    
     }
 
     public final static class Builder implements DerivedBuilder {
@@ -322,7 +360,7 @@ public class SimpleAsyncHttpClient {
         private ThrowableHandler defaultThrowableHandler = null;
         private boolean enableResumableDownload = false;
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
-        private AsyncHttpClient ahc = null;
+        private SharedAsyncHttpClient ahc = null;
 
         public Builder() {
             requestBuilder = new RequestBuilder("GET");
@@ -334,7 +372,7 @@ public class SimpleAsyncHttpClient {
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
             
-            this.ahc = client.asyncHttpClient();
+            this.ahc = (SharedAsyncHttpClient) client.asyncHttpClient();
         }
 
         public Builder addBodyPart(Part part) throws IllegalArgumentException {
