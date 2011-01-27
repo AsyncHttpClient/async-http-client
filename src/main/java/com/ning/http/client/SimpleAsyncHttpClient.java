@@ -859,7 +859,7 @@ public class SimpleAsyncHttpClient {
             } else {
                 super.onThrowable(t);
             }
-
+            closeConsumer();
         }
 
         /**
@@ -884,6 +884,11 @@ public class SimpleAsyncHttpClient {
          */
         @Override
         public Response onCompleted(Response response) throws Exception {
+            closeConsumer();
+            return super.onCompleted(response);
+        }
+
+        private void closeConsumer() {
             try {
                 if (bodyConsumer != null) {
                     bodyConsumer.close();
@@ -891,7 +896,6 @@ public class SimpleAsyncHttpClient {
             } catch (IOException ex) {
                 logger.warn("Unable to close a BodyConsumer {}", bodyConsumer);
             }
-            return super.onCompleted(response);
         }
 
         @Override
