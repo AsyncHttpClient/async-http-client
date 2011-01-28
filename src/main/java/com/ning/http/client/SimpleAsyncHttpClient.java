@@ -785,7 +785,7 @@ public class SimpleAsyncHttpClient {
         
         private void fireStatus(HttpResponseStatus status) {
             if ( listener != null ) {
-                listener.status(url, status.getStatusCode(), status.getStatusText());
+                listener.onStatus(url, status.getStatusCode(), status.getStatusText());
             }
         }
 
@@ -795,25 +795,25 @@ public class SimpleAsyncHttpClient {
             amount += remaining;
             
             if (listener != null) {
-                listener.received(url, amount, remaining, total);
+                listener.onBytesReceived(url, amount, remaining, total);
             }
         }
 
         private void fireHeaders(HttpResponseHeaders headers) {
             if (listener != null) {
-                listener.headers(url, new HeaderMap(headers.getHeaders()));
+                listener.onHeaders(url, new HeaderMap(headers.getHeaders()));
             }
         }
 
         private void fireSent(String url, long amount, long current, long total) {
             if (listener != null) {
-                listener.sent(url, amount, current, total);
+                listener.onBytesSent(url, amount, current, total);
             }
         }
 
         private void fireCompleted(Response response) {
             if ( listener != null) {
-                listener.finished(url, response.getStatusCode(), response.getStatusText());
+                listener.onCompleted(url, response.getStatusCode(), response.getStatusText());
             }
         }
     }

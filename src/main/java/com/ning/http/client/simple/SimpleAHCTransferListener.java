@@ -1,5 +1,6 @@
 package com.ning.http.client.simple;
 
+
 /*
  * Copyright (c) 2010-2011 Sonatype, Inc. All rights reserved.
  *
@@ -18,14 +19,14 @@ package com.ning.http.client.simple;
  */
 public interface SimpleAHCTransferListener {
 
-    void status(String url, int statusCode, String statusText);
+    void onStatus(String url, int statusCode, String statusText);
 
-    void headers(String url, HeaderMap headers);
+    void onHeaders(String url, HeaderMap headers);
 
-    void received(String url, long amount, long current, long total);
+    void onBytesReceived(String url, long amount, long current, long total);
     
-    void sent(String url, long amount, long current, long total);
+    void onBytesSent(String url, long amount, long current, long total);
 
-    void finished(String url, int statusCode, String statusText);
-
+    void onCompleted(String url, int statusCode, String statusText);
+    
 }
