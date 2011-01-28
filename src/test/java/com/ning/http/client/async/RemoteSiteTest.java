@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -49,6 +50,10 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
     private CyclicBarrier b;
     private AsyncCompletionHandler<Response> h;
     private Throwable t;
+
+    public static final String URL = "http://google.com?q=";
+    public static final String REQUEST_PARAM = "github github \n" +
+            "github";
 
     @BeforeClass
     public void before() {
@@ -202,6 +207,15 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
         Assert.assertEquals(available, byteToRead);
         client.close();
+    }
+
+    @Test(groups = {"online", "default_provider"})    
+    public void testUrlRequestParametersEncoding() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+        String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
+        log.info(String.format("Executing request [%s] ...", requestUrl2));
+        Response response = client.prepareGet(requestUrl2).execute().get();
+        Assert.assertEquals(response.getStatusCode(), 301);
     }
 
 }
