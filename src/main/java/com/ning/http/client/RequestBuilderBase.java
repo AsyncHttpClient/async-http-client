@@ -17,6 +17,8 @@ package com.ning.http.client;
 
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.util.UTF8UrlEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -38,6 +40,7 @@ import java.util.Map.Entry;
  * @param <T>
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
+    private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
 
     private static final class RequestImpl implements Request {
         private String method;
@@ -108,7 +111,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         private String toUrl(boolean encode) {
 
-            if (url == null) throw new NullPointerException("url is null");
+            if (url == null) {
+                logger.debug("setUrl hasn't been invoked. Using http://localhost");
+                url = "http://localhost";
+            }
 
             String uri;
             try {
