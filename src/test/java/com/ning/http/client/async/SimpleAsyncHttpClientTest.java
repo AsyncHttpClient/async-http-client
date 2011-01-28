@@ -139,10 +139,10 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     }
   
   
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void testDerive() throws Exception 
     {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
         SimpleAsyncHttpClient derived = client.derive().build();
         
         assertNotSame(derived, client);
