@@ -66,7 +66,7 @@ public class HeaderMap implements Map<String, List<String>> {
     }
 
     /**
-     * @see FluentCaseInsensitiveStringsMap#getJoinedValue(String)
+     * @see FluentCaseInsensitiveStringsMap#getJoinedValue(String, String) 
      */
     public String getJoinedValue(String key, String delimiter) {
         return headers.getJoinedValue(key, delimiter);
