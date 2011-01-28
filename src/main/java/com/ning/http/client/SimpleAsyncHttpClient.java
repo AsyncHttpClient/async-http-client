@@ -609,6 +609,9 @@ public class SimpleAsyncHttpClient {
             return realmBuilder;
         }
         
+        /**
+         * Set the listener to notify about connection progress.
+         */
         public Builder setListener(SimpleAHCTransferListener listener)
         {
             this.listener = listener;
