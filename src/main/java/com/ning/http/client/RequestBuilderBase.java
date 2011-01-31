@@ -332,6 +332,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addHeader(String name, String value) {
+        if (value == null) {
+            logger.warn("Value was null, set to \"\"");
+            value = "";
+        }
+                
         request.headers.add(name, value);
         return derived.cast(this);
     }
