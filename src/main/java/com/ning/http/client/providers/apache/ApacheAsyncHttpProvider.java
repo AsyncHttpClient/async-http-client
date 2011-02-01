@@ -39,6 +39,7 @@ import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
@@ -331,8 +332,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(URI.create(request.getUrl()).getHost());
-        if (!avoidProxy && proxyServer != null) {
+        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request ); 
+        if (!avoidProxy) {
 
             if (proxyServer.getPrincipal() != null) {
                 Credentials defaultcreds = new UsernamePasswordCredentials(proxyServer.getPrincipal(), proxyServer.getPassword());

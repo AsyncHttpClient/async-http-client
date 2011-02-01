@@ -131,6 +131,5 @@ public abstract class ProxyTest extends AbstractBasicTest {
         }
 
         client.close();
-
     }
 }

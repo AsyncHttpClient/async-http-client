@@ -44,6 +44,7 @@ import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
+import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -515,8 +516,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri);
-        if (proxyServer != null && !avoidProxy) {
+        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
+        if (!avoidProxy) {
             nettyRequest.setHeader("Proxy-Connection", ka);
             if (proxyServer.getPrincipal() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
@@ -724,7 +725,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
-        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri.getHost());
+        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, uri.getHost() );
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
 
         if (useSSl) {
