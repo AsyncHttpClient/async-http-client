@@ -18,6 +18,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -78,25 +79,17 @@ public class JDKResponse implements Response {
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            charset = parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
         }
 
         if (!contentComputed.get()) {
             contentToString(charset);
         }
         return content;
-    }
-
-    String parseCharset(String contentType) {
-        for (String part : contentType.split(";")) {
-            if (part.startsWith("charset=")) {
-                String[] val = part.split("=");
-                if (val[1] != null) {
-                    return val[1].trim();
-                }
-            }
-        }
-        return DEFAULT_CHARSET;
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
@@ -181,7 +174,11 @@ public class JDKResponse implements Response {
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
         }
 
         if (!contentComputed.get()) {

@@ -339,4 +339,16 @@ public class AsyncHttpProviderUtils {
                 .append(" core(s))");
         return b.toString();
     }
+
+    public static String parseCharset(String contentType) {
+        for (String part : contentType.split(";")) {
+            if (part.trim().startsWith("charset=")) {
+                String[] val = part.split("=");
+                if (val[1] != null) {
+                    return val[1].trim();
+                }
+            }
+        }
+        return null;
+    }
 }

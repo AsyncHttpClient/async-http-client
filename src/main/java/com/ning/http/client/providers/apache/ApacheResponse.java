@@ -18,6 +18,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -75,21 +76,14 @@ public class ApacheResponse implements Response {
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            charset = parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
-        return contentToString(charset);
-    }
 
-    String parseCharset(String contentType) {
-        for (String part : contentType.split(";")) {
-            if (part.startsWith("charset=")) {
-                String[] val = part.split("=");
-                if (val[1] != null) {
-                    return val[1].trim();
-                }
-            }
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
         }
-        return DEFAULT_CHARSET;
+
+        return contentToString(charset);
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
@@ -126,8 +120,13 @@ public class ApacheResponse implements Response {
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            charset = parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
+        
         String response = contentToString(charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }

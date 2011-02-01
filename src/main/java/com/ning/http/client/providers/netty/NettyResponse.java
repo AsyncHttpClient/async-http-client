@@ -21,6 +21,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -91,22 +92,16 @@ public class NettyResponse implements Response {
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            charset = parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
+        
         return contentToString(charset);
     }
 
-    String parseCharset(String contentType) {
-        for (String part : contentType.split(";")) {
-            if (part.startsWith("charset=")) {
-                String[] val = part.split("=");
-                if (val[1] != null) {
-                    return val[1].trim();
-                }
-            }
-        }
-        return DEFAULT_CHARSET;
-    }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
         checkBodyParts();
@@ -153,8 +148,13 @@ public class NettyResponse implements Response {
 
         String contentType = getContentType();
         if (contentType != null) {
-            parseCharset(contentType);
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
+        
         String response = contentToString(charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
