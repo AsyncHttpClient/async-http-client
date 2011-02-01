@@ -52,8 +52,16 @@ public class WebDavResponse implements Response{
         return response.getResponseBodyExcerpt(maxLength);
     }
 
+    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+        return response.getResponseBodyExcerpt(maxLength, charset);
+    }
+
     public String getResponseBody() throws IOException {
         return response.getResponseBody();
+    }
+
+    public String getResponseBody(String charset) throws IOException {
+        return response.getResponseBody(charset);
     }
 
     public URI getUri() throws MalformedURLException {

@@ -43,6 +43,7 @@ import java.util.Map;
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
 public class NettyAsyncResponse implements Response {
+    private final static String DEFAULT_CHARSET = "ISO-8859-1";
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
     private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS =
@@ -84,8 +85,11 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
 
     public String getResponseBody() throws IOException {
+        return getResponseBody(DEFAULT_CHARSET);
+    }
+
+    public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
-        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {
@@ -133,10 +137,13 @@ public class NettyAsyncResponse implements Response {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
+        return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
+    }
+
+    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         checkBodyParts();
 
         String contentType = getContentType();
-        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {

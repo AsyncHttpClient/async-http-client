@@ -59,6 +59,26 @@ public interface Response {
      * type header.
      *
      * @param maxLength The maximum number of bytes to read
+     * @param charset the charset to use when decoding the stream
+     * @return The response body
+     * @throws java.io.IOException
+     */
+    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException;
+
+    /**
+     * Return the entire response body as a String.
+     * @param charset the charset to use when decoding the stream
+     * @return the entire response body as a String.
+     * @throws IOException
+     */
+    public String getResponseBody(String charset) throws IOException;
+
+    /**
+     * Returns the first maxLength bytes of the response body as a string. Note that this does not check
+     * whether the content type is actually a textual one, but it will use the charset if present in the content
+     * type header.
+     *
+     * @param maxLength The maximum number of bytes to read
      * @return The response body
      * @throws java.io.IOException
      */

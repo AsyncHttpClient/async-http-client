@@ -33,6 +33,7 @@ import java.util.Map;
 
 
 public class ApacheResponse implements Response {
+    private final static String DEFAULT_CHARSET = "ISO-8859-1";    
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
@@ -68,8 +69,11 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public String getResponseBody() throws IOException {
+        return getResponseBody(DEFAULT_CHARSET);
+    }
+
+    public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
-        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {
@@ -106,8 +110,13 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
+        return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
+    }
+
+    /* @Override */
+    
+    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String contentType = getContentType();
-        String charset = "ISO-8859-1";
         if (contentType != null) {
             for (String part : contentType.split(";")) {
                 if (part.startsWith("charset=")) {
