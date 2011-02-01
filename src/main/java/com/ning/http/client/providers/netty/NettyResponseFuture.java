@@ -373,6 +373,10 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     protected void attachOpenChannel(Channel channel) {
         this.openChannel = channel;
     }
+
+    protected Channel openChannel(){
+        return openChannel;
+    }
     
     /**
      * Return the channel that was previously used. This usually means the request has been redirected.

@@ -1178,7 +1178,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        if (config.getMaxTotalConnections() != -1 && future.channel() != null && future.channel().isOpen()) {
+        if (config.getMaxTotalConnections() != -1 && future.openChannel() != null && future.openChannel().isOpen()) {
             maxConnections.decrementAndGet();
         }
 
