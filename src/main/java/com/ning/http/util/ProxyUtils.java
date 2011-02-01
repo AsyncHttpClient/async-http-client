@@ -12,69 +12,58 @@
  */
 package com.ning.http.util;
 
-import java.net.URI;
-import java.util.List;
-
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 
+import java.net.URI;
+import java.util.List;
+
 /**
  * Utilities for Proxy handling.
- * 
+ *
  * @author cstamas
  */
-public class ProxyUtils
-{
+public class ProxyUtils {
     /**
-     * {@see #avoidProxy(ProxyServer, String)}
-     * 
+     * {@see #avoidProxy(ProxyServer,String)}
+     *
      * @param proxyServer
      * @param request
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
-    public static boolean avoidProxy( final ProxyServer proxyServer, final Request request )
-    {
-        return avoidProxy( proxyServer, URI.create( request.getUrl() ).getHost() );
+    public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
+        return avoidProxy(proxyServer, URI.create(request.getUrl()).getHost());
     }
 
     /**
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
      * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * 
-     * @see http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+     *
      * @param proxyServer
-     * @param target the hostname
+     * @param target      the hostname
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
+     * @see http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      */
-    public static boolean avoidProxy( final ProxyServer proxyServer, final String target )
-    {
-        if ( proxyServer != null )
-        {
+    public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
+        if (proxyServer != null) {
             final String targetHost = target.toLowerCase();
-            
+
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
-            if ( nonProxyHosts != null && nonProxyHosts.size() > 0 )
-            {
-                for ( String nonProxyHost : nonProxyHosts )
-                {
-                    if ( nonProxyHost.startsWith( "*" ) && nonProxyHost.length() > 1
-                        && targetHost.endsWith( nonProxyHost.substring( 1 ).toLowerCase() ) )
-                    {
+            if (nonProxyHosts != null && nonProxyHosts.size() > 0) {
+                for (String nonProxyHost : nonProxyHosts) {
+                    if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
+                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase())) {
                         return true;
-                    }
-                    else if ( nonProxyHost.equalsIgnoreCase( targetHost ) )
-                    {
+                    } else if (nonProxyHost.equalsIgnoreCase(targetHost)) {
                         return true;
                     }
                 }
             }
 
             return false;
-        }
-        else
-        {
+        } else {
             return true;
         }
     }
