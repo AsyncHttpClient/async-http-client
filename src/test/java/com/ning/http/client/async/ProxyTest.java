@@ -27,12 +27,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 
 /**
@@ -107,5 +110,27 @@ public abstract class ProxyTest extends AbstractBasicTest {
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getHeader("target"), target);
         client.close();
+    }
+
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClientConfig cfg
+                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
+        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        try {
+
+            String target = "http://127.0.0.1:1234/";
+            client.prepareGet(target)
+                    .setProxyServer(new ProxyServer("127.0.0.1", port1).addNonProxyHost("127.0.0.1"))
+                    .execute().get();
+            assertFalse(true);
+        } catch (Throwable e) {
+            assertNotNull(e.getCause());
+            assertEquals(e.getCause().getClass(), ConnectException.class);
+        }
+
+        client.close();
+
     }
 }

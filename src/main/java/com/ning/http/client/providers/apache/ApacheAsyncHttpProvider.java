@@ -331,7 +331,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        if (proxyServer != null) {
+        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(URI.create(request.getUrl()).getHost());
+        if (!avoidProxy && proxyServer != null) {
 
             if (proxyServer.getPrincipal() != null) {
                 Credentials defaultcreds = new UsernamePasswordCredentials(proxyServer.getPrincipal(), proxyServer.getPassword());

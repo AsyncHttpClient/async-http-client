@@ -19,12 +19,15 @@ package com.ning.http.client;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a proxy server.
  */
 public class ProxyServer {
-    private String encoding = "UTF-8";
 
     public enum Protocol {
         HTTP("http"), HTTPS("https");
@@ -45,11 +48,12 @@ public class ProxyServer {
         }
     }
 
+    private String encoding = "UTF-8";
+    private final List<String> nonProxyHosts = new ArrayList<String>();
     private final Protocol protocol;
     private final String host;
     private final String principal;
     private final String password;
-
     private int port;
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
@@ -132,6 +136,20 @@ public class ProxyServer {
 
     public String getEncoding() {
         return encoding;
+    }
+
+    public ProxyServer addNonProxyHost(String uri) {
+        nonProxyHosts.add(uri);
+        return this;
+    }
+
+    public ProxyServer removeNonProxyHost(String uri) {
+        nonProxyHosts.remove(uri);
+        return this;
+    }
+
+    public List<String> getNonProxyHosts(){
+        return Collections.unmodifiableList(nonProxyHosts);
     }
     
     @Override

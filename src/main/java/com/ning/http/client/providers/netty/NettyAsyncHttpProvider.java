@@ -515,7 +515,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
         nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        if (proxyServer != null) {
+        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri);
+        if (proxyServer != null && !avoidProxy) {
             nettyRequest.setHeader("Proxy-Connection", ka);
             if (proxyServer.getPrincipal() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
@@ -722,7 +723,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-
+        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri.getHost());
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
 
         if (useSSl) {
@@ -743,7 +744,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         try {
-            if (proxyServer == null) {
+            if (proxyServer == null || avoidProxy) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));

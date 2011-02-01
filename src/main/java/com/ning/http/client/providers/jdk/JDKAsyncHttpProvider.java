@@ -125,8 +125,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(URI.create(request.getUrl()).getHost());
         Proxy proxy = null;
-        if (proxyServer != null || realm != null) {
+        if (!avoidProxy && (proxyServer != null || realm != null)) {
             try {
                 proxy = configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
@@ -153,8 +154,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     private HttpURLConnection createUrlConnection(Request request) throws IOException {
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
+        boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(URI.create(request.getUrl()).getHost());
         Proxy proxy = null;
-        if (proxyServer != null || realm != null) {
+        if (!avoidProxy && proxyServer != null || realm != null) {
             try {
                 proxy = configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
@@ -483,7 +485,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
             urlConnection.setRequestProperty("Connection", ka);
             ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-            if (proxyServer != null) {
+            boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri.getHost());
+            if (!avoidProxy && proxyServer != null) {
                 urlConnection.setRequestProperty("Proxy-Connection", ka);
                 if (proxyServer.getPrincipal() != null) {
                     urlConnection.setRequestProperty("Proxy-Authorization", AuthenticatorUtils.computeBasicAuthentication(proxyServer));
