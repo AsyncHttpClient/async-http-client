@@ -91,13 +91,21 @@ public class NettyResponse implements Response {
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            for (String part : contentType.split(";")) {
-                if (part.startsWith("charset=")) {
-                    charset = part.substring("charset=".length());
+            charset = parseCharset(contentType);
+        }
+        return contentToString(charset);
+    }
+
+    String parseCharset(String contentType) {
+        for (String part : contentType.split(";")) {
+            if (part.startsWith("charset=")) {
+                String[] val = part.split("=");
+                if (val[1] != null) {
+                    return val[1].trim();
                 }
             }
         }
-        return contentToString(charset);
+        return DEFAULT_CHARSET;
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
@@ -145,11 +153,7 @@ public class NettyResponse implements Response {
 
         String contentType = getContentType();
         if (contentType != null) {
-            for (String part : contentType.split(";")) {
-                if (part.startsWith("charset=")) {
-                    charset = part.substring("charset=".length());
-                }
-            }
+            parseCharset(contentType);
         }
         String response = contentToString(charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
