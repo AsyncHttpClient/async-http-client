@@ -704,6 +704,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 f.setNettyRequest(nettyRequest);
             }
             f.setState(NettyResponseFuture.STATE.POOLED);
+            f.attachOpenChannel(channel);
 
             log.debug("\n\nCached Request {}\n", channel);
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
