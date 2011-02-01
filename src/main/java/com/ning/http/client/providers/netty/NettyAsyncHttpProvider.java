@@ -837,6 +837,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     protected void discardChannel(Channel channel) {
+
+        // The channel may have already been removed if a timeout occurred, and this method may be called just after.
+        if (channel == null) {
+            return;
+        }
+
         try {
             channel.close();
         } catch (Throwable t) {
