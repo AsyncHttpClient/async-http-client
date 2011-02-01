@@ -42,7 +42,7 @@ import java.util.Map;
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
-public class NettyAsyncResponse implements Response {
+public class NettyResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
@@ -60,7 +60,7 @@ public class NettyAsyncResponse implements Response {
     private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
 
-    public NettyAsyncResponse(HttpResponseStatus status,
+    public NettyResponse(HttpResponseStatus status,
                               HttpResponseHeaders headers,
                               Collection<HttpResponseBodyPart> bodyParts) {
 

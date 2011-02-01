@@ -54,6 +54,10 @@ public interface AsyncHandler<T> {
          * Continue the processing
          */
         CONTINUE,
+        /**
+         * Pause the current processing.
+         */
+        PAUSE
 
     }
     

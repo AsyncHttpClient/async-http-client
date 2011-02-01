@@ -650,7 +650,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public Response prepareResponse(final HttpResponseStatus status,
                                     final HttpResponseHeaders headers,
                                     final Collection<HttpResponseBodyPart> bodyParts) {
-        return new NettyAsyncResponse(status, headers, bodyParts);
+        return new NettyResponse(status, headers, bodyParts);
     }
 
     /* @Override */
