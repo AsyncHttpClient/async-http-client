@@ -828,7 +828,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
-        if (config.getMaxTotalConnections() != -1) {
+        if (config.getMaxTotalConnections() != -1 && ctx.getChannel().isOpen()) {
             maxConnections.decrementAndGet();
         }
         connectionsPool.removeAll(ctx.getChannel());
@@ -1178,7 +1178,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        if (config.getMaxTotalConnections() != -1) {
+        if (config.getMaxTotalConnections() != -1 && future.channel() != null && future.channel().isOpen()) {
             maxConnections.decrementAndGet();
         }
 
