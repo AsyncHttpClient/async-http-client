@@ -491,6 +491,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 if (proxyServer.getPrincipal() != null) {
                     urlConnection.setRequestProperty("Proxy-Authorization", AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
+
+                if (proxyServer.getProtocol().equals(ProxyServer.Protocol.NTLM)) {
+
+                    if (proxyServer.getNtlmDomain() == null) throw new IllegalStateException("NTLM Domain cannot be null");
+
+                    jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+                    System.setProperty(NTLM_DOMAIN, proxyServer.getNtlmDomain());
+                }
             }
 
             Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();

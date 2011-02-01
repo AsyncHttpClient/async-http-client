@@ -19,7 +19,6 @@ package com.ning.http.client;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.List;
 public class ProxyServer {
 
     public enum Protocol {
-        HTTP("http"), HTTPS("https");
+        HTTP("http"), HTTPS("https"), NTLM("NTLM");
 
         private final String protocol;
 
@@ -55,6 +54,7 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private int port;
+    private String ntlmDomain;
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
@@ -130,8 +130,9 @@ public class ProxyServer {
         }
     }
 
-    public void setEncoding(String encoding) {
+    public ProxyServer setEncoding(String encoding) {
         this.encoding = encoding;
+        return this;
     }
 
     public String getEncoding() {
@@ -150,6 +151,15 @@ public class ProxyServer {
 
     public List<String> getNonProxyHosts(){
         return Collections.unmodifiableList(nonProxyHosts);
+    }
+
+    public ProxyServer setNtlmDomain(String ntlmDomain) {
+        this.ntlmDomain = ntlmDomain;
+        return this;
+    }
+
+    public String getNtlmDomain() {
+        return ntlmDomain;
     }
     
     @Override

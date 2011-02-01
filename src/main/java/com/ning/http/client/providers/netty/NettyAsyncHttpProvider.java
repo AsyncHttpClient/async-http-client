@@ -674,7 +674,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
          * Netty doesn't support NTLM, so fall back to the JDK in that case.
          */
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        if (realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM) {
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        if ((realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM)
+                || (proxyServer != null && proxyServer.getProtocol().equals(ProxyServer.Protocol.NTLM))) {
             log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
             return ntlmProvider.execute(request, asyncHandler);
         }
@@ -722,7 +724,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         boolean avoidProxy = proxyServer != null && proxyServer.getNonProxyHosts().contains(uri.getHost());
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
 
