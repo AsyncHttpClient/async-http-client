@@ -120,6 +120,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer);
             if (future == null) {
                 future = NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider);
+            } else {
+                future.setNettyRequest(nettyRequest);
+                future.setRequest(request);
             }
             return new NettyConnectListener<T>(config, future, nettyRequest);
         }

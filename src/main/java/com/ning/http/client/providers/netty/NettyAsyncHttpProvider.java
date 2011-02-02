@@ -40,7 +40,8 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
+import com.ning.http.client.ntlm.NTLMEngine;
+import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -151,8 +152,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final ConnectionsPool<String, Channel> connectionsPool;
 
-    private final JDKAsyncHttpProvider ntlmProvider;
-
     private final AtomicInteger maxConnections = new AtomicInteger();
 
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
@@ -164,6 +163,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
 
     private final boolean trackConnections;
+
+    private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -197,8 +198,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         this.connectionsPool = cp;
 
         configureNetty();
-        ntlmProvider = new JDKAsyncHttpProvider(config);
-
         trackConnections = (config.getMaxTotalConnections() != -1);
     }
 
@@ -520,6 +519,16 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         }
                     }
                     break;
+                case NTLM:
+                    try {
+                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
+                                ntlmEngine.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost()));
+                    } catch (NTLMEngineException e) {
+                        IOException ie = new IOException();
+                        ie.initCause(e);
+                        throw ie;
+                    }
+                    break;                                       
                 default:
                     throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
             }
@@ -688,17 +697,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             throw new IOException("Closed");
         }
 
-        /**
-         * Netty doesn't support NTLM, so fall back to the JDK in that case.
-         */
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        if ((realm != null && realm.getUsePreemptiveAuth() && realm.getScheme() == Realm.AuthScheme.NTLM)
-                || (proxyServer != null && proxyServer.getProtocol().equals(ProxyServer.Protocol.NTLM))) {
-            log.debug("NTLM not supported by this provider. Using the " + JDKAsyncHttpProvider.class.getName());
-            return ntlmProvider.execute(request, asyncHandler);
-        }
-
         URI uri = AsyncHttpProviderUtils.createUri(request.getUrl());
         Channel channel = null;
 
@@ -954,20 +953,47 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         builder.setUrl(future.getURI().toString());
                     }
 
+                    Realm newRealm = null;
+                    final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
+
                     // NTLM
-                    if (wwwAuth.contains("Negotiate") && wwwAuth.contains("NTLM")) {
-                        final Realm nr = new Realm.RealmBuilder().clone(realm).setUsePreemptiveAuth(true).build();
-                        ntlmProvider.execute(builder.setRealm(nr).build(), future.getAsyncHandler(), future);
-                        return;
+                    if (wwwAuth.get(0).startsWith("NTLM") || wwwAuth.get(0).startsWith("Negotiate")) {
+                        if (!realm.isNtlmMessageType2Received()) {
+                            String challengeHeader = ntlmEngine.generateType1Msg(realm.getNtlmDomain(), realm.getNtlmHost());
+
+                            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+    
+                            newRealm = new Realm.RealmBuilder().clone(realm)
+                                .setScheme(realm.getAuthScheme())
+                                .setUri(URI.create(request.getUrl()).getPath())
+                                .setMethodName(request.getMethod())
+                                .setNtlmMessageType2Received(true)
+                                .build();
+                            future.getAndSetAuth(false);
+                        } else {
+                            String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
+                            String challengeHeader = ntlmEngine.generateType3Msg(realm.getPrincipal(), realm.getPassword(), realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+
+                            headers.remove(HttpHeaders.Names.AUTHORIZATION);
+                            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+
+                            newRealm = new Realm.RealmBuilder().clone(realm)
+                                .setScheme(realm.getAuthScheme())
+                                .setUri(URI.create(request.getUrl()).getPath())
+                                .setMethodName(request.getMethod())
+                                .build();
+                        }
+                    } else {
+                        newRealm = new Realm.RealmBuilder().clone(realm)
+                                .setScheme(realm.getAuthScheme())
+                                .setUri(URI.create(request.getUrl()).getPath())
+                                .setMethodName(request.getMethod())
+                                .setUsePreemptiveAuth(true)
+                                .parseWWWAuthenticateHeader(wwwAuth.get(0))
+                                .build();
                     }
 
-                    final Realm nr = new Realm.RealmBuilder().clone(realm)
-                            .setScheme(realm.getAuthScheme())
-                            .setUri(URI.create(request.getUrl()).getPath())
-                            .setMethodName(request.getMethod())
-                            .setUsePreemptiveAuth(true)
-                            .parseWWWAuthenticateHeader(wwwAuth.get(0))
-                            .build();
+                    final Realm nr = newRealm;
 
                     log.debug("Sending authentication to {}", request.getUrl());
 
@@ -979,12 +1005,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     if (response.isChunked()) {
                         ctx.setAttachment(new AsyncCallable(future) {
                             public Object call() throws Exception {
-                                nextRequest(builder.setRealm(nr).build(), future);
+                                nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
                                 return null;
                             }
                         });
                     } else {
-                        nextRequest(builder.setRealm(nr).build(), future);
+                        nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
                     }
                     return;
                 }

@@ -17,7 +17,6 @@
 package com.ning.http.client;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -42,6 +41,8 @@ public class Realm {
     private final String methodName;
     private final boolean usePreemptiveAuth;
     private final String enc;
+    private final String host;
+    private final boolean messageType2Received;
 
     private final String domain;
 
@@ -64,7 +65,7 @@ public class Realm {
                   String uri,
                   String method,
                   boolean usePreemptiveAuth,
-                  String domain, String enc) {
+                  String domain, String enc, String host, boolean messageType2Received) {
 
         this.principal = principal;
         this.password = password;
@@ -81,6 +82,8 @@ public class Realm {
         this.usePreemptiveAuth = usePreemptiveAuth;
         this.domain = domain;
         this.enc = enc;
+        this.host = host;
+        this.messageType2Received = messageType2Received;
     }
 
     public String getPrincipal() {
@@ -151,9 +154,30 @@ public class Realm {
     /**
      * Return the NTLM domain to use. This value should map the JDK
      * @return the NTLM domain
+     * @deprecated - use getNtlmDomain()
      */
     public String getDomain() {
         return domain;
+    }
+
+    /**
+     * Return the NTLM domain to use. This value should map the JDK
+     * @return the NTLM domain
+     */
+    public String getNtlmDomain() {
+        return domain;
+    }
+
+    /**
+     * Return the NTLM host.
+     * @return the NTLM host
+     */
+    public String getNtlmHost(){
+        return host;
+    }
+
+    public boolean isNtlmMessageType2Received(){
+        return messageType2Received;
     }
 
     @Override
@@ -237,15 +261,38 @@ public class Realm {
         private boolean usePreemptive = false;
         private String domain = "";
         private String enc = "UTF-8";
+        private String host = "localhost";
+        private boolean messageType2Received = false;
 
+        @Deprecated
         public String getDomain() {
             return domain;
         }
 
+        @Deprecated
         public RealmBuilder setDomain(String domain) {
             this.domain = domain;
             return this;
         }
+
+        public String getNtlmDomain() {
+            return domain;
+        }
+
+        public RealmBuilder setNtlmDomain(String domain) {
+            this.domain = domain;
+            return this;
+        }
+
+        public String getNtlmHost() {
+            return host;
+        }
+
+        public RealmBuilder setNtlmHost(String host) {
+            this.host = host;
+            return this;
+        }
+
 
         public String getPrincipal() {
             return principal;
@@ -366,6 +413,11 @@ public class Realm {
             return this;
         }
 
+        public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
+            this.messageType2Received = messageType2Received;
+            return this;
+        }
+
         public RealmBuilder clone(Realm clone) {
             setRealmName(clone.getRealmName());
             setAlgorithm(clone.getAlgorithm());
@@ -378,6 +430,9 @@ public class Realm {
             setScheme(clone.getScheme());
             setUri(clone.getUri());
             setUsePreemptiveAuth(clone.getUsePreemptiveAuth());
+            setNtlmDomain(clone.getNtlmDomain());
+            setNtlmHost(clone.getNtlmHost());
+            setNtlmMessageType2Received(clone.isNtlmMessageType2Received());
             return this;
         }
 
@@ -511,7 +566,7 @@ public class Realm {
                     uri,
                     methodName,
                     usePreemptive,
-                    domain, enc);
+                    domain, enc, host, messageType2Received);
         }
     }
 

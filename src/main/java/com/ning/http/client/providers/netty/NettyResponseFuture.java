@@ -57,7 +57,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
     private AsyncHandler<V> asyncHandler;
     private final int responseTimeoutInMs;
-    private final Request request;
+    private Request request;
     private HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
     private URI uri;
@@ -383,6 +383,11 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         }
         return true;
     }
+
+    public void setRequest(Request request) {
+        this.request = request;
+    }
+
 
     /**
      * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be
