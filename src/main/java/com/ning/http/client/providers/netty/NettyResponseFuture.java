@@ -72,8 +72,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
-    private Channel channel;
     private Channel openChannel;
+    private boolean reuseChannel = false;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
     private final int maxRetry;
     private boolean writeHeaders;
@@ -360,31 +360,21 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return asyncHttpProvider;
     }
 
-    /**
-     * Attach a Channel for further re-use. This usually happens when the request gets redirected (301, 302, 401, 407)
-     * but we haven't consumed all the body bytes yet.
-     *
-     * @param channel The Channel to later re-use.
-     */
     protected void attachChannel(Channel channel) {
-        this.channel = channel;
-    }
-
-    protected void attachOpenChannel(Channel channel) {
         this.openChannel = channel;
     }
 
-    protected Channel openChannel(){
+    protected void attachChannel(Channel channel, boolean reuseChannel) {
+        this.openChannel = channel;
+        this.reuseChannel = reuseChannel;
+    }
+
+    protected Channel channel(){
         return openChannel;
     }
-    
-    /**
-     * Return the channel that was previously used. This usually means the request has been redirected.
-     *
-     * @return the previously used channel.
-     */
-    protected Channel channel() {
-        return channel;
+
+    protected boolean reuseChannel(){
+        return reuseChannel;
     }
 
     protected boolean canRetry() {
