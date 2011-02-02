@@ -141,7 +141,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private final ClientSocketChannelFactory socketChannelFactory;
 
-    private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient");
+    private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient") {
+        @Override
+        public boolean remove(Object o) {
+            maxConnections.decrementAndGet();
+            return super.remove(o);
+        }    
+    };
 
     private final ConnectionsPool<String, Channel> connectionsPool;
 
@@ -156,6 +162,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
+
+    private final boolean trackConnections;
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -188,6 +196,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         configureNetty();
         ntlmProvider = new JDKAsyncHttpProvider(config);
+
+        trackConnections = (config.getMaxTotalConnections() != -1);
     }
 
     void configureNetty() {
@@ -732,7 +742,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             constructSSLPipeline(c);
         }
 
-        if (config.getMaxTotalConnections() != -1) {
+        if (trackConnections) {
             maxConnections.incrementAndGet();
         }
 
@@ -828,7 +838,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
-        if (config.getMaxTotalConnections() != -1 && ctx.getChannel().isOpen()) {
+        if (trackConnections && openChannels.contains(ctx.getChannel())) {
             maxConnections.decrementAndGet();
         }
         connectionsPool.removeAll(ctx.getChannel());
@@ -1178,8 +1188,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        if (config.getMaxTotalConnections() != -1 && future.openChannel() != null && future.openChannel().isOpen()) {
+        if (trackConnections && future.openChannel() != null && openChannels.contains(future.openChannel())) {
             maxConnections.decrementAndGet();
+            openChannels.remove(future.openChannel());
         }
 
         log.debug("abording Future {}", future);

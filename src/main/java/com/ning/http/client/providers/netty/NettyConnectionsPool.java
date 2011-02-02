@@ -65,6 +65,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 added = pooledConnectionForHost.add(connection);
                 if (added) {
                     totalConnections.incrementAndGet();
+                    log.debug("ConnectionsPool increment totalConnections {}", totalConnections);
                 }
             } else {
                 log.debug("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
@@ -95,6 +96,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     channel = null;
                 } else {
                     totalConnections.decrementAndGet();
+                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", totalConnections);
                 }
             }
         }
@@ -114,7 +116,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 if (removed) {
                     log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
                     totalConnections.decrementAndGet();
-
+                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", totalConnections);                                        
                 }
                 isRemoved |= removed;
             }
