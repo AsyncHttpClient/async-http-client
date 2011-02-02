@@ -369,7 +369,15 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
+                Assert.assertEquals(h.getFirstValue( "server" ), "gws");
+                // This assertion below is not an invariant, since implicitly contains locale-dependant settings
+                // and fails when run in country having own localized Google site and it's locale relies on something
+                // other than ISO-8859-1.
+                // In Hungary for example, http://google.com/ redirects to http://www.google.hu/, a localized
+                // Google site, that uses ISO-8892-2 encoding (default for HU). Similar is true for other
+                // non-ISO-8859-1 using countries that have "localized" google, like google.hr, google.rs, google.cz, google.sk etc.
+                //
+                // Assert.assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
                 return STATE.CONTINUE;
             }
 
