@@ -189,8 +189,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
-        if (cp == null) {
+        if (cp == null && config.getAllowPoolingConnection()) {
             cp = new NettyConnectionsPool(config);
+        } else {
+            cp = new NonConnectionsPool();
         }
         this.connectionsPool = cp;
 
@@ -523,8 +525,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
         }
 
-        String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
-        nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, ka);
+        if (!request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
+            nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
+        }
+        
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
         if (!avoidProxy) {
@@ -1775,6 +1779,28 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     log.error(e.getMessage(), e);
                 }
             }
+        }
+    }
+
+    private static class NonConnectionsPool implements ConnectionsPool<String,Channel> {
+
+        public boolean offer(String uri, Channel connection) {
+            return false;
+        }
+
+        public Channel poll(String uri) {
+            return null;
+        }
+
+        public boolean removeAll(Channel connection) {
+            return false;
+        }
+
+        public boolean canCacheConnection() {
+            return true;
+        }
+
+        public void destroy() {
         }
     }
 }
