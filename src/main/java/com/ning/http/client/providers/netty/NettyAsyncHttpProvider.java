@@ -191,7 +191,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
         if (cp == null && config.getAllowPoolingConnection()) {
             cp = new NettyConnectionsPool(config);
-        } else {
+        } else if (cp == null) {
             cp = new NonConnectionsPool();
         }
         this.connectionsPool = cp;
@@ -532,7 +532,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
         if (!avoidProxy) {
-            nettyRequest.setHeader("Proxy-Connection", ka);
+            if (!request.getHeaders().containsKey("Proxy-Connection")) {
+                nettyRequest.setHeader("Proxy-Connection", "keep-alive");
+            }
+            
             if (proxyServer.getPrincipal() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
                         AuthenticatorUtils.computeBasicAuthentication(proxyServer));
