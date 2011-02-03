@@ -1268,7 +1268,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             openChannels.remove(future.channel());
         }
 
-        log.debug("abording Future {}", future);
+        log.debug("aborting Future {}", future);
         log.debug(t.getMessage(), t);
 
         future.abort(t);
