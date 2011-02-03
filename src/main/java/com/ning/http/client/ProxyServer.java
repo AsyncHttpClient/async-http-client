@@ -16,9 +16,6 @@
  */
 package com.ning.http.client;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +26,7 @@ import java.util.List;
 public class ProxyServer {
 
     public enum Protocol {
-        HTTP("http"), HTTPS("https"), NTLM("NTLM"), KERBEROS("KERBEROS");
+        HTTP("http"), HTTPS("https"), NTLM("NTLM"), KERBEROS("KERBEROS"), SPNEGO("SPNEGO");
 
         private final String protocol;
 
