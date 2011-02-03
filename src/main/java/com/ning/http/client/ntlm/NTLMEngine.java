@@ -38,7 +38,7 @@
 
 package com.ning.http.client.ntlm;
 
-import org.apache.commons.codec.binary.Base64;
+import com.ning.http.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -636,11 +636,7 @@ public class NTLMEngine {
 
         /** Constructor to use when message contents are known */
         NTLMMessage(String messageBody, int expectedType) throws NTLMEngineException {
-            try {
-                messageContents = Base64.decodeBase64(messageBody.getBytes(DEFAULT_CHARSET));
-            } catch (UnsupportedEncodingException e) {
-                throw new NTLMEngineException("Unsupported encoding" , e);
-            }
+            messageContents = Base64.decode(messageBody);
 
             // Look for NTLM message
             if (messageContents.length < SIGNATURE.length)
@@ -774,7 +770,7 @@ public class NTLMEngine {
             } else {
                 resp = messageContents;
             }
-            return new String(Base64.encodeBase64(resp), "US-ASCII");
+            return new String(Base64.encode(resp));
         }
 
     }
