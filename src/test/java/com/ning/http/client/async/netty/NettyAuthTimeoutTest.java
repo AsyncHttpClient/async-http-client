@@ -23,4 +23,5 @@ public class NettyAuthTimeoutTest extends AuthTimeoutTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
     }
+
 }

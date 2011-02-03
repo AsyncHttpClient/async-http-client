@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -55,7 +56,7 @@ public abstract class AuthTimeoutTest
 
     private final static String admin = "admin";
 
-    AsyncHttpClient client;
+    protected AsyncHttpClient client;
 
     public void setUpServer(String auth)
             throws Exception {
@@ -134,13 +135,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -156,13 +151,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -178,13 +167,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -200,13 +183,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -222,13 +199,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -244,13 +215,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -266,13 +231,7 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
@@ -288,18 +247,18 @@ public abstract class AuthTimeoutTest
             fail("expected timeout");
         }
         catch (Exception e) {
-            Throwable t = e;
-            // TimeoutException is wrapped into RuntimeEx *or* ExecutionEx or given directly??
-            if (!TimeoutException.class.equals(e.getClass())) {
-                assertNotNull(e.getCause(), "real exception was null");
-                t = e.getCause();
-            }
-            assertEquals(t.getClass(), TimeoutException.class);
+            inspectException(e);
         }
         client.close();
     }
 
-    private Future<Response> execute(boolean preemptive)
+    private void inspectException(Throwable t) {
+        assertNotNull(t.getCause());
+        assertEquals(t.getCause().getClass(), IOException.class);
+        assertEquals(t.getCause().getMessage(), "Remotely Closed");
+    }
+
+    protected Future<Response> execute(boolean preemptive)
             throws IOException {
         client =
                 getAsyncHttpClient(

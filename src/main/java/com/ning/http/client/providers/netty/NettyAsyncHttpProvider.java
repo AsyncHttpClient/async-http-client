@@ -1329,7 +1329,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             }
 
             if (future != null && !future.isDone()) {
-                remotelyClosed(ctx.getChannel(), future);
+                if (!remotelyClosed(ctx.getChannel(), future)) {
+                    abort(future, new IOException("Remotely Closed"));    
+                }
             }
         } else {
             closeChannel(ctx);
