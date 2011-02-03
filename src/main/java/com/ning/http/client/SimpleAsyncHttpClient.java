@@ -12,6 +12,14 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.resumable.ResumableAsyncHandler;
+import com.ning.http.client.resumable.ResumableIOExceptionFilter;
+import com.ning.http.client.simple.HeaderMap;
+import com.ning.http.client.simple.SimpleAHCTransferListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -20,48 +28,37 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.net.ssl.SSLContext;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.client.resumable.ResumableIOExceptionFilter;
-import com.ning.http.client.simple.HeaderMap;
-import com.ning.http.client.simple.SimpleAHCTransferListener;
-
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link com.ning.http.client.AsyncHttpClientConfig},
  * {@link Realm}, {@link com.ning.http.client.ProxyServer} and {@link com.ning.http.client.AsyncHandler}. You can
  * build powerful application by just using this class.
- *
+ * <p/>
  * This class rely on {@link BodyGenerator} and {@link BodyConsumer} for handling the request and response body. No
  * {@link AsyncHandler} are required. As simple as:
- *
+ * <p/>
  * {@code
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
-                .setIdleConnectionInPoolTimeoutInMs(100)
-                .setMaximumConnectionsTotal(50)
-                .setRequestTimeoutInMs(5 * 60 * 1000)
-                .setUrl(getTargetUrl())
-                .setHeader("Content-Type", "text/html").build();
-
-        StringBuilder s = new StringBuilder();
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ * .setIdleConnectionInPoolTimeoutInMs(100)
+ * .setMaximumConnectionsTotal(50)
+ * .setRequestTimeoutInMs(5 * 60 * 1000)
+ * .setUrl(getTargetUrl())
+ * .setHeader("Content-Type", "text/html").build();
+ * <p/>
+ * StringBuilder s = new StringBuilder();
+ * Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
  * }
  * or
  * {@code
-    public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
-
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
-                .setUrl(getTargetUrl())
-                .build();
-
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
-    }
+ * public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
+ * <p/>
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ * .setUrl(getTargetUrl())
+ * .build();
+ * <p/>
+ * ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+ * Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
  * }
- *
+ * }
  */
 public class SimpleAsyncHttpClient {
 
@@ -82,7 +79,7 @@ public class SimpleAsyncHttpClient {
         this.errorDocumentBehaviour = errorDocumentBehaviour;
         this.asyncHttpClient = ahc;
         this.listener = listener;
-        
+
         if (ahc != null) {
             ahc.shared();
         }
@@ -115,19 +112,19 @@ public class SimpleAsyncHttpClient {
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, throwableHandler);
     }
-    
+
     public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
         r.setBody(bodyGenerator);
-        return execute(r,bodyConsumer, null);
+        return execute(r, bodyConsumer, null);
     }
 
     public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
         r.setBody(bodyGenerator);
-        return execute(r,bodyConsumer, throwableHandler);
+        return execute(r, bodyConsumer, throwableHandler);
     }
 
     public Future<Response> put(BodyGenerator bodyGenerator) throws IOException {
@@ -193,7 +190,7 @@ public class SimpleAsyncHttpClient {
         r.setMethod("HEAD");
         return execute(r, null, null);
     }
-        
+
     public Future<Response> head(ThrowableHandler throwableHandler) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("HEAD");
@@ -227,26 +224,24 @@ public class SimpleAsyncHttpClient {
     private RequestBuilder rebuildRequest(Request rb) {
         return new RequestBuilder(rb);
     }
-    
+
     private Future<Response> execute(RequestBuilder rb, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
-        if ( throwableHandler == null )
-        {
+        if (throwableHandler == null) {
             throwableHandler = defaultThrowableHandler;
         }
 
         Request request = rb.build();
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler( bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener) ;
-        
-        if ( resumeEnabled && request.getMethod().equals( "GET" ) && 
-                        bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer )
-        {
-            ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer)bodyConsumer;
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener);
+
+        if (resumeEnabled && request.getMethod().equals("GET") &&
+                bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
+            ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
             long length = fileBodyConsumer.getTransferredBytes();
             fileBodyConsumer.resume();
-            handler = new ResumableBodyConsumerAsyncHandler( length, handler );
+            handler = new ResumableBodyConsumerAsyncHandler(length, handler);
         }
-        
-        return asyncHttpClient().executeRequest( request, handler );
+
+        return asyncHttpClient().executeRequest(request, handler);
     }
 
     private AsyncHttpClient asyncHttpClient() {
@@ -261,11 +256,11 @@ public class SimpleAsyncHttpClient {
     public void close() {
         asyncHttpClient().close();
     }
-    
+
     /**
      * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
      * instance of {@link AsyncHttpClient} to execute requests.
-     * 
+     *
      * @return a Builder for a derived SimpleAsyncHttpClient that uses the same
      *         instance of {@link AsyncHttpClient} to execute requests, never
      *         {@code null}.
@@ -275,25 +270,24 @@ public class SimpleAsyncHttpClient {
     }
 
     private class SharedAsyncHttpClient extends AsyncHttpClient {
-        
+
         AtomicInteger refCounter = new AtomicInteger(1);
-        
+
         public SharedAsyncHttpClient(AsyncHttpClientConfig config) {
             super(config);
         }
 
         @Override
         public synchronized void close() {
-            if ( refCounter.decrementAndGet() == 0 )
-            {
+            if (refCounter.decrementAndGet() == 0) {
                 super.close();
             }
         }
-        
+
         public synchronized void shared() {
             refCounter.incrementAndGet();
         }
-        
+
     }
 
     public enum ErrorDocumentBehaviour {
@@ -314,45 +308,45 @@ public class SimpleAsyncHttpClient {
          */
         OMIT;
     }
-    
+
     /**
      * This interface contains possible configuration changes for a derived SimpleAsyncHttpClient.
-     * 
+     *
      * @see SimpleAsyncHttpClient#derive()
      */
     public interface DerivedBuilder {
-    
+
         DerivedBuilder setFollowRedirects(boolean followRedirects);
-    
+
         DerivedBuilder setVirtualHost(String virtualHost);
-    
+
         DerivedBuilder setUrl(String url);
-    
+
         DerivedBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
-    
+
         DerivedBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
-    
+
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
-    
+
         DerivedBuilder setHeaders(FluentCaseInsensitiveStringsMap headers);
-    
+
         DerivedBuilder setHeader(String name, String value);
-    
+
         DerivedBuilder addQueryParameter(String name, String value);
-    
+
         DerivedBuilder addParameter(String key, String value) throws IllegalArgumentException;
-    
+
         DerivedBuilder addHeader(String name, String value);
-    
+
         DerivedBuilder addCookie(Cookie cookie);
-    
+
         DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
-        
+
         SimpleAsyncHttpClient build();
     }
 
     public final static class Builder implements DerivedBuilder {
-        
+
         private final RequestBuilder requestBuilder;
         private final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
         private Realm.RealmBuilder realmBuilder = null;
@@ -376,7 +370,7 @@ public class SimpleAsyncHttpClient {
             this.defaultThrowableHandler = client.defaultThrowableHandler;
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
-            
+
             this.ahc = (SharedAsyncHttpClient) client.asyncHttpClient();
         }
 
@@ -574,30 +568,27 @@ public class SimpleAsyncHttpClient {
             this.proxyPort = port;
             return this;
         }
-        
-        public Builder setDefaultThrowableHandler(ThrowableHandler throwableHandler)
-        {
+
+        public Builder setDefaultThrowableHandler(ThrowableHandler throwableHandler) {
             this.defaultThrowableHandler = throwableHandler;
             return this;
         }
-        
+
         /**
          * This setting controls whether an error document should be written via
          * the {@link BodyConsumer} after an error status code was received (e.g.
          * 404). Default is {@link ErrorDocumentBehaviour#WRITE}.
          */
-        public Builder setErrorDocumentBehaviour(ErrorDocumentBehaviour behaviour)
-        {
+        public Builder setErrorDocumentBehaviour(ErrorDocumentBehaviour behaviour) {
             this.errorDocumentBehaviour = behaviour;
             return this;
         }
-        
+
         /**
-         * Enable resumable downloads for the SimpleAHC. Resuming downloads will only work for GET requests 
+         * Enable resumable downloads for the SimpleAHC. Resuming downloads will only work for GET requests
          * with an instance of {@link ResumableBodyConsumer}.
          */
-        public Builder setResumableDownload( boolean enableResumableDownload )
-        {
+        public Builder setResumableDownload(boolean enableResumableDownload) {
             this.enableResumableDownload = enableResumableDownload;
             return this;
         }
@@ -608,12 +599,11 @@ public class SimpleAsyncHttpClient {
             }
             return realmBuilder;
         }
-        
+
         /**
          * Set the listener to notify about connection progress.
          */
-        public Builder setListener(SimpleAHCTransferListener listener)
-        {
+        public Builder setListener(SimpleAHCTransferListener listener) {
             this.listener = listener;
             return this;
         }
@@ -628,51 +618,46 @@ public class SimpleAsyncHttpClient {
                 configBuilder.setProxyServer(new ProxyServer(proxyProtocol, proxyHost, proxyPort, proxyPrincipal, proxyPassword));
             }
 
-            configBuilder.addIOExceptionFilter( new ResumableIOExceptionFilter() );
+            configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener );
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener);
 
             return sc;
         }
     }
 
     private final static class ResumableBodyConsumerAsyncHandler
-	    extends ResumableAsyncHandler<Response>
-        implements ProgressAsyncHandler<Response>
-    {
-        
+            extends ResumableAsyncHandler<Response>
+            implements ProgressAsyncHandler<Response> {
+
         private final ProgressAsyncHandler<Response> delegate;
 
-        public ResumableBodyConsumerAsyncHandler( long byteTransferred, ProgressAsyncHandler<Response> delegate )
-        {
-            super( byteTransferred, delegate );
+        public ResumableBodyConsumerAsyncHandler(long byteTransferred, ProgressAsyncHandler<Response> delegate) {
+            super(byteTransferred, delegate);
             this.delegate = delegate;
         }
 
-        public com.ning.http.client.AsyncHandler.STATE onHeaderWriteCompleted()
-        {
+        public com.ning.http.client.AsyncHandler.STATE onHeaderWriteCompleted() {
             return delegate.onHeaderWriteCompleted();
         }
 
-        public com.ning.http.client.AsyncHandler.STATE onContentWriteCompleted()
-        {
+        public com.ning.http.client.AsyncHandler.STATE onContentWriteCompleted() {
             return delegate.onContentWriteCompleted();
         }
 
-        public com.ning.http.client.AsyncHandler.STATE onContentWriteProgress( long amount, long current, long total )
-        {
-            return delegate.onContentWriteProgress( amount, current, total );
+        public com.ning.http.client.AsyncHandler.STATE onContentWriteProgress(long amount, long current, long total) {
+            return delegate.onContentWriteProgress(amount, current, total);
         }
-    }        
+    }
 
     private final static class BodyConsumerAsyncHandler extends AsyncCompletionHandlerBase {
-        
+
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
         private final String url;
         private final SimpleAHCTransferListener listener;
-        
+
         private boolean accumulateBody = false;
         private boolean omitBody = false;
         private int amount = 0;
@@ -685,7 +670,7 @@ public class SimpleAsyncHttpClient {
             this.url = url;
             this.listener = listener;
         }
-                                                                                                    
+
         @Override
         public void onThrowable(Throwable t) {
             if (exceptionHandler != null) {
@@ -701,11 +686,11 @@ public class SimpleAsyncHttpClient {
          */
         public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             fireReceived(content);
-            if ( omitBody  ) {
-	            return STATE.CONTINUE;
+            if (omitBody) {
+                return STATE.CONTINUE;
             }
-                
-            if (! accumulateBody && bodyConsumer != null) {
+
+            if (!accumulateBody && bodyConsumer != null) {
                 bodyConsumer.consume(content.getBodyByteBuffer());
             } else {
                 return super.onBodyPartReceived(content);
@@ -713,7 +698,7 @@ public class SimpleAsyncHttpClient {
             return STATE.CONTINUE;
         }
 
-        
+
         /**
          * {@inheritDoc}
          */
@@ -735,11 +720,10 @@ public class SimpleAsyncHttpClient {
         }
 
         @Override
-        public STATE onStatusReceived( HttpResponseStatus status )
-            throws Exception
-        {
+        public STATE onStatusReceived(HttpResponseStatus status)
+                throws Exception {
             fireStatus(status);
-            
+
             if (isErrorStatus(status)) {
                 switch (errorDocumentBehaviour) {
                     case ACCUMULATE:
@@ -752,11 +736,10 @@ public class SimpleAsyncHttpClient {
                         break;
                 }
             }
-            return super.onStatusReceived( status );
+            return super.onStatusReceived(status);
         }
 
-        private boolean isErrorStatus( HttpResponseStatus status )
-        {
+        private boolean isErrorStatus(HttpResponseStatus status) {
             return status.getStatusCode() >= 400;
         }
 
@@ -764,15 +747,15 @@ public class SimpleAsyncHttpClient {
         public STATE onHeadersReceived(HttpResponseHeaders headers)
                 throws Exception {
             calculateTotal(headers);
-            
+
             fireHeaders(headers);
-            
+
             return super.onHeadersReceived(headers);
         }
 
         private void calculateTotal(HttpResponseHeaders headers) {
             String length = headers.getHeaders().getFirstValue("Content-Length");
-            
+
             try {
                 total = Integer.valueOf(length);
             } catch (Exception e) {
@@ -785,18 +768,18 @@ public class SimpleAsyncHttpClient {
             fireSent(url, amount, current, total);
             return super.onContentWriteProgress(amount, current, total);
         }
-        
+
         private void fireStatus(HttpResponseStatus status) {
-            if ( listener != null ) {
+            if (listener != null) {
                 listener.onStatus(url, status.getStatusCode(), status.getStatusText());
             }
         }
 
         private void fireReceived(HttpResponseBodyPart content) {
             int remaining = content.getBodyByteBuffer().remaining();
-            
+
             amount += remaining;
-            
+
             if (listener != null) {
                 listener.onBytesReceived(url, amount, remaining, total);
             }
@@ -815,7 +798,7 @@ public class SimpleAsyncHttpClient {
         }
 
         private void fireCompleted(Response response) {
-            if ( listener != null) {
+            if (listener != null) {
                 listener.onCompleted(url, response.getStatusCode(), response.getStatusText());
             }
         }
