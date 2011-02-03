@@ -1845,6 +1845,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
     }
 
+    protected AsyncHttpClientConfig getConfig() {
+        return config;
+    }
+
     private static class NonConnectionsPool implements ConnectionsPool<String,Channel> {
 
         public boolean offer(String uri, Channel connection) {

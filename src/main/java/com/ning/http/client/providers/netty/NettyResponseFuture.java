@@ -97,7 +97,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
             ;
         } else {
-            maxRetry = 5;
+            maxRetry = asyncHttpProvider.getConfig().getMaxRequestRetry();
         }
         writeHeaders = true;
         writeBody = true;

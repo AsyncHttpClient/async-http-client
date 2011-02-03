@@ -72,6 +72,7 @@ public class AsyncHttpClientConfig {
     private final List<ResponseFilter> responseFilters;
     private final List<IOExceptionFilter> ioExceptionFilters;
     private final int requestCompressionLevel;
+    private final int maxRequestRetry;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -93,7 +94,7 @@ public class AsyncHttpClientConfig {
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
-                                  int requestCompressionLevel) {
+                                  int requestCompressionLevel, int maxRequestRetry) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -114,6 +115,7 @@ public class AsyncHttpClientConfig {
         this.responseFilters = responseFilters;
         this.ioExceptionFilters = ioExceptionFilters;
         this.requestCompressionLevel = requestCompressionLevel;
+        this.maxRequestRetry = maxRequestRetry;
 
         if (reaper == null) {
             this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
@@ -362,6 +364,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     */
+    public int getMaxRequestRetry() {
+        return maxRequestRetry;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -389,7 +399,7 @@ public class AsyncHttpClientConfig {
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
         private int requestCompressionLevel = -1;
-
+        private int maxRequestRetry = 5;
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
@@ -721,6 +731,16 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
+         * @param maxRequestRetry  the number of time a request will be retried
+         * @return this
+         */
+        public Builder setMaxRequestRetry(int maxRequestRetry) {
+            this.maxRequestRetry = maxRequestRetry;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          * 
          * @param prototype the configuration to use as a prototype.
@@ -777,7 +797,8 @@ public class AsyncHttpClientConfig {
                     requestFilters,
                     responseFilters,
                     ioExceptionFilters,
-                    requestCompressionLevel);
+                    requestCompressionLevel,
+                    maxRequestRetry);
         }
     }
 }
