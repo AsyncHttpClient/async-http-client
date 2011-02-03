@@ -77,6 +77,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                         // kaboom
                         // yes, response is commited, but Jetty does aborts and drops connection
                         httpResponse.sendError(500);
+                        break;
                     }
                 }
             }
@@ -120,7 +121,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     public AsyncHttpClientConfig getAsyncHttpClientConfig() {
         // for this test brevity's sake, we are limiting to 1 retries
-        return new AsyncHttpClientConfig.Builder().setMaxRequestRetry(1)
+        return new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0)
                 .setRequestTimeoutInMs(10000).build();
     }
 
