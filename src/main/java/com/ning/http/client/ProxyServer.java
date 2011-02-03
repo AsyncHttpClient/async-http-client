@@ -29,7 +29,7 @@ import java.util.List;
 public class ProxyServer {
 
     public enum Protocol {
-        HTTP("http"), HTTPS("https"), NTLM("NTLM");
+        HTTP("http"), HTTPS("https"), NTLM("NTLM"), KERBEROS("KERBEROS");
 
         private final String protocol;
 
@@ -98,36 +98,6 @@ public class ProxyServer {
 
     public String getPassword() {
         return password;
-    }
-    
-    /**
-     * Convert from Java java.net.Proxy object.
-     *
-     * @param proxy
-     * @return A ProxyServer object or null if the proxy object can not converted.
-     */
-    public static final ProxyServer fromProxy(final Proxy proxy) {
-        if (proxy == null || proxy.type() == Proxy.Type.DIRECT) {
-            return null;
-        }
-
-        if (proxy.type() != Proxy.Type.HTTP) {
-            throw new IllegalArgumentException("Only DIRECT and HTTP Proxies are supported!");
-        }
-
-        final SocketAddress sa = proxy.address();
-
-        if (!(sa instanceof InetSocketAddress)) {
-            throw new IllegalArgumentException("Only Internet Address sockets are supported!");
-        }
-
-        InetSocketAddress isa = (InetSocketAddress) sa;
-
-        if (isa.isUnresolved()) {
-            return new ProxyServer(isa.getHostName(), isa.getPort());
-        } else {
-            return new ProxyServer(isa.getAddress().getHostAddress(), isa.getPort());
-        }
     }
 
     public ProxyServer setEncoding(String encoding) {
