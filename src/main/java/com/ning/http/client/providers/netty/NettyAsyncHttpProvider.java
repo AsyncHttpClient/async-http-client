@@ -594,8 +594,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
                 } else if (request.getStringData() != null) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
-
-                    //TODO: check for the charset as well.
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), DEFAULT_CHARSET));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
