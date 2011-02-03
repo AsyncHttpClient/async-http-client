@@ -46,6 +46,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM
@@ -406,7 +407,7 @@ public class NTLMEngine {
      */
     private static byte[] lmHash(String password) throws NTLMEngineException {
         try {
-            byte[] oemPassword = password.toUpperCase().getBytes("US-ASCII");
+            byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes("US-ASCII");
             int length = Math.min(oemPassword.length, 14);
             byte[] keyBytes = new byte[14];
             System.arraycopy(oemPassword, 0, keyBytes, 0, length);
@@ -466,7 +467,7 @@ public class NTLMEngine {
             byte[] ntlmHash = ntlmHash(password);
             HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
             // Upper case username, mixed case target!!
-            hmacMD5.update(user.toUpperCase().getBytes("UnicodeLittleUnmarked"));
+            hmacMD5.update(user.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked"));
             hmacMD5.update(target.getBytes("UnicodeLittleUnmarked"));
             return hmacMD5.getOutput();
         } catch (java.io.UnsupportedEncodingException e) {
@@ -790,7 +791,7 @@ public class NTLMEngine {
                 domain = convertDomain(domain);
 
                 hostBytes = host.getBytes("UnicodeLittleUnmarked");
-                domainBytes = domain.toUpperCase().getBytes("UnicodeLittleUnmarked");
+                domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked");
             } catch (java.io.UnsupportedEncodingException e) {
                 throw new NTLMEngineException("Unicode unsupported: " + e.getMessage(), e);
             }
@@ -969,7 +970,7 @@ public class NTLMEngine {
             }
 
             try {
-                domainBytes = domain.toUpperCase().getBytes("UnicodeLittleUnmarked");
+                domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes("UnicodeLittleUnmarked");
                 hostBytes = host.getBytes("UnicodeLittleUnmarked");
                 userBytes = user.getBytes("UnicodeLittleUnmarked");
             } catch (java.io.UnsupportedEncodingException e) {
