@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2010-2011 Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package com.ning.http.client;
 
 import java.io.FilterInputStream;
@@ -74,63 +86,63 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     private volatile Throwable t;
 
     public BodyDeferringAsyncHandler(final OutputStream os) {
-	this.output = os;
-	this.responseSet = false;
+        this.output = os;
+        this.responseSet = false;
     }
 
     public void onThrowable(Throwable t) {
-	this.t = t;
+        this.t = t;
     }
 
     public STATE onStatusReceived(HttpResponseStatus responseStatus)
-	    throws Exception {
-	responseBuilder.reset();
-	responseBuilder.accumulate(responseStatus);
-	return STATE.CONTINUE;
+            throws Exception {
+        responseBuilder.reset();
+        responseBuilder.accumulate(responseStatus);
+        return STATE.CONTINUE;
     }
 
     public STATE onHeadersReceived(HttpResponseHeaders headers)
-	    throws Exception {
-	responseBuilder.accumulate(headers);
-	return STATE.CONTINUE;
+            throws Exception {
+        responseBuilder.accumulate(headers);
+        return STATE.CONTINUE;
     }
 
     public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
-	    throws Exception {
-	// body arrived, flush headers
-	if (!responseSet) {
-	    response = responseBuilder.build();
-	    responseSet = true;
-	    headersArrived.countDown();
-	}
+            throws Exception {
+        // body arrived, flush headers
+        if (!responseSet) {
+            response = responseBuilder.build();
+            responseSet = true;
+            headersArrived.countDown();
+        }
 
-	bodyPart.writeTo(output);
-	return STATE.CONTINUE;
+        bodyPart.writeTo(output);
+        return STATE.CONTINUE;
     }
 
     public Response onCompleted() throws IOException {
-	// Counting down to handle error cases too.
-	// In "normal" cases, latch is already at 0 here
-	// But in other cases, for example when because of some error
-	// onBodyPartReceived() is never called, the caller
-	// of getResponse() would remain blocked infinitely.
-	// By contract, onCompleted() is always invoked, even in case of errors
-	headersArrived.countDown();
+        // Counting down to handle error cases too.
+        // In "normal" cases, latch is already at 0 here
+        // But in other cases, for example when because of some error
+        // onBodyPartReceived() is never called, the caller
+        // of getResponse() would remain blocked infinitely.
+        // By contract, onCompleted() is always invoked, even in case of errors
+        headersArrived.countDown();
 
-	try {
-	    output.flush();
-	} finally {
-	    output.close();
-	}
+        try {
+            output.flush();
+        } finally {
+            output.close();
+        }
 
-	if (t != null) {
-	    IOException ioe = new IOException(t.getMessage());
-	    ioe.initCause(t);
-	    throw ioe;
-	} else {
-	    // sending out current response
-	    return responseBuilder.build();
-	}
+        if (t != null) {
+            IOException ioe = new IOException(t.getMessage());
+            ioe.initCause(t);
+            throw ioe;
+        } else {
+            // sending out current response
+            return responseBuilder.build();
+        }
     }
 
     /**
@@ -151,37 +163,41 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * @throws InterruptedException
      */
     public Response getResponse() throws InterruptedException {
-	// block here as long as headers arrive
-	headersArrived.await();
-	return response;
+        // block here as long as headers arrive
+        headersArrived.await();
+        return response;
     }
 
     // ==
 
+    /**
+     * A simple helper class that is used to perform automatic "join" for async
+     * download and the error checking of the Future of the request.
+     */
     public static class BodyDeferringInputStream<T> extends FilterInputStream {
-	private final Future<T> future;
+        private final Future<T> future;
 
-	public BodyDeferringInputStream(final Future<T> future,
-		final InputStream in) {
-	    super(in);
-	    this.future = future;
-	}
+        public BodyDeferringInputStream(final Future<T> future,
+                final InputStream in) {
+            super(in);
+            this.future = future;
+        }
 
-	public void close() throws IOException {
-	    // close
-	    super.close();
-	    // join
-	    get();
-	}
+        public void close() throws IOException {
+            // close
+            super.close();
+            // join
+            get();
+        }
 
-	public T get() throws IOException {
-	    try {
-		return future.get();
-	    } catch (Exception e) {
-		IOException ioe = new IOException(e.getMessage());
-		ioe.initCause(e);
-		throw ioe;
-	    }
-	}
+        public T get() throws IOException {
+            try {
+                return future.get();
+            } catch (Exception e) {
+                IOException ioe = new IOException(e.getMessage());
+                ioe.initCause(e);
+                throw ioe;
+            }
+        }
     }
 }
