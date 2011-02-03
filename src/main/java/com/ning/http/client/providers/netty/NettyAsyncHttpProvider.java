@@ -42,6 +42,7 @@ import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
+import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -165,6 +166,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final boolean trackConnections;
 
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
+
+    private final static SpnegoEngine spnegoEngine = new SpnegoEngine();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
         super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
@@ -528,7 +531,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                         ie.initCause(e);
                         throw ie;
                     }
-                    break;                                       
+                    break;
+                case KERBEROS:
+                case SPNEGO:
+                    String challengeHeader = null;
+                    try {
+                        challengeHeader = spnegoEngine.generateToken(nettyRequest);
+                    } catch (Throwable e) {
+                        IOException ie = new IOException();
+                        ie.initCause(e);
+                        throw ie;
+                    }
+                    nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+                    break;
                 default:
                     throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
             }
@@ -955,7 +970,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
 
                     // NTLM
-                    if (wwwAuth.get(0).startsWith("NTLM") || wwwAuth.get(0).startsWith("Negotiate")) {
+                    if (wwwAuth.get(0).startsWith("NTLM") || (wwwAuth.get(0).startsWith("Negotiate")
+                            && realm.getAuthScheme() == Realm.AuthScheme.NTLM)) {
+
                         if (!realm.isNtlmMessageType2Received()) {
                             String challengeHeader = ntlmEngine.generateType1Msg(realm.getNtlmDomain(), realm.getNtlmHost());
 
@@ -970,7 +987,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             future.getAndSetAuth(false);
                         } else {
                             String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-                            String challengeHeader = ntlmEngine.generateType3Msg(realm.getPrincipal(), realm.getPassword(), realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+                            String challengeHeader = ntlmEngine.generateType3Msg(realm.getPrincipal(), realm.getPassword(),
+                                    realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
 
                             headers.remove(HttpHeaders.Names.AUTHORIZATION);
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
@@ -980,6 +998,24 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                                 .setUri(URI.create(request.getUrl()).getPath())
                                 .setMethodName(request.getMethod())
                                 .build();
+                        }
+                    // SPNEGO KERBEROS
+                    } else if (wwwAuth.get(0).startsWith("Negotiate") && (realm.getAuthScheme() == Realm.AuthScheme.KERBEROS
+                            || realm.getAuthScheme() == Realm.AuthScheme.SPNEGO)) {
+                        
+                        try {
+                            String challengeHeader = spnegoEngine.generateToken(nettyRequest);
+                            headers.remove(HttpHeaders.Names.AUTHORIZATION);
+                            headers.add(HttpHeaders.Names.AUTHORIZATION, "Negociate " + challengeHeader);
+
+                            newRealm = new Realm.RealmBuilder().clone(realm)
+                                .setScheme(realm.getAuthScheme())
+                                .setUri(URI.create(request.getUrl()).getPath())
+                                .setMethodName(request.getMethod())
+                                .build();
+                        } catch (Throwable throwable) {
+                            abort(future,throwable);
+                            return;
                         }
                     } else {
                         newRealm = new Realm.RealmBuilder().clone(realm)
