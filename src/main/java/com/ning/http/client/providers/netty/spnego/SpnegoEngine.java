@@ -90,10 +90,9 @@ public class SpnegoEngine {
         this(null, false);
     }
 
-    public String generateToken(HttpRequest nettyRequest) throws Throwable {
+    public String generateToken(String authServer) throws Throwable {
 
         try {
-            String authServer = nettyRequest.getHeader("Host");
             if (this.stripPort) {
                 authServer = authServer.substring(0, authServer.indexOf(":"));
             }

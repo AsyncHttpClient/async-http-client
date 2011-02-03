@@ -504,7 +504,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
             }
         }
-
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         if (realm != null && realm.getUsePreemptiveAuth()) {
             switch (realm.getAuthScheme()) {
@@ -535,8 +535,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 case KERBEROS:
                 case SPNEGO:
                     String challengeHeader = null;
+                    String authServer = proxyServer == null ? AsyncHttpProviderUtils.getBaseUrl(uri) : proxyServer.getHost();
                     try {
-                        challengeHeader = spnegoEngine.generateToken(nettyRequest);
+                        challengeHeader = spnegoEngine.generateToken(authServer);
                     } catch (Throwable e) {
                         IOException ie = new IOException();
                         ie.initCause(e);
@@ -553,7 +554,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
         }
         
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
         if (!avoidProxy) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
@@ -968,13 +968,19 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                     Realm newRealm = null;
                     final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
+                    ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
 
+                    // TODO: Refactor and put this code out of here.
                     // NTLM
                     if (wwwAuth.get(0).startsWith("NTLM") || (wwwAuth.get(0).startsWith("Negotiate")
                             && realm.getAuthScheme() == Realm.AuthScheme.NTLM)) {
 
+                        String ntlmDomain = proxyServer == null ? realm.getNtlmDomain() : proxyServer.getNtlmDomain();
+                        String ntlmHost = proxyServer == null ? realm.getNtlmHost() : proxyServer.getHost();
+                        String prinicipal = proxyServer == null ? realm.getPrincipal() : proxyServer.getPrincipal();
+                        String password = proxyServer == null ? realm.getPassword() : proxyServer.getPassword();
                         if (!realm.isNtlmMessageType2Received()) {
-                            String challengeHeader = ntlmEngine.generateType1Msg(realm.getNtlmDomain(), realm.getNtlmHost());
+                            String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
     
@@ -987,8 +993,8 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             future.getAndSetAuth(false);
                         } else {
                             String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-                            String challengeHeader = ntlmEngine.generateType3Msg(realm.getPrincipal(), realm.getPassword(),
-                                    realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+                            String challengeHeader = ntlmEngine.generateType3Msg(prinicipal, password,
+                                    ntlmDomain, ntlmHost, serverChallenge);
 
                             headers.remove(HttpHeaders.Names.AUTHORIZATION);
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
@@ -1002,15 +1008,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     // SPNEGO KERBEROS
                     } else if (wwwAuth.get(0).startsWith("Negotiate") && (realm.getAuthScheme() == Realm.AuthScheme.KERBEROS
                             || realm.getAuthScheme() == Realm.AuthScheme.SPNEGO)) {
-                        
+
+                        URI uri = URI.create(request.getUrl());
+                        String authServer = proxyServer == null ? AsyncHttpProviderUtils.getBaseUrl(uri) : proxyServer.getHost();
                         try {
-                            String challengeHeader = spnegoEngine.generateToken(nettyRequest);
+                            String challengeHeader = spnegoEngine.generateToken(authServer);
                             headers.remove(HttpHeaders.Names.AUTHORIZATION);
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negociate " + challengeHeader);
 
                             newRealm = new Realm.RealmBuilder().clone(realm)
                                 .setScheme(realm.getAuthScheme())
-                                .setUri(URI.create(request.getUrl()).getPath())
+                                .setUri(uri.getPath())
                                 .setMethodName(request.getMethod())
                                 .build();
                         } catch (Throwable throwable) {
