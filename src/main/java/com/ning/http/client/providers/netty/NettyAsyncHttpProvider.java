@@ -828,7 +828,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     protected void channelIdle(ChannelHandlerContext ctx, IdleState state, long lastActivityTimeMillis) throws Exception {
 
         if (log.isDebugEnabled()) {
-            log.debug("Idle state {}, last activity {}ms ago",
+            log.debug("Idle state {}, last activity {} ms ago",
                     new Object[] {state, System.currentTimeMillis() - lastActivityTimeMillis});
         }
         if (state.equals(IdleState.READER_IDLE)) {
@@ -836,7 +836,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         Object attachment = ctx.getAttachment();
-        
+
         if (attachment != null) {
             if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
@@ -846,7 +846,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 }
     
                 abort(future, new TimeoutException("No response received. Connection timed out after "
-                        + config.getIdleConnectionTimeoutInMs()));
+                        + config.getIdleConnectionInPoolTimeoutInMs()));
             }
         } else {
           log.warn("null attachment on ChannelHandlerContext {}", ctx);
