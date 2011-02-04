@@ -40,7 +40,8 @@ import com.ning.http.client.Response;
 
 public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
-    protected static final int HALF_GIG = 53687091;
+    // not a half gig ;) for test shorter run's sake
+    protected static final int HALF_GIG = 100000;
 
     public static class SlowAndBigHandler extends AbstractHandler {
 
@@ -197,12 +198,13 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                 .prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrick");
 
         PipedOutputStream pos = new PipedOutputStream();
+        PipedInputStream pis = new PipedInputStream(pos);
         BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pos);
 
         Future<Response> f = r.execute(bdah);
 
         InputStream is = new BodyDeferringAsyncHandler.BodyDeferringInputStream<Response>(
-                f, new PipedInputStream(pos));
+                f, pis);
 
         Response resp = bdah.getResponse();
         assertNotNull(resp);
@@ -231,12 +233,13 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                 Boolean.TRUE.toString());
 
         PipedOutputStream pos = new PipedOutputStream();
+        PipedInputStream pis = new PipedInputStream(pos);
         BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pos);
 
         Future<Response> f = r.execute(bdah);
 
         InputStream is = new BodyDeferringAsyncHandler.BodyDeferringInputStream<Response>(
-                f, new PipedInputStream(pos));
+                f, pis);
 
         Response resp = bdah.getResponse();
         assertNotNull(resp);
