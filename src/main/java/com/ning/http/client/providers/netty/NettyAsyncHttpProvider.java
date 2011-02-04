@@ -148,7 +148,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         public boolean remove(Object o) {
             maxConnections.decrementAndGet();
             return super.remove(o);
-        }    
+        }
     };
 
     private final ConnectionsPool<String, Channel> connectionsPool;
@@ -225,7 +225,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
-                }                
+                }
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
@@ -553,13 +553,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (!request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
             nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
         }
-        
-        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
+
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         if (!avoidProxy) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
                 nettyRequest.setHeader("Proxy-Connection", "keep-alive");
             }
-            
+
             if (proxyServer.getPrincipal() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
                         AuthenticatorUtils.computeBasicAuthentication(proxyServer));
@@ -616,7 +616,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(bytes, 0, length));
-               } else if (request.getParams() != null) {
+                } else if (request.getParams() != null) {
                     StringBuilder sb = new StringBuilder();
                     for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                         final String key = paramEntry.getKey();
@@ -754,7 +754,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         }
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
-        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, uri.getHost() );
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
 
         if (useSSl) {
@@ -792,9 +792,10 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (directInvokation && !executeConnectAsync && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
-            if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS) ) {
+            if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
                 abort(c.future(), new ConnectException("Connect times out"));
-            };
+            }
+            ;
             try {
                 c.operationComplete(channelFuture);
             } catch (Exception e) {
@@ -829,8 +830,9 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
         if (log.isDebugEnabled()) {
             log.debug("Idle state {}, last activity {} ms ago",
-                    new Object[] {state, System.currentTimeMillis() - lastActivityTimeMillis});
+                    new Object[]{state, System.currentTimeMillis() - lastActivityTimeMillis});
         }
+
         if (state.equals(IdleState.READER_IDLE)) {
             return;
         }
@@ -840,18 +842,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         if (attachment != null) {
             if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-    
+
                 if (!future.isDone() && !future.isCancelled()) {
                     return;
                 }
-    
+
                 abort(future, new TimeoutException("No response received. Connection timed out after "
                         + config.getIdleConnectionInPoolTimeoutInMs()));
             }
         } else {
-          log.warn("null attachment on ChannelHandlerContext {}", ctx);
+            log.warn("null attachment on ChannelHandlerContext {}", ctx);
         }
-        
+
         log.debug("Channel Idle: {}", ctx.getChannel());
         closeChannel(ctx);
     }
@@ -923,7 +925,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                 response = (HttpResponse) e.getMessage();
 
                 log.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
-                
+
                 // Required if there is some trailing headers.
                 future.setHttpResponse(response);
 
@@ -983,13 +985,13 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-    
+
                             newRealm = new Realm.RealmBuilder().clone(realm)
-                                .setScheme(realm.getAuthScheme())
-                                .setUri(URI.create(request.getUrl()).getPath())
-                                .setMethodName(request.getMethod())
-                                .setNtlmMessageType2Received(true)
-                                .build();
+                                    .setScheme(realm.getAuthScheme())
+                                    .setUri(URI.create(request.getUrl()).getPath())
+                                    .setMethodName(request.getMethod())
+                                    .setNtlmMessageType2Received(true)
+                                    .build();
                             future.getAndSetAuth(false);
                         } else {
                             String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
@@ -1000,12 +1002,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
 
                             newRealm = new Realm.RealmBuilder().clone(realm)
-                                .setScheme(realm.getAuthScheme())
-                                .setUri(URI.create(request.getUrl()).getPath())
-                                .setMethodName(request.getMethod())
-                                .build();
+                                    .setScheme(realm.getAuthScheme())
+                                    .setUri(URI.create(request.getUrl()).getPath())
+                                    .setMethodName(request.getMethod())
+                                    .build();
                         }
-                    // SPNEGO KERBEROS
+                        // SPNEGO KERBEROS
                     } else if (wwwAuth.get(0).startsWith("Negotiate") && (realm.getAuthScheme() == Realm.AuthScheme.KERBEROS
                             || realm.getAuthScheme() == Realm.AuthScheme.SPNEGO)) {
 
@@ -1017,12 +1019,12 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
                             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negociate " + challengeHeader);
 
                             newRealm = new Realm.RealmBuilder().clone(realm)
-                                .setScheme(realm.getAuthScheme())
-                                .setUri(uri.getPath())
-                                .setMethodName(request.getMethod())
-                                .build();
+                                    .setScheme(realm.getAuthScheme())
+                                    .setUri(uri.getPath())
+                                    .setMethodName(request.getMethod())
+                                    .build();
                         } catch (Throwable throwable) {
-                            abort(future,throwable);
+                            abort(future, throwable);
                             return;
                         }
                     } else {
@@ -1330,7 +1332,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
             if (future != null && !future.isDone()) {
                 if (!remotelyClosed(ctx.getChannel(), future)) {
-                    abort(future, new IOException("Remotely Closed"));    
+                    abort(future, new IOException("Remotely Closed"));
                 }
             }
         } else {
@@ -1378,7 +1380,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
             future.done(new Callable<Boolean>() {
                 public Boolean call() throws Exception {
                     if (future.getKeepAlive() && cache) {
-                        if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel()) ) {
+                        if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
                             finishChannel(ctx);
                         }
                     }
@@ -1453,7 +1455,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
                 if (IOException.class.isAssignableFrom(cause.getClass()) && config.getIOExceptionFilters().size() > 0) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                        .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                            .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                     fc = handleIoException(fc, future);
 
                     if (fc.replayRequest()) {
@@ -1859,7 +1861,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         return config;
     }
 
-    private static class NonConnectionsPool implements ConnectionsPool<String,Channel> {
+    private static class NonConnectionsPool implements ConnectionsPool<String, Channel> {
 
         public boolean offer(String uri, Channel connection) {
             return false;
