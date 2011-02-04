@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import com.ning.http.client.Response.ResponseBuilder;
@@ -166,7 +167,8 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * 1st cached, probably incomplete one. Note: the response returned by this
      * method will contain everything <em>except</em> the response body itself,
      * so invoking any method like Response.getResponseBodyXXX() will result in
-     * error!
+     * error! Also, please not that this method might return <code>null</code>
+     * in case of some errors.
      * 
      * @return
      * @throws InterruptedException
@@ -183,30 +185,59 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * A simple helper class that is used to perform automatic "join" for async
      * download and the error checking of the Future of the request.
      */
-    public static class BodyDeferringInputStream<T> extends FilterInputStream {
-        private final Future<T> future;
+    public static class BodyDeferringInputStream extends FilterInputStream {
+        private final Future<Response> future;
 
-        public BodyDeferringInputStream(final Future<T> future,
-                final InputStream in) {
+        private final BodyDeferringAsyncHandler bdah;
+
+        public BodyDeferringInputStream(final Future<Response> future,
+                final BodyDeferringAsyncHandler bdah, final InputStream in) {
             super(in);
             this.future = future;
+            this.bdah = bdah;
         }
 
+        /**
+         * Closes the input stream, and "joins" (wait for complete execution
+         * together with potential exception thrown) of the async request.
+         */
         public void close() throws IOException {
             // close
             super.close();
-            // join
-            get();
-        }
-
-        public T get() throws IOException {
+            // "join" async request
             try {
-                return future.get();
+                getLastResponse();
             } catch (Exception e) {
                 IOException ioe = new IOException(e.getMessage());
                 ioe.initCause(e);
                 throw ioe;
             }
+        }
+
+        /**
+         * Delegates to {@link BodyDeferringAsyncHandler#getResponse()}. Will
+         * blocks as long as headers arrives only. Might return
+         * <code>null</code>. See
+         * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
+         * 
+         * @return
+         * @throws InterruptedException
+         */
+        public Response getAsapResponse() throws InterruptedException {
+            return bdah.getResponse();
+        }
+
+        /**
+         * Delegates to <code>Future<Response>#get()</code> method. Will block
+         * as long as complete response arrives.
+         * 
+         * @return
+         * @throws InterruptedException
+         * @throws ExecutionException
+         */
+        public Response getLastResponse() throws InterruptedException,
+                ExecutionException {
+            return future.get();
         }
     }
 }
