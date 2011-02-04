@@ -92,6 +92,11 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
     public void onThrowable(Throwable t) {
         this.t = t;
+        try {
+            closeOut();
+        } catch (IOException e) {
+            // ignore
+        }
     }
 
     public STATE onStatusReceived(HttpResponseStatus responseStatus)
@@ -120,6 +125,14 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         return STATE.CONTINUE;
     }
 
+    protected void closeOut() throws IOException {
+        try {
+            output.flush();
+        } finally {
+            output.close();
+        }
+    }
+
     public Response onCompleted() throws IOException {
         // Counting down to handle error cases too.
         // In "normal" cases, latch is already at 0 here
@@ -129,11 +142,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         // By contract, onCompleted() is always invoked, even in case of errors
         headersArrived.countDown();
 
-        try {
-            output.flush();
-        } finally {
-            output.close();
-        }
+        closeOut();
 
         if (t != null) {
             IOException ioe = new IOException(t.getMessage());
