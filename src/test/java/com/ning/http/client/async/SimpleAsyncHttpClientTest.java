@@ -14,9 +14,13 @@ package com.ning.http.client.async;
 
 import static org.testng.Assert.*;
 
+import static org.testng.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.testng.annotations.Test;
@@ -126,7 +130,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    @Test(groups = { "standalone", "default_provider" })
     public void testDerive() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
         SimpleAsyncHttpClient derived = client.derive().build();
@@ -151,27 +155,6 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         assertEquals(o.toString(), MY_MESSAGE);
 
         client.close();
-        derived.close();
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void testDeriveDoNotCloseAHCImmediately() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-
-        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
-        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
-
-        SimpleAsyncHttpClient derived = client.derive().build();
-
-        client.close();
-
-        Future<Response> future = derived.post(generator, consumer);
-
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(o.toString(), MY_MESSAGE);
-
         derived.close();
     }
 
@@ -224,11 +207,40 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
-        try{
+        try {
             new SimpleAsyncHttpClient.Builder().build().derive().build();
             assertTrue(true);
         } catch (NullPointerException ex) {
             fail();
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testCloseDerivedValidMaster() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        SimpleAsyncHttpClient derived = client.derive().build();
+    
+        derived.get().get();
+    
+        derived.close();
+    
+        Response response = client.get().get();
+    
+        assertEquals(response.getStatusCode(), 200);
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testCloseMasterInvalidDerived() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        SimpleAsyncHttpClient derived = client.derive().build();
+    
+        client.close();
+    
+        try {
+            derived.get().get();
+            fail("Expected closed AHC");
+        } catch (IOException e) {
+            // expected
         }
     }
 

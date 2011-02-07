@@ -70,8 +70,9 @@ public class SimpleAsyncHttpClient {
     private final boolean resumeEnabled;
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
     private final SimpleAHCTransferListener listener;
+    private final boolean derived;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, SharedAsyncHttpClient ahc, SimpleAHCTransferListener listener) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -80,9 +81,7 @@ public class SimpleAsyncHttpClient {
         this.asyncHttpClient = ahc;
         this.listener = listener;
 
-        if (ahc != null) {
-            ahc.shared();
-        }
+        this.derived = ahc != null;
     }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
@@ -247,47 +246,45 @@ public class SimpleAsyncHttpClient {
     private AsyncHttpClient asyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
-                asyncHttpClient = new SharedAsyncHttpClient(config);
+                asyncHttpClient = new AsyncHttpClient(config);
             }
         }
         return asyncHttpClient;
     }
 
+    /**
+     * Close the underlying AsyncHttpClient for this instance.
+     * <p/>
+     * If this instance is derived from another instance, this method does
+     * nothing as the client instance is managed by the original
+     * SimpleAsyncHttpClient.
+     * 
+     * @see #derive()
+     * @see AsyncHttpClient#close()
+     */
     public void close() {
-        asyncHttpClient().close();
+        if (!derived && asyncHttpClient != null) {
+            asyncHttpClient.close();
+        }
     }
 
     /**
      * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
      * instance of {@link AsyncHttpClient} to execute requests.
-     *
+     * 
+     * <p/>
+     * 
+     * The original SimpleAsyncHttpClient is responsible for managing the
+     * underlying AsyncHttpClient. For the derived instance, {@link #close()} is
+     * a NOOP. If the original SimpleAsyncHttpClient is closed, all derived
+     * instances become invalid.
+     * 
      * @return a Builder for a derived SimpleAsyncHttpClient that uses the same
      *         instance of {@link AsyncHttpClient} to execute requests, never
      *         {@code null}.
      */
     public DerivedBuilder derive() {
         return new Builder(this);
-    }
-
-    private class SharedAsyncHttpClient extends AsyncHttpClient {
-
-        AtomicInteger refCounter = new AtomicInteger(1);
-
-        public SharedAsyncHttpClient(AsyncHttpClientConfig config) {
-            super(config);
-        }
-
-        @Override
-        public synchronized void close() {
-            if (refCounter.decrementAndGet() == 0) {
-                super.close();
-            }
-        }
-
-        public synchronized void shared() {
-            refCounter.incrementAndGet();
-        }
-
     }
 
     public enum ErrorDocumentBehaviour {
@@ -342,6 +339,8 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
 
+        DerivedBuilder setResumableDownload(boolean resume);
+
         SimpleAsyncHttpClient build();
     }
 
@@ -358,7 +357,7 @@ public class SimpleAsyncHttpClient {
         private ThrowableHandler defaultThrowableHandler = null;
         private boolean enableResumableDownload = false;
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
-        private SharedAsyncHttpClient ahc = null;
+        private AsyncHttpClient ahc = null;
         private SimpleAHCTransferListener listener = null;
 
         public Builder() {
@@ -370,8 +369,7 @@ public class SimpleAsyncHttpClient {
             this.defaultThrowableHandler = client.defaultThrowableHandler;
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
-
-            this.ahc = (SharedAsyncHttpClient) client.asyncHttpClient();
+            this.ahc = client.asyncHttpClient();
         }
 
         public Builder addBodyPart(Part part) throws IllegalArgumentException {
