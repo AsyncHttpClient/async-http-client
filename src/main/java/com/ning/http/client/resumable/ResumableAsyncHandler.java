@@ -124,8 +124,9 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     public void onThrowable(Throwable t) {
         if (decoratedAsyncHandler != null) {
             decoratedAsyncHandler.onThrowable(t);
+        } else {
+            logger.debug("", t);
         }
-        logger.error("", t);
     }
 
     /**
