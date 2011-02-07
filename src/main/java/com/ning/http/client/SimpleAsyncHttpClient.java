@@ -339,6 +339,8 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
 
+        DerivedBuilder setResumableDownload(boolean resume);
+
         SimpleAsyncHttpClient build();
     }
 
