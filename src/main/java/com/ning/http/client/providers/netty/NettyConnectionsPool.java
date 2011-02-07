@@ -17,16 +17,17 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
+import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.channel.Channel;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A simple implementation of {@link com.ning.http.client.ConnectionsPool} based on a {@link ConcurrentHashMap}
@@ -36,20 +37,21 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
     private final ConcurrentHashMap<String, List<Channel>> connectionsPool =
             new ConcurrentHashMap<String, List<Channel>>();
-    private final AtomicInteger totalConnections = new AtomicInteger(0);
     private final AsyncHttpClientConfig config;
+    private final NettyAsyncHttpProvider provider;
+    private final ConcurrentHashMap<Channel, Future<?>> trackedIdleConnections = new ConcurrentHashMap<Channel, Future<?>>();
 
-
-    public NettyConnectionsPool(AsyncHttpClientConfig config) {
-        this.config = config;
+    public NettyConnectionsPool(NettyAsyncHttpProvider provider) {
+        this.provider = provider;
+        this.config = provider.getConfig();
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean offer(String uri, Channel connection) {
-        log.debug("Adding uri: {} for channel {}", uri, connection);
-        connection.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+    public boolean offer(String uri, Channel channel) {
+        log.debug("Adding uri: {} for channel {}", uri, channel);
+        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
         List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
         if (pooledConnectionForHost == null) {
@@ -62,10 +64,12 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         synchronized (pooledConnectionForHost) {
             int size = pooledConnectionForHost.size();
             if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
-                added = pooledConnectionForHost.add(connection);
+                added = pooledConnectionForHost.add(channel);
                 if (added) {
-                    totalConnections.incrementAndGet();
-                    log.debug("ConnectionsPool increment totalConnections {}", totalConnections);
+                    Future<?> idleFuture = config.reaper().schedule(new IdleRunner(channel, pooledConnectionForHost),
+                            config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
+                    trackedIdleConnections.put(channel, idleFuture);
+                    log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
                 }
             } else {
                 log.debug("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
@@ -73,6 +77,42 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             }
         }
         return added;
+    }
+
+    private final class IdleRunner implements Runnable {
+
+        private final List<Channel> activeChannels;
+        private final Channel channel;
+
+        public IdleRunner(Channel channel, List<Channel> activeChannels) {
+            this.channel = channel;
+            this.activeChannels = activeChannels;
+        }
+
+        public void run() {
+            synchronized (activeChannels) {
+                Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+                if (attachment != null) {
+                    if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
+                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+
+                        if (!future.isDone() && !future.isCancelled()) {
+                            log.warn("Future not in appropriate state {}", future);
+                            return;
+                        }
+                    }
+                }
+
+                if (activeChannels.remove(channel)) {
+                    log.debug("Channel idle. Expiring {}", channel);
+                    try {
+                        channel.close();
+                    } catch (Throwable t) {
+                        // Ignore
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -95,8 +135,17 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     removeAll(channel);
                     channel = null;
                 } else {
-                    totalConnections.decrementAndGet();
-                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", totalConnections);
+                    Future<?> idleFuture = trackedIdleConnections.remove(channel);
+                    if (idleFuture != null) {
+                        idleFuture.cancel(true);
+                    }
+
+                    // Double checking the channel hasn't been closed in between.
+                    if (!channel.isConnected() || !channel.isOpen()) {
+                        channel = null;
+                    }
+
+                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", trackedIdleConnections.size());
                 }
             }
         }
@@ -106,17 +155,21 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     /**
      * {@inheritDoc}
      */
-    public boolean removeAll(Channel connection) {
+    public boolean removeAll(Channel channel) {
         boolean isRemoved = false;
         Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
             Map.Entry<String, List<Channel>> e = i.next();
             synchronized (e.getValue()) {
-                boolean removed = e.getValue().remove(connection);
+                boolean removed = e.getValue().remove(channel);
                 if (removed) {
                     log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
-                    totalConnections.decrementAndGet();
-                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", totalConnections);                                        
+                    Future<?> idleFuture = trackedIdleConnections.remove(channel);
+                    if (idleFuture != null) {
+                        idleFuture.cancel(true);
+                    } else {
+                        log.debug("ConnectionsPool decrementAndGet totalConnections {}", trackedIdleConnections.size());
+                    }
                 }
                 isRemoved |= removed;
             }
@@ -128,7 +181,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (config.getMaxTotalConnections() != -1 && totalConnections.get() >= config.getMaxTotalConnections()) {
+        if (config.getMaxTotalConnections() != -1 && trackedIdleConnections.size() >= config.getMaxTotalConnections()) {
             return false;
         } else {
             return true;
@@ -139,6 +192,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public void destroy() {
+        trackedIdleConnections.clear();       
         try {
             Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
             while (i.hasNext()) {

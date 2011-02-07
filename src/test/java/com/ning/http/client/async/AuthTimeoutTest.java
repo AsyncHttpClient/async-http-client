@@ -40,10 +40,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -252,7 +250,8 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    private void inspectException(Throwable t) {
+    protected void inspectException(Throwable t) {
+        t.printStackTrace();
         assertNotNull(t.getCause());
         assertEquals(t.getCause().getClass(), IOException.class);
         assertEquals(t.getCause().getMessage(), "Remotely Closed");

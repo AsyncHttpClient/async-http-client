@@ -64,6 +64,7 @@ import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -88,7 +89,6 @@ import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +123,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHttpProvider<HttpResponse> {
+public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider<HttpResponse> {
     private final static String HTTP_HANDLER = "httpHandler";
     final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
@@ -170,7 +170,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
     private final static SpnegoEngine spnegoEngine = new SpnegoEngine();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
-        super(new HashedWheelTimer(), 0, 0, config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
 
         if (config.getAsyncHttpProviderConfig() != null
                 && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
@@ -194,7 +193,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
         if (cp == null && config.getAllowPoolingConnection()) {
-            cp = new NettyConnectionsPool(config);
+            cp = new NettyConnectionsPool(this);
         } else if (cp == null) {
             cp = new NonConnectionsPool();
         }
@@ -278,7 +277,7 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         final Channel channel = connectionsPool.poll(AsyncHttpProviderUtils.getBaseUrl(uri));
 
         if (channel != null) {
-            log.debug("Using cached Channel %s for uri {}", channel, uri);
+            log.debug("Using cached Channel {} for uri {}", channel, uri);
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
@@ -676,14 +675,17 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     public void close() {
         isClose.set(true);
-        connectionsPool.destroy();
-        openChannels.close();
-        this.releaseExternalResources();
-        config.reaper().shutdown();
-        config.executorService().shutdown();
-        socketChannelFactory.releaseExternalResources();
-        plainBootstrap.releaseExternalResources();
-        secureBootstrap.releaseExternalResources();
+        try {
+            config.reaper().shutdownNow();
+            connectionsPool.destroy();
+            openChannels.close();
+            config.executorService().shutdownNow();
+            socketChannelFactory.releaseExternalResources();
+            plainBootstrap.releaseExternalResources();
+            secureBootstrap.releaseExternalResources();
+        } catch (Throwable t) {
+            log.warn("Unexpected error on close", t);
+        }
     }
 
     /* @Override */
@@ -825,38 +827,6 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
         return result;
     }
 
-    @Override
-    protected void channelIdle(ChannelHandlerContext ctx, IdleState state, long lastActivityTimeMillis) throws Exception {
-
-        if (state.equals(IdleState.READER_IDLE)) {
-            return;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Idle state {}, last activity {} ms ago",
-                    new Object[]{state, System.currentTimeMillis() - lastActivityTimeMillis});
-        }
-
-        Object attachment = ctx.getAttachment();
-        if (attachment != null) {
-            if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
-                NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-
-                if (!future.isDone() && !future.isCancelled()) {
-                    return;
-                }
-
-                abort(future, new TimeoutException("No response received. Connection timed out after "
-                        + config.getIdleConnectionInPoolTimeoutInMs()));
-            }
-        } else {
-            log.warn("null attachment on ChannelHandlerContext {}", ctx);
-        }
-
-        log.debug("Channel Idle: {}", ctx.getChannel());
-        closeChannel(ctx);
-    }
-
     private void closeChannel(final ChannelHandlerContext ctx) {
         if (trackConnections && openChannels.contains(ctx.getChannel())) {
             maxConnections.decrementAndGet();
@@ -867,22 +837,18 @@ public class NettyAsyncHttpProvider extends IdleStateHandler implements AsyncHtt
 
     private void finishChannel(final ChannelHandlerContext ctx) {
         ctx.setAttachment(new DiscardEvent());
-        discardChannel(ctx.getChannel());
-    }
-
-    protected void discardChannel(Channel channel) {
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
-        if (channel == null) {
+        if (ctx.getChannel() == null) {
             return;
         }
 
         try {
-            channel.close();
+            ctx.getChannel().close();
         } catch (Throwable t) {
             log.error("error closing a connection", t);
         }
-        openChannels.remove(channel);
+        openChannels.remove(ctx.getChannel());
     }
 
     @Override

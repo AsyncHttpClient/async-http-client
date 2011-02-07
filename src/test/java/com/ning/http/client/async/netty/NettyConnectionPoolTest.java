@@ -23,4 +23,5 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
     }
+
 }

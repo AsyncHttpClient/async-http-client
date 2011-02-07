@@ -137,8 +137,13 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     /* @Override */
     public boolean cancel(boolean force) {
         if (isCancelled.get()) return false;
-        asyncHttpProvider.discardChannel(openChannel);
-        asyncHandler.onThrowable(new CancellationException());              
+
+        try {
+            openChannel.close();
+        } catch (Throwable t) {
+            // Ignore
+        }
+        asyncHandler.onThrowable(new CancellationException());
         latch.countDown();
         isCancelled.set(true);
         if (reaperFuture != null) reaperFuture.cancel(true);

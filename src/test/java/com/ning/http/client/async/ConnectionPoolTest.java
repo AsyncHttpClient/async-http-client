@@ -47,8 +47,6 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void testMaxTotalConnections() {
         AsyncHttpClient client = new AsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
-                        .setConnectionTimeoutInMs(100)
-                        .setRequestTimeoutInMs(100)
                         .setAllowPoolingConnection(true)
                         .setMaximumConnectionsTotal(1)
                         .build()
@@ -63,11 +61,35 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 Response response = client.prepareGet(url).execute().get();
                 log.info("{} response [{}].", i, response);
             } catch (Exception ex) {
-                ex.printStackTrace();
                 exception = ex;
             }
         }
         assertNull(exception);
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testMaxTotalConnectionsException() {
+        AsyncHttpClient client = new AsyncHttpClient(
+                new AsyncHttpClientConfig.Builder()
+                        .setAllowPoolingConnection(true)
+                        .setMaximumConnectionsTotal(1)
+                        .build()
+        );
+
+        String url = getTargetUrl();
+        int i;
+        Exception exception = null;
+        for (i = 0; i < 3; i++) {
+            try {
+                log.info("{} requesting url [{}]...", i, url);
+                client.prepareGet(url).execute();
+            } catch (Exception ex) {
+                exception = ex;
+            }
+        }
+        assertNotNull(exception);
+        assertNotNull(exception.getMessage());
+        assertEquals(exception.getMessage(),"Too many connections 1");
     }
 
     @Test(groups = {"standalone", "default_provider", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)
@@ -102,6 +124,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         server.stop();
         server.start();
         client.prepareGet(getTargetUrl()).execute(handler);
+
 
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");
@@ -370,5 +393,6 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         assertEquals(count.get(), 0);
         client.close();
     }
+
 }
 
