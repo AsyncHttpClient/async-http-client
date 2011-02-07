@@ -189,30 +189,10 @@ public class ApacheResponse implements Response {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
                     // TODO: ask for parsed header
-                    for (String value : header.getValue()) {
-                        String[] fields = value.split(";\\s*");
-                        String[] cookie = fields[0].split("=");
-                        String cookieName = cookie[0];
-                        String cookieValue = cookie[1];
-                        String expires = "-1";
-                        String path = null;
-                        String domain = null;
-                        boolean secure = false; // Parse each field
-                        for (int j = 1; j < fields.length; j++) {
-                            if ("secure".equalsIgnoreCase(fields[j])) {
-                                secure = true;
-                            } else if (fields[j].indexOf('=') > 0) {
-                                String[] f = fields[j].split("=");
-                                if ("expires".equalsIgnoreCase(f[0])) {
-                                    expires = f[1];
-                                } else if ("domain".equalsIgnoreCase(f[0])) {
-                                    domain = f[1];
-                                } else if ("path".equalsIgnoreCase(f[0])) {
-                                    path = f[1];
-                                }
-                            }
-                        }
-                        cookies.add(new Cookie(domain, cookieName, cookieValue, path, Integer.valueOf(expires), secure));
+                    List<String> v = header.getValue();
+                    for (String value : v) {
+                        Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
+                        cookies.add(cookie);
                     }
                 }
             }

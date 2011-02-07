@@ -12,7 +12,6 @@
  */
 package com.ning.http.util;
 
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
@@ -28,15 +27,27 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
- *
+ * <p/>
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+
+    private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS =
+            {
+                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
+                    new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
+                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
+                    new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
+            };
+
     //space ' '
     static final byte SP = 32;
 
@@ -133,18 +144,18 @@ public class AsyncHttpProviderUtils {
         }
         return url;
     }
-    
+
     public final static URI getRedirectUri(URI uri, String location) {
-      URI newUri = uri.resolve(location);
-      
-      String scheme = newUri.getScheme();
-      
-      if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
-          throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
-                + ", must be equal (ignoring case) to 'http' or 'https'");
-      }
-      
-      return newUri;
+        URI newUri = uri.resolve(location);
+
+        String scheme = newUri.getScheme();
+
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
+                    + ", must be equal (ignoring case) to 'http' or 'https'");
+        }
+
+        return newUri;
     }
 
     public final static int getPort(URI uri) {
@@ -350,5 +361,74 @@ public class AsyncHttpProviderUtils {
             }
         }
         return null;
+    }
+
+    public static Cookie parseCookie(String value) {
+        String[] fields = value.split(";\\s*");
+        String[] cookie = fields[0].split("=");
+        String cookieName = cookie[0];
+        String cookieValue = cookie[1];
+        int maxAge = -1;
+        String path = null;
+        String domain = null;
+        boolean secure = false;
+
+        boolean maxAgeSet = false;
+        boolean expiresSet = false;
+
+        for (int j = 1; j < fields.length; j++) {
+            if ("secure".equalsIgnoreCase(fields[j])) {
+                secure = true;
+            } else if (fields[j].indexOf('=') > 0) {
+                String[] f = fields[j].split("=");
+
+                // favor 'max-age' field over 'expires'
+                if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
+                    try {
+                        maxAge = Integer.valueOf(f[1]);
+                    }
+                    catch (NumberFormatException e1) {
+                        // ignore failure to parse -> treat as session cookie
+                        // invalidate a previously parsed expires-field
+                        maxAge = -1;
+                    }
+                    maxAgeSet = true;
+                } else if (!maxAgeSet && !expiresSet && "expires".equalsIgnoreCase(f[0])) {
+                    try {
+                        maxAge = convertExpireField(f[1]);
+                    }
+                    catch (ParseException e) {
+                        // original behavior, is this correct at all (expires field with max-age semantics)?
+                        try {
+                            maxAge = Integer.valueOf(f[1]);
+                        }
+                        catch (NumberFormatException e1) {
+                            // ignore failure to parse -> treat as session cookie
+                        }
+                    }
+                    expiresSet = true;
+                } else if ("domain".equalsIgnoreCase(f[0])) {
+                    domain = f[1];
+                } else if ("path".equalsIgnoreCase(f[0])) {
+                    path = f[1];
+                }
+            }
+        }
+
+        return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
+    }
+
+    private static int convertExpireField(String timestring) throws ParseException {
+        ParseException exception = null;
+        for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
+            try {
+                long expire = sdf.parse(timestring).getTime();
+                return (int) (expire - System.currentTimeMillis()) / 1000;
+            } catch (ParseException e) {
+                exception = e;
+            }
+        }
+
+        throw exception;
     }
 }
