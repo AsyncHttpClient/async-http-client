@@ -314,7 +314,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         final CountDownLatch l = new CountDownLatch(1);
         Request request = new RequestBuilder("HEAD").setUrl(getTargetUrl()).build();
-        n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
+        Response response = n.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
             @Override
             public Response onCompleted(Response response) throws Exception {
@@ -326,6 +326,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
+
+        try {
+            String s = response.getResponseBody();
+            Assert.assertEquals("",s);
+        } catch (IllegalStateException ex) {
+            fail();
+        }
 
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");

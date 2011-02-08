@@ -1146,6 +1146,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
+                    updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), response, this));
                     markAsDoneAndCacheConnection(future, ctx, ctx.getChannel().isReadable());
                 }
 
