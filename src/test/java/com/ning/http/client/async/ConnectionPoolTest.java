@@ -82,7 +82,12 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         for (i = 0; i < 10; i++) {
             try {
                 log.info("{} requesting url [{}]...", i, url);
-                client.prepareGet(url).execute();
+
+                if (i < 5) {
+                    client.prepareGet(url).execute().get();
+                } else {
+                    client.prepareGet(url).execute();
+                }
             } catch (Exception ex) {
                 exception = ex;
                 break;
