@@ -17,17 +17,21 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
+import com.sun.jmx.snmp.tasks.Task;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A simple implementation of {@link com.ning.http.client.ConnectionsPool} based on a {@link ConcurrentHashMap}
@@ -35,11 +39,13 @@ import java.util.concurrent.TimeUnit;
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
-    private final ConcurrentHashMap<String, List<Channel>> connectionsPool =
-            new ConcurrentHashMap<String, List<Channel>>();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<Channel>> connectionsPool =
+            new ConcurrentHashMap<String, ConcurrentLinkedQueue<Channel>>();
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProvider provider;
-    private final ConcurrentHashMap<Channel, Future<?>> trackedIdleConnections = new ConcurrentHashMap<Channel, Future<?>>();
+    private final ConcurrentHashMap<Channel, Timeout> trackedIdleConnections = new ConcurrentHashMap<Channel, Timeout>();
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+    private final HashedWheelTimer timer = new HashedWheelTimer();
 
     public NettyConnectionsPool(NettyAsyncHttpProvider provider) {
         this.provider = provider;
@@ -53,65 +59,59 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         log.debug("Adding uri: {} for channel {}", uri, channel);
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
-        List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
+        ConcurrentLinkedQueue<Channel> pooledConnectionForHost = connectionsPool.get(uri);
         if (pooledConnectionForHost == null) {
-            List<Channel> newPool = new LinkedList<Channel>();
+            ConcurrentLinkedQueue<Channel> newPool = new ConcurrentLinkedQueue<Channel>();
             connectionsPool.putIfAbsent(uri, newPool);
             pooledConnectionForHost = connectionsPool.get(uri);
         }
 
         boolean added;
-        synchronized (pooledConnectionForHost) {
-            int size = pooledConnectionForHost.size();
-            if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
-                added = pooledConnectionForHost.add(channel);
-                if (added) {
-                    Future<?> idleFuture = config.reaper().schedule(new IdleRunner(channel, pooledConnectionForHost),
-                            config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
-                    trackedIdleConnections.put(channel, idleFuture);
-                    log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
-                }
-            } else {
-                log.debug("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
-                added = false;
+        int size = pooledConnectionForHost.size();
+        if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
+            added = pooledConnectionForHost.add(channel);
+            if (added) {
+                Timeout t = timer.newTimeout(new IdleRunner(channel, pooledConnectionForHost),
+                        config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
+                trackedIdleConnections.put(channel, t);
+                log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
             }
+        } else {
+            log.debug("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
+            added = false;
         }
         return added;
     }
 
-    private final class IdleRunner implements Runnable {
+    private final class IdleRunner implements TimerTask {
 
-        private final List<Channel> activeChannels;
+        private final ConcurrentLinkedQueue<Channel> activeChannels;
         private final Channel channel;
 
-        public IdleRunner(Channel channel, List<Channel> activeChannels) {
+        public IdleRunner(Channel channel, ConcurrentLinkedQueue<Channel> activeChannels) {
             this.channel = channel;
             this.activeChannels = activeChannels;
         }
 
-        public void run() {
-            synchronized (activeChannels) {
-                Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
-                if (attachment != null) {
-                    if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
-                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
+        public void run(Timeout timeout) {
+            if (isClosed.get()) return;
+            Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+            if (attachment != null) {
+                if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
+                    NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
 
-                        if (!future.isDone() && !future.isCancelled()) {
-                            log.warn("Future not in appropriate state {}", future);
-                            return;
-                        }
-                    }
-                }
-
-                if (activeChannels.remove(channel)) {
-                    log.debug("Channel idle. Expiring {}", channel);
-                    try {
-                        channel.close();
-                    } catch (Throwable t) {
-                        // Ignore
+                    if (!future.isDone() && !future.isCancelled()) {
+                        log.warn("Future not in appropriate state {}", future);
+                        return;
                     }
                 }
             }
+
+            if (activeChannels.remove(channel)) {
+                log.debug("Channel idle. Expiring {}", channel);
+                close(channel);
+            }
+            timeout.cancel();
         }
     }
 
@@ -120,24 +120,23 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public Channel poll(String uri) {
         Channel channel = null;
-        List<Channel> pooledConnectionForHost = connectionsPool.get(uri);
+        ConcurrentLinkedQueue<Channel> pooledConnectionForHost = connectionsPool.get(uri);
         if (pooledConnectionForHost != null) {
             boolean poolEmpty = false;
             while (!poolEmpty && channel == null) {
-                synchronized (pooledConnectionForHost) {
-                    if (pooledConnectionForHost.size() > 0) {
-                        channel = pooledConnectionForHost.remove(0);
-                    }
+                if (pooledConnectionForHost.size() > 0) {
+                    channel = pooledConnectionForHost.poll();
                 }
+
                 if (channel == null) {
                     poolEmpty = true;
                 } else if (!channel.isConnected() || !channel.isOpen()) {
                     removeAll(channel);
                     channel = null;
                 } else {
-                    Future<?> idleFuture = trackedIdleConnections.remove(channel);
+                    Timeout idleFuture = trackedIdleConnections.remove(channel);
                     if (idleFuture != null) {
-                        idleFuture.cancel(true);
+                        idleFuture.cancel();
                     }
 
                     // Double checking the channel hasn't been closed in between.
@@ -156,23 +155,23 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
+        if (isClosed.get()) return false;
+
         boolean isRemoved = false;
-        Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
+        Iterator<Map.Entry<String, ConcurrentLinkedQueue<Channel>>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {
-            Map.Entry<String, List<Channel>> e = i.next();
-            synchronized (e.getValue()) {
-                boolean removed = e.getValue().remove(channel);
-                if (removed) {
-                    log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
-                    Future<?> idleFuture = trackedIdleConnections.remove(channel);
-                    if (idleFuture != null) {
-                        idleFuture.cancel(true);
-                    } else {
-                        log.debug("ConnectionsPool decrementAndGet totalConnections {}", trackedIdleConnections.size());
-                    }
+            Map.Entry<String, ConcurrentLinkedQueue<Channel>> e = i.next();
+            boolean removed = e.getValue().remove(channel);
+            if (removed) {
+                log.debug("Removing uri: {} for channel {}", e.getKey(), e.getValue());
+                Timeout idleFuture = trackedIdleConnections.remove(channel);
+                if (idleFuture != null) {
+                    idleFuture.cancel();
+                } else {
+                    log.debug("ConnectionsPool decrementAndGet totalConnections {}", trackedIdleConnections.size());
                 }
-                isRemoved |= removed;
             }
+            isRemoved |= removed;
         }
         return isRemoved;
     }
@@ -192,21 +191,33 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public void destroy() {
-        trackedIdleConnections.clear();       
+        if (isClosed.getAndSet(true)) return;
+
+        for(Map.Entry<Channel,Timeout> e: trackedIdleConnections.entrySet()) {
+            close(e.getKey());
+            e.getValue().cancel();
+        }
+        trackedIdleConnections.clear();
+        timer.stop();
+
         try {
-            Iterator<Map.Entry<String, List<Channel>>> i = connectionsPool.entrySet().iterator();
+            Iterator<Map.Entry<String, ConcurrentLinkedQueue<Channel>>> i = connectionsPool.entrySet().iterator();
             while (i.hasNext()) {
-                List<Channel> list = i.next().getValue();
-                synchronized (list) {
-                    for (int j = 0; j < list.size(); j++) {
-                        Channel channel = list.remove(0);
-                        removeAll(channel);
-                        channel.close();
-                    }
+                for (Channel channel: i.next().getValue()) {
+                    close(channel);
                 }
             }
         } finally {
             connectionsPool.clear();
+        }
+    }
+
+    private void close(Channel channel) {
+        try {
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel.close();
+        } catch (Throwable t) {
+            // noop
         }
     }
 }

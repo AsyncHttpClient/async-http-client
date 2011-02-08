@@ -116,16 +116,7 @@ public class AsyncHttpClientConfig {
         this.ioExceptionFilters = ioExceptionFilters;
         this.requestCompressionLevel = requestCompressionLevel;
         this.maxRequestRetry = maxRequestRetry;
-
-        if (reaper == null) {
-            this.reaper = Executors.newSingleThreadScheduledExecutor(new ThreadFactory(){
-                public Thread newThread(Runnable r) {
-                    return new Thread(r,"AsyncHttpClient-Reaper");
-                }
-            });
-        } else {
-            this.reaper = reaper;
-        }
+        this.reaper = reaper;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -385,13 +376,20 @@ public class AsyncHttpClientConfig {
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
         private boolean allowPoolingConnection = true;
-        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),
-                new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        return new Thread(r, "AsyncHttpClient-Reaper");
-                    }
-                });
-        private ExecutorService applicationThreadPool = Executors.newCachedThreadPool();
+        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),new ThreadFactory(){
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r,"AsyncHttpClient-Reaper");
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+        private ExecutorService applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory(){
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r,"AsyncHttpClient-Callback");
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
         private ProxyServer proxyServer = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;

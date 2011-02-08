@@ -431,10 +431,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
                 ReaperFuture reaperFuture = new ReaperFuture(channel, future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 1000, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
-
             }
         } catch (RejectedExecutionException ex) {
             abort(future, ex);
@@ -674,8 +673,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public void close() {
         isClose.set(true);
         try {
-            config.reaper().shutdownNow();
             connectionsPool.destroy();
+
+            for(Channel channel: openChannels) {
+                ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
+                if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+                    NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+                    future.setReaperFuture(null);
+                }
+            }
+
             openChannels.close();
             config.executorService().shutdownNow();
             socketChannelFactory.releaseExternalResources();
@@ -1261,6 +1268,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 
+        if (isClose.get()) {
+            return;
+        }
+
         connectionsPool.removeAll(ctx.getChannel());
 
         Exception exception = null;
@@ -1279,7 +1290,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return;
         }
 
-        if (!isClose.get() && ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+        if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
 
             if (config.getIOExceptionFilters().size() > 0) {
@@ -1304,6 +1315,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
+
         if (isClose.get()) {
             return false;
         }

@@ -21,6 +21,8 @@ import com.ning.http.client.Request;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -43,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
+    private final static Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
     public final static String MAX_RETRY = "com.ning.http.client.providers.netty.maxRetry";
 
     enum STATE {
@@ -72,7 +75,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
-    private Channel openChannel;
+    private Channel channel;
     private boolean reuseChannel = false;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
     private final int maxRetry;
@@ -139,14 +142,19 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         if (isCancelled.get()) return false;
 
         try {
-            openChannel.close();
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel.close();
         } catch (Throwable t) {
             // Ignore
         }
-        asyncHandler.onThrowable(new CancellationException());
+        try {
+            asyncHandler.onThrowable(new CancellationException());
+        } catch (Throwable t) {
+            logger.warn("cancel", t);
+        }
+        if (reaperFuture != null) reaperFuture.cancel(true);
         latch.countDown();
         isCancelled.set(true);
-        if (reaperFuture != null) reaperFuture.cancel(true);
         return true;
     }
 
@@ -366,16 +374,16 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     protected void attachChannel(Channel channel) {
-        this.openChannel = channel;
+        this.channel = channel;
     }
 
     protected void attachChannel(Channel channel, boolean reuseChannel) {
-        this.openChannel = channel;
+        this.channel = channel;
         this.reuseChannel = reuseChannel;
     }
 
     protected Channel channel(){
-        return openChannel;
+        return channel;
     }
 
     protected boolean reuseChannel(){
