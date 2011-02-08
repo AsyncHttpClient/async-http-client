@@ -431,7 +431,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1) {
                 ReaperFuture reaperFuture = new ReaperFuture(channel, future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 1000, TimeUnit.MILLISECONDS);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -674,6 +674,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         isClose.set(true);
         try {
             connectionsPool.destroy();
+            openChannels.close();
 
             for(Channel channel: openChannels) {
                 ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
@@ -684,7 +685,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             openChannels.close();
-            config.executorService().shutdownNow();
+            config.executorService().shutdown();
+            config.reaper().shutdown();
             socketChannelFactory.releaseExternalResources();
             plainBootstrap.releaseExternalResources();
             secureBootstrap.releaseExternalResources();
@@ -1694,6 +1696,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
          * @Override
          */
         public synchronized void run() {
+            if (isClose.get()) {
+                return;
+            }
+
             if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
                 log.debug("Request Timeout expired for {}", this.nettyResponseFuture);
 

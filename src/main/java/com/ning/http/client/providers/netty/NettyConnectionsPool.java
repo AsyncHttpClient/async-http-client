@@ -17,7 +17,6 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
-import com.sun.jmx.snmp.tasks.Task;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
@@ -29,7 +28,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -192,13 +190,13 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public void destroy() {
         if (isClosed.getAndSet(true)) return;
-
+        timer.stop();
+         
         for(Map.Entry<Channel,Timeout> e: trackedIdleConnections.entrySet()) {
             close(e.getKey());
             e.getValue().cancel();
         }
         trackedIdleConnections.clear();
-        timer.stop();
 
         try {
             Iterator<Map.Entry<String, ConcurrentLinkedQueue<Channel>>> i = connectionsPool.entrySet().iterator();
