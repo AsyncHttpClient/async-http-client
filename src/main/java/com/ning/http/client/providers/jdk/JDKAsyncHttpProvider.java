@@ -34,8 +34,6 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.providers.apache.ApacheAsyncHttpProvider;
-import com.ning.http.client.providers.apache.ApacheResponseBodyPart;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
