@@ -550,6 +550,10 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                             }
                         }
                     }
+
+                    if (method.getName().equalsIgnoreCase("HEAD")) {
+                        asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, "".getBytes(), ApacheAsyncHttpProvider.this));
+                    }
                 }
 
                 if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
