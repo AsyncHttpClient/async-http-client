@@ -80,6 +80,7 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>0.9.26</version>
+            <scope>test</scope>
         </dependency>       
         <dependency>
             <groupId>log4j</groupId>
