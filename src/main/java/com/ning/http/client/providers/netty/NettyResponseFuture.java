@@ -412,7 +412,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         return isDone()
                 || !canRetry()
                 || isCancelled()
-                || (channel() != null && channel().isOpen())
+                || (channel() != null && channel().isOpen() && uri.getScheme().compareToIgnoreCase("https") != 0)
                 || isInAuth();
     }
 

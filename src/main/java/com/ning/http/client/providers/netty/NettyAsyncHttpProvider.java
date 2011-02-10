@@ -1333,6 +1333,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (future == null || future.cannotBeReplay()) {
+            log.debug("Unable to replay request {} associated with future", future == null ? "" : future.getNettyRequest(), future);
             return false;
         }
 
