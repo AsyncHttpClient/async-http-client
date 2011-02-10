@@ -737,6 +737,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             bufferedBytes = f.getNettyRequest().getContent();
         }
 
+        boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
             HttpRequest nettyRequest = buildRequest(config, request, uri, false, bufferedBytes);
 
@@ -751,7 +752,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug("\n\nCached Request {}\n", channel);
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
-            writeRequest(channel, config, f, nettyRequest);
+            try {
+                writeRequest(channel, config, f, nettyRequest);
+            } catch (IllegalStateException ex) {
+                log.debug("writeRequest failure", ex);
+                if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
+                    log.debug("SSLEngine failure", ex);
+                    f = null;
+                } else {
+                    throw ex;
+                }
+            }
             return f;
         }
 
@@ -764,7 +775,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
         boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
-        boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
 
         if (useSSl) {
             constructSSLPipeline(c);
