@@ -93,6 +93,13 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
     public void onThrowable(Throwable t) {
         this.t = t;
+        // Counting down to handle error cases too.
+        // In "premature exceptions" cases, the onBodyPartReceived() and
+        // onCompleted()
+        // methods will never be invoked, leaving caller of getResponse() method
+        // blocked forever.
+        headersArrived.countDown();
+
         try {
             closeOut();
         } catch (IOException e) {
@@ -173,10 +180,17 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * @return
      * @throws InterruptedException
      */
-    public Response getResponse() throws InterruptedException {
+    public Response getResponse() throws InterruptedException, IOException {
         // block here as long as headers arrive
         headersArrived.await();
-        return response;
+
+        if (t != null) {
+            IOException ioe = new IOException(t.getMessage());
+            ioe.initCause(t);
+            throw ioe;
+        } else {
+            return response;
+        }
     }
 
     // ==
@@ -223,7 +237,8 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @return
          * @throws InterruptedException
          */
-        public Response getAsapResponse() throws InterruptedException {
+        public Response getAsapResponse() throws InterruptedException,
+                IOException {
             return bdah.getResponse();
         }
 

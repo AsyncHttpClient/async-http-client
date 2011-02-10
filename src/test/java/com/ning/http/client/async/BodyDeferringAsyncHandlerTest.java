@@ -241,8 +241,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
         Future<Response> f = r.execute(bdah);
 
-        BodyDeferringInputStream is = new BodyDeferringInputStream(
-                f, bdah, pis);
+        BodyDeferringInputStream is = new BodyDeferringInputStream(f, bdah, pis);
 
         Response resp = is.getAsapResponse();
         assertNotNull(resp);
@@ -259,6 +258,28 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         } catch (IOException e) {
             // good!
         }
+        client.close();
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testConnectionRefused() throws IOException, ExecutionException,
+            TimeoutException, InterruptedException {
+        int newPortWithoutAnyoneListening = findFreePort();
+        AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
+        AsyncHttpClient.BoundRequestBuilder r = client
+                .prepareGet("http://127.0.0.1:" + newPortWithoutAnyoneListening
+                        + "/testConnectionRefused");
+
+        CountingOutputStream cos = new CountingOutputStream();
+        BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
+        r.execute(bdah);
+        try {
+            bdah.getResponse();
+            Assert.fail("IOException should be thrown here!");
+        } catch (IOException e) {
+            // good
+        }
+
         client.close();
     }
 
