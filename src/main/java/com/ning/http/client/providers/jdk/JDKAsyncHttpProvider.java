@@ -499,9 +499,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                 if (proxyServer.getProtocol().equals(ProxyServer.Protocol.NTLM)) {
 
-                    if (proxyServer.getNtlmDomain() == null) throw new IllegalStateException("NTLM Domain cannot be null");
-
                     jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+                    if (proxyServer.getNtlmDomain() == null) {
+                        logger.info("NTLM domain is not set, trying to read it from system property -D{}", NTLM_DOMAIN);
+                        if (jdkNtlmDomain != null) {
+                            proxyServer.setNtlmDomain(jdkNtlmDomain);
+                        }
+                    }
+
                     System.setProperty(NTLM_DOMAIN, proxyServer.getNtlmDomain());
                 }
             }
@@ -525,7 +530,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         break;
                     case NTLM:
                         jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
-                        System.setProperty(NTLM_DOMAIN, realm.getDomain());
+                        if (realm.getNtlmDomain() == null) {
+                            logger.info("NTLM domain is not set, trying to read it from system property -D{}", NTLM_DOMAIN);
+                        } else {
+                            System.setProperty(NTLM_DOMAIN, realm.getNtlmDomain());
+                        }
                         break;
                     default:
                         throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));

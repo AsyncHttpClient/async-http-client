@@ -16,6 +16,9 @@
  */
 package com.ning.http.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -242,6 +245,8 @@ public class Realm {
      * A builder for {@link Realm}
      */
     public static class RealmBuilder {
+
+        private static final Logger logger = LoggerFactory.getLogger(RealmBuilder.class);
 
         //
         //  Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
@@ -552,6 +557,14 @@ public class Realm {
                     newResponse();
                 } catch (UnsupportedEncodingException e) {
                     throw new RuntimeException(e);
+                }
+            }
+
+            if (scheme.equals(AuthScheme.NTLM) && domain.equalsIgnoreCase("")){
+                logger.info("NTLM domain is not set, trying to read it from system property -Dhttp.auth.ntlm.domain");
+                String tmp = System.getProperty("http.auth.ntlm.domain");
+                if (tmp != null) {
+                    domain = tmp;
                 }
             }
 
