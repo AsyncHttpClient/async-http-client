@@ -51,7 +51,7 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private int port;
-    private String ntlmDomain;
+    private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
     public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;

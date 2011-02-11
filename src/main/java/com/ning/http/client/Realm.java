@@ -266,7 +266,7 @@ public class Realm {
         private String uri = "";
         private String methodName = "GET";
         private boolean usePreemptive = false;
-        private String domain = "";
+        private String domain = System.getProperty("http.auth.ntlm.domain", "");
         private String enc = "UTF-8";
         private String host = "localhost";
         private boolean messageType2Received = false;
@@ -557,14 +557,6 @@ public class Realm {
                     newResponse();
                 } catch (UnsupportedEncodingException e) {
                     throw new RuntimeException(e);
-                }
-            }
-
-            if (scheme.equals(AuthScheme.NTLM) && domain.equalsIgnoreCase("")){
-                logger.info("NTLM domain is not set, trying to read it from system property -Dhttp.auth.ntlm.domain");
-                String tmp = System.getProperty("http.auth.ntlm.domain");
-                if (tmp != null) {
-                    domain = tmp;
                 }
             }
 
