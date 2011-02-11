@@ -54,6 +54,10 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel channel) {
+        if (!provider.getConfig().isSslConnectionPoolEnabled() && uri.startsWith("https") ) {
+            return false;
+        }
+
         log.debug("Adding uri: {} for channel {}", uri, channel);
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
@@ -117,6 +121,10 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public Channel poll(String uri) {
+        if (!provider.getConfig().isSslConnectionPoolEnabled() && uri.startsWith("https") ) {
+            return null;
+        }
+
         Channel channel = null;
         ConcurrentLinkedQueue<Channel> pooledConnectionForHost = connectionsPool.get(uri);
         if (pooledConnectionForHost != null) {
@@ -154,7 +162,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean removeAll(Channel channel) {
         if (isClosed.get()) return false;
-
+        
         boolean isRemoved = false;
         Iterator<Map.Entry<String, ConcurrentLinkedQueue<Channel>>> i = connectionsPool.entrySet().iterator();
         while (i.hasNext()) {

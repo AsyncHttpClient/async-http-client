@@ -244,6 +244,30 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     }
 
     @Test(groups = {"standalone", "default_provider"})
+    public void multipleSSLWithoutCacheTest() throws Throwable {
+        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
+
+        String body = "hello there";
+        c.preparePost(getTargetUrl())
+                .setBody(body)
+                .setHeader("Content-Type", "text/html")
+                .execute();
+
+        c.preparePost(getTargetUrl())
+                .setBody(body)
+                .setHeader("Content-Type", "text/html")
+                .execute();
+
+       Response response = c.preparePost(getTargetUrl())
+                .setBody(body)
+                .setHeader("Content-Type", "text/html")
+                .execute().get();
+
+        assertEquals(response.getResponseBody(), body);
+        c.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
         final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 

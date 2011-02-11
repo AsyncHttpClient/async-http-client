@@ -73,6 +73,7 @@ public class AsyncHttpClientConfig {
     private final List<IOExceptionFilter> ioExceptionFilters;
     private final int requestCompressionLevel;
     private final int maxRequestRetry;
+    private final boolean allowSslConnectionPool;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -94,7 +95,9 @@ public class AsyncHttpClientConfig {
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
-                                  int requestCompressionLevel, int maxRequestRetry) {
+                                  int requestCompressionLevel,
+                                  int maxRequestRetry,
+                                  boolean allowSslConnectionCaching) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -117,6 +120,7 @@ public class AsyncHttpClientConfig {
         this.requestCompressionLevel = requestCompressionLevel;
         this.maxRequestRetry = maxRequestRetry;
         this.reaper = reaper;
+        this.allowSslConnectionPool = allowSslConnectionCaching;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -363,6 +367,15 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return true is SSL connection polling is enabled. Default is true.
+     * @return
+     */
+    public boolean isSslConnectionPoolEnabled() {
+        return allowSslConnectionPool;
+    }
+
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -401,6 +414,7 @@ public class AsyncHttpClientConfig {
         private final List<RequestFilter> requestFilters = new LinkedList<RequestFilter>();
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
+        private boolean allowSslConnectionPool = true;
 
         public Builder() {
         }
@@ -739,6 +753,16 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Return true is if connections pooling is enabled.
+         * @param allowSslConnectionPool true if enabled
+         * @return true is if connections pooling is enabled.
+         */
+        public Builder setAllowSslConnectionPool(boolean allowSslConnectionPool) {
+            this.allowSslConnectionPool = allowSslConnectionPool;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          * 
          * @param prototype the configuration to use as a prototype.
@@ -796,7 +820,8 @@ public class AsyncHttpClientConfig {
                     responseFilters,
                     ioExceptionFilters,
                     requestCompressionLevel,
-                    maxRequestRetry);
+                    maxRequestRetry,
+                    allowSslConnectionPool);
         }
     }
 }
