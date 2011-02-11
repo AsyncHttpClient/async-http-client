@@ -204,11 +204,10 @@
                             org.apache.commons.httpclient;resolution:=optional,
                             org.apache.commons.httpclient.*;resolution:=optional,
                             org.apache.log4j;resolution:=optional,
-                            org.slf4j;resolution:=optional,
                             *
                         </Import-Package>
                         <Export-Package>
-                            com.ning.http.*;version="1.3.4"
+                            com.ning.http.*;version="1.6.1"
                         </Export-Package>
                     </instructions>
                 </configuration>
