@@ -44,7 +44,9 @@ public abstract class HttpResponseBodyPart extends HttpContent {
     abstract public int writeTo(OutputStream outputStream) throws IOException;
 
     /**
-     * Return the underlying {@link ByteBuffer}
+     * Return a {@link ByteBuffer} that wraps the actual bytes read from the response's chunk. The {@link ByteBuffer}
+     * capacity is equal to the number of bytes available.
+     * 
      * @return {@link ByteBuffer}
      */
     abstract public ByteBuffer getBodyByteBuffer();
