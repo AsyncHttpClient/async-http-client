@@ -83,8 +83,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public ByteBuffer getBodyByteBuffer() {
-        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
-        return b.toByteBuffer();
+        return ByteBuffer.wrap(getBodyPartBytes());
     }
 
     protected HttpChunk chunk() {
