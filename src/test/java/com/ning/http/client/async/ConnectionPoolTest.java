@@ -286,49 +286,6 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = {"default_provider", "async"})
-    public void asyncDoGetMaxConnectionsTest() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsTotal(2).build());
-
-        // Use a l in case the assert fail
-        final CountDownLatch l = new CountDownLatch(2);
-
-        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                l.countDown();
-                return response;
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                try {
-                    Assert.fail("Unexpected exception", t);
-                } finally {
-                    l.countDown();
-                }
-            }
-        };
-        
-        client.prepareGet(getTargetUrl()).execute(handler);
-        client.prepareGet(getTargetUrl()).execute(handler);
-
-        try {
-            client.prepareGet(getTargetUrl()).execute(handler).get();
-            Assert.fail();
-        } catch (IOException ex) {
-            String s = ex.getMessage();
-            assertEquals(s, "Too many connections 2");
-        }
-
-
-        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-            Assert.fail("Timed out");
-        }
-        client.close();
-    }
-
     /**
      * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception.
      * The onComplete method must be only called once.

@@ -1182,6 +1182,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         try {
             response.getResponseBody();
+            
             fail();
         } catch (IllegalStateException e) {
             assertNotNull(e.getMessage());
