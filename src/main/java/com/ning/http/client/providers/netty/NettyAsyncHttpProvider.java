@@ -99,6 +99,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
@@ -465,10 +466,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
-            uri = URI.create(new StringBuilder(uri.getHost())
-                    .append(":")
-                    .append(AsyncHttpProviderUtils.getPort(uri)).toString());
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, uri.toString());
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
         } else {

@@ -145,6 +145,17 @@ public class AsyncHttpProviderUtils {
         return url;
     }
 
+    public final static String getAuthority(URI uri) {
+        String url = uri.getAuthority();
+        int port = uri.getPort();
+        if (port == -1) {
+            port = getPort(uri);
+            url += ":" + port;
+        }
+        return url;
+    }
+
+
     public final static URI getRedirectUri(URI uri, String location) {
         URI newUri = uri.resolve(location);
 

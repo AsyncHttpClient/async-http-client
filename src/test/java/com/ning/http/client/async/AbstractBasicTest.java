@@ -66,8 +66,12 @@ public abstract class AbstractBasicTest {
                 httpResponse.setContentType("text/html; charset=ISO-8859-1");
             } else {
                 httpResponse.setContentType("text/html; charset=utf-8");
-
             }
+
+            if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
+                httpResponse.addHeader("Allow","GET,HEAD,POST,OPTIONS,TRACE");
+            };
+            
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {
@@ -158,6 +162,10 @@ public abstract class AbstractBasicTest {
 
     protected String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
+    }
+
+    protected String getTargetUrl2() {
+        return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
     public AbstractHandler configureHandler() throws Exception {

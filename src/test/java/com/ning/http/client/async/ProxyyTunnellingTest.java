@@ -19,11 +19,18 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ProxyHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSocketConnector;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -36,9 +43,47 @@ import static org.testng.Assert.assertNotNull;
  */
 public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
 
+    private Server server2;
+
     public AbstractHandler configureHandler() throws Exception {
         ProxyHandler proxy = new ProxyHandler();
         return proxy;
+    }
+
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
+        server = new Server();
+        server2 = new Server();
+
+        port1 = findFreePort();
+        port2 = findFreePort();
+
+        Connector listener = new SelectChannelConnector();
+
+        listener.setHost("127.0.0.1");
+        listener.setPort(port1);
+
+        server.addConnector(listener);
+
+        SslSocketConnector connector = new SslSocketConnector();
+        connector.setHost("127.0.0.1");
+        connector.setPort(port2);
+
+        ClassLoader cl = getClass().getClassLoader();
+        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
+        String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
+        connector.setKeystore(keyStoreFile);
+        connector.setKeyPassword("changeit");
+        connector.setKeystoreType("JKS");
+
+        server2.addConnector(connector);
+
+        server.setHandler(configureHandler());
+        server.start();
+
+        server2.setHandler(new EchoHandler());
+        server2.start();
+        log.info("Local HTTP server started successfully");
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -51,7 +96,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = b.build();
         AsyncHttpClient asyncHttpClient = new AsyncHttpClient(config);
 
-        RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl("https://twitpic.com:443");
+        RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
         Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
             public void onThrowable(Throwable t) {
@@ -66,7 +111,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "nginx");
+        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
 
         asyncHttpClient.close();
     }
@@ -82,7 +127,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = b.build();
         AsyncHttpClient asyncHttpClient = new AsyncHttpClient(config);
 
-        RequestBuilder rb = new RequestBuilder("GET").setUrl("https://twitpic.com:443");
+        RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
         Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
             public void onThrowable(Throwable t) {
@@ -97,7 +142,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "nginx");
+        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
 
         asyncHttpClient.close();
     }
@@ -110,14 +155,14 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
                 .setProxyHost("127.0.0.1")
                 .setProxyPort(port1)
                 .setFollowRedirects(true)
-                .setUrl("https://twitpic.com:443")
+                .setUrl(getTargetUrl2())
                 .setHeader("Content-Type", "text/html").build();
 
         StringBuffer s = new StringBuffer();
         Response r = client.get().get();
 
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "nginx");
+        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
 
         client.close();
     }

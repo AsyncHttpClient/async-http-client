@@ -286,7 +286,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = {"online", "default_provider", "async"})
+    @Test(groups = {"default_provider", "async"})
     public void asyncDoGetMaxConnectionsTest() throws Throwable {
         AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsTotal(2).build());
 
@@ -310,17 +310,18 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 }
             }
         };
-
-        client.prepareGet("http://www.oracle.com/index.html").execute(handler).get();
-        client.prepareGet("http://www.apache.org/").execute(handler).get();
+        
+        client.prepareGet(getTargetUrl()).execute(handler);
+        client.prepareGet(getTargetUrl()).execute(handler);
 
         try {
-            client.prepareGet("http://www.ning.com/").execute(handler).get();
+            client.prepareGet(getTargetUrl()).execute(handler).get();
             Assert.fail();
         } catch (IOException ex) {
             String s = ex.getMessage();
             assertEquals(s, "Too many connections 2");
         }
+
 
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timed out");

@@ -1461,24 +1461,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = {"online", "default_provider", "async"})
+    @Test(groups = {"default_provider", "async"})
     public void optionsTest() throws Throwable {
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().build());
-        Response r = client.prepareOptions("http://www.apache.org/").execute().get();
+        Response r = client.prepareOptions(getTargetUrl()).execute().get();
 
         assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("Allow"), "GET,HEAD,POST,OPTIONS,TRACE");
-
-        client.close();
-    }
-
-    @Test(groups = {"online", "default_provider", "async"})
-    public void optionsNegativeTest() throws Throwable {
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().build());
-        Response r = client.prepareOptions("http://www.google.com/").execute().get();
-
-        assertEquals(r.getStatusCode(), 405);
-        assertEquals(r.getHeader("Allow"), null);
 
         client.close();
     }
