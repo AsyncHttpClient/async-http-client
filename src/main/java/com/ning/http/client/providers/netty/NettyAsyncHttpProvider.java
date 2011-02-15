@@ -1578,7 +1578,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return f;
     }
 
-    private static class ProgressListener implements ChannelFutureProgressListener {
+    private class ProgressListener implements ChannelFutureProgressListener {
 
         private final boolean notifyHeaders;
         private final AsyncHandler asyncHandler;
@@ -1625,7 +1625,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             future.touch();
 
-            if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+            Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : NettyAsyncHttpProvider.this.getConfig().getRealm();
+            boolean startPublishing = future.isInAuth()
+                    || realm == null
+                    || realm.getUsePreemptiveAuth() == true;
+
+            if (startPublishing && ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
                 if (notifyHeaders) {
                     ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
                 } else {

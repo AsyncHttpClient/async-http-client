@@ -15,6 +15,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
+import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.listener.TransferListener;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -176,6 +177,66 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
         try {
             Response response = c.preparePut(getTargetUrl()).setBody(largeFile)
+                    .execute(tl).get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertNotNull(hRead.get());
+            assertNotNull(hSent.get());
+            assertEquals(bbReceivedLenght.get(), largeFile.length());
+            assertEquals(bbSentLenght.get(), largeFile.length());
+        } catch (IOException ex) {
+            fail("Should have timed out");
+        }
+        c.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void basicPutBodyTest() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient();
+
+        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
+        final AtomicInteger bbSentLenght = new AtomicInteger(0);
+
+        final AtomicBoolean completed = new AtomicBoolean(false);
+
+        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
+        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
+        File largeFile = createTempFile(bytes, (int) repeats);
+
+        TransferCompletionHandler tl = new TransferCompletionHandler();
+        tl.addTransferListener(new TransferListener() {
+
+            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                hSent.set(headers);
+            }
+
+            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                hRead.set(headers);
+            }
+
+            public void onBytesReceived(ByteBuffer buffer) {
+                bbReceivedLenght.addAndGet(buffer.capacity());
+            }
+
+            public void onBytesSent(ByteBuffer buffer) {
+                bbSentLenght.addAndGet(buffer.capacity());
+            }
+
+            public void onRequestResponseCompleted() {
+                completed.set(true);
+            }
+
+            public void onThrowable(Throwable t) {
+                throwable.set(t);
+            }
+        });
+
+        try {
+            Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile))
                     .execute(tl).get();
 
             assertNotNull(response);

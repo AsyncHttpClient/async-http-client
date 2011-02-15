@@ -190,7 +190,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private void fireOnHeadersSent(FluentCaseInsensitiveStringsMap headers){
         for (TransferListener l: listeners) {
             try {
-                l.onResponseHeadersReceived(headers);
+                l.onRequestHeadersSent(headers);
             } catch (Throwable t) {
                 l.onThrowable(t);
             }
@@ -200,7 +200,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private void fireOnHeaderReceived(FluentCaseInsensitiveStringsMap headers){
         for (TransferListener l: listeners) {
             try {
-                l.onRequestHeadersSent(headers);
+                l.onResponseHeadersReceived(headers);
             } catch (Throwable t) {
                 l.onThrowable(t);
             }
