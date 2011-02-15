@@ -16,8 +16,9 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.async.TransferListenerTest;
+import com.ning.http.client.async.ZeroCopyFileTest;
 
-public class NettyZeroCopyFileTest extends TransferListenerTest {
+public class NettyZeroCopyFileTest extends ZeroCopyFileTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
