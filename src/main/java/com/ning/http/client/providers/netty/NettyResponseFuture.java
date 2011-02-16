@@ -221,6 +221,8 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
         }
 
         V update = content.get();
+        // No more retry
+        currentRetry.set(maxRetry);
         if (exEx.get() == null && !contentProcessed.getAndSet(true)) {
             try {
                 update = asyncHandler.onCompleted();

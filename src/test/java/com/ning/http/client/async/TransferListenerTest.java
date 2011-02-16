@@ -191,7 +191,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
+    @Test(groups = {"standalone", "default_provider"})
     public void basicPutBodyTest() throws Throwable {
         AsyncHttpClient c = new AsyncHttpClient();
 

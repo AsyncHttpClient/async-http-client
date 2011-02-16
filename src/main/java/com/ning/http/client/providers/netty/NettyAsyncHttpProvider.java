@@ -315,23 +315,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                           final NettyResponseFuture<T> future,
                                           final HttpRequest nettyRequest) {
         try {
-
-            if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
-
-                FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-                for (String s : future.getNettyRequest().getHeaderNames()) {
-                    for (String header : future.getNettyRequest().getHeaders(s)) {
-                        h.add(s, header);
-                    }
-                }
-
-                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(
-                        new NettyTransferAdapter(h, nettyRequest.getContent(), future.getRequest().getFile()));
-            }
-
             if (!channel.isOpen() || !channel.isConnected()) {
                 if (!remotelyClosed(channel, future)) {
                     abort(future, new ConnectException());
+                    return;
+                } else {
+                    log.error("Channel is in close state {} and cannot be recovered", channel);
+                    abort(future, new ClosedChannelException());                    
                     return;
                 }
             }
@@ -353,6 +343,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 } else {
                     body = null;
                 }
+            }
+
+
+            if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+
+                FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+                for (String s : future.getNettyRequest().getHeaderNames()) {
+                    for (String header : future.getNettyRequest().getHeaders(s)) {
+                        h.add(s, header);
+                    }
+                }
+
+                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(
+                        new NettyTransferAdapter(h, nettyRequest.getContent(), future.getRequest().getFile()));
             }
 
             // Leave it to true.
@@ -1463,6 +1467,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } catch (Throwable t) {
             cause = t;
         }
+
         if (future != null) {
             try {
                 abort(future, cause);
