@@ -317,14 +317,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             /**
              * If the channel is dead because it was pooled and the remote server decided to close it,
-             * we need to try to recover in order to prevent failing a valid request.
+             * we just let it go and the closeChannel do it's work.
              */
             if (!channel.isOpen() || !channel.isConnected()) {
-                if (!remotelyClosed(channel, future)) {
-                    abort(future, new ConnectException());
-                } else {
-                    log.debug("Request {} has been recovered", nettyRequest);
-                }
                 return;                
             }
 
@@ -366,12 +361,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
                     log.debug(cause.getMessage(), cause);
-
-                    if (future.provider().remotelyClosed(channel, future)) {
-                        return;
-                    } else {
-                        future.abort(cause);
+                    try {
+                        channel.close();
+                    } catch (RuntimeException ex) {
+                        log.debug(ex.getMessage(), ex);
                     }
+                    return;
                 }
             }
 
@@ -426,10 +421,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
         } catch (Throwable ioe) {
-            if (future.provider().remotelyClosed(channel, future)) {
-                return;
+            try {
+                channel.close();
+            } catch (RuntimeException ex) {
+                log.debug(ex.getMessage(), ex);
             }
-            abort(future, ioe);
         }
 
         try {
@@ -866,7 +862,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             ctx.getChannel().close();
         } catch (Throwable t) {
-            log.error("error closing a connection", t);
+            log.debug("Error closing a connection", t);
         }
         openChannels.remove(ctx.getChannel());
     }
@@ -1604,11 +1600,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {
                     log.debug(cause.getMessage(), cause);
-                    if (future.provider().remotelyClosed(cf.getChannel(), future)) {
-                        return;
-                    } else {
-                        future.abort(cause);
+                    try {
+                        cf.getChannel().close();
+                    } catch (RuntimeException ex) {
+                        log.debug(ex.getMessage(), ex);
                     }
+                    return;
                 }
 
                 if (ClosedChannelException.class.isAssignableFrom(cause.getClass())
@@ -1619,11 +1616,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         log.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
                     }
 
-                    if (future.provider().remotelyClosed(cf.getChannel(), future)) {
-                        return;
-                    } else {
-                        future.abort(cause);
+                    try {
+                        cf.getChannel().close();
+                    } catch (RuntimeException ex) {
+                        log.debug(ex.getMessage(), ex);
                     }
+                    return;                    
                 } else {
                     future.abort(cause);
                 }
