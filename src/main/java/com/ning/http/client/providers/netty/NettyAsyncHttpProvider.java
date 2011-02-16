@@ -320,8 +320,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     abort(future, new ConnectException());
                     return;
                 } else {
-                    log.error("Channel is in close state {} and cannot be recovered", channel);
-                    abort(future, new ClosedChannelException());                    
+                    log.debug("Request {} has been recovered", nettyRequest);
                     return;
                 }
             }
