@@ -67,16 +67,18 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         } else {
             Throwable cause = f.getCause();
 
+            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), future.canRetry());            
             if (future.canRetry() && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
                     || ClosedChannelException.class.isAssignableFrom(cause.getClass())
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
-                
+
+                logger.debug("Retrying {} ", nettyRequest);
                 if (future.provider().remotelyClosed(f.getChannel(), future)) {
                     return;
                 }
             }
 
-            logger.warn("Connect exception: {}", cause);
+            logger.warn("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
 
             ConnectException e = new ConnectException(f.getCause() != null ? cause.getMessage() : future.getURI().toString());
             if (cause != null) {
