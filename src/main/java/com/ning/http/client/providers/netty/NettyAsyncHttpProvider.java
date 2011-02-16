@@ -315,14 +315,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                           final NettyResponseFuture<T> future,
                                           final HttpRequest nettyRequest) {
         try {
+            /**
+             * If the channel is dead because it was pooled and the remote server decided to close it,
+             * we need to try to recover in order to prevent failing a valid request.
+             */
             if (!channel.isOpen() || !channel.isConnected()) {
                 if (!remotelyClosed(channel, future)) {
                     abort(future, new ConnectException());
-                    return;
                 } else {
                     log.debug("Request {} has been recovered", nettyRequest);
-                    return;
                 }
+                return;                
             }
 
             Body body = null;
@@ -343,7 +346,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     body = null;
                 }
             }
-
 
             if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
 
@@ -1629,6 +1631,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             future.touch();
 
+            /**
+             * We need to make sure we aren't in the middle of an authorization process before publishing events
+             * as we will re-publish again the same event after the authorization, causing unpredictable behavior.
+             */
             Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : NettyAsyncHttpProvider.this.getConfig().getRealm();
             boolean startPublishing = future.isInAuth()
                     || realm == null
