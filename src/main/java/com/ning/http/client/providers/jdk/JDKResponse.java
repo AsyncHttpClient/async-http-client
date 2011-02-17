@@ -155,7 +155,7 @@ public class JDKResponse implements Response {
                 active = parts[currentPos].getBodyPartBytes();
             }
 
-            return active[bytePos];
+            return active[bytePos] & 0xFF;
         }
     }
 
