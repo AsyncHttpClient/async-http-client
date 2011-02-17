@@ -20,6 +20,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -37,6 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
+
 import static org.testng.Assert.fail;
 
 /**
@@ -52,7 +55,12 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
                 HttpServletRequest req,
                 HttpServletResponse resp)
                 throws IOException, ServletException {
-            resp.setStatus(HttpServletResponse.SC_OK);
+
+            if (!req.getMethod().equalsIgnoreCase("PUT")) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                resp.setStatus(204);                
+            }
             request.setHandled(true);
         }
     }
@@ -90,7 +98,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
             public STATE onStatusReceived(HttpResponseStatus e) throws Exception {
                 status.set(true);
-                return STATE.CONTINUE;
+                return AsyncHandler.STATE.CONTINUE;
             }
 
             public STATE onHeadersReceived(HttpResponseHeaders e) throws Exception {
@@ -114,6 +122,17 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
         assertEquals(queue.size(), 0);
         assertTrue(status.get());
         assertEquals(headers.get(), 1);
+        ahc.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testPutEmptyBody() throws Throwable {
+        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
+
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 204);
+        assertEquals(response.getResponseBody(), "");        
         ahc.close();
     }
 }

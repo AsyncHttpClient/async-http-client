@@ -17,6 +17,7 @@ import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.Part;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
@@ -39,6 +40,7 @@ import java.util.Locale;
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+    private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
     private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS =
             {
@@ -441,5 +443,15 @@ public class AsyncHttpProviderUtils {
         }
 
         throw exception;
+    }
+
+    public static void checkBodyParts(int statusCode, Collection<HttpResponseBodyPart> bodyParts) {
+        if (bodyParts == null || bodyParts.size() == 0) {
+
+            // We allow empty body on 204
+            if (statusCode == 204) return;
+
+            throw new IllegalStateException(BODY_NOT_COMPUTED);
+        }
     }
 }

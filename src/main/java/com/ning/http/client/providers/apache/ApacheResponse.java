@@ -36,7 +36,6 @@ import java.util.Map;
 public class ApacheResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";    
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
-    private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
@@ -87,7 +86,7 @@ public class ApacheResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        checkBodyParts();
+        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
 
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
@@ -99,14 +98,8 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public InputStream getResponseBodyAsStream() throws IOException {
-        checkBodyParts();
+        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
         return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
-    }
-
-    private void checkBodyParts() {
-        if (bodyParts == null || bodyParts.size() == 0) {
-            throw new IllegalStateException(BODY_NOT_COMPUTED);
-        }
     }
 
     /* @Override */
