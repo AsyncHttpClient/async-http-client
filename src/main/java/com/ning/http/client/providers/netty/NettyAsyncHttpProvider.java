@@ -182,7 +182,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
         } else {
             socketChannelFactory = new NioClientSocketChannelFactory(
-                    Executors.newFixedThreadPool(100),
+                    Executors.newCachedThreadPool(),
                     config.executorService());
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
