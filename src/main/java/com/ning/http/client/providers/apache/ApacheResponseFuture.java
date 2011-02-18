@@ -63,6 +63,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
         if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
+        super.done();        
     }
 
     /**

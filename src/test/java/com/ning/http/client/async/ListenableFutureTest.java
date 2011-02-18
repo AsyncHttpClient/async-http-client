@@ -20,12 +20,14 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Tests case where response doesn't have body.
@@ -36,19 +38,26 @@ public abstract class ListenableFutureTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testListenableFuture() throws Throwable {
-        final AtomicBoolean executed = new AtomicBoolean(false);
+        final AtomicInteger statusCode = new AtomicInteger(500);
         AsyncHttpClient ahc = getAsyncHttpClient(null);
-        Response response = ((ListenableFuture<Response>)ahc.prepareGet(getTargetUrl()).execute()).addListener(new Runnable(){
-
+        final CountDownLatch latch = new CountDownLatch(1);
+        final Future<Response> future = ((ListenableFuture<Response>)ahc.prepareGet(getTargetUrl()).execute());
+        ((ListenableFuture)future).addListener(new Runnable(){
 
             public void run() {
-                executed.set(true);
+                try {
+                    statusCode.set(future.get().getStatusCode());
+                    latch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
-        }, Executors.newFixedThreadPool(1)).get();
+        }, Executors.newFixedThreadPool(1));
 
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertTrue(executed.get());
+        latch.await(10, TimeUnit.SECONDS);
+        assertEquals(statusCode.get(), 200);
         ahc.close();
     }
 }

@@ -239,7 +239,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void done(Callable callable) {
-        super.done();        
         try {
             if (exEx.get() != null) {
                 return;
@@ -261,6 +260,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } finally {
             latch.countDown();
         }
+        super.done();
     }
 
     public final void abort(final Throwable t) {
