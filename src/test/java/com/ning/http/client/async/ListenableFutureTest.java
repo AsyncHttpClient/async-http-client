@@ -33,8 +33,8 @@ public abstract class ListenableFutureTest extends AbstractBasicTest {
         final AtomicInteger statusCode = new AtomicInteger(500);
         AsyncHttpClient ahc = getAsyncHttpClient(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        final Future<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-        ((ListenableFuture)future).addListener(new Runnable(){
+        final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+        future.addListener(new Runnable(){
 
             public void run() {
                 try {

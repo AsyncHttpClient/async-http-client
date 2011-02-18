@@ -112,10 +112,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             System.setProperty(e.getKey(), e.getValue());
         }
     }
-    public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
         return execute(request, handler, null);
     }
-    public <T> Future<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
         }

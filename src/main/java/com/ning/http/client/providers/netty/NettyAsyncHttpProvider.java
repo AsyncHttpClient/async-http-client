@@ -26,6 +26,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
@@ -704,7 +705,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     /* @Override */
 
-    public <T> Future<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         return doConnect(request, asyncHandler, null, true);
     }
 
@@ -712,7 +713,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         doConnect(request, f.getAsyncHandler(), f, useCache);
     }
 
-    private <T> Future<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache) throws IOException {
+    private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache) throws IOException {
 
         if (isClose.get()) {
             throw new IOException("Closed");
