@@ -29,11 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 
-/**
- * Tests case where response doesn't have body.
- *
- * @author Hubert Iwaniuk
- */
 public abstract class ListenableFutureTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
