@@ -35,7 +35,7 @@ import static org.testng.Assert.assertTrue;
 public abstract class ListenableFutureTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
-    public void testPutEmptyBody() throws Throwable {
+    public void testListenableFuture() throws Throwable {
         final AtomicBoolean executed = new AtomicBoolean(false);
         AsyncHttpClient ahc = getAsyncHttpClient(null);
         Response response = ((ListenableFuture<Response>)ahc.prepareGet(getTargetUrl()).execute()).addListener(new Runnable(){

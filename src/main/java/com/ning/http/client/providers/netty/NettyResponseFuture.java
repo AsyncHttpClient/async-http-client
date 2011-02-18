@@ -16,8 +16,9 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.FutureImpl;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Request;
+import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @param <V>
  */
-public final class NettyResponseFuture<V> implements FutureImpl<V> {
+public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private final static Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
     public final static String MAX_RETRY = "com.ning.http.client.providers.netty.maxRetry";
@@ -98,7 +99,6 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
 
         if (System.getProperty(MAX_RETRY) != null) {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
-            ;
         } else {
             maxRetry = asyncHttpProvider.getConfig().getMaxRequestRetry();
         }
@@ -190,7 +190,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
                 latch.await();
             } else {
                 expired = !latch.await(l, tu);
-                if (!contentProcessed.get() && expired && l != -1 && ((System.currentTimeMillis() - touch.get()) <= l)) {
+                if (!contentProcessed.get() && expired && ((System.currentTimeMillis() - touch.get()) <= l)) {
                     return get(l, tu);
                 }
             }
@@ -239,6 +239,7 @@ public final class NettyResponseFuture<V> implements FutureImpl<V> {
     }
 
     public final void done(Callable callable) {
+        super.done();        
         try {
             if (exEx.get() != null) {
                 return;

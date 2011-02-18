@@ -13,7 +13,8 @@
 package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.FutureImpl;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.listenable.AbstractListenableFuture;
 
 import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class JDKFuture<V> implements FutureImpl<V> {
+public class JDKFuture<V> extends AbstractListenableFuture<V> {
 
     protected Future<V> innerFuture;
     protected final AsyncHandler<V> asyncHandler;
@@ -56,6 +57,7 @@ public class JDKFuture<V> implements FutureImpl<V> {
 
     public void done(Callable callable) {
         isDone.set(true);
+        super.done();
     }
 
     public void abort(Throwable t) {
