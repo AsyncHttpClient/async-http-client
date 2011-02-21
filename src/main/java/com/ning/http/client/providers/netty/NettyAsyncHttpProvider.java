@@ -765,6 +765,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return f;
         }
 
+        log.debug("\n\nNon cached Request {}\n", request);
+
         if (!connectionsPool.canCacheConnection() ||
                 (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
@@ -822,8 +824,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             channelFuture.addListener(c);
         }
-
-        log.debug("\n\nNon cached Request {}\n using Channel {}", request, channelFuture.getChannel());
 
         if (!c.future().isCancelled() || !c.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
@@ -1252,7 +1252,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             openChannels.remove(future.channel());
         }
 
-        log.debug("aborting Future {}\n", future);
+        log.debug("aborting Future {}", future);
         log.debug(t.getMessage(), t);
 
         future.abort(t);
@@ -1293,7 +1293,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             exception = ex;
         }
 
-        log.debug("Channel Closed: {}\n with attachment {}\n", e.getChannel(), ctx.getAttachment());
+        log.debug("Channel Closed: {}", e.getChannel());
 
         if (ctx.getAttachment() instanceof AsyncCallable) {
             AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
@@ -1334,13 +1334,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         connectionsPool.removeAll(channel);
 
-        if (future == null) {
+        if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() != null
+                && NettyResponseFuture.class.isAssignableFrom(
+                channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment().getClass())) {
             future = (NettyResponseFuture<?>)
                     channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
         }
 
         if (future == null || future.cannotBeReplay()) {
-            log.debug("Unable to replay request {}\n associated with future {}", future == null ? "null" : future.getNettyRequest(), future);
+            log.debug("Unable to replay request {} associated with future", future == null ? "" : future.getNettyRequest(), future);
             return false;
         }
 
@@ -1451,7 +1453,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
-                    log.debug("Trying to recover request {}\n from dead Channel: {}\n", channel);
+                    log.debug("Trying to recover from dead Channel: {}", channel);
                     if (remotelyClosed(channel, future)) {
                         return;
                     }
@@ -1722,7 +1724,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
-                log.debug("Request Timeout expired for {}\n", this.nettyResponseFuture);
+                log.debug("Request Timeout expired for {}", this.nettyResponseFuture);
 
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.nettyResponseFuture.getRequest().getPerRequestConfig();
