@@ -13,8 +13,8 @@
 package com.ning.http.client.providers.apache;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.FutureImpl;
 import com.ning.http.client.Request;
+import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.apache.commons.httpclient.HttpMethodBase;
 
 import java.util.concurrent.Callable;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class ApacheResponseFuture<V> implements FutureImpl<V> {
+public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private Future<V> innerFuture;
     private final AsyncHandler<V> asyncHandler;
@@ -63,6 +63,7 @@ public class ApacheResponseFuture<V> implements FutureImpl<V> {
         if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
+        super.done();        
     }
 
     /**

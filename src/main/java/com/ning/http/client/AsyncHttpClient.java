@@ -223,11 +223,11 @@ public class AsyncHttpClient {
             super(BoundRequestBuilder.class, prototype);
         }
 
-        public <T> Future<T> execute(AsyncHandler<T> handler) throws IOException {
+        public <T> ListenableFuture<T> execute(AsyncHandler<T> handler) throws IOException {
             return AsyncHttpClient.this.executeRequest(build(), handler);
         }
 
-        public Future<Response> execute() throws IOException {
+        public ListenableFuture<Response> execute() throws IOException {
             return AsyncHttpClient.this.executeRequest(build(), new AsyncCompletionHandlerBase());
         }
 
@@ -468,7 +468,7 @@ public class AsyncHttpClient {
      * @return a {@link Future} of type T
      * @throws IOException
      */
-    public <T> Future<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
         fc  = preProcessRequest(fc);
@@ -482,7 +482,7 @@ public class AsyncHttpClient {
      * @return a {@link Future} of type Response
      * @throws IOException
      */
-    public Future<Response> executeRequest(Request request) throws IOException {
+    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
         fc  = preProcessRequest(fc);
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());

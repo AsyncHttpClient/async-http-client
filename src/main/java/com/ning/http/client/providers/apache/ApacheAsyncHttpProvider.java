@@ -23,6 +23,7 @@ import com.ning.http.client.FilePart;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
 import com.ning.http.client.PerRequestConfig;
@@ -160,7 +161,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     private void configure(ApacheAsyncHttpProviderConfig config) {
     }
 
-    public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
         }

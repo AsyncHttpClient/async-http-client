@@ -18,7 +18,7 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FutureImpl;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -112,10 +112,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             System.setProperty(e.getKey(), e.getValue());
         }
     }
-    public <T> Future<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
         return execute(request, handler, null);
     }
-    public <T> Future<T> execute(Request request, AsyncHandler<T> handler, FutureImpl<?> future) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
         }
@@ -208,14 +208,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
         private HttpURLConnection urlConnection;
         private Request request;
         private final AsyncHandler<T> asyncHandler;
-        private final FutureImpl<T> future;
+        private final ListenableFuture<T> future;
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
         private byte[] cachedBytes;
         private int cachedBytesLenght;
         private boolean terminate = true;
 
-        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, FutureImpl<T> future) {
+        public AsyncHttpUrlConnection(HttpURLConnection urlConnection, Request request, AsyncHandler<T> asyncHandler, ListenableFuture<T> future) {
             this.urlConnection = urlConnection;
             this.request = request;
             this.asyncHandler = asyncHandler;
