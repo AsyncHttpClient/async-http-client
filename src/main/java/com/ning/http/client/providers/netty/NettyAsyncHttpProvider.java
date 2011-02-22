@@ -100,7 +100,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
@@ -749,7 +748,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             f.setState(NettyResponseFuture.STATE.POOLED);
             f.attachChannel(channel, false);
 
-            log.debug("\nUsing cached Channel {}\n for request {}\n", channel, request);
+            log.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, nettyRequest);
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
             try {
@@ -824,7 +823,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             channelFuture.addListener(c);
         }
 
-        log.debug("\n\nNon cached Request {}\n with channel {}\n", request, channel);
+        log.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", c.future().getNettyRequest(), channelFuture.getChannel());
 
         if (!c.future().isCancelled() || !c.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
@@ -1343,7 +1342,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (future == null || future.cannotBeReplay()) {
-            log.debug("Unable to replay request {}\n associated with future {}\n", future == null ? "null" : future.getNettyRequest(), future);
+            log.debug("Unable to recover request {}\n associated with future {}\n", future == null ? "null" : future.getNettyRequest(), future);
             return false;
         }
 
@@ -1400,7 +1399,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private boolean markChannelNotReadable(final ChannelHandlerContext ctx) {
-        // Catch any unexpected exception when marking the channel.        
+        // Catch any unexpected exception when marking the channel.
         ctx.setAttachment(new DiscardEvent());
         return true;
     }
@@ -1432,6 +1431,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
+        if (log.isDebugEnabled()) {
+            log.debug("Exception Caught: {} Attachment was {}",
+                    cause != null ? cause.getMessage() : "unavailable cause",
+                    ctx.getAttachment());
+            log.debug(cause.getMessage(), cause);
+        }
+
         try {
 
             if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
@@ -1454,10 +1460,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
-                    log.debug("Trying to recover from dead Channel: {}\n request {}", channel, future.getNettyRequest());
-                    if (remotelyClosed(channel, future)) {
-                        return;
-                    }
+                    log.debug("Trying to recover from dead Channel: {}", channel);
+                    return;
                 }
             } else if (ctx.getAttachment() instanceof AsyncCallable) {
                 future = ((AsyncCallable) ctx.getAttachment()).future();
@@ -1472,13 +1476,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } catch (Throwable t) {
                 log.error(t.getMessage(), t);
             }
-        }
-
-        if (log.isDebugEnabled()) {
-            log.error("Exception Caught: {} Attachment was {}",
-                    cause != null ? cause.getMessage() : "unavailable cause",
-                    ctx.getAttachment());
-            log.error(cause.getMessage(), cause);
         }
         closeChannel(ctx);
         ctx.sendUpstream(e);

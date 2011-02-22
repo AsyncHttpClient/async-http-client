@@ -16,7 +16,6 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
@@ -422,23 +421,22 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     @Override
     public String toString() {
         return "NettyResponseFuture{" +
-                "latch=" + latch +
-                ", isDone=" + isDone +
-                ", isCancelled=" + isCancelled +
-                ", asyncHandler=" + asyncHandler +
-                ", responseTimeoutInMs=" + responseTimeoutInMs +
-                ", request=" + request +
-                ", nettyRequest=" + nettyRequest +
-                ", content=" + content +
-                ", uri=" + uri +
-                ", keepAlive=" + keepAlive +
-                ", httpResponse=" + httpResponse +
-                ", exEx=" + exEx +
-                ", redirectCount=" + redirectCount +
-                ", reaperFuture=" + reaperFuture +
-                ", inAuth=" + inAuth +
-                ", statusReceived=" + statusReceived +
-                ", touch=" + touch +
+                "currentRetry=" + currentRetry +
+                ",\nisDone=" + isDone +
+                ",\nisCancelled=" + isCancelled +
+                ",\nasyncHandler=" + asyncHandler +
+                ",\nresponseTimeoutInMs=" + responseTimeoutInMs +
+                ",\nnettyRequest=" + nettyRequest +
+                ",\ncontent=" + content +
+                ",\nuri=" + uri +
+                ",\nkeepAlive=" + keepAlive +
+                ",\nhttpResponse=" + httpResponse +
+                ",\nexEx=" + exEx +
+                ",\nredirectCount=" + redirectCount +
+                ",\nreaperFuture=" + reaperFuture +
+                ",\ninAuth=" + inAuth +
+                ",\nstatusReceived=" + statusReceived +
+                ",\ntouch=" + touch +
                 '}';
     }
 
