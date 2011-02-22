@@ -203,7 +203,6 @@
                             org.jboss.netty.*;resolution:=optional,
                             org.apache.commons.httpclient;resolution:=optional,
                             org.apache.commons.httpclient.*;resolution:=optional,
-                            org.apache.log4j;resolution:=optional,
                             *
                         </Import-Package>
                         <Export-Package>
