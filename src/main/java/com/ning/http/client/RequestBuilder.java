@@ -91,6 +91,9 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
      * @param stream - An {@link InputStream}
      * @return a {@link RequestBuilder}
      * @throws IllegalArgumentException
+     * @deprecated {@link #setBody(BodyGenerator)} setBody(new InputStreamBodyGenerator(inputStream))
+     * @see #setBody(BodyGenerator) InputStreamBodyGenerator(inputStream)
+     * @see com.ning.http.client.generators.InputStreamBodyGenerator
      */
     @Override
     @Deprecated
