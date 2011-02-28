@@ -79,7 +79,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         String url = getTargetUrl();
         int i;
         Exception exception = null;
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < 20; i++) {
             try {
                 log.info("{} requesting url [{}]...", i, url);
 
