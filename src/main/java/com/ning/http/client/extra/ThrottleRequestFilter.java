@@ -55,9 +55,10 @@ public class ThrottleRequestFilter implements RequestFilter {
             }
             if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
                 throw new FilterException(
-                    String.format("No slot available for processing Request %s with AsyncHandler %s",
-                            ctx.getRequest(), ctx.getAsyncHandler()));
-            };
+                        String.format("No slot available for processing Request %s with AsyncHandler %s",
+                                ctx.getRequest(), ctx.getAsyncHandler()));
+            }
+            ;
         } catch (InterruptedException e) {
             throw new FilterException(
                     String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
@@ -75,7 +76,14 @@ public class ThrottleRequestFilter implements RequestFilter {
         }
 
         public void onThrowable(Throwable t) {
-            asyncHandler.onThrowable(t);
+            try {
+                asyncHandler.onThrowable(t);
+            } finally {
+                available.release();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
+                }
+            }
         }
 
         public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
