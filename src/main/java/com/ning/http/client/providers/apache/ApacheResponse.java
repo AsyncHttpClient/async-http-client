@@ -99,7 +99,11 @@ public class ApacheResponse implements Response {
 
     public InputStream getResponseBodyAsStream() throws IOException {
         AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-        return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
+        if (bodyParts.size() > 0) {
+            return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
+        } else {
+            return new ByteArrayInputStream("".getBytes());            
+        }
     }
 
     /* @Override */

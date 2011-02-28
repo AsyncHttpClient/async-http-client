@@ -111,7 +111,11 @@ public class JDKResponse implements Response {
             return new ByteArrayInputStream(content.getBytes(DEFAULT_CHARSET));
         }
 
-        return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
+        if (bodyParts.size() > 0) {
+            return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
+        } else {
+            return new ByteArrayInputStream("".getBytes());
+        }
     }
 
     private static class ByteArrayCollectionInputStream extends InputStream {

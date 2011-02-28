@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +133,10 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 204);
-        assertEquals(response.getResponseBody(), "");        
+        assertEquals(response.getResponseBody(), "");
+        assertTrue(InputStream.class.isAssignableFrom(response.getResponseBodyAsStream().getClass()));
+        assertEquals(response.getResponseBodyAsStream().read(), -1); 
+
         ahc.close();
     }
 }
