@@ -874,7 +874,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         IN_IO_THREAD.set(Boolean.TRUE);
         if (ctx.getAttachment() == null) {
-            log.warn("ChannelHandlerContext wasn't having any attachment");
+            log.debug("ChannelHandlerContext wasn't having any attachment");
         }
 
         if (ctx.getAttachment() instanceof DiscardEvent) {
