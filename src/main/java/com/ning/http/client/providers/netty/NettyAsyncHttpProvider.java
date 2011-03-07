@@ -594,7 +594,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             String reqType = request.getMethod();
-            if ("POST".equals(reqType) || "PUT".equals(reqType)) {
+            if (!"GET".equals(reqType) && !"HEAD".equals(reqType) && !"OPTION".equals(reqType) && !"TRACE".equals(reqType)) {
                 // We already have processed the body.
                 if (buffer != null && buffer.writerIndex() != 0) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
