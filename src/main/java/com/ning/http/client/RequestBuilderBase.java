@@ -493,8 +493,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
 
     public Request build() {
-        if ((request.length < 0) && (request.streamData == null) &&
-                (("POST".equals(request.method)) || ("PUT".equals(request.method)))) {
+        if ((request.length < 0) && (request.streamData == null) && allowBody(request.getMethod())) {
             // can't concatenate content-length
             String contentLength = request.headers.getFirstValue("Content-Length");
 
@@ -508,5 +507,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
         return request;
+    }
+
+    private boolean allowBody(String method) {
+        if ( method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS")
+                    && method.equalsIgnoreCase("TRACE")
+                    && method.equalsIgnoreCase("HEAD")) {
+            return false;
+        } else {
+            return true;
+        }
     }
 }
