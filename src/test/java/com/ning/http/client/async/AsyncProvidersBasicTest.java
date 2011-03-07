@@ -1180,14 +1180,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }
         }).get();
 
-        try {
-            response.getResponseBody();
-            
-            fail();
-        } catch (IllegalStateException e) {
-            assertNotNull(e.getMessage());
-            assertEquals(e.getMessage(), "Response's body hasn't been computed by your AsyncHandler.");
-        }
+        assertEquals(response.getResponseBody(),"");
         c.close();
     }
 

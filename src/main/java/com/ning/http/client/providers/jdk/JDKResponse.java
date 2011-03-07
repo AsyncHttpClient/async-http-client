@@ -92,8 +92,6 @@ public class JDKResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
@@ -105,8 +103,6 @@ public class JDKResponse implements Response {
     /* @Override */
 
     public InputStream getResponseBodyAsStream() throws IOException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         if (contentComputed.get()) {
             return new ByteArrayInputStream(content.getBytes(DEFAULT_CHARSET));
         }

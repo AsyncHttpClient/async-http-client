@@ -86,8 +86,6 @@ public class ApacheResponse implements Response {
     }
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
@@ -98,7 +96,6 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public InputStream getResponseBodyAsStream() throws IOException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
         if (bodyParts.size() > 0) {
             return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
         } else {

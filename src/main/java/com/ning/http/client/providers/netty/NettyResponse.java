@@ -93,8 +93,6 @@ public class NettyResponse implements Response {
 
 
     String contentToString(String charset) throws UnsupportedEncodingException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         StringBuilder b = new StringBuilder();
         for (HttpResponseBodyPart bp : bodyParts) {
             b.append(new String(bp.getBodyPartBytes(), charset));
@@ -105,8 +103,6 @@ public class NettyResponse implements Response {
     /* @Override */
 
     public InputStream getResponseBodyAsStream() throws IOException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp : bodyParts) {
             // Ugly. TODO
@@ -127,8 +123,6 @@ public class NettyResponse implements Response {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        AsyncHttpProviderUtils.checkBodyParts(status.getStatusCode(), bodyParts);
-
         String contentType = getContentType();
         if (contentType != null) {
             charset = AsyncHttpProviderUtils.parseCharset(contentType);
