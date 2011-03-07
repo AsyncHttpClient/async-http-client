@@ -378,9 +378,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(byte[] data) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for content");
-        }
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -389,9 +386,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(String data) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for content");
-        }
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -400,9 +394,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(InputStream stream) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for content");
-        }
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -415,9 +406,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
-        if ((!"POST".equals(request.method)) && (!"PUT".equals(request.method))) {
-            throw new IllegalArgumentException("Request type has to POST or PUT for content");
-        }
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
