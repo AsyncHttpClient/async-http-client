@@ -79,7 +79,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
             }
         } else {
-            log.debug("Maximum connections per hosts reached {}", config.getMaxConnectionPerHost());
+            log.debug("Maximum number of requests per host reached {} for {}", config.getMaxConnectionPerHost(), uri);
             added = false;
         }
         return added;
