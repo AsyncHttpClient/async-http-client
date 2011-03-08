@@ -74,7 +74,7 @@ public class ApacheResponse implements Response {
 
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
-        if (contentType != null) {
+        if (contentType != null && charset == null) {
             charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
 
@@ -113,7 +113,7 @@ public class ApacheResponse implements Response {
     
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String contentType = getContentType();
-        if (contentType != null) {
+        if (contentType != null && charset == null) {
             charset = AsyncHttpProviderUtils.parseCharset(contentType);
         }
 
