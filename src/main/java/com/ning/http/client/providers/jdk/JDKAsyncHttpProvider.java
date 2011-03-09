@@ -596,7 +596,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (!request.getHeaders().containsKey("Content-Type")) {
                         urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     }
-                    urlConnection.getOutputStream().write(sb.toString().getBytes("ISO-8859-1"));
+                    urlConnection.getOutputStream().write(sb.toString().getBytes(bodyCharset));
                 } else if (request.getParts() != null) {
                     int lenght = (int) request.getContentLength();
                     if (lenght != -1) {
