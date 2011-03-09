@@ -368,7 +368,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return true is SSL connection polling is enabled. Default is true.
-     * @return
+     * @return true is enabled.
      */
     public boolean isSslConnectionPoolEnabled() {
         return allowSslConnectionPool;

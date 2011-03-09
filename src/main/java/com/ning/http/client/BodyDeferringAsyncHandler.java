@@ -177,7 +177,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * error! Also, please not that this method might return <code>null</code>
      * in case of some errors.
      * 
-     * @return
+     * @return a {@link Response}
      * @throws InterruptedException
      */
     public Response getResponse() throws InterruptedException, IOException {
@@ -234,7 +234,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * <code>null</code>. See
          * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
          * 
-         * @return
+         * @return a {@link Response}
          * @throws InterruptedException
          */
         public Response getAsapResponse() throws InterruptedException,
@@ -246,7 +246,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * Delegates to <code>Future<Response>#get()</code> method. Will block
          * as long as complete response arrives.
          * 
-         * @return
+         * @return a {@link Response}
          * @throws InterruptedException
          * @throws ExecutionException
          */
