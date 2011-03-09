@@ -27,6 +27,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
@@ -59,7 +60,22 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     public final void operationComplete(ChannelFuture f) throws Exception {
         if (f.isSuccess()) {
             if (!handshakeDone.getAndSet(true) && f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER) != null) {
-                ((SslHandler) f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
+                try {
+                    ((SslHandler) f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
+                } catch (Throwable cause) {
+                    if (SSLException.class.isAssignableFrom(cause.getClass())) {
+                        logger.debug("Retrying {} ", nettyRequest);
+                        if (future.provider().remotelyClosed(f.getChannel(), future)) {
+                            return;
+                        }
+                    }
+                    
+                    ConnectException e = new ConnectException(f.getCause() != null ? cause.getMessage() : future.getURI().toString());
+                    if (cause != null) {
+                        e.initCause(cause);
+                    }
+                    future.abort(e);                   
+                }
                 return;
             }
             f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
