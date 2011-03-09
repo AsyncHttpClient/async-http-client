@@ -767,7 +767,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (!connectionsPool.canCacheConnection() ||
                 (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
-            throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+            asyncHandler.onThrowable(ex);            
+            throw ex;
         }
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
@@ -811,7 +813,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
                 abort(c.future(), new ConnectException("Connect times out"));
             }
-            ;
+
             try {
                 c.operationComplete(channelFuture);
             } catch (Exception e) {
