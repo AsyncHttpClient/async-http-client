@@ -27,7 +27,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
@@ -91,6 +90,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     public static class Builder<T> {
         private final AsyncHttpClientConfig config;
+        
         private final Request request;
         private final AsyncHandler<T> asyncHandler;
         private NettyResponseFuture<T> future;
