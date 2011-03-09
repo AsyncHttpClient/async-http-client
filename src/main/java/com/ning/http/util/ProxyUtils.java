@@ -25,7 +25,10 @@ import java.util.List;
  */
 public class ProxyUtils {
     /**
-     * {@see #avoidProxy(ProxyServer,String)}
+     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
+     * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
+     * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
+     * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      *
      * @param proxyServer
      * @param request
@@ -39,11 +42,12 @@ public class ProxyUtils {
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
      * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
+     * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      *
      * @param proxyServer
      * @param target      the hostname
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
-     * @see http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+     * 
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
         if (proxyServer != null) {
