@@ -92,6 +92,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -1466,7 +1467,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
                     log.debug("Trying to recover from dead Channel: {}", channel);
                     return;
-                }
+                }                             
             } else if (ctx.getAttachment() instanceof AsyncCallable) {
                 future = ((AsyncCallable) ctx.getAttachment()).future();
             }
