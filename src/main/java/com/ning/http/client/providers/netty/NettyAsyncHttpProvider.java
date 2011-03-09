@@ -121,6 +121,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jboss.netty.channel.Channels.pipeline;
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider<HttpResponse> {
     private final static String HTTP_HANDLER = "httpHandler";
@@ -159,8 +160,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private boolean executeConnectAsync = false;
 
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
-
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";
 
     private final boolean trackConnections;
 
@@ -595,6 +594,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             String reqType = request.getMethod();
             if (!"GET".equals(reqType) && !"HEAD".equals(reqType) && !"OPTION".equals(reqType) && !"TRACE".equals(reqType)) {
+
+                String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+
                 // We already have processed the body.
                 if (buffer != null && buffer.writerIndex() != 0) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
@@ -603,8 +605,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                     nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getByteData()));
                 } else if (request.getStringData() != null) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), DEFAULT_CHARSET));
+                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getStringData().getBytes(bodyCharset).length));
+                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(request.getStringData(), bodyCharset));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
                     byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
@@ -625,7 +627,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
                     }
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes(DEFAULT_CHARSET)));
+                    nettyRequest.setContent(ChannelBuffers.copiedBuffer(sb.toString().getBytes(bodyCharset)));
 
                     if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                         nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/x-www-form-urlencoded");
@@ -1552,15 +1554,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final static int computeAndSetContentLength(Request request, HttpRequest r) {
-        int lenght = (int) request.getLength();
-        if (lenght == -1 && r.getHeader(HttpHeaders.Names.CONTENT_LENGTH) != null) {
-            lenght = Integer.valueOf(r.getHeader(HttpHeaders.Names.CONTENT_LENGTH));
+        int length = (int) request.getContentLength();
+        if (length == -1 && r.getHeader(HttpHeaders.Names.CONTENT_LENGTH) != null) {
+            length = Integer.valueOf(r.getHeader(HttpHeaders.Names.CONTENT_LENGTH));
         }
 
-        if (lenght >= 0) {
-            r.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(lenght));
+        if (length >= 0) {
+            r.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
         }
-        return lenght;
+        return length;
     }
 
     public static <T> NettyResponseFuture<T> newFuture(URI uri,

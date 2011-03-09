@@ -40,6 +40,9 @@ import java.util.Locale;
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+
+    public final static String DEFAULT_CHARSET = "ISO-8859-1";
+
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
     private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS =

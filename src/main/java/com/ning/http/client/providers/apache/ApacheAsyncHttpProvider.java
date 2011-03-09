@@ -112,8 +112,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+
+
 /**
- * Provides a generic http client.
+ * An {@link com.ning.http.client.AsyncHttpProvider} for Apache Http Client 3.1
  */
 public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     private final static Logger logger = LoggerFactory.getLogger(ApacheAsyncHttpProvider.class);
@@ -228,13 +231,16 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         HttpMethodBase method = null;
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
             EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());
+
+            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+
             post.getParams().setContentCharset("ISO-8859-1");
             if (request.getByteData() != null) {
                 post.setRequestEntity(new ByteArrayRequestEntity(request.getByteData()));
                 post.setRequestHeader("Content-Length", String.valueOf(request.getByteData().length));
             } else if (request.getStringData() != null) {
-                post.setRequestEntity(new StringRequestEntity(request.getStringData(), "text/xml", "ISO-8859-1"));
-                post.setRequestHeader("Content-Length", String.valueOf(request.getStringData().length()));
+                post.setRequestEntity(new StringRequestEntity(request.getStringData(), "text/xml", bodyCharset));
+                post.setRequestHeader("Content-Length", String.valueOf(request.getStringData().getBytes(bodyCharset).length));
             } else if (request.getStreamData() != null) {
                 InputStreamRequestEntity r = new InputStreamRequestEntity(request.getStreamData());
                 post.setRequestEntity(r);
@@ -261,7 +267,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     post.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 }
             } else if (request.getParts() != null) {
-                MultipartRequestEntity mre = createMultipartRequestEntity(request.getParts(), post.getParams());
+                MultipartRequestEntity mre = createMultipartRequestEntity(bodyCharset, request.getParts(), post.getParams());
                 post.setRequestEntity(mre);
                 post.setRequestHeader("Content-Type", mre.getContentType());
                 post.setRequestHeader("Content-Length", String.valueOf(mre.getContentLength()));
@@ -288,7 +294,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                 try {
                     int length = (int) body.getContentLength();
                     if (length < 0) {
-                        length = (int) request.getLength();
+                        length = (int) request.getContentLength();
                     }
 
                     // TODO: This is suboptimal
@@ -393,7 +399,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
     }
 
     private final static int computeAndSetContentLength(Request request, HttpMethodBase m) {
-        int lenght = (int) request.getLength();
+        int lenght = (int) request.getContentLength();
         if (lenght == -1 && m.getRequestHeader("Content-Length") != null) {
             lenght = Integer.valueOf(m.getRequestHeader("Content-Length").getValue());
         }
@@ -655,7 +661,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
     }
 
-    private MultipartRequestEntity createMultipartRequestEntity(List<Part> params, HttpMethodParams methodParams) throws FileNotFoundException {
+    private MultipartRequestEntity createMultipartRequestEntity(String charset, List<Part> params, HttpMethodParams methodParams) throws FileNotFoundException {
         org.apache.commons.httpclient.methods.multipart.Part[] parts = new org.apache.commons.httpclient.methods.multipart.Part[params.size()];
         int i = 0;
 
@@ -663,7 +669,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
             if (part instanceof StringPart) {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.StringPart(part.getName(),
                         ((StringPart) part).getValue(),
-                        "ISO-8859-1");
+                        charset);
             } else if (part instanceof FilePart) {
                 parts[i] = new org.apache.commons.httpclient.methods.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),

@@ -18,10 +18,10 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
@@ -75,11 +75,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 
 public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection> {
     private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
@@ -470,7 +471,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 urlConnection.setRequestProperty("Accept-Encoding", "gzip");
             }
 
-            boolean contentTypeSet = false;
             if (!method.equalsIgnoreCase("CONNECT")) {
                 FluentCaseInsensitiveStringsMap h = request.getHeaders();
                 if (h != null) {
@@ -551,7 +551,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
             if ("POST".equals(reqType) || "PUT".equals(reqType)) {
                 urlConnection.setRequestProperty("Content-Length", "0");
                 urlConnection.setDoOutput(true);
-                //urlConnection.setChunkedStreamingMode(0);
+                String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
                 if (cachedBytes != null) {
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(cachedBytesLenght));
@@ -564,12 +564,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     urlConnection.getOutputStream().write(request.getByteData());
                 } else if (request.getStringData() != null) {
                     if (!request.getHeaders().containsKey("Content-Type")) {
-                        urlConnection.setRequestProperty("Content-Type", "text/html;charset=ISO-8859-1");
+                        urlConnection.setRequestProperty("Content-Type", "text/html;" + bodyCharset);
                     }
-                    urlConnection.setRequestProperty("Content-Length", String.valueOf(request.getStringData().length()));
-                    byte[] b = request.getStringData().getBytes("ISO-8859-1");
-                    //urlConnection.setFixedLengthStreamingMode(b.length);
-
+                    byte[] b = request.getStringData().getBytes(bodyCharset);
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(b.length));
                     urlConnection.getOutputStream().write(b);
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
@@ -600,7 +598,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     }
                     urlConnection.getOutputStream().write(sb.toString().getBytes("ISO-8859-1"));
                 } else if (request.getParts() != null) {
-                    int lenght = (int) request.getLength();
+                    int lenght = (int) request.getContentLength();
                     if (lenght != -1) {
                         urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
                         urlConnection.setFixedLengthStreamingMode(lenght);
@@ -618,7 +616,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                     mre.writeRequest(urlConnection.getOutputStream());
                 } else if (request.getEntityWriter() != null) {
-                    int lenght = (int) request.getLength();
+                    int lenght = (int) request.getContentLength();
                     if (lenght != -1) {
                         urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
                         urlConnection.setFixedLengthStreamingMode(lenght);
@@ -651,7 +649,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     try {
                         int length = (int) body.getContentLength();
                         if (length < 0) {
-                            length = (int) request.getLength();
+                            length = (int) request.getContentLength();
                         }
                         if (length >= 0) {
                             urlConnection.setRequestProperty("Content-Length", String.valueOf(length));

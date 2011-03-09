@@ -113,8 +113,15 @@ public interface Request {
     /**
      * Return the current size of the content-lenght header based on the body's size.
      * @return the current size of the content-lenght header based on the body's size.
+     * @deprecated
      */
     public long getLength();
+
+    /**
+     * Return the current size of the content-lenght header based on the body's size.
+     * @return the current size of the content-lenght header based on the body's size.
+     */
+    public long getContentLength();
 
     /**
      * Return the current parameters.
@@ -177,5 +184,10 @@ public interface Request {
      */
     public long getRangeOffset();
 
+    /**
+     * Return the encoding value used when encoding the request's body.
+     * @return the encoding value used when encoding the request's body.
+     */
+    public String getBodyEncoding();
 
 }

@@ -63,6 +63,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private boolean followRedirects;
         private PerRequestConfig perRequestConfig;
         private long rangeOffset = 0;
+        public String charset;
 
         public RequestImpl() {
         }
@@ -83,13 +84,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
                 this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
                 this.virtualHost = prototype.getVirtualHost();
-                this.length = prototype.getLength();
+                this.length = prototype.getContentLength();
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
                 this.followRedirects = prototype.isRedirectEnabled();
                 this.perRequestConfig = prototype.getPerRequestConfig();
                 this.rangeOffset = prototype.getRangeOffset();
+                this.charset = prototype.getBodyEncoding();
             }
         }
 
@@ -203,7 +205,16 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
+
+        /**
+         * @deprecated
+         * @return
+         */
         public long getLength() {
+            return length;
+        }
+
+        public long getContentLength() {
             return length;
         }
 
@@ -248,6 +259,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public long getRangeOffset() {
             return rangeOffset;
+        }
+
+        public String getBodyEncoding() {
+            return charset;
         }
 
         @Override
@@ -349,6 +364,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setHeaders(Map<String, Collection<String>> headers) {
         request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
         return derived.cast(this);
+    }
+
+    public T setContentLength(int length) {
+        request.length = length;
+        return derived.cast(this);        
     }
 
     public T addCookie(Cookie cookie) {
@@ -491,6 +511,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setBodyEncoding(String charset) {
+        request.charset = charset;
+        return derived.cast(this);
+    }
 
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) && allowBody(request.getMethod())) {
