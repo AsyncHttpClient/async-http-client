@@ -1347,7 +1347,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (future == null || future.cannotBeReplay()) {
-            log.debug("Unable to recover request {}\n associated with future {}\n", future == null ? "null" : future.getNettyRequest(), future);
+            log.debug("Unable to recover future {}\n", future);
             return false;
         }
 
@@ -1437,7 +1437,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         NettyResponseFuture<?> future = null;
 
         if (log.isDebugEnabled()) {
-            log.debug("Exception Caught: {} Attachment was {}",
+            log.debug("Exception Caught: {}\n Attachment was {}",
                     cause != null ? cause.getMessage() : "unavailable cause",
                     ctx.getAttachment());
             log.debug(cause.getMessage(), cause);
