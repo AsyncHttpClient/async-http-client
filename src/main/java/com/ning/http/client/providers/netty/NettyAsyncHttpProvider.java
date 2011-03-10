@@ -1461,7 +1461,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         fc = handleIoException(fc, future);
                     } else {
                         fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                            .request(future.getRequest()).replayRequest(true).ioException(IOException.class.cast(cause.getClass())).build();
+                            .request(future.getRequest()).replayRequest(true).build();
                     }
 
                     if (fc.replayRequest()) {
