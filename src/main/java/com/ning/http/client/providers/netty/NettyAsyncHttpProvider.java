@@ -1216,6 +1216,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         final Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
+        future.touch();
 
         log.debug("\n\nReplayed Request {}\n", newRequest);
 
