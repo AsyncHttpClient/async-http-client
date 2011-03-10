@@ -1258,7 +1258,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             openChannels.remove(future.channel());
         }
 
-        log.debug("aborting Future {}", future);
+        log.debug("Aborting Future {}\n", future);
         log.debug(t.getMessage(), t);
 
         future.abort(t);
@@ -1439,9 +1439,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         NettyResponseFuture<?> future = null;
 
         if (log.isDebugEnabled()) {
-            log.debug("Exception Caught: {}\n Attachment was {}",
-                    cause != null ? cause.getMessage() : "unavailable cause",
-                    ctx.getAttachment());
+            log.debug("Exception Caught: {}\n",
+                    cause != null ? cause.getMessage() : "unavailable cause");
             log.debug(cause.getMessage(), cause);
         }
 
@@ -1479,6 +1478,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (future != null) {
             try {
+                log.debug("Was unable to recover Future: {}", future);
                 abort(future, cause);
             } catch (Throwable t) {
                 log.error(t.getMessage(), t);
