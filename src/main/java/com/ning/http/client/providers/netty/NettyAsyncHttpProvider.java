@@ -1218,7 +1218,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.setState(NettyResponseFuture.STATE.NEW);
         future.touch();
 
-        log.debug("\n\nReplayed Request {}\n for Future {}\n", newRequest, future);
+        log.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
 
         // We must consume the body first in order to re-use the connection.
         if (response != null && response.isChunked()) {
@@ -1453,16 +1453,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.attachChannel(null, false);
                 future.touch();
 
-                if (IOException.class.isAssignableFrom(cause.getClass())) {
-                    FilterContext fc;
-                    if (config.getIOExceptionFilters().size() > 0) {
-                        fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                            .request(future.getRequest()).replayRequest(false).ioException(IOException.class.cast(cause.getClass())).build();
-                        fc = handleIoException(fc, future);
-                    } else {
-                        fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                            .request(future.getRequest()).replayRequest(true).build();
-                    }
+                if (IOException.class.isAssignableFrom(cause.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                            .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                    fc = handleIoException(fc, future);
 
                     if (fc.replayRequest()) {
                         replayRequest(future, fc, null, ctx);
