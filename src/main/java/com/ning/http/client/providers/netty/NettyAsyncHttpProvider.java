@@ -1439,7 +1439,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         NettyResponseFuture<?> future = null;
 
         if (log.isDebugEnabled()) {
-            log.debug(cause.getMessage(), cause);
+            log.debug("exceptionCaught", cause);
         }
 
         try {
