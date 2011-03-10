@@ -857,6 +857,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void finishChannel(final ChannelHandlerContext ctx) {
+        log.debug("Closing Channel {} ", ctx.getChannel());
+        
         ctx.setAttachment(new DiscardEvent());
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
@@ -1453,13 +1455,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.attachChannel(null, false);
                 future.touch();
 
-                if (IOException.class.isAssignableFrom(cause.getClass()) && config.getIOExceptionFilters().size() > 0) {
-                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                            .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
-                    fc = handleIoException(fc, future);
+                if (IOException.class.isAssignableFrom(cause.getClass())){
 
-                    if (fc.replayRequest()) {
-                        replayRequest(future, fc, null, ctx);
+                    if (config.getIOExceptionFilters().size() > 0) {
+                        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                                .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                        fc = handleIoException(fc, future);
+
+                        if (fc.replayRequest()) {
+                            replayRequest(future, fc, null, ctx);
+                            return;
+                        }
+                    } else {
+                        // Close the channel so the recovering can occurs.
+                        try {
+                            ctx.getChannel().close();
+                        } catch (Throwable t) {
+                            ; // Swallow.
+                        }
                         return;
                     }
                 }
