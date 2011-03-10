@@ -1218,7 +1218,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.setState(NettyResponseFuture.STATE.NEW);
         future.touch();
 
-        log.debug("\n\nReplayed Request {}\n", newRequest);
+        log.debug("\n\nReplayed Request {}\n for Future {}\n", newRequest, future);
 
         // We must consume the body first in order to re-use the connection.
         if (response != null && response.isChunked()) {
@@ -1317,7 +1317,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                 fc = handleIoException(fc, future);
 
-                if (fc.replayRequest()) {
+                if (fc.replayRequest() && !future.cannotBeReplay()) {
                     replayRequest(future, fc, null, ctx);
                     return;
                 }
