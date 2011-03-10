@@ -1310,6 +1310,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+            future.touch();
 
             if (config.getIOExceptionFilters().size() > 0) {
                 FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
