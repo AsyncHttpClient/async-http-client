@@ -431,6 +431,11 @@ public class AsyncHttpProviderUtils {
             }
         }
 
+        // Normalization of maxAge (LQ)
+        if( maxAge < -1 ) {
+            maxAge = -1;
+        }
+        
         return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
     }
 

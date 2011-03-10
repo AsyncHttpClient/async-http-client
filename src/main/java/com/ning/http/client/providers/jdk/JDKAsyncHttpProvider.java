@@ -317,7 +317,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                     int byteToRead = urlConnection.getContentLength();
                     InputStream stream = is;
-                    if (byteToRead <= 0) {
+                    /* if (byteToRead <= 0) */ {  // content-length is not always defined properly by servers
                         int[] lengthWrapper = new int[1];
                         byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
                         stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);

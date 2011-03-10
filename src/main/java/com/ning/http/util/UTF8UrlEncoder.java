@@ -74,6 +74,11 @@ public class UTF8UrlEncoder
     
     private final static void appendSingleByteEncoded(StringBuilder sb, int value)
     {
+        // The space char must be converted into a + (some servers doesn't support the %20 notation for space)  
+        if (value == 32) {
+            sb.append('+');
+            return;
+        }     
         sb.append('%');
         sb.append(HEX[value >> 4]);
         sb.append(HEX[value & 0xF]);
