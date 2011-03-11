@@ -17,7 +17,7 @@
     </description>
     <url>http://github.com/sonatype/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:AsynHttpClient/async-http-client.git</connection>
+        <connection>scm:git:git@github.com:sonatype/async-http-client.git</connection>
         <url>scm:git:git@github.com:sonatype/async-http-client.git</url>
         <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
     </scm>
