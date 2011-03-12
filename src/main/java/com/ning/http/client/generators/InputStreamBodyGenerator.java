@@ -75,7 +75,9 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                     buffer.put("\n".getBytes("UTF-8"));
                     return buffer.position();
                 } else {
-                    inputStream.reset();                    
+                    if (inputStream.markSupported()) {
+	                    inputStream.reset();                    
+                    }
                     eof = false;
                 }
                 return -1;

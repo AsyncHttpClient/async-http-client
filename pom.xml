@@ -9,17 +9,17 @@
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>async-http-client</name>
-    <version>1.6.2-SNAPSHOT</version>
+    <version>1.6.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
     </description>
-    <url>http://github.com/AsyncHttpClient/async-http-client</url>
+    <url>http://github.com/sonatype/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:AsynHttpClient/async-http-client.git</connection>
-        <url>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</url>
-        <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
+        <connection>scm:git:git@github.com:sonatype/async-http-client.git</connection>
+        <url>scm:git:git@github.com:sonatype/async-http-client.git</url>
+        <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
     </scm>
     <prerequisites>
         <maven>2.0.9</maven>

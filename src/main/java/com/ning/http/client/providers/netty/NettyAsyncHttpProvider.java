@@ -485,10 +485,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-        if (uri.getPort() == -1) {
-            nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
+
+        if (host != null) {
+            if (uri.getPort() == -1) {
+                nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
+            } else {
+                nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
+            }
         } else {
-            nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
+            log.warn("Host for Uri {} was null", uri.getHost());
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
@@ -865,6 +870,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void finishChannel(final ChannelHandlerContext ctx) {
+        log.debug("Closing Channel {} ", ctx.getChannel());
+        
         ctx.setAttachment(new DiscardEvent());
 
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
@@ -1224,8 +1231,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         final Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
+        future.touch();
 
-        log.debug("\n\nReplayed Request {}\n", newRequest);
+        log.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
 
         // We must consume the body first in order to re-use the connection.
         if (response != null && response.isChunked()) {
@@ -1265,7 +1273,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             openChannels.remove(future.channel());
         }
 
-        log.debug("aborting Future {}", future);
+        log.debug("Aborting Future {}\n", future);
         log.debug(t.getMessage(), t);
 
         future.abort(t);
@@ -1317,13 +1325,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+            future.touch();
 
             if (config.getIOExceptionFilters().size() > 0) {
                 FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
                         .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                 fc = handleIoException(fc, future);
 
-                if (fc.replayRequest()) {
+                if (fc.replayRequest() && !future.cannotBeReplay()) {
                     replayRequest(future, fc, null, ctx);
                     return;
                 }
@@ -1355,7 +1364,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (future == null || future.cannotBeReplay()) {
-            log.debug("Unable to recover request {}\n associated with future {}\n", future == null ? "null" : future.getNettyRequest(), future);
+            log.debug("Unable to recover future {}\n", future);
             return false;
         }
 
@@ -1445,10 +1454,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         NettyResponseFuture<?> future = null;
 
         if (log.isDebugEnabled()) {
-            log.debug("Exception Caught: {} Attachment was {}",
-                    cause != null ? cause.getMessage() : "unavailable cause",
-                    ctx.getAttachment());
-            log.debug(cause.getMessage(), cause);
+            log.debug("exceptionCaught", cause);
         }
 
         try {
@@ -1460,14 +1466,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) ctx.getAttachment();
                 future.attachChannel(null, false);
+                future.touch();
 
-                if (IOException.class.isAssignableFrom(cause.getClass()) && config.getIOExceptionFilters().size() > 0) {
-                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                            .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
-                    fc = handleIoException(fc, future);
+                if (IOException.class.isAssignableFrom(cause.getClass())){
 
-                    if (fc.replayRequest()) {
-                        replayRequest(future, fc, null, ctx);
+                    if (config.getIOExceptionFilters().size() > 0) {
+                        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                                .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
+                        fc = handleIoException(fc, future);
+
+                        if (fc.replayRequest()) {
+                            replayRequest(future, fc, null, ctx);
+                            return;
+                        }
+                    } else {
+                        // Close the channel so the recovering can occurs.
+                        try {
+                            ctx.getChannel().close();
+                        } catch (Throwable t) {
+                            ; // Swallow.
+                        }
                         return;
                     }
                 }
@@ -1485,6 +1503,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (future != null) {
             try {
+                log.debug("Was unable to recover Future: {}", future);
                 abort(future, cause);
             } catch (Throwable t) {
                 log.error(t.getMessage(), t);

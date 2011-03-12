@@ -35,7 +35,7 @@ public class FilterContext<T> {
     private final AsyncHandler<T> asyncHandler;
     private final Request request;
     private final HttpResponseStatus responseStatus;
-    private final boolean replayRequest;
+    private final boolean replayRequest ;
     private final IOException ioException;
 
     /**

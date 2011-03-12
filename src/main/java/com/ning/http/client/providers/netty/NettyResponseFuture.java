@@ -422,21 +422,21 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public String toString() {
         return "NettyResponseFuture{" +
                 "currentRetry=" + currentRetry +
-                ",\nisDone=" + isDone +
-                ",\nisCancelled=" + isCancelled +
-                ",\nasyncHandler=" + asyncHandler +
-                ",\nresponseTimeoutInMs=" + responseTimeoutInMs +
-                ",\nnettyRequest=" + nettyRequest +
-                ",\ncontent=" + content +
-                ",\nuri=" + uri +
-                ",\nkeepAlive=" + keepAlive +
-                ",\nhttpResponse=" + httpResponse +
-                ",\nexEx=" + exEx +
-                ",\nredirectCount=" + redirectCount +
-                ",\nreaperFuture=" + reaperFuture +
-                ",\ninAuth=" + inAuth +
-                ",\nstatusReceived=" + statusReceived +
-                ",\ntouch=" + touch +
+                ",\n\tisDone=" + isDone +
+                ",\n\tisCancelled=" + isCancelled +
+                ",\n\tasyncHandler=" + asyncHandler +
+                ",\n\tresponseTimeoutInMs=" + responseTimeoutInMs +
+                ",\n\tnettyRequest=" + nettyRequest +
+                ",\n\tcontent=" + content +
+                ",\n\turi=" + uri +
+                ",\n\tkeepAlive=" + keepAlive +
+                ",\n\thttpResponse=" + httpResponse +
+                ",\n\texEx=" + exEx +
+                ",\n\tredirectCount=" + redirectCount +
+                ",\n\treaperFuture=" + reaperFuture +
+                ",\n\tinAuth=" + inAuth +
+                ",\n\tstatusReceived=" + statusReceived +
+                ",\n\ttouch=" + touch +
                 '}';
     }
 
