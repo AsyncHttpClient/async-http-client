@@ -202,6 +202,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         trackConnections = (config.getMaxTotalConnections() != -1);
     }
 
+    // LQ
+    public String toString() {
+        return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",
+                maxConnections.get(),
+                openChannels.toString(),
+                connectionsPool.toString());
+    }
+
     void configureNetty() {
         if (asyncHttpProviderConfig != null) {
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {

@@ -202,6 +202,11 @@ public class AsyncHttpClient {
         this.httpProvider = loadDefaultProvider(providerClass,config);
     }
 
+    // LQ
+    public String toString() {
+        return httpProvider.toString();
+    }
+
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
         /**
          * Calculator used for calculating request signature for the request being
