@@ -77,6 +77,7 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 return super.close();
             } else {
                 logger.debug("CleanupChannelGroup Already closed");
+                return null;
             }
         } finally {
             this.lock.writeLock().unlock();
