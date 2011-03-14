@@ -47,6 +47,7 @@ import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
+import com.ning.http.util.CleanupChannelGroup;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -144,13 +145,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final ClientSocketChannelFactory socketChannelFactory;
 
-    private final ChannelGroup openChannels = new DefaultChannelGroup("asyncHttpClient") {
-        @Override
-        public boolean remove(Object o) {
-            maxConnections.decrementAndGet();
-            return super.remove(o);
-        }
-    };
+    private final ChannelGroup openChannels = new
+            CleanupChannelGroup("asyncHttpClient") {
+                @Override
+                public boolean remove(Object o) {
+                    maxConnections.decrementAndGet();
+                    return super.remove(o);
+                }
+            };
 
     private final ConnectionsPool<String, Channel> connectionsPool;
 
