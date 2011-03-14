@@ -693,7 +693,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
 
-            openChannels.close();
             config.executorService().shutdown();
             config.reaper().shutdown();
             socketChannelFactory.releaseExternalResources();
