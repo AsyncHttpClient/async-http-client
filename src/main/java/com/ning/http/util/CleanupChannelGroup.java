@@ -28,9 +28,12 @@
 
 package com.ning.http.util;
 
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -42,6 +45,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="http://bruno.biasedbit.com/">Bruno de Carvalho</a>
  */
 public class CleanupChannelGroup extends DefaultChannelGroup {
+
+    private final static Logger logger = LoggerFactory.getLogger(CleanupChannelGroup.class);
 
     // internal vars --------------------------------------------------------------------------------------------------
 
@@ -71,8 +76,7 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 // First time close() is called.
                 return super.close();
             } else {
-                throw new IllegalStateException("close() already called on " + this.getClass().getSimpleName() +
-                                                " with name " + this.getName());
+                logger.debug("CleanupChannelGroup Already closed");
             }
         } finally {
             this.lock.writeLock().unlock();
