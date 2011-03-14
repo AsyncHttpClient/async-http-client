@@ -27,6 +27,7 @@ import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
@@ -219,13 +220,13 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testCloseDerivedValidMaster() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
-    
+
         derived.get().get();
-    
+
         derived.close();
-    
+
         Response response = client.get().get();
-    
+
         assertEquals(response.getStatusCode(), 200);
     }
 
@@ -233,15 +234,59 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testCloseMasterInvalidDerived() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
-    
+
         client.close();
-    
+
         try {
             derived.get().get();
             fail("Expected closed AHC");
         } catch (IOException e) {
             // expected
         }
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testMultiPartPut() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
+        
+        Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+        
+        String body = response.getResponseBody();
+        String contentType = response.getHeader("X-Content-Type");
+        
+        assertTrue(contentType.contains("multipart/form-data"));
+        
+        String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+        
+        assertTrue(body.startsWith("--" + boundary));
+        assertTrue(body.trim().endsWith("--" + boundary + "--"));
+        assertTrue(body.contains("Content-Disposition:"));
+        assertTrue(body.contains("Content-Type: application/test"));
+        assertTrue(body.contains("name=\"baPart"));
+        assertTrue(body.contains("filename=\"fileName"));
+        
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testMultiPartPost() throws Exception {
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
+        
+        Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+        
+        String body = response.getResponseBody();
+        String contentType = response.getHeader("X-Content-Type");
+        
+        assertTrue(contentType.contains("multipart/form-data"));
+        
+        String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+        
+        assertTrue(body.startsWith("--" + boundary));
+        assertTrue(body.trim().endsWith("--" + boundary + "--"));
+        assertTrue(body.contains("Content-Disposition:"));
+        assertTrue(body.contains("Content-Type: application/test"));
+        assertTrue(body.contains("name=\"baPart"));
+        assertTrue(body.contains("filename=\"fileName"));
+        
     }
 
 }

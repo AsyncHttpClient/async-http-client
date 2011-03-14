@@ -83,6 +83,28 @@ public class SimpleAsyncHttpClient {
 
         this.derived = ahc != null;
     }
+    
+    public Future<Response> post(Part... parts) throws IOException {
+        RequestBuilder r = rebuildRequest(requestBuilder.build());
+        r.setMethod("POST");
+        
+        for ( Part part : parts ) {
+            r.addBodyPart( part );
+        }
+        
+        return execute(r, null, null);
+    }
+    
+    public Future<Response> post(BodyConsumer consumer, Part... parts) throws IOException {
+        RequestBuilder r = rebuildRequest(requestBuilder.build());
+        r.setMethod("POST");
+        
+        for ( Part part : parts ) {
+            r.addBodyPart( part );
+        }
+        
+        return execute(r, consumer, null);
+    }
 
     public Future<Response> post(BodyGenerator bodyGenerator) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
@@ -111,7 +133,28 @@ public class SimpleAsyncHttpClient {
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, throwableHandler);
     }
-
+    
+    public Future<Response> put(Part... parts) throws IOException {
+        RequestBuilder r = rebuildRequest(requestBuilder.build());
+        r.setMethod("POST");
+        
+        for ( Part part : parts ) {
+            r.addBodyPart( part );
+        }
+        
+        return execute(r, null, null);
+    }
+    
+    public Future<Response> put(BodyConsumer consumer, Part... parts) throws IOException {
+        RequestBuilder r = rebuildRequest(requestBuilder.build());
+        r.setMethod("POST");
+        
+        for ( Part part : parts ) {
+            r.addBodyPart( part );
+        }
+        
+        return execute(r, consumer, null);
+    }
     public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
