@@ -13,8 +13,9 @@
 package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
@@ -29,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class JDKFuture<V> extends AbstractListenableFuture<V> {
+
+    private final static Logger logger = LoggerFactory.getLogger(JDKFuture.class);
 
     protected Future<V> innerFuture;
     protected final AsyncHandler<V> asyncHandler;
@@ -76,7 +79,11 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (!cancelled.get() && innerFuture != null) {
             urlConnection.disconnect();
-            asyncHandler.onThrowable(new CancellationException());
+            try {
+                asyncHandler.onThrowable(new CancellationException());
+            } catch (Throwable te) {
+                logger.debug("asyncHandler.onThrowable", te);
+            }
             cancelled.set(true);
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {

@@ -68,7 +68,6 @@ import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
@@ -93,7 +92,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -122,8 +120,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.jboss.netty.channel.Channels.pipeline;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider<HttpResponse> {
     private final static String HTTP_HANDLER = "httpHandler";
@@ -785,7 +783,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (!connectionsPool.canCacheConnection() ||
                 (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
             IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
-            asyncHandler.onThrowable(ex);            
+            try {
+                asyncHandler.onThrowable(ex);   
+            } catch (Throwable t) {
+                log.warn("asyncHandler.onThrowable",t);
+            }
             throw ex;
         }
 

@@ -16,6 +16,8 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.apache.commons.httpclient.HttpMethodBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -29,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
+
+    private final static Logger logger = LoggerFactory.getLogger(ApacheResponseFuture.class);
 
     private Future<V> innerFuture;
     private final AsyncHandler<V> asyncHandler;
@@ -63,11 +67,12 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
         if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
-        super.done();        
+        super.done();
     }
 
     /**
      * TODO.
+     *
      * @param v The new content
      */
     public void content(V v) {
@@ -113,14 +118,22 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
 
         exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
-            asyncHandler.onThrowable(t);
-        }     
+            try {
+                asyncHandler.onThrowable(t);
+            } catch (Throwable t2) {
+                logger.debug("asyncHandler.onThrowable", t2);
+            }
+        }
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (!cancelled.get() && innerFuture != null) {
             method.abort();
-            asyncHandler.onThrowable(new CancellationException());        
+            try {
+                asyncHandler.onThrowable(new CancellationException());
+            } catch (Throwable t) {
+                logger.debug("asyncHandler.onThrowable", t);
+            }
             cancelled.set(true);
             if (reaperFuture != null) {
                 reaperFuture.cancel(true);
@@ -160,7 +173,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
             }
         } catch (TimeoutException t) {
             if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
-                return get(timeout,unit);
+                return get(timeout, unit);
             }
             timedOut.set(true);
             throw new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
@@ -178,7 +191,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
      *
      * @return <code>true</code> if response has expired and should be terminated.
      */
-    public boolean hasExpired(){
+    public boolean hasExpired() {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) >= responseTimeoutInMs);
     }
 
@@ -195,7 +208,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
      * {@inheritDoc}
      */
     /* @Override */
-     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
+    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
         boolean b = this.writeHeaders;
         this.writeHeaders = writeHeaders;
         return b;
