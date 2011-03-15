@@ -23,7 +23,7 @@ import java.io.OutputStream;
  * This class is an adaptation of the Apache HttpClient implementation
  * @link http://hc.apache.org/httpclient-3.x/
  */
-public abstract class Part {
+public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * The boundary
