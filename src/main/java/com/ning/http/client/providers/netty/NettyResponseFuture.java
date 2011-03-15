@@ -199,6 +199,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
                 try {
                     asyncHandler.onThrowable(te);
+                } catch (Throwable t) {
+                    logger.debug("asyncHandler.onThrowable", t);
                 } finally {
                     throw te;
                 }
@@ -228,6 +230,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             } catch (Throwable ex) {
                 try {
                     asyncHandler.onThrowable(ex);
+                } catch (Throwable t) {
+                    logger.debug("asyncHandler.onThrowable", t);
                 } finally {
                     throw new RuntimeException(ex);
                 }
@@ -270,6 +274,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         exEx.compareAndSet(null, new ExecutionException(t));
         try {
             asyncHandler.onThrowable(t);
+        } catch (Throwable te) {
+            logger.debug("asyncHandler.onThrowable", te);
         } finally {
             isCancelled.set(true);
             latch.countDown();
