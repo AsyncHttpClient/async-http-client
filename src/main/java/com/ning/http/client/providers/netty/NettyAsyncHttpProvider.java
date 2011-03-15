@@ -1102,7 +1102,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                             log.debug("Redirecting to {}", newUrl);
 
-                            if (future.getKeepAlive()) {
+                            if (response.isChunked()) {
                                 drainChannel(ctx, future, initialConnectionUri);
                             } else {
                                 closeChannel(ctx);
