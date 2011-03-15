@@ -206,7 +206,7 @@
                             *
                         </Import-Package>
                         <Export-Package>
-                            com.ning.http.*;version="1.6.1"
+                            com.ning.http.*;version="1.6.3"
                         </Export-Package>
                     </instructions>
                 </configuration>
