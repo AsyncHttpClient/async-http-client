@@ -54,6 +54,10 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel channel) {
+        if (isClosed.get()) {
+            return false;
+        }
+
         if (!provider.getConfig().isSslConnectionPoolEnabled() && uri.startsWith("https") ) {
             return false;
         }
@@ -73,10 +77,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         if (config.getMaxConnectionPerHost() == -1 || size < config.getMaxConnectionPerHost()) {
             added = pooledConnectionForHost.add(channel);
             if (added) {
-                Timeout t = timer.newTimeout(new IdleRunner(channel, pooledConnectionForHost),
-                        config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
-                trackedIdleConnections.put(channel, t);
-                log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
+                try {
+                    Timeout t = timer.newTimeout(new IdleRunner(channel, pooledConnectionForHost),
+                            config.getIdleConnectionInPoolTimeoutInMs(), TimeUnit.MILLISECONDS);
+                    trackedIdleConnections.put(channel, t);
+                    log.debug("ConnectionsPool increment totalConnections {}", trackedIdleConnections.size());
+                } catch (IllegalStateException e) {
+                    log.trace("HashedWheelTimer", e);   
+                }
             }
         } else {
             log.debug("Maximum number of requests per host reached {} for {}", config.getMaxConnectionPerHost(), uri);

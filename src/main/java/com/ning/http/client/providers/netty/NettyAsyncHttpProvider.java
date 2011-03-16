@@ -147,8 +147,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
-                    maxConnections.decrementAndGet();
-                    return super.remove(o);
+                    boolean removed = super.remove(o);
+                    if( removed ) {
+                        maxConnections.decrementAndGet();
+                    }
+                    return removed;
                 }
             };
 
@@ -200,6 +203,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         configureNetty();
         trackConnections = (config.getMaxTotalConnections() != -1);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",
+                maxConnections.get(),
+                openChannels.toString(),
+                connectionsPool.toString());
     }
 
     void configureNetty() {
