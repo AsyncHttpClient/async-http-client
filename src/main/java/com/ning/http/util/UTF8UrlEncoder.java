@@ -21,6 +21,8 @@ package com.ning.http.util;
  */
 public class UTF8UrlEncoder
 {
+    private static final boolean encodeSpaceUsingPlus = System.getProperty("com.com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus") == null ? false : true;
+
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
      * (all non-Ascii characers need to be encoded anyway)
@@ -43,16 +45,16 @@ public class UTF8UrlEncoder
     }
 
     private final static char[] HEX = "0123456789ABCDEF".toCharArray();
-    
+
     private UTF8UrlEncoder() { }
 
-    public static String encode(String input) 
+    public static String encode(String input)
     {
         StringBuilder sb = new StringBuilder(input.length() + 16);
         appendEncoded(sb, input);
         return sb.toString();
     }
-    
+
     public static StringBuilder appendEncoded(StringBuilder sb, String input)
     {
         final int[] safe = SAFE_ASCII;
@@ -71,9 +73,15 @@ public class UTF8UrlEncoder
         }
         return sb;
     }
-    
+
     private final static void appendSingleByteEncoded(StringBuilder sb, int value)
     {
+
+        if (encodeSpaceUsingPlus && value == 32) {
+            sb.append('+');
+            return;
+        }
+
         sb.append('%');
         sb.append(HEX[value >> 4]);
         sb.append(HEX[value & 0xF]);
