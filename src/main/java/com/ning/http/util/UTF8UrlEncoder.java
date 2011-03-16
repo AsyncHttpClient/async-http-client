@@ -19,8 +19,7 @@ package com.ning.http.util;
  * Convenience class that encapsulates details of "percent encoding"
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
-public class UTF8UrlEncoder
-{
+public class UTF8UrlEncoder {
     private static final boolean encodeSpaceUsingPlus = System.getProperty("com.com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus") == null ? false : true;
 
     /**
@@ -28,6 +27,7 @@ public class UTF8UrlEncoder
      * (all non-Ascii characers need to be encoded anyway)
      */
     private final static int[] SAFE_ASCII = new int[128];
+
     static {
         for (int i = 'a'; i <= 'z'; ++i) {
             SAFE_ASCII[i] = 1;
@@ -46,17 +46,16 @@ public class UTF8UrlEncoder
 
     private final static char[] HEX = "0123456789ABCDEF".toCharArray();
 
-    private UTF8UrlEncoder() { }
+    private UTF8UrlEncoder() {
+    }
 
-    public static String encode(String input)
-    {
+    public static String encode(String input) {
         StringBuilder sb = new StringBuilder(input.length() + 16);
         appendEncoded(sb, input);
         return sb.toString();
     }
 
-    public static StringBuilder appendEncoded(StringBuilder sb, String input)
-    {
+    public static StringBuilder appendEncoded(StringBuilder sb, String input) {
         final int[] safe = SAFE_ASCII;
 
         for (int i = 0, len = input.length(); i < len; ++i) {
@@ -74,8 +73,7 @@ public class UTF8UrlEncoder
         return sb;
     }
 
-    private final static void appendSingleByteEncoded(StringBuilder sb, int value)
-    {
+    private final static void appendSingleByteEncoded(StringBuilder sb, int value) {
 
         if (encodeSpaceUsingPlus && value == 32) {
             sb.append('+');
@@ -87,8 +85,7 @@ public class UTF8UrlEncoder
         sb.append(HEX[value & 0xF]);
     }
 
-    private final static void appendMultiByteEncoded(StringBuilder sb, int value)
-    {
+    private final static void appendMultiByteEncoded(StringBuilder sb, int value) {
         // two or three bytes? (ignoring surrogate pairs for now, which would yield 4 bytes)
         if (value < 0x800) {
             appendSingleByteEncoded(sb, (0xc0 | (value >> 6)));
