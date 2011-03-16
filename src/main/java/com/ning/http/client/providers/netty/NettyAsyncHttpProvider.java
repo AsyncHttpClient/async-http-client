@@ -485,7 +485,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
             }
         } else {
-            log.warn("Host for Uri {} was null", uri.getHost());
+            host = "127.0.0.1";
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
