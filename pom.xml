@@ -356,10 +356,10 @@
                 <version>2.3</version>
                 <configuration>
                     <excludes>
-                        <exclude>com.ning.http.client.AsyncHandler$STATE</exclude>
-                        <exclude>com.ning.http.client.ProxyServer$Protocol</exclude>
-                        <exclude>com.ning.http.client.Realm$AuthScheme</exclude>
-                        <exclude>com.ning.http.client.SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude>
+                        <exclude>com/ning/http/client/AsyncHandler$STATE.class</exclude>
+                        <exclude>com/ning/http/client/ProxyServer$Protocol.class</exclude>
+                        <exclude>com/ning/http/client/Realm$AuthScheme.class</exclude>
+                        <exclude>com/ning/http/client/SimpleAsyncHttpClient$ErrorDocumentBehaviour.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
