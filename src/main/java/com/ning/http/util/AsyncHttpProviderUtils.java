@@ -194,7 +194,9 @@ public class AsyncHttpProviderUtils {
         int i = 0;
 
         for (Part part : params) {
-            if (part instanceof StringPart) {
+            if (part instanceof com.ning.http.multipart.Part) {
+                parts[i] = (com.ning.http.multipart.Part) part;
+            } else if (part instanceof StringPart) {
                 parts[i] = new com.ning.http.multipart.StringPart(part.getName(),
                         ((StringPart) part).getValue(),
                         "UTF-8");

@@ -27,7 +27,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -106,7 +105,7 @@ public class RetryNonBlockingIssue {
     }
 
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient
-            fetcher, int requests,String action, String id) throws IOException {
+            fetcher, int requests, String action, String id) throws IOException {
         RequestBuilder builder = new RequestBuilder("GET");
         builder.addQueryParameter(action, "1");
 
@@ -137,7 +136,7 @@ public class RetryNonBlockingIssue {
 
             bc.setAllowPoolingConnection(true);
             bc.setMaximumConnectionsTotal(100);
-            bc.setConnectionTimeoutInMs(30000);
+            bc.setConnectionTimeoutInMs(60000);
             bc.setRequestTimeoutInMs(30000);
 
             NettyAsyncHttpProviderConfig config = new
@@ -146,13 +145,54 @@ public class RetryNonBlockingIssue {
             bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
 
-            res.add(testMethodRequest(c,
-                    3, "servlet", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "io", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c,
-                    3, "normal", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "500", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "500", UUID.randomUUID().toString()));
+            for (int i = 0; i < 32; i++) {
+                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+            }
+
+            StringBuilder b = new StringBuilder();
+            for (ListenableFuture<Response> r : res) {
+                Response theres = r.get();
+                b.append("==============\r\n");
+                b.append("Response Headers\r\n");
+                Map<String, List<String>> heads = theres.getHeaders();
+                b.append(heads + "\r\n");
+                b.append("==============\r\n");
+                assertTrue(heads.size() > 0);
+            }
+            System.out.println(b.toString());
+            System.out.flush();
+
+        }
+        finally {
+            if (c != null) c.close();
+        }
+    }
+
+    @Test
+    public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException,
+            ExecutionException {
+        AsyncHttpClient c = null;
+        List<ListenableFuture<Response>> res = new
+                ArrayList<ListenableFuture<Response>>();
+        try {
+            AsyncHttpClientConfig.Builder bc =
+                    new AsyncHttpClientConfig.Builder();
+
+            bc.setAllowPoolingConnection(true);
+            bc.setMaximumConnectionsTotal(100);
+            bc.setConnectionTimeoutInMs(60000);
+            bc.setRequestTimeoutInMs(30000);
+
+            NettyAsyncHttpProviderConfig config = new
+                    NettyAsyncHttpProviderConfig();
+            config.addProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT, "true");
+
+            bc.setAsyncHttpClientProviderConfig(config);
+            c = new AsyncHttpClient(bc.build());
+
+            for (int i = 0; i < 32; i++) {
+                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+            }
 
             StringBuilder b = new StringBuilder();
             for (ListenableFuture<Response> r : res) {
@@ -191,17 +231,13 @@ public class RetryNonBlockingIssue {
             NettyAsyncHttpProviderConfig config = new
                     NettyAsyncHttpProviderConfig();
             config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
-            
+
             bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
 
-            res.add(testMethodRequest(c,
-                    3, "servlet", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "io", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c,
-                    3, "normal", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "500", UUID.randomUUID().toString()));
-            res.add(testMethodRequest(c, 3, "500", UUID.randomUUID().toString()));
+            for (int i = 0; i < 32; i++) {
+                res.add(testMethodRequest(c, 3, "servlet", UUID.randomUUID().toString()));
+            }
 
             StringBuilder b = new StringBuilder();
             for (ListenableFuture<Response> r : res) {

@@ -198,6 +198,7 @@
                 <configuration>
                     <manifestLocation>META-INF</manifestLocation>
                     <instructions>
+                        <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
                         <Bundle-Vendor>Sonatype</Bundle-Vendor>
                         <Import-Package>
                             org.jboss.netty.*;resolution:=optional,
@@ -206,7 +207,7 @@
                             *
                         </Import-Package>
                         <Export-Package>
-                            com.ning.http.*;version="1.6.1"
+                            com.ning.http.*;version="$(replace;$(project.version);-SNAPSHOT;"")"
                         </Export-Package>
                     </instructions>
                 </configuration>
