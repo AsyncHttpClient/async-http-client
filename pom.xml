@@ -354,6 +354,13 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>clirr-maven-plugin</artifactId>
                 <version>2.3</version>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            java.lang.Enum
+                        </exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>check-api-compat</id>
