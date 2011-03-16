@@ -357,7 +357,7 @@
                 <configuration>
                     <excludes>
                         <exclude>
-                            java.lang.Enum
+                            enum
                         </exclude>
                     </excludes>
                 </configuration>
