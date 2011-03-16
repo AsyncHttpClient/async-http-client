@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -74,14 +75,14 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.6.1</version>
         </dependency>
-        
+
         <!-- Test dependencies -->
-         <dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>0.9.26</version>
             <scope>test</scope>
-        </dependency>       
+        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -159,14 +160,14 @@
         </dependency>
     </dependencies>
     <build>
-      <extensions>
-        <!-- Enabling the use of SSH -->
-        <extension>
-          <groupId>org.apache.maven.wagon</groupId>
-          <artifactId>wagon-ssh-external</artifactId>
-          <version>1.0-beta-6</version>
-        </extension>
-      </extensions>
+        <extensions>
+            <!-- Enabling the use of SSH -->
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh-external</artifactId>
+                <version>1.0-beta-6</version>
+            </extension>
+        </extensions>
         <defaultGoal>install</defaultGoal>
         <plugins>
             <plugin>
@@ -198,7 +199,8 @@
                 <configuration>
                     <manifestLocation>META-INF</manifestLocation>
                     <instructions>
-                        <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))</Bundle-Version>
+                        <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))
+                        </Bundle-Version>
                         <Bundle-Vendor>Sonatype</Bundle-Vendor>
                         <Import-Package>
                             org.jboss.netty.*;resolution:=optional,
@@ -326,20 +328,23 @@
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
-                            <artifactSet>                  
+                            <artifactSet>
                                 <excludes>
-                                    <exclude>commons-codec:commons-codec</exclude>                                                                                                            
-                                    <exclude>commons-lang:commons-lang</exclude>                                                                        
-                                    <exclude>commons-logging:commons-logging</exclude>                                    
+                                    <exclude>commons-codec:commons-codec</exclude>
+                                    <exclude>commons-lang:commons-lang</exclude>
+                                    <exclude>commons-logging:commons-logging</exclude>
                                     <exclude>junit:junit</exclude>
                                     <exclude>log4j:log4j</exclude>
                                     <exclude>commons-httpclient:commons-httpclient</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" />
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
