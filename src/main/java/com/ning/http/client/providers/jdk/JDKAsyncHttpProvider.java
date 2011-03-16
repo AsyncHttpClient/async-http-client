@@ -99,6 +99,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
     private Authenticator jdkAuthenticator;
 
+    private boolean bufferResponseInMemory = false;
+
     public JDKAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         this.config = config;
@@ -111,6 +113,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
     private void configure(JDKAsyncHttpProviderConfig config) {
         for(Map.Entry<String,String> e: config.propertiesSet()) {
             System.setProperty(e.getKey(), e.getValue());
+        }
+
+        if (config.getProperty(JDKAsyncHttpProviderConfig.FORCE_RESPONSE_BUFFERING) != null) {
+            bufferResponseInMemory = true;
         }
     }
     public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
@@ -317,7 +323,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                     int byteToRead = urlConnection.getContentLength();
                     InputStream stream = is;
-                    if (byteToRead <= 0) {
+                    if (bufferResponseInMemory || byteToRead <= 0) {
                         int[] lengthWrapper = new int[1];
                         byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
                         stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);

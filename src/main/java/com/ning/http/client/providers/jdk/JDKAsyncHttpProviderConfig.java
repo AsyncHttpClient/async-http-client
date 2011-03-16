@@ -20,8 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class JDKAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String,String> {
 
-    private final ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String, String>();
+    public static final String FORCE_RESPONSE_BUFFERING = "bufferResponseInMemory";
 
+    private final ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String, String>();
 
     public AsyncHttpProviderConfig addProperty(String name, String value) {
         properties.put(name, value);
