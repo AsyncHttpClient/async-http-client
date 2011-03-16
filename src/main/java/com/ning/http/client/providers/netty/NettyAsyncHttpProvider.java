@@ -147,8 +147,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             CleanupChannelGroup("asyncHttpClient") {
                 @Override
                 public boolean remove(Object o) {
-                    maxConnections.decrementAndGet();
-                    return super.remove(o);
+                    boolean removed = super.remove(o);  // LQ
+                    if( removed ) {
+                        // decrement maxConnections only if the channel has been removed.
+                        maxConnections.decrementAndGet();
+                    }
+                    return removed;
                 }
             };
 
