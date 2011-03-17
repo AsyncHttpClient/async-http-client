@@ -81,6 +81,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final int maxRetry;
     private boolean writeHeaders;
     private boolean writeBody;
+    private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -146,10 +147,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } catch (Throwable t) {
             // Ignore
         }
-        try {
-            asyncHandler.onThrowable(new CancellationException());
-        } catch (Throwable t) {
-            logger.warn("cancel", t);
+        if (!throwableCalled.getAndSet(true)) {
+            try {
+                asyncHandler.onThrowable(new CancellationException());
+            } catch (Throwable t) {
+                logger.warn("cancel", t);
+            }
         }
         if (reaperFuture != null) reaperFuture.cancel(true);
         latch.countDown();
@@ -197,12 +200,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             if (expired) {
                 isCancelled.set(true);
                 TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
-                try {
-                    asyncHandler.onThrowable(te);
-                } catch (Throwable t) {
-                    logger.debug("asyncHandler.onThrowable", t);
-                } finally {
-                    throw te;
+                if (!throwableCalled.getAndSet(true)) {
+                    try {
+                        asyncHandler.onThrowable(te);
+                    } catch (Throwable t) {
+                        logger.debug("asyncHandler.onThrowable", t);
+                    } finally {
+                        throw te;
+                    }
                 }
             }
             isDone.set(true);
@@ -228,12 +233,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
-                try {
-                    asyncHandler.onThrowable(ex);
-                } catch (Throwable t) {
-                    logger.debug("asyncHandler.onThrowable", t);
-                } finally {
-                    throw new RuntimeException(ex);
+                if (!throwableCalled.getAndSet(true)) {
+                    try {
+                        asyncHandler.onThrowable(ex);
+                    } catch (Throwable t) {
+                        logger.debug("asyncHandler.onThrowable", t);
+                    } finally {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
             content.compareAndSet(null, update);
@@ -272,13 +279,15 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (isDone.get() || isCancelled.get()) return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
-        try {
-            asyncHandler.onThrowable(t);
-        } catch (Throwable te) {
-            logger.debug("asyncHandler.onThrowable", te);
-        } finally {
-            isCancelled.set(true);
-            latch.countDown();
+        if (!throwableCalled.getAndSet(true)) {
+            try {
+                asyncHandler.onThrowable(t);
+            } catch (Throwable te) {
+                logger.debug("asyncHandler.onThrowable", te);
+            } finally {
+                isCancelled.set(true);
+                latch.countDown();
+            }
         }
     }
 
