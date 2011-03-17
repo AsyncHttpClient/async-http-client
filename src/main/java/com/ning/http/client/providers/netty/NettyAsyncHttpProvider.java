@@ -789,7 +789,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             try {
                 asyncHandler.onThrowable(ex);   
             } catch (Throwable t) {
-                log.warn("asyncHandler.onThrowable",t);
+                log.warn("!connectionsPool.canCacheConnection()",t);
             }
             throw ex;
         }
