@@ -868,9 +868,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
-        if (trackConnections && openChannels.contains(ctx.getChannel())) {
-            maxConnections.decrementAndGet();
-        }
         connectionsPool.removeAll(ctx.getChannel());
         finishChannel(ctx);
     }
