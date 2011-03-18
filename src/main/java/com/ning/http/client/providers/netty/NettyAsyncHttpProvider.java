@@ -903,8 +903,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (ctx.getAttachment() instanceof DiscardEvent) {
             return;
         } else if (ctx.getAttachment() instanceof AsyncCallable) {
-            HttpChunk chunk = (HttpChunk) e.getMessage();
-            if (chunk.isLast()) {
+            if (e.getMessage() instanceof HttpChunk) {
+                HttpChunk chunk = (HttpChunk) e.getMessage();
+                if (chunk.isLast()) {
+                    AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
+                    ac.call();
+                }
+            } else {
                 AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
                 ac.call();
             }
@@ -1043,12 +1048,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final Realm nr = newRealm;
 
                     log.debug("Sending authentication to {}", request.getUrl());
-
-                    if (future.getKeepAlive()) {
-                        future.attachChannel(ctx.getChannel(), true);
+                    AsyncCallable ac = new AsyncCallable(future) {
+                        public Object call() throws Exception {
+                            nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
+                            return null;
+                        }
+                    };
+                    if (future.getKeepAlive() && response.isChunked()) {
+                        // We must make sure there is no bytes left before executing the next request.                        
+                        ctx.setAttachment(ac);
+                    } else {
+                        ac.call();
                     }
-
-                    nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
                     return;
                 }
 
@@ -1081,13 +1092,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         future.attachChannel(ctx.getChannel(), true);
                     }
 
-                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
+                    final RequestBuilder builder = new RequestBuilder(future.getRequest());                    
                     try {
                         upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl(), proxyServer);
                     } catch (Throwable ex) {
                         abort(future, ex);
                     }
-
                     nextRequest(builder.build(), future);
                     return;
                 }
@@ -1105,18 +1115,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
                             final RequestBuilder builder = new RequestBuilder(future.getRequest());
                             final URI initialConnectionUri = future.getURI();
+                            final boolean initialConnectionKeepAlive = future.getKeepAlive();
                             future.setURI(uri);
                             final String newUrl = uri.toString();
 
                             log.debug("Redirecting to {}", newUrl);
 
-                            if (response.isChunked()) {
-                                drainChannel(ctx, future, initialConnectionUri);
-                            } else {
-                                closeChannel(ctx);
-                            }
+                            AsyncCallable ac = new AsyncCallable(future) {
+                                public Object call() throws Exception {
+                                    drainChannel(ctx, future, initialConnectionKeepAlive, initialConnectionUri);
+                                    nextRequest(builder.setUrl(newUrl).build(), future);
+                                    return null;
+                                }
+                            };
 
-                            nextRequest(builder.setUrl(newUrl).build(), future);
+                            if (response.isChunked()) {
+                                // We must make sure there is no bytes left before executing the next request.
+                                ctx.setAttachment(ac);
+                            } else {
+                                ac.call();
+                            }
                             return;
                         }
                     } else {
@@ -1142,7 +1160,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                     updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), response, this));
                     markAsDoneAndCacheConnection(future, ctx);
-                    drainChannel(ctx, future, future.getURI());
+                    drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
                     return;
                 }
 
@@ -1180,10 +1198,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final URI uri){
+    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri){
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (future.getKeepAlive() && ctx.getChannel().isReadable()) {
+                if (keepAlive && ctx.getChannel().isReadable()) {
                     if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(uri), ctx.getChannel())) {
                         finishChannel(ctx);
                     }
@@ -1216,7 +1234,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.touch();
 
         log.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
-        drainChannel(ctx, future, future.getURI());
+        drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         nextRequest(newRequest, future);
         return;
     }
@@ -1371,9 +1389,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean isChunked) throws IOException {
         if (isChunked && future.getKeepAlive()) {
-            drainChannel(ctx, future, future.getURI());
+            drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
-             if (future.getKeepAlive() && ctx.getChannel().isReadable()) {
+            if (future.getKeepAlive() && ctx.getChannel().isReadable()) {
                 if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
                     finishChannel(ctx);
                 }
