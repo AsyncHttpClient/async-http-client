@@ -19,7 +19,7 @@ and then define the dependency as:
          <dependency>
              <groupId>com.ning</groupId>
              <artifactId>async-http-client</artifactId>
-             <version>1.0.0</version>
+             <version>1.6.2</version>
          </dependency>
 
 You can also download the artifact
