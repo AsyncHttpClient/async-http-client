@@ -121,7 +121,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             String uri;
             try {
                 uri = URI.create(url).toURL().toString();
-            } catch (MalformedURLException e) {
+            } catch (Throwable e) {
                 throw new IllegalStateException("Illegal URL: " + url, e);
             }
 
