@@ -723,14 +723,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     /* @Override */
 
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return doConnect(request, asyncHandler, null, true, executeConnectAsync);
+        return doConnect(request, asyncHandler, null, true, executeConnectAsync, false);
     }
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect) throws IOException {
-        doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect);
+        doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, false);
     }
 
-    private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect) throws IOException {
+    private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
+        doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, reclaimCache);
+    }
+
+    private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f,
+                                              boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
 
         if (isClose.get()) {
             throw new IOException("Closed");
@@ -783,8 +788,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return f;
         }
 
-        if (!connectionsPool.canCacheConnection() ||
-                (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections())) {
+        // Do not throw an exception when we need an extra connection for a redirect.
+        if (!reclaimCache && (!connectionsPool.canCacheConnection() ||
+                (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()))) {
             IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
             try {
                 asyncHandler.onThrowable(ex);   
@@ -1094,7 +1100,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());                    
                     try {
-                        upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl(), proxyServer);
+                        log.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
+                        upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl());
                     } catch (Throwable ex) {
                         abort(future, ex);
                     }
@@ -1254,7 +1261,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void nextRequest(final Request request, final NettyResponseFuture<?> future, final boolean useCache) throws IOException {
-        execute(request, future, useCache, true);
+        execute(request, future, useCache, true, true);
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
@@ -1269,12 +1276,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.abort(t);
     }
 
-    private void upgradeProtocol(ChannelPipeline p, String scheme, ProxyServer proxyServer) throws IOException, GeneralSecurityException {
+    private void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
         if (p.get(HTTP_HANDLER) != null) {
             p.remove(HTTP_HANDLER);
         }
-
-        log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
 
         if (scheme.startsWith(HTTPS)) {
             if (p.get(SSL_HANDLER) == null) {
