@@ -1746,8 +1746,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
-                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
                 markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;
                 this.channel = null;
