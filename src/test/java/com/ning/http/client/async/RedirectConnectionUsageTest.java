@@ -51,7 +51,7 @@ import static org.testng.FileAssert.fail;
  *
  * @author dominict
  */
-public class RedirectConnectionUsageTest {
+public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
     private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
@@ -59,21 +59,6 @@ public class RedirectConnectionUsageTest {
     private Server server;
 
     private int port1;
-
-    public static int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            // 0 is open a socket on any free port
-            socket = new ServerSocket(0);
-            return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
-        }
-    }
-
 
     @BeforeClass
     public void setUp() throws Exception {
