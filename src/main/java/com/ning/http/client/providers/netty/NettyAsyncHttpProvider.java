@@ -1265,9 +1265,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        if (trackConnections && future.channel() != null && openChannels.contains(future.channel())) {
-            maxConnections.decrementAndGet();
+        if (future.channel() != null && openChannels.contains(future.channel())) {
             openChannels.remove(future.channel());
+        }
+
+        if (trackConnections) {
+            maxConnections.decrementAndGet();
         }
 
         log.debug("Aborting Future {}\n", future);
@@ -1746,8 +1749,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
-                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
+                closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
 
                 this.nettyResponseFuture = null;
                 this.channel = null;
