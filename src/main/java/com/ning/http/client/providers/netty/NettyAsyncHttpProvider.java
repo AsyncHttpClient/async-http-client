@@ -1745,7 +1745,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return;
             }
 
-            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()) {
+            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired() && !this.nettyResponseFuture.isDone() && !this.nettyResponseFuture.isCancelled()) {
                 log.debug("Request Timeout expired for {}\n", this.nettyResponseFuture);
 
                 int requestTimeout = config.getRequestTimeoutInMs();
@@ -1754,7 +1754,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                finishChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;
