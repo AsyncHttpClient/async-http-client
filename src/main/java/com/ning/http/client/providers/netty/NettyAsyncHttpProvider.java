@@ -879,21 +879,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void finishChannel(final ChannelHandlerContext ctx) {
-        log.debug("Closing Channel {} ", ctx.getChannel());
-        
         ctx.setAttachment(new DiscardEvent());
 
+        if (ctx.getChannel() != null) {
+            openChannels.remove(ctx.getChannel());            
+        }
+
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
-        if (ctx.getChannel() == null) {
+        if (ctx.getChannel() == null || !ctx.getChannel().isOpen()) {
             return;
         }
+
+        log.debug("Closing Channel {} ", ctx.getChannel());
 
         try {
             ctx.getChannel().close();
         } catch (Throwable t) {
             log.debug("Error closing a connection", t);
         }
-        openChannels.remove(ctx.getChannel());
     }
 
     @Override
@@ -1749,9 +1752,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
-                
-                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
+
                 closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;
                 this.channel = null;
