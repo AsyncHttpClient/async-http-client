@@ -881,12 +881,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void finishChannel(final ChannelHandlerContext ctx) {
         ctx.setAttachment(new DiscardEvent());
 
-        if (ctx.getChannel() != null) {
-            openChannels.remove(ctx.getChannel());            
-        }
-
         // The channel may have already been removed if a timeout occurred, and this method may be called just after.
-        if (ctx.getChannel() == null || !ctx.getChannel().isOpen()) {
+        if (ctx.getChannel() == null) {
             return;
         }
 
@@ -897,6 +893,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } catch (Throwable t) {
             log.debug("Error closing a connection", t);
         }
+
+        if (ctx.getChannel() != null) {
+            openChannels.remove(ctx.getChannel());
+        }
+
     }
 
     @Override
