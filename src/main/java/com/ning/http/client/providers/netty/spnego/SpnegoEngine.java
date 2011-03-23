@@ -93,7 +93,7 @@ public class SpnegoEngine {
     public String generateToken(String authServer) throws Throwable {
 
         try {
-            if (this.stripPort) {
+            if (this.stripPort && authServer.indexOf(":") != -1) {
                 authServer = authServer.substring(0, authServer.indexOf(":"));
             }
 
