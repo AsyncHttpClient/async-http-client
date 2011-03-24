@@ -43,7 +43,6 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,50 +55,34 @@ import java.io.IOException;
  * @since 4.1
  */
 public class SpnegoEngine {
-    private static final String SPNEGO_OID       = "1.3.6.1.5.5.2";
-    private static final String KERBEROS_OID     = "1.2.840.113554.1.2.2";
+    private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
+    private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final SpnegoTokenGenerator spengoGenerator;
-
-    private final boolean stripPort;
+    private final SpnegoTokenGenerator spnegoGenerator;
 
     private GSSContext gssContext = null;
 
-    /** base64 decoded challenge **/
+    /**
+     * base64 decoded challenge *
+     */
     private byte[] token;
 
     private Oid negotiationOid = null;
 
-    /**
-     * Default constructor for the Negotiate authentication scheme.
-     *
-     */
-    public SpnegoEngine(final SpnegoTokenGenerator spengoGenerator, boolean stripPort) {
-        super();
-        this.spengoGenerator = spengoGenerator;
-        this.stripPort = stripPort;
-    }
-
-    public SpnegoEngine(final SpnegoTokenGenerator spengoGenerator) {
-        this(spengoGenerator, false);
+    public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
+        this.spnegoGenerator = spnegoGenerator;
     }
 
     public SpnegoEngine() {
-        this(null, false);
+        this(null);
     }
 
-    public String generateToken(String authServer) throws Throwable {
+    public String generateToken(String server) throws Throwable {
 
         try {
-            if (this.stripPort && authServer.indexOf(":") != -1) {
-                authServer = authServer.substring(0, authServer.indexOf(":"));
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("init " + authServer);
-            }
+            log.debug("init {}", server);
             /* Using the SPNEGO OID is the correct method.
              * Kerberos v5 works for IIS but not JBoss. Unwrapping
              * the initial token when using SPNEGO OID looks like what is
@@ -115,22 +98,22 @@ public class SpnegoEngine {
              */
 
             /** Try SPNEGO by default, fall back to Kerberos later if error */
-            negotiationOid  = new Oid(SPNEGO_OID);
+            negotiationOid = new Oid(SPNEGO_OID);
 
             boolean tryKerberos = false;
             try {
                 GSSManager manager = GSSManager.getInstance();
-                GSSName serverName = manager.createName("HTTP/" + authServer, null);
+                GSSName serverName = manager.createName("HTTP/" + server, null);
                 gssContext = manager.createContext(
                         serverName.canonicalize(negotiationOid), negotiationOid, null,
                         GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
                 gssContext.requestCredDeleg(true);
-            } catch (GSSException ex){
+            } catch (GSSException ex) {
                 log.error("generateToken", ex);
                 // BAD MECH means we are likely to be using 1.5, fall back to Kerberos MECH.
                 // Rethrow any other exception.
-                if (ex.getMajor() == GSSException.BAD_MECH ){
+                if (ex.getMajor() == GSSException.BAD_MECH) {
                     log.debug("GSSException BAD_MECH, retry with Kerberos MECH");
                     tryKerberos = true;
                 } else {
@@ -138,21 +121,24 @@ public class SpnegoEngine {
                 }
 
             }
-            if (tryKerberos){
+            if (tryKerberos) {
                 /* Kerberos v5 GSS-API mechanism defined in RFC 1964.*/
-                log.debug("Using Kerberos MECH " + KERBEROS_OID);
-                negotiationOid  = new Oid(KERBEROS_OID);
+                log.debug("Using Kerberos MECH {}", KERBEROS_OID);
+                negotiationOid = new Oid(KERBEROS_OID);
                 GSSManager manager = GSSManager.getInstance();
-                GSSName serverName = manager.createName("HTTP/" + authServer, null);
+                GSSName serverName = manager.createName("HTTP/" + server, null);
                 gssContext = manager.createContext(
                         serverName.canonicalize(negotiationOid), negotiationOid, null,
                         GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
                 gssContext.requestCredDeleg(true);
             }
+
+            // TODO suspicious: this will always be null because no value has been assigned before. Assign directly?
             if (token == null) {
                 token = new byte[0];
             }
+
             token = gssContext.initSecContext(token, 0, token.length);
             if (token == null) {
                 throw new Exception("GSS security context initialization failed");
@@ -162,21 +148,22 @@ public class SpnegoEngine {
              * IIS accepts Kerberos and SPNEGO tokens. Some other servers Jboss, Glassfish?
              * seem to only accept SPNEGO. Below wraps Kerberos into SPNEGO token.
              */
-            if (spengoGenerator != null && negotiationOid.toString().equals(KERBEROS_OID)) {
-                token = spengoGenerator.generateSpnegoDERObject(token);
+            if (spnegoGenerator != null && negotiationOid.toString().equals(KERBEROS_OID)) {
+                token = spnegoGenerator.generateSpnegoDERObject(token);
             }
 
+            gssContext.dispose();
+
             String tokenstr = new String(Base64.encode(token));
-            if (log.isDebugEnabled()) {
-                log.debug("Sending response '" + tokenstr + "' back to the auth server");
-            }
-            return "Negotiate " + tokenstr;
+            log.debug("Sending response '{}' back to the server", tokenstr);
+
+            return tokenstr;
         } catch (GSSException gsse) {
             log.error("generateToken", gsse);
             if (gsse.getMajor() == GSSException.DEFECTIVE_CREDENTIAL
                     || gsse.getMajor() == GSSException.CREDENTIALS_EXPIRED)
                 throw new Exception(gsse.getMessage(), gsse);
-            if (gsse.getMajor() == GSSException.NO_CRED )
+            if (gsse.getMajor() == GSSException.NO_CRED)
                 throw new Exception(gsse.getMessage(), gsse);
             if (gsse.getMajor() == GSSException.DEFECTIVE_TOKEN
                     || gsse.getMajor() == GSSException.DUPLICATE_TOKEN
@@ -184,7 +171,7 @@ public class SpnegoEngine {
                 throw new Exception(gsse.getMessage(), gsse);
             // other error
             throw new Exception(gsse.getMessage());
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new Exception(ex.getMessage());
         }
     }

@@ -368,6 +368,7 @@
                         <exclude>**/ProxyServer$Protocol</exclude>
                         <exclude>**/Realm$AuthScheme</exclude>
                         <exclude>**/SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude>
+                        <exclude>**/SpnegoEngine</exclude>                        
                     </excludes>
                 </configuration>
                 <executions>

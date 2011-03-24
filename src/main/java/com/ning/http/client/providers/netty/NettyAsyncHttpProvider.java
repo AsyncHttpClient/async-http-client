@@ -546,9 +546,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 case KERBEROS:
                 case SPNEGO:
                     String challengeHeader = null;
-                    String authServer = proxyServer == null ? AsyncHttpProviderUtils.getBaseUrl(uri) : proxyServer.getHost();
+                    String server = proxyServer == null ? host : proxyServer.getHost();
                     try {
-                        challengeHeader = spnegoEngine.generateToken(authServer);
+                        challengeHeader = spnegoEngine.generateToken(server);
                     } catch (Throwable e) {
                         IOException ie = new IOException();
                         ie.initCause(e);
@@ -1030,11 +1030,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             || realm.getAuthScheme() == Realm.AuthScheme.SPNEGO)) {
 
                         URI uri = URI.create(request.getUrl());
-                        String authServer = proxyServer == null ? AsyncHttpProviderUtils.getBaseUrl(uri) : proxyServer.getHost();
+                        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
+                        String server = proxyServer == null ? host : proxyServer.getHost();
                         try {
-                            String challengeHeader = spnegoEngine.generateToken(authServer);
+                            String challengeHeader = spnegoEngine.generateToken(server);
                             headers.remove(HttpHeaders.Names.AUTHORIZATION);
-                            headers.add(HttpHeaders.Names.AUTHORIZATION, "Negociate " + challengeHeader);
+                            headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
                             newRealm = new Realm.RealmBuilder().clone(realm)
                                     .setScheme(realm.getAuthScheme())
