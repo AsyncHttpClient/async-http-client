@@ -1308,12 +1308,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         connectionsPool.removeAll(ctx.getChannel());
-
-        Exception exception = null;
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
-            exception = ex;
+            log.trace("super.channelClosed" , ex);
         }
 
         log.debug("Channel Closed: {} with attachment {}", e.getChannel(), ctx.getAttachment());
