@@ -254,7 +254,9 @@ public abstract class AuthTimeoutTest
         t.printStackTrace();
         assertNotNull(t.getCause());
         assertEquals(t.getCause().getClass(), IOException.class);
-        assertEquals(t.getCause().getMessage(), "Remotely Closed");
+        if (!t.getCause().getMessage().startsWith("Remotely Closed")){
+            fail();
+        };
     }
 
     protected Future<Response> execute(boolean preemptive)

@@ -1342,7 +1342,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (future != null && !future.isDone()) {
                 if (!remotelyClosed(ctx.getChannel(), future)) {
-                    abort(future, new IOException("Remotely Closed"));
+                    abort(future, new IOException("Remotely Closed " + ctx.getChannel()));
                 }
             }
         } else {
@@ -1754,7 +1754,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;

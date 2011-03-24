@@ -287,9 +287,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", te);
             } finally {
                 isCancelled.set(true);
-                latch.countDown();
             }
         }
+        latch.countDown();        
         super.done();        
     }
 
