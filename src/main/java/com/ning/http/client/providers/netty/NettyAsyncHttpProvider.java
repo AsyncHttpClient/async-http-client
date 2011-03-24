@@ -331,7 +331,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
              * we just let it go and the closeChannel do it's work.
              */
             if (!channel.isOpen() || !channel.isConnected()) {
-                return;                
+                return;
             }
 
             Body body = null;
@@ -793,7 +793,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()))) {
             IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
             try {
-                asyncHandler.onThrowable(ex);   
+                asyncHandler.onThrowable(ex);
             } catch (Throwable t) {
                 log.warn("!connectionsPool.canCacheConnection()",t);
             }
@@ -1065,7 +1065,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
                     };
                     if (future.getKeepAlive() && response.isChunked()) {
-                        // We must make sure there is no bytes left before executing the next request.                        
+                        // We must make sure there is no bytes left before executing the next request.
                         ctx.setAttachment(ac);
                     } else {
                         ac.call();
@@ -1102,7 +1102,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         future.attachChannel(ctx.getChannel(), true);
                     }
 
-                    final RequestBuilder builder = new RequestBuilder(future.getRequest());                    
+                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
                     try {
                         log.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
                         upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl());
@@ -1485,7 +1485,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
                     log.debug("Trying to recover from dead Channel: {}", channel);
                     return;
-                }                             
+                }
             } else if (ctx.getAttachment() instanceof AsyncCallable) {
                 future = ((AsyncCallable) ctx.getAttachment()).future();
             }
@@ -1643,7 +1643,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     } catch (RuntimeException ex) {
                         log.debug(ex.getMessage(), ex);
                     }
-                    return;                    
+                    return;
                 } else {
                     future.abort(cause);
                 }
@@ -1754,7 +1754,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                finishChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+                markChannelNotReadable(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;
