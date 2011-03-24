@@ -122,7 +122,7 @@ public abstract class AuthTimeoutTest
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void basicAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -138,7 +138,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void basicPreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -154,7 +154,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void digestAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -170,7 +170,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void digestPreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -186,7 +186,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void basicFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -202,7 +202,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void basicFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
@@ -218,7 +218,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void digestFutureAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
@@ -234,7 +234,7 @@ public abstract class AuthTimeoutTest
         client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = {"standalone", "default_provider"}, enabled = false)
     public void digestFuturePreemptiveAuthTimeoutTest()
             throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
