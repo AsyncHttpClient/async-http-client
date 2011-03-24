@@ -148,7 +148,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
-                    if( removed ) {
+                    if (removed) {
                         maxConnections.decrementAndGet();
                     }
                     return removed;
@@ -1270,8 +1270,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void abort(NettyResponseFuture<?> future, Throwable t) {
-        if (future.channel() != null && openChannels.contains(future.channel())) {
-            openChannels.remove(future.channel());
+        Channel channel = future.channel();
+        if (channel != null && openChannels.contains(channel)) {
+            closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
+            openChannels.remove(channel);
         }
 
         log.debug("Aborting Future {}\n", future);
@@ -1335,10 +1337,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
 
-            if (future != null && !future.isDone()) {
+            if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (!remotelyClosed(ctx.getChannel(), future)) {
                     abort(future, new IOException("Remotely Closed " + ctx.getChannel()));
                 }
+            } else {
+                closeChannel(ctx);
             }
         } else {
             closeChannel(ctx);
@@ -1749,7 +1753,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
                 abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.nettyResponseFuture = null;
