@@ -69,8 +69,13 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
         }
         exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
-            asyncHandler.onThrowable(t);
-        }     
+            try {
+                asyncHandler.onThrowable(t);
+            } catch (Throwable te) {
+                logger.debug("asyncHandler.onThrowable", te);
+            }
+        }
+        super.done();
     }
 
     public void content(V v) {
@@ -85,8 +90,10 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", te);
             }
             cancelled.set(true);
+            super.done();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
+            super.done();            
             return false;
         }
     }

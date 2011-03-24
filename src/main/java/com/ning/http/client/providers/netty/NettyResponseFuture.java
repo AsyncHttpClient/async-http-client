@@ -157,6 +157,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (reaperFuture != null) reaperFuture.cancel(true);
         latch.countDown();
         isCancelled.set(true);
+        super.done();        
         return true;
     }
 
@@ -289,6 +290,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 latch.countDown();
             }
         }
+        super.done();        
     }
 
     public void content(V v) {

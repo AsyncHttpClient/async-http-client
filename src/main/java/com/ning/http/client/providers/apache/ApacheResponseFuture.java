@@ -124,6 +124,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", t2);
             }
         }
+        super.done();        
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -138,8 +139,10 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
             if (reaperFuture != null) {
                 reaperFuture.cancel(true);
             }
+            super.done();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
+            super.done();            
             return false;
         }
     }
