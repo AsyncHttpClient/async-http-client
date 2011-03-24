@@ -81,7 +81,9 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
         } catch (Exception t) {
             assertNotNull(t.getCause());
             assertEquals(t.getCause().getClass(), IOException.class);
-            assertEquals(t.getCause().getMessage(), "Remotely Closed");
+            if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
+                fail();
+            }
         }
 
         ahc.close();
