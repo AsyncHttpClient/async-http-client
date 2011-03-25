@@ -530,6 +530,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                         jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
                         System.setProperty(NTLM_DOMAIN, realm.getDomain());
                         break;
+                    case NONE:
+                        break;
                     default:
                         throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
                 }
