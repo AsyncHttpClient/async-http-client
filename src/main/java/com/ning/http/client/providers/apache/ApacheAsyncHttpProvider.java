@@ -419,8 +419,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         private final HttpClient httpClient;
         private int currentRedirectCount;
         private AtomicBoolean isAuth = new AtomicBoolean(false);
-        private byte[] cachedBytes;
-        private int cachedBytesLenght;
         private boolean terminate = true;
 
         public ApacheClientRunnable(Request request, AsyncHandler<T> asyncHandler, HttpMethodBase method, ApacheResponseFuture<T> future, HttpClient httpClient) {
