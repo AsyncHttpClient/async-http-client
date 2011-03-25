@@ -450,5 +450,19 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
         client.close();
     }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl())
+                .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+
+        Future<Response> f = r.execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertNotNull(resp.getHeader("X-Auth"));
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        client.close();
+    }
 }
 
