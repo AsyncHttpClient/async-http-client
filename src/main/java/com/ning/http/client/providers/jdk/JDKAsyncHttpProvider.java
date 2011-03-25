@@ -298,7 +298,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                             .parseWWWAuthenticateHeader(wwwAuth)
                             .setUri(URI.create(request.getUrl()).getPath())
                             .setMethodName(request.getMethod())
-                            .setScheme(realm.getAuthScheme())
                             .setUsePreemptiveAuth(true)
                             .build();
                     RequestBuilder builder = new RequestBuilder(request);

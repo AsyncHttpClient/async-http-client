@@ -21,7 +21,7 @@ public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return ProviderUtil.jdkProvider(config);
     }
     
 }
