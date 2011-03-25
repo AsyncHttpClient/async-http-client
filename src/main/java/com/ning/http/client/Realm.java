@@ -54,7 +54,8 @@ public class Realm {
         BASIC,
         NTLM,
         SPNEGO,
-        KERBEROS
+        KERBEROS,
+        NONE
     }
 
     private Realm(AuthScheme scheme,
@@ -255,7 +256,7 @@ public class Realm {
 
         private String principal = "";
         private String password = "";
-        private AuthScheme scheme = AuthScheme.BASIC;
+        private AuthScheme scheme = AuthScheme.NONE;
         private String realmName = "";
         private String nonce = "";
         private String algorithm = "MD5";
@@ -416,6 +417,8 @@ public class Realm {
             setQop(match(headerLine, "qop"));
             if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
                 setScheme(AuthScheme.DIGEST);
+            } else {
+                setScheme(AuthScheme.BASIC);
             }
             return this;
         }

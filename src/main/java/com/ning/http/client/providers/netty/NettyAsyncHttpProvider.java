@@ -556,6 +556,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                     nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
                     break;
+                case NONE:
+                    break;
                 default:
                     throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
             }
@@ -1026,8 +1028,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     .build();
                         }
                         // SPNEGO KERBEROS
-                    } else if (wwwAuth.get(0).startsWith("Negotiate") && (realm.getAuthScheme() == Realm.AuthScheme.KERBEROS
-                            || realm.getAuthScheme() == Realm.AuthScheme.SPNEGO)) {
+                    } else if (wwwAuth.get(0).startsWith("Negotiate")) {
 
                         URI uri = URI.create(request.getUrl());
                         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
@@ -1041,6 +1042,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     .setScheme(realm.getAuthScheme())
                                     .setUri(uri.getPath())
                                     .setMethodName(request.getMethod())
+                                    .setScheme(Realm.AuthScheme.KERBEROS)
                                     .build();
                         } catch (Throwable throwable) {
                             abort(future, throwable);
