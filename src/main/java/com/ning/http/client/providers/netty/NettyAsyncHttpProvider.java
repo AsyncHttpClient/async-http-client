@@ -148,7 +148,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 @Override
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
-                    if (removed) {
+                    if (removed && trackConnections) {
                         maxConnections.decrementAndGet();
                     }
                     return removed;
