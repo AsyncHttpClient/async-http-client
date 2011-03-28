@@ -412,6 +412,7 @@ public class SimpleAsyncHttpClient {
             this.errorDocumentBehaviour = client.errorDocumentBehaviour;
             this.enableResumableDownload = client.resumeEnabled;
             this.ahc = client.asyncHttpClient();
+            this.listener = client.listener;
         }
 
         public Builder addBodyPart(Part part) throws IllegalArgumentException {
