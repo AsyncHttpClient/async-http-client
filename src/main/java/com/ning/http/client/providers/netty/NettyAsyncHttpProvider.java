@@ -166,6 +166,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
     private final boolean trackConnections;
+    
+    private final boolean useRawUrl;
 
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
@@ -203,6 +205,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         configureNetty();
         trackConnections = (config.getMaxTotalConnections() != -1);
+        useRawUrl=config.isUseRawUrl();
     }
 
     @Override
@@ -744,7 +747,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        URI uri = AsyncHttpProviderUtils.createUri(request.getUrl());
+        String requestUrl;
+        if(useRawUrl) {
+        	requestUrl=request.getRawUrl();
+        } else {
+        	requestUrl=request.getUrl();
+        }
+        URI uri = AsyncHttpProviderUtils.createUri(requestUrl);
         Channel channel = null;
 
         if (useCache) {

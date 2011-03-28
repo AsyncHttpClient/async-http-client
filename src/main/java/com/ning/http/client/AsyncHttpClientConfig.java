@@ -74,6 +74,7 @@ public class AsyncHttpClientConfig {
     private final int requestCompressionLevel;
     private final int maxRequestRetry;
     private final boolean allowSslConnectionPool;
+    private final boolean useRawUrl;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -97,7 +98,8 @@ public class AsyncHttpClientConfig {
                                   List<IOExceptionFilter> ioExceptionFilters,
                                   int requestCompressionLevel,
                                   int maxRequestRetry,
-                                  boolean allowSslConnectionCaching) {
+                                  boolean allowSslConnectionCaching,
+                                  boolean useRawUrl) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -128,6 +130,7 @@ public class AsyncHttpClientConfig {
             this.applicationThreadPool = applicationThreadPool;
         }
         this.proxyServer = proxyServer;
+        this.useRawUrl=useRawUrl;
     }
 
     /**
@@ -376,6 +379,14 @@ public class AsyncHttpClientConfig {
 
 
     /**
+	 * @return the useRawUrl
+	 */
+	public boolean isUseRawUrl() {
+		return useRawUrl;
+	}
+
+
+	/**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -415,7 +426,7 @@ public class AsyncHttpClientConfig {
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
         private boolean allowSslConnectionPool = true;
-
+        private boolean useRawUrl=false;
         public Builder() {
         }
 
@@ -763,6 +774,16 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Allows use unescaped URLs in requests
+         * useful for retrieving data from broken sites
+         * @param useRawUrl
+         * @return
+         */
+        public Builder setUseRawUrl(boolean useRawUrl) {
+        	this.useRawUrl=useRawUrl;
+        	return this;
+        }
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          * 
          * @param prototype the configuration to use as a prototype.
@@ -790,6 +811,7 @@ public class AsyncHttpClientConfig {
 
             requestFilters.addAll( prototype.getRequestFilters() );
             responseFilters.addAll( prototype.getResponseFilters() );
+            useRawUrl=prototype.isUseRawUrl();
         }
 
         /**
@@ -821,7 +843,8 @@ public class AsyncHttpClientConfig {
                     ioExceptionFilters,
                     requestCompressionLevel,
                     maxRequestRetry,
-                    allowSslConnectionPool);
+                    allowSslConnectionPool,
+                    useRawUrl);
         }
     }
 }
