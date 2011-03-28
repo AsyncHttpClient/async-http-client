@@ -1356,9 +1356,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 closeChannel(ctx);
             }
-        } else {
-            closeChannel(ctx);
-        }
+        } 
     }
 
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
@@ -1457,7 +1455,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         NettyResponseFuture<?> future = null;
 
         if (log.isDebugEnabled()) {
-            log.debug("exceptionCaught", cause);
+            log.debug("Unexpected I/O exception on channel {}", channel, cause);
         }
 
         try {
