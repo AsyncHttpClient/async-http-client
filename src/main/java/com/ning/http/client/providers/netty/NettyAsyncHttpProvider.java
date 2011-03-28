@@ -1287,9 +1287,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             openChannels.remove(channel);
         }
 
-        log.debug("Aborting Future {}\n", future);
-        log.debug(t.getMessage(), t);
-
+        if (!future.isCancelled() && !future.isDone()) {
+            log.debug("Aborting Future {}\n", future);
+            log.debug(t.getMessage(), t);
+        }
         future.abort(t);
     }
 
