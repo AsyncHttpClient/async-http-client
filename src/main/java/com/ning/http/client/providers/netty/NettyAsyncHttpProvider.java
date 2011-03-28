@@ -1233,6 +1233,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
                 return null;
             }
+
+            @Override
+            public String toString(){
+                return String.format("Draining task for channel %s", ctx.getChannel());
+            }
         });
     }
 

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link com.ning.http.client.AsyncHttpClientConfig},
@@ -724,12 +723,15 @@ public class SimpleAsyncHttpClient {
 
         @Override
         public void onThrowable(Throwable t) {
-            if (exceptionHandler != null) {
-                exceptionHandler.onThrowable(t);
-            } else {
-                super.onThrowable(t);
+            try {
+                if (exceptionHandler != null) {
+                    exceptionHandler.onThrowable(t);
+                } else {
+                    super.onThrowable(t);
+                }
+            } finally {
+                closeConsumer();
             }
-            closeConsumer();
         }
 
         /**
