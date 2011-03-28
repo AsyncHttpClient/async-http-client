@@ -934,6 +934,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
                 ac.call();
             }
+            ctx.setAttachment(new DiscardEvent());
             return;
         } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
             // The IdleStateHandler times out and he is calling us.

@@ -364,6 +364,7 @@
                 <version>2.3</version>
                 <configuration>
                     <excludes>
+                        <exclude>**/NettyAsyncHttpProvider$*</exclude>                        
                         <exclude>**/AsyncHandler$STATE</exclude>
                         <exclude>**/ProxyServer$Protocol</exclude>
                         <exclude>**/Realm$AuthScheme</exclude>
