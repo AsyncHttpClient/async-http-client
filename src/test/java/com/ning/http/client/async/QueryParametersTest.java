@@ -16,9 +16,7 @@
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.LoggerFactory;
@@ -93,8 +91,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
-        AsyncHttpClient client = new AsyncHttpClient(new JDKAsyncHttpProvider(
-                new AsyncHttpClientConfig.Builder().build()));
+        AsyncHttpClient client = getAsyncHttpClient(null);
         String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
         LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
         Response response = client.prepareGet(requestUrl2).execute().get();
@@ -119,8 +116,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void urlWithColonTest_JDK() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new JDKAsyncHttpProvider(
-                new AsyncHttpClientConfig.Builder().build()));
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         String query = "test:colon:";
         Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query))
