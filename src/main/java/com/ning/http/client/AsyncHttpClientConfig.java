@@ -130,7 +130,7 @@ public class AsyncHttpClientConfig {
             this.applicationThreadPool = applicationThreadPool;
         }
         this.proxyServer = proxyServer;
-        this.useRawUrl=useRawUrl;
+        this.useRawUrl = useRawUrl;
     }
 
     /**
@@ -276,6 +276,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return an instance of {@link SSLContext} used for SSL connection.
+     *
      * @return an instance of {@link SSLContext} used for SSL connection.
      */
     public SSLContext getSSLContext() {
@@ -284,22 +285,22 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return an instance of {@link ConnectionsPool}
+     *
      * @return an instance of {@link ConnectionsPool}
      */
-    public ConnectionsPool<?, ?> getConnectionsPool(){
+    public ConnectionsPool<?, ?> getConnectionsPool() {
         return connectionsPool;
     }
 
     /**
      * Return an instance of {@link SSLEngineFactory} used for SSL connection.
+     *
      * @return an instance of {@link SSLEngineFactory} used for SSL connection.
      */
     public SSLEngineFactory getSSLEngineFactory() {
         if (sslEngineFactory == null) {
-            return new SSLEngineFactory()
-            {
-                public SSLEngine newSSLEngine()
-                {
+            return new SSLEngineFactory() {
+                public SSLEngine newSSLEngine() {
                     if (sslContext != null) {
                         SSLEngine sslEngine = sslContext.createSSLEngine();
                         sslEngine.setUseClientMode(true);
@@ -315,46 +316,52 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return the {@link com.ning.http.client.AsyncHttpProviderConfig}
+     *
      * @return the {@link com.ning.http.client.AsyncHttpProviderConfig}
      */
-    public AsyncHttpProviderConfig<?,?> getAsyncHttpProviderConfig() {
+    public AsyncHttpProviderConfig<?, ?> getAsyncHttpProviderConfig() {
         return providerConfig;
     }
 
     /**
      * Return the current {@link Realm}}
+     *
      * @return the current {@link Realm}}
      */
-    public Realm getRealm(){
+    public Realm getRealm() {
         return realm;
     }
 
     /**
      * Return the list of {@link RequestFilter}
+     *
      * @return Unmodifiable list of {@link ResponseFilter}
      */
-    public List<RequestFilter> getRequestFilters(){
+    public List<RequestFilter> getRequestFilters() {
         return Collections.unmodifiableList(requestFilters);
     }
 
     /**
      * Return the list of {@link ResponseFilter}
+     *
      * @return Unmodifiable list of {@link ResponseFilter}
      */
-    public List<ResponseFilter> getResponseFilters(){
+    public List<ResponseFilter> getResponseFilters() {
         return Collections.unmodifiableList(responseFilters);
     }
 
     /**
      * Return the list of {@link java.io.IOException}
+     *
      * @return Unmodifiable list of {@link java.io.IOException}
      */
-    public List<IOExceptionFilter> getIOExceptionFilters(){
+    public List<IOExceptionFilter> getIOExceptionFilters() {
         return Collections.unmodifiableList(ioExceptionFilters);
     }
 
     /**
      * Return the compression level, or -1 if no compression is used.
+     *
      * @return the compression level, or -1 if no compression is use
      */
     public int getRequestCompressionLevel() {
@@ -363,6 +370,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     *
      * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
      */
     public int getMaxRequestRetry() {
@@ -371,6 +379,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return true is SSL connection polling is enabled. Default is true.
+     *
      * @return true is enabled.
      */
     public boolean isSslConnectionPoolEnabled() {
@@ -379,14 +388,14 @@ public class AsyncHttpClientConfig {
 
 
     /**
-	 * @return the useRawUrl
-	 */
-	public boolean isUseRawUrl() {
-		return useRawUrl;
-	}
+     * @return the useRawUrl
+     */
+    public boolean isUseRawUrl() {
+        return useRawUrl;
+    }
 
 
-	/**
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -400,24 +409,24 @@ public class AsyncHttpClientConfig {
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
         private boolean allowPoolingConnection = true;
-        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),new ThreadFactory(){
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r,"AsyncHttpClient-Reaper");
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-        private ExecutorService applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory(){
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r,"AsyncHttpClient-Callback");
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
+        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "AsyncHttpClient-Reaper");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        private ExecutorService applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "AsyncHttpClient-Callback");
+                t.setDaemon(true);
+                return t;
+            }
+        });
         private ProxyServer proxyServer = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
-        private AsyncHttpProviderConfig<?,?> providerConfig;
+        private AsyncHttpProviderConfig<?, ?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
         private int requestCompressionLevel = -1;
@@ -426,7 +435,8 @@ public class AsyncHttpClientConfig {
         private final List<ResponseFilter> responseFilters = new LinkedList<ResponseFilter>();
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
         private boolean allowSslConnectionPool = true;
-        private boolean useRawUrl=false;
+        private boolean useRawUrl = false;
+
         public Builder() {
         }
 
@@ -489,6 +499,7 @@ public class AsyncHttpClientConfig {
             this.defaultIdleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs;
             return this;
         }
+
         /**
          * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response
          *
@@ -606,26 +617,24 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the {@link SSLEngineFactory} for secure connection.
-         * 
+         *
          * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection
          * @return a {@link Builder}
          */
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory){
+        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
             this.sslEngineFactory = sslEngineFactory;
             return this;
         }
-        
+
         /**
          * Set the {@link SSLContext} for secure connection.
-         * 
+         *
          * @param sslContext the {@link SSLContext} for secure connection
          * @return a {@link Builder}
          */
-        public Builder setSSLContext(final SSLContext sslContext){
-            this.sslEngineFactory = new SSLEngineFactory()
-            {
-                public SSLEngine newSSLEngine() throws GeneralSecurityException
-                {
+        public Builder setSSLContext(final SSLContext sslContext) {
+            this.sslEngineFactory = new SSLEngineFactory() {
+                public SSLEngine newSSLEngine() throws GeneralSecurityException {
                     SSLEngine sslEngine = sslContext.createSSLEngine();
                     sslEngine.setUseClientMode(true);
                     return sslEngine;
@@ -637,6 +646,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}
+         *
          * @param providerConfig the {@link com.ning.http.client.AsyncHttpProviderConfig}
          * @return a {@link Builder}
          */
@@ -647,6 +657,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the {@link ConnectionsPool}
+         *
          * @param connectionsPool the {@link ConnectionsPool}
          * @return a {@link Builder}
          */
@@ -657,7 +668,8 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the {@link Realm}  that will be used for all requests.
-         * @param realm   the {@link Realm}
+         *
+         * @param realm the {@link Realm}
          * @return a {@link Builder}
          */
         public Builder setRealm(Realm realm) {
@@ -667,7 +679,8 @@ public class AsyncHttpClientConfig {
 
         /**
          * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
-         * @param requestFilter  {@link com.ning.http.client.filter.RequestFilter}
+         *
+         * @param requestFilter {@link com.ning.http.client.filter.RequestFilter}
          * @return this
          */
         public Builder addRequestFilter(RequestFilter requestFilter) {
@@ -677,6 +690,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Remove an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}
+         *
          * @param requestFilter {@link com.ning.http.client.filter.RequestFilter}
          * @return this
          */
@@ -688,6 +702,7 @@ public class AsyncHttpClientConfig {
         /**
          * Add an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is
          * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.
+         *
          * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}
          * @return this
          */
@@ -723,7 +738,7 @@ public class AsyncHttpClientConfig {
         /**
          * Remove an {@link com.ning.http.client.filter.IOExceptionFilter} tthat will be invoked when an {@link java.io.IOException}
          * occurs during the download/upload operations.
-         * 
+         *
          * @param ioExceptionFilter an {@link com.ning.http.client.filter.ResponseFilter}
          * @return this
          */
@@ -746,7 +761,6 @@ public class AsyncHttpClientConfig {
          *
          * @param requestCompressionLevel compression level, or -1 if no compression is use
          * @return this
-
          */
         public Builder setRequestCompressionLevel(int requestCompressionLevel) {
             this.requestCompressionLevel = requestCompressionLevel;
@@ -755,7 +769,8 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
-         * @param maxRequestRetry  the number of time a request will be retried
+         *
+         * @param maxRequestRetry the number of time a request will be retried
          * @return this
          */
         public Builder setMaxRequestRetry(int maxRequestRetry) {
@@ -765,6 +780,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Return true is if connections pooling is enabled.
+         *
          * @param allowSslConnectionPool true if enabled
          * @return true is if connections pooling is enabled.
          */
@@ -776,20 +792,21 @@ public class AsyncHttpClientConfig {
         /**
          * Allows use unescaped URLs in requests
          * useful for retrieving data from broken sites
+         *
          * @param useRawUrl
          * @return
          */
         public Builder setUseRawUrl(boolean useRawUrl) {
-        	this.useRawUrl=useRawUrl;
-        	return this;
+            this.useRawUrl = useRawUrl;
+            return this;
         }
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
-         * 
+         *
          * @param prototype the configuration to use as a prototype.
          */
-        public Builder( AsyncHttpClientConfig prototype )
-        {
+        public Builder(AsyncHttpClientConfig prototype) {
             allowPoolingConnection = prototype.getAllowPoolingConnection();
             providerConfig = prototype.getAsyncHttpProviderConfig();
             connectionsPool = prototype.getConnectionsPool();
@@ -809,9 +826,9 @@ public class AsyncHttpClientConfig {
             requestFilters.clear();
             responseFilters.clear();
 
-            requestFilters.addAll( prototype.getRequestFilters() );
-            responseFilters.addAll( prototype.getResponseFilters() );
-            useRawUrl=prototype.isUseRawUrl();
+            requestFilters.addAll(prototype.getRequestFilters());
+            responseFilters.addAll(prototype.getResponseFilters());
+            useRawUrl = prototype.isUseRawUrl();
         }
 
         /**
