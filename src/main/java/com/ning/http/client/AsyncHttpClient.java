@@ -373,6 +373,14 @@ public class AsyncHttpClient {
     }
 
     /**
+     * Return true if closed
+     * @return true if closed
+     */
+    public boolean isClosed(){
+        return isClosed.get();
+    }
+
+    /**
      * Return the {@link com.ning.http.client.AsyncHttpClientConfig}
      * @return {@link com.ning.http.client.AsyncHttpClientConfig}
      */
