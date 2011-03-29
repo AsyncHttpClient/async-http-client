@@ -1073,6 +1073,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     log.debug("Sending authentication to {}", request.getUrl());
                     AsyncCallable ac = new AsyncCallable(future) {
                         public Object call() throws Exception {
+                            drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
                             nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
                             return null;
                         }
