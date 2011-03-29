@@ -108,11 +108,12 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     }
                     
                     if (remove(idleChannel)) {
+                        log.debug("Closing Idle Channel {}", idleChannel.channel);
                         close(idleChannel.channel);
                     }
                 }
 
-                log.debug(String.format("%d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
+                log.trace(String.format("%d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
                         channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
             } catch (Throwable t) {
                 log.error("uncaught exception!", t);
