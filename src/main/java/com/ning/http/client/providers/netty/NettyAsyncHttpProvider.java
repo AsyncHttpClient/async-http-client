@@ -23,6 +23,7 @@ import com.ning.http.client.Body;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -1138,7 +1139,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
 
                         if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
-                            final RequestBuilder builder = new RequestBuilder(future.getRequest());
+                            final RequestBuilder builder = new RequestBuilder(future.getRequest()).setQueryParameters(null);
                             final URI initialConnectionUri = future.getURI();
                             final boolean initialConnectionKeepAlive = future.getKeepAlive();
                             future.setURI(uri);
