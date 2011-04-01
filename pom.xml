@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
-    <name>async-http-client</name>
+    <name>Asynchronous Http Client</name>
     <version>1.6.4-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
