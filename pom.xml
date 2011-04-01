@@ -21,6 +21,11 @@
         <url>scm:git:git@github.com:sonatype/async-http-client.git</url>
         <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
     </scm>
+    <issueManagement>
+        <system>jira</system>
+        <url>https://issues.sonatype.org/browse/AHC</url>
+    </issueManagement>
+
     <prerequisites>
         <maven>2.0.9</maven>
     </prerequisites>
