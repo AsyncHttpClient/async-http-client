@@ -89,7 +89,7 @@ public class OAuthSignatureCalculator
         long timestamp = System.currentTimeMillis() / 1000L;
         String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
-        requestBuilder = requestBuilder.addHeader(HEADER_AUTHORIZATION, headerValue);
+        requestBuilder = requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
 
     /**
