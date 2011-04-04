@@ -447,6 +447,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setQueryParameters(FluentStringsMap parameters){
+        if (parameters == null) {
+            request.queryParams = null;
+        } else {
+            request.queryParams = new FluentStringsMap(parameters);
+        }
+        return derived.cast(this);
+    }
+
     public T addParameter(String key, String value) throws IllegalArgumentException {
         resetNonMultipartData();
         resetMultipartData();

@@ -67,6 +67,11 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
+    public RequestBuilder setQueryParameters(FluentStringsMap parameters) {
+        return super.setQueryParameters(parameters);
+    }
+
+    @Override
     public Request build() {
         return super.build();
     }
