@@ -15,7 +15,6 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
@@ -23,16 +22,11 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -46,104 +40,65 @@ import static org.testng.Assert.assertNotNull;
  * @author Martin Schurrer
  */
 public abstract class RemoteSiteTest extends AbstractBasicTest{
-    private AsyncHttpClient c;
-    private CyclicBarrier b;
-    private AsyncCompletionHandler<Response> h;
-    private Throwable t;
 
     public static final String URL = "http://google.com?q=";
     public static final String REQUEST_PARAM = "github github \n" +
             "github";
-
-    @BeforeClass
-    public void before() {
-        b = new CyclicBarrier(2);
-        c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
-        t = null;
-        h = new AsyncCompletionHandler<Response>() {
-            public void onThrowable(Throwable t) {
-                try {
-                    RemoteSiteTest.this.t = t;
-                }
-                finally {
-                    try {
-                        b.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            public Response onCompleted(Response response) throws Exception {
-                try {
-                    return response;
-                } finally {
-                    try {
-                        b.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-    }
-
-    @AfterClass
-    public void checkThrowable() {
-        if (c != null)
-            c.close();
-
-        if (t != null) {
-            t.printStackTrace();
-            Assert.fail("timeout?!");
-        }
-    }
-
+    
     @Test(groups = {"online", "default_provider"})
-    public void testGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
+    public void testGoogleCom() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         // Works
-        c.prepareGet("http://www.google.com/").execute(h);
-        b.await();
+        Response response = c.prepareGet("http://www.google.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 302);
     }
 
     @Test(groups = {"online", "default_provider"})
-    public void testMailGoogleCom() throws IOException, BrokenBarrierException, InterruptedException {
-        c.prepareGet("http://mail.google.com/").execute(h);
-        b.await();
+    public void testMailGoogleCom() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        
+        Response response = c.prepareGet("http://mail.google.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
     }
 
     @Test(groups = {"online", "default_provider"})
-    public void testMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
+    public void testMicrosoftCom() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        
         // Works
-        c.prepareGet("http://microsoft.com/").execute(h);
-        b.await();
+        Response response = c.prepareGet("http://microsoft.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 301);
     }
 
     @Test(groups = {"online", "default_provider"})
-    public void testWwwMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
-        c.prepareGet("http://www.microsoft.com/").execute(h);
-        b.await();
+    public void testWwwMicrosoftCom() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        
+        Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 302);
     }
 
     @Test(groups = {"online", "default_provider"})
-    public void testUpdateMicrosoftCom() throws IOException, BrokenBarrierException, InterruptedException {
-        c.prepareGet("http://update.microsoft.com/").execute(h);
-        b.await();
+    public void testUpdateMicrosoftCom() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        
+        Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 302);
     }
 
     @Test(groups = {"online", "default_provider"})
-    public void testGoogleComWithTimeout() throws IOException, BrokenBarrierException, InterruptedException {
+    public void testGoogleComWithTimeout() throws Throwable {
+        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        
         // Works
-        c.prepareGet("http://google.com/").execute(h);
-        b.await();
-        Thread.sleep(20000); // Wait for timeout
-        if (t != null) {
-            Assert.fail("timeout?!");
-        }
+        Response response = c.prepareGet("http://google.com/").execute().get(10,TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 301);
     }
 
     @Test(groups = {"online", "default_provider"})
