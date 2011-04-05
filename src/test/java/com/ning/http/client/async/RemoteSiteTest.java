@@ -60,7 +60,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         
         Response response = c.prepareGet("http://mail.google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
     }
 
     @Test(groups = {"online", "default_provider"})
