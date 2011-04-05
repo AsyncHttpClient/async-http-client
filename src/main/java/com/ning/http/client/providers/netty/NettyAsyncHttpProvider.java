@@ -930,6 +930,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (chunk.isLast()) {
                     AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
                     ac.call();
+                }else{
+                    return;
                 }
             } else {
                 AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
