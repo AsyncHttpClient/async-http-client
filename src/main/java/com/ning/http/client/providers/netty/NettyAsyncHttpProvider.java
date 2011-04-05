@@ -1740,9 +1740,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         /**
          * @Override
          */
-        public Object get(long timeout, TimeUnit unit)
-                throws InterruptedException, ExecutionException,
-                TimeoutException {
+        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return this.scheduledFuture.get(timeout, unit);
         }
 
@@ -1768,7 +1766,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return;
             }
 
-            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired() && !this.nettyResponseFuture.isDone() && !this.nettyResponseFuture.isCancelled()) {
+            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()
+                    && !this.nettyResponseFuture.isDone() && !this.nettyResponseFuture.isCancelled()) {
                 log.debug("Request Timeout expired for {}\n", this.nettyResponseFuture);
 
                 int requestTimeout = config.getRequestTimeoutInMs();
