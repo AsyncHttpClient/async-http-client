@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
-    <name>async-http-client</name>
+    <name>Asynchronous Http Client</name>
     <version>1.6.4-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
@@ -18,9 +18,14 @@
     <url>http://github.com/sonatype/async-http-client</url>
     <scm>
         <connection>scm:git:git@github.com:sonatype/async-http-client.git</connection>
-        <url>scm:git:git@github.com:sonatype/async-http-client.git</url>
+        <url>https://github.com/sonatype/async-http-client</url>
         <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
     </scm>
+    <issueManagement>
+        <system>jira</system>
+        <url>https://issues.sonatype.org/browse/AHC</url>
+    </issueManagement>
+
     <prerequisites>
         <maven>2.0.9</maven>
     </prerequisites>

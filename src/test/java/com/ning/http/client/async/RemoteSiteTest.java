@@ -218,5 +218,39 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Assert.assertEquals(response.getStatusCode(), 301);
     }
 
+
+    @Test(groups = {"online", "default_provider"})
+    public void stripQueryStringTest() throws Throwable {
+
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        Response response = c.prepareGet("http://www.freakonomics.com/?p=55846")
+                .execute().get();
+
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 200);
+
+
+        c.close();
+    }
+
+    @Test(groups = {"online", "default_provider"})
+    public void stripQueryStringNegativeTest() throws Throwable {
+
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()
+                .setRemoveQueryParamsOnRedirect(false).setFollowRedirects(true).build();
+        AsyncHttpClient c = new AsyncHttpClient(cg);
+
+        Response response = c.prepareGet("http://www.freakonomics.com/?p=55846")
+                .execute().get();
+
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 301);
+
+
+        c.close();
+    }
+
 }
 

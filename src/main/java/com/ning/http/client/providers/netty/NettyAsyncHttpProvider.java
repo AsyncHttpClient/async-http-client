@@ -1137,9 +1137,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         String location = response.getHeader(HttpHeaders.Names.LOCATION);
                         URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
+                        boolean stripQueryString = config.isRemoveQueryParamOnRedirect();
 
                         if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
-                            final RequestBuilder builder = new RequestBuilder(future.getRequest()).setQueryParameters(null);
+                            final RequestBuilder builder = stripQueryString ?
+                                      new RequestBuilder(future.getRequest()).setQueryParameters(null)
+                                    : new RequestBuilder(future.getRequest());
+
                             final URI initialConnectionUri = future.getURI();
                             final boolean initialConnectionKeepAlive = future.getKeepAlive();
                             future.setURI(uri);

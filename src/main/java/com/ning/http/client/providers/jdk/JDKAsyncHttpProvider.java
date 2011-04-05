@@ -145,12 +145,16 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         HttpURLConnection urlConnection = createUrlConnection(request);
 
+        PerRequestConfig conf = request.getPerRequestConfig();
+        int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
+                conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+
         JDKDelegateFuture delegate = null;
         if (future != null) {
-            delegate = new JDKDelegateFuture(handler, config.getRequestTimeoutInMs(), future, urlConnection);
+            delegate = new JDKDelegateFuture(handler, requestTimeout, future, urlConnection);
         }
-        
-        JDKFuture f = delegate == null ? new JDKFuture<T>(handler, config.getRequestTimeoutInMs(), urlConnection) : delegate;
+
+        JDKFuture f = delegate == null ? new JDKFuture<T>(handler, requestTimeout, urlConnection) : delegate;
         f.touch();
 
         f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));

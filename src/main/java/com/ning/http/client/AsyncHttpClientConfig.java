@@ -75,6 +75,7 @@ public class AsyncHttpClientConfig {
     private final int maxRequestRetry;
     private final boolean allowSslConnectionPool;
     private final boolean useRawUrl;
+    private final boolean removeQueryParamOnRedirect;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -99,7 +100,8 @@ public class AsyncHttpClientConfig {
                                   int requestCompressionLevel,
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
-                                  boolean useRawUrl) {
+                                  boolean useRawUrl,
+                                  boolean removeQueryParamOnRedirect) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -123,6 +125,7 @@ public class AsyncHttpClientConfig {
         this.maxRequestRetry = maxRequestRetry;
         this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
+        this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -394,6 +397,14 @@ public class AsyncHttpClientConfig {
         return useRawUrl;
     }
 
+    /**
+     * Return true if the query parameters will be stripped from the request when a redirect is requested.
+     * @return true if the query parameters will be stripped from the request when a redirect is requested.
+     */
+    public boolean isRemoveQueryParamOnRedirect() {
+        return removeQueryParamOnRedirect;
+    }
+
 
     /**
      * Builder for an {@link AsyncHttpClient}
@@ -436,6 +447,7 @@ public class AsyncHttpClientConfig {
         private final List<IOExceptionFilter> ioExceptionFilters = new LinkedList<IOExceptionFilter>();
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
+        private boolean removeQueryParamOnRedirect = true;
 
         public Builder() {
         }
@@ -782,7 +794,7 @@ public class AsyncHttpClientConfig {
          * Return true is if connections pooling is enabled.
          *
          * @param allowSslConnectionPool true if enabled
-         * @return true is if connections pooling is enabled.
+         * @return this
          */
         public Builder setAllowSslConnectionPool(boolean allowSslConnectionPool) {
             this.allowSslConnectionPool = allowSslConnectionPool;
@@ -794,13 +806,23 @@ public class AsyncHttpClientConfig {
          * useful for retrieving data from broken sites
          *
          * @param useRawUrl
-         * @return
+         * @return this
          */
         public Builder setUseRawUrl(boolean useRawUrl) {
             this.useRawUrl = useRawUrl;
             return this;
         }
 
+        /**
+         * Set to false if you don't want the query parameters removed when a redirect occurs.
+         * @param removeQueryParamOnRedirect
+         * @return this
+         */
+        public Builder setRemoveQueryParamsOnRedirect(boolean removeQueryParamOnRedirect) {
+            this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+            return this;
+        }
+        
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -861,7 +883,8 @@ public class AsyncHttpClientConfig {
                     requestCompressionLevel,
                     maxRequestRetry,
                     allowSslConnectionPool,
-                    useRawUrl);
+                    useRawUrl,
+                    removeQueryParamOnRedirect);
         }
     }
 }
