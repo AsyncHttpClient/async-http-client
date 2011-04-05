@@ -218,6 +218,16 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Assert.assertEquals(response.getStatusCode(), 301);
     }
 
+    /**
+     * See  https://issues.sonatype.org/browse/AHC-61
+     * @throws Throwable
+     */
+    @Test(groups = {"online", "default_provider"})
+    public void testAHC60() throws Throwable {
+        AsyncHttpClient client = new AsyncHttpClient();
+        Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get();
+        Assert.assertEquals(response.getStatusCode(), 200);
+    }
 
     @Test(groups = {"online", "default_provider"})
     public void stripQueryStringTest() throws Throwable {

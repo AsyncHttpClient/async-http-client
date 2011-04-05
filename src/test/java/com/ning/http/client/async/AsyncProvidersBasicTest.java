@@ -58,7 +58,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import static org.testng.Assert.assertNotNull;
 
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
@@ -554,6 +553,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
+
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
@@ -930,8 +930,10 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             });
 
             future.get(10, TimeUnit.SECONDS);
-        } catch (TimeoutException ex) {
-            Assert.assertTrue(true);
+        } catch (ExecutionException ex) {            
+            if (ex.getCause() != null && TimeoutException.class.isAssignableFrom(ex.getCause().getClass())) {
+                Assert.assertTrue(true);
+            }
         } catch (IllegalStateException ex) {
             Assert.assertTrue(false);
         }
