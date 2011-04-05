@@ -178,8 +178,11 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
             if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
                 return get(timeout, unit);
             }
-            timedOut.set(true);
-            throw new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+
+            if (exception.get() == null) {
+                timedOut.set(true);
+                throw new ExecutionException(new TimeoutException(String.format("No response received after %s", responseTimeoutInMs)));
+            }
         } catch (CancellationException ce) {
         }
 
