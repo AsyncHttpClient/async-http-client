@@ -45,7 +45,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testMaxTotalConnections() {
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setAllowPoolingConnection(true)
                         .setMaximumConnectionsTotal(1)
@@ -69,7 +69,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setAllowPoolingConnection(true)
                         .setMaximumConnectionsTotal(1)
@@ -100,7 +100,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         // Use a l in case the assert fail
         final CountDownLatch l = new CountDownLatch(2);
@@ -166,7 +166,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
         };
 
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionsPool(cp)
                         .build()
@@ -210,7 +210,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
         };
 
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionsPool(cp)
                         .build()
@@ -232,7 +232,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void multipleMaxConnectionOpenTest() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         String body = "hello there";
 
@@ -261,7 +261,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
                 .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         String body = "hello there";
 
@@ -296,7 +296,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void win7DisconnectTest() throws Throwable {
         final AtomicInteger count = new AtomicInteger(0);
 
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         AsyncCompletionHandler<Response> handler = new
                 AsyncCompletionHandlerAdapter() {
 
@@ -326,7 +326,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void asyncHandlerOnThrowableTest() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final AtomicInteger count = new AtomicInteger();
         final String THIS_IS_NOT_FOR_YOU = "This is not for you";
         final CountDownLatch latch = new CountDownLatch(16);

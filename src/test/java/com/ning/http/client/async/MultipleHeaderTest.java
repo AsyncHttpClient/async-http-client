@@ -53,7 +53,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[]{null, null};
 
-        AsyncHttpClient ahc = new AsyncHttpClient();
+        AsyncHttpClient ahc = getAsyncHttpClient(null);
         Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {
@@ -104,7 +104,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
             throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] clHeaders = new String[]{null, null};
 
-        AsyncHttpClient ahc = new AsyncHttpClient();
+        AsyncHttpClient ahc = getAsyncHttpClient(null);
         Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
         final CountDownLatch latch = new CountDownLatch(1);
         ahc.executeRequest(req, new AsyncHandler<Void>() {

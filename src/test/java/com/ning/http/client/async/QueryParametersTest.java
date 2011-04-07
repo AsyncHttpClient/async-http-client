@@ -72,7 +72,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testQueryParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         Future<Response> f = client
                 .prepareGet("http://127.0.0.1:" + port1)
                 .addQueryParameter("a", "1")
@@ -103,7 +103,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void urlWithColonTest_Netty() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         String query = "test:colon:";
         Response response = c.prepareGet(String.format("http://127.0.0.1:%d/foo/test/colon?q=%s", port1, query))

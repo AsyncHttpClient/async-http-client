@@ -205,7 +205,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPostTest() throws Throwable {
 
-        final AsyncHttpClient client = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -221,7 +221,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void multipleSSLRequestsTest() throws Throwable {
-        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 
         String body = "hello there";
 
@@ -245,7 +245,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
 
         String body = "hello there";
         c.preparePost(getTargetUrl())
@@ -269,7 +269,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
-        final AsyncHttpClient c = new AsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
 
         final String body = "hello there";
 

@@ -83,7 +83,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
 
     @AfterMethod(alwaysRun = true)
     public void clean() throws InterruptedException, Exception {
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
         c.executeRequest(deleteRequest).get();
@@ -97,7 +97,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
         Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response = c.executeRequest(mkcolRequest).get();
 
@@ -109,7 +109,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
         Response response = c.executeRequest(mkcolRequest).get();
@@ -120,7 +120,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
         Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
         Response response = c.executeRequest(propFindRequest).get();
 
@@ -131,7 +131,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response = c.executeRequest(mkcolRequest).get();
@@ -153,7 +153,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"})
     public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
 
         Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
         Response response = c.executeRequest(mkcolRequest).get();

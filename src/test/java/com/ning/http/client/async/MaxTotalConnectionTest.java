@@ -38,7 +38,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 "http://google.com",
                 "http://github.com/"};
 
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionTimeoutInMs(1000)
                         .setRequestTimeoutInMs(5000)
@@ -68,7 +68,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 "http://google.com",
                 "http://lenta.ru"};
 
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionTimeoutInMs(1000)
                         .setRequestTimeoutInMs(5000)
@@ -99,7 +99,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 "http://google.com",
                 "http://github.com/"};
 
-        AsyncHttpClient client = new AsyncHttpClient(
+        AsyncHttpClient client = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder()
                         .setConnectionTimeoutInMs(1000)
                         .setRequestTimeoutInMs(5000)

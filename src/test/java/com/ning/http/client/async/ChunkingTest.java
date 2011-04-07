@@ -90,7 +90,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             bc.setFollowRedirects(true);
 
 
-            c = new AsyncHttpClient(bc.build());
+            c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());

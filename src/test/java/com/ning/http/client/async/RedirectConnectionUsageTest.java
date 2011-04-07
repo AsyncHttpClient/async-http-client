@@ -125,7 +125,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
                 config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
             //config.addProperty(NettyAsyncHttpProviderConfig.REUSE_ADDRESS, "true");
             bc.setAsyncHttpClientProviderConfig(config);
-            c = new AsyncHttpClient(bc.build());
+            c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("GET");
             builder.setUrl(servletEndpointRedirectUrl);

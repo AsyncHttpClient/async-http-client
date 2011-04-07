@@ -72,7 +72,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void basicByteBufferTest() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient();
+        AsyncHttpClient c = getAsyncHttpClient(null);
         final AtomicBoolean completed = new AtomicBoolean(false);
 
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");

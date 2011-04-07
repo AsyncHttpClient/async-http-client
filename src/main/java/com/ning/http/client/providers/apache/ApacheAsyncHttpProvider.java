@@ -38,6 +38,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
@@ -446,6 +447,10 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                     reaperFuture.setScheduledFuture(scheduledFuture);
                     future.setReaperFuture(reaperFuture);
+                }
+
+                if (TransferCompletionHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                    throw new IllegalStateException(TransferCompletionHandler.class.getName() + "not supported by this provider");
                 }
 
                 int statusCode = 200;

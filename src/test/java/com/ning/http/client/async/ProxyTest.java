@@ -66,7 +66,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
@@ -83,7 +83,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg
                 = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
-        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        AsyncHttpClient client = getAsyncHttpClient(cfg);
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
@@ -99,7 +99,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg
                 = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
-        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        AsyncHttpClient client = getAsyncHttpClient(cfg);
         String target = "http://127.0.0.1:1234/";
         Future<Response> f = client
                 .prepareGet(target)
@@ -117,7 +117,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     public void testNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg
                 = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
-        AsyncHttpClient client = new AsyncHttpClient(cfg);
+        AsyncHttpClient client = getAsyncHttpClient(cfg);
         try {
 
             String target = "http://127.0.0.1:1234/";

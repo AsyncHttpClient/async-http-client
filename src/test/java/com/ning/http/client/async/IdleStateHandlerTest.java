@@ -76,7 +76,7 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     public void idleStateTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         try {
             c.prepareGet(getTargetUrl()).execute().get();

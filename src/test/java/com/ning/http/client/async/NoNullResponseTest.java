@@ -61,7 +61,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
                 .setRequestTimeoutInMs(10000)
                 .setMaximumConnectionsPerHost(-1)
                 .setMaximumConnectionsTotal(-1);
-        return new AsyncHttpClient(configBuilder.build());
+        return getAsyncHttpClient(configBuilder.build());
     }
 
     private SSLContext getSSLContext() throws GeneralSecurityException {
