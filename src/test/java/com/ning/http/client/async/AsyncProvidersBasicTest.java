@@ -1559,4 +1559,19 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         c.close();
     }
 
+    @Test(groups = {"standalone", "default_provider"}, expectedExceptions = IllegalArgumentException.class)
+    public void getShouldNotAllowBody() throws IllegalArgumentException, IOException {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
+        builder.setBody("Boo!");
+        builder.execute();
+    }
+
+    @Test(groups = {"standalone", "default_provider"}, expectedExceptions = IllegalArgumentException.class)
+    public void headShouldNotAllowBody() throws IllegalArgumentException, IOException {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient.BoundRequestBuilder builder = c.prepareHead(getTargetUrl());
+        builder.setBody("Boo!");
+        builder.execute();
+    }
 }
