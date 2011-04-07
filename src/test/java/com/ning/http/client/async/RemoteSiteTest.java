@@ -47,7 +47,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
     
     @Test(groups = {"online", "default_provider"})
     public void testGoogleCom() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         // Works
         Response response = c.prepareGet("http://www.google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
@@ -55,7 +55,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void testMailGoogleCom() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         
         Response response = c.prepareGet("http://mail.google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
@@ -64,7 +64,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void testMicrosoftCom() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         
         // Works
         Response response = c.prepareGet("http://microsoft.com/").execute().get(10,TimeUnit.SECONDS);
@@ -74,7 +74,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void testWwwMicrosoftCom() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         
         Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
@@ -83,7 +83,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void testUpdateMicrosoftCom() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         
         Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
@@ -92,7 +92,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void testGoogleComWithTimeout() throws Throwable {
-        AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         
         // Works
         Response response = c.prepareGet("http://google.com/").execute().get(10,TimeUnit.SECONDS);
@@ -102,7 +102,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})
     public void asyncStatusHEADContentLenghtTest() throws Throwable {
-        AsyncHttpClient p = new AsyncHttpClient(
+        AsyncHttpClient p = getAsyncHttpClient(
                 new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
 
         final CountDownLatch l = new CountDownLatch(1);
@@ -134,7 +134,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
                 .setMaximumNumberOfRedirects(6)
                 .build();
 
-        AsyncHttpClient c = new AsyncHttpClient(config);
+        AsyncHttpClient c = getAsyncHttpClient(config);
         try {
             Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();
             if (response != null) {
@@ -165,7 +165,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
     @Test(groups = {"online", "default_provider"})    
     public void testUrlRequestParametersEncoding() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
         log.info(String.format("Executing request [%s] ...", requestUrl2));
         Response response = client.prepareGet(requestUrl2).execute().get();
@@ -178,7 +178,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
      */
     @Test(groups = {"online", "default_provider"})
     public void testAHC60() throws Throwable {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get();
         Assert.assertEquals(response.getStatusCode(), 200);
     }
@@ -187,7 +187,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
     public void stripQueryStringTest() throws Throwable {
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         Response response = c.prepareGet("http://www.freakonomics.com/?p=55846")
                 .execute().get();
@@ -204,7 +204,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()
                 .setRemoveQueryParamsOnRedirect(false).setFollowRedirects(true).build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         Response response = c.prepareGet("http://www.freakonomics.com/?p=55846")
                 .execute().get();
