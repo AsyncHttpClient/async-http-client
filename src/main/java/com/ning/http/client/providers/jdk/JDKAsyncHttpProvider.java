@@ -336,7 +336,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (byteToRead > 0) {
                         int minBytes = Math.min(8192, byteToRead);
                         byte[] bytes = new byte[minBytes];
-                        int leftBytes = minBytes < 8192 ? 0 : byteToRead;
+                        int leftBytes = minBytes < 8192 ? minBytes : byteToRead;
                         int read = 0;
                         while (leftBytes > -1) {
 

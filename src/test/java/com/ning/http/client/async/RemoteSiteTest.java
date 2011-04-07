@@ -15,8 +15,12 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
@@ -214,6 +218,43 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
 
 
         c.close();
+    }
+
+    @Test(groups = {"online", "default_provider"})
+    public void testAHC62Com() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+        // Works
+        Response response = c.prepareGet("http://api.crunchbase.com/v/1/financial-organization/kinsey-hills-group.js").execute(new AsyncHandler<Response>() {
+
+            private Response.ResponseBuilder builder = new Response.ResponseBuilder();
+
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+            }
+
+            public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                System.out.println(bodyPart.getBodyPartBytes().length);
+                builder.accumulate(bodyPart);
+
+                return STATE.CONTINUE;
+            }
+
+            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                builder.accumulate(responseStatus);
+                return STATE.CONTINUE;
+            }
+
+            public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                builder.accumulate(headers);
+                return STATE.CONTINUE;
+            }
+
+            public Response onCompleted() throws Exception {
+                return builder.build();
+            }
+        }).get(10, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(response.getResponseBody().length(), 3876);
     }
 
 }
