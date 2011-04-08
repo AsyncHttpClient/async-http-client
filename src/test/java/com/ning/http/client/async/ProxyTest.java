@@ -21,6 +21,8 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Response;
+import com.ning.http.client.ProxyServer.Protocol;
+import com.ning.http.util.ProxyUtils;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -146,6 +148,76 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.proxyPort", String.valueOf(port1));
             System.setProperty("http.nonProxyHosts", "localhost");
 
+            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
+            AsyncHttpClient client = getAsyncHttpClient(cfg);
+
+            String target = "http://127.0.0.1:1234/";
+            Future<Response> f = client.prepareGet(target).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("target"), target);
+
+            target = "http://localhost:1234/";
+            f = client.prepareGet(target).execute();
+            try {
+                resp = f.get(3, TimeUnit.SECONDS);
+                fail("should not be able to connect");
+            } catch (ExecutionException e) {
+                // ok, no proxy used
+            }
+            
+            client.close();
+        } finally {
+            System.setProperties(originalProps);
+        }
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testIgnoreProxyPropertiesByDefault() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        Properties originalProps = System.getProperties();
+        try {
+            Properties props = new Properties();
+            props.putAll(originalProps);
+
+            System.setProperties(props);
+
+            System.setProperty("http.proxyHost", "127.0.0.1");
+            System.setProperty("http.proxyPort", String.valueOf(port1));
+            System.setProperty("http.nonProxyHosts", "localhost");
+
+            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
+            AsyncHttpClient client = getAsyncHttpClient(cfg);
+
+            String target = "http://127.0.0.1:1234/";
+            Future<Response> f = client.prepareGet(target).execute();
+            try {
+                f.get(3, TimeUnit.SECONDS);
+                fail("should not be able to connect");
+            } catch (ExecutionException e) {
+                // ok, no proxy used
+            }
+
+            client.close();
+        } finally {
+            System.setProperties(originalProps);
+        }
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        Properties originalProps = System.getProperties();
+        try {
+            Properties props = new Properties();
+            props.putAll(originalProps);
+
+            System.setProperties(props);
+
+            System.setProperty("http.proxyHost", "127.0.0.1");
+            System.setProperty("http.proxyPort", String.valueOf(port1));
+            System.setProperty("http.nonProxyHosts", "localhost");
+            System.setProperty("com.ning.http.client.AsyncHttpClientConfig.useProxyProperties", "true");
+
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
             AsyncHttpClient client = getAsyncHttpClient(cfg);
 
@@ -164,12 +236,11 @@ public abstract class ProxyTest extends AbstractBasicTest {
             } catch (ExecutionException e) {
                 // ok, no proxy used
             }
-
+            
             client.close();
         } finally {
             System.setProperties(originalProps);
         }
-
     }
-
+    
 }
