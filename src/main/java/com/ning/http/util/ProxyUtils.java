@@ -17,6 +17,7 @@ import com.ning.http.client.Request;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Utilities for Proxy handling.
@@ -70,5 +71,30 @@ public class ProxyUtils {
         } else {
             return true;
         }
+    }
+
+    /**
+     * Creates a proxy server instance from the given properties.
+     * <p/>
+     * Currently only the default http.* proxy properties are supported. See
+     * http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+     *
+     * @param properties
+     *            the properties to evaluate. Must not be null.
+     * @return a ProxyServer instance or null, if no valid properties were set.
+     */
+    public static ProxyServer createProxy(Properties properties) {
+        ProxyServer proxyServer = null;
+        String httpProxyHost = properties.getProperty("http.proxyHost");
+        if (httpProxyHost != null) {
+            proxyServer = new ProxyServer(httpProxyHost, Integer.valueOf(properties.getProperty("http.proxyPort", "80")));
+            String nonProxyHosts = properties.getProperty("http.nonProxyHosts");
+            if (nonProxyHosts != null) {
+                for (String spec : nonProxyHosts.split("\\|")) {
+                    proxyServer.addNonProxyHost(spec);
+                }
+            }
+        }
+        return proxyServer;
     }
 }
