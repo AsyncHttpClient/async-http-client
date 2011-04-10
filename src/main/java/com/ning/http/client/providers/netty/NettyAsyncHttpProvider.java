@@ -113,6 +113,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -175,6 +176,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final static SpnegoEngine spnegoEngine = new SpnegoEngine();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
+        this(config, null);
+    }
+    
+    public NettyAsyncHttpProvider(AsyncHttpClientConfig config, ExecutorService nioBossExecutorService) {
 
         if (config.getAsyncHttpProviderConfig() != null
                 && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
@@ -186,8 +191,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (asyncHttpProviderConfig != null && asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
         } else {
+            ExecutorService bossExecutor = nioBossExecutorService;
+            if (bossExecutor == null) {
+                bossExecutor = Executors.newCachedThreadPool();
+            }
             socketChannelFactory = new NioClientSocketChannelFactory(
-                    Executors.newCachedThreadPool(),
+                    bossExecutor,
                     config.executorService());
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
