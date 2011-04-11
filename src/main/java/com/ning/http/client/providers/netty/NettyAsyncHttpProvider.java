@@ -113,6 +113,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -183,16 +184,22 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
         }
 
-        if (asyncHttpProviderConfig != null && asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
+        if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
         } else {
-            socketChannelFactory = new NioClientSocketChannelFactory(
-                    Executors.newCachedThreadPool(),
-                    config.executorService());
+            ExecutorService e;
+            Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
+            if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
+                e = ExecutorService.class.cast(o);
+            } else {
+               e = Executors.newCachedThreadPool();  
+            }
+            socketChannelFactory = new NioClientSocketChannelFactory(e,config.executorService());
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
-
+        configureNetty();
+        
         this.config = config;
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
@@ -204,7 +211,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         this.connectionsPool = cp;
 
-        configureNetty();
         trackConnections = (config.getMaxTotalConnections() != -1);
         useRawUrl=config.isUseRawUrl();
     }

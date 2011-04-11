@@ -21,6 +21,7 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
@@ -46,6 +47,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
      */
     public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
+
+    /**
+     * Allow configuring the Netty's boss executor service.
+     */
+    public final static String BOSS_EXECUTOR_SERVICE = "bossExecutorService";
 
     /**
      * See {@link java.net.Socket#setReuseAddress(boolean)}
