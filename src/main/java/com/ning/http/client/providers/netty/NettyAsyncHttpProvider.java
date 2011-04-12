@@ -856,7 +856,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (directInvokation && !asyncConnect && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
             if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
-                abort(c.future(), new ConnectException("Connect times out"));
+                abort(c.future(), new ConnectException(String.format("Connect operation to %s timeout %s", uri, timeOut)));
             }
 
             try {
@@ -945,9 +945,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             ctx.setAttachment(new DiscardEvent());
             return;
         } else if (!(ctx.getAttachment() instanceof NettyResponseFuture<?>)) {
-            // The IdleStateHandler times out and he is calling us.
-            // We already closed the channel in IdleStateHandler#channelIdle
-            // so we have nothing to do
+            try {
+                ctx.getChannel().close();
+            } catch (Throwable t) {
+                log.trace("Closing an orphan channel {}", ctx.getChannel());
+            }
             return;
         }
 
@@ -1427,23 +1429,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastChunk) throws IOException {
-        if (lastChunk && future.getKeepAlive()) {
+    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
+        if (lastValidChunk && future.getKeepAlive()) {
             drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
-            if (future.getKeepAlive() && ctx.getChannel().isReadable()) {
-                if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
-                    finishChannel(ctx);
-                }
+            if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
+                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
+                markAsDone(future, ctx);                
+                return;
             }
+            finishChannel(ctx);
         }
         markAsDone(future, ctx);
-    }
-
-    private boolean markChannelNotReadable(final ChannelHandlerContext ctx) {
-        // Catch any unexpected exception when marking the channel.
-        ctx.setAttachment(new DiscardEvent());
-        return true;
     }
 
     @SuppressWarnings("unchecked")
