@@ -89,6 +89,9 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 for (IdleChannel idleChannel : channel2IdleChannel.values()) {
                     long age = currentTime - idleChannel.start;
                     if (age > maxIdleTime) {
+
+                        log.debug("Adding Candidate Idle Channel {}", idleChannel.channel);                        
+
                         // store in an unsynchronized list to minimize the impact on the ConcurrentHashMap.
                         channelsInTimeout.add(idleChannel);
                     }
