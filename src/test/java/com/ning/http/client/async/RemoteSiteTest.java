@@ -254,7 +254,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
             }
         }).get(10, TimeUnit.SECONDS);
         assertNotNull(response);
-        assertEquals(response.getResponseBody().length(), 3876);
+        assertEquals(response.getResponseBody().length(), 3873);
     }
 
 }
