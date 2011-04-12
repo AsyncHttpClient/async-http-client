@@ -23,7 +23,6 @@ import com.ning.http.client.Body;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -1161,8 +1160,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                             AsyncCallable ac = new AsyncCallable(future) {
                                 public Object call() throws Exception {
-                                    drainChannel(ctx, future, initialConnectionKeepAlive, initialConnectionUri);
-                                    nextRequest(builder.setUrl(newUrl).build(), future);
+                                    if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
+                                        connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                        return null;
+                                    }
+                                    finishChannel(ctx);
                                     return null;
                                 }
                             };
@@ -1173,6 +1175,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             } else {
                                 ac.call();
                             }
+                            nextRequest(builder.setUrl(newUrl).build(), future);                            
                             return;
                         }
                     } else {
@@ -1182,7 +1185,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
                     finishUpdate(future, ctx, response.isChunked());
-
                     return;
                 } else if (updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), response, this))) {
                     finishUpdate(future, ctx, response.isChunked());
@@ -1197,9 +1199,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                     updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), response, this));
-                    markAsDoneAndCacheConnection(future, ctx);
+                    markAsDone(future, ctx);
                     drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
-                    return;
                 }
 
             } else if (e.getMessage() instanceof HttpChunk) {
@@ -1239,13 +1240,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri){
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (keepAlive && ctx.getChannel().isReadable()) {
-                    if (!connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(uri), ctx.getChannel())) {
-                        finishChannel(ctx);
-                    }
-                } else {
-                    finishChannel(ctx);
+                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(uri), ctx.getChannel())) {
+                    return null;
                 }
+
+                finishChannel(ctx);
                 return null;
             }
 
@@ -1414,7 +1413,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private void markAsDoneAndCacheConnection(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
+    private void markAsDone(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
         // We need to make sure everything is OK before adding the connection back to the pool.
         try {
             future.done(null);
@@ -1423,13 +1422,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug(t.getMessage(), t);
         }
 
-        if (!future.getKeepAlive()) {
+        if (!future.getKeepAlive() || !ctx.getChannel().isReadable()) {
             closeChannel(ctx);
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean isChunked) throws IOException {
-        if (isChunked && future.getKeepAlive()) {
+    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastChunk) throws IOException {
+        if (lastChunk && future.getKeepAlive()) {
             drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
             if (future.getKeepAlive() && ctx.getChannel().isReadable()) {
@@ -1438,7 +1437,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
         }
-        markAsDoneAndCacheConnection(future, ctx);
+        markAsDone(future, ctx);
     }
 
     private boolean markChannelNotReadable(final ChannelHandlerContext ctx) {
