@@ -883,12 +883,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (acquiredConnection) {
                     freeConnections.release();
                 }
+                channelFuture.cancel();
                 abort(c.future(), new ConnectException(String.format("Connect operation to %s timeout %s", uri, timeOut)));
             }
 
             try {
                 c.operationComplete(channelFuture);
             } catch (Exception e) {
+                if (acquiredConnection) {
+                    freeConnections.release();
+                }
                 IOException ioe = new IOException(e.getMessage());
                 ioe.initCause(e);
                 throw ioe;
@@ -982,6 +986,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
         future.touch();
+
+        // The connect timeout occured.
+        if (future.isCancelled() || future.isDone()) {
+            finishChannel(ctx);
+            return;
+        }
 
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler<?> handler = future.getAsyncHandler();
