@@ -116,10 +116,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.jboss.netty.channel.Channels.pipeline;
@@ -150,15 +150,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 public boolean remove(Object o) {
                     boolean removed = super.remove(o);
                     if (removed && trackConnections) {
-                        maxConnections.decrementAndGet();
+                        freeConnections.release();
                     }
                     return removed;
                 }
             };
 
+
     private final ConnectionsPool<String, Channel> connectionsPool;
 
-    private final AtomicInteger maxConnections = new AtomicInteger();
+    private Semaphore freeConnections = null;
 
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
 
@@ -167,7 +168,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
     private final boolean trackConnections;
-    
+
     private final boolean useRawUrl;
 
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
@@ -191,14 +192,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
                 e = ExecutorService.class.cast(o);
             } else {
-               e = Executors.newCachedThreadPool();  
+                e = Executors.newCachedThreadPool();
             }
-            socketChannelFactory = new NioClientSocketChannelFactory(e,config.executorService());
+            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService());
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
         configureNetty();
-        
+
         this.config = config;
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
@@ -210,14 +211,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         this.connectionsPool = cp;
 
-        trackConnections = (config.getMaxTotalConnections() != -1);
-        useRawUrl=config.isUseRawUrl();
+        if (config.getMaxTotalConnections() != -1) {
+            trackConnections = true;
+            freeConnections = new Semaphore(config.getMaxTotalConnections());
+        } else {
+            trackConnections = false;
+        }
+
+        useRawUrl = config.isUseRawUrl();
     }
 
     @Override
     public String toString() {
         return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",
-                maxConnections.get(),
+                config.getMaxTotalConnections() - freeConnections.availablePermits(),
                 openChannels.toString(),
                 connectionsPool.toString());
     }
@@ -705,7 +712,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             connectionsPool.destroy();
             openChannels.close();
 
-            for(Channel channel: openChannels) {
+            for (Channel channel : openChannels) {
                 ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
                 if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
                     NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
@@ -754,10 +761,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         String requestUrl;
-        if(useRawUrl) {
-        	requestUrl=request.getRawUrl();
+        if (useRawUrl) {
+            requestUrl = request.getRawUrl();
         } else {
-        	requestUrl=request.getUrl();
+            requestUrl = request.getUrl();
         }
         URI uri = AsyncHttpProviderUtils.createUri(requestUrl);
         Channel channel = null;
@@ -806,26 +813,40 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         // Do not throw an exception when we need an extra connection for a redirect.
-        if (!reclaimCache && (!connectionsPool.canCacheConnection() ||
-                (config.getMaxTotalConnections() > -1 && (maxConnections.get() + 1) > config.getMaxTotalConnections()))) {
+        if (!reclaimCache && !connectionsPool.canCacheConnection()) {
             IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
             try {
                 asyncHandler.onThrowable(ex);
             } catch (Throwable t) {
-                log.warn("!connectionsPool.canCacheConnection()",t);
+                log.warn("!connectionsPool.canCacheConnection()", t);
             }
             throw ex;
         }
+
+        boolean acquiredConnection = false;
+
+        if (trackConnections) {
+            if (!reclaimCache) {
+                if (!freeConnections.tryAcquire()) {
+                    IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+                    try {
+                        asyncHandler.onThrowable(ex);
+                    } catch (Throwable t) {
+                        log.warn("!connectionsPool.canCacheConnection()", t);
+                    }
+                    throw ex;
+                } else {
+                    acquiredConnection = true;
+                }
+            }
+        }
+
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
         boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
 
         if (useSSl) {
             constructSSLPipeline(c);
-        }
-
-        if (trackConnections) {
-            maxConnections.incrementAndGet();
         }
 
         ChannelFuture channelFuture;
@@ -844,6 +865,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
         } catch (Throwable t) {
+            if (acquiredConnection) {
+                freeConnections.release();
+            }
             abort(c.future(), t.getCause() == null ? t : t.getCause());
             return c.future();
         }
@@ -856,6 +880,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (directInvokation && !asyncConnect && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
             if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
+                if (acquiredConnection) {
+                    freeConnections.release();
+                }
                 abort(c.future(), new ConnectException(String.format("Connect operation to %s timeout %s", uri, timeOut)));
             }
 
@@ -935,7 +962,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (chunk.isLast()) {
                     AsyncCallable ac = (AsyncCallable) ctx.getAttachment();
                     ac.call();
-                }else{
+                } else {
                     return;
                 }
             } else {
@@ -1150,7 +1177,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
                             final RequestBuilder builder = stripQueryString ?
-                                      new RequestBuilder(future.getRequest()).setQueryParameters(null)
+                                    new RequestBuilder(future.getRequest()).setQueryParameters(null)
                                     : new RequestBuilder(future.getRequest());
 
                             final URI initialConnectionUri = future.getURI();
@@ -1163,7 +1190,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             AsyncCallable ac = new AsyncCallable(future) {
                                 public Object call() throws Exception {
                                     if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
-                                        connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                            connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
                                         return null;
                                     }
                                     finishChannel(ctx);
@@ -1177,7 +1204,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             } else {
                                 ac.call();
                             }
-                            nextRequest(builder.setUrl(newUrl).build(), future);                            
+                            nextRequest(builder.setUrl(newUrl).build(), future);
                             return;
                         }
                     } else {
@@ -1239,7 +1266,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri){
+    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
                 if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(uri), ctx.getChannel())) {
@@ -1251,7 +1278,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             @Override
-            public String toString(){
+            public String toString() {
                 return String.format("Draining task for channel %s", ctx.getChannel());
             }
         });
@@ -1343,7 +1370,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             super.channelClosed(ctx, e);
         } catch (Exception ex) {
-            log.trace("super.channelClosed" , ex);
+            log.trace("super.channelClosed", ex);
         }
 
         log.debug("Channel Closed: {} with attachment {}", e.getChannel(), ctx.getAttachment());
@@ -1377,7 +1404,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 closeChannel(ctx);
             }
-        } 
+        }
     }
 
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
@@ -1435,7 +1462,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
                     connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
-                markAsDone(future, ctx);                
+                markAsDone(future, ctx);
                 return;
             }
             finishChannel(ctx);
@@ -1485,7 +1512,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.attachChannel(null, false);
                 future.touch();
 
-                if (IOException.class.isAssignableFrom(cause.getClass())){
+                if (IOException.class.isAssignableFrom(cause.getClass())) {
 
                     if (config.getIOExceptionFilters().size() > 0) {
                         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
