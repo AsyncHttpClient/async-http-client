@@ -103,7 +103,7 @@ public class SpnegoEngine {
             boolean tryKerberos = false;
             try {
                 GSSManager manager = GSSManager.getInstance();
-                GSSName serverName = manager.createName("HTTP/" + server, null);
+                GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
                 gssContext = manager.createContext(
                         serverName.canonicalize(negotiationOid), negotiationOid, null,
                         GSSContext.DEFAULT_LIFETIME);
@@ -126,7 +126,7 @@ public class SpnegoEngine {
                 log.debug("Using Kerberos MECH {}", KERBEROS_OID);
                 negotiationOid = new Oid(KERBEROS_OID);
                 GSSManager manager = GSSManager.getInstance();
-                GSSName serverName = manager.createName("HTTP/" + server, null);
+                GSSName serverName = manager.createName("HTTP@" + server, GSSName.NT_HOSTBASED_SERVICE);
                 gssContext = manager.createContext(
                         serverName.canonicalize(negotiationOid), negotiationOid, null,
                         GSSContext.DEFAULT_LIFETIME);

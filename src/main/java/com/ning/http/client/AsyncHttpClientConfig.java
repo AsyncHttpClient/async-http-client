@@ -18,6 +18,7 @@ package com.ning.http.client;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -419,6 +420,7 @@ public class AsyncHttpClientConfig {
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
+        private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean allowPoolingConnection = true;
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             public Thread newThread(Runnable r) {
@@ -822,7 +824,21 @@ public class AsyncHttpClientConfig {
             this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
             return this;
         }
-        
+
+        /**
+         * Sets whether AHC should use the default http.proxy* system properties
+         * to obtain proxy information.
+         * <p/>
+         * If useProxyProperties is set to <code>true</code> but {@link #setProxyServer(ProxyServer)} was used 
+         * to explicitly set a proxy server, the latter is preferred.
+         * <p/>
+         * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+         */
+        public Builder setUseProxyProperties(boolean useProxyProperties) {
+            this.useProxyProperties = useProxyProperties;
+            return this;
+        }
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -859,6 +875,10 @@ public class AsyncHttpClientConfig {
          * @return an {@link AsyncHttpClientConfig}
          */
         public AsyncHttpClientConfig build() {
+            if (proxyServer == null && useProxyProperties) {
+                proxyServer = ProxyUtils.createProxy(System.getProperties());
+            }
+
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
                     defaultMaxConnectionPerHost,
                     defaultConnectionTimeOutInMs,

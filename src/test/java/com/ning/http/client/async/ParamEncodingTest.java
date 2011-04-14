@@ -60,7 +60,7 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         Future<Response> f = client
                 .preparePost("http://127.0.0.1:" + port1)
                 .addParameter("test", value)

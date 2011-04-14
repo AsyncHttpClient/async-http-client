@@ -94,7 +94,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
 
         AsyncHttpClientConfig config = b.build();
-        AsyncHttpClient asyncHttpClient = new AsyncHttpClient(config);
+        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
 
         RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
         Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
@@ -125,7 +125,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         b.setProxyServer(ps);
 
         AsyncHttpClientConfig config = b.build();
-        AsyncHttpClient asyncHttpClient = new AsyncHttpClient(config);
+        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
 
         RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
         Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {

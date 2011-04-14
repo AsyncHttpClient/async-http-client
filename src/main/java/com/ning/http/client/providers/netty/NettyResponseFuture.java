@@ -207,7 +207,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                     } catch (Throwable t) {
                         logger.debug("asyncHandler.onThrowable", t);
                     } finally {
-                        throw te;
+                        throw new ExecutionException(te);
                     }
                 }
             }

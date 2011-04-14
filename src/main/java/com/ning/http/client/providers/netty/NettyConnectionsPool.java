@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
-    private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
+    private final static Logger log = LoggerFactory.getLogger(NettyConnectionsPool.class);
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
@@ -89,6 +89,9 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 for (IdleChannel idleChannel : channel2IdleChannel.values()) {
                     long age = currentTime - idleChannel.start;
                     if (age > maxIdleTime) {
+
+                        log.debug("Adding Candidate Idle Channel {}", idleChannel.channel);                        
+
                         // store in an unsynchronized list to minimize the impact on the ConcurrentHashMap.
                         channelsInTimeout.add(idleChannel);
                     }
@@ -103,6 +106,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
                             if (!future.isDone() && !future.isCancelled()) {
                                 log.debug("Future not in appropriate state %s\n", future);
+                                continue;
                             }
                         }
                     }
@@ -113,8 +117,8 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     }
                 }
 
-                log.trace(String.format("%d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
-                        channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
+                log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
+                        connectionsPool.size(), channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
             } catch (Throwable t) {
                 log.error("uncaught exception!", t);
             }

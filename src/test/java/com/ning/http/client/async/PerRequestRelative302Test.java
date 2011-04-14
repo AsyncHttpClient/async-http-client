@@ -93,7 +93,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     public void redirected302Test() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         // once
         Response response = c.prepareGet(getTargetUrl())
@@ -133,7 +133,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
@@ -155,7 +155,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = new AsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(cg);
 
         Response response = c.preparePost(getTargetUrl())
                 .setFollowRedirects(true)

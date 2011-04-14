@@ -69,7 +69,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -106,7 +106,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -129,7 +129,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties
@@ -170,7 +170,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
 
         ClassLoader cl = getClass().getClassLoader();
         // override system properties

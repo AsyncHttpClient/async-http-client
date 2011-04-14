@@ -38,6 +38,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
@@ -448,6 +449,10 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                     future.setReaperFuture(reaperFuture);
                 }
 
+                if (TransferCompletionHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                    throw new IllegalStateException(TransferCompletionHandler.class.getName() + "not supported by this provider");
+                }
+
                 int statusCode = 200;
                 try {
                     statusCode = httpClient.executeMethod(method);
@@ -530,7 +535,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
                         if (byteToRead > 0) {
                             int minBytes = Math.min(8192, byteToRead);
                             byte[] bytes = new byte[minBytes];
-                            int leftBytes = minBytes < 8192 ? 0 : byteToRead;
+                            int leftBytes = minBytes < 8192 ? minBytes : byteToRead;
                             int read = 0;
                             while (leftBytes > -1) {
 

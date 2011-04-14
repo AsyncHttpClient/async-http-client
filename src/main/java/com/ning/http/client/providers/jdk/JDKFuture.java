@@ -93,7 +93,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
             super.done();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
-            super.done();            
+            super.done();
             return false;
         }
     }
@@ -127,10 +127,13 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
             }
         } catch (TimeoutException t) {
             if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
-                return get(timeout,unit);
+                return get(timeout, unit);
             }
-            timedOut.set(true);
-            throw new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+
+            if (exception.get() == null) {
+                timedOut.set(true);
+                throw new ExecutionException(new TimeoutException(String.format("No response received after %s", responseTimeoutInMs)));
+            }
         } catch (CancellationException ce) {
         }
 
@@ -145,7 +148,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
      *
      * @return <code>true</code> if response has expired and should be terminated.
      */
-    public boolean hasExpired(){
+    public boolean hasExpired() {
         return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
     }
 

@@ -93,7 +93,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testRequestTimeout() throws IOException {
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = getAsyncHttpClient(null);
         PerRequestConfig requestConfig = new PerRequestConfig();
         requestConfig.setRequestTimeoutInMs(100);
         Future<Response> responseFuture =
@@ -115,7 +115,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         PerRequestConfig requestConfig = new PerRequestConfig();
         requestConfig.setRequestTimeoutInMs(-1);
         Future<Response> responseFuture =
@@ -135,7 +135,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void testGlobalRequestTimeout() throws IOException {
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
         try {
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
@@ -156,7 +156,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalIdleTimeout() throws IOException {
         final long times[] = new long[]{-1, -1};
 
-        AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).build());
         Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
             @Override
             public Response onCompleted(Response response) throws Exception {

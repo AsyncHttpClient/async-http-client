@@ -70,7 +70,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         Response response = c.preparePost(getTargetUrl())
                 .execute().get();
@@ -84,7 +84,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         List<Future<Response>> futures = new ArrayList<Future<Response>>();
         for (int i = 0; i < 200; i++) {
@@ -104,7 +104,7 @@ public abstract class FilterTest extends AbstractBasicTest {
     public void maxConnectionsText() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl())
@@ -131,7 +131,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl())
@@ -162,7 +162,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl())
@@ -194,7 +194,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = new AsyncHttpClient(b.build());
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl())

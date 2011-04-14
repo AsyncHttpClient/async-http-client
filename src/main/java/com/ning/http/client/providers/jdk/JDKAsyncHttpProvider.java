@@ -34,6 +34,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -248,6 +249,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 configure(uri, urlConnection, request);
                 urlConnection.connect();
 
+                if (TransferCompletionHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                    throw new IllegalStateException(TransferCompletionHandler.class.getName() + "not supported by this provider");
+                }
+
                 int statusCode = urlConnection.getResponseCode();
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
@@ -336,7 +341,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                     if (byteToRead > 0) {
                         int minBytes = Math.min(8192, byteToRead);
                         byte[] bytes = new byte[minBytes];
-                        int leftBytes = minBytes < 8192 ? 0 : byteToRead;
+                        int leftBytes = minBytes < 8192 ? minBytes : byteToRead;
                         int read = 0;
                         while (leftBytes > -1) {
 
