@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         this.maxIdleTime = provider.getConfig().getIdleConnectionInPoolTimeoutInMs();
         this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
     }
-        
+
     private static class IdleChannel {
         final String uri;
         final Channel channel;
@@ -83,6 +84,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             try {
                 if (isClosed.get()) return;
 
+                if (log.isDebugEnabled()) {
+                    Set<String> keys = connectionsPool.keySet();
+
+                    for (String s : keys) {
+                        log.debug("Entry count for : {} : {}", s, connectionsPool.get(s).size());
+                    }
+                }
+
                 List<IdleChannel> channelsInTimeout = new ArrayList<IdleChannel>();
                 long currentTime = System.currentTimeMillis();
 
@@ -90,7 +99,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     long age = currentTime - idleChannel.start;
                     if (age > maxIdleTime) {
 
-                        log.debug("Adding Candidate Idle Channel {}", idleChannel.channel);                        
+                        log.debug("Adding Candidate Idle Channel {}", idleChannel.channel);
 
                         // store in an unsynchronized list to minimize the impact on the ConcurrentHashMap.
                         channelsInTimeout.add(idleChannel);
@@ -110,7 +119,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                             }
                         }
                     }
-                    
+
                     if (remove(idleChannel)) {
                         log.debug("Closing Idle Channel {}", idleChannel.channel);
                         close(idleChannel.channel);
