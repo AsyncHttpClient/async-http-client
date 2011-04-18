@@ -19,7 +19,7 @@ and then define the dependency as:
          <dependency>
              <groupId>com.ning</groupId>
              <artifactId>async-http-client</artifactId>
-             <version>1.6.2</version>
+             <version>1.6.3</version>
          </dependency>
 
 You can also download the artifact
@@ -97,7 +97,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 
           @Override
           public STATE onHeadersReceived(HttpResponseHeaders h) throws Exception {
-              Headers headers = h.getHeaders();
+              FluentCaseInsensitiveStringsMap headers = h.getHeaders();
                // The headers have been read
                // If you don't want to read the body, or stop processing the response
                return STATE.ABORT;
@@ -106,7 +106,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
           @Override
           public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                builder.append(new String(bodyPart.getBodyPartBytes()));
-               return STATE.CONTINU
+               return STATE.CONTINUE;
           }
 
           @Override
