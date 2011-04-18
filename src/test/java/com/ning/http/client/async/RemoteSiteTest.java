@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.AssertJUnit.assertTrue;
 
 /**
  * Unit tests for remote site.
@@ -254,7 +255,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
             }
         }).get(10, TimeUnit.SECONDS);
         assertNotNull(response);
-        assertEquals(response.getResponseBody().length(), 3873);
+        assertTrue(response.getResponseBody().length() >= 3870);
     }
 
 }
