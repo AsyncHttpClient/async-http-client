@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import com.ning.http.client.Response.ResponseBuilder;
 
@@ -84,7 +85,9 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
     private volatile Response response;
 
-    private volatile Throwable t;
+    private volatile Throwable throwable;
+
+    private final Semaphore semaphore = new Semaphore(1);
 
     public BodyDeferringAsyncHandler(final OutputStream os) {
         this.output = os;
@@ -92,13 +95,20 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     public void onThrowable(Throwable t) {
-        this.t = t;
+        this.throwable = t;
         // Counting down to handle error cases too.
         // In "premature exceptions" cases, the onBodyPartReceived() and
         // onCompleted()
         // methods will never be invoked, leaving caller of getResponse() method
         // blocked forever.
-        headersArrived.countDown();
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            // Ignore
+        } finally {
+            headersArrived.countDown();
+            semaphore.release();
+        }
 
         try {
             closeOut();
@@ -152,13 +162,20 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
         closeOut();
 
-        if (t != null) {
-            IOException ioe = new IOException(t.getMessage());
-            ioe.initCause(t);
-            throw ioe;
-        } else {
-            // sending out current response
-            return responseBuilder.build();
+        try {
+            semaphore.acquire();
+            if (throwable != null) {
+                IOException ioe = new IOException(throwable.getMessage());
+                ioe.initCause(throwable);
+                throw ioe;
+            } else {
+                // sending out current response
+                return responseBuilder.build();
+            }
+        } catch (InterruptedException e) {
+            return null;
+        } finally {
+            semaphore.release();
         }
     }
 
@@ -184,12 +201,17 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         // block here as long as headers arrive
         headersArrived.await();
 
-        if (t != null) {
-            IOException ioe = new IOException(t.getMessage());
-            ioe.initCause(t);
-            throw ioe;
-        } else {
-            return response;
+        try {
+            semaphore.acquire();
+            if (throwable != null) {
+                IOException ioe = new IOException(throwable.getMessage());
+                ioe.initCause(throwable);
+                throw ioe;
+            } else {
+                return response;
+            }
+        } finally {
+            semaphore.release();
         }
     }
 
