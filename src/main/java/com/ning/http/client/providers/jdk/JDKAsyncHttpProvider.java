@@ -179,7 +179,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         HttpURLConnection urlConnection = null;
         if (proxy == null) {
-            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection();
+            urlConnection =
+                (HttpURLConnection) AsyncHttpProviderUtils.createUri( request.getUrl() ).toURL().openConnection( Proxy.NO_PROXY );
         } else {
             urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(proxy);
         }
