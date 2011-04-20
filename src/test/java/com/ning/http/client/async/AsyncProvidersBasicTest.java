@@ -810,7 +810,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl())
                 .setHeaders(h)
                 .setParameters(m)
-                .setVirtualHost("localhost")
+                .setVirtualHost("localhost:" + port1)
                 .build();
 
         Response response = n.executeRequest(request, new AsyncCompletionHandlerAdapter()).get();

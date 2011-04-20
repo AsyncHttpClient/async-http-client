@@ -508,6 +508,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (host != null) {
             if (uri.getPort() == -1) {
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
+            } else if (request.getVirtualHost() != null) {
+                nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
             } else {
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
             }
