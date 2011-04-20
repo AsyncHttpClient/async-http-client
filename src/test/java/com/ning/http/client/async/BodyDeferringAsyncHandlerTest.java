@@ -155,7 +155,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void deferredSimpleWithFailure() throws IOException,
             ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
