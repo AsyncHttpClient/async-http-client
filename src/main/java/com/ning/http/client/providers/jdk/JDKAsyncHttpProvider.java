@@ -469,7 +469,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 host = request.getVirtualHost();
             }
 
-            if (uri.getPort() == -1 && request.getVirtualHost() != null) {
+            if (uri.getPort() == -1 || request.getVirtualHost() != null) {
                 urlConnection.setRequestProperty("Host", host);
             } else {
                 urlConnection.setRequestProperty("Host", host + ":" + uri.getPort());
