@@ -393,7 +393,13 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
         }
 
         if (request.getVirtualHost() != null) {
-            method.getParams().setVirtualHost(request.getVirtualHost());
+
+            String vs = request.getVirtualHost();
+            int index = vs.indexOf(":");
+            if (index > 0) {
+                vs = vs.substring(0,index);
+            }            
+            method.getParams().setVirtualHost(vs);
         }
 
         return method;
