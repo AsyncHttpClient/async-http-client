@@ -64,6 +64,13 @@ public class FileBodyGenerator
 
         private final long length;
 
+        public FileBody(File file)
+                throws IOException {
+            this.file = new RandomAccessFile(file, "r");
+            channel = this.file.getChannel();
+            length = file.length();
+        }
+
         public FileBody(File file, long regionSeek, long regionLength)
                 throws IOException {
             this.file = new RandomAccessFile(file, "r");
