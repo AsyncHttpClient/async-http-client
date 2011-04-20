@@ -29,17 +29,30 @@ public class FileBodyGenerator
         implements BodyGenerator {
 
     private final File file;
+    private final long regionSeek;
+    private final long regionLength;
 
     public FileBodyGenerator(File file) {
         if (file == null) {
             throw new IllegalArgumentException("no file specified");
         }
         this.file = file;
+        this.regionLength = file.length();
+        this.regionSeek = 0;
+    }
+
+    public FileBodyGenerator(File file, long regionSeek, long regionLength) {
+        if (file == null) {
+            throw new IllegalArgumentException("no file specified");
+        }
+        this.file = file;
+        this.regionLength = regionLength;
+        this.regionSeek = regionSeek;
     }
 
     public RandomAccessBody createBody()
             throws IOException {
-        return new FileBody(file);
+        return new FileBody(file, regionSeek, regionLength);
     }
 
     protected static class FileBody
@@ -51,11 +64,14 @@ public class FileBodyGenerator
 
         private final long length;
 
-        public FileBody(File file)
+        public FileBody(File file, long regionSeek, long regionLength)
                 throws IOException {
             this.file = new RandomAccessFile(file, "r");
             channel = this.file.getChannel();
-            length = this.file.length();
+            length = regionLength;
+            if (regionSeek > 0) {
+                this.file.seek(regionSeek);
+            }
         }
 
         public long getContentLength() {
