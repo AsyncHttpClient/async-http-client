@@ -92,6 +92,9 @@ public class FileBodyGenerator
 
         public long transferTo(long position, long count, WritableByteChannel target)
                 throws IOException {
+            if (count > length) {
+                count = length;
+            }
             return channel.transferTo(position, count, target);
         }
 
