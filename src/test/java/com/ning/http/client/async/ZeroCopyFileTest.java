@@ -137,6 +137,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         File file = new File(url.toURI());
 
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+        tmp.deleteOnExit();
         final FileOutputStream stream = new FileOutputStream(tmp);
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
             public void onThrowable(Throwable t) {
@@ -178,6 +179,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         File file = new File(url.toURI());
 
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+        tmp.deleteOnExit();
         final FileOutputStream stream = new FileOutputStream(tmp);
         Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
             public void onThrowable(Throwable t) {
