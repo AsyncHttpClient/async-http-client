@@ -258,6 +258,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     public static File createTempFile(byte[] pattern, int repeat)
             throws IOException {
         TMP.mkdirs();
+        TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
         write(pattern, repeat, tmpFile);
 

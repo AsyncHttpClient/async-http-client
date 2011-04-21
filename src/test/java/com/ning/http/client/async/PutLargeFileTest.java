@@ -116,7 +116,9 @@ public abstract class PutLargeFileTest
     public static File createTempFile(byte[] pattern, int repeat)
             throws IOException {
         TMP.mkdirs();
+        TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
+        tmpFile.deleteOnExit();
         write(pattern, repeat, tmpFile);
 
         return tmpFile;
