@@ -64,10 +64,10 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public void abort(Throwable t) {
+        exception.set(t);        
         if (innerFuture != null) {
             innerFuture.cancel(true);
         }
-        exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
             try {
                 asyncHandler.onThrowable(t);
