@@ -104,6 +104,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public void abort(Throwable t) {
+        exception.set(t);        
         if (innerFuture != null) {
             innerFuture.cancel(true);
         }
@@ -115,8 +116,6 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
         if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
-
-        exception.set(t);
         if (!timedOut.get() && !cancelled.get()) {
             try {
                 asyncHandler.onThrowable(t);
