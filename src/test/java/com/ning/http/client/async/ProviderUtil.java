@@ -46,4 +46,5 @@ public class ProviderUtil {
             return new AsyncHttpClient(new JDKAsyncHttpProvider(config));
         }
     }
+
 }

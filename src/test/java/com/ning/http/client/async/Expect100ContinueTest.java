@@ -49,8 +49,8 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
-                httpRequest.getInputStream().read(bytes);
-                httpResponse.getOutputStream().write(bytes);
+                final int read = httpRequest.getInputStream().read(bytes);
+                httpResponse.getOutputStream().write(bytes, 0, read);
             }
 
             httpResponse.setStatus(200);

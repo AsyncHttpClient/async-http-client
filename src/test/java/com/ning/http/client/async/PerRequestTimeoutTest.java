@@ -50,6 +50,10 @@ import static org.testng.Assert.fail;
 public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
+    protected String getExpectedTimeoutMessage() {
+        return "No response received after 100";
+    }
+
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
@@ -106,7 +110,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), "No response received after 100");
+            assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }
@@ -128,7 +132,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), "No response received after 100");
+            assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
         }
         client.close();
     }
@@ -145,7 +149,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), "No response received after 100");
+            assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
         } catch (TimeoutException e) {
             fail("Timeout.", e);
         }

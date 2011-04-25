@@ -58,7 +58,7 @@ public interface AsyncHandler<T> {
     
     /**
      * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
-     * produced by implementation of onXXXReceived method invokation.
+     * produced by implementation of onXXXReceived method invocation.
      *
      * @param t a {@link Throwable}
      */
@@ -81,8 +81,8 @@ public interface AsyncHandler<T> {
     STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
     /**
-     * Invoked as soon as the HTTP headers has been received. Can potentially be invoked morethan once if a broken server
-     * sent trailling headers.
+     * Invoked as soon as the HTTP headers has been received. Can potentially be invoked more than once if a broken server
+     * sent trailing headers.
      * @param headers the HTTP headers.
      * @throws Exception if something wrong happens
      * @return a {@link STATE} telling to CONTINUE or ABORT the current processing.
