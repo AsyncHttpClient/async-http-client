@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 public abstract class BasicHttpsTest extends AbstractBasicTest {
 
@@ -123,8 +124,8 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
                 //noinspection ResultOfMethodCallIgnored
-                httpRequest.getInputStream().read(bytes);
-                httpResponse.getOutputStream().write(bytes);
+                int read = httpRequest.getInputStream().read(bytes);
+                httpResponse.getOutputStream().write(bytes, 0, read);
             }
 
             httpResponse.setStatus(200);
@@ -283,10 +284,13 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
                         .execute().get(TIMEOUT, TimeUnit.SECONDS);
             }
             catch (final ExecutionException e) {
-                assertEquals(e.getCause().getClass(), ConnectException.class);
-                assertNotNull(e.getCause());
-                assertEquals(e.getCause().getCause().getClass(), SSLHandshakeException.class);
-
+                Throwable cause = e.getCause();
+                if (cause instanceof ConnectException) {
+                    assertNotNull(cause.getCause());
+                    assertTrue(cause.getCause() instanceof SSLHandshakeException);
+                } else {
+                    assertTrue(cause instanceof SSLHandshakeException);
+                }
             }
 
             TRUST_SERVER_CERT.set(true);

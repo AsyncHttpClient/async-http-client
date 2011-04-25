@@ -50,6 +50,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashSet;
@@ -114,6 +115,33 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         server.setHandler(security);
         server.start();
         log.info("Local HTTP server started successfully");
+    }
+
+    private String getFileContent(final File file) {
+        FileInputStream in = null;
+        try {
+            if (file.exists() && file.canRead()) {
+                final StringBuilder sb = new StringBuilder(128);
+                final byte[] b = new byte[512];
+                int read;
+                in = new FileInputStream(file);
+                while ((read = in.read(b)) != -1) {
+                    sb.append(new String(b, 0, read, "UTF-8"));
+                }
+                return sb.toString();
+            }
+            throw new IllegalArgumentException("File does not exist or cannot be read: "
+                    + file.getCanonicalPath());
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException ignored) {}
+            }
+        }
+
     }
 
     private void setUpSecondServer() throws Exception {
@@ -191,7 +219,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             } else {
                 System.err.println("got redirected" + request.getRequestURI());
                 response.addHeader("X-Auth", request.getHeader("Authorization"));
-                response.addHeader("X-Content-Lenght", String.valueOf(request.getContentLength()));
+                response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
                 response.setStatus(200);
                 response.getOutputStream().write("content".getBytes("UTF-8"));
                 response.getOutputStream().flush();
@@ -214,7 +242,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 return;
             }
             response.addHeader("X-Auth", request.getHeader("Authorization"));
-            response.addHeader("X-Content-Lenght", String.valueOf(request.getContentLength()));
+            response.addHeader("X-Content-Length", String.valueOf(request.getContentLength()));
             response.setStatus(200);
 
 
@@ -360,7 +388,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Content-Lenght"), "4");
+        assertEquals(resp.getResponseBody(), "test");
         client.close();
     }
 
@@ -371,6 +399,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         // override system properties
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
+        final String fileContent = getFileContent(file);
 
         AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl())
                 .setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
@@ -380,7 +409,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        assertEquals(resp.getResponseBody(), fileContent);
         client.close();
     }
 
@@ -392,6 +421,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         // override system properties
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
+        final String fileContent = getFileContent(file);
 
         AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file);
 
@@ -400,7 +430,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        assertEquals(resp.getResponseBody(), fileContent);
         client.close();
     }
 
@@ -411,6 +441,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         // override system properties
         URL url = cl.getResource("SimpleTextFile.txt");
         File file = new File(url.toURI());
+        final String fileContent = getFileContent(file);
 
         AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl())
                 .setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
@@ -420,7 +451,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertNotNull(resp.getHeader("X-Auth"));
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Content-Lenght"), "26");
+        assertEquals(resp.getResponseBody(), fileContent);
         client.close();
     }
 
