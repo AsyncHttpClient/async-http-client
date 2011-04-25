@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -201,7 +202,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 return response;
             }
         }).get();
-
         if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
@@ -934,6 +934,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             if (ex.getCause() != null && TimeoutException.class.isAssignableFrom(ex.getCause().getClass())) {
                 Assert.assertTrue(true);
             }
+        } catch (TimeoutException te) {
+            Assert.assertTrue(true);
         } catch (IllegalStateException ex) {
             Assert.assertTrue(false);
         }
@@ -1100,8 +1102,13 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         c.prepareGet("http://null.apache.org:9999/").execute(new AsyncCompletionHandlerAdapter() {
             /* @Override */
             public void onThrowable(Throwable t) {
-                assertEquals(t.getClass(), ConnectException.class);
-                l.countDown();
+                if (t != null) {
+                    if (t.getClass().equals(ConnectException.class)) {
+                        l.countDown();
+                    } else if (t.getClass().equals(UnresolvedAddressException.class)) {
+                        l.countDown();
+                    }
+                }
             }
         });
 
@@ -1518,10 +1525,10 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }).get();
             Assert.fail();
         } catch (Throwable ex) {
-            ex.printStackTrace();
-            System.out.println("EXPIRED: " + (System.currentTimeMillis() - t1));
+            final long elapsedTime = System.currentTimeMillis() - t1;
+            System.out.println("EXPIRED: " + (elapsedTime));
             Assert.assertNotNull(ex.getCause());
-            Assert.assertEquals(ex.getCause().getMessage(), "No response received after 10000");
+            Assert.assertTrue(elapsedTime >= 10000 && elapsedTime <= 16000);
         }
         c.close();
     }
