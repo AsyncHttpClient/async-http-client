@@ -1528,7 +1528,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             final long elapsedTime = System.currentTimeMillis() - t1;
             System.out.println("EXPIRED: " + (elapsedTime));
             Assert.assertNotNull(ex.getCause());
-            Assert.assertTrue(elapsedTime >= 10000 && elapsedTime <= 25000);
+            Assert.assertTrue(elapsedTime >= 10000 && elapsedTime <= 16000);
         }
         c.close();
     }
