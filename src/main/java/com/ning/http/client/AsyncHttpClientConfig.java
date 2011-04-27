@@ -406,6 +406,13 @@ public class AsyncHttpClientConfig {
         return removeQueryParamOnRedirect;
     }
 
+    /**
+     * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
+     * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
+     */
+    public boolean isClosed(){
+        return applicationThreadPool.isShutdown() || reaper.isShutdown();
+    }
 
     /**
      * Builder for an {@link AsyncHttpClient}
@@ -875,6 +882,11 @@ public class AsyncHttpClientConfig {
          * @return an {@link AsyncHttpClientConfig}
          */
         public AsyncHttpClientConfig build() {
+
+            if ( applicationThreadPool.isShutdown() ) {
+                throw new IllegalStateException( "ExecutorServices closed" );
+            }
+
             if (proxyServer == null && useProxyProperties) {
                 proxyServer = ProxyUtils.createProxy(System.getProperties());
             }
