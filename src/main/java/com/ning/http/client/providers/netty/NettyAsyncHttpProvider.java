@@ -1824,8 +1824,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 this.channel = null;
             }
 
-            if (this.nettyResponseFuture != null
-                    && (this.nettyResponseFuture.isDone() || this.nettyResponseFuture.isCancelled())) {
+            if (this.nettyResponseFuture == null || this.nettyResponseFuture.isDone() || this.nettyResponseFuture.isCancelled()) {
                 cancel(true);
             }
         }
