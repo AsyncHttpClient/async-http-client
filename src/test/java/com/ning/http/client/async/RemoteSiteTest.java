@@ -221,23 +221,6 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         c.close();
     }
 
-    @Test(groups = {"online", "default_provider"})
-    public void evilCoookieTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-
-        RequestBuilder builder2 = new RequestBuilder("GET");
-        builder2.setFollowRedirects(true);
-        builder2.setUrl("http://www.google.com/");
-        builder2.addHeader("Content-Type", "text/plain");
-        builder2.addCookie(new com.ning.http.client.Cookie(".google.com", "evilcookie", "test", "/", 10, false));
-        com.ning.http.client.Request request2 = builder2.build();
-        Response response = c.executeRequest(request2).get();
-
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        c.close();
-    }
-
     @Test(groups = {"online", "default_provider"}, enabled = false)
     public void testAHC62Com() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
