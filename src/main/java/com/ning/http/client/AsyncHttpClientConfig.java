@@ -77,6 +77,7 @@ public class AsyncHttpClientConfig {
     private final boolean allowSslConnectionPool;
     private final boolean useRawUrl;
     private final boolean removeQueryParamOnRedirect;
+    private final int ioThreadMultiplier;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -102,7 +103,8 @@ public class AsyncHttpClientConfig {
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
                                   boolean useRawUrl,
-                                  boolean removeQueryParamOnRedirect) {
+                                  boolean removeQueryParamOnRedirect,
+                                  int ioThreadMultiplier) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -127,6 +129,7 @@ public class AsyncHttpClientConfig {
         this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+        this.ioThreadMultiplier = ioThreadMultiplier;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -406,6 +409,13 @@ public class AsyncHttpClientConfig {
         return removeQueryParamOnRedirect;
     }
 
+    /***
+     *
+     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
+     */
+    public int getIoThreadMultiplier() {
+        return ioThreadMultiplier;
+    }
 
     /**
      * Builder for an {@link AsyncHttpClient}
@@ -450,6 +460,7 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
+        private int ioThreadMultiplier = 2;
 
         public Builder() {
         }
@@ -839,6 +850,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setIOThreadMultiplier(int multiplier){
+            this.ioThreadMultiplier = multiplier;
+            return this;
+        }
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -867,6 +883,7 @@ public class AsyncHttpClientConfig {
             requestFilters.addAll(prototype.getRequestFilters());
             responseFilters.addAll(prototype.getResponseFilters());
             useRawUrl = prototype.isUseRawUrl();
+            ioThreadMultiplier = prototype.getIoThreadMultiplier();
         }
 
         /**
@@ -904,7 +921,8 @@ public class AsyncHttpClientConfig {
                     maxRequestRetry,
                     allowSslConnectionPool,
                     useRawUrl,
-                    removeQueryParamOnRedirect);
+                    removeQueryParamOnRedirect,
+                    ioThreadMultiplier);
         }
     }
 }
