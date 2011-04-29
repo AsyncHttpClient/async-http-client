@@ -1049,7 +1049,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 
                 if (statusCode == 401
                         && wwwAuth.size() > 0
-                        && realm != null
                         && !future.getAndSetAuth(true)) {
 
                     future.setState(NettyResponseFuture.STATE.NEW);
@@ -1061,8 +1060,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         newRealm = kerberosChallenge(request, proxyServer, headers, realm, future);
                         if (newRealm == null) return;
                     } else {
-                        newRealm = new Realm.RealmBuilder().clone(realm)
-                                .setScheme(realm.getAuthScheme())
+                        Realm.RealmBuilder realmBuilder;
+                        if (realm != null) {
+                            realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
+;
+                        } else {
+                            realmBuilder = new Realm.RealmBuilder();
+                        }
+                        newRealm = realmBuilder
                                 .setUri(URI.create(request.getUrl()).getPath())
                                 .setMethodName(request.getMethod())
                                 .setUsePreemptiveAuth(true)
@@ -1253,12 +1258,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
-            return new Realm.RealmBuilder().clone(realm)
-                    .setScheme(realm.getAuthScheme())
-                    .setUri(uri.getPath())
-                    .setMethodName(request.getMethod())
-                    .setScheme(Realm.AuthScheme.KERBEROS)
-                    .build();
+            Realm.RealmBuilder realmBuilder;
+            if (realm != null) {
+                realmBuilder = new Realm.RealmBuilder().clone(realm);
+            } else {
+                realmBuilder = new Realm.RealmBuilder();
+            }
+            return realmBuilder.setUri(uri.getPath())
+                        .setMethodName(request.getMethod())
+                        .setScheme(Realm.AuthScheme.KERBEROS)
+                        .build();
         } catch (Throwable throwable) {
             abort(future, throwable);
             return null;
@@ -1272,18 +1281,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 Realm realm,
                                 NettyResponseFuture<?> future) throws NTLMEngineException {
 
-        String ntlmDomain = proxyServer == null ? realm.getNtlmDomain() : proxyServer.getNtlmDomain();
-        String ntlmHost = proxyServer == null ? realm.getNtlmHost() : proxyServer.getHost();
-        String prinicipal = proxyServer == null ? realm.getPrincipal() : proxyServer.getPrincipal();
-        String password = proxyServer == null ? realm.getPassword() : proxyServer.getPassword();
+        boolean useRealm = (proxyServer == null && realm != null);
+
+        String ntlmDomain =  useRealm? realm.getNtlmDomain() : proxyServer.getNtlmDomain();
+        String ntlmHost = useRealm ? realm.getNtlmHost() : proxyServer.getHost();
+        String principal = useRealm ? realm.getPrincipal() : proxyServer.getPrincipal();
+        String password = useRealm ? realm.getPassword() : proxyServer.getPassword();
+
         Realm newRealm;
         if (!realm.isNtlmMessageType2Received()) {
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
 
-            newRealm = new Realm.RealmBuilder().clone(realm)
-                    .setScheme(realm.getAuthScheme())
+            Realm.RealmBuilder realmBuilder;
+            if (realm != null) {
+                realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme());
+            } else {
+                realmBuilder = new Realm.RealmBuilder();
+            }
+            newRealm = realmBuilder
                     .setUri(URI.create(request.getUrl()).getPath())
                     .setMethodName(request.getMethod())
                     .setNtlmMessageType2Received(true)
@@ -1291,18 +1308,23 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             future.getAndSetAuth(false);
         } else {
             String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-            String challengeHeader = ntlmEngine.generateType3Msg(prinicipal, password,
+            String challengeHeader = ntlmEngine.generateType3Msg(principal, password,
                     ntlmDomain, ntlmHost, serverChallenge);
 
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-
-            newRealm = new Realm.RealmBuilder().clone(realm)
-                    .setScheme(realm.getAuthScheme())
-                    .setUri(URI.create(request.getUrl()).getPath())
-                    .setMethodName(request.getMethod())
-                    .build();
+            Realm.RealmBuilder realmBuilder;
+            if (realm != null) {
+                realmBuilder = new Realm.RealmBuilder().clone(realm);
+            } else {
+                realmBuilder = new Realm.RealmBuilder();
+            }
+            newRealm = realmBuilder.setScheme(realm.getAuthScheme())
+                        .setUri(URI.create(request.getUrl()).getPath())
+                        .setMethodName(request.getMethod())
+                        .build();
         }
+
         return newRealm;
     }
 
