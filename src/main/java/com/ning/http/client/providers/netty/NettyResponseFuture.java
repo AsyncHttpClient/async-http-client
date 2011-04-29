@@ -139,6 +139,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public boolean cancel(boolean force) {
+        if (reaperFuture != null) {
+            reaperFuture.cancel(true);
+        }
+        
         if (isCancelled.get()) return false;
 
         try {
@@ -154,7 +158,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 logger.warn("cancel", t);
             }
         }
-        if (reaperFuture != null) reaperFuture.cancel(true);
         latch.countDown();
         isCancelled.set(true);
         super.done();        
@@ -251,10 +254,13 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public final void done(Callable callable) {
         try {
+            if (reaperFuture != null) {
+                reaperFuture.cancel(true);
+            }
+
             if (exEx.get() != null) {
                 return;
             }
-            if (reaperFuture != null) reaperFuture.cancel(true);
             getContent();
             isDone.set(true);
             if (callable != null) {
@@ -275,7 +281,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void abort(final Throwable t) {
-        if (reaperFuture != null && !reaperFuture.isCancelled() && !reaperFuture.isDone()) {
+        if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
 
