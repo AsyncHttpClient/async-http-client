@@ -877,11 +877,6 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setIOThreadMultiplier(int multiplier){
-            this.ioThreadMultiplier = multiplier;
-            return this;
-        }
-
         /**
          * Set the {@link HostnameVerifier}
          * @param hostnameVerifier {@link HostnameVerifier}
@@ -889,6 +884,11 @@ public class AsyncHttpClientConfig {
          */
         public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier){
             this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        public Builder setIOThreadMultiplier(int multiplier){
+            this.ioThreadMultiplier = multiplier;
             return this;
         }
 
