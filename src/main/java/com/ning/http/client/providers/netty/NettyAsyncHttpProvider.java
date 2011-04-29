@@ -1807,6 +1807,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
          */
         public synchronized void run() {
             if (isClose.get()) {
+                cancel(true);
                 return;
             }
 
@@ -1824,6 +1825,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 this.nettyResponseFuture = null;
                 this.channel = null;
+            }
+
+            if (this.nettyResponseFuture != null
+                    && (this.nettyResponseFuture.isDone() || this.nettyResponseFuture.isCancelled())) {
+                cancel(true);
             }
         }
     }
