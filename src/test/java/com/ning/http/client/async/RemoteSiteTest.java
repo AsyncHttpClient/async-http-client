@@ -221,7 +221,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         c.close();
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = {"online", "default_provider"}, enabled = false)
     public void testAHC62Com() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         // Works
