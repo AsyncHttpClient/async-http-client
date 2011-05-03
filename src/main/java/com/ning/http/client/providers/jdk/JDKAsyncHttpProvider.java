@@ -47,11 +47,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -160,7 +158,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
         f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));
         maxConnections.incrementAndGet();
-        
+
         return f;
     }
 
@@ -198,12 +196,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
             }
             secure.setSSLSocketFactory(sslContext.getSocketFactory());
-            secure.setHostnameVerifier(new HostnameVerifier() {
-
-                public boolean verify(String s, SSLSession sslSession) {
-                    return true;
-                }
-            });
+            secure.setHostnameVerifier(config.getHostnameVerifier());
         }
         return urlConnection;
     }
@@ -398,7 +391,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
 
                     if (fc.replayRequest()) {
                         request = fc.getRequest();
-                        urlConnection = createUrlConnection(request);                        
+                        urlConnection = createUrlConnection(request);
                         return call();
                     }
                 }
@@ -546,7 +539,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection
                 }
 
             }
-            
+
             // Add default accept headers.
             if (request.getHeaders().getFirstValue("Accept") == null) {
                 urlConnection.setRequestProperty("Accept", "*/*");

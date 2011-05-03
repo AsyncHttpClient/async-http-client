@@ -20,6 +20,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,11 +60,21 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     public final void operationComplete(ChannelFuture f) throws Exception {
         if (f.isSuccess()) {
-            f.getChannel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
-            if (!handshakeDone.getAndSet(true) && f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER) != null) {
-                ((SslHandler) f.getChannel().getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);              
+            Channel channel = f.getChannel();
+            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
+            SslHandler sslHandler = (SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER);
+            if (!handshakeDone.getAndSet(true) && (sslHandler != null)) {
+                ((SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
                 return;
             }
+
+            if (sslHandler != null) {
+                if (!config.getHostnameVerifier().verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
+                        sslHandler.getEngine().getSession())) {
+                    throw new ConnectException("HostnameVerifier exception.");
+                }
+            }
+
             future.provider().writeRequest(f.getChannel(), config, future, nettyRequest);
         } else {
             Throwable cause = f.getCause();

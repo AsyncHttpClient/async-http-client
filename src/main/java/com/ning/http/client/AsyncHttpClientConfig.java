@@ -20,8 +20,10 @@ import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.util.ProxyUtils;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -77,6 +79,7 @@ public class AsyncHttpClientConfig {
     private final boolean allowSslConnectionPool;
     private final boolean useRawUrl;
     private final boolean removeQueryParamOnRedirect;
+    private final HostnameVerifier hostnameVerifier;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -102,7 +105,8 @@ public class AsyncHttpClientConfig {
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
                                   boolean useRawUrl,
-                                  boolean removeQueryParamOnRedirect) {
+                                  boolean removeQueryParamOnRedirect,
+                                  HostnameVerifier hostnameVerifier) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -127,6 +131,7 @@ public class AsyncHttpClientConfig {
         this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+        this.hostnameVerifier = hostnameVerifier;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -415,6 +420,14 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * Return the {@link HostnameVerifier}
+     * @return the {@link HostnameVerifier}
+     */
+    public HostnameVerifier getHostnameVerifier() {
+        return hostnameVerifier;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -457,6 +470,12 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
+        private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+
+            public boolean verify( String s, SSLSession sslSession ) {
+                return true;
+            }
+        };
 
         public Builder() {
         }
@@ -847,6 +866,16 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Set the {@link HostnameVerifier}
+         * @param hostnameVerifier {@link HostnameVerifier}
+         * @return this
+         */
+        public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier){
+            this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -916,7 +945,8 @@ public class AsyncHttpClientConfig {
                     maxRequestRetry,
                     allowSslConnectionPool,
                     useRawUrl,
-                    removeQueryParamOnRedirect);
+                    removeQueryParamOnRedirect,
+                    hostnameVerifier);
         }
     }
 }
