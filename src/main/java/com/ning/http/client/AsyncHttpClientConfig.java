@@ -439,14 +439,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
-     * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
-     */
-    public boolean isClosed(){
-        return applicationThreadPool.isShutdown() || reaper.isShutdown();
-    }
-
-    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
