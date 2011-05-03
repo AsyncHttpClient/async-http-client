@@ -45,6 +45,7 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
+import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -402,7 +403,34 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (future.getAndSetWriteBody(true)) {
                 if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
-                    if (future.getRequest().getFile() != null) {
+                	if(future.getRequest().getParts() != null) {
+               		 String boundary = future.getNettyRequest().getHeader(
+               			"Content-Type");
+               		 
+               		 String length = future.getNettyRequest().getHeader(
+               			"Content-Length");
+               		 
+               		 final MultipartBody multipartBody = new MultipartBody(
+               			future.getRequest().getParts(), boundary, length);
+               		 
+               		 ChannelFuture writeFuture = channel.write(
+               			new BodyFileRegion(multipartBody));
+                        
+                        final Body b = multipartBody;
+                        
+                        writeFuture.addListener(new ProgressListener(
+                       		false, future.getAsyncHandler(), future) {
+                            public void operationComplete(ChannelFuture cf) {
+                                try {
+                                    b.close();
+                                } catch (IOException e) {
+                                    log.warn("Failed to close request body: {}", e.getMessage(), e);
+                                }
+                                super.operationComplete(cf);
+                            }
+                        });
+               	}
+               	else if (future.getRequest().getFile() != null) {
                         final File file = future.getRequest().getFile();
                         long fileLength = 0;
                         final RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -685,9 +713,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
-                    mre.writeRequest(new ChannelBufferOutputStream(b));
-                    nettyRequest.setContent(b);
                 } else if (request.getEntityWriter() != null) {
                     int lenght = computeAndSetContentLength(request, nettyRequest);
 
