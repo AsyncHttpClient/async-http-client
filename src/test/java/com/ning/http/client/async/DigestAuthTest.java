@@ -37,6 +37,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -86,7 +87,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setConstraintMappings(Arrays.asList(new ConstraintMapping[]{mapping}), knownRoles);
         security.setAuthenticator(new DigestAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
