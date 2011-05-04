@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -106,7 +107,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setConstraintMappings(Arrays.asList(new ConstraintMapping[]{mapping}), knownRoles);
         security.setAuthenticator(new BasicAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
@@ -181,7 +182,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 super.handle(arg0, arg1, arg2, arg3);
             }
         };
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setConstraintMappings(Arrays.asList(new ConstraintMapping[]{mapping}), knownRoles);
         security.setAuthenticator(new DigestAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(true);
