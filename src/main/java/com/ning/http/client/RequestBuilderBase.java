@@ -23,15 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 /**
@@ -563,23 +557,24 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return true;
         }
     }
-    
-      public T addOrReplaceCookie(Cookie cookie) {
-    	String cookieKey=cookie.getName();
-    	boolean replace=false;
-    	int index=0;
-    	for(Cookie c : request.cookies) {
-    		if(c.getName().equals(cookieKey)){
-    			replace=true;
-    			break;
-    		};
-    		index++;
-    	}
-    	if(replace) {
-    		((ArrayList<Cookie>)request.cookies).set(index, cookie);
-    	} else {
+
+    public T addOrReplaceCookie(Cookie cookie) {
+        String cookieKey = cookie.getName();
+        boolean replace = false;
+        int index = 0;
+        for (Cookie c : request.cookies) {
+            if (c.getName().equals(cookieKey)) {
+                replace = true;
+                break;
+            }
+
+            index++;
+        }
+        if (replace) {
+            ((ArrayList<Cookie>) request.cookies).set(index, cookie);
+        } else {
             request.cookies.add(cookie);
-    	}
+        }
         return derived.cast(this);
     }
 }
