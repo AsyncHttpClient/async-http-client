@@ -3,7 +3,6 @@ package com.ning.http.multipart;
 
 import com.ning.http.client.RandomAccessBody;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;

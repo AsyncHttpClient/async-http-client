@@ -87,7 +87,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
-        security.setConstraintMappings(Arrays.asList(new ConstraintMapping[]{mapping}), knownRoles);
+        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
         security.setAuthenticator(new DigestAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
