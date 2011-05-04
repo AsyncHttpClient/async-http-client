@@ -16,7 +16,6 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 
 import java.net.URI;
@@ -29,7 +28,7 @@ public class ApacheResponseHeaders extends HttpResponseHeaders {
     private final HttpMethodBase method;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ApacheResponseHeaders(URI uri, HttpMethodBase method, AsyncHttpProvider<HttpClient> provider) {
+    public ApacheResponseHeaders(URI uri, HttpMethodBase method, AsyncHttpProvider provider) {
         super(uri, provider, false);
         this.method = method;
         headers = computerHeaders();

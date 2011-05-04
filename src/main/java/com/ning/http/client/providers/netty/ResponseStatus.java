@@ -29,7 +29,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public ResponseStatus(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse> provider) {
+    public ResponseStatus(URI uri, HttpResponse response, AsyncHttpProvider provider) {
         super(uri, provider);
         this.response = response;
     }

@@ -142,7 +142,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AsyncHttpClient {
 
     private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.netty.NettyAsyncHttpProvider";
-    private final AsyncHttpProvider<?> httpProvider;
+    private final AsyncHttpProvider httpProvider;
     private final AsyncHttpClientConfig config;
     private final static Logger logger = LoggerFactory.getLogger(AsyncHttpClient.class);
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
@@ -167,7 +167,7 @@ public class AsyncHttpClient {
      * the default {@link AsyncHttpClientConfig} configuration.
      * @param provider a {@link AsyncHttpProvider}
      */
-    public AsyncHttpClient(AsyncHttpProvider<?> provider) {
+    public AsyncHttpClient(AsyncHttpProvider provider) {
         this(provider,new AsyncHttpClientConfig.Builder().build());
     }
 
@@ -186,7 +186,7 @@ public class AsyncHttpClient {
      * @param config a {@link AsyncHttpClientConfig}
      * @param httpProvider a {@link AsyncHttpProvider}
      */
-    public AsyncHttpClient(AsyncHttpProvider<?> httpProvider, AsyncHttpClientConfig config) {
+    public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
         this.config = config;
         this.httpProvider = httpProvider;
     }
@@ -349,7 +349,7 @@ public class AsyncHttpClient {
      * Return the asynchronous {@link com.ning.http.client.AsyncHttpProvider}
      * @return an {@link com.ning.http.client.AsyncHttpProvider}
      */
-    public AsyncHttpProvider<?> getProvider() {
+    public AsyncHttpProvider getProvider() {
         return httpProvider;
     }
 
@@ -531,9 +531,9 @@ public class AsyncHttpClient {
     }
 
     @SuppressWarnings("unchecked")
-    private final static AsyncHttpProvider<?> loadDefaultProvider(String className, AsyncHttpClientConfig config){
+    private final static AsyncHttpProvider loadDefaultProvider(String className, AsyncHttpClientConfig config){
         try {
-            Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>) Thread.currentThread()
+            Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread()
                     .getContextClassLoader().loadClass(className);
             return providerClass.getDeclaredConstructor(
                     new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
@@ -541,7 +541,7 @@ public class AsyncHttpClient {
 
             // Let's try with another classloader
             try {
-                Class<AsyncHttpProvider<?>> providerClass = (Class<AsyncHttpProvider<?>>)
+                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>)
                         AsyncHttpClient.class.getClassLoader().loadClass(className);
                 return providerClass.getDeclaredConstructor(
                         new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
