@@ -1162,11 +1162,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                             log.debug("Redirecting to {}", newUrl);
                             for(String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)){
-                                Cookie c=AsyncHttpProviderUtils.parseCookie(cookieStr);
+                                Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
                                 nBuilder.addOrReplaceCookie(c);
                             }
+
                             for(String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)){
-                                Cookie c=AsyncHttpProviderUtils.parseCookie(cookieStr);
+                                Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
                                 nBuilder.addOrReplaceCookie(c);
                             }
     

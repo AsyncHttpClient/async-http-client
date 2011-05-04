@@ -415,7 +415,7 @@ public class AsyncHttpProviderUtils {
                     try {
                         maxAge = convertExpireField(f[1]);
                     }
-                    catch (ParseException e) {
+                    catch (Exception e) {
                         // original behavior, is this correct at all (expires field with max-age semantics)?
                         try {
                             maxAge = Integer.valueOf(f[1]);
@@ -440,18 +440,31 @@ public class AsyncHttpProviderUtils {
         return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
     }
 
-    private static int convertExpireField(String timestring) throws ParseException {
-        ParseException exception = null;
+    private static int convertExpireField(String timestring) throws Exception {
+        Exception exception = null;
         for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
             try {
-                long expire = sdf.parse(timestring).getTime();
+                long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
                 return (int) (expire - System.currentTimeMillis()) / 1000;
             } catch (ParseException e) {
+                exception = e;
+            } catch (NumberFormatException e) {
                 exception = e;
             }
         }
 
         throw exception;
+    }
+
+    private final static String removeQuote(String s) {
+        if (s.startsWith("\"")) {
+            s = s.substring(1);
+        }
+
+        if (s.endsWith("\"")) {
+            s = s.substring(0,s.length() -1);
+        }
+        return s;
     }
 
     public static void checkBodyParts(int statusCode, Collection<HttpResponseBodyPart> bodyParts) {
