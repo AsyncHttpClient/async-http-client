@@ -90,7 +90,7 @@ public abstract class AuthTimeoutTest
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
         
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setConstraintMappings(Arrays.asList(new ConstraintMapping[]{mapping}), knownRoles);
         security.setAuthenticator(new BasicAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
