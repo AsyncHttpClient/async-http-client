@@ -160,4 +160,9 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     public RequestBuilder setFollowRedirects(boolean followRedirects) {
         return super.setFollowRedirects(followRedirects);
     }
+
+    @Override
+    public RequestBuilder addOrReplaceCookie(Cookie c) {
+	return super.addOrReplaceCookie(c);		
+    }
 }
