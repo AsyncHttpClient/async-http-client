@@ -558,23 +558,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
     }
 
-    public T addOrReplaceCookie(Cookie cookie) {
-        String cookieKey = cookie.getName();
-        boolean replace = false;
-        int index = 0;
-        for (Cookie c : request.cookies) {
-            if (c.getName().equals(cookieKey)) {
-                replace = true;
-                break;
-            }
-
-            index++;
-        }
-        if (replace) {
-            ((ArrayList<Cookie>) request.cookies).set(index, cookie);
-        } else {
+      public T addOrReplaceCookie(Cookie cookie) {
+    	String cookieKey=cookie.getName();
+    	boolean replace=false;
+    	int index=0;
+    	for(Cookie c : request.cookies) {
+    		if(c.getName().equals(cookieKey)){
+    			replace=true;
+    			break;
+    		};
+    		index++;
+    	}
+    	if(replace) {
+    		((ArrayList<Cookie>)request.cookies).set(index, cookie);
+    	} else {
             request.cookies.add(cookie);
-        }
+    	}
         return derived.cast(this);
     }
 }
