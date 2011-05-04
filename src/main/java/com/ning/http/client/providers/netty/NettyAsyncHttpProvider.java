@@ -124,7 +124,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.jboss.netty.channel.Channels.pipeline;
 
-public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider<HttpResponse> {
+public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
     private final static String HTTP_HANDLER = "httpHandler";
     final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";

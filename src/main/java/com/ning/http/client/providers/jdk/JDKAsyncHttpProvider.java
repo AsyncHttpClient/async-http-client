@@ -81,7 +81,7 @@ import java.util.zip.GZIPInputStream;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 
-public class JDKAsyncHttpProvider implements AsyncHttpProvider<HttpURLConnection> {
+public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
 
     private final static String NTLM_DOMAIN = "http.auth.ntlm.domain";

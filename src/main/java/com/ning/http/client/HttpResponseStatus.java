@@ -23,7 +23,7 @@ import java.net.URI;
  */
 public abstract class HttpResponseStatus extends HttpContent {
 
-    public HttpResponseStatus(URI uri, AsyncHttpProvider<?> provider) {
+    public HttpResponseStatus(URI uri, AsyncHttpProvider provider) {
         super(uri, provider);
     }
 

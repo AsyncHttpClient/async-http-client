@@ -36,13 +36,13 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final HttpResponse response;
     private final AtomicReference<byte[]> bytes = new AtomicReference(null);
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse> provider) {
+    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider) {
         super(uri, provider);
         this.chunk = null;
         this.response = response;
     }
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider<HttpResponse> provider, HttpChunk chunk) {
+    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk) {
         super(uri, provider);
         this.chunk = chunk;
         this.response = response;

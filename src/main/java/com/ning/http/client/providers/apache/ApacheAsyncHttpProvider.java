@@ -119,7 +119,7 @@ import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 /**
  * An {@link com.ning.http.client.AsyncHttpProvider} for Apache Http Client 3.1
  */
-public class ApacheAsyncHttpProvider implements AsyncHttpProvider<HttpClient> {
+public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(ApacheAsyncHttpProvider.class);
 
     private final AsyncHttpClientConfig config;

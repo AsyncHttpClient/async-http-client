@@ -14,7 +14,6 @@ package com.ning.http.client.providers.apache;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
-import org.apache.commons.httpclient.HttpClient;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,7 +27,7 @@ public class ApacheResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] chunk;
 
-    public ApacheResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider<HttpClient> provider) {
+    public ApacheResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider) {
         super(uri, provider);
         this.chunk = chunk;
     }

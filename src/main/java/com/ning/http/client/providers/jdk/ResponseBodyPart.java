@@ -17,7 +17,6 @@ import com.ning.http.client.HttpResponseBodyPart;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.ByteBuffer;
 
@@ -28,7 +27,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] chunk;
 
-    public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider<HttpURLConnection> provider) {
+    public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider) {
         super(uri, provider);
         this.chunk = chunk;
     }

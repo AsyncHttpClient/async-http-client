@@ -26,7 +26,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpURLConnection urlConnection;
 
-    public ResponseStatus(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider<HttpURLConnection> provider) {
+    public ResponseStatus(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
         super(uri, provider);
         this.urlConnection = urlConnection;
     }

@@ -14,7 +14,6 @@ package com.ning.http.client.providers.apache;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 
 import java.net.URI;
@@ -26,7 +25,7 @@ public class ApacheResponseStatus extends HttpResponseStatus {
 
     private final HttpMethodBase method;
 
-    public ApacheResponseStatus(URI uri, HttpMethodBase method, AsyncHttpProvider<HttpClient> provider) {
+    public ApacheResponseStatus(URI uri, HttpMethodBase method, AsyncHttpProvider provider) {
         super(uri, provider);
         this.method = method;
     }
