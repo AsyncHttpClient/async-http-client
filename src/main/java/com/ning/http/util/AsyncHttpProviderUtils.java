@@ -459,10 +459,10 @@ public class AsyncHttpProviderUtils {
 
     private static int convertExpireField(String timestring) throws Exception {
         Exception exception = null;
-        for (SimpleDateFormat sdf : simpleDateFormat.get()) {
+        for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
             try {
                 long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
-                return (int) ((expire - System.currentTimeMillis()) / 1000);
+                return (int) (expire - System.currentTimeMillis()) / 1000;
             } catch (ParseException e) {
                 exception = e;
             } catch (NumberFormatException e) {
