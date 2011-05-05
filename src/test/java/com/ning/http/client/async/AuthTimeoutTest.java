@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -88,6 +89,7 @@ public abstract class AuthTimeoutTest
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
+        
         security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
         security.setAuthenticator(new BasicAuthenticator());
         security.setLoginService(loginService);
