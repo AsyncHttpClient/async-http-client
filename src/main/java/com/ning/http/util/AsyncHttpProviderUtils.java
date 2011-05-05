@@ -45,13 +45,24 @@ public class AsyncHttpProviderUtils {
 
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
-    private final static SimpleDateFormat[] RFC2822_LIKE_DATE_FORMATS =
-            {
-                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
-                    new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
-                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
-                    new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
-            };
+
+    protected final static ThreadLocal<SimpleDateFormat[]> simpleDateFormat = new ThreadLocal<SimpleDateFormat[]>() {
+        protected SimpleDateFormat[] initialValue() {
+
+            return new SimpleDateFormat[]
+                    {
+                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
+                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
+                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
+                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
+                    };
+        }
+    };
+
+    public final static SimpleDateFormat[] get() {
+        return simpleDateFormat.get();
+    }
+
 
     //space ' '
     static final byte SP = 32;
@@ -442,7 +453,7 @@ public class AsyncHttpProviderUtils {
 
     private static int convertExpireField(String timestring) throws Exception {
         Exception exception = null;
-        for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
+        for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             try {
                 long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
                 return (int) (expire - System.currentTimeMillis()) / 1000;
