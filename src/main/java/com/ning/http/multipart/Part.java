@@ -380,40 +380,39 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
-    public static void sendMessageEnd(OutputStream out, byte[] partBoundary) 
-		throws IOException {
-		
-		if (partBoundary == null || partBoundary.length == 0) {
-	        throw new IllegalArgumentException("partBoundary may not be empty");
-	    }
-		
-		out.write(EXTRA_BYTES);
-	    out.write(partBoundary);
-	    out.write(EXTRA_BYTES);
-	    out.write(CRLF_BYTES);
-	}
+    public static void sendMessageEnd(OutputStream out, byte[] partBoundary)
+            throws IOException {
 
-	/**
-	 * Write all parts and the last boundary to the specified output stream.
-	 *
-	 * @param out          The stream to write to.
-	 * @param part         The part to write.
-	 * @throws IOException If an I/O error occurs while writing the parts.
-	 * @since N/A
-	 */
-	public static void sendPart(OutputStream out, Part part, byte[] partBoundary)
-	        throws IOException {
-	
-	    if (part == null) {
-	        throw new IllegalArgumentException("Parts may not be null");
-	    }
-	
-	    part.setPartBoundary(partBoundary);
-	    part.send(out);
-	}
-    
+        if (partBoundary == null || partBoundary.length == 0) {
+            throw new IllegalArgumentException("partBoundary may not be empty");
+        }
 
-	/**
+        out.write(EXTRA_BYTES);
+        out.write(partBoundary);
+        out.write(EXTRA_BYTES);
+        out.write(CRLF_BYTES);
+    }
+
+    /**
+     * Write all parts and the last boundary to the specified output stream.
+     *
+     * @param out  The stream to write to.
+     * @param part The part to write.
+     * @throws IOException If an I/O error occurs while writing the parts.
+     * @since N/A
+     */
+    public static void sendPart(OutputStream out, Part part, byte[] partBoundary)
+            throws IOException {
+
+        if (part == null) {
+            throw new IllegalArgumentException("Parts may not be null");
+        }
+
+        part.setPartBoundary(partBoundary);
+        part.send(out);
+    }
+
+    /**
      * Return the total sum of all parts and that of the last boundary
      *
      * @param parts The parts.
