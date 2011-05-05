@@ -1341,14 +1341,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-
-            Realm.RealmBuilder realmBuilder;
-            if (realm != null) {
-                realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme());
-            } else {
-                realmBuilder = new Realm.RealmBuilder();
-            }
-            newRealm = realmBuilder
+            newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
                     .setUri(URI.create(request.getUrl()).getPath())
                     .setMethodName(request.getMethod())
                     .setNtlmMessageType2Received(true)
