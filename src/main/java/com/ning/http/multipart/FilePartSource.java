@@ -107,5 +107,10 @@ public class FilePartSource implements PartSource {
             return new ByteArrayInputStream(new byte[] {});
         }
     }
+    
+    public File getFile() {
+    	return file;
+    }
+    
 
 }
