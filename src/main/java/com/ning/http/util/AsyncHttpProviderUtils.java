@@ -51,13 +51,14 @@ public class AsyncHttpProviderUtils {
 
             return new SimpleDateFormat[]
                     {
+                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
+                            new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
-                            new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US) // RFC1123
+
                     };
         }
     };
@@ -461,7 +462,7 @@ public class AsyncHttpProviderUtils {
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             try {
                 long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
-                return (int) (expire - System.currentTimeMillis()) / 1000;
+                return (int) ((expire - System.currentTimeMillis()) / 1000);
             } catch (ParseException e) {
                 exception = e;
             } catch (NumberFormatException e) {
