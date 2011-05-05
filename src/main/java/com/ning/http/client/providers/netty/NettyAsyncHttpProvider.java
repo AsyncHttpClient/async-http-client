@@ -1315,7 +1315,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         String password = useRealm ? realm.getPassword() : proxyServer.getPassword();
 
         Realm newRealm;
-        if (!realm.isNtlmMessageType2Received()) {
+        if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
