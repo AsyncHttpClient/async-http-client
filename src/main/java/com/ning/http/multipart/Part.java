@@ -21,6 +21,7 @@ import java.io.OutputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
+ *
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class Part implements com.ning.http.client.Part {
@@ -168,7 +169,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Sets the part boundary.  Only meant to be used by
-     * {@link Part#sendParts(java.io.OutputStream , Part[], byte[])}
+     * {@link Part#sendParts(java.io.OutputStream, Part[], byte[])}
      * and {@link Part#getLengthOfParts(Part[], byte[])}
      *
      * @param boundaryBytes An array of ASCII bytes.
@@ -378,41 +379,40 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(EXTRA_BYTES);
         out.write(CRLF_BYTES);
     }
-    
-    public static void sendMessageEnd(OutputStream out, byte[] partBoundary) 
-		throws IOException {
-		
-		if (partBoundary == null || partBoundary.length == 0) {
-	        throw new IllegalArgumentException("partBoundary may not be empty");
-	    }
-		
-		out.write(EXTRA_BYTES);
-	    out.write(partBoundary);
-	    out.write(EXTRA_BYTES);
-	    out.write(CRLF_BYTES);
-	}
 
-	/**
-	 * Write all parts and the last boundary to the specified output stream.
-	 *
-	 * @param out          The stream to write to.
-	 * @param part         The part to write.
-	 * @throws IOException If an I/O error occurs while writing the parts.
-	 * @since N/A
-	 */
-	public static void sendPart(OutputStream out, Part part, byte[] partBoundary)
-	        throws IOException {
-	
-	    if (part == null) {
-	        throw new IllegalArgumentException("Parts may not be null");
-	    }
-	
-	    part.setPartBoundary(partBoundary);
-	    part.send(out);
-	}
-    
+    public static void sendMessageEnd(OutputStream out, byte[] partBoundary)
+            throws IOException {
 
-	/**
+        if (partBoundary == null || partBoundary.length == 0) {
+            throw new IllegalArgumentException("partBoundary may not be empty");
+        }
+
+        out.write(EXTRA_BYTES);
+        out.write(partBoundary);
+        out.write(EXTRA_BYTES);
+        out.write(CRLF_BYTES);
+    }
+
+    /**
+     * Write all parts and the last boundary to the specified output stream.
+     *
+     * @param out  The stream to write to.
+     * @param part The part to write.
+     * @throws IOException If an I/O error occurs while writing the parts.
+     * @since N/A
+     */
+    public static void sendPart(OutputStream out, Part part, byte[] partBoundary)
+            throws IOException {
+
+        if (part == null) {
+            throw new IllegalArgumentException("Parts may not be null");
+        }
+
+        part.setPartBoundary(partBoundary);
+        part.send(out);
+    }
+
+    /**
      * Return the total sum of all parts and that of the last boundary
      *
      * @param parts The parts.
