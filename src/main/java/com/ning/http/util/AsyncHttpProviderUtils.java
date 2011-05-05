@@ -51,14 +51,10 @@ public class AsyncHttpProviderUtils {
 
             return new SimpleDateFormat[]
                     {
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
-                            new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US) // RFC1123
-
                     };
         }
     };
@@ -459,7 +455,7 @@ public class AsyncHttpProviderUtils {
 
     private static int convertExpireField(String timestring) throws Exception {
         Exception exception = null;
-        for (SimpleDateFormat sdf : RFC2822_LIKE_DATE_FORMATS) {
+        for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             try {
                 long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
                 return (int) (expire - System.currentTimeMillis()) / 1000;
