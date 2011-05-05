@@ -12,9 +12,19 @@
  */
 package com.ning.http.client.async;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.BodyDeferringAsyncHandler;
+import com.ning.http.client.BodyDeferringAsyncHandler.BodyDeferringInputStream;
+import com.ning.http.client.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,20 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.BodyDeferringAsyncHandler;
-import com.ning.http.client.BodyDeferringAsyncHandler.BodyDeferringInputStream;
-import com.ning.http.client.Response;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
@@ -157,7 +155,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         client.close();
     }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void deferredSimpleWithFailure() throws IOException,
             ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
