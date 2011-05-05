@@ -1033,7 +1033,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
                 HttpResponseStatus status = new ResponseStatus(future.getURI(), response, this);
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).build();
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
@@ -1248,7 +1248,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         } catch (Exception t) {
             if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
                         .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
                 fc = handleIoException(fc, future);
 
@@ -1316,14 +1316,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-
-            Realm.RealmBuilder realmBuilder;
-            if (realm != null) {
-                realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme());
-            } else {
-                realmBuilder = new Realm.RealmBuilder();
-            }
-            newRealm = realmBuilder
+            newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
                     .setUri(URI.create(request.getUrl()).getPath())
                     .setMethodName(request.getMethod())
                     .setNtlmMessageType2Received(true)
@@ -1472,7 +1465,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             future.touch();
 
             if (config.getIOExceptionFilters().size() > 0) {
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
                         .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                 fc = handleIoException(fc, future);
 
@@ -1600,7 +1593,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 if (IOException.class.isAssignableFrom(cause.getClass())) {
 
                     if (config.getIOExceptionFilters().size() > 0) {
-                        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
+                        FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
                                 .request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                         fc = handleIoException(fc, future);
 
