@@ -400,34 +400,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (future.getAndSetWriteBody(true)) {
                 if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
-                	if(future.getRequest().getParts() != null) {
-               		 String boundary = future.getNettyRequest().getHeader(
-               			"Content-Type");
-               		 
-               		 String length = future.getNettyRequest().getHeader(
-               			"Content-Length");
-               		 
-               		 final MultipartBody multipartBody = new MultipartBody(
-               			future.getRequest().getParts(), boundary, length);
-               		 
-               		 ChannelFuture writeFuture = channel.write(
-               			new BodyFileRegion(multipartBody));
-                        
-                        final Body b = multipartBody;
-                        
-                        writeFuture.addListener(new ProgressListener(
-                       		false, future.getAsyncHandler(), future) {
+                    if (future.getRequest().getParts() != null) {
+                        String boundary = future.getNettyRequest().getHeader("Content-Type");
+                        String length = future.getNettyRequest().getHeader("Content-Length");
+                        final MultipartBody multipartBody = new MultipartBody(future.getRequest().getParts(), boundary, length);
+                        ChannelFuture writeFuture = channel.write(new BodyFileRegion(multipartBody));
+
+                        writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+
                             public void operationComplete(ChannelFuture cf) {
                                 try {
-                                    b.close();
+                                    multipartBody.close();
                                 } catch (IOException e) {
                                     log.warn("Failed to close request body: {}", e.getMessage(), e);
                                 }
                                 super.operationComplete(cf);
                             }
+
                         });
-               	}
-               	else if (future.getRequest().getFile() != null) {
+                    } else if (future.getRequest().getFile() != null) {
                         final File file = future.getRequest().getFile();
                         long fileLength = 0;
                         final RandomAccessFile raf = new RandomAccessFile(file, "r");
