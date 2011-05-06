@@ -404,7 +404,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         String boundary = future.getNettyRequest().getHeader("Content-Type");
                         String length = future.getNettyRequest().getHeader("Content-Length");
                         final MultipartBody multipartBody = new MultipartBody(future.getRequest().getParts(), boundary, length);
-                        ChannelFuture writeFuture = channel.write(new BodyFileRegion(multipartBody));
+
+                        ChannelFuture writeFuture;
+                        if (channel.getPipeline().get(SslHandler.class) == null) {
+                            writeFuture = channel.write(new BodyFileRegion(multipartBody));
+                        } else {
+                            writeFuture = channel.write(new BodyChunkedInput(multipartBody));
+                        }
 
                         writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
 
@@ -700,7 +706,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
-
                 } else if (request.getEntityWriter() != null) {
                     int lenght = computeAndSetContentLength(request, nettyRequest);
 
