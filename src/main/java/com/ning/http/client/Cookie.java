@@ -56,11 +56,11 @@ public class Cookie {
     }
 
     public String getName() {
-        return name;
+        return name == null ? "" : name;
     }
 
     public String getValue() {
-        return value;
+        return value == null ? "" : value;
     }
 
     public String getPath() {
