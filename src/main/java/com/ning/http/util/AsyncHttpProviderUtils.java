@@ -400,7 +400,8 @@ public class AsyncHttpProviderUtils {
         String[] fields = value.split(";\\s*");
         String[] cookie = fields[0].split("=");
         String cookieName = cookie[0];
-        String cookieValue = cookie[1];
+        String cookieValue = (cookie.length==1) ? null : cookie[1];
+
         int maxAge = -1;
         String path = null;
         String domain = null;
@@ -414,6 +415,7 @@ public class AsyncHttpProviderUtils {
                 secure = true;
             } else if (fields[j].indexOf('=') > 0) {
                 String[] f = fields[j].split("=");
+                if(f.length==1) continue; // Add protection against null field values
 
                 // favor 'max-age' field over 'expires'
                 if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
