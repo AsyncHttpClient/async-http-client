@@ -45,7 +45,6 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -1334,12 +1333,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     .build();
             future.getAndSetAuth(false);
         } else {
-            String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-            String challengeHeader = ntlmEngine.generateType3Msg(principal, password,
-                    ntlmDomain, ntlmHost, serverChallenge);
-
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+
+            if (wwwAuth.get(0).startsWith("NTLM ")) {
+                String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
+                String challengeHeader = ntlmEngine.generateType3Msg(principal, password,
+                        ntlmDomain, ntlmHost, serverChallenge);
+
+                headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            }
+
             Realm.RealmBuilder realmBuilder;
             if (realm != null) {
                 realmBuilder = new Realm.RealmBuilder().clone(realm);
