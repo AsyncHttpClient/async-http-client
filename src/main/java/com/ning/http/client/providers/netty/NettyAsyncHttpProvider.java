@@ -45,7 +45,6 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -539,7 +538,19 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+
         if (realm != null && realm.getUsePreemptiveAuth()) {
+
+            String domain = realm.getNtlmDomain();
+            if (proxyServer != null && proxyServer.getNtlmDomain() != null) {
+                domain = proxyServer.getNtlmDomain();
+            }
+
+            String authHost = realm.getNtlmHost();
+            if (proxyServer != null && proxyServer.getHost() != null) {
+                host = proxyServer.getHost();
+            }
+
             switch (realm.getAuthScheme()) {
                 case BASIC:
                     nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
@@ -558,7 +569,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 case NTLM:
                     try {
                         nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                ntlmEngine.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost()));
+                                ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
                     } catch (NTLMEngineException e) {
                         IOException ie = new IOException();
                         ie.initCause(e);
@@ -1312,12 +1323,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     .build();
             future.getAndSetAuth(false);
         } else {
-            String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-            String challengeHeader = ntlmEngine.generateType3Msg(principal, password,
-                    ntlmDomain, ntlmHost, serverChallenge);
-
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+
+            if (wwwAuth.get(0).startsWith("NTLM ")) {
+                String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
+                String challengeHeader = ntlmEngine.generateType3Msg(principal, password,
+                        ntlmDomain, ntlmHost, serverChallenge);
+
+                headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            }
+
             Realm.RealmBuilder realmBuilder;
             if (realm != null) {
                 realmBuilder = new Realm.RealmBuilder().clone(realm);
