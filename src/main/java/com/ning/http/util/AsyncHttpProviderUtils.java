@@ -418,7 +418,7 @@ public class AsyncHttpProviderUtils {
                 // favor 'max-age' field over 'expires'
                 if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
                     try {
-                        maxAge = Integer.valueOf(f[1]);
+                        maxAge = Integer.valueOf(removeQuote(f[1]));
                     }
                     catch (NumberFormatException e1) {
                         // ignore failure to parse -> treat as session cookie
