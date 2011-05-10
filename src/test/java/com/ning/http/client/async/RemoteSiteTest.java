@@ -130,7 +130,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         p.close();
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = {"online", "default_provider"}, enabled = false)
     public void invalidStreamTest2() throws Throwable {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
                 .setRequestTimeoutInMs(10000)
