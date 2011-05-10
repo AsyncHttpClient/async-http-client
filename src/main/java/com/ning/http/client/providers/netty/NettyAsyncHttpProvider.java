@@ -818,13 +818,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             try {
                 writeRequest(channel, config, f, nettyRequest);
-            } catch (IllegalStateException ex) {
+            } catch (Exception ex) {
                 log.debug("writeRequest failure", ex);
                 if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
                     log.debug("SSLEngine failure", ex);
                     f = null;
                 } else {
-                    throw ex;
+                    try {
+                        asyncHandler.onThrowable(ex);
+                    } catch (Throwable t) {
+                        log.warn("doConnect.writeRequest()", t);
+                    }
+                    IOException ioe = new IOException(ex.getMessage());
+                    ioe.initCause(ex);
+                    throw ioe;
                 }
             }
             return f;
@@ -913,6 +920,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
                 IOException ioe = new IOException(e.getMessage());
                 ioe.initCause(e);
+                try {
+                    asyncHandler.onThrowable(ioe);
+                } catch (Throwable t) {
+                    log.warn("c.operationComplete()", t);
+                }
                 throw ioe;
             }
         } else {
