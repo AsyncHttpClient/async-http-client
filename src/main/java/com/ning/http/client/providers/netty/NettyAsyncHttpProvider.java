@@ -501,7 +501,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          HttpMethod m,
                                          URI uri,
                                          ChannelBuffer buffer) throws IOException {
-        String host = uri.getHost();
+
+        String host = AsyncHttpProviderUtils.getHost(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
@@ -899,7 +900,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             if (proxyServer == null || avoidProxy) {
-                channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
+                channelFuture = bootstrap.connect(new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
@@ -1301,7 +1302,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     NettyResponseFuture<?> future) throws NTLMEngineException {
 
         URI uri = URI.create(request.getUrl());
-        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
+        String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
             String challengeHeader = spnegoEngine.generateToken(server);
