@@ -14,7 +14,7 @@
  * under the License.
  */
 package com.ning.http.client.providers.netty;
-
+   
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -104,8 +104,10 @@ import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
