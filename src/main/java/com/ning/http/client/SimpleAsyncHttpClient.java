@@ -70,10 +70,8 @@ public class SimpleAsyncHttpClient {
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
     private final SimpleAHCTransferListener listener;
     private final boolean derived;
-    private Realm realm;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, Realm realm, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler,
-            ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -81,7 +79,6 @@ public class SimpleAsyncHttpClient {
         this.errorDocumentBehaviour = errorDocumentBehaviour;
         this.asyncHttpClient = ahc;
         this.listener = listener;
-        this.realm = realm;
 
         this.derived = ahc != null;
     }
@@ -274,8 +271,6 @@ public class SimpleAsyncHttpClient {
             throwableHandler = defaultThrowableHandler;
         }
 
-        rb.setRealm(realm);
-
         Request request = rb.build();
         ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener);
 
@@ -388,20 +383,6 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder setResumableDownload(boolean resume);
 
-        DerivedBuilder setRealmEnconding(String enc);
-
-        DerivedBuilder setRealmUsePreemptiveAuth(boolean usePreemptiveAuth);
-
-        DerivedBuilder setRealmName(String realmName);
-
-        DerivedBuilder setRealmScheme(Realm.AuthScheme scheme);
-
-        DerivedBuilder setRealmPassword(String password);
-
-        DerivedBuilder setRealmPrincipal(String principal);
-
-        DerivedBuilder setRealmDomain(String domain);
-
         SimpleAsyncHttpClient build();
     }
 
@@ -432,10 +413,6 @@ public class SimpleAsyncHttpClient {
             this.enableResumableDownload = client.resumeEnabled;
             this.ahc = client.asyncHttpClient();
             this.listener = client.listener;
-
-            if (client.realm != null) {
-                realm().clone(client.realm);
-            }
         }
 
         public Builder addBodyPart(Part part) throws IllegalArgumentException {
@@ -684,10 +661,8 @@ public class SimpleAsyncHttpClient {
 
         public SimpleAsyncHttpClient build() {
 
-            Realm realm = null;
             if (realmBuilder != null) {
-                realm = realmBuilder.build();
-                configBuilder.setRealm(realm);
+                configBuilder.setRealm(realmBuilder.build());
             }
 
             if (proxyHost != null) {
@@ -696,8 +671,7 @@ public class SimpleAsyncHttpClient {
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), realm, requestBuilder, defaultThrowableHandler,
-                    errorDocumentBehaviour, enableResumableDownload, ahc, listener);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener);
 
             return sc;
         }
