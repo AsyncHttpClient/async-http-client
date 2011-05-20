@@ -23,6 +23,7 @@ import com.ning.http.client.Body;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -194,7 +195,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 e = Executors.newCachedThreadPool();
             }
-            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService());
+            int numWorkers = config.getIoThreadMultiplier()*Runtime.getRuntime().availableProcessors();
+            log.info("numWorkers=" + numWorkers);
+            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
@@ -486,7 +489,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          HttpMethod m,
                                          URI uri,
                                          ChannelBuffer buffer) throws IOException {
-        String host = uri.getHost();
+
+        String host = AsyncHttpProviderUtils.getHost(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
@@ -880,7 +884,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             if (proxyServer == null || avoidProxy) {
-                channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
+                channelFuture = bootstrap.connect(new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
@@ -1282,7 +1286,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     NettyResponseFuture<?> future) throws NTLMEngineException {
         
         URI uri = URI.create(request.getUrl());
-        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
+        String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
             String challengeHeader = spnegoEngine.generateToken(server);

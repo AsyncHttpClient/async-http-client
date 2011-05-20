@@ -79,6 +79,7 @@ public class AsyncHttpClientConfig {
     private final boolean allowSslConnectionPool;
     private final boolean useRawUrl;
     private final boolean removeQueryParamOnRedirect;
+    private final int ioThreadMultiplier;
     private final HostnameVerifier hostnameVerifier;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
@@ -106,6 +107,7 @@ public class AsyncHttpClientConfig {
                                   boolean allowSslConnectionCaching,
                                   boolean useRawUrl,
                                   boolean removeQueryParamOnRedirect,
+                                  int ioThreadMultiplier,
                                   HostnameVerifier hostnameVerifier) {
 
         this.maxTotalConnections = maxTotalConnections;
@@ -131,6 +133,7 @@ public class AsyncHttpClientConfig {
         this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+        this.ioThreadMultiplier = ioThreadMultiplier;
         this.hostnameVerifier = hostnameVerifier;
 
         if (applicationThreadPool == null) {
@@ -411,6 +414,14 @@ public class AsyncHttpClientConfig {
         return removeQueryParamOnRedirect;
     }
 
+    /***
+     *
+     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
+     */
+    public int getIoThreadMultiplier() {
+        return ioThreadMultiplier;
+    }
+
     /**
      * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
      * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
@@ -470,6 +481,7 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
+        private int ioThreadMultiplier = 2;
         private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
 
             public boolean verify( String s, SSLSession sslSession ) {
@@ -865,6 +877,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setIOThreadMultiplier(int multiplier){
+            this.ioThreadMultiplier = multiplier;
+            return this;
+        }
+
         /**
          * Set the {@link HostnameVerifier}
          * @param hostnameVerifier {@link HostnameVerifier}
@@ -903,6 +920,7 @@ public class AsyncHttpClientConfig {
             requestFilters.addAll(prototype.getRequestFilters());
             responseFilters.addAll(prototype.getResponseFilters());
             useRawUrl = prototype.isUseRawUrl();
+            ioThreadMultiplier = prototype.getIoThreadMultiplier();
         }
 
         /**
@@ -946,6 +964,7 @@ public class AsyncHttpClientConfig {
                     allowSslConnectionPool,
                     useRawUrl,
                     removeQueryParamOnRedirect,
+                    ioThreadMultiplier,
                     hostnameVerifier);
         }
     }
