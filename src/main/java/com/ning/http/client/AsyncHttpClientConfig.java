@@ -79,8 +79,8 @@ public class AsyncHttpClientConfig {
     private final boolean allowSslConnectionPool;
     private final boolean useRawUrl;
     private final boolean removeQueryParamOnRedirect;
-    private final HostnameVerifier hostnameVerifier;
     private final int ioThreadMultiplier;
+    private final HostnameVerifier hostnameVerifier;
 
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
@@ -107,8 +107,8 @@ public class AsyncHttpClientConfig {
                                   boolean allowSslConnectionCaching,
                                   boolean useRawUrl,
                                   boolean removeQueryParamOnRedirect,
-                                  HostnameVerifier hostnameVerifier,
-                                  int ioThreadMultiplier) {
+                                  int ioThreadMultiplier,
+                                  HostnameVerifier hostnameVerifier) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -133,8 +133,8 @@ public class AsyncHttpClientConfig {
         this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
-        this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
+        this.hostnameVerifier = hostnameVerifier;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -414,6 +414,14 @@ public class AsyncHttpClientConfig {
         return removeQueryParamOnRedirect;
     }
 
+    /***
+     *
+     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
+     */
+    public int getIoThreadMultiplier() {
+        return ioThreadMultiplier;
+    }
+
     /**
      * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
      * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
@@ -428,14 +436,6 @@ public class AsyncHttpClientConfig {
      */
     public HostnameVerifier getHostnameVerifier() {
         return hostnameVerifier;
-    }
-
-    /***
-     *
-     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
-     */
-    public int getIoThreadMultiplier() {
-        return ioThreadMultiplier;
     }
 
     /**
@@ -481,13 +481,13 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
+        private int ioThreadMultiplier = 2;
         private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
 
             public boolean verify( String s, SSLSession sslSession ) {
                 return true;
             }
         };
-        private int ioThreadMultiplier = 2;
 
         public Builder() {
         }
@@ -877,6 +877,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setIOThreadMultiplier(int multiplier){
+            this.ioThreadMultiplier = multiplier;
+            return this;
+        }
+
         /**
          * Set the {@link HostnameVerifier}
          * @param hostnameVerifier {@link HostnameVerifier}
@@ -884,11 +889,6 @@ public class AsyncHttpClientConfig {
          */
         public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier){
             this.hostnameVerifier = hostnameVerifier;
-            return this;
-        }
-
-        public Builder setIOThreadMultiplier(int multiplier){
-            this.ioThreadMultiplier = multiplier;
             return this;
         }
 
@@ -964,8 +964,8 @@ public class AsyncHttpClientConfig {
                     allowSslConnectionPool,
                     useRawUrl,
                     removeQueryParamOnRedirect,
-                    hostnameVerifier,
-                    ioThreadMultiplier);
+                    ioThreadMultiplier,
+                    hostnameVerifier);
         }
     }
 }
