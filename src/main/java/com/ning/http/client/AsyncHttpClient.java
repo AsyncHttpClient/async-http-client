@@ -497,7 +497,7 @@ public class AsyncHttpClient {
      }
 
     /**
-     * Configure and execute the associated @link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
+     * Configure and execute the associated {@link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
      *
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
