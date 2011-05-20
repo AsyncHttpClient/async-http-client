@@ -44,8 +44,10 @@ public class MultipartBody implements RandomAccessBody {
     FileLocation fileLocation;
     FilePart currentFilePart;
     FileChannel currentFileChannel;
-    
-    enum FileLocation{ NONE, START, MIDDLE, END};
+
+    enum FileLocation {NONE, START, MIDDLE, END}
+
+    ;
 
     public MultipartBody(List<com.ning.http.client.Part> parts, String boundary, String contentLength) {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(boundary.substring("multipart/form-data; boundary=".length()));
@@ -73,242 +75,238 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     public long read(ByteBuffer buffer) throws IOException {
-    	try {
-        int overallLength = 0;
-        
-        int maxLength = buffer.capacity();
+        try {
+            int overallLength = 0;
 
-        if (startPart == parts.size()&& endWritten) {
+            int maxLength = buffer.capacity();
+
+            if (startPart == parts.size() && endWritten) {
+                return overallLength;
+            }
+
+            boolean full = false;
+            while (!full && !doneWritingParts) {
+                com.ning.http.client.Part part = null;
+                if (startPart < parts.size()) {
+                    part = parts.get(startPart);
+                }
+                if (currentFileChannel != null) {
+                    overallLength += currentFileChannel.read(buffer);
+
+                    if (currentFileChannel.position() == currentFileChannel.size()) {
+                        currentFileChannel.close();
+                        currentFileChannel = null;
+                    }
+
+                    if (overallLength == maxLength) {
+                        full = true;
+                    }
+                } else if (currentStreamPosition > -1) {
+                    overallLength += writeToBuffer(buffer, maxLength - overallLength);
+
+                    if (overallLength == maxLength) {
+                        full = true;
+                    }
+                    if (startPart == parts.size() && currentStream.available() == 0) {
+                        doneWritingParts = true;
+                    }
+                } else if (part instanceof StringPart) {
+                    StringPart currentPart = (StringPart) part;
+
+                    initializeStringPart(currentPart);
+
+                    startPart++;
+                } else if (part instanceof com.ning.http.client.StringPart) {
+                    StringPart currentPart = generateClientStringpart(part);
+
+                    initializeStringPart(currentPart);
+
+                    startPart++;
+                } else if (part instanceof FilePart) {
+                    if (fileLocation == FileLocation.NONE) {
+                        currentFilePart = (FilePart) part;
+                        initializeFilePart(currentFilePart);
+                    } else if (fileLocation == FileLocation.START) {
+                        initializeFileBody(currentFilePart);
+                    } else if (fileLocation == FileLocation.MIDDLE) {
+                        initializeFileEnd(currentFilePart);
+                    } else if (fileLocation == FileLocation.END) {
+                        startPart++;
+                        if (startPart == parts.size() && currentStream.available() == 0) {
+                            doneWritingParts = true;
+                        }
+                    }
+                } else if (part instanceof com.ning.http.client.FilePart) {
+                    if (fileLocation == FileLocation.NONE) {
+                        currentFilePart = generateClientFilePart(part);
+                        initializeFilePart(currentFilePart);
+                    } else if (fileLocation == FileLocation.START) {
+                        initializeFileBody(currentFilePart);
+                    } else if (fileLocation == FileLocation.MIDDLE) {
+                        initializeFileEnd(currentFilePart);
+                    } else if (fileLocation == FileLocation.END) {
+                        startPart++;
+                        if (startPart == parts.size() && currentStream.available() == 0) {
+                            doneWritingParts = true;
+                        }
+                    }
+                } else if (part instanceof com.ning.http.client.ByteArrayPart) {
+                    com.ning.http.client.ByteArrayPart bytePart =
+                            (com.ning.http.client.ByteArrayPart) part;
+
+                    if (fileLocation == FileLocation.NONE) {
+                        currentFilePart =
+                                generateClientByteArrayPart(bytePart);
+
+                        initializeFilePart(currentFilePart);
+                    } else if (fileLocation == FileLocation.START) {
+                        initializeByteArrayBody(currentFilePart);
+                    } else if (fileLocation == FileLocation.MIDDLE) {
+                        initializeFileEnd(currentFilePart);
+                    } else if (fileLocation == FileLocation.END) {
+                        startPart++;
+                        if (startPart == parts.size() && currentStream.available() == 0) {
+                            doneWritingParts = true;
+                        }
+                    }
+                }
+            }
+
+            if (doneWritingParts) {
+                if (currentStreamPosition == -1) {
+                    ByteArrayOutputStream endWriter = new ByteArrayOutputStream();
+
+                    Part.sendMessageEnd(endWriter, boundary);
+
+                    initializeBuffer(endWriter);
+                }
+
+                if (currentStreamPosition > -1) {
+                    overallLength += writeToBuffer(buffer, maxLength - overallLength);
+
+                    if (currentStream.available() == 0) {
+                        currentStream.close();
+                        currentStreamPosition = -1;
+                        endWritten = true;
+                    }
+                }
+            }
             return overallLength;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
         }
-       
-        boolean full = false;
-        while(!full && !doneWritingParts) {
-        	com.ning.http.client.Part part = null;
-        	if(startPart < parts.size()) {
-        		part = parts.get(startPart);
-        	}
-        	if(currentFileChannel != null) {
-        		overallLength += currentFileChannel.read(buffer);
-        		
-        		if(currentFileChannel.position() == currentFileChannel.size()) {
-        			currentFileChannel.close();
-        			currentFileChannel = null;
-        		}
-        		
-        		if(overallLength == maxLength) {
-                	full = true;
-                }
-        	}
-        	else if(currentStreamPosition > -1) {
-        		overallLength += writeToBuffer(buffer, maxLength - overallLength);
-                
-                if(overallLength == maxLength) {
-                	full = true;
-                }
-                if(startPart == parts.size() && currentStream.available() == 0) {
-                	doneWritingParts = true;
-                }
-        	}
-        	else if (part instanceof StringPart) {
-            	StringPart currentPart = (StringPart)part;
-            	
-                initializeStringPart(currentPart);
-                
-                startPart++;
-            }else if(part instanceof com.ning.http.client.StringPart) {
-            	StringPart currentPart = generateClientStringpart(part);
-
-            	initializeStringPart(currentPart);
-            	
-            	startPart++;
-            }else if(part instanceof FilePart) {
-            	if(fileLocation == FileLocation.NONE) {
-            		currentFilePart = (FilePart)part;
-            		initializeFilePart(currentFilePart);
-            	}else if(fileLocation == FileLocation.START) {
-            		initializeFileBody(currentFilePart);
-            	}else if(fileLocation == FileLocation.MIDDLE) {
-            		initializeFileEnd(currentFilePart);
-            	}else if(fileLocation == FileLocation.END) {
-            		startPart++;
-            		if(startPart == parts.size() && currentStream.available() == 0) {
-                    	doneWritingParts = true;
-                    }
-            	}
-            }
-            else if(part instanceof com.ning.http.client.FilePart) {
-            	if(fileLocation == FileLocation.NONE) {
-            		currentFilePart = generateClientFilePart(part);
-            		initializeFilePart(currentFilePart);
-            	}else if(fileLocation == FileLocation.START) {
-            		initializeFileBody(currentFilePart);
-            	}else if(fileLocation == FileLocation.MIDDLE) {
-            		initializeFileEnd(currentFilePart);
-            	}else if(fileLocation == FileLocation.END) {
-            		startPart++;
-            		if(startPart == parts.size() && currentStream.available() == 0) {
-                    	doneWritingParts = true;
-                    }
-            	}
-            }
-            else if(part instanceof com.ning.http.client.ByteArrayPart) {
-            	com.ning.http.client.ByteArrayPart bytePart = 
-            		(com.ning.http.client.ByteArrayPart)part;
-            	
-            	if(fileLocation == FileLocation.NONE) {
-            		currentFilePart = 
-            			generateClientByteArrayPart(bytePart);
-            		
-            		initializeFilePart(currentFilePart);
-            	}else if(fileLocation == FileLocation.START) {
-            		initializeByteArrayBody(currentFilePart);
-            	}else if(fileLocation == FileLocation.MIDDLE) {
-            		initializeFileEnd(currentFilePart);
-            	}else if(fileLocation == FileLocation.END) {
-            		startPart++;
-            		if(startPart == parts.size() && currentStream.available() == 0) {
-                    	doneWritingParts = true;
-                    }
-            	}
-            }
-        }
-        
-        if(doneWritingParts) {
-	        if(currentStreamPosition == -1) {
-	        	 ByteArrayOutputStream endWriter = new ByteArrayOutputStream();
-	
-	        	 Part.sendMessageEnd(endWriter, boundary);
-	        	 
-	        	 initializeBuffer(endWriter);
-	        }
-	        
-	        if(currentStreamPosition > -1) {
-	        	overallLength += writeToBuffer(buffer, maxLength - overallLength);
-                
-                if(currentStream.available() == 0) {
-                	currentStream.close();
-                	currentStreamPosition = -1;
-                	endWritten = true;
-                }
-	        }
-        }
-    	return overallLength;
-    	
-    	}catch(Exception e) {
-    		e.printStackTrace();
-    		return 0;
-    	}
-    }
-   
-	private void initializeByteArrayBody(FilePart filePart) 
-		throws IOException {
-		
-		ByteArrayOutputStream output = generateByteArrayBody(filePart);
-		
-		initializeBuffer(output); 
-		
-		fileLocation = FileLocation.MIDDLE;
-	}
-
-	private void initializeFileEnd(FilePart currentPart) 
-		throws IOException {
-		
-		ByteArrayOutputStream output = generateFileEnd(currentPart);
-		
-		initializeBuffer(output);  
-		
-		fileLocation = FileLocation.END;
-		
-	}
-
-	private void initializeFileBody(FilePart currentPart) 
-		throws IOException {
-		
-		 if ( FilePartSource.class.isAssignableFrom( currentPart.getSource().getClass())) {
-
-			 FilePartSource source = (FilePartSource) currentPart.getSource();
-
-	            File file = source.getFile();
-
-	            RandomAccessFile raf = new RandomAccessFile(file, "r");
-	            files.add(raf);
-
-	            currentFileChannel = raf.getChannel();
-	           
-	        } else {
-	            PartSource partSource = currentPart.getSource();
-
-	            InputStream stream = partSource.createInputStream();
-
-	            byte[] bytes = new byte[(int)partSource.getLength()];
-	            
-	            stream.read(bytes);
-	            
-	            currentStream = new ByteArrayInputStream(bytes);
-	            
-	            currentStreamPosition = 0;
-	        }
-		 
-		fileLocation = FileLocation.MIDDLE;
-	}
-
-	private void initializeFilePart(FilePart filePart)
-    	throws IOException {
-    	
-    	filePart.setPartBoundary(boundary);
-    	
-    	ByteArrayOutputStream output = generateFileStart(filePart);
-    	
-    	initializeBuffer(output);  
-    	
-    	fileLocation = FileLocation.START;
     }
 
-	private void initializeStringPart(StringPart currentPart)
-			throws IOException {
-		currentPart.setPartBoundary(boundary);
+    private void initializeByteArrayBody(FilePart filePart)
+            throws IOException {
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = generateByteArrayBody(filePart);
 
-		Part.sendPart(outputStream, currentPart, boundary);
+        initializeBuffer(output);
 
-		initializeBuffer(outputStream);
-	}
-    
-    private int writeToBuffer(ByteBuffer buffer, int length) 
-    	throws IOException {
-    	
-    	int available = currentStream.available();
-    	
-		int writeLength = Math.min(available, length);
-		
-		byte[] bytes = new byte[writeLength];
-	
-		currentStream.read(bytes);
-		
-	    buffer.put(bytes);
-	    
-	    if(available <= length) {
-	    	currentStream.close();
-	    	currentStreamPosition = -1;
-	    }else {
-	    	currentStreamPosition += writeLength;
-	    }
-	    
-		return writeLength;
+        fileLocation = FileLocation.MIDDLE;
     }
 
-	private void initializeBuffer(ByteArrayOutputStream outputStream) 
-		throws IOException {
-		
-		currentStream = new ByteArrayInputStream(outputStream.toByteArray());
-		
-		currentStreamPosition = 0;
-	
-	}
+    private void initializeFileEnd(FilePart currentPart)
+            throws IOException {
 
-	public long transferTo(long position, long count, WritableByteChannel target)
+        ByteArrayOutputStream output = generateFileEnd(currentPart);
+
+        initializeBuffer(output);
+
+        fileLocation = FileLocation.END;
+
+    }
+
+    private void initializeFileBody(FilePart currentPart)
+            throws IOException {
+
+        if (FilePartSource.class.isAssignableFrom(currentPart.getSource().getClass())) {
+
+            FilePartSource source = (FilePartSource) currentPart.getSource();
+
+            File file = source.getFile();
+
+            RandomAccessFile raf = new RandomAccessFile(file, "r");
+            files.add(raf);
+
+            currentFileChannel = raf.getChannel();
+
+        } else {
+            PartSource partSource = currentPart.getSource();
+
+            InputStream stream = partSource.createInputStream();
+
+            byte[] bytes = new byte[(int) partSource.getLength()];
+
+            stream.read(bytes);
+
+            currentStream = new ByteArrayInputStream(bytes);
+
+            currentStreamPosition = 0;
+        }
+
+        fileLocation = FileLocation.MIDDLE;
+    }
+
+    private void initializeFilePart(FilePart filePart)
+            throws IOException {
+
+        filePart.setPartBoundary(boundary);
+
+        ByteArrayOutputStream output = generateFileStart(filePart);
+
+        initializeBuffer(output);
+
+        fileLocation = FileLocation.START;
+    }
+
+    private void initializeStringPart(StringPart currentPart)
+            throws IOException {
+        currentPart.setPartBoundary(boundary);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Part.sendPart(outputStream, currentPart, boundary);
+
+        initializeBuffer(outputStream);
+    }
+
+    private int writeToBuffer(ByteBuffer buffer, int length)
+            throws IOException {
+
+        int available = currentStream.available();
+
+        int writeLength = Math.min(available, length);
+
+        byte[] bytes = new byte[writeLength];
+
+        currentStream.read(bytes);
+
+        buffer.put(bytes);
+
+        if (available <= length) {
+            currentStream.close();
+            currentStreamPosition = -1;
+        } else {
+            currentStreamPosition += writeLength;
+        }
+
+        return writeLength;
+    }
+
+    private void initializeBuffer(ByteArrayOutputStream outputStream)
+            throws IOException {
+
+        currentStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        currentStreamPosition = 0;
+
+    }
+
+    public long transferTo(long position, long count, WritableByteChannel target)
             throws IOException {
 
         long overallLength = 0;
@@ -362,28 +360,28 @@ public class MultipartBody implements RandomAccessBody {
         return 0;
     }
 
-	private FilePart generateClientByteArrayPart(
-			com.ning.http.client.ByteArrayPart bytePart) {
-		ByteArrayPartSource source = new ByteArrayPartSource(bytePart.getFileName(), bytePart.getData());
+    private FilePart generateClientByteArrayPart(
+            com.ning.http.client.ByteArrayPart bytePart) {
+        ByteArrayPartSource source = new ByteArrayPartSource(bytePart.getFileName(), bytePart.getData());
 
-		FilePart filePart = new FilePart(bytePart.getName(), source, bytePart.getMimeType(), bytePart.getCharSet());
-		return filePart;
-	}
+        FilePart filePart = new FilePart(bytePart.getName(), source, bytePart.getMimeType(), bytePart.getCharSet());
+        return filePart;
+    }
 
-	private FilePart generateClientFilePart(com.ning.http.client.Part part)
-			throws FileNotFoundException {
-		com.ning.http.client.FilePart currentPart = (com.ning.http.client.FilePart) part;
+    private FilePart generateClientFilePart(com.ning.http.client.Part part)
+            throws FileNotFoundException {
+        com.ning.http.client.FilePart currentPart = (com.ning.http.client.FilePart) part;
 
-		FilePart filePart = new FilePart(currentPart.getName(), currentPart.getFile());
-		return filePart;
-	}
+        FilePart filePart = new FilePart(currentPart.getName(), currentPart.getFile());
+        return filePart;
+    }
 
-	private StringPart generateClientStringpart(com.ning.http.client.Part part) {
-		com.ning.http.client.StringPart stringPart = (com.ning.http.client.StringPart) part;
+    private StringPart generateClientStringpart(com.ning.http.client.Part part) {
+        com.ning.http.client.StringPart stringPart = (com.ning.http.client.StringPart) part;
 
-		StringPart currentPart = new StringPart(stringPart.getName(), stringPart.getValue());
-		return currentPart;
-	}
+        StringPart currentPart = new StringPart(stringPart.getName(), stringPart.getValue());
+        return currentPart;
+    }
 
     private long handleByteArrayPart(WritableByteChannel target,
                                      FilePart filePart, byte[] data) throws IOException {
@@ -392,12 +390,12 @@ public class MultipartBody implements RandomAccessBody {
         return writeToTarget(target, output);
     }
 
-	private ByteArrayOutputStream generateByteArrayBody(FilePart filePart)
-			throws IOException {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private ByteArrayOutputStream generateByteArrayBody(FilePart filePart)
+            throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         Part.sendPart(output, filePart, boundary);
-		return output;
-	}
+        return output;
+    }
 
     private long handleFileEnd(WritableByteChannel target, FilePart filePart)
             throws IOException {
@@ -407,13 +405,13 @@ public class MultipartBody implements RandomAccessBody {
         return this.writeToTarget(target, endOverhead);
     }
 
-	private ByteArrayOutputStream generateFileEnd(FilePart filePart)
-			throws IOException {
-		ByteArrayOutputStream endOverhead = new ByteArrayOutputStream();
+    private ByteArrayOutputStream generateFileEnd(FilePart filePart)
+            throws IOException {
+        ByteArrayOutputStream endOverhead = new ByteArrayOutputStream();
 
         filePart.sendEnd(endOverhead);
-		return endOverhead;
-	}
+        return endOverhead;
+    }
 
     private long handleFileHeaders(WritableByteChannel target, FilePart filePart) throws IOException {
         filePart.setPartBoundary(boundary);
@@ -423,9 +421,9 @@ public class MultipartBody implements RandomAccessBody {
         return writeToTarget(target, overhead);
     }
 
-	private ByteArrayOutputStream generateFileStart(FilePart filePart)
-			throws IOException {
-		ByteArrayOutputStream overhead = new ByteArrayOutputStream();
+    private ByteArrayOutputStream generateFileStart(FilePart filePart)
+            throws IOException {
+        ByteArrayOutputStream overhead = new ByteArrayOutputStream();
 
         filePart.setPartBoundary(boundary);
 
@@ -434,12 +432,12 @@ public class MultipartBody implements RandomAccessBody {
         filePart.sendContentTypeHeader(overhead);
         filePart.sendTransferEncodingHeader(overhead);
         filePart.sendEndOfHeader(overhead);
-		return overhead;
-	}
+        return overhead;
+    }
 
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
 
-        if ( FilePartSource.class.isAssignableFrom( filePart.getSource().getClass())) {
+        if (FilePartSource.class.isAssignableFrom(filePart.getSource().getClass())) {
             int length = 0;
 
             length += handleFileHeaders(target, filePart);
@@ -477,7 +475,7 @@ public class MultipartBody implements RandomAccessBody {
         InputStream stream = partSource.createInputStream();
 
         int nRead = 0;
-        byte[] bytes = new byte[(int)partSource.getLength()];
+        byte[] bytes = new byte[(int) partSource.getLength()];
         while (nRead != -1) {
             nRead = stream.read(bytes);
             if (nRead > 0) {
