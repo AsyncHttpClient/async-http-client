@@ -1077,7 +1077,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future);
                         // SPNEGO KERBEROS
                     } else if (wwwAuth.contains("Negotiate")) {
-                        newRealm = kerberosChallenge(request, proxyServer, headers, realm, future);
+                        newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future );
                         if (newRealm == null) return;
                     } else {
                         Realm.RealmBuilder realmBuilder;
@@ -1133,7 +1133,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         newRealm = ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future);
                         // SPNEGO KERBEROS
                     } else if (proxyAuth.contains("Negotiate")) {
-                        newRealm = kerberosChallenge(request, proxyServer, headers, realm, future);
+                        newRealm = kerberosChallenge(proxyAuth, request, proxyServer, headers, realm, future);
                         if (newRealm == null) return;
                     } else {
                         newRealm = future.getRequest().getRealm();
@@ -1274,11 +1274,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private Realm kerberosChallenge(Request request,
+    private Realm kerberosChallenge(List<String> proxyAuth,
+                                    Request request,
                                     ProxyServer proxyServer,
                                     FluentCaseInsensitiveStringsMap headers,
                                     Realm realm,
-                                    NettyResponseFuture<?> future) {
+                                    NettyResponseFuture<?> future) throws NTLMEngineException {
         
         URI uri = URI.create(request.getUrl());
         String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
@@ -1299,6 +1300,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         .setScheme(Realm.AuthScheme.KERBEROS)
                         .build();
         } catch (Throwable throwable) {
+            if (proxyAuth.contains("NTLM")) {
+                return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future);
+            }
             abort(future, throwable);
             return null;
         }
