@@ -375,7 +375,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         } else if (config.getUserAgent() != null) {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         } else {
-            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(ApacheAsyncHttpProvider.class));
+            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
         }
 
         if (config.isCompressionEnabled()) {
