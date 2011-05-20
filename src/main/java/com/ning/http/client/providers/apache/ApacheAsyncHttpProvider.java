@@ -39,6 +39,7 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
@@ -369,10 +370,12 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
+        if (request.getHeaders().getFirstValue("User-Agent") != null) {
+            method.setRequestHeader("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
+        } else if (config.getUserAgent() != null) {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         } else {
-            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(ApacheAsyncHttpProvider.class));
+            method.setRequestHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
         }
 
         if (config.isCompressionEnabled()) {

@@ -35,6 +35,7 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -545,10 +546,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 urlConnection.setRequestProperty("Accept", "*/*");
             }
 
-            if (request.getHeaders().getFirstValue("User-Agent") == null && config.getUserAgent() != null) {
+            if (request.getHeaders().getFirstValue("User-Agent") != null) {
+                urlConnection.setRequestProperty("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
+            } else if (config.getUserAgent() != null) {
                 urlConnection.setRequestProperty("User-Agent", config.getUserAgent());
             } else {
-                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.class));
+                urlConnection.setRequestProperty("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
             }
 
             if (request.getCookies() != null && !request.getCookies().isEmpty()) {
