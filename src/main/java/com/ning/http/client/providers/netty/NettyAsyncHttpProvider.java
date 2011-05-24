@@ -462,7 +462,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(channel, future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, delay, TimeUnit.MILLISECONDS);
+                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -1195,7 +1195,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
                                 nBuilder.addOrReplaceCookie(c);
                             }
-    
 
                             AsyncCallable ac = new AsyncCallable(future) {
                                 public Object call() throws Exception {
