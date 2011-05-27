@@ -160,7 +160,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             IdleChannel idleChannel = new IdleChannel(uri, channel);
             added = idleConnectionForHost.add(idleChannel);
             if (channel2IdleChannel.put(channel, idleChannel) != null) {
-                log.error("Bas, this channel entry already exists in the connections pool!");
+                log.error("Channel {} already exists in the connections pool!", channel);
             }
         } else {
             log.debug("Maximum number of requests per host reached {} for {}", maxConnectionPerHost, uri);
