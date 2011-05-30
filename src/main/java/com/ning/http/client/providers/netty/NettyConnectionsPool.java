@@ -158,9 +158,12 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         int size = idleConnectionForHost.size();
         if (maxConnectionPerHost == -1 || size < maxConnectionPerHost) {
             IdleChannel idleChannel = new IdleChannel(uri, channel);
-            added = idleConnectionForHost.add(idleChannel);
-            if (channel2IdleChannel.put(channel, idleChannel) != null) {
-                log.error("Channel {} already exists in the connections pool!", channel);
+            synchronized(idleConnectionForHost) {
+                added = idleConnectionForHost.add(idleChannel);
+
+                if (channel2IdleChannel.put(channel, idleChannel) != null) {
+                    log.error("Channel {} already exists in the connections pool!", channel);
+                }
             }
         } else {
             log.debug("Maximum number of requests per host reached {} for {}", maxConnectionPerHost, uri);
@@ -183,8 +186,12 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             boolean poolEmpty = false;
             while (!poolEmpty && idleChannel == null) {
                 if (idleConnectionForHost.size() > 0) {
-                    idleChannel = idleConnectionForHost.poll();
-                    if (idleChannel != null) channel2IdleChannel.remove(idleChannel.channel);
+                    synchronized(idleConnectionForHost) {
+                        idleChannel = idleConnectionForHost.poll();
+                        if (idleChannel != null) {
+                            channel2IdleChannel.remove(idleChannel.channel);
+                        }
+                    }
                 }
 
                 if (idleChannel == null) {

@@ -1107,6 +1107,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             return null;
                         }
                     };
+
                     if (future.getKeepAlive() && response.isChunked()) {
                         // We must make sure there is no bytes left before executing the next request.
                         ctx.setAttachment(ac);
