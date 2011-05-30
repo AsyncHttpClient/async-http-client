@@ -12,21 +12,6 @@
  */
 package com.ning.http.client.async;
 
-import static org.testng.Assert.*;
-
-import static org.testng.Assert.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import org.testng.annotations.Test;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
@@ -36,6 +21,19 @@ import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
+import org.testng.annotations.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Future;
+
+import static junit.framework.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.assertNotSame;
 
 public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
