@@ -19,7 +19,6 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -71,7 +70,7 @@ public abstract class AbstractBasicTest {
             if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
                 httpResponse.addHeader("Allow","GET,HEAD,POST,OPTIONS,TRACE");
             };
-            
+
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {

@@ -47,8 +47,6 @@ public class MultipartBody implements RandomAccessBody {
 
     enum FileLocation {NONE, START, MIDDLE, END}
 
-    ;
-
     public MultipartBody(List<com.ning.http.client.Part> parts, String boundary, String contentLength) {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(boundary.substring("multipart/form-data; boundary=".length()));
         this.contentLength = Long.parseLong(contentLength);
@@ -194,7 +192,7 @@ public class MultipartBody implements RandomAccessBody {
             return overallLength;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info("read exception", e);
             return 0;
         }
     }
@@ -312,7 +310,7 @@ public class MultipartBody implements RandomAccessBody {
         long overallLength = 0;
 
         if (startPart == parts.size()) {
-            return overallLength;
+            return contentLength;
         }
 
         int tempPart = startPart;
@@ -372,7 +370,7 @@ public class MultipartBody implements RandomAccessBody {
             throws FileNotFoundException {
         com.ning.http.client.FilePart currentPart = (com.ning.http.client.FilePart) part;
 
-        FilePart filePart = new FilePart(currentPart.getName(), currentPart.getFile());
+        FilePart filePart = new FilePart(currentPart.getName(), currentPart.getFile(), currentPart.getMimeType(), currentPart.getCharSet());
         return filePart;
     }
 
@@ -450,11 +448,22 @@ public class MultipartBody implements RandomAccessBody {
 
             FileChannel fc = raf.getChannel();
 
-            long fileLength = fc.transferTo(0, file.length(), target);
-
-            if (fileLength != file.length()) {
-                logger.info("Did not complete file.");
+            long l = file.length();
+            int fileLength = 0;
+            synchronized (fc) {
+                while (fileLength != l) {
+                    fileLength += fc.transferTo(fileLength, l, target);
+                    if (fileLength != l) {
+                        logger.info("Waiting for writing...");
+                        try {
+                            fc.wait(1000);
+                        } catch (InterruptedException e) {
+                            logger.trace(e.getMessage(), e);
+                        }
+                    }
+                }
             }
+            fc.close();
 
             length += handleFileEnd(target, filePart);
 
@@ -474,15 +483,20 @@ public class MultipartBody implements RandomAccessBody {
 
         InputStream stream = partSource.createInputStream();
 
-        int nRead = 0;
-        byte[] bytes = new byte[(int) partSource.getLength()];
-        while (nRead != -1) {
-            nRead = stream.read(bytes);
-            if (nRead > 0) {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream(nRead);
-                bos.write(bytes, 0, nRead);
-                writeToTarget(target, bos);
+        try {
+            int nRead = 0;
+            while (nRead != -1) {
+                // Do not buffer the entire monster in memory.
+                byte[] bytes = new byte[8192];
+                nRead = stream.read(bytes);
+                if (nRead > 0) {
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream(nRead);
+                    bos.write(bytes, 0, nRead);
+                    writeToTarget(target, bos);
+                }
             }
+        } finally {
+            stream.close();
         }
         length += handleFileEnd(target, filePart);
 
@@ -518,19 +532,24 @@ public class MultipartBody implements RandomAccessBody {
             throws IOException {
 
         int written = 0;
+        int maxSpin = 0;
         synchronized (byteWriter) {
+            ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
             while ((target.isOpen()) && (written < byteWriter.size())) {
-                ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
-                written = target.write(message);
-                // TODO: This is dangerous to spin, we need to find another way to wait until 
-                //the byte channel is ready to receive the additional bytes or else data is lost.
-                if (written != byteWriter.size()) {
+                written += target.write(message);
+                if (written != byteWriter.size() && maxSpin++ < 10) {
                     logger.info("Waiting for writing...");
                     try {
                         byteWriter.wait(1000);
+                        maxSpin++;
                     } catch (InterruptedException e) {
                         logger.trace(e.getMessage(), e);
                     }
+                } else {
+                    if (maxSpin >= 10) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
+                    maxSpin = 0;
                 }
             }
         }
