@@ -164,7 +164,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
 
-    private boolean executeConnectAsync = false;
+    private boolean executeConnectAsync = true;
 
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
 
