@@ -26,10 +26,10 @@ import java.io.InputStream;
 public class ByteArrayPartSource implements PartSource {
 
     /** Name of the source file. */
-    private String fileName;
+    private final String fileName;
 
     /** Byte array of the source file. */
-    private byte[] bytes;
+    private final byte[] bytes;
 
     /**
      * Constructor for ByteArrayPartSource.
@@ -38,10 +38,8 @@ public class ByteArrayPartSource implements PartSource {
      * @param bytes the content of this part
      */
     public ByteArrayPartSource(String fileName, byte[] bytes) {
-
         this.fileName = fileName;
         this.bytes = bytes;
-
     }
 
     /**
