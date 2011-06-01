@@ -131,7 +131,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
     /**
      * Tests that the streaming of a file works.
      */
-    @Test
+    @Test (enabled = false)
     public void testSendingSmallFilesAndByteArray() {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -275,7 +275,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         String[] contentArray = content.split(":");
         // TODO: this fail on win32
-        //assertEquals(2, contentArray.length);
+        assertEquals(2, contentArray.length);
 
         String tmpFiles = contentArray[1];
         assertNotNull(tmpFiles);
