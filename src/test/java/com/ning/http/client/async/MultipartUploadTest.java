@@ -52,7 +52,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -131,7 +130,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
     /**
      * Tests that the streaming of a file works.
      */
-    @Test (enabled = false)
+    @Test (enabled = true)
     public void testSendingSmallFilesAndByteArray() {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -187,7 +186,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             tmpFile = File.createTempFile("textbytearray", ".txt");
             os = new FileOutputStream(tmpFile);
-            IOUtils.write(expectedContents.getBytes(), os);
+            IOUtils.write(expectedContents.getBytes("UTF-8"), os);
             tmpFileCreated = true;
 
             testFiles.add(tmpFile);
@@ -233,7 +232,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes(), "text/plain", Charset.defaultCharset().toString()));
+            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes("UTF-8") ,"text/plain", "UTF-8"));
 
 
             com.ning.http.client.Request r = builder.build();
@@ -267,13 +266,13 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         String content = null;
         try {
             content = r.getResponseBody();
-            assertNotNull("Content Should not have been null", content);
+            assertNotNull("===>" + content);
             System.out.println(content);
         } catch (IOException e) {
             fail("Unable to obtain content");
         }
 
-        String[] contentArray = content.split(":");
+        String[] contentArray = content.split("\\|\\|");
         // TODO: this fail on win32
         assertEquals(2, contentArray.length);
 
@@ -465,7 +464,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 w.write(Integer.toString(getFilesProcessed()));
                 resetFilesProcessed();
                 resetStringsProcessed();
-                w.write(':');
+                w.write("||");
                 w.write(files.toString());
                 w.close();
             } else {
@@ -473,7 +472,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 w.write(Integer.toString(getFilesProcessed()));
                 resetFilesProcessed();
                 resetStringsProcessed();
-                w.write(':');
+                w.write("||");
                 w.close();
             }
 
