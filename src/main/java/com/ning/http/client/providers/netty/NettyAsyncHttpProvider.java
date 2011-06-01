@@ -1182,7 +1182,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 boolean redirectEnabled = request.isRedirectEnabled() ? true : config.isRedirectEnabled();
-                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
+                if (redirectEnabled && (statusCode == 302 || statusCode == 301 || statusCode == 307)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
                         // We must allow 401 handling again.
