@@ -20,12 +20,20 @@ package com.ning.http.client;
  * A string multipart part.
  */
 public class StringPart implements Part {
-    private String name;
-    private String value;
+    private final String name;
+    private final String value;
+    private final String charset;
+
+    public StringPart(String name, String value, String charset) {
+        this.name = name;
+        this.value = value;
+        this.charset = charset;
+    }
 
     public StringPart(String name, String value) {
         this.name = name;
         this.value = value;
+        this.charset = "UTF-8";
     }
 
     public String getName() {
@@ -35,4 +43,9 @@ public class StringPart implements Part {
     public String getValue() {
         return value;
     }
+
+    public String getCharset() {
+        return charset;
+    }
+
 }

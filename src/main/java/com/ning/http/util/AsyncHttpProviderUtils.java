@@ -214,7 +214,7 @@ public class AsyncHttpProviderUtils {
             } else if (part instanceof StringPart) {
                 parts[i] = new com.ning.http.multipart.StringPart(part.getName(),
                         ((StringPart) part).getValue(),
-                        "UTF-8");
+                        ((StringPart) part).getCharset());
             } else if (part instanceof FilePart) {
                 parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
                         ((FilePart) part).getFile(),
