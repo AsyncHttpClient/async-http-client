@@ -262,8 +262,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         DefaultChannelFuture.setUseDeadLockChecker(false);
 
         if (asyncHttpProviderConfig != null) {
-            if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT) != null) {
-                executeConnectAsync = true;
+            Object value = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT);
+            if (value != null && Boolean.class.isAssignableFrom(value.getClass())) {
+                executeConnectAsync = Boolean.class.cast(value);
             } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
             }
