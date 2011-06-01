@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.util.Date;
 
 import static org.testng.Assert.assertEquals;
@@ -55,10 +54,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
     private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
-
-    private Server server;
-
-    private int port1;
 
     @BeforeClass
     public void setUp() throws Exception {
