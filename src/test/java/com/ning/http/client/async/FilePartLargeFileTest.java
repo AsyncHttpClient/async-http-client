@@ -67,7 +67,7 @@ public abstract class FilePartLargeFileTest
         AsyncHttpClient client = getAsyncHttpClient(config);
         BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
-        rb.setBody(largeFile);
+        rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream" , "UTF-8"));
 
         Response response = rb.execute().get();
         Assert.assertEquals(200, response.getStatusCode());
