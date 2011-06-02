@@ -377,7 +377,7 @@ public class MultipartBody implements RandomAccessBody {
     private StringPart generateClientStringpart(com.ning.http.client.Part part) {
         com.ning.http.client.StringPart stringPart = (com.ning.http.client.StringPart) part;
 
-        StringPart currentPart = new StringPart(stringPart.getName(), stringPart.getValue());
+        StringPart currentPart = new StringPart(stringPart.getName(), stringPart.getValue(), stringPart.getCharset());
         return currentPart;
     }
 
