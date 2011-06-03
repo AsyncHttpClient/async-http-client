@@ -307,7 +307,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if (uri.getAuthority() != null) {
             buildedUrl.append(uri.getAuthority());
         }
-        buildedUrl.append(uri.getRawPath());
+        if (uri.getRawPath() != null) {
+            buildedUrl.append(uri.getRawPath());
+        } else {
+            // AHC-96
+            // Let's try to derive it
+            if (url.indexOf("://") == -1) {
+                String s = buildedUrl.toString();
+                url = s + url.substring(uri.getScheme().length() + 1);
+                return buildUrl(url);
+            } else {
+                throw new IllegalArgumentException("Invalid url " + uri.toString());
+            }
+        }
 
         if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
             String[] queries = uri.getRawQuery().split("&");
