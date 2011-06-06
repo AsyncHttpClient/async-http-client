@@ -19,6 +19,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.AsyncHttpClientConfigBean;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -1590,6 +1591,14 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void invalidUri() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getBrokenTargetUrl());
+        Response r = c.executeRequest(builder.build()).get();
+        assertEquals(200, r.getStatusCode());
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void asyncHttpClientConfigBeanTest() throws Exception {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfigBean().setUserAgent("test"));
+        AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
         Response r = c.executeRequest(builder.build()).get();
         assertEquals(200, r.getStatusCode());
     }
