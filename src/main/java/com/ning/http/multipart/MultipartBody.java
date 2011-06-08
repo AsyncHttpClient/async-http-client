@@ -450,10 +450,11 @@ public class MultipartBody implements RandomAccessBody {
 
             long l = file.length();
             int fileLength = 0;
+            long nWrite = 0;
             synchronized (fc) {
                 while (fileLength != l) {
-                    fileLength += fc.transferTo(fileLength, l, target);
-                    if (fileLength != l) {
+                    nWrite = fc.transferTo(fileLength, l, target);
+                    if (nWrite == 0 ) {
                         logger.info("Waiting for writing...");
                         try {
                             fc.wait(1000);
@@ -461,6 +462,7 @@ public class MultipartBody implements RandomAccessBody {
                             logger.trace(e.getMessage(), e);
                         }
                     }
+                    fileLength += nWrite;
                 }
             }
             fc.close();
@@ -537,11 +539,10 @@ public class MultipartBody implements RandomAccessBody {
             ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
             while ((target.isOpen()) && (written < byteWriter.size())) {
                 written += target.write(message);
-                if (written != byteWriter.size() && maxSpin++ < 10) {
+                if (written == 0 && maxSpin++ < 10) {
                     logger.info("Waiting for writing...");
                     try {
                         byteWriter.wait(1000);
-                        maxSpin++;
                     } catch (InterruptedException e) {
                         logger.trace(e.getMessage(), e);
                     }
