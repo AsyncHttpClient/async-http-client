@@ -215,8 +215,8 @@ public class AsyncHttpClient {
          */
         protected String baseURL;
         
-        private BoundRequestBuilder(String reqType) {
-            super(BoundRequestBuilder.class, reqType);
+        private BoundRequestBuilder(String reqType, boolean useRawUrl) {
+            super(BoundRequestBuilder.class, reqType, useRawUrl);
         }
 
         private BoundRequestBuilder(Request prototype) {
@@ -557,7 +557,7 @@ public class AsyncHttpClient {
     }
 
     protected BoundRequestBuilder requestBuilder(String reqType, String url) {
-        return new BoundRequestBuilder(reqType).setUrl(url).setSignatureCalculator(signatureCalculator);
+        return new BoundRequestBuilder(reqType, config.isUseRawUrl()).setUrl(url).setSignatureCalculator(signatureCalculator);
     }
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {

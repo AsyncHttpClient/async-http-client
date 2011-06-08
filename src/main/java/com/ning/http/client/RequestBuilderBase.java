@@ -58,8 +58,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private PerRequestConfig perRequestConfig;
         private long rangeOffset = 0;
         public String charset;
+        private boolean useRawUrl = false;
 
-        public RequestImpl() {
+        public RequestImpl(boolean useRawUrl) {
+            this.useRawUrl = useRawUrl;
         }
 
         public RequestImpl(Request prototype) {
@@ -86,6 +88,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.perRequestConfig = prototype.getPerRequestConfig();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
+                this.useRawUrl = prototype.isUseRawUrl();
             }
         }
 
@@ -274,20 +277,27 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             return sb.toString();
         }
+
+        public boolean isUseRawUrl() {
+            return useRawUrl;
+        }
     }
 
     private final Class<T> derived;
     protected final RequestImpl request;
+    protected boolean useRawUrl = false;
 
-    protected RequestBuilderBase(Class<T> derived, String method) {
+    protected RequestBuilderBase(Class<T> derived, String method, boolean rawUrls) {
         this.derived = derived;
-        request = new RequestImpl();
+        request = new RequestImpl(rawUrls);
         request.method = method;
+        this.useRawUrl = rawUrls;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
         this.derived = derived;
         request = new RequestImpl(prototype);
+        this.useRawUrl = prototype.isUseRawUrl();
     }
     
     public T setUrl(String url) {
@@ -330,7 +340,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     addQueryParameter(query, null);
                 }else{
                     try {
-                        addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8") , URLDecoder.decode(query.substring(pos +1), "UTF-8"));
+                        if (this.useRawUrl) {
+                            addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
+                        } else {
+                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8") , URLDecoder.decode(query.substring(pos +1), "UTF-8"));
+                        }
                     }
                     catch ( UnsupportedEncodingException e ) {
                         throw new RuntimeException(e);

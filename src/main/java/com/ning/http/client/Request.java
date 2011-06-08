@@ -190,4 +190,6 @@ public interface Request {
      */
     public String getBodyEncoding();
 
+    public boolean isUseRawUrl();
+
 }

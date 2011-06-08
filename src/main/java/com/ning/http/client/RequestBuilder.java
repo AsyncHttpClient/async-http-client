@@ -25,12 +25,17 @@ import java.util.Map;
  * Builder for a {@link Request}.
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
+
     public RequestBuilder() {
-        super(RequestBuilder.class, "GET");
+        super(RequestBuilder.class, "GET", false);
     }
 
     public RequestBuilder(String method) {
-        super(RequestBuilder.class, method);
+        super(RequestBuilder.class, method, false);
+    }
+
+    public RequestBuilder(String method, boolean useRawUrl) {
+        super(RequestBuilder.class, method, useRawUrl);
     }
 
     public RequestBuilder(Request prototype) {
