@@ -27,6 +27,7 @@ import com.ning.http.multipart.PartSource;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -175,6 +176,13 @@ public class AsyncHttpProviderUtils {
         return url;
     }
 
+    public final static String contentToString(Collection<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
+        StringBuilder b = new StringBuilder();
+        for (HttpResponseBodyPart bp : bodyParts) {
+            b.append(new String(bp.getBodyPartBytes(), charset));
+        }
+        return b.toString();
+    }
 
     public final static URI getRedirectUri(URI uri, String location) {
         URI newUri = uri.resolve(location);

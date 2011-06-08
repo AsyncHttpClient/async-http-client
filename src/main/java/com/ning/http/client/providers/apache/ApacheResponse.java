@@ -23,7 +23,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -82,19 +81,10 @@ public class ApacheResponse implements Response {
             charset = DEFAULT_CHARSET;
         }
 
-        return contentToString(charset);
-    }
-
-    String contentToString(String charset) throws UnsupportedEncodingException {
-        StringBuilder b = new StringBuilder();
-        for (HttpResponseBodyPart bp : bodyParts) {
-            b.append(new String(bp.getBodyPartBytes(), charset));
-        }
-        return b.toString();
+        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
     }
 
     /* @Override */
-
     public InputStream getResponseBodyAsStream() throws IOException {
         if (bodyParts.size() > 0) {
             return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
@@ -121,7 +111,7 @@ public class ApacheResponse implements Response {
             charset = DEFAULT_CHARSET;
         }
         
-        String response = contentToString(charset);
+        String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
 
