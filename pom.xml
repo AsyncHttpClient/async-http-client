@@ -384,8 +384,10 @@
                         <exclude>**/Realm$AuthScheme</exclude>
                         <exclude>**/SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude>
                         <exclude>**/SpnegoEngine</exclude>                        
+                        <exclude>**/Request</exclude>                        
+                        <exclude>**/Request$EntityWriter</exclude>                        
+                        <exclude>**/RequestBuilderBase</exclude>                        
                     </excludes>
-                    <comparisonVersion>1.7.0</comparisonVersion>
                 </configuration>
                 <executions>
                     <execution>
