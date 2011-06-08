@@ -386,7 +386,8 @@
                         <exclude>**/SpnegoEngine</exclude>                        
                         <exclude>**/Request</exclude>                        
                         <exclude>**/Request$EntityWriter</exclude>                        
-                        <exclude>**/RequestBuilderBase</exclude>                        
+                        <exclude>**/RequestBuilderBase</exclude>
+                        <exclude>**/Response</exclude>
                     </excludes>
                 </configuration>
                 <executions>

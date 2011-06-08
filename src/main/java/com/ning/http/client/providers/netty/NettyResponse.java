@@ -72,7 +72,11 @@ public class NettyResponse implements Response {
     }
 
     /* @Override */
+    public byte[] getResponseBodyAsBytes() throws IOException {
+        return AsyncHttpProviderUtils.contentToByte(bodyParts);
+    }
 
+    /* @Override */
     public String getResponseBody() throws IOException {
         return getResponseBody(DEFAULT_CHARSET);
     }

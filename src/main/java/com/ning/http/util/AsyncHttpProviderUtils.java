@@ -184,6 +184,22 @@ public class AsyncHttpProviderUtils {
         return b.toString();
     }
 
+    public final static byte[] contentToByte(Collection<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
+        int size = 0;
+        for (HttpResponseBodyPart body : bodyParts) {
+            size += body.getBodyPartBytes().length;
+        }
+        byte[] bytes = new byte[size];
+        int offset = 0;
+        for (HttpResponseBodyPart body : bodyParts) {
+            byte[] bodyBytes = body.getBodyPartBytes();
+            System.arraycopy(bodyBytes, 0, bytes, offset, bodyBytes.length);
+            offset += bodyBytes.length;
+        }
+
+        return bytes;
+    }
+
     public final static URI getRedirectUri(URI uri, String location) {
         URI newUri = uri.resolve(location);
 

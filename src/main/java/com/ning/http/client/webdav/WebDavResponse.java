@@ -44,6 +44,11 @@ public class WebDavResponse implements Response{
         return response.getStatusText();
     }
 
+    /* @Override */
+    public byte[] getResponseBodyAsBytes() throws IOException {
+        return response.getResponseBodyAsBytes();
+    }
+
     public InputStream getResponseBodyAsStream() throws IOException {
         return response.getResponseBodyAsStream();
     }

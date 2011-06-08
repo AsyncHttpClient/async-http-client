@@ -1602,4 +1602,26 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         Response r = c.executeRequest(builder.build()).get();
         assertEquals(200, r.getStatusCode());
     }
+
+    @Test(groups = {"default_provider", "async"})
+    public void bodyAsByteTest() throws Throwable {
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().build());
+        Response r = client.prepareGet(getTargetUrl()).execute().get();
+
+        assertEquals(r.getStatusCode(), 200);
+        assertEquals(r.getResponseBodyAsBytes(), new byte[]{});
+
+        client.close();
+    }
+
+    @Test(groups = {"default_provider", "async"})
+    public void mirrorByteTest() throws Throwable {
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        Response r = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
+
+        assertEquals(r.getStatusCode(), 200);
+        assertEquals(new String(r.getResponseBodyAsBytes(), "UTF-8"), "MIRROR");
+
+        client.close();
+    }
 }

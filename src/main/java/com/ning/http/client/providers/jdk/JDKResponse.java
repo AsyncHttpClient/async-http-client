@@ -74,6 +74,11 @@ public class JDKResponse implements Response {
         return getResponseBody(DEFAULT_CHARSET);
     }
 
+    /* @Override */
+    public byte[] getResponseBodyAsBytes() throws IOException {
+        return AsyncHttpProviderUtils.contentToByte(bodyParts);
+    }
+
     public String getResponseBody(String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null && charset == null) {
