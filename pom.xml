@@ -385,6 +385,7 @@
                         <exclude>**/SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude>
                         <exclude>**/SpnegoEngine</exclude>                        
                     </excludes>
+                    <comparisonVersion>1.7.0</comparisonVersion>
                 </configuration>
                 <executions>
                     <execution>
