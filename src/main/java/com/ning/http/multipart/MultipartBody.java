@@ -538,8 +538,9 @@ public class MultipartBody implements RandomAccessBody {
         synchronized (byteWriter) {
             ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
             while ((target.isOpen()) && (written < byteWriter.size())) {
-                written += target.write(message);
-                if (written == 0 && maxSpin++ < 10) {
+                long nWrite = target.write(message);
+                written += nWrite;
+                if (nWrite == 0 && maxSpin++ < 10) {
                     logger.info("Waiting for writing...");
                     try {
                         byteWriter.wait(1000);
