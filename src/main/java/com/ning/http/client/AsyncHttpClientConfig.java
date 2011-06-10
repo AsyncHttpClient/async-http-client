@@ -905,7 +905,6 @@ public class AsyncHttpClientConfig {
             connectionsPool = prototype.getConnectionsPool();
             defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
             defaultIdleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
-            allowPoolingConnection = prototype.getKeepAlive();
             defaultMaxConnectionPerHost = prototype.getMaxConnectionPerHost();
             maxDefaultRedirects = prototype.getMaxRedirects();
             defaultMaxTotalConnections = prototype.getMaxTotalConnections();
@@ -915,14 +914,26 @@ public class AsyncHttpClientConfig {
             sslContext = prototype.getSSLContext();
             sslEngineFactory = prototype.getSSLEngineFactory();
             userAgent = prototype.getUserAgent();
+            redirectEnabled = prototype.isRedirectEnabled();
+            compressionEnabled = prototype.isCompressionEnabled();
+            reaper = prototype.reaper();
+            applicationThreadPool = prototype.executorService();
 
             requestFilters.clear();
             responseFilters.clear();
+            ioExceptionFilters.clear();
 
             requestFilters.addAll(prototype.getRequestFilters());
             responseFilters.addAll(prototype.getResponseFilters());
+            ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
+
+            requestCompressionLevel = prototype.getRequestCompressionLevel();
             useRawUrl = prototype.isUseRawUrl();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
+            maxRequestRetry = prototype.getMaxRequestRetry();
+            allowSslConnectionPool = prototype.getAllowPoolingConnection();
+            removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
+            hostnameVerifier = prototype.getHostnameVerifier();
         }
 
         /**
