@@ -45,6 +45,13 @@ public interface Response {
     public String getStatusText();
 
     /**
+     * Return the entire response body as a byte[].
+     * @return the entire response body as a byte[].
+     * @throws IOException
+     */
+    public byte[] getResponseBodyAsBytes() throws IOException;
+
+    /**
      * Returns an input stream for the response body. Note that you should not try to get this more than once,
      * and that you should not close the stream.
      *

@@ -450,17 +450,36 @@ public class MultipartBody implements RandomAccessBody {
 
             long l = file.length();
             int fileLength = 0;
+            long nWrite = 0;
             synchronized (fc) {
                 while (fileLength != l) {
-                    fileLength += fc.transferTo(fileLength, l, target);
-                    if (fileLength != l) {
-                        logger.info("Waiting for writing...");
-                        try {
-                            fc.wait(1000);
-                        } catch (InterruptedException e) {
-                            logger.trace(e.getMessage(), e);
+                    try {
+                        nWrite = fc.transferTo(fileLength, l, target);
+                        if (nWrite == 0) {
+                            logger.info("Waiting for writing...");
+                            try {
+                                fc.wait(1000);
+                            } catch (InterruptedException e) {
+                                logger.trace(e.getMessage(), e);
+                            }
+                        }
+                    } catch (IOException ex) {
+                        String message = ex.getMessage();
+
+                        // http://bugs.sun.com/view_bug.do?bug_id=5103988
+                        if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
+                            try {
+                                fc.wait(1000);
+                            } catch (InterruptedException e) {
+                                logger.trace(e.getMessage(), e);
+                            }
+                            logger.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
+                            continue;
+                        } else {
+                            throw ex;
                         }
                     }
+                    fileLength += nWrite;
                 }
             }
             fc.close();
@@ -536,12 +555,12 @@ public class MultipartBody implements RandomAccessBody {
         synchronized (byteWriter) {
             ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
             while ((target.isOpen()) && (written < byteWriter.size())) {
-                written += target.write(message);
-                if (written != byteWriter.size() && maxSpin++ < 10) {
+                long nWrite = target.write(message);
+                written += nWrite;
+                if (nWrite == 0 && maxSpin++ < 10) {
                     logger.info("Waiting for writing...");
                     try {
                         byteWriter.wait(1000);
-                        maxSpin++;
                     } catch (InterruptedException e) {
                         logger.trace(e.getMessage(), e);
                     }

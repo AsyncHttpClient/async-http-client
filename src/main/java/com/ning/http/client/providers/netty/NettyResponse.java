@@ -28,7 +28,6 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -73,7 +72,11 @@ public class NettyResponse implements Response {
     }
 
     /* @Override */
+    public byte[] getResponseBodyAsBytes() throws IOException {
+        return AsyncHttpProviderUtils.contentToByte(bodyParts);
+    }
 
+    /* @Override */
     public String getResponseBody() throws IOException {
         return getResponseBody(DEFAULT_CHARSET);
     }
@@ -88,20 +91,10 @@ public class NettyResponse implements Response {
             charset = DEFAULT_CHARSET;
         }
         
-        return contentToString(charset);
-    }
-
-
-    String contentToString(String charset) throws UnsupportedEncodingException {
-        StringBuilder b = new StringBuilder();
-        for (HttpResponseBodyPart bp : bodyParts) {
-            b.append(new String(bp.getBodyPartBytes(), charset));
-        }
-        return b.toString();
+        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
     }
 
     /* @Override */
-
     public InputStream getResponseBodyAsStream() throws IOException {
         ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
         for (HttpResponseBodyPart bp : bodyParts) {
@@ -132,7 +125,7 @@ public class NettyResponse implements Response {
             charset = DEFAULT_CHARSET;
         }
         
-        String response = contentToString(charset);
+        String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
 

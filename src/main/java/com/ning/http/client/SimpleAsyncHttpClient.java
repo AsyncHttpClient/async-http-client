@@ -403,7 +403,7 @@ public class SimpleAsyncHttpClient {
         private SimpleAHCTransferListener listener = null;
 
         public Builder() {
-            requestBuilder = new RequestBuilder("GET");
+            requestBuilder = new RequestBuilder("GET", false);
         }
 
         private Builder(SimpleAsyncHttpClient client) {

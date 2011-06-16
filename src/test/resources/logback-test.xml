@@ -4,6 +4,9 @@
             <Pattern>%d [%thread] %level %logger - %m%n</Pattern>
         </layout>
     </appender>
+
+    <logger name="org.eclipse" level="INFO"/>
+
     <root level="debug">
         <appender-ref ref="CONSOLE"/>
     </root>

@@ -19,6 +19,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
+import com.ning.http.client.AsyncHttpClientConfigBean;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -1592,5 +1593,35 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getBrokenTargetUrl());
         Response r = c.executeRequest(builder.build()).get();
         assertEquals(200, r.getStatusCode());
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void asyncHttpClientConfigBeanTest() throws Exception {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfigBean().setUserAgent("test"));
+        AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
+        Response r = c.executeRequest(builder.build()).get();
+        assertEquals(200, r.getStatusCode());
+    }
+
+    @Test(groups = {"default_provider", "async"})
+    public void bodyAsByteTest() throws Throwable {
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().build());
+        Response r = client.prepareGet(getTargetUrl()).execute().get();
+
+        assertEquals(r.getStatusCode(), 200);
+        assertEquals(r.getResponseBodyAsBytes(), new byte[]{});
+
+        client.close();
+    }
+
+    @Test(groups = {"default_provider", "async"})
+    public void mirrorByteTest() throws Throwable {
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        Response r = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
+
+        assertEquals(r.getStatusCode(), 200);
+        assertEquals(new String(r.getResponseBodyAsBytes(), "UTF-8"), "MIRROR");
+
+        client.close();
     }
 }
