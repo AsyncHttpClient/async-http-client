@@ -36,15 +36,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class support asynchronous and synchronous HTTP request.
  *
  * To execute synchronous HTTP request, you just need to do
- * {@code
+ * <blockquote><pre>
  *    AsyncHttpClient c = new AsyncHttpClient();
  *    Future<Response> f = c.prepareGet("http://www.ning.com/").execute();
- * }
+ * </pre></blockquote
  *
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
  * create an {@link AsyncHandler} or its abstract implementation, {@link com.ning.http.client.AsyncCompletionHandler}
  *
- * {@code
+ * <blockquote><pre>
  *       AsyncHttpClient c = new AsyncHttpClient();
  *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
  *
@@ -74,12 +74,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *          &#125;
  *      &#125;);
  *      Integer statusCode = f.get();
- * }
+ * </pre></blockquote
  * The {@link AsyncCompletionHandler#onCompleted(com.ning.http.client.Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
  *
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
- * {@code
+ * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
  *          private StringBuilder builder = new StringBuilder();
@@ -117,23 +117,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *      &#125;);
  *
  *      String bodyResponse = f.get();
- * }
+ * </pre></blockquote
  * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
  *
  * This class can also be used without the need of {@link AsyncHandler}</p>
- * {@code
+ * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
- * }
+ * </pre></blockquote>
  *
  * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
- * {@code
+ * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
- * }
+ * </pre></blockquote>
  *
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.

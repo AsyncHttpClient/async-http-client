@@ -34,30 +34,28 @@ import java.util.concurrent.ScheduledExecutorService;
  * <p/>
  * This class rely on {@link BodyGenerator} and {@link BodyConsumer} for handling the request and response body. No
  * {@link AsyncHandler} are required. As simple as:
- * <p/>
- * {@code
+ * <blockquote><pre>
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
  * .setIdleConnectionInPoolTimeoutInMs(100)
  * .setMaximumConnectionsTotal(50)
  * .setRequestTimeoutInMs(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
- * <p/>
+ *
  * StringBuilder s = new StringBuilder();
  * Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
- * }
+ * </pre></blockquote>
  * or
- * {@code
+ * <blockquote><pre>
  * public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
- * <p/>
+ *
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
  * .setUrl(getTargetUrl())
  * .build();
- * <p/>
+ *
  * ByteArrayOutputStream o = new ByteArrayOutputStream(10);
  * Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
- * }
- * }
+ * </pre></blockquote>
  */
 public class SimpleAsyncHttpClient {
 

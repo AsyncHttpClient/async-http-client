@@ -32,12 +32,12 @@ package com.ning.http.client;
  *
  * AsyncHandler aren't thread safe, hence you should avoid re-using the same instance when doing concurrent requests.
  * As an exmaple, the following may produce unexpected results:
- * {@code
+ * <blockquote><pre>
  *   AsyncHandler ah = new AsyncHandler() {....};
  *   AsyncHttpClient client = new AsyncHttpClient();
  *   client.prepareGet("http://...").execute(ah);
  *   client.prepareGet("http://...").execute(ah);
- * }
+ * </pre></blockquote>
  * It is recommended to create a new instance instead.
  *
  * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
