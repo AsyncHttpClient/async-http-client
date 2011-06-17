@@ -3,12 +3,16 @@ com.ning.http.client.consumers
 com.ning.http.client.extra
 com.ning.http.client.filter
 com.ning.http.client.generators
+com.ning.http.client.listenable
 com.ning.http.client.listener
+com.ning.http.client.ntlm
 com.ning.http.client.oauth
 com.ning.http.client.providers.apache
 com.ning.http.client.providers.jdk
 com.ning.http.client.providers.netty
+com.ning.http.client.providers.netty.spnego
 com.ning.http.client.resumable
+com.ning.http.client.simple
 com.ning.http.client.webdav
 com.ning.http.multipart
 com.ning.http.util
