@@ -205,6 +205,14 @@ public class AsyncHttpProviderUtils {
         }
     }
 
+    public final static String getHost(URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            host = uri.getAuthority();
+        }
+        return host;
+    }
+
     public final static URI getRedirectUri(URI uri, String location) {
         URI newUri = uri.resolve(location);
 
