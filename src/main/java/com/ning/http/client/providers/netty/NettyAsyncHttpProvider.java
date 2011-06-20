@@ -501,7 +501,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          HttpMethod m,
                                          URI uri,
                                          ChannelBuffer buffer) throws IOException {
-        String host = uri.getHost();
+
+        String host = AsyncHttpProviderUtils.getHost(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
@@ -510,8 +511,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
-        } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
         } else {
             StringBuilder path = new StringBuilder(uri.getRawPath());
             if (uri.getQuery() != null) {
@@ -899,7 +898,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             if (proxyServer == null || avoidProxy) {
-                channelFuture = bootstrap.connect(new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getPort(uri)));
+                channelFuture = bootstrap.connect(new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
             }
@@ -1183,7 +1182,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 boolean redirectEnabled = request.isRedirectEnabled() ? true : config.isRedirectEnabled();
-                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
+                if (redirectEnabled && (statusCode == 302 || statusCode == 301 || statusCode == 307)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
                         // We must allow 401 handling again.
@@ -1301,7 +1300,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     NettyResponseFuture<?> future) throws NTLMEngineException {
 
         URI uri = URI.create(request.getUrl());
-        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
+        String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
             String challengeHeader = spnegoEngine.generateToken(server);

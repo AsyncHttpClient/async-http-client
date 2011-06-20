@@ -78,7 +78,7 @@ public class NettyResponse implements Response {
 
     /* @Override */
     public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
+        return getResponseBody(null);
     }
 
     public String getResponseBody(String charset) throws IOException {
@@ -112,7 +112,7 @@ public class NettyResponse implements Response {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
-        return getResponseBodyExcerpt(maxLength, DEFAULT_CHARSET);
+        return getResponseBodyExcerpt(maxLength, null);
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {

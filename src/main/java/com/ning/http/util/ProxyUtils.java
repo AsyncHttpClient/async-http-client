@@ -71,7 +71,7 @@ public class ProxyUtils {
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, URI.create(request.getUrl()).getHost());
+        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(URI.create(request.getUrl())));
     }
 
     /**
