@@ -511,8 +511,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
-        } else if (config.getProxyServer() != null || request.getProxyServer() != null) {
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, uri.toString());
         } else {
             StringBuilder path = new StringBuilder(uri.getRawPath());
             if (uri.getQuery() != null) {
