@@ -52,7 +52,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
                            HttpServletRequest request,
                            HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
-                response.addHeader("target", r.getUri().toString());
+                response.addHeader("target", r.getUri().getPath());
                 response.setStatus(HttpServletResponse.SC_OK);
             } else { // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -77,7 +77,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), target);
+        assertEquals(resp.getHeader("target"), "/");
         client.close();
     }
 
@@ -93,7 +93,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), target);
+        assertEquals(resp.getHeader("target"), "/");
         client.close();
     }
 
@@ -110,7 +110,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
         Response resp = f.get(3, TimeUnit.SECONDS);
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), target);
+        assertEquals(resp.getHeader("target"), "/");
         client.close();
     }
 
@@ -156,7 +156,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("target"), target);
+            assertEquals(resp.getHeader("target"), "/");
 
             target = "http://localhost:1234/";
             f = client.prepareGet(target).execute();
@@ -226,7 +226,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("target"), target);
+            assertEquals(resp.getHeader("target"), "/");
 
             target = "http://localhost:1234/";
             f = client.prepareGet(target).execute();
