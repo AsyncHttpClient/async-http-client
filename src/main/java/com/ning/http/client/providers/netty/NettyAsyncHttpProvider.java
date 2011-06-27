@@ -20,6 +20,7 @@ import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Body;
+import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -40,6 +41,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
@@ -356,9 +358,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             Body body = null;
             if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
-                if (future.getRequest().getBodyGenerator() != null) {
+                BodyGenerator bg = future.getRequest().getBodyGenerator();
+                if (bg != null) {
+                    // Netty issue with chunking.
+                    if (InputStreamBodyGenerator.class.isAssignableFrom(bg.getClass())) {
+                        InputStreamBodyGenerator.class.cast(bg).patchNettyChunkingIssue(true);
+                    }
+
                     try {
-                        body = future.getRequest().getBodyGenerator().createBody();
+                        body = bg.createBody();
                     } catch (IOException ex) {
                         throw new IllegalStateException(ex);
                     }
