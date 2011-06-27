@@ -18,12 +18,12 @@ package com.ning.http.client;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.util.AllowAllHostnameVerifier;
 import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -483,12 +483,7 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
-        private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
-
-            public boolean verify( String s, SSLSession sslSession ) {
-                return true;
-            }
-        };
+        private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
         private int ioThreadMultiplier = 2;
 
         public Builder() {

@@ -19,6 +19,7 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
+import com.ning.http.util.AllowAllHostnameVerifier;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -28,6 +29,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -68,8 +70,10 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 return;
             }
 
-            if (sslHandler != null) {
-                if (!config.getHostnameVerifier().verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
+            HostnameVerifier v = config.getHostnameVerifier();
+            if (sslHandler != null && !AllowAllHostnameVerifier.class.isAssignableFrom(v.getClass())) {
+                // TODO: channel.getRemoteAddress()).getHostName() is very expensive. Should cache the result.
+                if (!v.verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
                         sslHandler.getEngine().getSession())) {
                     throw new ConnectException("HostnameVerifier exception.");
                 }
