@@ -110,8 +110,11 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                 buffer.put(chunk, 0, read);
                 // Was missing the final chunk \r\n.
                 buffer.put(END_PADDING);
+            } else {
+                if (read > 0) {
+                    buffer.put(chunk, 0, read);
+                }
             }
-
             return read;
         }
 
