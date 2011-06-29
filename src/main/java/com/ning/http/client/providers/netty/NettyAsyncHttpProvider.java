@@ -1254,14 +1254,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 } else if (!response.isChunked()) {
                     if (response.getContent().readableBytes() != 0) {
-                        updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), response, this, true));
+                        updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, this, true));
                     }
                     finishUpdate(future, ctx, false);
                     return;
                 }
 
                 if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                    updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), response, this, true));
+                    updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, this, true));
                     markAsDone(future, ctx);
                     drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
                 }
@@ -1270,7 +1270,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 HttpChunk chunk = (HttpChunk) e.getMessage();
 
                 if (handler != null) {
-                    if (chunk.isLast() || updateBodyAndInterrupt(handler, new ResponseBodyPart(future.getURI(), null, this, chunk, chunk.isLast()))) {
+                    if (chunk.isLast() || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, this, chunk, chunk.isLast()))) {
                         if (chunk instanceof DefaultHttpChunkTrailer) {
                             updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(),
                                     future.getHttpResponse(), this, (HttpChunkTrailer) chunk));
@@ -1600,8 +1600,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     @SuppressWarnings("unchecked")
-    private final boolean updateBodyAndInterrupt(AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
-        return handler.onBodyPartReceived(c) != STATE.CONTINUE;
+    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
+        boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
+        if (c.closeUnderlyingConnection()) {
+            future.setKeepAlive(false);
+        }
+        return state;
     }
 
     //Simple marker for stopping publishing bytes.

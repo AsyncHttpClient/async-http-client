@@ -36,6 +36,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final HttpResponse response;
     private final AtomicReference<byte[]> bytes = new AtomicReference(null);
     private final boolean isLast;
+    private boolean closeConnection = false;
 
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
         super(uri, provider);
@@ -69,7 +70,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         byte[] rb = new byte[read];
         b.readBytes(rb);
         bytes.set(rb);
-        b.readerIndex(index);        
+        b.readerIndex(index);
         return bytes.get();
     }
 
@@ -95,6 +96,22 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public boolean isLast() {
         return isLast;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markUnderlyingConnectionAsClosed() {
+        closeConnection = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean closeUnderlyingConnection() {
+        return closeConnection;
     }
 
     protected HttpChunk chunk() {

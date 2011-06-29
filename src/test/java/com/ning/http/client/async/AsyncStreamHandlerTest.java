@@ -22,6 +22,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -502,6 +503,48 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         if (!l.await(20, TimeUnit.SECONDS)) {
             Assert.fail("Timeout out");
         }
+        c.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void closeConnectionTest() throws Throwable {
+        final CountDownLatch l = new CountDownLatch(1);
+        AsyncHttpClient c = getAsyncHttpClient(null);
+
+        Response r = c.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
+
+            private Response.ResponseBuilder builder = new Response.ResponseBuilder();
+
+            public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
+                builder.accumulate(content);
+                return STATE.CONTINUE;
+            }
+
+            public void onThrowable(Throwable t) {
+            }
+
+            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                builder.accumulate(content);
+
+                if (content.isLast()) {
+                    content.markUnderlyingConnectionAsClosed();
+                }
+                return STATE.CONTINUE;
+            }
+
+            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                builder.accumulate(responseStatus);
+
+                return STATE.CONTINUE;
+            }
+
+            public Response onCompleted() throws Exception {
+                return builder.build();
+            }
+        }).get();
+
+        Assert.assertNotNull(r);
+        Assert.assertEquals(r.getStatusCode(), 200);
         c.close();
     }
 }

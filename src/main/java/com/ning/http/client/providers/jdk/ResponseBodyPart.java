@@ -27,6 +27,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] chunk;
     private final boolean isLast;
+    private boolean closeConnection;
 
     public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
         super(uri, provider);
@@ -60,5 +61,21 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public boolean isLast() {
         return isLast;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markUnderlyingConnectionAsClosed() {
+        closeConnection = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean closeUnderlyingConnection() {
+        return closeConnection;
     }
 }
