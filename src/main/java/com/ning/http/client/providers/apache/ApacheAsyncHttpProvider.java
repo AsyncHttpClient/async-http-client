@@ -39,7 +39,6 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
@@ -563,15 +562,16 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                                 byte[] b = new byte[read];
                                 System.arraycopy(bytes, 0, b, 0, read);
-                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this));
-
                                 leftBytes -= read;
+
+                                asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, b, ApacheAsyncHttpProvider.this, leftBytes > -1));
+
                             }
                         }
                     }
 
                     if (method.getName().equalsIgnoreCase("HEAD")) {
-                        asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, "".getBytes(), ApacheAsyncHttpProvider.this));
+                        asyncHandler.onBodyPartReceived(new ApacheResponseBodyPart(uri, "".getBytes(), ApacheAsyncHttpProvider.this, true));
                     }
                 }
 

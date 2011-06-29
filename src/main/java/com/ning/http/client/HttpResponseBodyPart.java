@@ -50,4 +50,11 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      * @return {@link ByteBuffer}
      */
     abstract public ByteBuffer getBodyByteBuffer();
+
+    /**
+     * Return true if this is the last part.
+     * @return true if this is the last part.
+     */
+    abstract public boolean isLast();
+
 }

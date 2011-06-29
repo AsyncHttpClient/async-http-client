@@ -35,17 +35,20 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final HttpChunk chunk;
     private final HttpResponse response;
     private final AtomicReference<byte[]> bytes = new AtomicReference(null);
+    private final boolean isLast;
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider) {
+    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
         super(uri, provider);
+        isLast = last;
         this.chunk = null;
         this.response = response;
     }
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk) {
+    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
         super(uri, provider);
         this.chunk = chunk;
         this.response = response;
+        isLast = last;
     }
 
     /**
@@ -84,6 +87,14 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public ByteBuffer getBodyByteBuffer() {
         return ByteBuffer.wrap(getBodyPartBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isLast() {
+        return isLast;
     }
 
     protected HttpChunk chunk() {

@@ -404,6 +404,7 @@
                         <exclude>**/Request$EntityWriter</exclude>
                         <exclude>**/RequestBuilderBase</exclude>
                         <exclude>**/Response</exclude>
+                        <exclude>**/**ResponseBodyPart</exclude>
                     </excludes>
                 </configuration>
                 <executions>

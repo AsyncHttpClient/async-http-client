@@ -35,7 +35,6 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -349,14 +348,13 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                             byte[] b = new byte[read];
                             System.arraycopy(bytes, 0, b, 0, read);
-                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, JDKAsyncHttpProvider.this));
-
                             leftBytes -= read;
+                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, JDKAsyncHttpProvider.this, leftBytes > -1));
                         }
                     }
 
                     if (request.getMethod().equalsIgnoreCase("HEAD")) {
-                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, "".getBytes(), JDKAsyncHttpProvider.this));
+                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, "".getBytes(), JDKAsyncHttpProvider.this, true));
                     }
                 }
 

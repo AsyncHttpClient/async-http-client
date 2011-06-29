@@ -26,10 +26,12 @@ import java.nio.ByteBuffer;
 public class ApacheResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] chunk;
+    private final boolean isLast;
 
-    public ApacheResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider) {
+    public ApacheResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
         super(uri, provider);
         this.chunk = chunk;
+        isLast = last;
     }
 
     /**
@@ -50,5 +52,13 @@ public class ApacheResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public ByteBuffer getBodyByteBuffer() {
         return ByteBuffer.wrap(chunk);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isLast() {
+        return isLast;
     }
 }
