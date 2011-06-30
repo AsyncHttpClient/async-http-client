@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class JDKResponse implements Response {
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";        
+    private final static String DEFAULT_CHARSET = "ISO-8859-1";
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
@@ -123,7 +123,7 @@ public class JDKResponse implements Response {
             computeLength(parts);
         }
 
-        private void computeLength(HttpResponseBodyPart[] parts){
+        private void computeLength(HttpResponseBodyPart[] parts) {
             if (available == 0) {
                 for (HttpResponseBodyPart p : parts) {
                     available += p.getBodyPartBytes().length;

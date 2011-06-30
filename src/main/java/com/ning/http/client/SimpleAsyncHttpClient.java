@@ -41,18 +41,18 @@ import java.util.concurrent.ScheduledExecutorService;
  * .setRequestTimeoutInMs(5 * 60 * 1000)
  * .setUrl(getTargetUrl())
  * .setHeader("Content-Type", "text/html").build();
- *
+ * <p/>
  * StringBuilder s = new StringBuilder();
  * Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
  * </pre></blockquote>
  * or
  * <blockquote><pre>
  * public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
- *
+ * <p/>
  * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
  * .setUrl(getTargetUrl())
  * .build();
- *
+ * <p/>
  * ByteArrayOutputStream o = new ByteArrayOutputStream(10);
  * Future<Response> future = client.post(new FileodyGenerator(myFile), new OutputStreamBodyConsumer(o));
  * </pre></blockquote>
@@ -80,26 +80,26 @@ public class SimpleAsyncHttpClient {
 
         this.derived = ahc != null;
     }
-    
+
     public Future<Response> post(Part... parts) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
-        
-        for ( Part part : parts ) {
-            r.addBodyPart( part );
+
+        for (Part part : parts) {
+            r.addBodyPart(part);
         }
-        
+
         return execute(r, null, null);
     }
-    
+
     public Future<Response> post(BodyConsumer consumer, Part... parts) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
-        
-        for ( Part part : parts ) {
-            r.addBodyPart( part );
+
+        for (Part part : parts) {
+            r.addBodyPart(part);
         }
-        
+
         return execute(r, consumer, null);
     }
 
@@ -130,28 +130,29 @@ public class SimpleAsyncHttpClient {
         r.setBody(bodyGenerator);
         return execute(r, bodyConsumer, throwableHandler);
     }
-    
+
     public Future<Response> put(Part... parts) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
-        
-        for ( Part part : parts ) {
-            r.addBodyPart( part );
+
+        for (Part part : parts) {
+            r.addBodyPart(part);
         }
-        
+
         return execute(r, null, null);
     }
-    
+
     public Future<Response> put(BodyConsumer consumer, Part... parts) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
-        
-        for ( Part part : parts ) {
-            r.addBodyPart( part );
+
+        for (Part part : parts) {
+            r.addBodyPart(part);
         }
-        
+
         return execute(r, consumer, null);
     }
+
     public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer) throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
@@ -298,7 +299,7 @@ public class SimpleAsyncHttpClient {
      * If this instance is derived from another instance, this method does
      * nothing as the client instance is managed by the original
      * SimpleAsyncHttpClient.
-     * 
+     *
      * @see #derive()
      * @see AsyncHttpClient#close()
      */
@@ -311,14 +312,14 @@ public class SimpleAsyncHttpClient {
     /**
      * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
      * instance of {@link AsyncHttpClient} to execute requests.
-     * 
      * <p/>
-     * 
+     * <p/>
+     * <p/>
      * The original SimpleAsyncHttpClient is responsible for managing the
      * underlying AsyncHttpClient. For the derived instance, {@link #close()} is
      * a NOOP. If the original SimpleAsyncHttpClient is closed, all derived
      * instances become invalid.
-     * 
+     *
      * @return a Builder for a derived SimpleAsyncHttpClient that uses the same
      *         instance of {@link AsyncHttpClient} to execute requests, never
      *         {@code null}.
@@ -649,7 +650,8 @@ public class SimpleAsyncHttpClient {
 
         /**
          * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
-         * @param maxRequestRetry  the number of time a request will be retried
+         *
+         * @param maxRequestRetry the number of time a request will be retried
          * @return this
          */
         public Builder setMaxRequestRetry(int maxRequestRetry) {

@@ -49,8 +49,7 @@ class BodyFileRegion
     public void releaseExternalResources() {
         try {
             body.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // we tried
         }
     }

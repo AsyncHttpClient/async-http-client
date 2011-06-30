@@ -67,8 +67,11 @@ public class NTLMEngine {
     protected final static int FLAG_NEGOTIATE_128 = 0x20000000;
     protected final static int FLAG_NEGOTIATE_KEY_EXCH = 0x40000000;
 
-    /** Secure random generator */
+    /**
+     * Secure random generator
+     */
     private static final java.security.SecureRandom RND_GEN;
+
     static {
         java.security.SecureRandom rnd = null;
         try {
@@ -78,13 +81,19 @@ public class NTLMEngine {
         RND_GEN = rnd;
     }
 
-    /** Character encoding */
+    /**
+     * Character encoding
+     */
     static final String DEFAULT_CHARSET = "ASCII";
 
-    /** The character set to use for encoding the credentials */
+    /**
+     * The character set to use for encoding the credentials
+     */
     private String credentialCharset = DEFAULT_CHARSET;
 
-    /** The signature string as bytes in the default encoding */
+    /**
+     * The signature string as bytes in the default encoding
+     */
     private static byte[] SIGNATURE;
 
     static {
@@ -102,22 +111,16 @@ public class NTLMEngine {
     /**
      * Returns the response for the given message.
      *
-     * @param message
-     *            the message that was received from the server.
-     * @param username
-     *            the username to authenticate with.
-     * @param password
-     *            the password to authenticate with.
-     * @param host
-     *            The host.
-     * @param domain
-     *            the NT domain to authenticate in.
+     * @param message  the message that was received from the server.
+     * @param username the username to authenticate with.
+     * @param password the password to authenticate with.
+     * @param host     The host.
+     * @param domain   the NT domain to authenticate in.
      * @return The response.
-     * @throws NTLMEngineException
-     *             If the messages cannot be retrieved.
+     * @throws NTLMEngineException If the messages cannot be retrieved.
      */
     final String getResponseFor(String message, String username, String password,
-            String host, String domain) throws NTLMEngineException {
+                                String host, String domain) throws NTLMEngineException {
 
         final String response;
         if (message == null || message.trim().equals("")) {
@@ -135,17 +138,15 @@ public class NTLMEngine {
      * sequence. This message includes the user name, domain and host for the
      * authentication session.
      *
-     * @param host
-     *            the computer name of the host requesting authentication.
-     * @param domain
-     *            The domain to authenticate with.
+     * @param host   the computer name of the host requesting authentication.
+     * @param domain The domain to authenticate with.
      * @return String the message to add to the HTTP request header.
      */
     String getType1Message(String host, String domain) throws NTLMEngineException {
         try {
             return new Type1Message(domain, host).getResponse();
         } catch (UnsupportedEncodingException e) {
-            throw new NTLMEngineException("Unsupported encoding" , e);
+            throw new NTLMEngineException("Unsupported encoding", e);
         }
     }
 
@@ -155,28 +156,22 @@ public class NTLMEngine {
      * username and the result of encrypting the nonce sent by the server using
      * the user's password as the key.
      *
-     * @param user
-     *            The user name. This should not include the domain name.
-     * @param password
-     *            The password.
-     * @param host
-     *            The host that is originating the authentication request.
-     * @param domain
-     *            The domain to authenticate within.
-     * @param nonce
-     *            the 8 byte array the server sent.
+     * @param user     The user name. This should not include the domain name.
+     * @param password The password.
+     * @param host     The host that is originating the authentication request.
+     * @param domain   The domain to authenticate within.
+     * @param nonce    the 8 byte array the server sent.
      * @return The type 3 message.
-     * @throws NTLMEngineException
-     *             If {@encrypt(byte[],byte[])} fails.
+     * @throws NTLMEngineException If {@encrypt(byte[],byte[])} fails.
      */
     String getType3Message(String user, String password, String host, String domain,
-            byte[] nonce, int type2Flags, String target, byte[] targetInformation)
+                           byte[] nonce, int type2Flags, String target, byte[] targetInformation)
             throws NTLMEngineException {
         try {
             return new Type3Message(domain, host, user, password, nonce, type2Flags, target,
                     targetInformation).getResponse();
         } catch (UnsupportedEncodingException e) {
-            throw new NTLMEngineException("Unsupported encoding" , e);            
+            throw new NTLMEngineException("Unsupported encoding", e);
         }
     }
 
@@ -188,14 +183,15 @@ public class NTLMEngine {
     }
 
     /**
-     * @param credentialCharset
-     *            The credentialCharset to set.
+     * @param credentialCharset The credentialCharset to set.
      */
     void setCredentialCharset(String credentialCharset) {
         this.credentialCharset = credentialCharset;
     }
 
-    /** Strip dot suffix from a name */
+    /**
+     * Strip dot suffix from a name
+     */
     private static String stripDotSuffix(String value) {
         int index = value.indexOf(".");
         if (index != -1)
@@ -203,12 +199,16 @@ public class NTLMEngine {
         return value;
     }
 
-    /** Convert host to standard form */
+    /**
+     * Convert host to standard form
+     */
     private static String convertHost(String host) {
         return stripDotSuffix(host);
     }
 
-    /** Convert domain to standard form */
+    /**
+     * Convert domain to standard form
+     */
     private static String convertDomain(String domain) {
         return stripDotSuffix(domain);
     }
@@ -237,7 +237,9 @@ public class NTLMEngine {
         return buffer;
     }
 
-    /** Calculate a challenge block */
+    /**
+     * Calculate a challenge block
+     */
     private static byte[] makeRandomChallenge() throws NTLMEngineException {
         if (RND_GEN == null) {
             throw new NTLMEngineException("Random generator not available");
@@ -249,7 +251,9 @@ public class NTLMEngine {
         return rval;
     }
 
-    /** Calculate an NTLM2 challenge block */
+    /**
+     * Calculate an NTLM2 challenge block
+     */
     private static byte[] makeNTLM2RandomChallenge() throws NTLMEngineException {
         if (RND_GEN == null) {
             throw new NTLMEngineException("Random generator not available");
@@ -267,11 +271,8 @@ public class NTLMEngine {
      * Calculates the LM Response for the given challenge, using the specified
      * password.
      *
-     * @param password
-     *            The user's password.
-     * @param challenge
-     *            The Type 2 challenge from the server.
-     *
+     * @param password  The user's password.
+     * @param challenge The Type 2 challenge from the server.
      * @return The LM Response.
      */
     static byte[] getLMResponse(String password, byte[] challenge)
@@ -284,11 +285,8 @@ public class NTLMEngine {
      * Calculates the NTLM Response for the given challenge, using the specified
      * password.
      *
-     * @param password
-     *            The user's password.
-     * @param challenge
-     *            The Type 2 challenge from the server.
-     *
+     * @param password  The user's password.
+     * @param challenge The Type 2 challenge from the server.
      * @return The NTLM Response.
      */
     static byte[] getNTLMResponse(String password, byte[] challenge)
@@ -302,23 +300,16 @@ public class NTLMEngine {
      * specified authentication target, username, password, target information
      * block, and client challenge.
      *
-     * @param target
-     *            The authentication target (i.e., domain).
-     * @param user
-     *            The username.
-     * @param password
-     *            The user's password.
-     * @param targetInformation
-     *            The target information block from the Type 2 message.
-     * @param challenge
-     *            The Type 2 challenge from the server.
-     * @param clientChallenge
-     *            The random 8-byte client challenge.
-     *
+     * @param target            The authentication target (i.e., domain).
+     * @param user              The username.
+     * @param password          The user's password.
+     * @param targetInformation The target information block from the Type 2 message.
+     * @param challenge         The Type 2 challenge from the server.
+     * @param clientChallenge   The random 8-byte client challenge.
      * @return The NTLMv2 Response.
      */
     static byte[] getNTLMv2Response(String target, String user, String password,
-            byte[] challenge, byte[] clientChallenge, byte[] targetInformation)
+                                    byte[] challenge, byte[] clientChallenge, byte[] targetInformation)
             throws NTLMEngineException {
         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
         byte[] blob = createBlob(clientChallenge, targetInformation);
@@ -329,21 +320,15 @@ public class NTLMEngine {
      * Calculates the LMv2 Response for the given challenge, using the specified
      * authentication target, username, password, and client challenge.
      *
-     * @param target
-     *            The authentication target (i.e., domain).
-     * @param user
-     *            The username.
-     * @param password
-     *            The user's password.
-     * @param challenge
-     *            The Type 2 challenge from the server.
-     * @param clientChallenge
-     *            The random 8-byte client challenge.
-     *
+     * @param target          The authentication target (i.e., domain).
+     * @param user            The username.
+     * @param password        The user's password.
+     * @param challenge       The Type 2 challenge from the server.
+     * @param clientChallenge The random 8-byte client challenge.
      * @return The LMv2 Response.
      */
     static byte[] getLMv2Response(String target, String user, String password,
-            byte[] challenge, byte[] clientChallenge) throws NTLMEngineException {
+                                  byte[] challenge, byte[] clientChallenge) throws NTLMEngineException {
         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
         return lmv2Response(ntlmv2Hash, challenge, clientChallenge);
     }
@@ -352,19 +337,15 @@ public class NTLMEngine {
      * Calculates the NTLM2 Session Response for the given challenge, using the
      * specified password and client challenge.
      *
-     * @param password
-     *            The user's password.
-     * @param challenge
-     *            The Type 2 challenge from the server.
-     * @param clientChallenge
-     *            The random 8-byte client challenge.
-     *
+     * @param password        The user's password.
+     * @param challenge       The Type 2 challenge from the server.
+     * @param clientChallenge The random 8-byte client challenge.
      * @return The NTLM2 Session Response. This is placed in the NTLM response
      *         field of the Type 3 message; the LM response field contains the
      *         client challenge, null-padded to 24 bytes.
      */
     static byte[] getNTLM2SessionResponse(String password, byte[] challenge,
-            byte[] clientChallenge) throws NTLMEngineException {
+                                          byte[] clientChallenge) throws NTLMEngineException {
         try {
             byte[] ntlmHash = ntlmHash(password);
 
@@ -399,9 +380,7 @@ public class NTLMEngine {
     /**
      * Creates the LM Hash of the user's password.
      *
-     * @param password
-     *            The password.
-     *
+     * @param password The password.
      * @return The LM Hash of the given password, used in the calculation of the
      *         LM Response.
      */
@@ -431,9 +410,7 @@ public class NTLMEngine {
     /**
      * Creates the NTLM Hash of the user's password.
      *
-     * @param password
-     *            The password.
-     *
+     * @param password The password.
      * @return The NTLM Hash of the given password, used in the calculation of
      *         the NTLM Response and the NTLMv2 and LMv2 Hashes.
      */
@@ -451,13 +428,9 @@ public class NTLMEngine {
     /**
      * Creates the NTLMv2 Hash of the user's password.
      *
-     * @param target
-     *            The authentication target (i.e., domain).
-     * @param user
-     *            The username.
-     * @param password
-     *            The password.
-     *
+     * @param target   The authentication target (i.e., domain).
+     * @param user     The username.
+     * @param password The password.
      * @return The NTLMv2 Hash, used in the calculation of the NTLMv2 and LMv2
      *         Responses.
      */
@@ -478,11 +451,8 @@ public class NTLMEngine {
     /**
      * Creates the LM Response from the given hash and Type 2 challenge.
      *
-     * @param hash
-     *            The LM or NTLM Hash.
-     * @param challenge
-     *            The server challenge from the Type 2 message.
-     *
+     * @param hash      The LM or NTLM Hash.
+     * @param challenge The server challenge from the Type 2 message.
      * @return The response (either LM or NTLM, depending on the provided hash).
      */
     private static byte[] lmResponse(byte[] hash, byte[] challenge) throws NTLMEngineException {
@@ -513,13 +483,9 @@ public class NTLMEngine {
      * Creates the LMv2 Response from the given hash, client data, and Type 2
      * challenge.
      *
-     * @param hash
-     *            The NTLMv2 Hash.
-     * @param clientData
-     *            The client data (blob or client challenge).
-     * @param challenge
-     *            The server challenge from the Type 2 message.
-     *
+     * @param hash       The NTLMv2 Hash.
+     * @param clientData The client data (blob or client challenge).
+     * @param challenge  The server challenge from the Type 2 message.
      * @return The response (either NTLMv2 or LMv2, depending on the client
      *         data).
      */
@@ -539,17 +505,14 @@ public class NTLMEngine {
      * Creates the NTLMv2 blob from the given target information block and
      * client challenge.
      *
-     * @param targetInformation
-     *            The target information block from the Type 2 message.
-     * @param clientChallenge
-     *            The random 8-byte client challenge.
-     *
+     * @param targetInformation The target information block from the Type 2 message.
+     * @param clientChallenge   The random 8-byte client challenge.
      * @return The blob, used in the calculation of the NTLMv2 Response.
      */
     private static byte[] createBlob(byte[] clientChallenge, byte[] targetInformation) {
-        byte[] blobSignature = new byte[] { (byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00 };
-        byte[] reserved = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
-        byte[] unknown1 = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
+        byte[] blobSignature = new byte[]{(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
+        byte[] reserved = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        byte[] unknown1 = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
         long time = System.currentTimeMillis();
         time += 11644473600000l; // milliseconds from January 1, 1601 -> epoch.
         time *= 10000; // tenths of a microsecond.
@@ -579,12 +542,9 @@ public class NTLMEngine {
     /**
      * Creates a DES encryption key from the given key material.
      *
-     * @param bytes
-     *            A byte array containing the DES key material.
-     * @param offset
-     *            The offset in the given byte array at which the 7-byte key
-     *            material starts.
-     *
+     * @param bytes  A byte array containing the DES key material.
+     * @param offset The offset in the given byte array at which the 7-byte key
+     *               material starts.
      * @return A DES encryption key created from the key material starting at
      *         the specified offset in the given byte array.
      */
@@ -607,8 +567,7 @@ public class NTLMEngine {
     /**
      * Applies odd parity to the given byte array.
      *
-     * @param bytes
-     *            The data whose parity bits are to be adjusted for odd parity.
+     * @param bytes The data whose parity bits are to be adjusted for odd parity.
      */
     private static void oddParity(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
@@ -623,19 +582,29 @@ public class NTLMEngine {
         }
     }
 
-    /** NTLM message generation, base class */
+    /**
+     * NTLM message generation, base class
+     */
     static class NTLMMessage {
-        /** The current response */
+        /**
+         * The current response
+         */
         private byte[] messageContents = null;
 
-        /** The current output position */
+        /**
+         * The current output position
+         */
         private int currentOutputPosition = 0;
 
-        /** Constructor to use when message contents are not yet known */
+        /**
+         * Constructor to use when message contents are not yet known
+         */
         NTLMMessage() {
         }
 
-        /** Constructor to use when message contents are known */
+        /**
+         * Constructor to use when message contents are known
+         */
         NTLMMessage(String messageBody, int expectedType) throws NTLMEngineException {
             messageContents = Base64.decode(messageBody);
 
@@ -667,36 +636,48 @@ public class NTLMEngine {
             return SIGNATURE.length + 4;
         }
 
-        /** Get the message length */
+        /**
+         * Get the message length
+         */
         protected int getMessageLength() {
             return currentOutputPosition;
         }
 
-        /** Read a byte from a position within the message buffer */
+        /**
+         * Read a byte from a position within the message buffer
+         */
         protected byte readByte(int position) throws NTLMEngineException {
             if (messageContents.length < position + 1)
                 throw new NTLMEngineException("NTLM: Message too short");
             return messageContents[position];
         }
 
-        /** Read a bunch of bytes from a position in the message buffer */
+        /**
+         * Read a bunch of bytes from a position in the message buffer
+         */
         protected void readBytes(byte[] buffer, int position) throws NTLMEngineException {
             if (messageContents.length < position + buffer.length)
                 throw new NTLMEngineException("NTLM: Message too short");
             System.arraycopy(messageContents, position, buffer, 0, buffer.length);
         }
 
-        /** Read a ushort from a position within the message buffer */
+        /**
+         * Read a ushort from a position within the message buffer
+         */
         protected int readUShort(int position) throws NTLMEngineException {
             return NTLMEngine.readUShort(messageContents, position);
         }
 
-        /** Read a ulong from a position within the message buffer */
+        /**
+         * Read a ulong from a position within the message buffer
+         */
         protected int readULong(int position) throws NTLMEngineException {
             return NTLMEngine.readULong(messageContents, position);
         }
 
-        /** Read a security buffer from a position within the message buffer */
+        /**
+         * Read a security buffer from a position within the message buffer
+         */
         protected byte[] readSecurityBuffer(int position) throws NTLMEngineException {
             return NTLMEngine.readSecurityBuffer(messageContents, position);
         }
@@ -704,10 +685,9 @@ public class NTLMEngine {
         /**
          * Prepares the object to create a response of the given length.
          *
-         * @param maxlength
-         *            the maximum length of the response to prepare, not
-         *            including the type and the signature (which this method
-         *            adds).
+         * @param maxlength the maximum length of the response to prepare, not
+         *                  including the type and the signature (which this method
+         *                  adds).
          */
         protected void prepareResponse(int maxlength, int messageType) {
             messageContents = new byte[maxlength];
@@ -719,8 +699,7 @@ public class NTLMEngine {
         /**
          * Adds the given byte to the response.
          *
-         * @param b
-         *            the byte to add.
+         * @param b the byte to add.
          */
         protected void addByte(byte b) {
             messageContents[currentOutputPosition] = b;
@@ -730,8 +709,7 @@ public class NTLMEngine {
         /**
          * Adds the given bytes to the response.
          *
-         * @param bytes
-         *            the bytes to add.
+         * @param bytes the bytes to add.
          */
         protected void addBytes(byte[] bytes) {
             for (int i = 0; i < bytes.length; i++) {
@@ -740,13 +718,17 @@ public class NTLMEngine {
             }
         }
 
-        /** Adds a USHORT to the response */
+        /**
+         * Adds a USHORT to the response
+         */
         protected void addUShort(int value) {
             addByte((byte) (value & 0xff));
             addByte((byte) (value >> 8 & 0xff));
         }
 
-        /** Adds a ULong to the response */
+        /**
+         * Adds a ULong to the response
+         */
         protected void addULong(int value) {
             addByte((byte) (value & 0xff));
             addByte((byte) (value >> 8 & 0xff));
@@ -776,12 +758,16 @@ public class NTLMEngine {
 
     }
 
-    /** Type 1 message assembly class */
+    /**
+     * Type 1 message assembly class
+     */
     static class Type1Message extends NTLMMessage {
         protected byte[] hostBytes;
         protected byte[] domainBytes;
 
-        /** Constructor. Include the arguments the message will need */
+        /**
+         * Constructor. Include the arguments the message will need
+         */
         Type1Message(String domain, String host) throws NTLMEngineException {
             super();
             try {
@@ -844,7 +830,9 @@ public class NTLMEngine {
 
     }
 
-    /** Type 2 message class */
+    /**
+     * Type 2 message class
+     */
     static class Type2Message extends NTLMMessage {
         protected byte[] challenge;
         protected String target;
@@ -891,29 +879,39 @@ public class NTLMEngine {
             }
         }
 
-        /** Retrieve the challenge */
+        /**
+         * Retrieve the challenge
+         */
         byte[] getChallenge() {
             return challenge;
         }
 
-        /** Retrieve the target */
+        /**
+         * Retrieve the target
+         */
         String getTarget() {
             return target;
         }
 
-        /** Retrieve the target info */
+        /**
+         * Retrieve the target info
+         */
         byte[] getTargetInfo() {
             return targetInfo;
         }
 
-        /** Retrieve the response flags */
+        /**
+         * Retrieve the response flags
+         */
         int getFlags() {
             return flags;
         }
 
     }
 
-    /** Type 3 message assembly class */
+    /**
+     * Type 3 message assembly class
+     */
     static class Type3Message extends NTLMMessage {
         // Response flags from the type2 message
         protected int type2Flags;
@@ -925,9 +923,11 @@ public class NTLMEngine {
         protected byte[] lmResp;
         protected byte[] ntResp;
 
-        /** Constructor. Pass the arguments we will need */
+        /**
+         * Constructor. Pass the arguments we will need
+         */
         Type3Message(String domain, String host, String user, String password, byte[] nonce,
-                int type2Flags, String target, byte[] targetInformation)
+                     int type2Flags, String target, byte[] targetInformation)
                 throws NTLMEngineException {
             // Save the flags
             this.type2Flags = type2Flags;
@@ -978,7 +978,9 @@ public class NTLMEngine {
             }
         }
 
-        /** Assemble the response */
+        /**
+         * Assemble the response
+         */
         @Override
         String getResponse() throws UnsupportedEncodingException {
             int ntRespLen = ntResp.length;
@@ -1298,19 +1300,25 @@ public class NTLMEngine {
 
         }
 
-        /** Grab the current digest. This is the "answer". */
+        /**
+         * Grab the current digest. This is the "answer".
+         */
         byte[] getOutput() {
             byte[] digest = md5.digest();
             md5.update(opad);
             return md5.digest(digest);
         }
 
-        /** Update by adding a complete array */
+        /**
+         * Update by adding a complete array
+         */
         void update(byte[] input) {
             md5.update(input);
         }
 
-        /** Update the algorithm */
+        /**
+         * Update the algorithm
+         */
         void update(byte[] input, int offset, int length) {
             md5.update(input, offset, length);
         }

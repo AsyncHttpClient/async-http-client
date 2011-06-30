@@ -18,6 +18,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+/**
+ * A simple {@link OutputStream} implementation for {@link BodyConsumer}
+ */
 public class OutputStreamBodyConsumer implements BodyConsumer {
 
     private final OutputStream outputStream;
@@ -26,11 +29,18 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
         this.outputStream = outputStream;
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void consume(ByteBuffer byteBuffer) throws IOException {
         outputStream.write(byteBuffer.array());
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void close() throws IOException {
         outputStream.close();
     }

@@ -437,7 +437,7 @@ public class AsyncHttpProviderUtils {
         String[] fields = value.split(";\\s*");
         String[] cookie = fields[0].split("=");
         String cookieName = cookie[0];
-        String cookieValue = (cookie.length==1) ? null : cookie[1];
+        String cookieValue = (cookie.length == 1) ? null : cookie[1];
 
         int maxAge = -1;
         String path = null;
@@ -452,14 +452,13 @@ public class AsyncHttpProviderUtils {
                 secure = true;
             } else if (fields[j].indexOf('=') > 0) {
                 String[] f = fields[j].split("=");
-                if(f.length==1) continue; // Add protection against null field values
+                if (f.length == 1) continue; // Add protection against null field values
 
                 // favor 'max-age' field over 'expires'
                 if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
                     try {
                         maxAge = Integer.valueOf(removeQuote(f[1]));
-                    }
-                    catch (NumberFormatException e1) {
+                    } catch (NumberFormatException e1) {
                         // ignore failure to parse -> treat as session cookie
                         // invalidate a previously parsed expires-field
                         maxAge = -1;
@@ -468,13 +467,11 @@ public class AsyncHttpProviderUtils {
                 } else if (!maxAgeSet && !expiresSet && "expires".equalsIgnoreCase(f[0])) {
                     try {
                         maxAge = convertExpireField(f[1]);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         // original behavior, is this correct at all (expires field with max-age semantics)?
                         try {
                             maxAge = Integer.valueOf(f[1]);
-                        }
-                        catch (NumberFormatException e1) {
+                        } catch (NumberFormatException e1) {
                             // ignore failure to parse -> treat as session cookie
                         }
                     }
@@ -516,7 +513,7 @@ public class AsyncHttpProviderUtils {
         }
 
         if (s.endsWith("\"")) {
-            s = s.substring(0,s.length() -1);
+            s = s.substring(0, s.length() - 1);
         }
         return s;
     }

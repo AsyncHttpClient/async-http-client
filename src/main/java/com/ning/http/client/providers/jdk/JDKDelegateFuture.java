@@ -32,7 +32,7 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
 
     public void done(Callable callable) {
         delegateFuture.done(callable);
-        super.done(callable);        
+        super.done(callable);
     }
 
     public void abort(Throwable t) {

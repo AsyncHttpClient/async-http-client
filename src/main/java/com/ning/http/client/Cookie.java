@@ -96,7 +96,7 @@ public class Cookie {
             unmodifiablePorts = this.ports = Collections.emptySet();
         } else {
             Set<Integer> newPorts = new TreeSet<Integer>();
-            for (int p: portsCopy) {
+            for (int p : portsCopy) {
                 if (p <= 0 || p > 65535) {
                     throw new IllegalArgumentException("port out of range: " + p);
                 }
@@ -109,7 +109,7 @@ public class Cookie {
 
     public void setPorts(Iterable<Integer> ports) {
         Set<Integer> newPorts = new TreeSet<Integer>();
-        for (int p: ports) {
+        for (int p : ports) {
             if (p <= 0 || p > 65535) {
                 throw new IllegalArgumentException("port out of range: " + p);
             }

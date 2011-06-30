@@ -22,8 +22,7 @@ package com.ning.http.client;
  *
  * @since 1.1
  */
-public interface SignatureCalculator
-{
+public interface SignatureCalculator {
     /**
      * Method called when {@link RequestBuilder#build} method is called.
      * Should first calculate signature information and then modify request
@@ -31,11 +30,11 @@ public interface SignatureCalculator
      * an HTTP header).
      *
      * @param requestBuilder builder that can be used to modify request, usually
-     *   by adding header that includes calculated signature. Be sure NOT to
-     *   call {@link RequestBuilder#build} since this will cause infinite recursion
-     * @param request Request that is being built; needed to access content to
-     *   be signed
+     *                       by adding header that includes calculated signature. Be sure NOT to
+     *                       call {@link RequestBuilder#build} since this will cause infinite recursion
+     * @param request        Request that is being built; needed to access content to
+     *                       be signed
      */
     public void calculateAndAddSignature(String url, Request request,
-            RequestBuilderBase<?> requestBuilder);
+                                         RequestBuilderBase<?> requestBuilder);
 }

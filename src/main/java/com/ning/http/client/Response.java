@@ -27,7 +27,6 @@ import java.util.List;
 
 /**
  * Represents the asynchronous HTTP response callback for an {@link com.ning.http.client.AsyncCompletionHandler}
- *  
  */
 public interface Response {
     /**
@@ -46,6 +45,7 @@ public interface Response {
 
     /**
      * Return the entire response body as a byte[].
+     *
      * @return the entire response body as a byte[].
      * @throws IOException
      */
@@ -66,7 +66,7 @@ public interface Response {
      * type header.
      *
      * @param maxLength The maximum number of bytes to read
-     * @param charset the charset to use when decoding the stream
+     * @param charset   the charset to use when decoding the stream
      * @return The response body
      * @throws java.io.IOException
      */
@@ -74,6 +74,7 @@ public interface Response {
 
     /**
      * Return the entire response body as a String.
+     *
      * @param charset the charset to use when decoding the stream
      * @return the entire response body as a String.
      * @throws IOException
@@ -93,6 +94,7 @@ public interface Response {
 
     /**
      * Return the entire response body as a String.
+     *
      * @return the entire response body as a String.
      * @throws IOException
      */
@@ -101,6 +103,7 @@ public interface Response {
     /**
      * Return the request {@link URI}. Note that if the request got redirected, the value of the {@link URI} will be
      * the last valid redirect url.
+     *
      * @return the request {@link URI}.
      * @throws MalformedURLException
      */
@@ -108,18 +111,21 @@ public interface Response {
 
     /**
      * Return the content-type header value.
+     *
      * @return the content-type header value.
      */
     public String getContentType();
 
     /**
      * Return the response header
+     *
      * @return the response header
      */
     public String getHeader(String name);
 
     /**
      * Return a {@link List} of the response header value.
+     *
      * @return the response header
      */
     public List<String> getHeaders(String name);
@@ -135,6 +141,7 @@ public interface Response {
 
     /**
      * Subclasses SHOULD implement toString() in a way that identifies the request for logging.
+     *
      * @return The textual representation
      */
     public String toString();
@@ -146,6 +153,7 @@ public interface Response {
 
     /**
      * Return true if the response's status has been computed by an {@link AsyncHandler}
+     *
      * @return true if the response's status has been computed by an {@link AsyncHandler}
      */
     public boolean hasResponseStatus();
@@ -154,6 +162,7 @@ public interface Response {
      * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the
      * either {@link com.ning.http.client.AsyncHandler#onStatusReceived(HttpResponseStatus)}
      * or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link com.ning.http.client.AsyncHandler.STATE#ABORT}
+     *
      * @return true if the response's headers has been computed by an {@link AsyncHandler}
      */
     public boolean hasResponseHeaders();
@@ -162,6 +171,7 @@ public interface Response {
      * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the
      * either {@link com.ning.http.client.AsyncHandler#onStatusReceived(HttpResponseStatus)}
      * or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned {@link com.ning.http.client.AsyncHandler.STATE#ABORT}
+     *
      * @return true if the response's body has been computed by an {@link AsyncHandler}
      */
     public boolean hasResponseBody();
@@ -175,6 +185,7 @@ public interface Response {
 
         /**
          * Accumulate {@link HttpContent} in order to build a {@link Response}
+         *
          * @param httpContent {@link HttpContent}
          * @return this
          */
@@ -184,13 +195,14 @@ public interface Response {
             } else if (httpContent instanceof HttpResponseHeaders) {
                 headers = (HttpResponseHeaders) httpContent;
             } else if (httpContent instanceof HttpResponseBodyPart) {
-                bodies.add((HttpResponseBodyPart)httpContent);
+                bodies.add((HttpResponseBodyPart) httpContent);
             }
             return this;
         }
 
         /**
          * Build a {@link Response} instance
+         *
          * @return a {@link Response} instance
          */
         public Response build() {

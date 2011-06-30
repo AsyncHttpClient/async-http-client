@@ -1099,17 +1099,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     future.setState(NettyResponseFuture.STATE.NEW);
                     // NTLM
-                    if ( !wwwAuth.contains("Kerberos") && (wwwAuth.contains("NTLM") || (wwwAuth.contains("Negotiate"))) ) {
+                    if (!wwwAuth.contains("Kerberos") && (wwwAuth.contains("NTLM") || (wwwAuth.contains("Negotiate")))) {
                         newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future);
                         // SPNEGO KERBEROS
                     } else if (wwwAuth.contains("Negotiate")) {
-                        newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future );
+                        newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future);
                         if (newRealm == null) return;
                     } else {
                         Realm.RealmBuilder realmBuilder;
                         if (realm != null) {
                             realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
-;
+                            ;
                         } else {
                             realmBuilder = new Realm.RealmBuilder();
                         }
@@ -1211,12 +1211,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             final String newUrl = uri.toString();
 
                             log.debug("Redirecting to {}", newUrl);
-                            for(String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)){
+                            for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)) {
                                 Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
                                 nBuilder.addOrReplaceCookie(c);
                             }
 
-                            for(String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)){
+                            for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)) {
                                 Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
                                 nBuilder.addOrReplaceCookie(c);
                             }
@@ -1322,9 +1322,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 realmBuilder = new Realm.RealmBuilder();
             }
             return realmBuilder.setUri(uri.getPath())
-                        .setMethodName(request.getMethod())
-                        .setScheme(Realm.AuthScheme.KERBEROS)
-                        .build();
+                    .setMethodName(request.getMethod())
+                    .setScheme(Realm.AuthScheme.KERBEROS)
+                    .build();
         } catch (Throwable throwable) {
             if (proxyAuth.contains("NTLM")) {
                 return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future);
@@ -1343,7 +1343,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         boolean useRealm = (proxyServer == null && realm != null);
 
-        String ntlmDomain =  useRealm? realm.getNtlmDomain() : proxyServer.getNtlmDomain();
+        String ntlmDomain = useRealm ? realm.getNtlmDomain() : proxyServer.getNtlmDomain();
         String ntlmHost = useRealm ? realm.getNtlmHost() : proxyServer.getHost();
         String principal = useRealm ? realm.getPrincipal() : proxyServer.getPrincipal();
         String password = useRealm ? realm.getPassword() : proxyServer.getPassword();
@@ -1377,9 +1377,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 realmBuilder = new Realm.RealmBuilder();
             }
             newRealm = realmBuilder.setScheme(realm.getAuthScheme())
-                        .setUri(URI.create(request.getUrl()).getPath())
-                        .setMethodName(request.getMethod())
-                        .build();
+                    .setUri(URI.create(request.getUrl()).getPath())
+                    .setMethodName(request.getMethod())
+                    .build();
         }
 
         return newRealm;

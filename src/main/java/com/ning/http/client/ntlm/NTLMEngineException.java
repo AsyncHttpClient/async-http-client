@@ -41,7 +41,6 @@ package com.ning.http.client.ntlm;
 /**
  * Signals NTLM protocol failure.
  *
- *
  * @since 4.0
  */
 public class NTLMEngineException extends Exception {
@@ -65,8 +64,8 @@ public class NTLMEngineException extends Exception {
      * Creates a new NTLMEngineException with the specified detail message and cause.
      *
      * @param message the exception detail message
-     * @param cause the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
-     * if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
+     * @param cause   the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
+     *                if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
      */
     public NTLMEngineException(String message, Throwable cause) {
         super(message, cause);

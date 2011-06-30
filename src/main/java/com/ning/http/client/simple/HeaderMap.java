@@ -13,17 +13,17 @@ package com.ning.http.client.simple;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-
 /**
  * A map containing headers with the sole purpose of being given to
  * {@link SimpleAHCTransferListener#onHeaders(String, HeaderMap)}.
- * 
+ *
  * @author Benjamin Hanzelmann
  */
 public class HeaderMap implements Map<String, List<String>> {
@@ -66,7 +66,7 @@ public class HeaderMap implements Map<String, List<String>> {
     }
 
     /**
-     * @see FluentCaseInsensitiveStringsMap#getJoinedValue(String, String) 
+     * @see FluentCaseInsensitiveStringsMap#getJoinedValue(String, String)
      */
     public String getJoinedValue(String key, String delimiter) {
         return headers.getJoinedValue(key, delimiter);

@@ -90,7 +90,7 @@ public class NettyResponse implements Response {
         if (charset == null) {
             charset = DEFAULT_CHARSET;
         }
-        
+
         return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
     }
 
@@ -124,7 +124,7 @@ public class NettyResponse implements Response {
         if (charset == null) {
             charset = DEFAULT_CHARSET;
         }
-        
+
         String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }

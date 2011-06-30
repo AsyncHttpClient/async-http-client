@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class JDKAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String,String> {
+public class JDKAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, String> {
 
     public static final String FORCE_RESPONSE_BUFFERING = "bufferResponseInMemory";
 

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.Response.ResponseBuilder;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,13 +23,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
-import com.ning.http.client.Response.ResponseBuilder;
-
 /**
  * An AsyncHandler that returns Response (without body, so status code and
  * headers only) as fast as possible for inspection, but leaves you the option
  * to defer body consumption.
- * <p>
+ * <p/>
  * This class introduces new call: getResponse(), that blocks caller thread as
  * long as headers are received, and return Response as soon as possible, but
  * still pouring response body into supplied output stream. This handler is
@@ -37,10 +37,10 @@ import com.ning.http.client.Response.ResponseBuilder;
  * be GETted, but you need headers first, or you don't know yet (depending on
  * some logic, maybe coming from headers) where to save the body, or you just
  * want to leave body stream to some other component to consume it.
- * <p>
+ * <p/>
  * All these above means that this AsyncHandler needs a bit of different
  * handling than "recommended" way. Some examples:
- * 
+ * <p/>
  * <pre>
  *     FileOutputStream fos = ...
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(fos);
@@ -55,7 +55,7 @@ import com.ning.http.client.Response.ResponseBuilder;
  *     // finally &quot;join&quot; the download
  *     fr.get();
  * </pre>
- * 
+ * <p/>
  * <pre>
  *     PipedOutputStream pout = new PipedOutputStream();
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pout);
@@ -72,7 +72,6 @@ import com.ning.http.client.Response.ResponseBuilder;
  *      ...
  *     }
  * </pre>
- * 
  */
 public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     private final ResponseBuilder responseBuilder = new ResponseBuilder();
@@ -193,7 +192,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * so invoking any method like Response.getResponseBodyXXX() will result in
      * error! Also, please not that this method might return <code>null</code>
      * in case of some errors.
-     * 
+     *
      * @return a {@link Response}
      * @throws InterruptedException
      */
@@ -227,7 +226,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         private final BodyDeferringAsyncHandler bdah;
 
         public BodyDeferringInputStream(final Future<Response> future,
-                final BodyDeferringAsyncHandler bdah, final InputStream in) {
+                                        final BodyDeferringAsyncHandler bdah, final InputStream in) {
             super(in);
             this.future = future;
             this.bdah = bdah;
@@ -255,7 +254,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * blocks as long as headers arrives only. Might return
          * <code>null</code>. See
          * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
-         * 
+         *
          * @return a {@link Response}
          * @throws InterruptedException
          */
@@ -267,7 +266,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         /**
          * Delegates to <code>Future<Response>#get()</code> method. Will block
          * as long as complete response arrives.
-         * 
+         *
          * @return a {@link Response}
          * @throws InterruptedException
          * @throws ExecutionException

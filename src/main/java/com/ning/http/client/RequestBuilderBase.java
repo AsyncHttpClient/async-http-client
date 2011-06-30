@@ -25,7 +25,12 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -68,7 +73,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             if (prototype != null) {
                 this.method = prototype.getMethod();
                 int pos = prototype.getUrl().indexOf("?");
-                this.url = pos > 0 ? prototype.getUrl().substring(0,pos) : prototype.getUrl();
+                this.url = pos > 0 ? prototype.getUrl().substring(0, pos) : prototype.getUrl();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
@@ -128,12 +133,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
                     builder.append("/");
                 }
-                builder.append("?"); 
+                builder.append("?");
 
-                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
+                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext(); ) {
                     Map.Entry<String, List<String>> param = i.next();
                     String name = param.getKey();
-                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
+                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext(); ) {
                         String value = j.next();
                         if (encode) {
                             UTF8UrlEncoder.appendEncoded(builder, name);
@@ -204,8 +209,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         /* @Override */
 
         /**
-         * @deprecated
          * @return
+         * @deprecated
          */
         public long getLength() {
             return length;
@@ -299,7 +304,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request = new RequestImpl(prototype);
         this.useRawUrl = prototype.isUseRawUrl();
     }
-    
+
     public T setUrl(String url) {
         request.url = buildUrl(url);
         return derived.cast(this);
@@ -334,19 +339,18 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
-            for( String query : queries) {
+            for (String query : queries) {
                 pos = query.indexOf("=");
                 if (pos <= 0) {
                     addQueryParameter(query, null);
-                }else{
+                } else {
                     try {
                         if (this.useRawUrl) {
-                            addQueryParameter(query.substring(0, pos) , query.substring(pos +1));
+                            addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
                         } else {
-                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8") , URLDecoder.decode(query.substring(pos +1), "UTF-8"));
+                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
                         }
-                    }
-                    catch ( UnsupportedEncodingException e ) {
+                    } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -371,7 +375,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             logger.warn("Value was null, set to \"\"");
             value = "";
         }
-                
+
         request.headers.add(name, value);
         return derived.cast(this);
     }
@@ -388,7 +392,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setContentLength(int length) {
         request.length = length;
-        return derived.cast(this);        
+        return derived.cast(this);
     }
 
     public T addCookie(Cookie cookie) {
@@ -411,7 +415,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private void resetMultipartData() {
         request.parts = null;
     }
-        
+
     private void checkIfBodyAllowed() {
         if ("GET".equals(request.method) || "HEAD".equals(request.method)) {
             throw new IllegalArgumentException("Can NOT set Body on HTTP Request Method GET nor HEAD.");
@@ -479,7 +483,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setQueryParameters(FluentStringsMap parameters){
+    public T setQueryParameters(FluentStringsMap parameters) {
         if (parameters == null) {
             request.queryParams = null;
         } else {
@@ -565,8 +569,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             if (contentLength != null) {
                 try {
                     request.length = Long.parseLong(contentLength);
-                }
-                catch (NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     // NoOp -- we wdn't specify length so it will be chunked?
                 }
             }
@@ -575,9 +578,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private boolean allowBody(String method) {
-        if ( method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS")
-                    && method.equalsIgnoreCase("TRACE")
-                    && method.equalsIgnoreCase("HEAD")) {
+        if (method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS")
+                && method.equalsIgnoreCase("TRACE")
+                && method.equalsIgnoreCase("HEAD")) {
             return false;
         } else {
             return true;

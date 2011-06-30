@@ -82,7 +82,7 @@ public class AsyncHttpClientConfig {
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
 
-    protected AsyncHttpClientConfig(){
+    protected AsyncHttpClientConfig() {
     }
 
     private AsyncHttpClientConfig(int maxTotalConnections,
@@ -411,6 +411,7 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return true if the query parameters will be stripped from the request when a redirect is requested.
+     *
      * @return true if the query parameters will be stripped from the request when a redirect is requested.
      */
     public boolean isRemoveQueryParamOnRedirect() {
@@ -419,21 +420,23 @@ public class AsyncHttpClientConfig {
 
     /**
      * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
+     *
      * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
      */
-    public boolean isClosed(){
+    public boolean isClosed() {
         return applicationThreadPool.isShutdown() || reaper.isShutdown();
     }
 
     /**
      * Return the {@link HostnameVerifier}
+     *
      * @return the {@link HostnameVerifier}
      */
     public HostnameVerifier getHostnameVerifier() {
         return hostnameVerifier;
     }
-    /***
-     *
+
+    /**
      * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use
      */
     public int getIoThreadMultiplier() {
@@ -852,6 +855,7 @@ public class AsyncHttpClientConfig {
 
         /**
          * Set to false if you don't want the query parameters removed when a redirect occurs.
+         *
          * @param removeQueryParamOnRedirect
          * @return this
          */
@@ -864,7 +868,7 @@ public class AsyncHttpClientConfig {
          * Sets whether AHC should use the default http.proxy* system properties
          * to obtain proxy information.
          * <p/>
-         * If useProxyProperties is set to <code>true</code> but {@link #setProxyServer(ProxyServer)} was used 
+         * If useProxyProperties is set to <code>true</code> but {@link #setProxyServer(ProxyServer)} was used
          * to explicitly set a proxy server, the latter is preferred.
          * <p/>
          * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
@@ -874,17 +878,18 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setIOThreadMultiplier(int multiplier){
+        public Builder setIOThreadMultiplier(int multiplier) {
             this.ioThreadMultiplier = multiplier;
             return this;
         }
 
         /**
          * Set the {@link HostnameVerifier}
+         *
          * @param hostnameVerifier {@link HostnameVerifier}
          * @return this
          */
-        public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier){
+        public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier) {
             this.hostnameVerifier = hostnameVerifier;
             return this;
         }
@@ -938,8 +943,8 @@ public class AsyncHttpClientConfig {
          */
         public AsyncHttpClientConfig build() {
 
-            if ( applicationThreadPool.isShutdown() ) {
-                throw new IllegalStateException( "ExecutorServices closed" );
+            if (applicationThreadPool.isShutdown()) {
+                throw new IllegalStateException("ExecutorServices closed");
             }
 
             if (proxyServer == null && useProxyProperties) {
