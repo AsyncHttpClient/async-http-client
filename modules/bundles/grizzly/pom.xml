@@ -31,8 +31,9 @@
                             <instructions>
                                 <Import-Package>*</Import-Package>
                                 <Export-Package>
-                                    com.ning.http.client;version=${project.version},
-                                    com.ning.http.client.providers.grizzly;version=${project.version}
+                                    !com.ning.http.client.providers.netty.*;version=${project.version},
+                                    !com.ning.http.client.providers.apache.*;version=${project.version},
+                                    com.ning.http.client.*;version=${project.version}
                                 </Export-Package>
                                 <Embed-Dependency>
                                     org.glassfish.grizzly;scope=runtime
