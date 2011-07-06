@@ -41,7 +41,7 @@ import java.util.List;
  * {@link com.ning.http.client.HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
  */
 public class GrizzlyResponse implements Response {
 

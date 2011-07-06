@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link AbstractListenableFuture} implementation adaptation of Grizzly's
  * {@link FutureImpl}.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
  */
 public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 

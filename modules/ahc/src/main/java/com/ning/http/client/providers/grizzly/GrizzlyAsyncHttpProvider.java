@@ -112,8 +112,122 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * TODO: Documentation
+ * <p>
+ * The <em>Grizzly</em> {@link AsyncHttpProvider} is comprised of a series of
+ * {@link org.glassfish.grizzly.filterchain.Filter} implementations:
+ * </p>
  *
+ * <pre>
+ *                               ( WRITE )
+ *          +-----+      +-----+      +-----+      +-----+      +-----+
+ *  N  <--- |     | <--- |     | <--- |     | <--- |     | <--- |     | <---  A
+ *  E       | (1) |      | (2) |      | (3) |      | (4) |      | (5) |       P
+ *  T  ---> |     | ---> |     | ---> |     | ---> |     | DONE |     |       P
+ *          +-----+      +-----+      +-----+      +-----+      +-----+
+ *                               ( READ )
+ * </pre>
+ *
+ * <ol>
+ *     <li>AsyncHttpClientTransportFilter</li>
+ *     <li>IdleTimeoutFilter</li>
+ *     <li>SSLSwitchingFilter</li>
+ *     <li>AsyncHttpClientEventFilter</li>
+ *     <li>AsyncHttpClientFilter</li>
+ * </ol>
+ *
+ * <table border="1">
+ *     <tr>
+ *         <th width="33%">Filter</th>
+ *         <th width="33%">Read</th>
+ *         <th width="33%">Write</th>
+ *     </tr>
+ *     <tr>
+ *         <td>
+ *             AsyncHttpClientTransportFilter:  This filter is responsible for
+ *             reading to/from the network.
+ *         </td>
+ *         <td>
+ *             Read binary data from the wire and pass a {@link Buffer} instance
+ *             to the next filter in the chain.  If an error occurs during the
+ *             read, the {@link ListenableFuture#abort(Throwable)} method will
+ *             be invoked.
+ *         </td>
+ *         <td>
+ *             Writes the {@link Buffer} instance provided by the previous
+ *             {@link org.glassfish.grizzly.filterchain.Filter} invocation to
+ *             the wire.
+ *         </td>
+ *     </tr>
+ *     <tr>
+ *         <td>
+ *             IdleTimeoutFilter: This filter is responsible to tracking the
+ *             amount of time a connection has been inactive.  If this period
+ *             of inactivity exceeds the configured maximum ({@link com.ning.http.client.AsyncHttpClientConfig#getRequestTimeoutInMs()}),
+ *             the connection will be closed.
+ *         </td>
+ *         <td>
+ *             Updates the timestamp associated with the client connection.
+ *         </td>
+ *         <td>
+ *             Updates the timestamp associated with the client connection.
+ *         </td>
+ *     </tr>
+ *     <tr>
+ *         <td>
+ *             SSLSwitchingFilter:  This filter is a wrapper around Grizzly's
+ *             {@link SSLFilter}.  If a particular AsyncHttpClient instance is
+ *             configured for SSL, this filter will delegate all read/write
+ *             calls to the wrapped {@link SSLFilter}.  However, there are cases
+ *             where a connection will need to switch from insecure-to-secure
+ *             and vice versa.  For these cases, a <code>SSLSwitchingEvent</code>
+ *             may be triggered informing the filter what configuration is should
+ *             be in.  One common use case for this functionality is
+ *             http-to-https redirection.
+ *         </td>
+ *         <td>
+ *             If the current connection is secure, the {@link Buffer} instance
+ *             will be passed to the {@link SSLFilter} for processing, otherwise
+ *             the {@link Buffer} is passed to the next filter in the chain.
+ *         </td>
+ *         <td>
+ *             If the current connection is secure, the {@link Buffer} instance
+ *             will be passed to the {@link SSLFilter} for processing, otherwise
+ *             the {@link Buffer} is passed to the next filter in the chain.
+ *         </td>
+ *     </tr>
+ *     <tr>
+ *         <td>
+ *             AsyncHttpClientEventFilter: This filter is responsible for
+ *             translating the HTTP processing events as fired from the Grizzly
+ *             runtime into the events defined by the Async HTTP Client library.
+ *         </td>
+ *         <td>
+ *             Reads are delegated to its super class, which in turn will
+ *             fire the events upon which this filter will act upon.   In the
+ *             read case, this is the last filter in the chain.  When a particular
+ *             HTTP packet has been completely parsed, all relevant events defined
+ *             by the Async HTTP Client library will have been fired and thus
+ *             concluding this particular request.
+ *         </td>
+ *         <td>
+ *             Writes are delegated to its super class, which in turn will
+ *             fire the events upon which this filter will act upon.
+ *         </td>
+ *     </tr>
+ *     <tr>
+ *         <td>
+ *             AsyncHttpClientFilter: This filter is responsible for
+ *             transforming Async HTTP Client {@link Request} instances into
+ *             HTTP entities understood by the Grizzly runtime.
+ *         </td>
+ *         <td>
+ *             N/A
+ *         </td>
+ *         <td>
+ *             Convert the {@link Request} to a Grizzly {@link HttpRequestPacket}.
+ *         </td>
+ *     </tr>
+ * </table>
  * @author The Grizzly Team
  */
 public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
@@ -327,7 +441,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final long timeout = config.getRequestTimeoutInMs();
             if (timeout > 0) {
                 final long newTimeout = System.currentTimeMillis() + timeout;
-                System.out.println("PER REQUEST TIMEOUT: " + newTimeout);
                 resolver.setTimeoutMillis(c, newTimeout);
             }
         } else {
@@ -425,7 +538,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             ctx.write(requestPacket, ctx.getTransportContext().getCompletionHandler());
         }
-        System.out.println("REQUEST: " + requestPacket.toString());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("REQUEST: {}", requestPacket.toString());
+        }
     }
 
 
@@ -441,6 +556,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     // ----------------------------------------------------------- Inner Classes
 
 
+    /**
+     * Implementations of <code>StatusHandler</code> allows custom logic to
+     * be executed after response headers have been processed.  Examples of
+     * where this can be useful are for 401 (Authorization) or 302 (Redirect)
+     * responses.
+     */
     private interface StatusHandler {
 
         public enum InvocationStatus {
@@ -457,6 +578,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StatusHandler
 
 
+    /**
+     * Maintains <code>transactional</code> state of one or more requests.
+     * This means for a request that follows a redirect or replays a request,
+     * this same state object will be present for all requests.
+     */
     private final class HttpTransactionContext {
 
         private final AtomicInteger redirectCount = new AtomicInteger(0);
@@ -540,6 +666,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     // ---------------------------------------------------------- Nested Classes
 
+
+    /**
+     * This event will be fired when processing HTTP 100-Continue responses.
+     */
     private static final class ContinueEvent implements FilterChainEvent {
 
         private final HttpTransactionContext context;
@@ -566,6 +696,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ContinueEvent
 
 
+    /**
+     * Customized {@link TransportFilter} to handle READ events that aren't
+     * initiated by the user.  This is necessary to capture errors that occur
+     * during the read so that the {@link GrizzlyResponseFuture} may be notified
+     * of issues.
+     */
     private final class AsyncHttpClientTransportFilter extends TransportFilter {
 
         @Override
@@ -587,12 +723,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                 @Override
                 public void completed(Object result) {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                    // no-op
                 }
 
                 @Override
                 public void updated(Object result) {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                    // no-op
                 }
             });
             return super.handleRead(ctx);
@@ -601,6 +737,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END AsyncHttpClientTransportFilter
 
 
+    /**
+     * This {@link org.glassfish.grizzly.filterchain.Filter} is responsible for
+     * the transformation of {@link Request} objects to
+     * {@link HttpRequestPacket} objects.
+     */
     private final class AsyncHttpClientFilter extends BaseFilter {
 
 
@@ -650,8 +791,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         // ----------------------------------------------------- Private Methods
-
-
 
 
         private void sendAsGrizzlyRequest(final Request request,
@@ -838,10 +977,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END AsyncHttpClientFiler
 
 
+    /**
+     * This custom {@link HttpClientFilter} handles the mapping of Grizzly
+     * HTTP parsing/serializing events to those defined by the AsyncHttpClient
+     * library.
+     */
     private static final class AsyncHttpClientEventFilter extends HttpClientFilter {
 
         private final Map<Integer,StatusHandler> HANDLER_MAP = new HashMap<Integer,StatusHandler>();
-
 
         private final GrizzlyAsyncHttpProvider provider;
 
@@ -877,6 +1020,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
 
+        /**
+         * onHttpContentParsed() maps to AsyncHandler.onBodyPartReceived().
+         */
         @Override
         protected void onHttpContentParsed(HttpContent content,
                                            FilterChainContext ctx) {
@@ -897,6 +1043,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        /**
+         * onHttpHeadersEncoded() maps to TransferCompletionHandler.onHeaderWriteCompleted().
+         */
         @Override
         protected void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
@@ -906,6 +1055,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
+        /**
+         * onHttpContentEncoded() maps to TransferCompletionHandler.onContentWriteProgress().
+         */
         @Override
         protected void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
@@ -920,6 +1072,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
+        /**
+         * onInitialLineParsed() maps to AsyncHandler.onStatusReceived().
+         * This is where we hook in <code>StatusHandler</code> implementations
+         * if any are present.
+         */
         @Override
         protected void onInitialLineParsed(HttpHeader httpHeader,
                                            FilterChainContext ctx) {
@@ -991,13 +1148,24 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        /**
+         * onHttpHeadersParsed() maps to AsyncHandler.onHeadersReceived().
+         * Before invoking the AsyncHandler, this method will check to see if a
+         * StatusHandler is present within the current HttpTransactionContext
+         * and if present, will invoke it bypassing the call to the AsyncHandler.
+         *
+         * Additionally, if the client is configured with ResponseFilters, this is
+         * when those filters will be taken action upon.
+         */
         @SuppressWarnings({"unchecked"})
         @Override
         protected void onHttpHeadersParsed(HttpHeader httpHeader,
                                            FilterChainContext ctx) {
 
             super.onHttpHeadersParsed(httpHeader, ctx);
-            System.out.println("RESPONSE: " + httpHeader.toString());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("RESPONSE: {}", httpHeader.toString());
+            }
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
@@ -1069,6 +1237,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
 
+        /**
+         * onHttpPacketParsed maps to AsyncHandler.onCompleted().
+         */
         @SuppressWarnings({"unchecked"})
         @Override
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
@@ -1159,6 +1330,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // ------------------------------------------------------- Inner Classes
 
 
+        /**
+         * Handles 401 response codes.
+         */
         private static final class AuthorizationHandler implements StatusHandler {
 
             private static final AuthorizationHandler INSTANCE =
@@ -1246,6 +1420,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } // END AuthorizationHandler
 
 
+        /**
+         * Handles 301, 302, and 307 response codes.
+         */
         private static final class RedirectHandler implements StatusHandler {
 
             private static final RedirectHandler INSTANCE = new RedirectHandler();
@@ -1372,6 +1549,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END AsyncHttpClientFilter
 
 
+    /**
+     * EncodingFilter to trigger compression/decompression as appropriate.
+     */
     private static final class ClientEncodingFilter implements EncodingFilter {
 
 
@@ -1398,6 +1578,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ClientContentEncoding
 
 
+    /**
+     * ConnectionsPool implementation that performs no caching.  This will be
+     * used when the client has connection caching disabled.
+     */
     private static final class NonCachingPool implements ConnectionsPool<String,Connection> {
 
 
@@ -1427,6 +1611,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END NonCachingPool
 
 
+    /**
+     * BodyHandler implementations contain logic for handling different
+     * request body types defined by async http client.
+     */
     private static interface BodyHandler {
 
         static int MAX_CHUNK_SIZE = 8192;
@@ -1440,6 +1628,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END BodyHandler
 
 
+    /**
+     * Responsible for finding the appropriate BodyHandler implementation for
+     * a particular request.
+     */
     private static final class BodyHandlerFactory {
 
         private static final BodyHandler[] HANDLERS = new BodyHandler[] {
@@ -1465,6 +1657,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END BodyHandlerFactory
 
 
+    /**
+     * Specialized BodyHandler to defer serialization of request body content
+     * until 100-Continue has been received from the server.
+     */
     private static final class ExpectHandler implements BodyHandler {
 
         private final BodyHandler delegate;
@@ -1502,6 +1698,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ContinueHandler
 
 
+    /**
+     * BodyHandler for byte[] request bodies.
+     */
     private static final class ByteArrayBodyHandler implements BodyHandler {
 
 
@@ -1531,7 +1730,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-
+    /**
+     * BodyHandler for String request bodies.
+     */
     private static final class StringBodyHandler implements BodyHandler {
 
 
@@ -1564,6 +1765,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StringBodyHandler
 
 
+    /**
+     * BodyHandler that sends empty content.
+     */
     private static final class NoBodyHandler implements BodyHandler {
 
 
@@ -1588,6 +1792,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StringBodyHandler
 
 
+    /**
+     * BodyHandler for parameter-based request bodies.
+     */
     private static final class ParamsBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1642,6 +1849,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ParamsBodyHandler
 
 
+    /**
+     * BodyHandler for EntityWriter request bodies.
+     */
     private static final class EntityWriterBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1674,6 +1884,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END EntityWriterBodyHandler
 
 
+    /**
+     * BodyHandler for StreamData request bodies.
+     */
     private static final class StreamDataBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1723,6 +1936,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StreamDataBodyHandler
 
 
+    /**
+     * BodyHandler for Part-based request bodies.
+     */
     private static final class PartsBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1761,6 +1977,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END PartsBodyHandler
 
 
+    /**
+     * BodyHandler for File request bodies.
+     */
     private static final class FileBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1804,6 +2023,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END FileBodyHandler
 
 
+    /**
+     * BodyHandler for BodyGenerator request bodies.
+     */
     private static final class BodyGeneratorBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1848,6 +2070,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END BodyGeneratorBodyHandler
 
 
+    /**
+     * The ConnectionManager is responsible for vending and handling the return
+     * of Connections to a pool.
+     */
     static class ConnectionManager {
 
         private final Attribute<Boolean> DO_NOT_CACHE =
@@ -1995,6 +2221,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         // ------------------------------------------------------ Nested Classes
 
+        /**
+         * Maintains a count of all active tracked connections.  NOTE: not all
+         * connections will be tracked.  For instance when a new connection is
+         * obtained due to a redirect or a replay event - these connections will
+         * not be tracked nor pooled.
+         */
         private static class ConnectionMonitor implements Connection.CloseListener {
 
         private final Semaphore connections;
@@ -2033,6 +2265,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     } // END ConnectionManager
 
+
+    /**
+     * Custom {@link org.glassfish.grizzly.filterchain.Filter} implementation
+     * that allows SSL to be dynamically enabled/disabled for a connection.
+     */
     static final class SwitchingSSLFilter extends SSLFilter {
 
         private final boolean secureByDefault;

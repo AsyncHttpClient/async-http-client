@@ -26,7 +26,7 @@ import java.net.URI;
  * {@link HttpResponseHeaders} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
  */
 public class GrizzlyResponseHeaders extends HttpResponseHeaders {
 

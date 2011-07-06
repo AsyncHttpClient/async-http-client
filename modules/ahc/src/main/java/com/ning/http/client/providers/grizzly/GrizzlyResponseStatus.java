@@ -23,7 +23,7 @@ import java.net.URI;
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
  */
 public class GrizzlyResponseStatus extends HttpResponseStatus {
 

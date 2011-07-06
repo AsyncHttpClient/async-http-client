@@ -34,7 +34,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
+/**
+ * {@link ConnectionsPool} implementation for the Grizzly provider.
+ *
+ * @author The Grizzly Team
+ */
 public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection> {
 
     private final static Logger LOG = LoggerFactory.getLogger(GrizzlyConnectionsPool.class);
