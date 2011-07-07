@@ -34,6 +34,10 @@ public class FilePart implements Part {
         this.charSet = charSet;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public String getName() {
         return name;
     }

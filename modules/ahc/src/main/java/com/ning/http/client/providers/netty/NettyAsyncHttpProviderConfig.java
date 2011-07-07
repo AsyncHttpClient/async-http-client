@@ -59,7 +59,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
-    public NettyAsyncHttpProviderConfig(){
+    public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, "false");
     }
 

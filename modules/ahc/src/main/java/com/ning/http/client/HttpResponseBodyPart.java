@@ -31,28 +31,31 @@ public abstract class HttpResponseBodyPart extends HttpContent {
 
     /**
      * Return the response body's part bytes received.
+     *
      * @return the response body's part bytes received.
      */
     abstract public byte[] getBodyPartBytes();
 
     /**
      * Write the available bytes to the {@link java.io.OutputStream}
+     *
      * @param outputStream
-     * @throws IOException
      * @return The number of bytes written
+     * @throws IOException
      */
     abstract public int writeTo(OutputStream outputStream) throws IOException;
 
     /**
      * Return a {@link ByteBuffer} that wraps the actual bytes read from the response's chunk. The {@link ByteBuffer}
      * capacity is equal to the number of bytes available.
-     * 
+     *
      * @return {@link ByteBuffer}
      */
     abstract public ByteBuffer getBodyByteBuffer();
 
     /**
      * Return true if this is the last part.
+     *
      * @return true if this is the last part.
      */
     abstract public boolean isLast();
@@ -66,6 +69,7 @@ public abstract class HttpResponseBodyPart extends HttpContent {
 
     /**
      * Return true of the underlying connection will be closed once the response has been fully processed.
+     *
      * @return true of the underlying connection will be closed once the response has been fully processed.
      */
     abstract public boolean closeUnderlyingConnection();

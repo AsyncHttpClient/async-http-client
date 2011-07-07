@@ -64,7 +64,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public void abort(Throwable t) {
-        exception.set(t);        
+        exception.set(t);
         if (innerFuture != null) {
             innerFuture.cancel(true);
         }

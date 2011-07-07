@@ -27,7 +27,7 @@ public class PerRequestConfig {
     public PerRequestConfig() {
         this(null, 0);
     }
-    
+
     public PerRequestConfig(ProxyServer proxyServer, int requestTimeoutInMs) {
         this.proxyServer = proxyServer;
         this.requestTimeoutInMs = requestTimeoutInMs;

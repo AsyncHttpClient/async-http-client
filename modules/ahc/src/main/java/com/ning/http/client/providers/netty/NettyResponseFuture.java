@@ -158,7 +158,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
         latch.countDown();
         isCancelled.set(true);
-        super.done();        
+        super.done();
         return true;
     }
 
@@ -179,7 +179,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         try {
             return get(responseTimeoutInMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            cancelReaper();                                    
+            cancelReaper();
             throw new ExecutionException(e);
         }
     }
@@ -300,8 +300,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 isCancelled.set(true);
             }
         }
-        latch.countDown();        
-        super.done();        
+        latch.countDown();
+        super.done();
     }
 
     public void content(V v) {
@@ -410,11 +410,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.reuseChannel = reuseChannel;
     }
 
-    protected Channel channel(){
+    protected Channel channel() {
         return channel;
     }
 
-    protected boolean reuseChannel(){
+    protected boolean reuseChannel() {
         return reuseChannel;
     }
 

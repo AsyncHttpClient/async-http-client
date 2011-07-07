@@ -28,34 +28,33 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A {@link com.ning.http.client.AsyncHandler} that can be used to notify a set of {@link com.ning.http.client.listener.TransferListener}
- *
- * {@code
-       AsyncHttpClient client = new AsyncHttpClient();
-       TransferCompletionHandler tl = new TransferCompletionHandler();
-       tl.addTransferListener(new TransferListener() {
-
-            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
-            }
-
-            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
-            }
-
-            public void onBytesReceived(ByteBuffer buffer) {
-            }
-
-            public void onBytesSent(ByteBuffer buffer) {
-            }
-
-            public void onRequestResponseCompleted() {
-            }
-
-            public void onThrowable(Throwable t) {
-            }
-        });
-
-        Response response = httpClient.prepareGet("http://...").execute(tl).get();
-    }
- *
+ * <p/>
+ * <blockquote><pre>
+ * AsyncHttpClient client = new AsyncHttpClient();
+ * TransferCompletionHandler tl = new TransferCompletionHandler();
+ * tl.addTransferListener(new TransferListener() {
+ * <p/>
+ * public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+ * }
+ * <p/>
+ * public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+ * }
+ * <p/>
+ * public void onBytesReceived(ByteBuffer buffer) {
+ * }
+ * <p/>
+ * public void onBytesSent(ByteBuffer buffer) {
+ * }
+ * <p/>
+ * public void onRequestResponseCompleted() {
+ * }
+ * <p/>
+ * public void onThrowable(Throwable t) {
+ * }
+ * });
+ * <p/>
+ * Response response = httpClient.prepareGet("http://...").execute(tl).get();
+ * </pre></blockquote>
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
@@ -69,9 +68,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link com.ning.http.client.Response#getResponseBody()},
      * {@link com.ning.http.client.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will
      * throw an IllegalStateException if called.
-     *
      */
-    public TransferCompletionHandler(){
+    public TransferCompletionHandler() {
         this(false);
     }
 
@@ -81,12 +79,13 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      *
      * @param accumulateResponseBytes true to accumulates bytes in memory.
      */
-    public TransferCompletionHandler(boolean accumulateResponseBytes){
+    public TransferCompletionHandler(boolean accumulateResponseBytes) {
         this.accumulateResponseBytes = accumulateResponseBytes;
     }
 
     /**
      * Add a {@link com.ning.http.client.listener.TransferListener}
+     *
      * @param t a {@link com.ning.http.client.listener.TransferListener}
      * @return this
      */
@@ -97,6 +96,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Remove a {@link com.ning.http.client.listener.TransferListener}
+     *
      * @param t a {@link com.ning.http.client.listener.TransferListener}
      * @return this
      */
@@ -107,6 +107,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Associate a {@link com.ning.http.client.listener.TransferCompletionHandler.TransferAdapter} with this listener.
+     *
      * @param transferAdapter {@link TransferAdapter}
      */
     public void transferAdapter(TransferAdapter transferAdapter) {
@@ -187,8 +188,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         fireOnThrowable(t);
     }
 
-    private void fireOnHeadersSent(FluentCaseInsensitiveStringsMap headers){
-        for (TransferListener l: listeners) {
+    private void fireOnHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+        for (TransferListener l : listeners) {
             try {
                 l.onRequestHeadersSent(headers);
             } catch (Throwable t) {
@@ -197,8 +198,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnHeaderReceived(FluentCaseInsensitiveStringsMap headers){
-        for (TransferListener l: listeners) {
+    private void fireOnHeaderReceived(FluentCaseInsensitiveStringsMap headers) {
+        for (TransferListener l : listeners) {
             try {
                 l.onResponseHeadersReceived(headers);
             } catch (Throwable t) {
@@ -207,7 +208,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnEnd(){
+    private void fireOnEnd() {
         // There is a probability that the asynchronous listener never gets called, so we fake it at the end once
         // we are 100% sure the response has been received.
         long count = bytesTransferred.getAndSet(-1);
@@ -234,7 +235,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
             }
         }
 
-        for (TransferListener l: listeners) {
+        for (TransferListener l : listeners) {
             try {
                 l.onRequestResponseCompleted();
             } catch (Throwable t) {
@@ -243,8 +244,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnBytesReceived(byte[] b){
-        for (TransferListener l: listeners) {
+    private void fireOnBytesReceived(byte[] b) {
+        for (TransferListener l : listeners) {
             try {
                 l.onBytesReceived(ByteBuffer.wrap(b));
             } catch (Throwable t) {
@@ -253,8 +254,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-   private void fireOnBytesSent(byte[] b){
-        for (TransferListener l: listeners) {
+    private void fireOnBytesSent(byte[] b) {
+        for (TransferListener l : listeners) {
             try {
                 l.onBytesSent(ByteBuffer.wrap(b));
             } catch (Throwable t) {
@@ -263,8 +264,8 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnThrowable(Throwable t){
-        for (TransferListener l: listeners) {
+    private void fireOnThrowable(Throwable t) {
+        for (TransferListener l : listeners) {
             try {
                 l.onThrowable(t);
             } catch (Throwable t2) {

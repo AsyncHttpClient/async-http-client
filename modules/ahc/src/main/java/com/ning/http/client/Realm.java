@@ -24,7 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * This class is required when authentication is needed. The class support DIGEST and BASIC. 
+ * This class is required when authentication is needed. The class support DIGEST and BASIC.
  */
 public class Realm {
 
@@ -141,7 +141,7 @@ public class Realm {
         return uri;
     }
 
-    public String getEncoding(){
+    public String getEncoding() {
         return enc;
     }
 
@@ -151,6 +151,7 @@ public class Realm {
 
     /**
      * Return true is preemptive authentication is enabled
+     *
      * @return true is preemptive authentication is enabled
      */
     public boolean getUsePreemptiveAuth() {
@@ -159,6 +160,7 @@ public class Realm {
 
     /**
      * Return the NTLM domain to use. This value should map the JDK
+     *
      * @return the NTLM domain
      * @deprecated - use getNtlmDomain()
      */
@@ -168,6 +170,7 @@ public class Realm {
 
     /**
      * Return the NTLM domain to use. This value should map the JDK
+     *
      * @return the NTLM domain
      */
     public String getNtlmDomain() {
@@ -176,13 +179,14 @@ public class Realm {
 
     /**
      * Return the NTLM host.
+     *
      * @return the NTLM host
      */
-    public String getNtlmHost(){
+    public String getNtlmHost() {
         return host;
     }
 
-    public boolean isNtlmMessageType2Received(){
+    public boolean isNtlmMessageType2Received() {
         return messageType2Received;
     }
 
@@ -407,7 +411,7 @@ public class Realm {
 
         public RealmBuilder setUsePreemptiveAuth(boolean usePreemptiveAuth) {
             this.usePreemptive = usePreemptiveAuth;
-            return this;            
+            return this;
         }
 
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
@@ -452,7 +456,7 @@ public class Realm {
                 byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes("ISO-8859-1"));
                 cnonce = toHexString(b);
             } catch (Exception e) {
-                 throw new SecurityException(e);
+                throw new SecurityException(e);
             }
         }
 
@@ -482,7 +486,7 @@ public class Realm {
         public RealmBuilder setEnconding(String enc) {
             this.enc = enc;
             return this;
-        }        
+        }
 
         private void newResponse() throws UnsupportedEncodingException {
             MessageDigest md = null;
@@ -492,30 +496,30 @@ public class Realm {
                 throw new SecurityException(e);
             }
             md.update(new StringBuilder(principal)
-                        .append(":")
-                        .append(realmName)
-                        .append(":")
-                        .append(password)
-                        .toString().getBytes("ISO-8859-1"));
+                    .append(":")
+                    .append(realmName)
+                    .append(":")
+                    .append(password)
+                    .toString().getBytes("ISO-8859-1"));
             byte[] ha1 = md.digest();
 
             md.reset();
             md.update(new StringBuilder(methodName)
-                        .append(':')
-                        .append(uri).toString().getBytes("ISO-8859-1"));
+                    .append(':')
+                    .append(uri).toString().getBytes("ISO-8859-1"));
             byte[] ha2 = md.digest();
 
             md.update(new StringBuilder(toBase16(ha1))
-                        .append(':')
-                        .append(nonce)
-                        .append(':')
-                        .append(NC)
-                        .append(':')
-                        .append(cnonce)
-                        .append(':')
-                        .append(qop)
-                        .append(':')
-                        .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+                    .append(':')
+                    .append(nonce)
+                    .append(':')
+                    .append(NC)
+                    .append(':')
+                    .append(cnonce)
+                    .append(':')
+                    .append(qop)
+                    .append(':')
+                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
             byte[] digest = md.digest();
 
             response = toHexString(digest);
@@ -549,6 +553,7 @@ public class Realm {
 
         /**
          * Build a {@link Realm}
+         *
          * @return a {@link Realm}
          */
         public Realm build() {

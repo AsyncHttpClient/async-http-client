@@ -15,7 +15,6 @@ package com.ning.http.client.filter;
 /**
  * An exception that can be thrown by an {@link com.ning.http.client.AsyncHandler} to interrupt invocation of
  * the {@link RequestFilter} and {@link ResponseFilter}. It also interrupt the request and response processing.
- * 
  */
 public class FilterException extends Exception {
 

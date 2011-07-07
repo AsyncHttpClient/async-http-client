@@ -32,7 +32,7 @@ import java.util.Set;
  * return this instance. This class differs from {@link FluentStringsMap} in that keys are treated in an
  * case-insensitive matter, i.e. case of the key doesn't matter when retrieving values or changing the map.
  * However, the map preserves the key case (of the first insert or replace) and returns the keys in their
- * original case in the appropriate methods (e.g. {@link FluentCaseInsensitiveStringsMap#keySet()}).  
+ * original case in the appropriate methods (e.g. {@link FluentCaseInsensitiveStringsMap#keySet()}).
  */
 public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>>, Iterable<Map.Entry<String, List<String>>> {
     private final Map<String, List<String>> values = new LinkedHashMap<String, List<String>>();
@@ -72,7 +72,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         return this;
     }
 
-    private List<String> fetchValues( Collection<String> values ) {
+    private List<String> fetchValues(Collection<String> values) {
         List<String> result = null;
 
         if (values != null) {
@@ -84,7 +84,8 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
                     // lazy initialization
                     result = new ArrayList<String>();
                 }
-                result.add(value);            }
+                result.add(value);
+            }
         }
         return result;
     }
@@ -99,21 +100,20 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap add(String key, Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues( values );
-    
+            List<String> nonNullValues = fetchValues(values);
+
             if (nonNullValues != null) {
-                String       lcKey     = key.toLowerCase();
-                String       realKey   = keyLookup.get(lcKey);
+                String lcKey = key.toLowerCase();
+                String realKey = keyLookup.get(lcKey);
                 List<String> curValues = null;
-    
+
                 if (realKey == null) {
                     realKey = key;
                     keyLookup.put(lcKey, key);
-                }
-                else {
+                } else {
                     curValues = this.values.get(realKey);
                 }
-        
+
                 if (curValues == null) {
                     curValues = new ArrayList<String>();
                     this.values.put(realKey, curValues);
@@ -168,23 +168,22 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     /**
      * Replaces the values for the given key with the given values.
      *
-     * @param key  The key
+     * @param key    The key
      * @param values The new values
      * @return This object
      */
     public FluentCaseInsensitiveStringsMap replace(final String key, final Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues( values );
-            String       lcKkey        = key.toLowerCase();
-            String       realKey       = keyLookup.get(lcKkey);
-    
+            List<String> nonNullValues = fetchValues(values);
+            String lcKkey = key.toLowerCase();
+            String realKey = keyLookup.get(lcKkey);
+
             if (nonNullValues == null) {
                 keyLookup.remove(lcKkey);
                 if (realKey != null) {
                     this.values.remove(realKey);
                 }
-            }
-            else {
+            } else {
                 if (!key.equals(realKey)) {
                     keyLookup.put(lcKkey, key);
                     this.values.remove(realKey);
@@ -231,8 +230,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> put(String key, List<String> value)
-    {
+    public List<String> put(String key, List<String> value) {
         if (key == null) {
             throw new NullPointerException("Null keys are not allowed");
         }
@@ -247,8 +245,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public void putAll(Map<? extends String, ? extends List<String>> values)
-    {
+    public void putAll(Map<? extends String, ? extends List<String>> values) {
         replaceAll(values);
     }
 
@@ -260,9 +257,9 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public FluentCaseInsensitiveStringsMap delete(String key) {
         if (key != null) {
-            String lcKey   = key.toLowerCase();
+            String lcKey = key.toLowerCase();
             String realKey = keyLookup.remove(lcKey);
-    
+
             if (realKey != null) {
                 values.remove(realKey);
             }
@@ -304,12 +301,10 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> remove(Object key)
-    {
+    public List<String> remove(Object key) {
         if (key == null) {
             return null;
-        }
-        else {
+        } else {
             List<String> oldValues = get(key.toString());
 
             delete(key.toString());
@@ -321,8 +316,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public void clear()
-    {
+    public void clear() {
         keyLookup.clear();
         values.clear();
     }
@@ -339,8 +333,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public Set<String> keySet()
-    {
+    public Set<String> keySet() {
         return new LinkedHashSet<String>(keyLookup.values());
     }
 
@@ -348,8 +341,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public Set<Entry<String, List<String>>> entrySet()
-    {
+    public Set<Entry<String, List<String>>> entrySet() {
         return values.entrySet();
     }
 
@@ -357,8 +349,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public int size()
-    {
+    public int size() {
         return values.size();
     }
 
@@ -366,8 +357,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean isEmpty()
-    {
+    public boolean isEmpty() {
         return values.isEmpty();
     }
 
@@ -375,8 +365,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean containsKey(Object key)
-    {
+    public boolean containsKey(Object key) {
         return key == null ? false : keyLookup.containsKey(key.toString().toLowerCase());
     }
 
@@ -384,8 +373,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean containsValue(Object value)
-    {
+    public boolean containsValue(Object value) {
         return values.containsValue(value);
     }
 
@@ -401,11 +389,9 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
 
         if (values == null) {
             return null;
-        }
-        else if (values.isEmpty()) {
+        } else if (values.isEmpty()) {
             return "";
-        }
-        else {
+        } else {
             return values.get(0);
         }
     }
@@ -418,14 +404,12 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      */
     public String getJoinedValue(String key, String delimiter) {
         List<String> values = get(key);
-        
+
         if (values == null) {
             return null;
-        }
-        else if (values.size() == 1) {
+        } else if (values.size() == 1) {
             return values.get(0);
-        }
-        else {
+        } else {
             StringBuilder result = new StringBuilder();
 
             for (String value : values) {
@@ -442,19 +426,17 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> get(Object key)
-    {
+    public List<String> get(Object key) {
         if (key == null) {
             return null;
         }
 
-        String lcKey   = key.toString().toLowerCase();
+        String lcKey = key.toString().toLowerCase();
         String realKey = keyLookup.get(lcKey);
 
         if (realKey == null) {
             return null;
-        }
-        else {
+        } else {
             return values.get(realKey);
         }
     }
@@ -463,8 +445,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * {@inheritDoc}
      */
     /* @Override */
-    public Collection<List<String>> values()
-    {
+    public Collection<List<String>> values() {
         return values.values();
     }
 
@@ -486,8 +467,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
             if (other.values != null) {
                 return false;
             }
-        }
-        else if (!values.equals(other.values)) {
+        } else if (!values.equals(other.values)) {
             return false;
         }
         return true;
@@ -499,8 +479,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder result = new StringBuilder();
 
         for (Map.Entry<String, List<String>> entry : values.entrySet()) {
@@ -516,8 +495,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
             for (String value : entry.getValue()) {
                 if (needsComma) {
                     result.append(", ");
-                }
-                else {
+                } else {
                     needsComma = true;
                 }
                 result.append(value);

@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ApacheAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String,String> {
+public class ApacheAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, String> {
 
     private final ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String, String>();
 

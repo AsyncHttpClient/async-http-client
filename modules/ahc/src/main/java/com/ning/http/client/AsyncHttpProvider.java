@@ -40,9 +40,10 @@ public interface AsyncHttpProvider {
 
     /**
      * Prepare a {@link Response}
-     * @param status  {@link HttpResponseStatus}
+     *
+     * @param status    {@link HttpResponseStatus}
      * @param headers   {@link HttpResponseHeaders}
-     * @param bodyParts  list of {@link HttpResponseBodyPart}
+     * @param bodyParts list of {@link HttpResponseBodyPart}
      * @return a {@link Response}
      */
     public Response prepareResponse(HttpResponseStatus status,

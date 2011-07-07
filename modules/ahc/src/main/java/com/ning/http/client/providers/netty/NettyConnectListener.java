@@ -83,7 +83,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         } else {
             Throwable cause = f.getCause();
 
-            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), future.canRetry());            
+            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), future.canRetry());
             if (future.canRetry() && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
                     || ClosedChannelException.class.isAssignableFrom(cause.getClass())
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
@@ -97,7 +97,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             logger.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
 
             boolean printCause = f.getCause() != null && cause.getMessage() != null;
-            ConnectException e = new ConnectException( printCause ? cause.getMessage() + " to " + future.getURI().toString() : future.getURI().toString());
+            ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getURI().toString() : future.getURI().toString());
             if (cause != null) {
                 e.initCause(cause);
             }
@@ -107,7 +107,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     public static class Builder<T> {
         private final AsyncHttpClientConfig config;
-        
+
         private final Request request;
         private final AsyncHandler<T> asyncHandler;
         private NettyResponseFuture<T> future;

@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)} convenience method which gets called
  * when the {@link Response} processing is finished.  This class also implement the {@link ProgressAsyncHandler} callback,
  * all doing nothing except returning {@link com.ning.http.client.AsyncHandler.STATE#CONTINUE}
- *  
- * @param <T>  Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+ *
+ * @param <T> Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, ProgressAsyncHandler<T> {
 
@@ -73,7 +73,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     /**
      * Invoked once the HTTP response processing is finished.
      * <p/>
-     *
+     * <p/>
      * Gets always invoked as last callback method.
      *
      * @param response The {@link Response}
@@ -104,9 +104,10 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
 
     /**
      * Invoked when the I/O operation associated with the {@link Request} body as been progressed.
-     * @param amount The amount of bytes to transfer.
+     *
+     * @param amount  The amount of bytes to transfer.
      * @param current The amount of bytes transferred
-     * @param total The total number of bytes transferred
+     * @param total   The total number of bytes transferred
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
     public STATE onContentWriteProgress(long amount, long current, long total) {

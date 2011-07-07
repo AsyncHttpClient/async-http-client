@@ -36,6 +36,10 @@ public class StringPart implements Part {
         this.charset = "UTF-8";
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public String getName() {
         return name;
     }

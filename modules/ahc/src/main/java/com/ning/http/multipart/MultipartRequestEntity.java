@@ -25,21 +25,25 @@ import java.util.Random;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
+ *
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class MultipartRequestEntity implements RequestEntity {
 
-    /** The Content-Type for multipart/form-data. */
+    /**
+     * The Content-Type for multipart/form-data.
+     */
     private static final String MULTIPART_FORM_CONTENT_TYPE = "multipart/form-data";
 
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
     private static byte[] MULTIPART_CHARS = MultipartEncodingUtil.getAsciiBytes(
-        "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
     /**
      * Generates a random multipart boundary string.
+     *
      * @return
      */
     private static byte[] generateMultipartBoundary() {
@@ -53,7 +57,9 @@ public class MultipartRequestEntity implements RequestEntity {
 
     private final Logger log = LoggerFactory.getLogger(MultipartRequestEntity.class);
 
-    /** The MIME parts as set by the constructor */
+    /**
+     * The MIME parts as set by the constructor
+     */
     protected Part[] parts;
 
     private byte[] multipartBoundary;
@@ -62,7 +68,8 @@ public class MultipartRequestEntity implements RequestEntity {
 
     /**
      * Creates a new multipart entity containing the given parts.
-     * @param parts The parts to include.
+     *
+     * @param parts        The parts to include.
      * @param methodParams The params of the HttpMethod using this entity.
      */
     public MultipartRequestEntity(Part[] parts, FluentStringsMap methodParams) {
@@ -87,7 +94,7 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     protected byte[] getMultipartBoundary() {
         if (multipartBoundary == null) {
-            String temp =  methodParams.get("") == null ? null : methodParams.get("").iterator().next();
+            String temp = methodParams.get("") == null ? null : methodParams.get("").iterator().next();
             if (temp != null) {
                 multipartBoundary = MultipartEncodingUtil.getAsciiBytes(temp);
             } else {

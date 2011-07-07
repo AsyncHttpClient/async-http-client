@@ -21,10 +21,9 @@ import java.io.UnsupportedEncodingException;
  * Wrapper class for more convenient (and possibly more efficient in future)
  * UTF-8 encoding and decoding.
  */
-public class UTF8Codec
-{
+public class UTF8Codec {
     private final static String ENCODING_UTF8 = "UTF-8";
-    
+
     // When we move to JDK 1.6+, we can do this:
     /*
     import java.nio.charset.Charset;
@@ -59,7 +58,7 @@ public class UTF8Codec
     public static String fromUTF8(byte[] input) {
         return fromUTF8(input, 0, input.length);
     }
-    
+
     public static String fromUTF8(byte[] input, int offset, int len) {
         try {
             return new String(input, offset, len, ENCODING_UTF8);

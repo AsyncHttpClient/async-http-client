@@ -20,16 +20,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Simple {@link AsyncHandler} of type {@link Response}
+ * Simple {@link AsyncHandler} of type {@link Response}
  */
-public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>{
+public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response> {
     private final Logger log = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Response onCompleted(Response response) throws Exception {
         return response;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     /* @Override */
     public void onThrowable(Throwable t) {
         log.debug(t.getMessage(), t);

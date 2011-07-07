@@ -21,21 +21,26 @@ import java.io.InputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
+ *
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class ByteArrayPartSource implements PartSource {
 
-    /** Name of the source file. */
+    /**
+     * Name of the source file.
+     */
     private final String fileName;
 
-    /** Byte array of the source file. */
+    /**
+     * Byte array of the source file.
+     */
     private final byte[] bytes;
 
     /**
      * Constructor for ByteArrayPartSource.
      *
      * @param fileName the name of the file these bytes represent
-     * @param bytes the content of this part
+     * @param bytes    the content of this part
      */
     public ByteArrayPartSource(String fileName, byte[] bytes) {
         this.fileName = fileName;

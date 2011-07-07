@@ -116,7 +116,7 @@ public class ProxyServer {
         return this;
     }
 
-    public List<String> getNonProxyHosts(){
+    public List<String> getNonProxyHosts() {
         return Collections.unmodifiableList(nonProxyHosts);
     }
 
@@ -128,7 +128,7 @@ public class ProxyServer {
     public String getNtlmDomain() {
         return ntlmDomain;
     }
-    
+
     @Override
     public String toString() {
         return String.format("%s://%s:%d", protocol.toString(), host, port);

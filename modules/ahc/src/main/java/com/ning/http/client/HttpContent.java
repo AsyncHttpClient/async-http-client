@@ -26,14 +26,24 @@ public class HttpContent {
 
     protected HttpContent(URI url, AsyncHttpProvider provider) {
         this.provider = provider;
-        this.uri= url;
+        this.uri = url;
     }
 
+    /**
+     * Return the current {@link AsyncHttpProvider}
+     *
+     * @return the current {@link AsyncHttpProvider}
+     */
     public final AsyncHttpProvider provider() {
         return provider;
     }
 
-    public final URI getUrl(  ){
+    /**
+     * Return the request {@link URI}
+     *
+     * @return the request {@link URI}
+     */
+    public final URI getUrl() {
         return uri;
     }
 }

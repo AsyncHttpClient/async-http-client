@@ -33,7 +33,7 @@ import java.util.Map;
 
 
 public class ApacheResponse implements Response {
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";    
+    private final static String DEFAULT_CHARSET = "ISO-8859-1";
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
@@ -93,7 +93,7 @@ public class ApacheResponse implements Response {
         if (bodyParts.size() > 0) {
             return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
         } else {
-            return new ByteArrayInputStream("".getBytes());            
+            return new ByteArrayInputStream("".getBytes());
         }
     }
 
@@ -104,7 +104,7 @@ public class ApacheResponse implements Response {
     }
 
     /* @Override */
-    
+
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         String contentType = getContentType();
         if (contentType != null && charset == null) {
@@ -114,7 +114,7 @@ public class ApacheResponse implements Response {
         if (charset == null) {
             charset = DEFAULT_CHARSET;
         }
-        
+
         String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }

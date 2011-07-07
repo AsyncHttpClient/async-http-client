@@ -47,6 +47,10 @@ public class ThrottleRequestFilter implements RequestFilter {
         available = new Semaphore(maxConnections, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public FilterContext filter(FilterContext ctx) throws FilterException {
 
         try {
@@ -75,6 +79,10 @@ public class ThrottleRequestFilter implements RequestFilter {
             this.asyncHandler = asyncHandler;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        /* @Override */
         public void onThrowable(Throwable t) {
             try {
                 asyncHandler.onThrowable(t);
@@ -86,18 +94,34 @@ public class ThrottleRequestFilter implements RequestFilter {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        /* @Override */
         public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
             return asyncHandler.onBodyPartReceived(bodyPart);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        /* @Override */
         public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
             return asyncHandler.onStatusReceived(responseStatus);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        /* @Override */
         public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             return asyncHandler.onHeadersReceived(headers);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        /* @Override */
         public T onCompleted() throws Exception {
             available.release();
             if (logger.isDebugEnabled()) {

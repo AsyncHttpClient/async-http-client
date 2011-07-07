@@ -45,7 +45,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     // Note: For now we keep the delegates in place even though they are not needed
     //       since otherwise Clojure (and maybe other languages) won't be able to
     //       access these methods - see Clojure tickets 126 and 259
-    
+
     @Override
     public RequestBuilder addBodyPart(Part part) throws IllegalArgumentException {
         return super.addBodyPart(part);
@@ -98,12 +98,13 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 
     /**
      * Deprecated - Use setBody(new InputStreamBodyGenerator(inputStream)).
+     *
      * @param stream - An {@link InputStream}
      * @return a {@link RequestBuilder}
      * @throws IllegalArgumentException
-     * @deprecated {@link #setBody(BodyGenerator)} setBody(new InputStreamBodyGenerator(inputStream))
      * @see #setBody(BodyGenerator) InputStreamBodyGenerator(inputStream)
      * @see com.ning.http.client.generators.InputStreamBodyGenerator
+     * @deprecated {@link #setBody(BodyGenerator)} setBody(new InputStreamBodyGenerator(inputStream))
      */
     @Override
     @Deprecated

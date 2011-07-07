@@ -20,10 +20,10 @@ import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,41 +34,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
- *
+ * <p/>
  * To execute synchronous HTTP request, you just need to do
  * <blockquote><pre>
  *    AsyncHttpClient c = new AsyncHttpClient();
  *    Future<Response> f = c.prepareGet("http://www.ning.com/").execute();
  * </pre></blockquote
- *
+ * <p/>
  * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
  * create an {@link AsyncHandler} or its abstract implementation, {@link com.ning.http.client.AsyncCompletionHandler}
- *
+ * <p/>
  * <blockquote><pre>
  *       AsyncHttpClient c = new AsyncHttpClient();
  *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
- *
+ * <p/>
  *          &#64;Override
  *          public Response onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response;
  *          &#125;
- *
+ * <p/>
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
  *      Response response = f.get();
- *
+ * <p/>
  *      // We are just interested to retrieve the status code.
  *     Future<Integer> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Integer>() &#123;
- *
+ * <p/>
  *          &#64;Override
  *          public Integer onCompleted(Response response) throws IOException &#123;
  *               // Do something
  *              return response.getStatusCode();
  *          &#125;
- *
+ * <p/>
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
@@ -77,67 +77,66 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </pre></blockquote
  * The {@link AsyncCompletionHandler#onCompleted(com.ning.http.client.Response)} will be invoked once the http response has been fully read, which include
  * the http headers and the response body. Note that the entire response will be buffered in memory.
- *
+ * <p/>
  * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
  *          private StringBuilder builder = new StringBuilder();
- *
+ * <p/>
  *          &#64;Override
  *          public STATE onStatusReceived(HttpResponseStatus s) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          }
- *
+ * <p/>
  *          &#64;Override
  *          public STATE onHeadersReceived(HttpResponseHeaders bodyPart) throws Exception &#123;
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
- *
+ * <p/>
  *          }
  *          &#64;Override
- *
+ * <p/>
  *          public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception &#123;
  *               builder.append(new String(bodyPart));
  *               // return STATE.CONTINUE or STATE.ABORT
  *               return STATE.CONTINUE
  *          &#125;
- *
+ * <p/>
  *          &#64;Override
  *          public String onCompleted() throws Exception &#123;
  *               // Will be invoked once the response has been fully read or a ResponseComplete exception
  *               // has been thrown.
  *               return builder.toString();
  *          &#125;
- *
+ * <p/>
  *          &#64;Override
  *          public void onThrowable(Throwable t) &#123;
  *          &#125;
  *      &#125;);
- *
+ * <p/>
  *      String bodyResponse = f.get();
  * </pre></blockquote
  * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
  * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
- *
+ * <p/>
  * This class can also be used without the need of {@link AsyncHandler}</p>
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
- *
+ * <p/>
  * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>
- *
+ * <p/>
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.
- *
  */
 public class AsyncHttpClient {
 
@@ -149,11 +148,11 @@ public class AsyncHttpClient {
 
     /**
      * Default signature calculator to use for all requests constructed by this client instance.
-     * 
+     *
      * @since 1.1
      */
     protected SignatureCalculator signatureCalculator;
-    
+
     /**
      * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
      * default {@link AsyncHttpProvider} will be used ({@link com.ning.http.client.providers.netty.NettyAsyncHttpProvider}
@@ -165,25 +164,28 @@ public class AsyncHttpClient {
     /**
      * Create a new HTTP Asynchronous Client using an implementation of {@link AsyncHttpProvider} and
      * the default {@link AsyncHttpClientConfig} configuration.
+     *
      * @param provider a {@link AsyncHttpProvider}
      */
     public AsyncHttpClient(AsyncHttpProvider provider) {
-        this(provider,new AsyncHttpClientConfig.Builder().build());
+        this(provider, new AsyncHttpClientConfig.Builder().build());
     }
 
     /**
      * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and the
      * {@link #DEFAULT_PROVIDER}
+     *
      * @param config a {@link AsyncHttpClientConfig}
      */
     public AsyncHttpClient(AsyncHttpClientConfig config) {
-        this(loadDefaultProvider(DEFAULT_PROVIDER, config),config);
+        this(loadDefaultProvider(DEFAULT_PROVIDER, config), config);
     }
 
     /**
      * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
      * and a {@link AsyncHttpProvider}.
-     * @param config a {@link AsyncHttpClientConfig}
+     *
+     * @param config       a {@link AsyncHttpClientConfig}
      * @param httpProvider a {@link AsyncHttpProvider}
      */
     public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
@@ -194,12 +196,13 @@ public class AsyncHttpClient {
     /**
      * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
      * and a AsyncHttpProvider class' name.
-     * @param config a {@link AsyncHttpClientConfig}
+     *
+     * @param config        a {@link AsyncHttpClientConfig}
      * @param providerClass a {@link AsyncHttpProvider}
      */
     public AsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
         this.config = new AsyncHttpClientConfig.Builder().build();
-        this.httpProvider = loadDefaultProvider(providerClass,config);
+        this.httpProvider = loadDefaultProvider(providerClass, config);
     }
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
@@ -214,7 +217,7 @@ public class AsyncHttpClient {
          * signature calculation
          */
         protected String baseURL;
-        
+
         private BoundRequestBuilder(String reqType, boolean useRawUrl) {
             super(BoundRequestBuilder.class, reqType, useRawUrl);
         }
@@ -347,6 +350,7 @@ public class AsyncHttpClient {
 
     /**
      * Return the asynchronous {@link com.ning.http.client.AsyncHttpProvider}
+     *
      * @return an {@link com.ning.http.client.AsyncHttpProvider}
      */
     public AsyncHttpProvider getProvider() {
@@ -374,17 +378,19 @@ public class AsyncHttpClient {
 
     /**
      * Return true if closed
+     *
      * @return true if closed
      */
-    public boolean isClosed(){
+    public boolean isClosed() {
         return isClosed.get();
     }
 
     /**
      * Return the {@link com.ning.http.client.AsyncHttpClientConfig}
+     *
      * @return {@link com.ning.http.client.AsyncHttpClientConfig}
      */
-    public AsyncHttpClientConfig getConfig(){
+    public AsyncHttpClientConfig getConfig() {
         return config;
     }
 
@@ -395,9 +401,10 @@ public class AsyncHttpClient {
         this.signatureCalculator = signatureCalculator;
         return this;
     }
-    
+
     /**
      * Prepare an HTTP client GET request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -407,6 +414,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client CONNECT request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -416,6 +424,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client OPTIONS request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -425,6 +434,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client HEAD request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -434,6 +444,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client POST request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -443,6 +454,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client PUT request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -452,6 +464,7 @@ public class AsyncHttpClient {
 
     /**
      * Prepare an HTTP client DELETE request.
+     *
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
@@ -461,6 +474,7 @@ public class AsyncHttpClient {
 
     /**
      * Construct a {@link RequestBuilder} using a {@link Request}
+     *
      * @param request a {@link Request}
      * @return {@link RequestBuilder}
      */
@@ -470,31 +484,33 @@ public class AsyncHttpClient {
 
     /**
      * Execute an HTTP request.
+     *
      * @param request {@link Request}
      * @param handler an instance of {@link AsyncHandler}
-     * @param <T> Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
      * @return a {@link Future} of type T
      * @throws IOException
      */
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
-        fc  = preProcessRequest(fc);
+        fc = preProcessRequest(fc);
 
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
 
-     /**
+    /**
      * Execute an HTTP request.
+     *
      * @param request {@link Request}
      * @return a {@link Future} of type Response
      * @throws IOException
      */
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
-        fc  = preProcessRequest(fc);
+        fc = preProcessRequest(fc);
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
-     }
+    }
 
     /**
      * Configure and execute the associated {@link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
@@ -526,18 +542,18 @@ public class AsyncHttpClient {
             builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
             request = builder.build();
         }
-        fc = new FilterContext.FilterContextBuilder(fc).request(request).build();        
+        fc = new FilterContext.FilterContextBuilder(fc).request(request).build();
         return fc;
     }
 
     @SuppressWarnings("unchecked")
-    private final static AsyncHttpProvider loadDefaultProvider(String className, AsyncHttpClientConfig config){
+    private final static AsyncHttpProvider loadDefaultProvider(String className, AsyncHttpClientConfig config) {
         try {
             Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread()
                     .getContextClassLoader().loadClass(className);
             return providerClass.getDeclaredConstructor(
                     new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
-        } catch (Throwable t){
+        } catch (Throwable t) {
 
             // Let's try with another classloader
             try {
