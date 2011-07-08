@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.ning</groupId>
+        <artifactId>async-http-client-project</artifactId>
+        <version>1.7.0-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.ning</groupId>
+    <artifactId>grizzly-async-http-client</artifactId>
+    <packaging>jar</packaging>
+    <version>1.7.0-SNAPSHOT</version>
+    <name>Grizzly Async HTTP Client Bundle</name>
+    <url>http://github.com/sonatype/async-http-client</url>
+    <profiles>
+        <profile>
+            <id>grizzly</id>
+            <activation>
+                <jdk>[1.6,)</jdk>
+            </activation>
+            <build>
+                <defaultGoal>install</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.felix</groupId>
+                        <artifactId>maven-bundle-plugin</artifactId>
+                        <configuration>
+                            <instructions>
+                                <Import-Package>*</Import-Package>
+                                <Export-Package>
+                                    !com.ning.http.client.providers.netty.*;version=${project.version},
+                                    !com.ning.http.client.providers.apache.*;version=${project.version},
+                                    com.ning.http.client.*;version=${project.version}
+                                </Export-Package>
+                                <Embed-Dependency>
+                                    org.glassfish.grizzly;scope=runtime
+                                </Embed-Dependency>
+                            </instructions>
+                            <unpackBundle>true</unpackBundle>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>osgi-bundle</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>bundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>com.ning</groupId>
+                    <artifactId>async-http-client</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>grizzly-http</artifactId>
+                    <version>2.1.2-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
+
+</project>
