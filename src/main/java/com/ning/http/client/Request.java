@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
 
@@ -64,6 +65,13 @@ public interface Request {
      * @return the decoded url
      */
     public String getUrl();
+
+    /**
+     * Return the InetAddress to override
+     *
+     * @return the InetAddress
+     */
+    public InetAddress getInetAddress();
 
     /**
      * Return the undecoded url
