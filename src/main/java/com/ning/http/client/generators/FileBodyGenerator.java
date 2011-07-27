@@ -50,6 +50,10 @@ public class FileBodyGenerator
         this.regionSeek = regionSeek;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public RandomAccessBody createBody()
             throws IOException {
         return new FileBody(file, regionSeek, regionLength);

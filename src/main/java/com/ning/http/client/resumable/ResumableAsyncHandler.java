@@ -85,7 +85,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     public ResumableAsyncHandler(AsyncHandler<T> decoratedAsyncHandler) {
         this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
-    
+
     public ResumableAsyncHandler(long byteTransferred, AsyncHandler<T> decoratedAsyncHandler) {
         this(byteTransferred, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
@@ -145,7 +145,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         } catch (IOException ex) {
             return AsyncHandler.STATE.ABORT;
         }
-        
+
         if (decoratedAsyncHandler != null) {
             state = decoratedAsyncHandler.onBodyPartReceived(bodyPart);
         }
@@ -202,7 +202,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         if (resumableIndex.get(request.getUrl()) != null) {
             byteTransferred.set(resumableIndex.get(request.getUrl()));
         }
-        
+
         // The Resumbale
         if (resumableListener != null && resumableListener.length() > 0 && byteTransferred.get() != resumableListener.length()) {
             byteTransferred.set(resumableListener.length());
@@ -297,22 +297,21 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
             return new HashMap<String, Long>();
         }
     }
-    
+
     private static class NULLResumableListener implements ResumableListener {
-        
+
         private long length = 0L;
 
-        public void onBytesReceived( ByteBuffer byteBuffer ) throws IOException {
+        public void onBytesReceived(ByteBuffer byteBuffer) throws IOException {
             length += byteBuffer.remaining();
         }
 
         public void onAllBytesReceived() {
         }
 
-        public long length()
-        {
+        public long length() {
             return length;
         }
-        
+
     }
 }

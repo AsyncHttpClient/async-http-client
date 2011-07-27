@@ -110,7 +110,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     }
 
     private void configure(JDKAsyncHttpProviderConfig config) {
-        for(Map.Entry<String,String> e: config.propertiesSet()) {
+        for (Map.Entry<String, String> e : config.propertiesSet()) {
             System.setProperty(e.getKey(), e.getValue());
         }
 
@@ -118,9 +118,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             bufferResponseInMemory = true;
         }
     }
+
     public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
         return execute(request, handler, null);
     }
+
     public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
@@ -131,8 +133,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
-        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         Proxy proxy = null;
         if (!avoidProxy && (proxyServer != null || realm != null)) {
             try {
@@ -164,8 +166,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
     private HttpURLConnection createUrlConnection(Request request) throws IOException {
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
-        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request );
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         Proxy proxy = null;
         if (!avoidProxy && proxyServer != null || realm != null) {
             try {
@@ -178,7 +180,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         HttpURLConnection urlConnection = null;
         if (proxy == null) {
             urlConnection =
-                (HttpURLConnection) AsyncHttpProviderUtils.createUri( request.getUrl() ).toURL().openConnection( Proxy.NO_PROXY );
+                    (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(Proxy.NO_PROXY);
         } else {
             urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(proxy);
         }
@@ -291,8 +293,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
 
-                Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
-                if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null ) {
+                Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+                if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
                     logger.debug("Sending authentication to {}", request.getUrl());
@@ -497,7 +499,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
             urlConnection.setRequestProperty("Connection", ka);
             ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-            boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, uri.getHost() );
+            boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
             if (!avoidProxy) {
                 urlConnection.setRequestProperty("Proxy-Connection", ka);
                 if (proxyServer.getPrincipal() != null) {
@@ -510,8 +512,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
 
-            Realm realm =  request.getRealm() != null ?  request.getRealm() : config.getRealm();
-            if (realm != null && realm.getUsePreemptiveAuth() ) {
+            Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+            if (realm != null && realm.getUsePreemptiveAuth()) {
                 switch (realm.getAuthScheme()) {
                     case BASIC:
                         urlConnection.setRequestProperty("Authorization",
@@ -645,7 +647,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     FileInputStream fis = new FileInputStream(file);
                     try {
                         OutputStream os = urlConnection.getOutputStream();
-                        for (final byte[] buffer = new byte[1024 * 16];;) {
+                        for (final byte[] buffer = new byte[1024 * 16]; ; ) {
                             int read = fis.read(buffer);
                             if (read < 0) {
                                 break;
@@ -667,12 +669,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                             urlConnection.setFixedLengthStreamingMode(length);
                         }
                         OutputStream os = urlConnection.getOutputStream();
-                        for (ByteBuffer buffer = ByteBuffer.allocate( 1024 * 8 );;) {
+                        for (ByteBuffer buffer = ByteBuffer.allocate(1024 * 8); ; ) {
                             buffer.clear();
                             if (body.read(buffer) < 0) {
                                 break;
                             }
-                            os.write( buffer.array(), buffer.arrayOffset(), buffer.position() );
+                            os.write(buffer.array(), buffer.arrayOffset(), buffer.position());
                         }
                     } finally {
                         try {

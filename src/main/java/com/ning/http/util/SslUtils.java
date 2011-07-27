@@ -65,8 +65,7 @@ public class SslUtils {
         try {
             keyStore.load(keystoreInputStream, (config.keyStorePassword == null) ? null
                     : config.keyStorePassword.toCharArray());
-        }
-        finally {
+        } finally {
             keystoreInputStream.close();
         }
 
@@ -80,8 +79,7 @@ public class SslUtils {
         try {
             trustStore.load(truststoreInputStream, (config.trustStorePassword == null) ? null
                     : config.trustStorePassword.toCharArray());
-        }
-        finally {
+        } finally {
             truststoreInputStream.close();
         }
 
@@ -144,7 +142,7 @@ public class SslUtils {
             keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
             keyManagerAlgorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
 
-            if (keyManagerAlgorithm == null){
+            if (keyManagerAlgorithm == null) {
                 keyManagerAlgorithm = "SunX509";
             }
 
@@ -161,7 +159,7 @@ public class SslUtils {
             }
             trustManagerAlgorithm = Security.getProperty("ssl.TrustManagerFactory.algorithm");
 
-            if (trustManagerAlgorithm == null){
+            if (trustManagerAlgorithm == null) {
                 trustManagerAlgorithm = "SunX509";
             }
         }

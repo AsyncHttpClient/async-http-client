@@ -31,6 +31,7 @@ public interface BodyConsumer {
 
     /**
      * Invoked when all the response bytes has been processed.
+     *
      * @throws IOException
      */
     void close() throws IOException;

@@ -158,7 +158,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         int size = idleConnectionForHost.size();
         if (maxConnectionPerHost == -1 || size < maxConnectionPerHost) {
             IdleChannel idleChannel = new IdleChannel(uri, channel);
-            synchronized(idleConnectionForHost) {
+            synchronized (idleConnectionForHost) {
                 added = idleConnectionForHost.add(idleChannel);
 
                 if (channel2IdleChannel.put(channel, idleChannel) != null) {
@@ -186,7 +186,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             boolean poolEmpty = false;
             while (!poolEmpty && idleChannel == null) {
                 if (idleConnectionForHost.size() > 0) {
-                    synchronized(idleConnectionForHost) {
+                    synchronized (idleConnectionForHost) {
                         idleChannel = idleConnectionForHost.poll();
                         if (idleChannel != null) {
                             channel2IdleChannel.remove(idleChannel.channel);

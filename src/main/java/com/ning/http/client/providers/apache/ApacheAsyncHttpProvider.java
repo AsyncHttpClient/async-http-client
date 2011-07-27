@@ -305,7 +305,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                         // This is totally sub optimal
                         byte[] bytes = new byte[length];
                         ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                        for (; ;) {
+                        for (; ; ) {
                             buffer.clear();
                             if (body.read(buffer) < 0) {
                                 break;
@@ -340,7 +340,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        boolean avoidProxy = ProxyUtils.avoidProxy( proxyServer, request ); 
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         if (!avoidProxy) {
 
             if (proxyServer.getPrincipal() != null) {
@@ -399,8 +399,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             String vs = request.getVirtualHost();
             int index = vs.indexOf(":");
             if (index > 0) {
-                vs = vs.substring(0,index);
-            }            
+                vs = vs.substring(0, index);
+            }
             method.getParams().setVirtualHost(vs);
         }
 
@@ -591,7 +591,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                 if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
-                        .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
+                            .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
 
                     try {
                         fc = handleIoException(fc);

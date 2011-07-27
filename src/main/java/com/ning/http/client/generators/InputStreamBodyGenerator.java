@@ -47,6 +47,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public Body createBody() throws IOException {
         return new ISBody();
     }
@@ -125,9 +129,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
     /**
      * HACK: This is required because Netty has issues with chunking.
+     *
      * @param patchNettyChunkingIssue
      */
-    public void patchNettyChunkingIssue(boolean patchNettyChunkingIssue){
+    public void patchNettyChunkingIssue(boolean patchNettyChunkingIssue) {
         this.patchNettyChunkingIssue = patchNettyChunkingIssue;
     }
 }

@@ -104,7 +104,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public void abort(Throwable t) {
-        exception.set(t);        
+        exception.set(t);
         if (innerFuture != null) {
             innerFuture.cancel(true);
         }
@@ -123,7 +123,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", t2);
             }
         }
-        super.done();        
+        super.done();
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -141,7 +141,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
             super.done();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
-            super.done();            
+            super.done();
             return false;
         }
     }

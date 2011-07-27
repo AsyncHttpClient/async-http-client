@@ -17,6 +17,9 @@ import com.ning.http.client.BodyConsumer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link ByteBuffer} implementation of {@link BodyConsumer}
+ */
 public class ByteBufferBodyConsumer implements BodyConsumer {
 
     private final ByteBuffer byteBuffer;
@@ -25,10 +28,18 @@ public class ByteBufferBodyConsumer implements BodyConsumer {
         this.byteBuffer = byteBuffer;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void consume(ByteBuffer byteBuffer) throws IOException {
         byteBuffer.put(byteBuffer);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void close() throws IOException {
         byteBuffer.flip();
     }

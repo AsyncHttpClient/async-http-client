@@ -18,6 +18,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * An {@link Appendable} customer for {@link ByteBuffer}
+ */
 public class AppendableBodyConsumer implements BodyConsumer {
 
     private final Appendable appendable;
@@ -33,13 +36,21 @@ public class AppendableBodyConsumer implements BodyConsumer {
         this.encoding = "UTF-8";
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void consume(ByteBuffer byteBuffer) throws IOException {
         appendable.append(new String(byteBuffer.array(), encoding));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    /* @Override */
     public void close() throws IOException {
         if (Closeable.class.isAssignableFrom(appendable.getClass())) {
-            Closeable.class.cast(appendable).close();    
+            Closeable.class.cast(appendable).close();
         }
     }
 }

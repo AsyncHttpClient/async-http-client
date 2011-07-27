@@ -23,46 +23,59 @@ import java.io.OutputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
+ *
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class FilePart extends PartBase {
 
-    /** Default content encoding of file attachments. */
+    /**
+     * Default content encoding of file attachments.
+     */
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    /** Default charset of file attachments. */
+    /**
+     * Default charset of file attachments.
+     */
     public static final String DEFAULT_CHARSET = "ISO-8859-1";
 
-    /** Default transfer encoding of file attachments. */
+    /**
+     * Default transfer encoding of file attachments.
+     */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
 
-    /** Attachment's file name */
+    /**
+     * Attachment's file name
+     */
     protected static final String FILE_NAME = "; filename=";
 
-    /** Attachment's file name as a byte array */
+    /**
+     * Attachment's file name as a byte array
+     */
     private static final byte[] FILE_NAME_BYTES =
-        MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
+            MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
 
-    /** Source of the file part. */
+    /**
+     * Source of the file part.
+     */
     private PartSource source;
 
     /**
      * FilePart Constructor.
      *
-     * @param name the name for this part
-     * @param partSource the source for this part
+     * @param name        the name for this part
+     * @param partSource  the source for this part
      * @param contentType the content type for this part, if <code>null</code> the
-     * {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the
-     * {@link #DEFAULT_CHARSET default} is used
+     *                    {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset     the charset encoding for this part, if <code>null</code> the
+     *                    {@link #DEFAULT_CHARSET default} is used
      */
     public FilePart(String name, PartSource partSource, String contentType, String charset) {
 
         super(
-            name,
-            contentType == null ? DEFAULT_CONTENT_TYPE : contentType,
-            charset == null ? "ISO-8859-1" : charset,
-            DEFAULT_TRANSFER_ENCODING
+                name,
+                contentType == null ? DEFAULT_CONTENT_TYPE : contentType,
+                charset == null ? "ISO-8859-1" : charset,
+                DEFAULT_TRANSFER_ENCODING
         );
 
         if (partSource == null) {
@@ -74,7 +87,7 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      *
-     * @param name the name for this part
+     * @param name       the name for this part
      * @param partSource the source for this part
      */
     public FilePart(String name, PartSource partSource) {
@@ -86,74 +99,71 @@ public class FilePart extends PartBase {
      *
      * @param name the name of the file part
      * @param file the file to post
-     *
      * @throws java.io.FileNotFoundException if the <i>file</i> is not a normal
-     * file or if it is not readable.
+     *                                       file or if it is not readable.
      */
     public FilePart(String name, File file)
-    throws FileNotFoundException {
+            throws FileNotFoundException {
         this(name, new FilePartSource(file), null, null);
     }
 
     /**
      * FilePart Constructor.
      *
-     * @param name the name of the file part
-     * @param file the file to post
+     * @param name        the name of the file part
+     * @param file        the file to post
      * @param contentType the content type for this part, if <code>null</code> the
-     * {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the
-     * {@link #DEFAULT_CHARSET default} is used
-     *
+     *                    {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset     the charset encoding for this part, if <code>null</code> the
+     *                    {@link #DEFAULT_CHARSET default} is used
      * @throws FileNotFoundException if the <i>file</i> is not a normal
-     * file or if it is not readable.
+     *                               file or if it is not readable.
      */
     public FilePart(String name, File file, String contentType, String charset)
-    throws FileNotFoundException {
+            throws FileNotFoundException {
         this(name, new FilePartSource(file), contentType, charset);
     }
 
-     /**
+    /**
      * FilePart Constructor.
      *
-     * @param name the name of the file part
+     * @param name     the name of the file part
      * @param fileName the file name
-     * @param file the file to post
-     *
+     * @param file     the file to post
      * @throws FileNotFoundException if the <i>file</i> is not a normal
-     * file or if it is not readable.
+     *                               file or if it is not readable.
      */
     public FilePart(String name, String fileName, File file)
-    throws FileNotFoundException {
+            throws FileNotFoundException {
         this(name, new FilePartSource(fileName, file), null, null);
     }
 
-     /**
+    /**
      * FilePart Constructor.
      *
-     * @param name the name of the file part
-     * @param fileName the file name
-     * @param file the file to post
+     * @param name        the name of the file part
+     * @param fileName    the file name
+     * @param file        the file to post
      * @param contentType the content type for this part, if <code>null</code> the
-     * {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the
-     * {@link #DEFAULT_CHARSET default} is used
-     *
+     *                    {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset     the charset encoding for this part, if <code>null</code> the
+     *                    {@link #DEFAULT_CHARSET default} is used
      * @throws FileNotFoundException if the <i>file</i> is not a normal
-     * file or if it is not readable.
+     *                               file or if it is not readable.
      */
     public FilePart(String name, String fileName, File file, String contentType, String charset)
-    throws FileNotFoundException {
+            throws FileNotFoundException {
         this(name, new FilePartSource(fileName, file), contentType, charset);
     }
 
     /**
      * Write the disposition header to the output stream
+     *
      * @param out The output stream
      * @throws java.io.IOException If an IO problem occurs
      */
     protected void sendDispositionHeader(OutputStream out)
-    throws IOException {
+            throws IOException {
         super.sendDispositionHeader(out);
         String filename = this.source.getFileName();
         if (filename != null) {
@@ -166,6 +176,7 @@ public class FilePart extends PartBase {
 
     /**
      * Write the data in "source" to the specified stream.
+     *
      * @param out The output stream.
      * @throws IOException if an IO problem occurs.
      */
@@ -202,6 +213,7 @@ public class FilePart extends PartBase {
 
     /**
      * Return the length of the data.
+     *
      * @return The length.
      * @throws IOException if an IO problem occurs
      */

@@ -48,7 +48,7 @@ public final class AuthenticatorUtils {
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value) {
-        return construct(builder,name,value,false);
+        return construct(builder, name, value, false);
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value, boolean tail) {

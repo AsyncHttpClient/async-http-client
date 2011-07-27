@@ -20,40 +20,51 @@ import java.io.OutputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
+ *
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class StringPart extends PartBase {
 
-    /** Default content encoding of string parameters. */
+    /**
+     * Default content encoding of string parameters.
+     */
     public static final String DEFAULT_CONTENT_TYPE = "text/plain";
 
-    /** Default charset of string parameters*/
+    /**
+     * Default charset of string parameters
+     */
     public static final String DEFAULT_CHARSET = "US-ASCII";
 
-    /** Default transfer encoding of string parameters*/
+    /**
+     * Default transfer encoding of string parameters
+     */
     public static final String DEFAULT_TRANSFER_ENCODING = "8bit";
 
-    /** Contents of this StringPart. */
+    /**
+     * Contents of this StringPart.
+     */
     private byte[] content;
 
-    /** The String value of this part. */
+    /**
+     * The String value of this part.
+     */
     private String value;
 
     /**
      * Constructor.
      *
-     * @param name The name of the part
-     * @param value the string to post
+     * @param name    The name of the part
+     * @param value   the string to post
      * @param charset the charset to be used to encode the string, if <code>null</code>
-     * the {@link #DEFAULT_CHARSET default} is used
+     *                the {@link #DEFAULT_CHARSET default} is used
      */
     public StringPart(String name, String value, String charset) {
 
         super(
-            name,
-            DEFAULT_CONTENT_TYPE,
-            charset == null ? DEFAULT_CHARSET : charset,
-            DEFAULT_TRANSFER_ENCODING
+                name,
+                DEFAULT_CONTENT_TYPE,
+                charset == null ? DEFAULT_CHARSET : charset,
+                DEFAULT_TRANSFER_ENCODING
         );
         if (value == null) {
             throw new IllegalArgumentException("Value may not be null");
@@ -68,7 +79,7 @@ public class StringPart extends PartBase {
     /**
      * Constructor.
      *
-     * @param name The name of the part
+     * @param name  The name of the part
      * @param value the string to post
      */
     public StringPart(String name, String value) {
@@ -90,6 +101,7 @@ public class StringPart extends PartBase {
 
     /**
      * Writes the data to the given OutputStream.
+     *
      * @param out the OutputStream to write to
      * @throws java.io.IOException if there is a write error
      */
@@ -99,6 +111,7 @@ public class StringPart extends PartBase {
 
     /**
      * Return the length of the data.
+     *
      * @return The length of the data.
      * @throws IOException If an IO problem occurs
      */

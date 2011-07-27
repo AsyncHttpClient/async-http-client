@@ -67,7 +67,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         return this;
     }
 
-    private List<String> fetchValues( Collection<String> values ) {
+    private List<String> fetchValues(Collection<String> values) {
         List<String> result = null;
 
         if (values != null) {
@@ -88,18 +88,18 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     /**
      * Adds the specified values and returns this object.
      *
-     * @param key   The key
+     * @param key    The key
      * @param values The value(s); if null then this method has no effect. Use an empty collection
      *               to generate an empty value
      * @return This object
      */
     public FluentStringsMap add(String key, Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues( values );
-    
+            List<String> nonNullValues = fetchValues(values);
+
             if (nonNullValues != null) {
                 List<String> curValues = this.values.get(key);
-        
+
                 if (curValues == null) {
                     curValues = new ArrayList<String>();
                     this.values.put(key, curValues);
@@ -154,18 +154,17 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     /**
      * Replaces the values for the given key with the given values.
      *
-     * @param key  The key
+     * @param key    The key
      * @param values The new values
      * @return This object
      */
     public FluentStringsMap replace(final String key, final Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues( values );
-    
+            List<String> nonNullValues = fetchValues(values);
+
             if (nonNullValues == null) {
                 this.values.remove(key);
-            }
-            else {
+            } else {
                 this.values.put(key, nonNullValues);
             }
         }
@@ -208,8 +207,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> put(String key, List<String> value)
-    {
+    public List<String> put(String key, List<String> value) {
         if (key == null) {
             throw new NullPointerException("Null keys are not allowed");
         }
@@ -224,8 +222,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public void putAll(Map<? extends String, ? extends List<String>> values)
-    {
+    public void putAll(Map<? extends String, ? extends List<String>> values) {
         replaceAll(values);
     }
 
@@ -274,12 +271,10 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> remove(Object key)
-    {
+    public List<String> remove(Object key) {
         if (key == null) {
             return null;
-        }
-        else {
+        } else {
             List<String> oldValues = get(key.toString());
 
             delete(key.toString());
@@ -291,8 +286,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public void clear()
-    {
+    public void clear() {
         values.clear();
     }
 
@@ -308,8 +302,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public Set<String> keySet()
-    {
+    public Set<String> keySet() {
         return Collections.unmodifiableSet(values.keySet());
     }
 
@@ -317,8 +310,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public Set<Entry<String, List<String>>> entrySet()
-    {
+    public Set<Entry<String, List<String>>> entrySet() {
         return values.entrySet();
     }
 
@@ -326,8 +318,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public int size()
-    {
+    public int size() {
         return values.size();
     }
 
@@ -335,8 +326,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean isEmpty()
-    {
+    public boolean isEmpty() {
         return values.isEmpty();
     }
 
@@ -344,8 +334,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean containsKey(Object key)
-    {
+    public boolean containsKey(Object key) {
         return key == null ? false : values.containsKey(key.toString());
     }
 
@@ -353,8 +342,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public boolean containsValue(Object value)
-    {
+    public boolean containsValue(Object value) {
         return values.containsValue(value);
     }
 
@@ -370,11 +358,9 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
 
         if (values == null) {
             return null;
-        }
-        else if (values.isEmpty()) {
+        } else if (values.isEmpty()) {
             return "";
-        }
-        else {
+        } else {
             return values.get(0);
         }
     }
@@ -387,14 +373,12 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      */
     public String getJoinedValue(String key, String delimiter) {
         List<String> values = get(key);
-        
+
         if (values == null) {
             return null;
-        }
-        else if (values.size() == 1) {
+        } else if (values.size() == 1) {
             return values.get(0);
-        }
-        else {
+        } else {
             StringBuilder result = new StringBuilder();
 
             for (String value : values) {
@@ -411,8 +395,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public List<String> get(Object key)
-    {
+    public List<String> get(Object key) {
         if (key == null) {
             return null;
         }
@@ -424,8 +407,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * {@inheritDoc}
      */
     /* @Override */
-    public Collection<List<String>> values()
-    {
+    public Collection<List<String>> values() {
         return values.values();
     }
 
@@ -447,8 +429,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
             if (other.values != null) {
                 return false;
             }
-        }
-        else if (!values.equals(other.values)) {
+        } else if (!values.equals(other.values)) {
             return false;
         }
         return true;
@@ -460,8 +441,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder result = new StringBuilder();
 
         for (Map.Entry<String, List<String>> entry : values.entrySet()) {
@@ -477,8 +457,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
             for (String value : entry.getValue()) {
                 if (needsComma) {
                     result.append(", ");
-                }
-                else {
+                } else {
                     needsComma = true;
                 }
                 result.append(value);

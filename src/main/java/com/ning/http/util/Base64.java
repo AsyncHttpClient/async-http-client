@@ -15,7 +15,7 @@ package com.ning.http.util;
 /**
  * Implements the "base64" binary encoding scheme as defined by
  * <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a>.
- *
+ * <p/>
  * Portions of code here are taken from Apache Pivot
  */
 public final class Base64 {
@@ -82,8 +82,8 @@ public final class Base64 {
         int i = 0;
         for (int end = bytes.length - 2; i < end; ) {
             int chunk = ((bytes[i++] & 0xFF) << 16)
-                | ((bytes[i++] & 0xFF) << 8)                  
-                | (bytes[i++] & 0xFF);                 
+                    | ((bytes[i++] & 0xFF) << 8)
+                    | (bytes[i++] & 0xFF);
             buf.append(lookup[chunk >> 18]);
             buf.append(lookup[(chunk >> 12) & 0x3F]);
             buf.append(lookup[(chunk >> 6) & 0x3F]);
