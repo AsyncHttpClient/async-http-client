@@ -96,6 +96,21 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     }
 
+    @Override
+    public boolean isLast() {
+        return content.isLast();
+    }
+
+    @Override
+    public void markUnderlyingConnectionAsClosed() {
+        // TODO
+    }
+
+    @Override
+    public boolean closeUnderlyingConnection() {
+        // TODO
+        return false;
+    }
 
     // ----------------------------------------------- Package Protected Methods
 
