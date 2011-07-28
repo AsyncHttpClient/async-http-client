@@ -184,6 +184,14 @@
             <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
+
+        <!-- Optional Grizzly HTTP -->
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http</artifactId>
+            <version>2.1.2-SNAPSHOT</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
     <build>
         <extensions>
@@ -196,6 +204,33 @@
         </extensions>
         <defaultGoal>install</defaultGoal>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${source.property}</source>
+                    <target>${target.property}</target>
+                    <excludes>
+                        <exclude>
+                            ${compiler.exclude}
+                        </exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>test-compile</phase>
+                        <configuration>
+                            <testExcludes>
+                                <testExclude>${test.compiler.exclude}</testExclude>
+                            </testExcludes>
+                        </configuration>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -342,6 +377,7 @@
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>
                     </links>
+                    <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
@@ -420,6 +456,27 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>grizzly</id>
+            <activation>
+                <jdk>[1.6,)</jdk>
+            </activation>
+            <properties>
+                <compiler.exclude>asdfasfd/**</compiler.exclude>
+                <test.compiler.exclude>asdfasdf/**</test.compiler.exclude>
+                <javadoc.package.exclude>asdfasdf</javadoc.package.exclude>
+                <source.property>1.6</source.property>
+                <target.property>1.6</target.property>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>grizzly-http</artifactId>
+                    <version>2.1.2-SNAPSHOT</version>
+                    <optional>true</optional>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
@@ -507,6 +564,11 @@
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
+        <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
+        <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
+        <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
+        <source.property>1.5</source.property>
+        <target.property>1.5</target.property>
     </properties>
 </project>
 

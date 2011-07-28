@@ -156,6 +156,10 @@ public class AsyncHttpProviderUtils {
         return uri;
     }
 
+    public static String getBaseUrl(String url) {
+        return getBaseUrl(createUri(url));
+    }
+
     public final static String getBaseUrl(URI uri) {
         String url = uri.getScheme() + "://" + uri.getAuthority();
         int port = uri.getPort();

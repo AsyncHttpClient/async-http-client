@@ -52,7 +52,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
 
         final AsyncHttpClient client =
-                new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
+               getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
                         .setConnectionTimeoutInMs(1000)
                         .setRequestTimeoutInMs(5000)
                         .setAllowPoolingConnection(true)

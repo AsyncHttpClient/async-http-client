@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,8 +57,12 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
-                httpRequest.getInputStream().read(bytes);
-                httpResponse.getOutputStream().write(bytes);
+                final InputStream in = httpRequest.getInputStream();
+                final OutputStream out = httpResponse.getOutputStream();
+                int read;
+                while ((read = in.read(bytes)) != -1) {
+                    out.write(bytes, 0, read);
+                }
             }
 
             httpResponse.setStatus(200);
@@ -93,8 +99,9 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBody().length(), largeFile.length());
             assertEquals(byteReceived.get(), largeFile.length());
+            assertEquals(response.getResponseBody().length(), largeFile.length());
+
         } catch (IOException ex) {
             fail("Should have timed out");
         }
