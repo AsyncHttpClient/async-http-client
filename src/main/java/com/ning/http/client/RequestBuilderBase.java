@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private static final class RequestImpl implements Request {
         private String method;
         private String url = null;
+        private InetAddress address = null;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
@@ -74,6 +76,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.method = prototype.getMethod();
                 int pos = prototype.getUrl().indexOf("?");
                 this.url = pos > 0 ? prototype.getUrl().substring(0, pos) : prototype.getUrl();
+                this.address = prototype.getInetAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
@@ -111,6 +114,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public String getUrl() {
             return toUrl(true);
+        }
+
+        public InetAddress getInetAddress() {
+            return address;
         }
 
         private String toUrl(boolean encode) {
@@ -308,6 +315,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setUrl(String url) {
         request.url = buildUrl(url);
         return derived.cast(this);
+    }
+
+    public T setInetAddress(InetAddress address) {
+    	request.address = address;
+    	return derived.cast(this);
     }
 
     private String buildUrl(String url) {

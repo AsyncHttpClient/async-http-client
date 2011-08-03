@@ -905,7 +905,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         try {
-            if (proxyServer == null || avoidProxy) {
+        	if (request.getInetAddress() != null) {
+        		channelFuture = bootstrap.connect(new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri)));
+        	}
+        	else if (proxyServer == null || avoidProxy) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
