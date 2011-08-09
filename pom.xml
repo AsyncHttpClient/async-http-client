@@ -199,29 +199,18 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
                     <source>${source.property}</source>
                     <target>${target.property}</target>
+                    <maxmem>1024m</maxmem>
                     <excludes>
-                        <exclude>
-                            ${compiler.exclude}
-                        </exclude>
+                        <exclude>${compiler.exclude}</exclude>
                     </excludes>
+                    <testExcludes>
+                        <testExclude>${test.compiler.exclude}</testExclude>
+                    </testExcludes>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>test-compile</phase>
-                        <configuration>
-                            <testExcludes>
-                                <testExclude>${test.compiler.exclude}</testExclude>
-                            </testExcludes>
-                        </configuration>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -306,17 +295,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
-                    <encoding>UTF-8</encoding>
-                    <maxmem>1024m</maxmem>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
