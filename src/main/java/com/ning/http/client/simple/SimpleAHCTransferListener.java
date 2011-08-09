@@ -20,7 +20,7 @@ import com.ning.http.client.SimpleAsyncHttpClient;
  * <p/>
  * Note: This listener does not cover requests failing before a connection is
  * established. For error handling, see
- * {@link SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(com.ning.http.client.ThrowableHandler)}
+ * {@link com.ning.http.client.SimpleAsyncHttpClient.Builder#setDefaultThrowableHandler(com.ning.http.client.ThrowableHandler)}
  *
  * @author Benjamin Hanzelmann
  */

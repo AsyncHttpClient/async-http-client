@@ -113,7 +113,7 @@ public class ProxyUtils {
      *
      * @param properties the properties to evaluate. Must not be null.
      * @return a ProxyServer instance or null, if no valid properties were set.
-     * @see http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+     * @see <a href="http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html">Networking Properties</a>
      * @see #PROXY_HOST
      * @see #PROXY_PORT
      * @see #PROXY_PROTOCOL
