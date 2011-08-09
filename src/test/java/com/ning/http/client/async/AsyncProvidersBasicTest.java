@@ -515,8 +515,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         final CountDownLatch l = new CountDownLatch(1);
-        Response r = c.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("ŽŽŽŽŽŽ").execute().get();
-        assertEquals(r.getResponseBody().getBytes("ISO-8859-1"),"ŽŽŽŽŽŽ".getBytes("ISO-8859-1"));
+        Response r = c.preparePost(getTargetUrl()).addHeader("X-ISO", "true").setBody("\u017D\u017D\u017D\u017D\u017D\u017D").execute().get();
+        assertEquals(r.getResponseBody().getBytes("ISO-8859-1"),"\u017D\u017D\u017D\u017D\u017D\u017D".getBytes("ISO-8859-1"));
         c.close();
     }
     
