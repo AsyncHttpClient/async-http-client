@@ -184,14 +184,6 @@
             <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
-
-        <!-- Optional Grizzly HTTP -->
-        <dependency>
-            <groupId>org.glassfish.grizzly</groupId>
-            <artifactId>grizzly-http</artifactId>
-            <version>2.1.2-SNAPSHOT</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
     <build>
         <extensions>
@@ -476,6 +468,18 @@
                     <optional>true</optional>
                 </dependency>
             </dependencies>
+            <repositories>
+                <repository>
+                    <id>jvnet-nexus-snapshots</id>
+                    <url>https://maven.java.net/content/repositories/snapshots</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
         </profile>
         <profile>
             <id>release-sign-artifacts</id>
