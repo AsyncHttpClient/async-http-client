@@ -1848,6 +1848,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
+            future.touch();
             if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
                 ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
             }
