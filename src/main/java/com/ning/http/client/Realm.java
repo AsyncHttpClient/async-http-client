@@ -436,6 +436,7 @@ public class Realm {
             setNonce(clone.getNonce());
             setPassword(clone.getPassword());
             setPrincipal(clone.getPrincipal());
+            setEnconding(clone.getEncoding());
             setQop(clone.getQop());
             setScheme(clone.getScheme());
             setUri(clone.getUri());
