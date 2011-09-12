@@ -587,12 +587,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                 @Override
                 public void completed(Object result) {
-                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 @Override
                 public void updated(Object result) {
-                    //To change body of implemented methods use File | Settings | File Templates.
                 }
             });
             return super.handleRead(ctx);
@@ -889,6 +887,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     context.currentState = handler.onBodyPartReceived(
                             new GrizzlyResponseBodyPart(content,
                                     null,
+                                    ctx.getConnection(),
                                     provider));
                 } catch (Exception e) {
                     handler.onThrowable(e);
@@ -1850,7 +1849,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     static class ConnectionManager {
 
-        private final Attribute<Boolean> DO_NOT_CACHE =
+        private static final Attribute<Boolean> DO_NOT_CACHE =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
         private final ConnectionsPool<String,Connection> pool;
         private final TCPNIOConnectorHandler connectionHandler;
@@ -1885,6 +1884,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         // ----------------------------------------------------- Private Methods
+
+        static void markConnectionAsDoNotCache(final Connection c) {
+            DO_NOT_CACHE.set(c, Boolean.TRUE);
+        }
+
+        static boolean isConnectionCacheable(final Connection c) {
+            final Boolean canCache =  DO_NOT_CACHE.get(c);
+            return ((canCache != null) ? canCache : false);
+        }
 
 
         Connection obtainTrackedConnection(final Request request,

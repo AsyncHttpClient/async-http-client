@@ -379,8 +379,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                         c.close().markForRecycle(true);
                     }
                     queue.clear();
-                } catch (IOException ioe) {
-                    // TODO log
+                } catch (IOException ignored) {
                 }
                 queues.remove(this);
             }
