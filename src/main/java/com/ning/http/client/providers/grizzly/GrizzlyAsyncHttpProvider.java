@@ -2027,9 +2027,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             }
 
-
             @Override
-            public void onClosed(Connection connection) throws IOException {
+            public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
 
                 if (connections != null) {
                     connections.release();

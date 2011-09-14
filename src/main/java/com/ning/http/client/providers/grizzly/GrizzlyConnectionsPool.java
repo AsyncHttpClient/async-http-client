@@ -66,7 +66,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         delayedExecutor.start();
         listener = new Connection.CloseListener() {
             @Override
-            public void onClosed(Connection connection) throws IOException {
+            public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
                 if (LOG.isInfoEnabled()) {
                     LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
                 }
