@@ -56,6 +56,7 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.filterchain.TransportFilter;
+import org.glassfish.grizzly.http.ContentEncoding;
 import org.glassfish.grizzly.http.EncodingFilter;
 import org.glassfish.grizzly.http.GZipContentEncoding;
 import org.glassfish.grizzly.http.HttpClientFilter;
@@ -92,7 +93,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -304,6 +304,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 AsyncHttpClientEventFilter(this);
         final AsyncHttpClientFilter clientFilter =
                 new AsyncHttpClientFilter(clientConfig);
+        ContentEncoding[] encodings = eventFilter.getContentEncodings();
+        if (encodings.length > 0) {
+            for (ContentEncoding encoding : encodings) {
+                eventFilter.removeContentEncoding(encoding);
+            }
+        }
         if (clientConfig.isCompressionEnabled()) {
             eventFilter.addContentEncoding(
                     new GZipContentEncoding(512,
@@ -327,7 +333,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final long timeout = config.getRequestTimeoutInMs();
             if (timeout > 0) {
                 final long newTimeout = System.currentTimeMillis() + timeout;
-                System.out.println("PER REQUEST TIMEOUT: " + newTimeout);
                 resolver.setTimeoutMillis(c, newTimeout);
             }
         } else {
@@ -413,7 +418,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                              final HttpRequestPacket requestPacket)
     throws IOException {
 
-        if (isPostOrPut(request)) {
+        if (requestHasEntityBody(request)) {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             BodyHandler handler = BodyHandlerFactory.getBodyHandler(request);
             if (requestPacket.getHeaders().contains(Header.Expect)
@@ -425,15 +430,19 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             ctx.write(requestPacket, ctx.getTransportContext().getCompletionHandler());
         }
-        System.out.println("REQUEST: " + requestPacket.toString());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("REQUEST: " + requestPacket.toString());
+        }
     }
 
 
-    private static boolean isPostOrPut(Request request) {
+    private static boolean requestHasEntityBody(Request request) {
 
         final String method = request.getMethod();
         return (Method.POST.matchesMethod(method)
-                || Method.PUT.matchesMethod(method));
+                || Method.PUT.matchesMethod(method)
+                || Method.PATCH.matchesMethod(method)
+                || Method.DELETE.matchesMethod(method));
 
     }
 
@@ -571,6 +580,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public NextAction handleRead(FilterChainContext ctx) throws IOException {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
+            if (context == null) {
+                return super.handleRead(ctx);
+            }
             ctx.getTransportContext().setCompletionHandler(new CompletionHandler() {
                 @Override
                 public void cancelled() {
@@ -683,7 +695,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             } else {
                 builder.uri(uri.getPath());
             }
-            if (isPostOrPut(request)) {
+            if (requestHasEntityBody(request)) {
                 final long contentLength = request.getContentLength();
                 if (contentLength > 0) {
                     builder.contentLength(contentLength);
@@ -996,7 +1008,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                            FilterChainContext ctx) {
 
             super.onHttpHeadersParsed(httpHeader, ctx);
-            System.out.println("RESPONSE: " + httpHeader.toString());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("RESPONSE: " + httpHeader.toString());
+            }
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
@@ -1658,9 +1672,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final MemoryManager mm = ctx.getMemoryManager();
             Buffer b = mm.allocate(512);
-            OutputStream o = new BufferOutputStream(mm, b, true);
+            BufferOutputStream o = new BufferOutputStream(mm, b, true);
             final Request.EntityWriter writer = request.getEntityWriter();
             writer.writeEntity(o);
+            b = o.getBuffer();
             b.trim();
             if (b.hasRemaining()) {
                 final HttpContent content = requestPacket.httpContentBuilder().content(b).build();
@@ -1746,8 +1761,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             requestPacket.setContentType(mre.getContentType());
             final MemoryManager mm = ctx.getMemoryManager();
             Buffer b = mm.allocate(512);
-            OutputStream o = new BufferOutputStream(mm, b, true);
+            BufferOutputStream o = new BufferOutputStream(mm, b, true);
             mre.writeRequest(o);
+            b = o.getBuffer();
             b.trim();
             if (b.hasRemaining()) {
                 final HttpContent content = requestPacket.httpContentBuilder().content(b).build();
