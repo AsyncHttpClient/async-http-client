@@ -442,7 +442,7 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-http</artifactId>
-                    <version>2.1.2-SNAPSHOT</version>
+                    <version>2.2-SNAPSHOT</version>
                     <optional>true</optional>
                 </dependency>
             </dependencies>

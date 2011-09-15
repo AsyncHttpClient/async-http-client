@@ -16,6 +16,7 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
 
 import java.io.IOException;
@@ -23,6 +24,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.ConnectionManager.*;
 
 /**
  * {@link HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
@@ -33,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpContent content;
+    private final Connection connection;
     private final AtomicReference<byte[]> contentBytes =
             new AtomicReference<byte[]>();
 
@@ -42,9 +46,12 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     public GrizzlyResponseBodyPart(final HttpContent content,
                                    final URI uri,
+                                   final Connection connection,
                                    final AsyncHttpProvider provider) {
         super(uri, provider);
         this.content = content;
+        this.connection = connection;
+
     }
 
 
@@ -96,21 +103,30 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isLast() {
         return content.isLast();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void markUnderlyingConnectionAsClosed() {
-        // TODO
+        markConnectionAsDoNotCache(connection);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean closeUnderlyingConnection() {
-        // TODO
-        return false;
+        return !isConnectionCacheable(connection);
     }
+
 
     // ----------------------------------------------- Package Protected Methods
 
