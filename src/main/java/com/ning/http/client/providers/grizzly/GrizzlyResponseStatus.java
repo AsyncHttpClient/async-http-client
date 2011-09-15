@@ -109,12 +109,4 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
         return response.getProtocolString();
     }
 
-
-    // ------------------------------------------------- Package Private Methods
-
-
-    HttpResponsePacket getResponse() {
-        return response;
-    }
-
 }
