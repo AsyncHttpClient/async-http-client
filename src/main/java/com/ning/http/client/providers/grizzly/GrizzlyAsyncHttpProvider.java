@@ -123,12 +123,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
 
+    private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
+
     private final TCPNIOTransport clientTransport;
     private final AsyncHttpClientConfig clientConfig;
     private final ConnectionManager connectionManager;
 
     DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
+
 
 
     // ------------------------------------------------------------ Constructors
@@ -420,7 +423,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         if (requestHasEntityBody(request)) {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
-            BodyHandler handler = BodyHandlerFactory.getBodyHandler(request);
+            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
             if (requestPacket.getHeaders().contains(Header.Expect)
                     && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
                 handler = new ExpectHandler(handler);
@@ -1453,9 +1456,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END BodyHandler
 
 
-    private static final class BodyHandlerFactory {
+    private final class BodyHandlerFactory {
 
-        private static final BodyHandler[] HANDLERS = new BodyHandler[] {
+        private final BodyHandler[] HANDLERS = new BodyHandler[] {
             new StringBodyHandler(),
             new ByteArrayBodyHandler(),
             new ParamsBodyHandler(),
@@ -1466,7 +1469,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             new BodyGeneratorBodyHandler()
         };
 
-        public static BodyHandler getBodyHandler(final Request request) {
+        public BodyHandler getBodyHandler(final Request request) {
             for (final BodyHandler h : HANDLERS) {
                 if (h.handlesBodyType(request)) {
                     return h;
@@ -1515,7 +1518,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ContinueHandler
 
 
-    private static final class ByteArrayBodyHandler implements BodyHandler {
+    private final class ByteArrayBodyHandler implements BodyHandler {
 
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1537,7 +1540,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final byte[] data = new String(request.getByteData(), charset).getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
-            requestPacket.setContentLengthLong(data.length);
+            if (requestPacket.getContentLength() == -1) {
+                    if (!clientConfig.isCompressionEnabled()) {
+                        requestPacket.setContentLengthLong(data.length);
+                    }
+                }
             final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
@@ -1545,7 +1552,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    private static final class StringBodyHandler implements BodyHandler {
+    private final class StringBodyHandler implements BodyHandler {
 
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1568,7 +1575,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final byte[] data = request.getStringData().getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
-            requestPacket.setContentLengthLong(data.length);
+            if (requestPacket.getContentLength() == -1) {
+                if (!clientConfig.isCompressionEnabled()) {
+                    requestPacket.setContentLengthLong(data.length);
+                }
+            }
             final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
@@ -1601,7 +1612,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StringBodyHandler
 
 
-    private static final class ParamsBodyHandler implements BodyHandler {
+    private final class ParamsBodyHandler implements BodyHandler {
+
 
         // -------------------------------------------- Methods from BodyHandler
 
@@ -1646,7 +1658,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final MemoryManager mm = ctx.getMemoryManager();
                 final Buffer gBuffer = Buffers.wrap(mm, data);
                 final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-                requestPacket.setContentLengthLong(data.length);
+                if (requestPacket.getContentLength() == -1) {
+                    if (!clientConfig.isCompressionEnabled()) {
+                        requestPacket.setContentLengthLong(data.length);
+                    }
+                }
                 content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
