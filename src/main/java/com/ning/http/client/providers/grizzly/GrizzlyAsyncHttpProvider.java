@@ -1960,6 +1960,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException {
             final String url = request.getUrl();
             Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
+            if (c != null && !c.isOpen()) {
+                System.out.println("STALE CONNECTION");
+                try {
+                    c.close();
+                } catch (IOException ignored) {
+                } finally {
+                    c = null;
+                }
+            }
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
@@ -1995,7 +2004,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         Connection obtainConnection(final Request request,
                                     final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException {
+        throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final Connection c = (obtainConnection0(request.getUrl(),
                                                     request,
@@ -2026,7 +2035,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         private Connection obtainConnection0(final String url,
                                              final Request request,
                                              final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException {
+        throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final URI uri = AsyncHttpProviderUtils.createUri(url);
             ProxyServer proxy = getProxyServer(request);
@@ -2035,8 +2044,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
-            return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                                             createConnectionCompletionHandler(request, requestFuture, null)).get();
+            int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
+            if (cTimeout > 0) {
+                return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                                                 createConnectionCompletionHandler(request,
+                                                                                   requestFuture,
+                                                                                   null)).get(cTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                                                 createConnectionCompletionHandler(request,
+                                                                                   requestFuture,
+                                                                                   null)).get();
+            }
 
         }
 
