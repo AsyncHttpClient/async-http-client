@@ -123,12 +123,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
 
+    private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
+
     private final TCPNIOTransport clientTransport;
     private final AsyncHttpClientConfig clientConfig;
     private final ConnectionManager connectionManager;
 
     DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
+
 
 
     // ------------------------------------------------------------ Constructors
@@ -164,10 +167,41 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final GrizzlyResponseFuture<T> future =
                 new GrizzlyResponseFuture<T>(this, request, handler);
         future.setDelegate(SafeFutureImpl.<T>create());
-        final Connection c;
+        final CompletionHandler<Connection>  connectHandler = new CompletionHandler<Connection>() {
+            @Override
+            public void cancelled() {
+                future.cancel(true);
+            }
+
+            @Override
+            public void failed(final Throwable throwable) {
+                future.abort(throwable);
+            }
+
+            @Override
+            public void completed(final Connection c) {
+                try {
+                    execute(c, request, handler, future);
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        failed(e);
+                    } else if (e instanceof IOException) {
+                        failed(e);
+                    }
+                    if (LOGGER.isWarnEnabled()) {
+                        LOGGER.warn(e.toString(), e);
+                    }
+                }
+            }
+
+            @Override
+            public void updated(final Connection c) {
+                // no-op
+            }
+        };
+
         try {
-            c = connectionManager.obtainTrackedConnection(request, future);
-            execute(c, request, handler, future);
+            connectionManager.doAsyncTrackedConnection(request, future, connectHandler);
         } catch (Exception e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -181,9 +215,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         return future;
     }
-
-
-
 
     /**
      * {@inheritDoc}
@@ -420,7 +451,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         if (requestHasEntityBody(request)) {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
-            BodyHandler handler = BodyHandlerFactory.getBodyHandler(request);
+            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
             if (requestPacket.getHeaders().contains(Header.Expect)
                     && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
                 handler = new ExpectHandler(handler);
@@ -1453,9 +1484,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END BodyHandler
 
 
-    private static final class BodyHandlerFactory {
+    private final class BodyHandlerFactory {
 
-        private static final BodyHandler[] HANDLERS = new BodyHandler[] {
+        private final BodyHandler[] HANDLERS = new BodyHandler[] {
             new StringBodyHandler(),
             new ByteArrayBodyHandler(),
             new ParamsBodyHandler(),
@@ -1466,7 +1497,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             new BodyGeneratorBodyHandler()
         };
 
-        public static BodyHandler getBodyHandler(final Request request) {
+        public BodyHandler getBodyHandler(final Request request) {
             for (final BodyHandler h : HANDLERS) {
                 if (h.handlesBodyType(request)) {
                     return h;
@@ -1515,7 +1546,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ContinueHandler
 
 
-    private static final class ByteArrayBodyHandler implements BodyHandler {
+    private final class ByteArrayBodyHandler implements BodyHandler {
 
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1537,7 +1568,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final byte[] data = new String(request.getByteData(), charset).getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
-            requestPacket.setContentLengthLong(data.length);
+            if (requestPacket.getContentLength() == -1) {
+                    if (!clientConfig.isCompressionEnabled()) {
+                        requestPacket.setContentLengthLong(data.length);
+                    }
+                }
             final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
@@ -1545,7 +1580,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    private static final class StringBodyHandler implements BodyHandler {
+    private final class StringBodyHandler implements BodyHandler {
 
 
         // -------------------------------------------- Methods from BodyHandler
@@ -1568,7 +1603,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final byte[] data = request.getStringData().getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
             final Buffer gBuffer = Buffers.wrap(mm, data);
-            requestPacket.setContentLengthLong(data.length);
+            if (requestPacket.getContentLength() == -1) {
+                if (!clientConfig.isCompressionEnabled()) {
+                    requestPacket.setContentLengthLong(data.length);
+                }
+            }
             final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
@@ -1601,7 +1640,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StringBodyHandler
 
 
-    private static final class ParamsBodyHandler implements BodyHandler {
+    private final class ParamsBodyHandler implements BodyHandler {
+
 
         // -------------------------------------------- Methods from BodyHandler
 
@@ -1646,7 +1686,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final MemoryManager mm = ctx.getMemoryManager();
                 final Buffer gBuffer = Buffers.wrap(mm, data);
                 final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-                requestPacket.setContentLengthLong(data.length);
+                if (requestPacket.getContentLength() == -1) {
+                    if (!clientConfig.isCompressionEnabled()) {
+                        requestPacket.setContentLengthLong(data.length);
+                    }
+                }
                 content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
@@ -1910,7 +1954,25 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return ((canCache != null) ? canCache : false);
         }
 
+        private void doAsyncTrackedConnection(final Request request,
+                                              final GrizzlyResponseFuture requestFuture,
+                                              final CompletionHandler<Connection> connectHandler)
+        throws IOException, ExecutionException, InterruptedException {
+            final String url = request.getUrl();
+            Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
+            if (c == null) {
+                if (!connectionMonitor.acquire()) {
+                    throw new IOException("Max connections exceeded");
+                }
+                doAsyncConnect(url, request, requestFuture, connectHandler);
+            } else {
+                provider.touchConnection(c, request);
+                connectHandler.completed(c);
+            }
 
+        }
+
+        /*
         Connection obtainTrackedConnection(final Request request,
                                            final GrizzlyResponseFuture requestFuture)
         throws IOException, ExecutionException, InterruptedException {
@@ -1929,7 +1991,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return c;
 
         }
-
+        */
 
         Connection obtainConnection(final Request request,
                                     final GrizzlyResponseFuture requestFuture)
@@ -1943,6 +2005,23 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        private void doAsyncConnect(final String url,
+                                    final Request request,
+                                    final GrizzlyResponseFuture requestFuture,
+                                    final CompletionHandler<Connection> connectHandler)
+        throws IOException, ExecutionException, InterruptedException {
+
+            final URI uri = AsyncHttpProviderUtils.createUri(url);
+            ProxyServer proxy = getProxyServer(request);
+            if (ProxyUtils.avoidProxy(proxy, request)) {
+                proxy = null;
+            }
+            String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
+            int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
+            connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                    createConnectionCompletionHandler(request, requestFuture, connectHandler));
+
+        }
 
         private Connection obtainConnection0(final String url,
                                              final Request request,
@@ -1957,7 +2036,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                                             createConnectionCompletionHandler(request, requestFuture)).get();
+                                             createConnectionCompletionHandler(request, requestFuture, null)).get();
 
         }
 
@@ -1996,23 +2075,38 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         CompletionHandler<Connection> createConnectionCompletionHandler(final Request request,
-                                                                        final GrizzlyResponseFuture future) {
+                                                                        final GrizzlyResponseFuture future,
+                                                                        final CompletionHandler<Connection> wrappedHandler) {
             return new CompletionHandler<Connection>() {
                 public void cancelled() {
-                    future.cancel(true);
+                    if (wrappedHandler != null) {
+                        wrappedHandler.cancelled();
+                    } else {
+                        future.cancel(true);
+                    }
                 }
 
                 public void failed(Throwable throwable) {
-                    future.abort(throwable);
+                    if (wrappedHandler != null) {
+                        wrappedHandler.failed(throwable);
+                    } else {
+                        future.abort(throwable);
+                    }
                 }
 
                 public void completed(Connection connection) {
                     future.setConnection(connection);
                     provider.touchConnection(connection, request);
+                    if (wrappedHandler != null) {
+                        connection.addCloseListener(connectionMonitor);
+                        wrappedHandler.completed(connection);
+                    }
                 }
 
                 public void updated(Connection result) {
-                    // no-op
+                    if (wrappedHandler != null) {
+                        wrappedHandler.updated(result);
+                    }
                 }
             };
         }
