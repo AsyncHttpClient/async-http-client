@@ -1042,6 +1042,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("RESPONSE: " + httpHeader.toString());
             }
+            if (httpHeader.containsHeader(Header.Connection)) {
+                if ("close".equals(httpHeader.getHeader(Header.Connection))) {
+                    ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
+                }
+            }
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
