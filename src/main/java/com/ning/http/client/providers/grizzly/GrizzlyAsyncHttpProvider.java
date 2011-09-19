@@ -1960,15 +1960,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException {
             final String url = request.getUrl();
             Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
-            if (c != null && !c.isOpen()) {
-                System.out.println("STALE CONNECTION");
-                try {
-                    c.close();
-                } catch (IOException ignored) {
-                } finally {
-                    c = null;
-                }
-            }
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
