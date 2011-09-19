@@ -41,8 +41,6 @@ import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -626,7 +624,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     urlConnection.setRequestProperty("Content-Type", mre.getContentType());
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(mre.getContentLength()));
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                     mre.writeRequest(urlConnection.getOutputStream());
                 } else if (request.getEntityWriter() != null) {
                     int lenght = (int) request.getContentLength();
