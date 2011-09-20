@@ -1042,6 +1042,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("RESPONSE: " + httpHeader.toString());
             }
+            if (httpHeader.containsHeader(Header.Connection)) {
+                if ("close".equals(httpHeader.getHeader(Header.Connection))) {
+                    ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
+                }
+            }
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
@@ -1995,7 +2000,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         Connection obtainConnection(final Request request,
                                     final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException {
+        throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final Connection c = (obtainConnection0(request.getUrl(),
                                                     request,
@@ -2026,7 +2031,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         private Connection obtainConnection0(final String url,
                                              final Request request,
                                              final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException {
+        throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final URI uri = AsyncHttpProviderUtils.createUri(url);
             ProxyServer proxy = getProxyServer(request);
@@ -2035,8 +2040,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
-            return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                                             createConnectionCompletionHandler(request, requestFuture, null)).get();
+            int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
+            if (cTimeout > 0) {
+                return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                                                 createConnectionCompletionHandler(request,
+                                                                                   requestFuture,
+                                                                                   null)).get(cTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                return connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                                                 createConnectionCompletionHandler(request,
+                                                                                   requestFuture,
+                                                                                   null)).get();
+            }
 
         }
 
