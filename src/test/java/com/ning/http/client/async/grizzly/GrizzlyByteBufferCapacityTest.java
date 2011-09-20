@@ -17,6 +17,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ByteBufferCapacityTest;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import org.testng.annotations.Test;
 
 public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
 
@@ -28,4 +29,7 @@ public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
     }
 
+    @Test(groups = {"standalone", "default_provider"}, enabled=false)
+    public void basicByteBufferTest() throws Throwable {
+    }
 }
