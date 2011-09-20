@@ -82,6 +82,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean writeHeaders;
     private boolean writeBody;
     private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
+    private boolean allowConnect = false;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -405,6 +406,18 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.channel = channel;
     }
 
+    public void setReuseChannel(boolean reuseChannel) {
+        this.reuseChannel = reuseChannel;
+    }
+
+    public boolean isConnectAllowed() {
+        return allowConnect;
+    }
+
+    public void setConnectAllowed(boolean allowConnect) {
+        this.allowConnect = allowConnect;
+    }
+
     protected void attachChannel(Channel channel, boolean reuseChannel) {
         this.channel = channel;
         this.reuseChannel = reuseChannel;
@@ -428,7 +441,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public void setRequest(Request request) {
         this.request = request;
     }
-
 
     /**
      * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be
