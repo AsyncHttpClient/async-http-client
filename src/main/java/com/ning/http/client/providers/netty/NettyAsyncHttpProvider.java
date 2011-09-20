@@ -637,7 +637,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (!(auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM"))) {
                         try {
                             String msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(),
-                                                                     proxyServer.getHost());
+                                    proxyServer.getHost());
                             nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
                         } catch (NTLMEngineException e) {
                             IOException ie = new IOException();
@@ -647,7 +647,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 } else {
                     nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION,
-                        AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+                            AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
             }
         }
@@ -845,12 +845,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
-        	HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes);
+            HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes);
 
             if (f == null) {
                 f = newFuture(uri, request, asyncHandler, nettyRequest, config, this);
             } else {
-            	nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes);
+                nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes);
                 f.setNettyRequest(nettyRequest);
             }
             f.setState(NettyResponseFuture.STATE.POOLED);
@@ -927,10 +927,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         try {
-        	if (request.getInetAddress() != null) {
-        		channelFuture = bootstrap.connect(new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri)));
-        	}
-        	else if (proxyServer == null || avoidProxy) {
+            if (request.getInetAddress() != null) {
+                channelFuture = bootstrap.connect(new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri)));
+            } else if (proxyServer == null || avoidProxy) {
                 channelFuture = bootstrap.connect(new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri)));
             } else {
                 channelFuture = bootstrap.connect(new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort()));
@@ -1181,7 +1180,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     log.debug("Sending proxy authentication to {}", request.getUrl());
 
                     future.setState(NettyResponseFuture.STATE.NEW);
-                    
+
                     if (!proxyAuth.contains("Kerberos") && (proxyAuth.get(0).contains("NTLM") || (proxyAuth.contains("Negotiate")))) {
                         newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, headers, realm, future);
                         // SPNEGO KERBEROS
@@ -1409,14 +1408,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 realmBuilder = new Realm.RealmBuilder();
             }
             newRealm = realmBuilder.setScheme(realm.getAuthScheme())
-                        .setUri(URI.create(request.getUrl()).getPath())
-                        .setMethodName(request.getMethod())
-                        .build();
+                    .setUri(URI.create(request.getUrl()).getPath())
+                    .setMethodName(request.getMethod())
+                    .build();
         }
 
         return newRealm;
     }
-    
+
     private Realm ntlmProxyChallenge(List<String> wwwAuth,
                                      Request request,
                                      ProxyServer proxyServer,
@@ -1429,10 +1428,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (wwwAuth.get(0).startsWith("NTLM ")) {
             String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
             String challengeHeader = ntlmEngine.generateType3Msg(proxyServer.getPrincipal(),
-                                                                 proxyServer.getPassword(),
-                                                                 proxyServer.getNtlmDomain(),
-                                                                 proxyServer.getHost(),
-                                                                 serverChallenge);
+                    proxyServer.getPassword(),
+                    proxyServer.getNtlmDomain(),
+                    proxyServer.getHost(),
+                    serverChallenge);
             headers.add(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
         }
         Realm newRealm;
@@ -1443,9 +1442,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             realmBuilder = new Realm.RealmBuilder();
         }
         newRealm = realmBuilder//.setScheme(realm.getAuthScheme())
-                    .setUri(URI.create(request.getUrl()).getPath())
-                    .setMethodName(request.getMethod())
-                    .build();
+                .setUri(URI.create(request.getUrl()).getPath())
+                .setMethodName(request.getMethod())
+                .build();
 
         return newRealm;
     }
