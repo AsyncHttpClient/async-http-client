@@ -96,6 +96,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
@@ -401,7 +402,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    private void setHttpTransactionContext(final AttributeStorage storage,
+    void setHttpTransactionContext(final AttributeStorage storage,
                                            final HttpTransactionContext httpTransactionState) {
 
         if (httpTransactionState == null) {
@@ -412,7 +413,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-    private HttpTransactionContext getHttpTransactionContext(final AttributeStorage storage) {
+    HttpTransactionContext getHttpTransactionContext(final AttributeStorage storage) {
 
         return REQUEST_STATE_ATTR.get(storage);
 
@@ -497,26 +498,27 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StatusHandler
 
 
-    private final class HttpTransactionContext {
+    final class HttpTransactionContext {
 
-        private final AtomicInteger redirectCount = new AtomicInteger(0);
+        final AtomicInteger redirectCount = new AtomicInteger(0);
 
-        private final int maxRedirectCount;
-        private final boolean redirectsAllowed;
-        private final GrizzlyAsyncHttpProvider provider =
+        final int maxRedirectCount;
+        final boolean redirectsAllowed;
+        final GrizzlyAsyncHttpProvider provider =
                 GrizzlyAsyncHttpProvider.this;
 
-        private Request request;
-        private AsyncHandler handler;
-        private BodyHandler bodyHandler;
-        private StatusHandler statusHandler;
-        private StatusHandler.InvocationStatus invocationStatus =
+        Request request;
+        String requestUrl;
+        AsyncHandler handler;
+        BodyHandler bodyHandler;
+        StatusHandler statusHandler;
+        StatusHandler.InvocationStatus invocationStatus =
                 StatusHandler.InvocationStatus.CONTINUE;
-        private GrizzlyResponseStatus responseStatus;
-        private GrizzlyResponseFuture future;
-        private String lastRedirectURI;
-        private AtomicLong totalBodyWritten = new AtomicLong();
-        private AsyncHandler.STATE currentState;
+        GrizzlyResponseStatus responseStatus;
+        GrizzlyResponseFuture future;
+        String lastRedirectURI;
+        AtomicLong totalBodyWritten = new AtomicLong();
+        AsyncHandler.STATE currentState;
 
 
         // -------------------------------------------------------- Constructors
@@ -531,6 +533,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             this.handler = handler;
             redirectsAllowed = provider.clientConfig.isRedirectEnabled();
             maxRedirectCount = provider.clientConfig.getMaxRedirects();
+            this.requestUrl = request.getUrl();
 
         }
 
@@ -538,7 +541,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // ----------------------------------------------------- Private Methods
 
 
-        private HttpTransactionContext copy() {
+        HttpTransactionContext copy() {
             final HttpTransactionContext newContext =
                     new HttpTransactionContext(future,
                                                request,
@@ -554,20 +557,20 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
 
-        private void abort(final Throwable t) {
+        void abort(final Throwable t) {
             if (future != null) {
                 future.abort(t);
             }
         }
 
-        private void done(final Callable c) {
+        void done(final Callable c) {
             if (future != null) {
                 future.done(c);
             }
         }
 
         @SuppressWarnings({"unchecked"})
-        private void result(Object result) {
+        void result(Object result) {
             if (future != null) {
                 future.delegate.result(result);
                 future.done(null);
@@ -699,7 +702,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                           final FilterChainContext ctx)
         throws IOException {
 
-            final URI uri = AsyncHttpProviderUtils.createUri(request.getUrl());
+            final HttpTransactionContext httpCtx = getHttpTransactionContext(ctx.getConnection());
+            final URI uri = AsyncHttpProviderUtils.createUri(httpCtx.requestUrl);
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
 
             builder.method(request.getMethod());
@@ -756,7 +760,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
             }
-            final AsyncHandler h = getHttpTransactionContext(ctx.getConnection()).handler;
+            final AsyncHandler h = httpCtx.handler;
             if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
                 final FluentCaseInsensitiveStringsMap map =
                         new FluentCaseInsensitiveStringsMap(request.getHeaders());
@@ -1012,7 +1016,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final GrizzlyResponseStatus responseStatus =
                         new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
-                                                  getURI(context.request.getUrl()),
+                                                  getURI(context.requestUrl),
                                                   provider);
             context.responseStatus = responseStatus;
             if (context.statusHandler != null) {
@@ -1031,6 +1035,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
 
+        }
+
+        @Override
+        protected void onHttpError(final HttpHeader httpHeader,
+                                   final FilterChainContext ctx,
+                                   final Throwable t) throws IOException {
+            httpHeader.setSkipRemainder(true);
+            final HttpTransactionContext context =
+                    provider.getHttpTransactionContext(ctx.getConnection());
+            context.abort(t);
         }
 
         @SuppressWarnings({"unchecked"})
@@ -1162,20 +1176,21 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         private static HttpTransactionContext cleanup(final FilterChainContext ctx,
                                                       final GrizzlyAsyncHttpProvider provider) {
 
+            final Connection c = ctx.getConnection();
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
-
-            if (!context.provider.connectionManager.canReturnConnection(ctx.getConnection())) {
+                    provider.getHttpTransactionContext(c);
+            context.provider.setHttpTransactionContext(c, null);
+            if (!context.provider.connectionManager.canReturnConnection(c)) {
                 context.abort(new IOException("Maximum pooled connections exceeded"));
             } else {
-                if (!context.provider.connectionManager.returnConnection(context.request.getUrl(), ctx.getConnection())) {
+                if (!context.provider.connectionManager.returnConnection(context.requestUrl, c)) {
                     try {
                         ctx.getConnection().close().markForRecycle(true);
                     } catch (IOException ignored) {
                     }
                 }
             }
-            context.provider.setHttpTransactionContext(ctx.getConnection(), null);
+
             return context;
 
         }
@@ -1242,7 +1257,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final Request req = httpTransactionContext.request;
                 realm = new Realm.RealmBuilder().clone(realm)
                                 .setScheme(realm.getAuthScheme())
-                                .setUri(URI.create(req.getUrl()).getPath())
+                                .setUri(URI.create(httpTransactionContext.requestUrl).getPath())
                                 .setMethodName(req.getMethod())
                                 .setUsePreemptiveAuth(true)
                                 .parseWWWAuthenticateHeader(auth)
@@ -1319,9 +1334,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                 URI orig;
                 if (httpTransactionContext.lastRedirectURI == null) {
-                    orig = AsyncHttpProviderUtils.createUri(httpTransactionContext.request.getUrl());
+                    orig = AsyncHttpProviderUtils.createUri(httpTransactionContext.requestUrl);
                 } else {
-                    orig = AsyncHttpProviderUtils.getRedirectUri(AsyncHttpProviderUtils.createUri(httpTransactionContext.request.getUrl()),
+                    orig = AsyncHttpProviderUtils.getRedirectUri(AsyncHttpProviderUtils.createUri(httpTransactionContext.requestUrl),
                                                                  httpTransactionContext.lastRedirectURI);
                 }
                 httpTransactionContext.lastRedirectURI = redirectURL;
@@ -1359,6 +1374,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     httpTransactionContext.future = null;
                     newContext.invocationStatus = InvocationStatus.CONTINUE;
                     newContext.request = requestToSend;
+                    newContext.requestUrl = requestToSend.getUrl();
                     httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
                     httpTransactionContext.provider.execute(c,
                                                             requestToSend,
@@ -1959,9 +1975,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return ((canCache != null) ? canCache : false);
         }
 
-        private void doAsyncTrackedConnection(final Request request,
-                                              final GrizzlyResponseFuture requestFuture,
-                                              final CompletionHandler<Connection> connectHandler)
+        void doAsyncTrackedConnection(final Request request,
+                                      final GrizzlyResponseFuture requestFuture,
+                                      final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
             final String url = request.getUrl();
             Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
@@ -2010,10 +2026,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-        private void doAsyncConnect(final String url,
-                                    final Request request,
-                                    final GrizzlyResponseFuture requestFuture,
-                                    final CompletionHandler<Connection> connectHandler)
+        void doAsyncConnect(final String url,
+                            final Request request,
+                            final GrizzlyResponseFuture requestFuture,
+                            final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
 
             final URI uri = AsyncHttpProviderUtils.createUri(url);

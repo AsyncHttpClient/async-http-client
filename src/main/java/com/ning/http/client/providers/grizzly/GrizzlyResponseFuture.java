@@ -142,11 +142,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public V get() throws InterruptedException, ExecutionException {
 
-        try {
-            return get(60, TimeUnit.SECONDS);
-        } catch (TimeoutException te) {
-            throw new ExecutionException(te);
-        }
+        return delegate.get();
 
     }
 
