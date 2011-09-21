@@ -1033,6 +1033,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        @Override
+        protected void onHttpError(final HttpHeader httpHeader,
+                                   final FilterChainContext ctx,
+                                   final Throwable t) throws IOException {
+            httpHeader.setSkipRemainder(true);
+            final HttpTransactionContext context =
+                    provider.getHttpTransactionContext(ctx.getConnection());
+            context.abort(t);
+        }
+
         @SuppressWarnings({"unchecked"})
         @Override
         protected void onHttpHeadersParsed(HttpHeader httpHeader,
@@ -1162,20 +1172,21 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         private static HttpTransactionContext cleanup(final FilterChainContext ctx,
                                                       final GrizzlyAsyncHttpProvider provider) {
 
+            final Connection c = ctx.getConnection();
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
-
-            if (!context.provider.connectionManager.canReturnConnection(ctx.getConnection())) {
+                    provider.getHttpTransactionContext(c);
+            context.provider.setHttpTransactionContext(c, null);
+            if (!context.provider.connectionManager.canReturnConnection(c)) {
                 context.abort(new IOException("Maximum pooled connections exceeded"));
             } else {
-                if (!context.provider.connectionManager.returnConnection(context.request.getUrl(), ctx.getConnection())) {
+                if (!context.provider.connectionManager.returnConnection(context.request.getUrl(), c)) {
                     try {
                         ctx.getConnection().close().markForRecycle(true);
                     } catch (IOException ignored) {
                     }
                 }
             }
-            context.provider.setHttpTransactionContext(ctx.getConnection(), null);
+
             return context;
 
         }

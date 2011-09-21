@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -67,8 +68,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         listener = new Connection.CloseListener() {
             @Override
             public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
+                if (closeType == Connection.CloseType.REMOTELY) {
+                    if (LOG.isInfoEnabled()) {
+                        LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
+                    }
                 }
                 GrizzlyConnectionsPool.this.removeAll(connection);
             }
@@ -91,6 +94,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
         DelayedExecutor.IdleConnectionQueue conQueue = connectionsPool.get(uri);
         if (conQueue == null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Creating new Connection queue for uri [{}] and connection [{}]",
+                        new Object[]{uri, connection});
+            }
             DelayedExecutor.IdleConnectionQueue newPool =
                     delayedExecutor.createIdleConnectionQueue(timeout);
             conQueue = connectionsPool.putIfAbsent(uri, newPool);
@@ -100,13 +107,21 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         }
 
         final int size = conQueue.size();
-
         if (maxConnectionsPerHost == -1 || size < maxConnectionsPerHost) {
             conQueue.offer(connection);
             connection.addCloseListener(listener);
-            totalCachedConnections.incrementAndGet();
+            final int total = totalCachedConnections.incrementAndGet();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[offer] Pooling connection [{}] for uri [{}].  Current size (for host; before pooling): [{}].  Max size (for host): [{}].  Total number of cached connections: [{}].",
+                        new Object[]{connection, uri, size, maxConnectionsPerHost, total});
+            }
             return true;
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[offer] Unable to pool connection [{}] for uri [{}]. Current size (for host): [{}].  Max size (for host): [{}].  Total number of cached connections: [{}].",
+                    new Object[]{connection, uri, size, maxConnectionsPerHost, totalCachedConnections.get()});
+        }
+
         return false;
     }
 
@@ -136,11 +151,18 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                     connection = null;
                 }
             }
+        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[poll] No existing queue for uri [{}].",
+                        new Object[]{uri});
+            }
         }
         if (connection != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[poll] Found pooled connection [{}] for uri [{}].",
+                        new Object[]{connection, uri});
+            }
             totalCachedConnections.decrementAndGet();
-        }
-        if (connection != null) {
             connection.removeCloseListener(listener);
         }
         return connection;
@@ -306,8 +328,8 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                                     delayQueue.queue.offer(element);
                                 } else {
                                     try {
-                                        if (LOG.isInfoEnabled()) {
-                                            LOG.info("Idle connection ({}) detected.  Removing from cache.", element.toString());
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("Idle connection ({}) detected.  Removing from cache.", element.toString());
                                         }
                                         element.close().markForRecycle(true);
                                     } catch (Exception ignored) {
@@ -332,8 +354,8 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
 
         final class IdleConnectionQueue {
-            final BlockingQueue<Connection> queue =
-                    DataStructures.getLTQInstance(Connection.class);
+            final ConcurrentLinkedQueue<Connection> queue =
+                    new ConcurrentLinkedQueue<Connection>();
 
 
             final TimeoutResolver resolver = new TimeoutResolver();
