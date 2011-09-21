@@ -18,8 +18,13 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;
+import org.glassfish.grizzly.impl.SafeFutureImpl;
+import org.glassfish.grizzly.impl.UnsafeFutureImpl;
 
 import java.net.URI;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 
 /**
@@ -30,7 +35,7 @@ import java.net.URI;
  */
 public class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
-    private final FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+    private final Future<FluentCaseInsensitiveStringsMap> headersFuture;
 
     // ------------------------------------------------------------ Constructors
 
@@ -38,14 +43,24 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
     public GrizzlyResponseHeaders(final HttpResponsePacket response,
                                   final URI uri,
                                   final AsyncHttpProvider provider) {
-        super(uri, provider);
 
-        final MimeHeaders headersLocal = response.getHeaders();
-        for (String name : headersLocal.names()) {
-            for (String header : headersLocal.values(name)) {
-                headers.add(name, header);
-            }
-        }
+        super(uri, provider);
+        final Callable<FluentCaseInsensitiveStringsMap> callable =
+                new Callable<FluentCaseInsensitiveStringsMap>() {
+                    @Override
+                    public FluentCaseInsensitiveStringsMap call() throws Exception {
+                        final FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+                        final MimeHeaders headersLocal = response.getHeaders();
+                        for (String name : headersLocal.names()) {
+                            for (String header : headersLocal.values(name)) {
+                                headers.add(name, header);
+                            }
+                        }
+                        return headers;
+                    }
+                };
+        headersFuture = new FutureTask<FluentCaseInsensitiveStringsMap>(callable);
+
     }
 
 
@@ -57,7 +72,11 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
      */
     @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {
-        return headers;
+        try {
+            return headersFuture.get();
+        } catch (Exception e) {
+            throw new RuntimeException("Error during lazy eval of headers");
+        }
     }
 
 
