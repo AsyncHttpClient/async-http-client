@@ -140,7 +140,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         if (conQueue != null) {
             boolean poolEmpty = false;
             while (!poolEmpty && connection == null) {
-                if (conQueue.size() > 0) {
+                if (!conQueue.isEmpty()) {
                     connection = conQueue.poll();
                 }
 
@@ -372,18 +372,18 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             // ------------------------------------------------- Private Methods
 
 
-            private void offer(final Connection c) {
+            void offer(final Connection c) {
                 if (timeout >= 0) {
                     resolver.setTimeoutMs(c, System.currentTimeMillis() + timeout);
                 }
                 queue.offer(c);
             }
 
-            private Connection poll() {
+            Connection poll() {
                 return queue.poll();
             }
 
-            public boolean remove(final Connection c) {
+            boolean remove(final Connection c) {
                 if (timeout >= 0) {
                     resolver.removeTimeout(c);
 
@@ -391,11 +391,15 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                 return queue.remove(c);
             }
 
-            public int size() {
+            int size() {
                 return queue.size();
             }
+            
+            boolean isEmpty() {
+                return queue.isEmpty();
+            }
 
-            public void destroy() {
+            void destroy() {
                 try {
                     for (Connection c : queue) {
                         c.close().markForRecycle(true);
@@ -412,7 +416,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         // ------------------------------------------------------ Nested Classes
 
 
-        private static final class TimeoutResolver {
+        static final class TimeoutResolver {
 
             private static final String IDLE_ATTRIBUTE_NAME = "grizzly-ahc-conn-pool-idle-attribute";
             private static final Attribute<IdleRecord> IDLE_ATTR =
@@ -429,25 +433,25 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             // ------------------------------------------------- Private Methods
 
 
-            private boolean removeTimeout(final Connection c) {
+            boolean removeTimeout(final Connection c) {
                 IDLE_ATTR.get(c).timeoutMs = 0;
                 return true;
             }
 
-            private Long getTimeoutMs(final Connection c) {
+            Long getTimeoutMs(final Connection c) {
                 return IDLE_ATTR.get(c).timeoutMs;
             }
 
-            private void setTimeoutMs(final Connection c, final long timeoutMs) {
+            void setTimeoutMs(final Connection c, final long timeoutMs) {
                 IDLE_ATTR.get(c).timeoutMs = timeoutMs;
             }
 
 
             // -------------------------------------------------- Nested Classes
 
-            private static final class IdleRecord {
+            static final class IdleRecord {
 
-                private volatile long timeoutMs;
+                volatile long timeoutMs;
 
             } // END IdleRecord
 

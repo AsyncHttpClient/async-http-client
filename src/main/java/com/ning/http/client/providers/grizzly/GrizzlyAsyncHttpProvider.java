@@ -420,7 +420,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    private void timeout(final Connection c) {
+    void timeout(final Connection c) {
 
         final HttpTransactionContext context = getHttpTransactionContext(c);
         setHttpTransactionContext(c, null);
@@ -428,7 +428,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-    private static int getPort(final URI uri, final int p) {
+    static int getPort(final URI uri, final int p) {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase();
@@ -445,9 +445,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     @SuppressWarnings({"unchecked"})
-    private void sendRequest(final FilterChainContext ctx,
-                             final Request request,
-                             final HttpRequestPacket requestPacket)
+    void sendRequest(final FilterChainContext ctx,
+                     final Request request,
+                     final HttpRequestPacket requestPacket)
     throws IOException {
 
         if (requestHasEntityBody(request)) {
@@ -958,10 +958,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final AsyncHandler handler = context.handler;
             if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
                 final int written = content.getContent().remaining();
-                context.totalBodyWritten.addAndGet(written);
+                final long total = context.totalBodyWritten.addAndGet(written);
                 ((TransferCompletionHandler) handler).onContentWriteProgress(
                         written,
-                        context.totalBodyWritten.get(),
+                        total,
                         content.getHttpHeader().getContentLength());
             }
         }
@@ -1658,7 +1658,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         }
 
-    } // END StringBodyHandler
+    } // END NoBodyHandler
 
 
     private final class ParamsBodyHandler implements BodyHandler {
@@ -1687,18 +1687,21 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 charset = Charsets.DEFAULT_CHARACTER_ENCODING;
             }
             final FluentStringsMap params = request.getParams();
-            for (Map.Entry<String, List<String>> entry : params.entrySet()) {
-                String name = entry.getKey();
-                List<String> values = entry.getValue();
-                if (values != null && !values.isEmpty()) {
-                    if (sb == null) {
-                        sb = new StringBuilder(128);
-                    }
-                    for (String value : values) {
-                        if (sb.length() > 0) {
-                            sb.append('&');
+            if (!params.isEmpty()) {
+                for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+                    String name = entry.getKey();
+                    List<String> values = entry.getValue();
+                    if (values != null && !values.isEmpty()) {
+                        if (sb == null) {
+                            sb = new StringBuilder(128);
                         }
-                        sb.append(URLEncoder.encode(name, charset)).append('=').append(URLEncoder.encode(value, charset));
+                        for (String value : values) {
+                            if (sb.length() > 0) {
+                                sb.append('&');
+                            }
+                            sb.append(URLEncoder.encode(name, charset))
+                                    .append('=').append(URLEncoder.encode(value, charset));
+                        }
                     }
                 }
             }
