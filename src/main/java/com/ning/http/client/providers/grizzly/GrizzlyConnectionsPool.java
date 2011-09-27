@@ -360,6 +360,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
             final TimeoutResolver resolver = new TimeoutResolver();
             final long timeout;
+            final AtomicInteger count = new AtomicInteger(0);
 
             // ---------------------------------------------------- Constructors
 
@@ -377,9 +378,11 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                     resolver.setTimeoutMs(c, System.currentTimeMillis() + timeout);
                 }
                 queue.offer(c);
+                count.incrementAndGet();
             }
 
             Connection poll() {
+                count.decrementAndGet();
                 return queue.poll();
             }
 
@@ -388,15 +391,16 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                     resolver.removeTimeout(c);
 
                 }
+                count.decrementAndGet();
                 return queue.remove(c);
             }
 
             int size() {
-                return queue.size();
+                return count.get();
             }
             
             boolean isEmpty() {
-                return queue.isEmpty();
+                return (count.get() == 0);
             }
 
             void destroy() {
