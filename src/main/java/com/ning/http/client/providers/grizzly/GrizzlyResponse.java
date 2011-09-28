@@ -20,6 +20,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.util.AsyncHttpProviderUtils;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.CookiesBuilder;
 import org.glassfish.grizzly.http.util.Charsets;
@@ -41,7 +42,8 @@ import java.util.List;
  * {@link com.ning.http.client.HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
+ * @since 1.7.0
  */
 public class GrizzlyResponse implements Response {
 

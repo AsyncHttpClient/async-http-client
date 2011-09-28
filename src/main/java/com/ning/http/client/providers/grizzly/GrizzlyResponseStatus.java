@@ -15,6 +15,7 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
+
 import org.glassfish.grizzly.http.HttpResponsePacket;
 
 import java.net.URI;
@@ -23,7 +24,8 @@ import java.net.URI;
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
+ * @since 1.7.0
  */
 public class GrizzlyResponseStatus extends HttpResponseStatus {
 

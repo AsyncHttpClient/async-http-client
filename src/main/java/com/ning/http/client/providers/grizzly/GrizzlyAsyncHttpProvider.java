@@ -41,8 +41,8 @@ import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
-
 import com.ning.http.util.SslUtils;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
@@ -111,10 +111,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+
 /**
- * TODO: Documentation
+ * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
  *
  * @author The Grizzly Team
+ * @since 1.7.0
  */
 public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
@@ -141,7 +144,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         this.clientConfig = clientConfig;
         final TCPNIOTransportBuilder builder = TCPNIOTransportBuilder.newInstance();
-        builder.setIOStrategy(SameThreadIOStrategy.getInstance());
         clientTransport = builder.build();
         initializeTransport(clientConfig);
         connectionManager = new ConnectionManager(this, clientTransport);
@@ -276,6 +278,20 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     protected void initializeTransport(AsyncHttpClientConfig clientConfig) {
+        
+        GrizzlyAsyncHttpProviderConfig providerConfig = 
+                       (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
+        if (providerConfig != null) {
+            final TransportCustomizer customizer = (TransportCustomizer)
+                    providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
+            if (customizer != null) {
+                customizer.customize(clientTransport);
+            } else {
+                clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+            }
+        } else {
+            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+        }
 
         final FilterChainBuilder fcb = FilterChainBuilder.stateless();
         fcb.add(new AsyncHttpClientTransportFilter());
@@ -1240,7 +1256,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                      final FilterChainContext ctx) {
 
                 responsePacket.setSkipRemainder(true); // ignore the remainder of the response
-                final String auth = responsePacket.getHeader("WWW-Authenticate");
+                final String auth = responsePacket.getHeader(Header.WWWAuthenticate);
                 if (auth == null) {
                     throw new IllegalStateException("401 response received, but no WWW-Authenticate header was present");
                 }
@@ -1994,27 +2010,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
         }
-
-        /*
-        Connection obtainTrackedConnection(final Request request,
-                                           final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException {
-
-            final String url = request.getUrl();
-            Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
-            if (c == null) {
-                if (!connectionMonitor.acquire()) {
-                    throw new IOException("Max connections exceeded");
-                }
-                c = obtainConnection0(url, request, requestFuture);
-                c.addCloseListener(connectionMonitor);
-            } else {
-                provider.touchConnection(c, request);
-            }
-            return c;
-
-        }
-        */
 
         Connection obtainConnection(final Request request,
                                     final GrizzlyResponseFuture requestFuture)
