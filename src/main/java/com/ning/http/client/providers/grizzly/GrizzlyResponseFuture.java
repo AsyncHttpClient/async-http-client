@@ -16,6 +16,7 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.impl.FutureImpl;
 
@@ -31,7 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link AbstractListenableFuture} implementation adaptation of Grizzly's
  * {@link FutureImpl}.
  *
- * @author Grizzly Team
+ * @author The Grizzly Team
+ * @since 1.7.0
  */
 public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
