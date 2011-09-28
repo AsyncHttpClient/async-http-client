@@ -278,57 +278,47 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     protected void initializeTransport(AsyncHttpClientConfig clientConfig) {
         
-        GrizzlyAsyncHttpProviderConfig providerConfig = 
-                       (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
-        if (providerConfig != null) {
-            final TransportCustomizer customizer = (TransportCustomizer)
-                    providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
-            if (customizer != null) {
-                customizer.customize(clientTransport);
-            } else {
-                clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
-            }
-        } else {
-            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
-        }
+
 
         final FilterChainBuilder fcb = FilterChainBuilder.stateless();
         fcb.add(new AsyncHttpClientTransportFilter());
 
         final int timeout = clientConfig.getRequestTimeoutInMs();
-        int delay = 500;
-        if (timeout < delay) {
-            delay = timeout - 10;
-        }
-        timeoutExecutor = IdleTimeoutFilter.createDefaultIdleDelayedExecutor(delay, TimeUnit.MILLISECONDS);
-        timeoutExecutor.start();
-        final IdleTimeoutFilter.TimeoutResolver timeoutResolver =
-                new IdleTimeoutFilter.TimeoutResolver() {
-                    @Override
-                    public long getTimeout(FilterChainContext ctx) {
-                        final HttpTransactionContext context =
-                                GrizzlyAsyncHttpProvider.this.getHttpTransactionContext(ctx.getConnection());
-                        if (context != null) {
-                            final PerRequestConfig config = context.request.getPerRequestConfig();
-                            if (config != null) {
-                                final long timeout = config.getRequestTimeoutInMs();
-                                if (timeout > 0) {
-                                    return timeout;
+        if (timeout > 0) {
+            int delay = 500;
+            if (timeout < delay) {
+                delay = timeout - 10;
+            }
+            timeoutExecutor = IdleTimeoutFilter.createDefaultIdleDelayedExecutor(delay, TimeUnit.MILLISECONDS);
+            timeoutExecutor.start();
+            final IdleTimeoutFilter.TimeoutResolver timeoutResolver =
+                    new IdleTimeoutFilter.TimeoutResolver() {
+                        @Override
+                        public long getTimeout(FilterChainContext ctx) {
+                            final HttpTransactionContext context =
+                                    GrizzlyAsyncHttpProvider.this.getHttpTransactionContext(ctx.getConnection());
+                            if (context != null) {
+                                final PerRequestConfig config = context.request.getPerRequestConfig();
+                                if (config != null) {
+                                    final long timeout = config.getRequestTimeoutInMs();
+                                    if (timeout > 0) {
+                                        return timeout;
+                                    }
                                 }
                             }
+                            return timeout;
                         }
-                        return timeout;
-                    }
-                };
-        final IdleTimeoutFilter timeoutFilter = new IdleTimeoutFilter(timeoutExecutor,
-                timeoutResolver,
-                new IdleTimeoutFilter.TimeoutHandler() {
-                    public void onTimeout(Connection connection) {
-                        timeout(connection);
-                    }
-                });
-        fcb.add(timeoutFilter);
-        resolver = timeoutFilter.getResolver();
+                    };
+            final IdleTimeoutFilter timeoutFilter = new IdleTimeoutFilter(timeoutExecutor,
+                    timeoutResolver,
+                    new IdleTimeoutFilter.TimeoutHandler() {
+                        public void onTimeout(Connection connection) {
+                            timeout(connection);
+                        }
+                    });
+            fcb.add(timeoutFilter);
+            resolver = timeoutFilter.getResolver();
+        }
 
         SSLContext context = clientConfig.getSSLContext();
         boolean defaultSecState = (context != null);
@@ -364,6 +354,21 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
         fcb.add(eventFilter);
         fcb.add(clientFilter);
+
+        GrizzlyAsyncHttpProviderConfig providerConfig =
+                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
+        if (providerConfig != null) {
+            final TransportCustomizer customizer = (TransportCustomizer)
+                    providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
+            if (customizer != null) {
+                customizer.customize(clientTransport, fcb);
+            } else {
+                clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+            }
+        } else {
+            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+        }
+
         clientTransport.setProcessor(fcb.build());
 
     }
@@ -379,12 +384,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final long timeout = config.getRequestTimeoutInMs();
             if (timeout > 0) {
                 final long newTimeout = System.currentTimeMillis() + timeout;
-                resolver.setTimeoutMillis(c, newTimeout);
+                if (resolver != null) {
+                    resolver.setTimeoutMillis(c, newTimeout);
+                }
             }
         } else {
             final long timeout = clientConfig.getRequestTimeoutInMs();
             if (timeout > 0) {
-                resolver.setTimeoutMillis(c, System.currentTimeMillis() + timeout);
+                if (resolver != null) {
+                    resolver.setTimeoutMillis(c, System.currentTimeMillis() + timeout);
+                }
             }
         }
 
@@ -1061,6 +1070,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onHttpError(final HttpHeader httpHeader,
                                    final FilterChainContext ctx,
                                    final Throwable t) throws IOException {
+            t.printStackTrace();
             httpHeader.setSkipRemainder(true);
             final HttpTransactionContext context =
                     provider.getHttpTransactionContext(ctx.getConnection());
@@ -2119,7 +2129,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final boolean result = (DO_NOT_CACHE.get(c) == null
                                        && pool.offer(AsyncHttpProviderUtils.getBaseUrl(url), c));
             if (result) {
-                provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
+                if (provider.resolver != null) {
+                    provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
+                }
             }
             return result;
 

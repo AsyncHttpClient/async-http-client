@@ -13,6 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
 /**
@@ -27,10 +28,17 @@ public interface TransportCustomizer {
 
     /**
      * Customizes the configuration of the provided {@link TCPNIOTransport} 
-     * instance. 
+     * and {@link FilterChainBuilder} instances.
      * 
      * @param transport the {@link TCPNIOTransport} instance for this client.
+     * @param filterChainBuilder the {@link FilterChainBuilder} that will
+     *   produce the {@link org.glassfish.grizzly.filterchain.FilterChain} that
+     *   will be used to send/receive data.  The FilterChain will be populated
+     *   with the Filters typically used for processing HTTP client requests.
+     *   These filters should generally be left alone.  But this does allow
+     *   adding additional filters to the chain to add additional features.
      */
-    void customize(final TCPNIOTransport transport);
+    void customize(final TCPNIOTransport transport,
+                   final FilterChainBuilder filterChainBuilder);
     
 }
