@@ -15,6 +15,7 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
+
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -35,7 +36,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
+/**
+ * {@link ConnectionsPool} implementation.
+ * 
+ * @author The Grizzly Team
+ * @since 1.7.0
+ */
 public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection> {
 
     private final static Logger LOG = LoggerFactory.getLogger(GrizzlyConnectionsPool.class);
