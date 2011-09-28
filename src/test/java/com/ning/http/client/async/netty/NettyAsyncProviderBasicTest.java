@@ -14,8 +14,10 @@ package com.ning.http.client.async.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.async.AsyncProvidersBasicTest;
 import com.ning.http.client.async.ProviderUtil;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
@@ -24,4 +26,11 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         return ProviderUtil.nettyProvider(config);
     }
 
+    @Override
+    protected AsyncHttpProviderConfig getProviderConfig() {
+        final NettyAsyncHttpProviderConfig config = 
+                new NettyAsyncHttpProviderConfig();
+        config.addProperty("tcpNoDelay", true);
+        return config;
+    }
 }

@@ -1403,8 +1403,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = {"online", "default_provider", "async"})
     public void asyncDoGetNestedTest() throws Throwable {
-        AsyncHttpProviderConfig<String, Object> pc = new NettyAsyncHttpProviderConfig();
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().build());
 
         // Use a l in case the assert fail
         final CountDownLatch l = new CountDownLatch(2);
@@ -1488,15 +1487,10 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         c.close();
     }
 
-    // TODO Netty only
     @Test(groups = {"online", "default_provider"})
     public void testAsyncHttpProviderConfig() throws Exception {
 
-        NettyAsyncHttpProviderConfig pc = new NettyAsyncHttpProviderConfig();
-        pc.addProperty("tcpNoDelay", true);
-
-        // Just make sure Netty still works.
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(pc).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(getProviderConfig()).build());
         Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
         if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
             fail("No response Body");
@@ -1624,4 +1618,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         client.close();
     }
+
+    protected abstract AsyncHttpProviderConfig getProviderConfig();
 }

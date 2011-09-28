@@ -17,6 +17,7 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
@@ -115,11 +116,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             bc.setRequestTimeoutInMs(1000);
             bc.setFollowRedirects(true);
 
-            NettyAsyncHttpProviderConfig config = new NettyAsyncHttpProviderConfig();
-            if (System.getProperty("blockingio") != null)
-                config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
-            //config.addProperty(NettyAsyncHttpProviderConfig.REUSE_ADDRESS, "true");
-            bc.setAsyncHttpClientProviderConfig(config);
             c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("GET");
@@ -151,6 +147,8 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
 
 
     }
+
+    protected abstract AsyncHttpProviderConfig getProviderConfig();
 
 
     class MockRedirectHttpServlet extends HttpServlet {
