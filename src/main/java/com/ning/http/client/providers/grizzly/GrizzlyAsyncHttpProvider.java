@@ -1972,8 +1972,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     } else {
                         // pass the context to bodyLocal to be able to
                         // continue body transferring once more data is available
-                        if (generator instanceof PartialBodyGenerator) {
-                            ((PartialBodyGenerator) generator).initializeAsynchronousTransfer(ctx, requestPacket);
+                        if (generator instanceof FeedableBodyGenerator) {
+                            ((FeedableBodyGenerator) generator).initializeAsynchronousTransfer(ctx, requestPacket);
                             return false;
                         } else {
                             throw new IllegalStateException("BodyGenerator unexpectedly returned 0 bytes available");

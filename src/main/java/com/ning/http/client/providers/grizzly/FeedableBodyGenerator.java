@@ -32,7 +32,7 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class PartialBodyGenerator implements BodyGenerator {
+public class FeedableBodyGenerator implements BodyGenerator {
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<BodyPart>();
     private final AtomicInteger queueSize = new AtomicInteger();
     
@@ -41,10 +41,10 @@ public class PartialBodyGenerator implements BodyGenerator {
     
     @Override
     public Body createBody() throws IOException {
-        return new PartialBody();
+        return new EmptyBody();
     }
     
-    public void append(final Buffer buffer, final boolean isLast)
+    public void feed(final Buffer buffer, final boolean isLast)
             throws IOException {
         queue.offer(new BodyPart(buffer, isLast));
         queueSize.incrementAndGet();
@@ -81,7 +81,7 @@ public class PartialBodyGenerator implements BodyGenerator {
         }
     }
     
-    private final class PartialBody implements Body {
+    private final class EmptyBody implements Body {
 
         @Override
         public long getContentLength() {
