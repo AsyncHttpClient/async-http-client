@@ -45,16 +45,16 @@ public class OAuthSignatureCalculator
         implements SignatureCalculator {
     public final static String HEADER_AUTHORIZATION = "Authorization";
 
-    private final String KEY_OAUTH_CONSUMER_KEY = "oauth_consumer_key";
-    private final String KEY_OAUTH_NONCE = "oauth_nonce";
-    private final String KEY_OAUTH_SIGNATURE = "oauth_signature";
-    private final String KEY_OAUTH_SIGNATURE_METHOD = "oauth_signature_method";
-    private final String KEY_OAUTH_TIMESTAMP = "oauth_timestamp";
-    private final String KEY_OAUTH_TOKEN = "oauth_token";
-    private final String KEY_OAUTH_VERSION = "oauth_version";
+    private static final String KEY_OAUTH_CONSUMER_KEY = "oauth_consumer_key";
+    private static final String KEY_OAUTH_NONCE = "oauth_nonce";
+    private static final String KEY_OAUTH_SIGNATURE = "oauth_signature";
+    private static final String KEY_OAUTH_SIGNATURE_METHOD = "oauth_signature_method";
+    private static final String KEY_OAUTH_TIMESTAMP = "oauth_timestamp";
+    private static final String KEY_OAUTH_TOKEN = "oauth_token";
+    private static final String KEY_OAUTH_VERSION = "oauth_version";
 
-    private final String OAUTH_VERSION_1_0 = "1.0";
-    private final String OAUTH_SIGNATURE_METHOD = "HMAC-SHA1";
+    private static final String OAUTH_VERSION_1_0 = "1.0";
+    private static final String OAUTH_SIGNATURE_METHOD = "HMAC-SHA1";
 
     /**
      * To generate Nonce, need some (pseudo)randomness; no need for
@@ -84,12 +84,12 @@ public class OAuthSignatureCalculator
     //@Override // silly 1.5; doesn't allow this for interfaces
 
     public void calculateAndAddSignature(String baseURL, Request request, RequestBuilderBase<?> requestBuilder) {
-        String method = request.getMethod().toString(); // POST etc
+        String method = request.getMethod(); // POST etc
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
         String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
-        requestBuilder = requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
+        requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
 
     /**
@@ -259,6 +259,26 @@ public class OAuthSignatureCalculator
         @Override
         public String toString() {
             return key + "=" + value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Parameter parameter = (Parameter) o;
+
+            if (!key.equals(parameter.key)) return false;
+            if (!value.equals(parameter.value)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = key.hashCode();
+            result = 31 * result + value.hashCode();
+            return result;
         }
     }
 }

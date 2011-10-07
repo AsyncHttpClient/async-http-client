@@ -275,7 +275,7 @@ public class AsyncHttpClient {
                 if (i >= 0) {
                     url = url.substring(0, i);
                 }
-                signatureCalculator.calculateAndAddSignature(baseURL, request, this);
+                signatureCalculator.calculateAndAddSignature(url, request, this);
             }
             return super.build();
         }

@@ -20,6 +20,7 @@ import com.ning.http.client.async.RedirectConnectionUsageTest;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
 import com.ning.http.client.providers.grizzly.TransportCustomizer;
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 
@@ -40,7 +41,7 @@ public class GrizzlyRedirectConnectionUsageTest extends RedirectConnectionUsageT
         final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
         config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {
             @Override
-            public void customize(TCPNIOTransport transport) {
+            public void customize(TCPNIOTransport transport, FilterChainBuilder builder) {
                 if (System.getProperty("blockingio") != null) {
                     transport.configureBlocking(true);
                 }
