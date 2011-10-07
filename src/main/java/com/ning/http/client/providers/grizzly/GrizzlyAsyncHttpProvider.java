@@ -81,6 +81,7 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -104,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -225,6 +227,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         try {
             connectionManager.destroy();
             clientTransport.stop();
+            final ExecutorService service = clientConfig.executorService();
+            if (service != null) {
+                service.shutdown();
+            }
             if (timeoutExecutor != null) {
                 timeoutExecutor.stop();
             }
@@ -277,8 +283,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     protected void initializeTransport(AsyncHttpClientConfig clientConfig) {
-        
-
 
         final FilterChainBuilder fcb = FilterChainBuilder.stateless();
         fcb.add(new AsyncHttpClientTransportFilter());
@@ -354,7 +358,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
         fcb.add(eventFilter);
         fcb.add(clientFilter);
-
+        
         GrizzlyAsyncHttpProviderConfig providerConfig =
                 (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
         if (providerConfig != null) {
@@ -363,10 +367,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (customizer != null) {
                 customizer.customize(clientTransport, fcb);
             } else {
-                clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+                doDefaultTransportConfig();
             }
         } else {
-            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+            doDefaultTransportConfig();
         }
 
         clientTransport.setProcessor(fcb.build());
@@ -401,6 +405,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
+    
+    private void doDefaultTransportConfig() {
+        final ExecutorService service = clientConfig.executorService();
+        if (service != null) {
+            clientTransport.setIOStrategy(WorkerThreadIOStrategy.getInstance());
+            clientTransport.setWorkerThreadPool(service);
+        } else {
+            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
+        }
+    }
 
 
     private <T> CompletionHandler<WriteResult> createWriteCompletionHandler(final GrizzlyResponseFuture<T> future) {
