@@ -18,10 +18,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ChunkingTest;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 
-/**
- * TODO: This test current fails as InputStreamBodyGenerator adds chunk
- *       information.
- */
 public class GrizzlyChunkingTest extends ChunkingTest {
 
     @Override

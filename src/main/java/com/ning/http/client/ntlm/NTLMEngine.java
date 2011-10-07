@@ -76,7 +76,7 @@ public class NTLMEngine {
         java.security.SecureRandom rnd = null;
         try {
             rnd = java.security.SecureRandom.getInstance("SHA1PRNG");
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         RND_GEN = rnd;
     }
@@ -753,7 +753,7 @@ public class NTLMEngine {
             } else {
                 resp = messageContents;
             }
-            return new String(Base64.encode(resp));
+            return Base64.encode(resp);
         }
 
     }
@@ -996,8 +996,7 @@ public class NTLMEngine {
             int domainOffset = ntRespOffset + ntRespLen;
             int userOffset = domainOffset + domainLen;
             int hostOffset = userOffset + userLen;
-            int sessionKeyOffset = hostOffset + hostLen;
-            int finalLength = sessionKeyOffset + 0;
+            int finalLength = hostOffset + hostLen;
 
             // Start the response. Length includes signature and type
             prepareResponse(finalLength, 3);
@@ -1127,7 +1126,6 @@ public class NTLMEngine {
                 int transferAmt = input.length - inputIndex;
                 System.arraycopy(input, inputIndex, dataBuffer, curBufferPos, transferAmt);
                 count += transferAmt;
-                curBufferPos += transferAmt;
             }
         }
 
