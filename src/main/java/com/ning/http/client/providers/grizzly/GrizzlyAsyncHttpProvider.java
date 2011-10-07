@@ -1904,22 +1904,29 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             AtomicInteger written = new AtomicInteger();
             boolean last = false;
             requestPacket.setContentLengthLong(f.length());
-            for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last; ) {
-                Buffer b = null;
-                int read;
-                if ((read = fis.read(buf)) < 0) {
-                    last = true;
-                    b = Buffers.EMPTY_BUFFER;
-                }
-                if (b != Buffers.EMPTY_BUFFER) {
-                    written.addAndGet(read);
-                    b = Buffers.wrap(mm, buf, 0, read);
-                }
+            try {
+                for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last; ) {
+                    Buffer b = null;
+                    int read;
+                    if ((read = fis.read(buf)) < 0) {
+                        last = true;
+                        b = Buffers.EMPTY_BUFFER;
+                    }
+                    if (b != Buffers.EMPTY_BUFFER) {
+                        written.addAndGet(read);
+                        b = Buffers.wrap(mm, buf, 0, read);
+                    }
 
-                final HttpContent content =
-                        requestPacket.httpContentBuilder().content(b).
-                                last(last).build();
-                ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+                    final HttpContent content =
+                            requestPacket.httpContentBuilder().content(b).
+                                    last(last).build();
+                    ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+                }
+            } finally {
+                try {
+                    fis.close();
+                } catch (IOException ignored) {
+                }
             }
 
             return true;
