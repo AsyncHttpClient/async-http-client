@@ -631,7 +631,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (proxyServer.getPrincipal() != null) {
-                if (proxyServer.getNtlmDomain() != null) {
+                if (proxyServer.getNtlmDomain() != "") {
 
                     List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
                     if (!(auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM"))) {
