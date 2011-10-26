@@ -492,12 +492,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
     }
+    
+    private static boolean isProxyServer(AsyncHttpClientConfig config, Request request) {
+    	return request.getProxyServer() != null || config.getProxyServer() != null;
+    }
 
     protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri,
                                                     boolean allowConnect, ChannelBuffer buffer) throws IOException {
 
         String method = request.getMethod();
-        if (allowConnect && ((request.getProxyServer() != null || config.getProxyServer() != null) && HTTPS.equalsIgnoreCase(uri.getScheme()))) {
+        if (allowConnect && (isProxyServer(config, request) && HTTPS.equalsIgnoreCase(uri.getScheme()))) {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, buffer);
@@ -520,9 +524,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
-            StringBuilder path = new StringBuilder(uri.getRawPath());
-            if (uri.getQuery() != null) {
-                path.append("?").append(uri.getRawQuery());
+            StringBuilder path = null;
+            if(isProxyServer(config, request))
+            	path = new StringBuilder(uri.toString());
+            else {
+            	path = new StringBuilder(uri.getRawPath());
+	            if (uri.getQuery() != null) {
+	                path.append("?").append(uri.getRawQuery());
+	            }
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
