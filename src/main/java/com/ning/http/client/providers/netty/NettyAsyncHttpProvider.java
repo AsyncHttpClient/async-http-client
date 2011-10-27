@@ -1411,12 +1411,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             Realm.RealmBuilder realmBuilder;
+            Realm.AuthScheme authScheme;
             if (realm != null) {
                 realmBuilder = new Realm.RealmBuilder().clone(realm);
+                authScheme = realm.getAuthScheme();
             } else {
                 realmBuilder = new Realm.RealmBuilder();
+                authScheme = Realm.AuthScheme.NTLM;
             }
-            newRealm = realmBuilder.setScheme(realm.getAuthScheme())
+            newRealm = realmBuilder.setScheme(authScheme)
                     .setUri(URI.create(request.getUrl()).getPath())
                     .setMethodName(request.getMethod())
                     .build();
