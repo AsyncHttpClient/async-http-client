@@ -19,9 +19,9 @@ public interface WebSocket {
 
     WebSocket sendMessage(byte[] message);
 
-    WebSocket addMessageListener(WebSocketMessageListener l);
+    WebSocket addMessageListener(WebSocketListener l);
 
-    public static interface WebSocketMessageListener{
+    public static interface WebSocketListener {
 
         void onMessage(byte[] message);
 
@@ -31,4 +31,5 @@ public interface WebSocket {
 
     }
 
+    WebSocket close();
 }
