@@ -202,9 +202,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 latch.await();
             } else {
                 expired = !latch.await(l, tu);
-                if (!contentProcessed.get() && expired && ((System.currentTimeMillis() - touch.get()) <= l)) {
-                    return get(l, tu);
-                }
             }
 
             if (expired) {
