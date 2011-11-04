@@ -53,7 +53,11 @@ public interface AsyncHandler<T> {
         /**
          * Continue the processing
          */
-        CONTINUE
+        CONTINUE,
+        /**
+         * Upgrade the protocol. When specified, the AsyncHttpProvider will try to invoke the {@link UpgradeHandler#onReady}
+         */
+        UPGRADE
     }
 
     /**
