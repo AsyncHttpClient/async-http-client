@@ -23,7 +23,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.CookiesBuilder;
-import org.glassfish.grizzly.http.util.Charsets;
+import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
 import org.glassfish.grizzly.utils.BufferInputStream;
