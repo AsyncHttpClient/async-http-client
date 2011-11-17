@@ -1844,7 +1844,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                        NettyAsyncHttpProvider provider) {
 
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                requestTimeout(config, request.getPerRequestConfig()), provider);
+                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider);
 
         if (request.getHeaders().getFirstValue("Expect") != null
                 && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {

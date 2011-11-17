@@ -60,6 +60,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
     private AsyncHandler<V> asyncHandler;
     private final int responseTimeoutInMs;
+    private final int idleConnectionTimeoutInMs;
     private Request request;
     private HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
@@ -72,6 +73,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    private final long start = System.currentTimeMillis();
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
@@ -89,10 +91,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                                AsyncHandler<V> asyncHandler,
                                HttpRequest nettyRequest,
                                int responseTimeoutInMs,
+                               int idleConnectionTimeoutInMs,
                                NettyAsyncHttpProvider asyncHttpProvider) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
+        this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
@@ -169,7 +173,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) >= responseTimeoutInMs);
+        long now = System.currentTimeMillis();
+        return idleConnectionTimeoutInMs != -1 && ((now - touch.get()) >= idleConnectionTimeoutInMs)
+                || responseTimeoutInMs != -1 && ((now - start) >= responseTimeoutInMs);
     }
 
     /**
@@ -202,9 +208,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 latch.await();
             } else {
                 expired = !latch.await(l, tu);
-                if (!contentProcessed.get() && expired && ((System.currentTimeMillis() - touch.get()) <= l)) {
-                    return get(l, tu);
-                }
             }
 
             if (expired) {
