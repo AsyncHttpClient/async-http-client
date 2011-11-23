@@ -16,12 +16,12 @@
  */
 package com.ning.http.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC. 
@@ -37,6 +37,7 @@ public class Realm {
     private final String nonce;
     private final String algorithm;
     private final String response;
+    private final String opaque;
     private final String qop;
     private final String nc;
     private final String cnonce;
@@ -71,7 +72,8 @@ public class Realm {
                   String uri,
                   String method,
                   boolean usePreemptiveAuth,
-                  String domain, String enc, String host, boolean messageType2Received) {
+                  String domain, String enc, String host, boolean messageType2Received, 
+                  String opaque) {
 
         this.principal = principal;
         this.password = password;
@@ -80,6 +82,7 @@ public class Realm {
         this.nonce = nonce;
         this.algorithm = algorithm;
         this.response = response;
+        this.opaque = opaque;
         this.qop = qop;
         this.nc = nc;
         this.cnonce = cnonce;
@@ -123,6 +126,10 @@ public class Realm {
 
     public String getResponse() {
         return response;
+    }
+    
+    public String getOpaque() {
+      return opaque;
     }
 
     public String getQop() {
@@ -261,6 +268,7 @@ public class Realm {
         private String nonce = "";
         private String algorithm = "MD5";
         private String response = "";
+        private String opaque = "";
         private String qop = "auth";
         private String nc = "00000001";
         private String cnonce = "";
@@ -364,16 +372,25 @@ public class Realm {
             this.response = response;
             return this;
         }
+        
+        public String getOpaque() {
+            return this.opaque;
+        }
+        
+        public RealmBuilder setOpaque(String opaque) {
+          this.opaque = opaque;
+          return this;
+        }
 
         public String getQop() {
             return qop;
         }
-
+        
         public RealmBuilder setQop(String qop) {
             this.qop = qop;
             return this;
         }
-
+        
         public String getNc() {
             return nc;
         }
@@ -414,6 +431,7 @@ public class Realm {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
             setAlgorithm(match(headerLine, "algorithm"));
+            setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
             if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
                 setScheme(AuthScheme.DIGEST);
@@ -437,6 +455,7 @@ public class Realm {
             setPassword(clone.getPassword());
             setPrincipal(clone.getPrincipal());
             setEnconding(clone.getEncoding());
+            setOpaque(clone.getOpaque());
             setQop(clone.getQop());
             setScheme(clone.getScheme());
             setUri(clone.getUri());
@@ -580,7 +599,8 @@ public class Realm {
                     domain,
                     enc,
                     host,
-                    messageType2Received);
+                    messageType2Received, 
+                    opaque);
         }
     }
 
