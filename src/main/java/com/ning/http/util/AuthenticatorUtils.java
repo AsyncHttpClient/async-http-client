@@ -12,11 +12,11 @@
  */
 package com.ning.http.util;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
 
@@ -40,8 +40,6 @@ public final class AuthenticatorUtils {
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
-        if (realm.getOpaque() != null && realm.getOpaque().isEmpty() == false)
-        	construct(builder, "opaque", realm.getOpaque());
         builder.append("qop").append('=').append(realm.getQop()).append(", ");
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
