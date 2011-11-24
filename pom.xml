@@ -410,6 +410,8 @@
                         <exclude>**/Request$EntityWriter</exclude>
                         <exclude>**/RequestBuilderBase</exclude>
                         <exclude>**/Response</exclude>
+                        <exclude>**/Response$</exclude>
+                        <exclude>**/NettyResponseFuture</exclude>
                         <exclude>**/**ResponseBodyPart</exclude>
                     </excludes>
                 </configuration>
