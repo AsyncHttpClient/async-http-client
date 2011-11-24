@@ -40,6 +40,8 @@ public final class AuthenticatorUtils {
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
+        if (realm.getOpaque() != null && realm.getOpaque().isEmpty() == false)
+        	construct(builder, "opaque", realm.getOpaque());
         builder.append("qop").append('=').append(realm.getQop()).append(", ");
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
