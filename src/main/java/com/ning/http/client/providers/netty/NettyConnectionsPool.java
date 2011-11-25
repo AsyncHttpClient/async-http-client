@@ -35,7 +35,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final Timer idleConnectionDetector = new Timer();
+    private final Timer idleConnectionDetector = new Timer(true);
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
