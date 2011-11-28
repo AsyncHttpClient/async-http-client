@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.2.5.Final</version>
+            <version>3.2.7.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
@@ -384,11 +384,11 @@
                             </artifactSet>
                             <transformers>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
+                                    implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -536,6 +536,15 @@
             <url>${distMgmtSnapshotsUrl}</url>
         </snapshotRepository>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <id>repository.jboss.org</id>
+            <url>https://repository.jboss.org/nexus/content/repositories/releases/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
