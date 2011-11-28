@@ -129,22 +129,15 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
     private final static String HTTP_HANDLER = "httpHandler";
-    final static String SSL_HANDLER = "sslHandler";
+    private final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
     private final static String HTTP = "http";
-
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
-
     private final ClientBootstrap plainBootstrap;
-
     private final ClientBootstrap secureBootstrap;
-
     private final static int MAX_BUFFERED_BYTES = 8192;
-
     private final AsyncHttpClientConfig config;
-
     private final AtomicBoolean isClose = new AtomicBoolean(false);
-
     private final ClientSocketChannelFactory socketChannelFactory;
 
     private final ChannelGroup openChannels = new
@@ -161,21 +154,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
 
     private final ConnectionsPool<String, Channel> connectionsPool;
-
     private Semaphore freeConnections = null;
-
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
-
     private boolean executeConnectAsync = true;
-
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
-
     private final boolean trackConnections;
-
     private final boolean useRawUrl;
-
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
-
     private final static SpnegoEngine spnegoEngine = new SpnegoEngine();
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
@@ -492,7 +477,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
     }
-    
+
     private static boolean isProxyServer(AsyncHttpClientConfig config, Request request) {
     	return request.getProxyServer() != null || config.getProxyServer() != null;
     }
