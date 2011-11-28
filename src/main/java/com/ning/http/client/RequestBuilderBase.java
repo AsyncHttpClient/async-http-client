@@ -134,7 +134,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 throw new IllegalArgumentException("Illegal URL: " + url, e);
             }
 
-            if (queryParams != null) {
+            if (queryParams != null && !queryParams.isEmpty()) {
 
                 StringBuilder builder = new StringBuilder();
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
