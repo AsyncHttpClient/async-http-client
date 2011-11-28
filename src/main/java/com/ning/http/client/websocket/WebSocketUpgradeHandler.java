@@ -17,6 +17,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.UpgradeHandler;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade.
@@ -32,7 +33,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     @Override
     public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-        throw new IllegalStateException();
+        return STATE.CONTINUE;
     }
 
     @Override
@@ -46,11 +47,14 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     @Override
     public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-        throw new IllegalStateException();
+        return STATE.CONTINUE;
     }
 
     @Override
     public WebSocket onCompleted() throws Exception {
+        if (webSocket == null) {
+           throw new IllegalStateException("WebSocket is null");
+        }
         return webSocket;
     }
 
@@ -62,6 +66,5 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public void onFailure(Throwable t) {
     }
-
 
 }

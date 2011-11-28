@@ -12,14 +12,12 @@
  */
 package com.ning.http.client.websocket;
 
-/**
- * A Websocket client
- */
-public interface WebSocket {
+public interface WebSocketListener {
 
-    WebSocket sendMessage(byte[] message);
+    void onMessage(byte[] message);
 
-    WebSocket addMessageListener(WebSocketListener l);
+    void onClose();
 
-    void close();
+    void onError(Throwable t);
+
 }

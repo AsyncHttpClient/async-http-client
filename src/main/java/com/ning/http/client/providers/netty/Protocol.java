@@ -10,16 +10,18 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket;
+package com.ning.http.client.providers.netty;
 
-/**
- * A Websocket client
- */
-public interface WebSocket {
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
 
-    WebSocket sendMessage(byte[] message);
+public interface Protocol {
 
-    WebSocket addMessageListener(WebSocketListener l);
+    void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception;
 
-    void close();
+    void onError(ChannelHandlerContext ctx, ExceptionEvent e);
+
+    void onClose(ChannelHandlerContext ctx, ChannelStateEvent e);
 }
