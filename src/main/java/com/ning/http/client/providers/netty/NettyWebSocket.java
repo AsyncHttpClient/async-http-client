@@ -12,8 +12,10 @@
  */
 package com.ning.http.client.providers.netty;
 
+import com.ning.http.client.providers.netty.netty4.BinaryWebSocketFrame;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketListener;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -29,7 +31,7 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket sendMessage(byte[] message) {
-        channel.write(message);
+        channel.write(new BinaryWebSocketFrame(ChannelBuffers.wrappedBuffer(message)));
         return this;
     }
 

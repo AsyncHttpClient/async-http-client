@@ -46,6 +46,9 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
+import com.ning.http.client.providers.netty.netty4.WebSocket08FrameDecoder;
+import com.ning.http.client.providers.netty.netty4.WebSocket08FrameEncoder;
+import com.ning.http.client.providers.netty.netty4.WebSocketFrame;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -91,8 +94,6 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
@@ -133,6 +134,7 @@ import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
+    private final static String WEBSOCKET_KEY = "Sec-WebSocket-Key";
     private final static String HTTP_HANDLER = "httpHandler";
     protected final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
@@ -271,7 +273,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
                 pipeline.addLast("ws-decoder", new HttpResponseDecoder());
-                pipeline.addLast("ws-encoder", new WebSocketFrameEncoder());
+                pipeline.addLast("ws-encoder", new HttpRequestEncoder());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
             }
@@ -540,11 +542,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-
-        if (uri.getScheme().equalsIgnoreCase(WEBSOCKET)) {
+        boolean webSocket = uri.getScheme().equalsIgnoreCase(WEBSOCKET);
+        if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost());
+            nettyRequest.addHeader("Sec-WebSocket-Origin", "http://" + uri.getHost());
+            nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
+            nettyRequest.addHeader("Sec-WebSocket-Version", "8");
         }
 
         if (host != null) {
@@ -640,7 +644,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        if (!request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
+        if (!webSocket && !request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
             nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
         }
 
@@ -1915,7 +1919,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private static final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        if (request.getMethod() != "GET" || WebSocketUpgradeHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+        if (request.getMethod() != "GET" || !WebSocketUpgradeHandler.class.isAssignableFrom(asyncHandler.getClass())) {
             return false;
         }
         return true;
@@ -2220,21 +2224,30 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         new org.jboss.netty.handler.codec.http.HttpResponseStatus(101, "Web Socket Protocol Handshake");
 
                 final boolean validStatus = response.getStatus().equals(status);
-                final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE).equals(HttpHeaders.Values.WEBSOCKET);
+                final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
                 final boolean validConnection = response.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE);
 
                 HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                if (!validStatus || !validUpgrade || !validConnection || statusReceived) {
+                if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
                     throw new IOException("Invalid handshake response");
+                }
+
+                String accept = response.getHeader("Sec-WebSocket-Accept");
+                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(WEBSOCKET_KEY));
+                if (accept == null || !accept.equals(key) ) {
+                    throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
 
                 if (h.onHeadersReceived(new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this)) == STATE.CONTINUE) {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 }
-            } else if (e.getMessage() instanceof DefaultWebSocketFrame) {
-                final DefaultWebSocketFrame frame = (DefaultWebSocketFrame) e.getMessage();
+                ctx.getPipeline().replace("ws-decoder", "ws-decoder", new WebSocket08FrameDecoder(false,false));
+                ctx.getPipeline().replace("ws-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
+                future.done(null);
+            } else if (e.getMessage() instanceof WebSocketFrame) {
+                final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
                 HttpChunk webSocketChunk = new HttpChunk() {
                     private ChannelBuffer content;
@@ -2261,6 +2274,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 webSocket.onMessage(rp.getBodyPartBytes());
+            } else {
+                log.error("Invalid attachment {}", ctx.getAttachment());
             }
         }
 
@@ -2298,7 +2313,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 webSocket.close();
             } catch (Throwable t) {
                 log.error("onError", t);
-
             }
         }
     }
