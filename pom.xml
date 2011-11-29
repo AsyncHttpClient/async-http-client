@@ -8,10 +8,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
-    <artifactId>async-http-client</artifactId>
+    <artifactId>async-http-client-project</artifactId>
     <name>Asynchronous Http Client</name>
     <version>1.7.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <description>
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
@@ -59,36 +59,6 @@
         </license>
     </licenses>
     <dependencies>
-        <dependency>
-            <groupId>org.jboss.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>3.2.5.Final</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.6.2</version>
-        </dependency>
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -165,25 +135,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Optional Apache Http Client -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
     <build>
         <extensions>
@@ -241,38 +192,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.3.4</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <manifestLocation>META-INF</manifestLocation>
-                    <instructions>
-                        <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))
-                        </Bundle-Version>
-                        <Bundle-Vendor>Sonatype</Bundle-Vendor>
-                        <Import-Package>
-                            org.jboss.netty.*;resolution:=optional,
-                            org.apache.commons.httpclient;resolution:=optional,
-                            org.apache.commons.httpclient.*;resolution:=optional,
-                            *
-                        </Import-Package>
-                        <Export-Package>
-                            com.ning.http.*;version="$(replace;$(project.version);-SNAPSHOT;"")"
-                        </Export-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>osgi-bundle</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>bundle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -288,9 +208,11 @@
                                 <requireMavenVersion>
                                     <version>2.0.9</version>
                                 </requireMavenVersion>
+                                <!--
                                 <requireJavaVersion>
                                     <version>1.5</version>
                                 </requireJavaVersion>
+                                -->
                             </rules>
                         </configuration>
                     </execution>
@@ -359,108 +281,9 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>shaded</shadedClassifierName>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>commons-codec:commons-codec</exclude>
-                                    <exclude>commons-lang:commons-lang</exclude>
-                                    <exclude>commons-logging:commons-logging</exclude>
-                                    <exclude>junit:junit</exclude>
-                                    <exclude>log4j:log4j</exclude>
-                                    <exclude>commons-httpclient:commons-httpclient</exclude>
-                                </excludes>
-                            </artifactSet>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>clirr-maven-plugin</artifactId>
-                <version>2.3</version>
-                <configuration>
-                    <excludes>
-                        <exclude>**/NettyAsyncHttpProvider$*</exclude>
-                        <exclude>**/AsyncHandler$STATE</exclude>
-                        <exclude>**/ProxyServer$Protocol</exclude>
-                        <exclude>**/Realm$AuthScheme</exclude>
-                        <exclude>**/SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude>
-                        <exclude>**/SpnegoEngine</exclude>
-                        <exclude>**/Request</exclude>
-                        <exclude>**/Request$EntityWriter</exclude>
-                        <exclude>**/RequestBuilderBase</exclude>
-                        <exclude>**/Response</exclude>
-                        <exclude>**/Response$</exclude>
-                        <exclude>**/NettyResponseFuture</exclude>
-                        <exclude>**/**ResponseBodyPart</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>check-api-compat</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
     <profiles>
-        <profile>
-            <id>grizzly</id>
-            <activation>
-                <jdk>[1.6,)</jdk>
-            </activation>
-            <properties>
-                <compiler.exclude>asdfasfd/**</compiler.exclude>
-                <test.compiler.exclude>asdfasdf/**</test.compiler.exclude>
-                <javadoc.package.exclude>asdfasdf</javadoc.package.exclude>
-                <source.property>1.6</source.property>
-                <target.property>1.6</target.property>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-http</artifactId>
-                    <version>2.2-SNAPSHOT</version>
-                    <optional>true</optional>
-                </dependency>
-            </dependencies>
-            <repositories>
-                <repository>
-                    <id>jvnet-nexus-snapshots</id>
-                    <url>https://maven.java.net/content/repositories/snapshots</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-        </profile>
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
@@ -536,11 +359,18 @@
             <url>${distMgmtSnapshotsUrl}</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <modules>
+        <module>modules</module>
+    </modules>
+
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
-        <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
-        <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
+        <!--<compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude> -->
+        <compiler.exclude>a</compiler.exclude>
+        <!--<test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>-->
+        <test.compiler.exclude>a</test.compiler.exclude>
         <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
         <source.property>1.5</source.property>
         <target.property>1.5</target.property>
