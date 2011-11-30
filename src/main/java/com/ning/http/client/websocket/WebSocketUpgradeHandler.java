@@ -17,7 +17,6 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.UpgradeHandler;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade.
