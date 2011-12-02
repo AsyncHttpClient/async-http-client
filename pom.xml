@@ -443,7 +443,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-http</artifactId>
+                    <artifactId>grizzly-websockets</artifactId>
                     <version>2.2-SNAPSHOT</version>
                     <optional>true</optional>
                 </dependency>
