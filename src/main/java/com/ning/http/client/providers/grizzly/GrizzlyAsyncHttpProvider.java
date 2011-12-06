@@ -41,6 +41,8 @@ import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
+import com.ning.http.client.websocket.WebSocketPingListener;
+import com.ning.http.client.websocket.WebSocketTextListener;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
@@ -1276,7 +1278,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
-            boolean result = false;
+            boolean result;
             if (httpHeader.isSkipRemainder()) {
                 clearResponse(ctx.getConnection());
                 cleanup(ctx, provider);
@@ -2521,7 +2523,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
-            // TODO NEED A WebSocket instance
             ahcListener.onClose(webSocket);
         }
 
@@ -2532,7 +2533,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, String s) {
-            // no-op
+            if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketTextListener.class.cast(ahcListener).onMessage(s);
+            }
         }
 
         @Override
@@ -2544,7 +2547,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onPing(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            // no-op
+            if (WebSocketPingListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketPingListener.class.cast(ahcListener).onPing(bytes);
+            }
         }
 
         @Override
