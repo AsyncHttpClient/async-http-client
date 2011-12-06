@@ -1229,7 +1229,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 }
 
-                boolean redirectEnabled = request.isRedirectEnabled() ? true : config.isRedirectEnabled();
+                boolean redirectEnabled = request.isRedirectOverrideSet()? request.isRedirectEnabled() : config.isRedirectEnabled();
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301 || statusCode == 307)) {
 
                     if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {

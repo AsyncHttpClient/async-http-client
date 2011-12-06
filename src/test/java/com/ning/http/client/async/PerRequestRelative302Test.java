@@ -112,6 +112,25 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         assertTrue(baseUrl.matches(anyMicrosoftPage), "response does not show redirection to " + anyMicrosoftPage);
     }
 
+    @Test(groups = {"online", "default_provider"})
+    public void notRedirected302Test() throws Throwable {
+        isSet.getAndSet(false);
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClient c = getAsyncHttpClient(cg);
+
+
+        // once
+        Response response = c.prepareGet(getTargetUrl())
+                .setFollowRedirects(false)
+                .setHeader("X-redirect", "http://www.microsoft.com/")
+                .execute().get();
+
+        assertNotNull(response);
+        assertEquals(response.getStatusCode(), 302);
+
+        c.close();
+    }
+
     private String getBaseUrl(URI uri) {
         String url = uri.toString();
         int port = uri.getPort();
