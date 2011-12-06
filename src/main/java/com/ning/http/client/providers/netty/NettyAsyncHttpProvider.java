@@ -2274,6 +2274,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 webSocket.onMessage(rp.getBodyPartBytes());
+                webSocket.onTextMessage(frame.getBinaryData().toString("UTF-8"));
             } else {
                 log.error("Invalid attachment {}", ctx.getAttachment());
             }

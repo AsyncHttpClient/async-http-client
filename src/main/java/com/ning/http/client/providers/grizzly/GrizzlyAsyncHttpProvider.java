@@ -39,6 +39,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.websocket.WebSocket;
+import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -2482,8 +2483,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
+        public WebSocket sendTextMessage(String message) {
+            gWebSocket.send(message);
+            return this;
+        }
+
+        @Override
         public WebSocket addMessageListener(WebSocketListener l) {
-            gWebSocket.add(new AHCWebSocketListenerAdapter(l));
+            gWebSocket.add(new AHCWebSocketListenerAdapter(l, this));
             return this;
         }
 
@@ -2498,12 +2505,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private static final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websockets.WebSocketListener {
 
         private final WebSocketListener ahcListener;
+        private final WebSocket webSocket;
 
         // -------------------------------------------------------- Constructors
 
 
-        AHCWebSocketListenerAdapter(final WebSocketListener ahcListener) {
+        AHCWebSocketListenerAdapter(final WebSocketListener ahcListener, WebSocket webSocket) {
             this.ahcListener = ahcListener;
+            this.webSocket = webSocket;
         }
 
 
@@ -2511,8 +2520,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
-        public void onClose(org.glassfish.grizzly.websockets.WebSocket webSocket, DataFrame dataFrame) {
-            ahcListener.onClose();
+        public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
+            // TODO NEED A WebSocket instance
+            ahcListener.onClose(webSocket);
         }
 
         @Override
@@ -2527,7 +2537,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            ahcListener.onMessage(bytes);
+            if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketByteListener.class.cast(ahcListener).onMessage(bytes);
+            }
         }
 
         @Override

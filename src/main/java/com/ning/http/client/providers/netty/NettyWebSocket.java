@@ -14,11 +14,16 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.providers.netty.netty4.BinaryWebSocketFrame;
 import com.ning.http.client.websocket.WebSocket;
+import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
+import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 public class NettyWebSocket implements WebSocket {
 
@@ -31,7 +36,17 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket sendMessage(byte[] message) {
-        channel.write(new BinaryWebSocketFrame(ChannelBuffers.wrappedBuffer(message)));
+        channel.write(new BinaryWebSocketFrame(wrappedBuffer(message)));
+        return this;
+    }
+
+    @Override
+    public WebSocket sendTextMessage(String message) {
+        try {
+            channel.write(new BinaryWebSocketFrame(wrappedBuffer(message.getBytes("ISO-8859-1"))));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
@@ -49,7 +64,17 @@ public class NettyWebSocket implements WebSocket {
 
     protected void onMessage(byte[] message) {
         for (WebSocketListener l : listeners) {
-            l.onMessage(message);
+            if (WebSocketByteListener.class.isAssignableFrom(l.getClass())) {
+                WebSocketByteListener.class.cast(l).onMessage(message);
+            }
+        }
+    }
+
+    protected void onTextMessage(String message) {
+        for (WebSocketListener l : listeners) {
+            if (WebSocketTextListener.class.isAssignableFrom(l.getClass())) {
+                WebSocketTextListener.class.cast(l).onMessage(message);
+            }
         }
     }
 
@@ -61,7 +86,7 @@ public class NettyWebSocket implements WebSocket {
 
     protected void onClose() {
         for (WebSocketListener l : listeners) {
-            l.onClose();
+            l.onClose(this);
         }
     }
 }

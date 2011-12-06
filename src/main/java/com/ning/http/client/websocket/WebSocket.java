@@ -19,6 +19,8 @@ public interface WebSocket {
 
     WebSocket sendMessage(byte[] message);
 
+    WebSocket sendTextMessage(String message);
+
     WebSocket addMessageListener(WebSocketListener l);
 
     void close();

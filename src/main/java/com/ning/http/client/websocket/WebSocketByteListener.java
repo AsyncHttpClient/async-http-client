@@ -12,12 +12,8 @@
  */
 package com.ning.http.client.websocket;
 
-public interface WebSocketListener {
+public interface WebSocketByteListener extends WebSocketListener {
 
-    void onOpen(WebSocket websocket);
-
-    void onClose(WebSocket websocket);
-
-    void onError(Throwable t);
+    void onMessage(byte[] message);
 
 }

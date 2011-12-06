@@ -13,10 +13,14 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.UpgradeHandler;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An {@link AsyncHandler} which is able to execute WebSocket upgrade.
@@ -24,6 +28,18 @@ import com.ning.http.client.UpgradeHandler;
 public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
 
     private WebSocket webSocket;
+    private final ConcurrentLinkedQueue<WebSocketListener> l;
+    private final String protocol;
+    private final long maxByteSize;
+    private final long maxTextSize;
+    private final AtomicBoolean ok = new AtomicBoolean(false);
+
+    private WebSocketUpgradeHandler(Builder b) {
+        l = b.l;
+        protocol = b.protocol;
+        maxByteSize = b.maxByteSize;
+        maxTextSize = b.maxTextSize;
+    }
 
     @Override
     public void onThrowable(Throwable t) {
@@ -40,7 +56,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
-           throw new IllegalStateException("Invalid Upgrade protocol");
+            throw new IllegalStateException("Invalid Upgrade protocol");
         }
     }
 
@@ -52,7 +68,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public WebSocket onCompleted() throws Exception {
         if (webSocket == null) {
-           throw new IllegalStateException("WebSocket is null");
+            throw new IllegalStateException("WebSocket is null");
         }
         return webSocket;
     }
@@ -60,10 +76,71 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
+        for(WebSocketListener w: l) {
+            webSocket.addMessageListener(w);
+            w.onOpen(webSocket);
+        }
+        ok.set(true);
     }
 
     @Override
     public void onFailure(Throwable t) {
+        for(WebSocketListener w: l) {
+            if (!ok.get()){
+                webSocket.addMessageListener(w);
+            }
+            w.onError(t);
+        }
     }
 
+    /**
+     * Build a {@link WebSocketUpgradeHandler}
+     */
+    public final static class Builder {
+        private ConcurrentLinkedQueue<WebSocketListener> l = new ConcurrentLinkedQueue<WebSocketListener>();
+        private String protocol = "";
+        private long maxByteSize = 8192;
+        private long maxTextSize = 8192;
+
+         /**
+         * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}
+         *
+         * @param listener a {@link WebSocketListener}
+         * @return this
+         */
+        public Builder addWebSocketListener(WebSocketListener listener) {
+            l.add(listener);
+            return this;
+        }
+
+        /**
+         * Remove a {@link WebSocketListener}
+         *
+         * @param listener a {@link WebSocketListener}
+         * @return this
+         */
+        public Builder removeWebSocketListener(WebSocketListener listener) {
+            l.remove(listener);
+            return this;
+        }
+
+        public Builder setProtocol(String protocol) {
+            this.protocol = protocol;
+            return this;
+        }
+
+        public Builder setMaxByteSize(long maxByteSize) {
+            this.maxByteSize = maxByteSize;
+            return this;
+        }
+
+        public Builder setMaxTextSize(long maxTextSize) {
+            this.maxTextSize = maxTextSize;
+            return this;
+        }
+
+        public WebSocketUpgradeHandler build(){
+            return new WebSocketUpgradeHandler(this);
+        }
+    }
 }
