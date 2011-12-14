@@ -53,6 +53,8 @@ import com.ning.http.util.SslUtils;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.EmptyCompletionHandler;
+import org.glassfish.grizzly.FileTransfer;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.WriteResult;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -138,7 +140,10 @@ import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderCon
 public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
-
+    private static final boolean SEND_FILE_SUPPORT;
+    static {
+        SEND_FILE_SUPPORT = configSendFileSupport();
+    }
     private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
 
@@ -150,6 +155,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
+
 
 
 
@@ -421,6 +427,29 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
+
+
+    private static boolean configSendFileSupport() {
+
+        return !((System.getProperty("os.name").equalsIgnoreCase("linux")
+                && !linuxSendFileSupported())
+                || System.getProperty("os.name").equalsIgnoreCase("HP-UX"));
+    }
+
+
+    private static boolean linuxSendFileSupported() {
+        final String version = System.getProperty("java.version");
+        if (version.startsWith("1.6")) {
+            int idx = version.indexOf('_');
+            if (idx == -1) {
+                return false;
+            }
+            final int patchRev = Integer.parseInt(version.substring(idx + 1));
+            return (patchRev >= 18);
+        } else {
+            return version.startsWith("1.7") || version.startsWith("1.8");
+        }
+    }
     
     private void doDefaultTransportConfig() {
         final ExecutorService service = clientConfig.executorService();
@@ -791,7 +820,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final URI uri = AsyncHttpProviderUtils.createUri(httpCtx.requestUrl);
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-
+            boolean secure = "https".equals(uri.getScheme());
             builder.method(request.getMethod());
             builder.protocol(Protocol.HTTP_1_1);
             String host = request.getVirtualHost();
@@ -807,7 +836,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final ProxyServer proxy = getProxyServer(request);
             final boolean useProxy = (proxy != null);
             if (useProxy) {
-                if ("https".equals(uri.getScheme())) {
+                if (secure) {
                     builder.method(Method.CONNECT);
                     builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
                 } else {
@@ -840,6 +869,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             } else {
                 requestPacket = builder.build();
             }
+            requestPacket.setSecure(true);
             if (!useProxy) {
                 addQueryString(request, requestPacket);
             }
@@ -860,10 +890,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             final AsyncHandler h = httpCtx.handler;
-            if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
-                final FluentCaseInsensitiveStringsMap map =
-                        new FluentCaseInsensitiveStringsMap(request.getHeaders());
-                TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+            if (h != null) {
+                if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
+                    final FluentCaseInsensitiveStringsMap map =
+                            new FluentCaseInsensitiveStringsMap(request.getHeaders());
+                    TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+                }
             }
             return sendRequest(ctx, request, requestPacket);
 
@@ -1070,8 +1102,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
-            if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
+            if (handler != null) {
+                if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
+                    ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
+                }
             }
         }
 
@@ -1079,13 +1113,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
-            if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                final int written = content.getContent().remaining();
-                final long total = context.totalBodyWritten.addAndGet(written);
-                ((TransferCompletionHandler) handler).onContentWriteProgress(
-                        written,
-                        total,
-                        content.getHttpHeader().getContentLength());
+            if (handler != null) {
+                if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
+                    final int written = content.getContent().remaining();
+                    final long total = context.totalBodyWritten.addAndGet(written);
+                    ((TransferCompletionHandler) handler).onContentWriteProgress(
+                            written,
+                            total,
+                            content.getHttpHeader().getContentLength());
+                }
             }
         }
 
@@ -1994,7 +2030,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END PartsBodyHandler
 
 
-    private static final class FileBodyHandler implements BodyHandler {
+    private final class FileBodyHandler implements BodyHandler {
 
         // -------------------------------------------- Methods from BodyHandler
 
@@ -2010,34 +2046,57 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException {
 
             final File f = request.getFile();
-            final FileInputStream fis = new FileInputStream(request.getFile());
-            final MemoryManager mm = ctx.getMemoryManager();
-            AtomicInteger written = new AtomicInteger();
-            boolean last = false;
             requestPacket.setContentLengthLong(f.length());
-            try {
-                for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last; ) {
-                    Buffer b = null;
-                    int read;
-                    if ((read = fis.read(buf)) < 0) {
-                        last = true;
-                        b = Buffers.EMPTY_BUFFER;
-                    }
-                    if (b != Buffers.EMPTY_BUFFER) {
-                        written.addAndGet(read);
-                        b = Buffers.wrap(mm, buf, 0, read);
-                    }
-
-                    final HttpContent content =
-                            requestPacket.httpContentBuilder().content(b).
-                                    last(last).build();
-                    ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
-                }
-            } finally {
+            final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
+            if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
+                final FileInputStream fis = new FileInputStream(request.getFile());
+                final MemoryManager mm = ctx.getMemoryManager();
+                AtomicInteger written = new AtomicInteger();
+                boolean last = false;
                 try {
-                    fis.close();
-                } catch (IOException ignored) {
+                    for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last; ) {
+                        Buffer b = null;
+                        int read;
+                        if ((read = fis.read(buf)) < 0) {
+                            last = true;
+                            b = Buffers.EMPTY_BUFFER;
+                        }
+                        if (b != Buffers.EMPTY_BUFFER) {
+                            written.addAndGet(read);
+                            b = Buffers.wrap(mm, buf, 0, read);
+                        }
+
+                        final HttpContent content =
+                                requestPacket.httpContentBuilder().content(b).
+                                        last(last).build();
+                        ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+                    }
+                } finally {
+                    try {
+                        fis.close();
+                    } catch (IOException ignored) {
+                    }
                 }
+            } else {
+                // write the headers
+                ctx.write(requestPacket, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+                ctx.write(new FileTransfer(f), new EmptyCompletionHandler<WriteResult>() {
+
+                    @Override
+                    public void updated(WriteResult result) {
+                        final AsyncHandler handler = context.handler;
+                        if (handler != null) {
+                            if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
+                                final long written = result.getWrittenSize();
+                                final long total = context.totalBodyWritten.addAndGet(written);
+                                ((TransferCompletionHandler) handler).onContentWriteProgress(
+                                        written,
+                                        total,
+                                        requestPacket.getContentLength());
+                            }
+                        }
+                    }
+                });
             }
 
             return true;

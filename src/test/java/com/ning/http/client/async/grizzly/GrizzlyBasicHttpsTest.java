@@ -28,4 +28,8 @@ public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
     }
 
+    @Override
+    public void zeroCopyPostTest() throws Throwable {
+        super.zeroCopyPostTest();    //To change body of overridden methods use File | Settings | File Templates.
+    }
 }
