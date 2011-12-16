@@ -13,7 +13,6 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;

@@ -13,6 +13,7 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.providers.netty.netty4.BinaryWebSocketFrame;
+import com.ning.http.client.providers.netty.netty4.TextWebSocketFrame;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
@@ -42,11 +43,7 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket sendTextMessage(String message) {
-        try {
-            channel.write(new BinaryWebSocketFrame(wrappedBuffer(message.getBytes("ISO-8859-1"))));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        channel.write(new TextWebSocketFrame(message));
         return this;
     }
 
@@ -88,5 +85,12 @@ public class NettyWebSocket implements WebSocket {
         for (WebSocketListener l : listeners) {
             l.onClose(this);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "NettyWebSocket{" +
+                "channel=" + channel +
+                '}';
     }
 }

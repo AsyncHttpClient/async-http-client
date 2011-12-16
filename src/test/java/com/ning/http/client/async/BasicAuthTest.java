@@ -30,7 +30,6 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -42,6 +41,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.util.security.Constraint;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -53,8 +53,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -102,12 +104,15 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         mapping.setConstraint(constraint);
         mapping.setPathSpec("/*");
 
+        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        cm.add(mapping);
+
         Set<String> knownRoles = new HashSet<String>();
         knownRoles.add(user);
         knownRoles.add(admin);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+        security.setConstraintMappings(cm, knownRoles);
         security.setAuthenticator(new BasicAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(false);
@@ -139,7 +144,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             if (in != null) {
                 try {
                     in.close();
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
         }
 
@@ -182,7 +188,11 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
                 super.handle(arg0, arg1, arg2, arg3);
             }
         };
-        security.setConstraintMappings(new ConstraintMapping[]{mapping}, knownRoles);
+
+        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        cm.add(mapping);
+
+        security.setConstraintMappings(cm, knownRoles);
         security.setAuthenticator(new DigestAuthenticator());
         security.setLoginService(loginService);
         security.setStrict(true);

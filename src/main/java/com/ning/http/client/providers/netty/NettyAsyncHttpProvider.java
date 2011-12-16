@@ -2236,15 +2236,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 String accept = response.getHeader("Sec-WebSocket-Accept");
                 String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(WEBSOCKET_KEY));
-                if (accept == null || !accept.equals(key) ) {
+                if (accept == null || !accept.equals(key)) {
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
 
+                ctx.getPipeline().replace("ws-decoder", "ws-decoder", new WebSocket08FrameDecoder(false, false));
+                ctx.getPipeline().replace("ws-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 if (h.onHeadersReceived(new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this)) == STATE.CONTINUE) {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 }
-                ctx.getPipeline().replace("ws-decoder", "ws-decoder", new WebSocket08FrameDecoder(false,false));
-                ctx.getPipeline().replace("ws-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 future.done(null);
             } else if (e.getMessage() instanceof WebSocketFrame) {
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
