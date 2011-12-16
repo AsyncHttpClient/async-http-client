@@ -16,6 +16,8 @@ package com.ning.http.client.async.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.Response;
 import com.ning.http.client.async.AsyncProvidersBasicTest;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
@@ -23,8 +25,14 @@ import com.ning.http.client.providers.grizzly.TransportCustomizer;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import static org.testng.Assert.assertEquals;
 
 public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
@@ -48,5 +56,9 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
             }
         });
         return config;
+    }
+
+    @Test(groups = {"standalone", "default_provider", "async"}, enabled = false)
+    public void asyncDoPostBasicGZIPTest() throws Throwable {
     }
 }
