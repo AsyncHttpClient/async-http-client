@@ -1442,12 +1442,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 .parseWWWAuthenticateHeader(auth)
                                 .build();
                 if (auth.toLowerCase().startsWith("basic")) {
+                    req.getHeaders().remove(Header.Authorization.toString());
                     try {
                         req.getHeaders().add(Header.Authorization.toString(),
                                              AuthenticatorUtils.computeBasicAuthentication(realm));
                     } catch (UnsupportedEncodingException ignored) {
                     }
                 } else if (auth.toLowerCase().startsWith("digest")) {
+                    req.getHeaders().remove(Header.Authorization.toString());
                     try {
                         req.getHeaders().add(Header.Authorization.toString(),
                                              AuthenticatorUtils.computeDigestAuthentication(realm));
