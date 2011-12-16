@@ -111,7 +111,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
+        assertEquals(r.getHeader("server"), "Jetty(8.1.0.RC1)");
 
         asyncHttpClient.close();
     }
@@ -142,7 +142,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
+        assertEquals(r.getHeader("server"), "Jetty(8.1.0.RC1)");
 
         asyncHttpClient.close();
     }
@@ -162,7 +162,7 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
         Response r = client.get().get();
 
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(7.1.4.v20100610)");
+        assertEquals(r.getHeader("server"), "Jetty(8.1.0.RC1)");
 
         client.close();
     }
