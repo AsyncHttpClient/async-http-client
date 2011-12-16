@@ -219,6 +219,8 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static URI getRedirectUri(URI uri, String location) {
+        if(location == null)
+            throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
         URI newUri = uri.resolve(location);
 
         String scheme = newUri.getScheme();

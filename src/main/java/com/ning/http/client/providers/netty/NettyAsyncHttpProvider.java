@@ -727,7 +727,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
                     nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes, 0, length));
-                } else if (request.getParams() != null) {
+                } else if (request.getParams() != null && !request.getParams().isEmpty()) {
                     StringBuilder sb = new StringBuilder();
                     for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                         final String key = paramEntry.getKey();
