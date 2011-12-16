@@ -201,6 +201,13 @@ public interface Request {
     public boolean isRedirectEnabled();
 
     /**
+     *
+     * @return <tt>true></tt> if request's redirectEnabled setting
+     *          should be used in place of client's
+     */
+    public boolean isRedirectOverrideSet();
+
+    /**
      * Return Per request configuration.
      *
      * @return Per request configuration.
