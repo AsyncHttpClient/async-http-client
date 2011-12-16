@@ -13,14 +13,14 @@
 package com.ning.http.client.websocket;
 
 /**
- * A {@link WebSocketListener} for text message
+ * A WebSocket's Pong Listener
  */
-public interface WebSocketTextListener extends WebSocketListener {
+public interface WebSocketPongListener extends WebSocketListener {
 
     /**
-     * Invoked when WebSocket text message are received.
-     * @param message a {@link String} message
+     * Invoked when a pong message is received
+     * @param message a byte array
      */
-    void onMessage(String message);
+    void onPong(byte[] message);
 
 }

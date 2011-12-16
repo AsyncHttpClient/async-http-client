@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * An {@link AsyncHandler} which is able to execute WebSocket upgrade.
+ * An {@link AsyncHandler} which is able to execute WebSocket upgrade. Use the Builder for configuring WebSocket options.
  */
 public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, AsyncHandler<WebSocket> {
 
@@ -41,18 +41,27 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         maxTextSize = b.maxTextSize;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void onThrowable(Throwable t) {
+    public final void onThrowable(Throwable t) {
         onFailure(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public final STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         return STATE.CONTINUE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public final STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
@@ -60,33 +69,45 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public final STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         return STATE.CONTINUE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public WebSocket onCompleted() throws Exception {
+    public final WebSocket onCompleted() throws Exception {
         if (webSocket == null) {
             throw new IllegalStateException("WebSocket is null");
         }
         return webSocket;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void onSuccess(WebSocket webSocket) {
+    public final void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
-        for(WebSocketListener w: l) {
+        for (WebSocketListener w : l) {
             webSocket.addMessageListener(w);
             w.onOpen(webSocket);
         }
         ok.set(true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void onFailure(Throwable t) {
-        for(WebSocketListener w: l) {
-            if (!ok.get()){
+    public final void onFailure(Throwable t) {
+        for (WebSocketListener w : l) {
+            if (!ok.get()) {
                 webSocket.addMessageListener(w);
             }
             w.onError(t);
@@ -102,7 +123,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         private long maxByteSize = 8192;
         private long maxTextSize = 8192;
 
-         /**
+        /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}
          *
          * @param listener a {@link WebSocketListener}
@@ -124,22 +145,44 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
             return this;
         }
 
+        /**
+         * Set the WebSocket protocol.
+         *
+         * @param protocol the WebSocket protocol.
+         * @return this
+         */
         public Builder setProtocol(String protocol) {
             this.protocol = protocol;
             return this;
         }
 
+        /**
+         * Set the max size of the WebSocket byte message that will be sent.
+         *
+         * @param maxByteSize max size of the WebSocket byte message
+         * @return this
+         */
         public Builder setMaxByteSize(long maxByteSize) {
             this.maxByteSize = maxByteSize;
             return this;
         }
 
+        /**
+         * Set the max size of the WebSocket text message that will be sent.
+         *
+         * @param maxTextSize max size of the WebSocket byte message
+         * @return this
+         */
         public Builder setMaxTextSize(long maxTextSize) {
             this.maxTextSize = maxTextSize;
             return this;
         }
 
-        public WebSocketUpgradeHandler build(){
+        /**
+         * Build a {@link WebSocketUpgradeHandler}
+         * @return a {@link WebSocketUpgradeHandler}
+         */
+        public WebSocketUpgradeHandler build() {
             return new WebSocketUpgradeHandler(this);
         }
     }

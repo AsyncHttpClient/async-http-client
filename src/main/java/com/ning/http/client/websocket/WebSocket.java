@@ -17,11 +17,29 @@ package com.ning.http.client.websocket;
  */
 public interface WebSocket {
 
+    /**
+     * Sen a byte message.
+     * @param message a byte message
+     * @return this
+     */
     WebSocket sendMessage(byte[] message);
 
+    /**
+     * Send a text message
+     * @param message a text message
+     * @return this.
+     */
     WebSocket sendTextMessage(String message);
 
+    /**
+     * Add a {@link WebSocketListener}
+     * @param l a {@link WebSocketListener}
+     * @return this
+     */
     WebSocket addMessageListener(WebSocketListener l);
 
+    /**
+     * Close the WebSocket.
+     */
     void close();
 }
