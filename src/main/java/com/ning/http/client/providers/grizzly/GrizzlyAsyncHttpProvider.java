@@ -1054,14 +1054,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             this.provider = provider;
             HANDLER_MAP.put(HttpStatus.UNAUTHORIZED_401.getStatusCode(),
                             AuthorizationHandler.INSTANCE);
-            if (provider.clientConfig.isRedirectEnabled()) {
-                HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(),
-                                RedirectHandler.INSTANCE);
-                HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(),
-                                RedirectHandler.INSTANCE);
-                HANDLER_MAP.put(HttpStatus.TEMPORARY_REDIRECT_307.getStatusCode(),
-                                RedirectHandler.INSTANCE);
-            }
+            HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(),
+                    RedirectHandler.INSTANCE);
+            HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(),
+                    RedirectHandler.INSTANCE);
+            HANDLER_MAP.put(HttpStatus.TEMPORARY_REDIRECT_307.getStatusCode(),
+                    RedirectHandler.INSTANCE);
 
         }
 
@@ -1155,6 +1153,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (context.invocationStatus == StatusHandler.InvocationStatus.CONTINUE) {
                 if (HANDLER_MAP.containsKey(status)) {
                     context.statusHandler = HANDLER_MAP.get(status);
+                }
+                if (context.statusHandler instanceof RedirectHandler) {
+                    if (!isRedirectAllowed(context)) {
+                        context.statusHandler = null;
+                    }
                 }
             }
             if (isRedirectAllowed(context)) {
@@ -1347,6 +1350,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         private static boolean isRedirectAllowed(final HttpTransactionContext ctx) {
             boolean allowed = ctx.request.isRedirectEnabled();
+            if (ctx.request.isRedirectOverrideSet()) {
+                return allowed;
+            }
             if (!allowed) {
                 allowed = ctx.redirectsAllowed;
             }
