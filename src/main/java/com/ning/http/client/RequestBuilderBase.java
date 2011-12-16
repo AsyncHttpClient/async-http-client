@@ -127,11 +127,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 url = "http://localhost";
             }
 
-            String uri;
-            try {
-                uri = URI.create(url).toURL().toString();
-            } catch (Throwable e) {
-                throw new IllegalArgumentException("Illegal URL: " + url, e);
+            String uri = url;
+            if (!uri.startsWith("ws")) {
+                try {
+                    uri = URI.create(url).toURL().toString();
+                } catch (Throwable e) {
+                    throw new IllegalArgumentException("Illegal URL: " + url, e);
+                }
             }
 
             if (queryParams != null && !queryParams.isEmpty()) {

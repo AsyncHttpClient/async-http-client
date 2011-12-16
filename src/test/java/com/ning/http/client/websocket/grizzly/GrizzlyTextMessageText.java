@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,26 +10,20 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-
-package com.ning.http.client.async.grizzly;
+package com.ning.http.client.websocket.grizzly;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.BasicHttpsTest;
+import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import com.ning.http.client.websocket.ByteMessageTest;
 
-public class GrizzlyBasicHttpsTest extends BasicHttpsTest {
-
+public class GrizzlyTextMessageText extends ByteMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-    }
-
-    @Override
-    public void zeroCopyPostTest() throws Throwable {
-        super.zeroCopyPostTest();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }
