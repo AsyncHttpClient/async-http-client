@@ -94,6 +94,10 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                         text.set(message);
                         latch.countDown();
                     }
+
+                    @Override
+                    public void onFragment(byte[] fragment, boolean last) {
+                    }
                 }).build()).get();
 
         websocket.sendMessage("ECHO".getBytes());
@@ -137,6 +141,10 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                             text.set(n);
                         }
                         latch.countDown();
+                    }
+
+                    @Override
+                    public void onFragment(byte[] fragment, boolean last) {
                     }
                 }).build()).get();
 
@@ -182,6 +190,10 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                             text.set(n);
                         }
                         latch.countDown();
+                    }
+
+                    @Override
+                    public void onFragment(byte[] fragment, boolean last) {
                     }
                 }).build()).get();
 

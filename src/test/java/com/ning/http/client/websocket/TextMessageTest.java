@@ -147,6 +147,10 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     }
 
                     @Override
+                    public void onFragment(String fragment, boolean last) {
+                    }
+
+                    @Override
                     public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                     }
 
@@ -184,6 +188,10 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     }
 
                     @Override
+                    public void onFragment(String fragment, boolean last) {
+                    }
+
+                    @Override
                     public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
                     }
 
@@ -203,6 +211,10 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     public void onMessage(String message) {
                         text.set(text.get() + message);
                         latch.countDown();
+                    }
+
+                    @Override
+                    public void onFragment(String fragment, boolean last) {
                     }
 
                     @Override
@@ -240,6 +252,10 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     public void onMessage(String message) {
                         text.set(text.get() + message);
                         latch.countDown();
+                    }
+
+                    @Override
+                    public void onFragment(String fragment, boolean last) {
                     }
 
                     boolean t = false;

@@ -23,4 +23,13 @@ public interface WebSocketByteListener extends WebSocketListener {
      */
     void onMessage(byte[] message);
 
+
+    /**
+     * Invoked when bytes of a fragmented message are available.
+     *
+     * @param fragment byte[] fragment.
+     * @param last if this fragment is the last in the series.
+     */
+    void onFragment(byte[] fragment, boolean last);
+
 }

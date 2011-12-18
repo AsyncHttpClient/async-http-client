@@ -42,6 +42,7 @@ import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketPingListener;
+import com.ning.http.client.websocket.WebSocketPongListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -870,7 +871,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 requestPacket = builder.build();
             }
             requestPacket.setSecure(true);
-            if (!useProxy) {
+            if (!useProxy && !httpCtx.isWSRequest) {
                 addQueryString(request, requestPacket);
             }
             addHeaders(request, requestPacket);
@@ -1301,8 +1302,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         ws.onConnect();
                         context.webSocket = new GrizzlyWebSocketAdapter(ws);
                         WebSocketEngine.getEngine().setWebSocketHolder(ctx.getConnection(),
-                                                                       context.protocolHandler,
-                                                                       ws);
+                                context.protocolHandler,
+                                ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
                         context.result(handler.onCompleted());
                     } catch (Exception e) {
@@ -2596,8 +2597,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
-        public void onConnect(org.glassfish.grizzly.websockets.WebSocket webSocket) {
-            // no-op
+        public void onConnect(org.glassfish.grizzly.websockets.WebSocket gWebSocket) {
+            ahcListener.onOpen(webSocket);
         }
 
         @Override
@@ -2623,17 +2624,23 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onPong(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            // no-op
+            if (WebSocketPongListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketPongListener.class.cast(ahcListener).onPong(bytes);
+            }
         }
 
         @Override
         public void onFragment(org.glassfish.grizzly.websockets.WebSocket webSocket, String s, boolean b) {
-            // no-op
+            if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketTextListener.class.cast(ahcListener).onFragment(s, b);
+            }
         }
 
         @Override
         public void onFragment(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes, boolean b) {
-            // no-op
+            if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, b);
+            }
         }
 
     } // END AHCWebSocketListenerAdapter
