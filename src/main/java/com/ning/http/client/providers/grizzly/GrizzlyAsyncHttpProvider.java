@@ -1302,7 +1302,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 context.protocolHandler,
                                 ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
-                        final int wsTimeout = context.provider.clientConfig.getWebSocketTimeoutInMs();
+                        final int wsTimeout = context.provider.clientConfig.getWebSocketIdleTimeoutInMs();
                         IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(),
                                                            ((wsTimeout <= 0)
                                                                    ? IdleTimeoutFilter.FOREVER

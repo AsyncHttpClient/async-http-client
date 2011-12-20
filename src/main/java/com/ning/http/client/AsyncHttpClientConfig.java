@@ -56,7 +56,7 @@ public class AsyncHttpClientConfig {
     protected int maxTotalConnections;
     protected int maxConnectionPerHost;
     protected int connectionTimeOutInMs;
-    protected int webSocketTimeoutInMs;
+    protected int webSocketIdleTimeoutInMs;
     protected int idleConnectionInPoolTimeoutInMs;
     protected int idleConnectionTimeoutInMs;
     protected int requestTimeoutInMs;
@@ -120,7 +120,7 @@ public class AsyncHttpClientConfig {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.connectionTimeOutInMs = connectionTimeOutInMs;
-        this.webSocketTimeoutInMs = webSocketTimeoutInMs;
+        this.webSocketIdleTimeoutInMs = webSocketTimeoutInMs;
         this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
         this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
@@ -191,11 +191,11 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} connection may be idle before being timed out.
-     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} connection may be idle before being timed out.
+     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
+     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.
      */
-    public int getWebSocketTimeoutInMs() {
-        return webSocketTimeoutInMs;
+    public int getWebSocketIdleTimeoutInMs() {
+        return webSocketIdleTimeoutInMs;
     }
 
     /**
@@ -463,7 +463,7 @@ public class AsyncHttpClientConfig {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
         private int defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
-        private int defaultWebsocketTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultWebsocketTimoutInMS", 15 * 60 * 1000);
+        private int defaultWebsocketIdleTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultWebsocketTimoutInMS", 15 * 60 * 1000);
         private int defaultIdleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
         private int defaultIdleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
@@ -537,6 +537,18 @@ public class AsyncHttpClientConfig {
          */
         public Builder setConnectionTimeoutInMs(int defaultConnectionTimeOutInMs) {
             this.defaultConnectionTimeOutInMs = defaultConnectionTimeOutInMs;
+            return this;
+        }
+
+        /**
+         * Set the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
+         *
+         * @param defaultWebSocketIdleTimeoutInMs
+         *         the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.
+         * @return a {@link Builder}
+         */
+        public Builder setWebSocketIdleTimeoutInMs(int defaultWebSocketIdleTimeoutInMs) {
+            this.defaultWebsocketIdleTimeoutInMs = defaultWebSocketIdleTimeoutInMs;
             return this;
         }
 
@@ -969,7 +981,7 @@ public class AsyncHttpClientConfig {
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
                     defaultMaxConnectionPerHost,
                     defaultConnectionTimeOutInMs,
-                    defaultWebsocketTimeoutInMs,
+                    defaultWebsocketIdleTimeoutInMs,
                     defaultIdleConnectionInPoolTimeoutInMs,
                     defaultIdleConnectionTimeoutInMs,
                     defaultRequestTimeoutInMs,
