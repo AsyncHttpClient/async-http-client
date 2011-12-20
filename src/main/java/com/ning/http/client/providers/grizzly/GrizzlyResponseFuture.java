@@ -182,11 +182,8 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private void closeConnection() {
 
-        try {
-            if (connection != null && !connection.isOpen()) {
-                connection.close().markForRecycle(true);
-            }
-        } catch (IOException ignored) {
+        if (connection != null && !connection.isOpen()) {
+            connection.close().markForRecycle(true);
         }
 
     }

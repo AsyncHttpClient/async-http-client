@@ -46,6 +46,12 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     }
 
     @Override
+    @Test
+    public void asyncHeaderPOSTTest() throws Throwable {
+        super.asyncHeaderPOSTTest();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
     protected AsyncHttpProviderConfig getProviderConfig() {
         final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
         config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {

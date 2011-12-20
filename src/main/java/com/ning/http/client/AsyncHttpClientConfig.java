@@ -56,6 +56,7 @@ public class AsyncHttpClientConfig {
     protected int maxTotalConnections;
     protected int maxConnectionPerHost;
     protected int connectionTimeOutInMs;
+    protected int webSocketTimeoutInMs;
     protected int idleConnectionInPoolTimeoutInMs;
     protected int idleConnectionTimeoutInMs;
     protected int requestTimeoutInMs;
@@ -89,6 +90,7 @@ public class AsyncHttpClientConfig {
     private AsyncHttpClientConfig(int maxTotalConnections,
                                   int maxConnectionPerHost,
                                   int connectionTimeOutInMs,
+                                  int webSocketTimeoutInMs,
                                   int idleConnectionInPoolTimeoutInMs,
                                   int idleConnectionTimeoutInMs,
                                   int requestTimeoutInMs,
@@ -118,6 +120,7 @@ public class AsyncHttpClientConfig {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.connectionTimeOutInMs = connectionTimeOutInMs;
+        this.webSocketTimeoutInMs = webSocketTimeoutInMs;
         this.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
         this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
@@ -185,6 +188,14 @@ public class AsyncHttpClientConfig {
      */
     public int getConnectionTimeoutInMs() {
         return connectionTimeOutInMs;
+    }
+
+    /**
+     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} connection may be idle before being timed out.
+     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} connection may be idle before being timed out.
+     */
+    public int getWebSocketTimeoutInMs() {
+        return webSocketTimeoutInMs;
     }
 
     /**
@@ -452,6 +463,7 @@ public class AsyncHttpClientConfig {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
         private int defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
         private int defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
+        private int defaultWebsocketTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultWebsocketTimoutInMS", 15 * 60 * 1000);
         private int defaultIdleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
         private int defaultIdleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
         private int defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
@@ -957,6 +969,7 @@ public class AsyncHttpClientConfig {
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
                     defaultMaxConnectionPerHost,
                     defaultConnectionTimeOutInMs,
+                    defaultWebsocketTimeoutInMs,
                     defaultIdleConnectionInPoolTimeoutInMs,
                     defaultIdleConnectionTimeoutInMs,
                     defaultRequestTimeoutInMs,

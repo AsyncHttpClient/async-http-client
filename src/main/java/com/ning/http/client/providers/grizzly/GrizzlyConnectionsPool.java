@@ -410,13 +410,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             }
 
             void destroy() {
-                try {
-                    for (Connection c : queue) {
-                        c.close().markForRecycle(true);
-                    }
-                    queue.clear();
-                } catch (IOException ignored) {
+                for (Connection c : queue) {
+                    c.close().markForRecycle(true);
                 }
+                queue.clear();
                 queues.remove(this);
             }
 
