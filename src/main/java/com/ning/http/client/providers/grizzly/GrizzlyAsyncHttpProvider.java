@@ -2567,6 +2567,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
+        public boolean isOpen() {
+            return gWebSocket.isConnected();
+        }
+
+        @Override
         public void close() {
             gWebSocket.close();
         }

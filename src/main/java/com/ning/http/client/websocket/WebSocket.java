@@ -39,6 +39,13 @@ public interface WebSocket {
     WebSocket addMessageListener(WebSocketListener l);
 
     /**
+     * Returns <code>true</code> if the WebSocket is open/connected.
+     *
+     * @return <code>true</code> if the WebSocket is open/connected.
+     */
+    boolean isOpen();
+
+    /**
      * Close the WebSocket.
      */
     void close();

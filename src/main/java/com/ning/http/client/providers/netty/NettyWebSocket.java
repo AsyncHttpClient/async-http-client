@@ -54,6 +54,11 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public boolean isOpen() {
+        return channel.isOpen();
+    }
+
+    @Override
     public void close() {
         onClose();
         channel.close();
