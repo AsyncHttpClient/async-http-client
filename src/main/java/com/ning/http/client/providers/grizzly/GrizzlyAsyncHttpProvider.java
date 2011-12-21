@@ -76,6 +76,7 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.Protocol;
+import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.DataChunk;
@@ -94,6 +95,7 @@ import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 import org.glassfish.grizzly.utils.DelayedExecutor;
+import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.DefaultWebSocket;
@@ -122,7 +124,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -130,7 +131,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
@@ -2271,7 +2271,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                    createConnectionCompletionHandler(request, requestFuture, null, null, connectHandler));
+                    createConnectionCompletionHandler(request, requestFuture, connectHandler));
 
         }
 
@@ -2288,27 +2288,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
-            final AtomicReference<Connection> connectionRef =
-                    new AtomicReference<Connection>();
-            final CountDownLatch latch = new CountDownLatch(1);
+            FutureImpl<Connection> future = Futures.createSafeFuture();
+            CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
+                    createConnectionCompletionHandler(request, requestFuture, null));
             if (cTimeout > 0) {
                 connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        createConnectionCompletionHandler(request,
-                                requestFuture,
-                                connectionRef,
-                                latch,
-                                null));
-                latch.await(cTimeout, TimeUnit.MILLISECONDS);
+                        ch);
+                return future.get(cTimeout, TimeUnit.MILLISECONDS);
             } else {
                 connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        createConnectionCompletionHandler(request,
-                                                          requestFuture,
-                                                          connectionRef,
-                                                          null,
-                                                          null));
-                latch.await();
+                        ch);
+                return future.get();
             }
-            return connectionRef.get();
         }
 
         private ProxyServer getProxyServer(Request request) {
@@ -2349,8 +2340,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         CompletionHandler<Connection> createConnectionCompletionHandler(final Request request,
                                                                         final GrizzlyResponseFuture future,
-                                                                        final AtomicReference<Connection> connectionReference,
-                                                                        final CountDownLatch latch,
                                                                         final CompletionHandler<Connection> wrappedHandler) {
             return new CompletionHandler<Connection>() {
                 public void cancelled() {
@@ -2358,9 +2347,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         wrappedHandler.cancelled();
                     } else {
                         future.cancel(true);
-                    }
-                    if (latch != null) {
-                        latch.countDown();
                     }
                 }
 
@@ -2370,9 +2356,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     } else {
                         future.abort(throwable);
                     }
-                    if (latch != null) {
-                        latch.countDown();
-                    }
                 }
 
                 public void completed(Connection connection) {
@@ -2381,12 +2364,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     if (wrappedHandler != null) {
                         connection.addCloseListener(connectionMonitor);
                         wrappedHandler.completed(connection);
-                    }
-                    if (connectionReference != null) {
-                        connectionReference.set(connection);
-                    }
-                    if (latch != null) {
-                        latch.countDown();
                     }
                 }
 
