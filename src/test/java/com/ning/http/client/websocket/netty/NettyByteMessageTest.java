@@ -10,20 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket.grizzly;
+package com.ning.http.client.websocket.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
-import com.ning.http.client.websocket.ByteMessageTest;
+import com.ning.http.client.websocket.TextMessageTest;
 
-public class GrizzlyByteMessageText extends ByteMessageTest {
+public class NettyByteMessageTest extends TextMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.nettyProvider(config);
     }
 }
