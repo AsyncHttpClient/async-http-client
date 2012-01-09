@@ -306,7 +306,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    protected void initializeTransport(AsyncHttpClientConfig clientConfig) {
+    protected void initializeTransport(final AsyncHttpClientConfig clientConfig) {
 
         final FilterChainBuilder fcb = FilterChainBuilder.stateless();
         fcb.add(new AsyncHttpClientTransportFilter());
@@ -326,6 +326,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             final HttpTransactionContext context =
                                     GrizzlyAsyncHttpProvider.this.getHttpTransactionContext(ctx.getConnection());
                             if (context != null) {
+                                if (context.isWSRequest) {
+                                    return clientConfig.getWebSocketIdleTimeoutInMs();
+                                }
                                 final PerRequestConfig config = context.request.getPerRequestConfig();
                                 if (config != null) {
                                     final long timeout = config.getRequestTimeoutInMs();
