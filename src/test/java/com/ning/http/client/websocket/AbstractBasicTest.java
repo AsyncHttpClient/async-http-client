@@ -35,6 +35,10 @@ public abstract class AbstractBasicTest extends Server {
     public abstract class WebSocketHandler extends HandlerWrapper implements WebSocketFactory.Acceptor {
         private final WebSocketFactory _webSocketFactory = new WebSocketFactory(this, 32 * 1024);
 
+        public WebSocketHandler(){
+            _webSocketFactory.setMaxIdleTime(10000);
+        }
+
         public WebSocketFactory getWebSocketFactory() {
             return _webSocketFactory;
         }
@@ -83,7 +87,7 @@ public abstract class AbstractBasicTest extends Server {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        port1 = 8080;
+        port1 = findFreePort();
         _connector = new SelectChannelConnector();
         _connector.setPort(port1);
 

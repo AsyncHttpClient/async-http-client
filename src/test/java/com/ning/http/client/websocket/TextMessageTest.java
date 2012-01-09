@@ -100,6 +100,36 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     }
 
     @Test(timeOut = 60000)
+    public void onTimeoutCloseTest() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<String> text = new AtomicReference<String>("");
+
+        WebSocket websocket = c.prepareGet(getTargetUrl())
+                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+
+                    @Override
+                    public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                    }
+
+                    @Override
+                    public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                        text.set("OnClose");
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        t.printStackTrace();
+                        latch.countDown();
+                    }
+                }).build()).get();
+
+        latch.await();
+        assertEquals(text.get(), "OnClose");
+    }
+
+    @Test(timeOut = 60000)
     public void onClose() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch latch = new CountDownLatch(1);

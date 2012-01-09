@@ -947,7 +947,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = request.getUrl().startsWith(WEBSOCKET) ? webSocketBootstrap : (useSSl ? secureBootstrap : plainBootstrap);
-        bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
+        //bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
         if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
@@ -1038,6 +1038,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         log.debug("Closing Channel {} ", ctx.getChannel());
+
 
         try {
             ctx.getChannel().close();
@@ -1284,6 +1285,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug("Aborting Future {}\n", future);
             log.debug(t.getMessage(), t);
         }
+
         future.abort(t);
     }
 
@@ -1341,6 +1343,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 }
             }
+
+            Protocol p = (ctx.getPipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
+            p.onClose(ctx, e);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (!remotelyClosed(ctx.getChannel(), future)) {
