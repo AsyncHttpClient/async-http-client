@@ -947,7 +947,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = request.getUrl().startsWith(WEBSOCKET) ? webSocketBootstrap : (useSSl ? secureBootstrap : plainBootstrap);
-        //bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
+        bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
         if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
