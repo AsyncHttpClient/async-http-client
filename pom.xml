@@ -415,6 +415,7 @@
                         <exclude>**/Response$</exclude>
                         <exclude>**/NettyResponseFuture</exclude>
                         <exclude>**/**ResponseBodyPart</exclude>
+                        <exclude>**/**WebSocket</exclude>
                     </excludes>
                 </configuration>
                 <executions>
