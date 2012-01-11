@@ -13,15 +13,15 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.providers.netty.netty4.BinaryWebSocketFrame;
+import com.ning.http.client.providers.netty.netty4.PingWebSocketFrame;
+import com.ning.http.client.providers.netty.netty4.PongWebSocketFrame;
 import com.ning.http.client.providers.netty.netty4.TextWebSocketFrame;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
@@ -42,8 +42,42 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public WebSocket stream(byte[] fragment, boolean last) {
+        if (fragment != null && fragment.length > 0) {
+            channel.write(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)));
+        }
+        return this;
+    }
+
+    @Override
+    public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
+        if (fragment != null && fragment.length > 0) {
+            channel.write(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset,  len)));
+        }
+        return this;
+    }
+
+    @Override
     public WebSocket sendTextMessage(String message) {
         channel.write(new TextWebSocketFrame(message));
+        return this;
+    }
+
+    @Override
+    public WebSocket streamText(String fragment, boolean last) {
+        channel.write(new TextWebSocketFrame(last, 0, fragment));
+        return this;
+    }
+
+    @Override
+    public WebSocket sendPing(byte[] payload) {
+        channel.write(new PingWebSocketFrame(wrappedBuffer(payload)));
+        return this;
+    }
+    
+    @Override
+    public WebSocket sendPong(byte[] payload) {
+        channel.write(new PongWebSocketFrame(wrappedBuffer(payload)));
         return this;
     }
 

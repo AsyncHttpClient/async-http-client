@@ -2558,8 +2558,42 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
+        public WebSocket stream(byte[] fragment, boolean last) {
+            if (fragment != null && fragment.length > 0) {
+                gWebSocket.stream(last, fragment, 0, fragment.length);
+            }
+            return this;
+        }
+
+        @Override
+        public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
+            if (fragment != null && fragment.length > 0) {
+                gWebSocket.stream(last, fragment, offset, len);
+            }
+            return this;
+        }
+
+        @Override
         public WebSocket sendTextMessage(String message) {
             gWebSocket.send(message);
+            return this;
+        }
+
+        @Override
+        public WebSocket streamText(String fragment, boolean last) {
+            gWebSocket.stream(last, fragment);
+            return this;
+        }
+
+        @Override
+        public WebSocket sendPing(byte[] payload) {
+            gWebSocket.sendPing(payload);
+            return this;
+        }
+
+        @Override
+        public WebSocket sendPong(byte[] payload) {
+            gWebSocket.sendPong(payload);
             return this;
         }
 
