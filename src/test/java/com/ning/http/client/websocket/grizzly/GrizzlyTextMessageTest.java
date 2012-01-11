@@ -17,6 +17,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.websocket.ByteMessageTest;
+import org.testng.annotations.Test;
 
 public class GrizzlyTextMessageTest extends ByteMessageTest {
     @Override
@@ -25,5 +26,11 @@ public class GrizzlyTextMessageTest extends ByteMessageTest {
             config = new AsyncHttpClientConfig.Builder().build();
         }
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+    }
+
+    @Test(timeOut = 60000)
+    @Override
+    public void echoFragments() throws Exception {
+        super.echoFragments();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }

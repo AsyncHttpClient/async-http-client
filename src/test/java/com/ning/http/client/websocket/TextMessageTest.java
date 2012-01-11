@@ -312,7 +312,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         assertEquals(text.get(), "ECHOECHO");
     }
 
-    @Test(timeOut = 60000)
+
     public void echoFragments() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         final CountDownLatch latch = new CountDownLatch(1);

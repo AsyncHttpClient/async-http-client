@@ -43,18 +43,12 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket stream(byte[] fragment, boolean last) {
-        if (fragment != null && fragment.length > 0) {
-            channel.write(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment)));
-        }
-        return this;
+        throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
     @Override
     public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
-        if (fragment != null && fragment.length > 0) {
-            channel.write(new BinaryWebSocketFrame(last, 0, wrappedBuffer(fragment, offset,  len)));
-        }
-        return this;
+        throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
     @Override
@@ -65,8 +59,7 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public WebSocket streamText(String fragment, boolean last) {
-        channel.write(new TextWebSocketFrame(last, 0, fragment));
-        return this;
+        throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
     @Override

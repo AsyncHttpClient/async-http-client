@@ -200,7 +200,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             assertEquals(text.get(), "ECHOECHO".getBytes());
     }
 
-    @Test
+
     public void echoFragments() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
                 final CountDownLatch latch = new CountDownLatch(1);
