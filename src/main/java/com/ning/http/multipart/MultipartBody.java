@@ -458,7 +458,7 @@ public class MultipartBody implements RandomAccessBody {
                         if (nWrite == 0) {
                             logger.info("Waiting for writing...");
                             try {
-                                fc.wait(1000);
+                                fc.wait(50);
                             } catch (InterruptedException e) {
                                 logger.trace(e.getMessage(), e);
                             }
