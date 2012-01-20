@@ -202,6 +202,14 @@ public class FilePart extends PartBase {
         }
     }
 
+	public void setStalledTime(long ms) {
+		_stalledTime = ms;
+	}
+
+	public long getStalledTime() {
+		return _stalledTime;
+	}
+
     /**
      * Returns the source of the file part.
      *
@@ -220,5 +228,7 @@ public class FilePart extends PartBase {
     protected long lengthOfData() throws IOException {
         return source.getLength();
     }
+
+	private long _stalledTime = -1;
 
 }
