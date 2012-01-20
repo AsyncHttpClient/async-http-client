@@ -13,6 +13,7 @@
 package com.ning.http.multipart;
 
 import com.ning.http.client.RandomAccessBody;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -434,7 +435,11 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
-
+    	FilePartStallHandler handler = new FilePartStallHandler(
+    		filePart.getStalledTime(), filePart);
+    	
+    	handler.start();
+    	
         if (FilePartSource.class.isAssignableFrom(filePart.getSource().getClass())) {
             int length = 0;
 
@@ -453,8 +458,13 @@ public class MultipartBody implements RandomAccessBody {
             long nWrite = 0;
             synchronized (fc) {
                 while (fileLength != l) {
+                	if(handler.isFailed()) {
+                		logger.debug("Stalled error");
+                        throw new FileUploadStalledException();
+                	}
                     try {
                         nWrite = fc.transferTo(fileLength, l, target);
+                       
                         if (nWrite == 0) {
                             logger.info("Waiting for writing...");
                             try {
@@ -462,6 +472,9 @@ public class MultipartBody implements RandomAccessBody {
                             } catch (InterruptedException e) {
                                 logger.trace(e.getMessage(), e);
                             }
+                        }
+                        else {
+                        	handler.writeHappened();
                         }
                     } catch (IOException ex) {
                         String message = ex.getMessage();
@@ -482,6 +495,8 @@ public class MultipartBody implements RandomAccessBody {
                     fileLength += nWrite;
                 }
             }
+            handler.completed();
+            
             fc.close();
 
             length += handleFileEnd(target, filePart);
@@ -541,7 +556,7 @@ public class MultipartBody implements RandomAccessBody {
             return handleStringPart(target, (StringPart) currentPart);
         } else if (currentPart.getClass().equals(FilePart.class)) {
             FilePart filePart = (FilePart) currentPart;
-
+            
             return handleFilePart(target, filePart);
         }
         return 0;
