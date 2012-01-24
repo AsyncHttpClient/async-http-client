@@ -12,15 +12,15 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.providers.netty.netty4.BinaryWebSocketFrame;
-import com.ning.http.client.providers.netty.netty4.PingWebSocketFrame;
-import com.ning.http.client.providers.netty.netty4.PongWebSocketFrame;
-import com.ning.http.client.providers.netty.netty4.TextWebSocketFrame;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
