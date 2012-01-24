@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -34,7 +34,7 @@ public class NettyAsyncResponseTest {
 
     @Test(groups = "standalone")
     public void testCookieParseExpires() {
-        // e.g. "Sun, 06-Feb-2011 03:45:24 GMT";
+        // e.g. "Sun, 06-Feb-2012 03:45:24 GMT";
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 

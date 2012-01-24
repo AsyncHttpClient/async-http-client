@@ -402,6 +402,7 @@
                 <version>2.3</version>
                 <configuration>
                     <excludes>
+                        <exclude>**/netty4/**</exclude>
                         <exclude>**/NettyAsyncHttpProvider$*</exclude>
                         <exclude>**/AsyncHandler$STATE</exclude>
                         <exclude>**/ProxyServer$Protocol</exclude>

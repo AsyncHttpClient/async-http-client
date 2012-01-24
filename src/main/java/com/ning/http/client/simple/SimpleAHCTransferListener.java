@@ -1,7 +1,7 @@
 package com.ning.http.client.simple;
 
 /*
- * Copyright (c) 2010-2011 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0, 
  * and you may not use this file except in compliance with the Apache License Version 2.0. 
