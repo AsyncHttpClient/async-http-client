@@ -432,7 +432,7 @@ public class AsyncHttpProviderUtils {
         for (String part : contentType.split(";")) {
             if (part.trim().startsWith("charset=")) {
                 String[] val = part.split("=");
-                if (val[1].length > 1) {
+                if (val.length > 1) {
                     return val[1].trim();
                 }
             }
