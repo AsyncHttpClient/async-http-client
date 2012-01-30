@@ -22,6 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public abstract class TextMessageTest extends AbstractBasicTest {
 
@@ -98,6 +100,36 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
         latch.await();
         assertEquals(text.get(), "OnOpen");
+    }
+
+    @Test(timeOut = 60000)
+    public void onEmptyListenerTest() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+
+        WebSocket websocket = null;
+        try {
+            websocket = c.prepareGet(getTargetUrl())
+                    .execute(new WebSocketUpgradeHandler.Builder().build()).get();
+        } catch (Throwable t) {
+            fail();
+        }
+        assertTrue(websocket != null);
+    }
+
+    @Test(timeOut = 60000)
+    public void onFailureTest() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        final AtomicReference<String> text = new AtomicReference<String>("");
+
+        WebSocket websocket = null;
+        Throwable t = null;
+        try {
+            websocket = c.prepareGet("ws://abcdefg")
+                    .execute(new WebSocketUpgradeHandler.Builder().build()).get();
+        } catch (Throwable t2) {
+            t = t2;
+        }
+        assertTrue(t != null);
     }
 
     @Test(timeOut = 60000)

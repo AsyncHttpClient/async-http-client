@@ -106,7 +106,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public final void onFailure(Throwable t) {
         for (WebSocketListener w : l) {
-            if (!ok.get()) {
+            if (!ok.get() && webSocket != null) {
                 webSocket.addMessageListener(w);
             }
             w.onError(t);
