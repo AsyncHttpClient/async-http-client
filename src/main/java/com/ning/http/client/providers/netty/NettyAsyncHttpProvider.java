@@ -1943,7 +1943,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             HttpRequest nettyRequest = future.getNettyRequest();
-            AsyncHandler<?> handler = future.getAsyncHandler();
+            AsyncHandler handler = future.getAsyncHandler();
             Request request = future.getRequest();
             HttpResponse response = null;
             try {
@@ -1964,7 +1964,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
                     HttpResponseStatus status = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                    FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).build();
+                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).build();
                     for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                         try {
                             fc = asyncFilter.filter(fc);
@@ -1975,6 +1975,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             abort(future, efe);
                         }
                     }
+
+                    // The handler may have been wrapped.
+                    handler = fc.getAsyncHandler();
+                    future.setAsyncHandler(handler);
 
                     // The request has changed
                     if (fc.replayRequest()) {
@@ -2220,12 +2224,35 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-            final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-            NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(ctx.getAttachment());
-            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
+            NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
+            WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
+            Request request = future.getRequest();
 
             if (e.getMessage() instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e.getMessage();
+
+                HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).build();
+                for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                    try {
+                        fc = asyncFilter.filter(fc);
+                        if (fc == null) {
+                            throw new NullPointerException("FilterContext is null");
+                        }
+                    } catch (FilterException efe) {
+                        abort(future, efe);
+                    }
+                }
+
+                // The handler may have been wrapped.
+                future.setAsyncHandler(fc.getAsyncHandler());
+
+                // The request has changed
+                if (fc.replayRequest()) {
+                    replayRequest(future, fc, response, ctx);
+                    return;
+                }
+
                 final org.jboss.netty.handler.codec.http.HttpResponseStatus status =
                         new org.jboss.netty.handler.codec.http.HttpResponseStatus(101, "Web Socket Protocol Handshake");
 
@@ -2233,7 +2260,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
                 final boolean validConnection = response.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE);
 
-                HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
+                s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
                 if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
