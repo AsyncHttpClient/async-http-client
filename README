@@ -99,7 +99,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
           @Override
           public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                builder.append(new String(bodyPart.getBodyPartBytes()));
-               return STATE.CONTINU
+               return STATE.CONTINUE
           }
 
           @Override
@@ -145,7 +145,10 @@ Async Http Client also support WebSocket by simply doing:
                     }
                 }).build()).get();
 
-The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of Netty (http://www.jboss.org/netty), the Java NIO Client Server Socket Framework from JBoss, but the library exposes a configurable provider SPI which allows to easily plug in other frameworks.
+The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of Netty (http://www.jboss.org/netty), but the library exposes a configurable provider SPI which allows to easily plug in other frameworks like Grizzly (http://grizzly.java.net)
+
+       AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
+       AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
