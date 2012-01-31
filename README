@@ -1,9 +1,10 @@
+<link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
+
 Async Http Client
 Copyright 2010 Ning Inc
 
 DESCRIPTION
 -----------
-Issue tracker: https://issues.sonatype.org/browse/AHC
 Javadoc: http://sonatype.github.com/async-http-client/apidocs/index.html
 Getting started: http://is.gd/kexrN (PDF)
                  http://is.gd/ja6My (HTML)
