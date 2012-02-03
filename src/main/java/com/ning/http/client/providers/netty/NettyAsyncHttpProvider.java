@@ -2258,7 +2258,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 final boolean validStatus = response.getStatus().equals(status);
                 final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
-                final boolean validConnection = response.getHeader(HttpHeaders.Names.CONNECTION).equals(HttpHeaders.Values.UPGRADE);
+                String c = response.getHeader(HttpHeaders.Names.CONNECTION);
+                final boolean validConnection = c == null ? false : c.equals(HttpHeaders.Values.UPGRADE);
 
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
