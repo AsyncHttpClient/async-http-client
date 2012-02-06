@@ -2598,7 +2598,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
-        public WebSocket addMessageListener(WebSocketListener l) {
+        public WebSocket addWebSocketListener(WebSocketListener l) {
             gWebSocket.add(new AHCWebSocketListenerAdapter(l, this));
             return this;
         }

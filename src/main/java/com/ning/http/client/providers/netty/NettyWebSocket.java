@@ -75,7 +75,7 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
-    public WebSocket addMessageListener(WebSocketListener l) {
+    public WebSocket addWebSocketListener(WebSocketListener l) {
         listeners.add(l);
         return this;
     }

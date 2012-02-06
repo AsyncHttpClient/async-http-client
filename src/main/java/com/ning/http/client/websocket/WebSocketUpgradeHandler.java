@@ -94,7 +94,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     public final void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
         for (WebSocketListener w : l) {
-            webSocket.addMessageListener(w);
+            webSocket.addWebSocketListener(w);
             w.onOpen(webSocket);
         }
         ok.set(true);
@@ -107,7 +107,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     public final void onFailure(Throwable t) {
         for (WebSocketListener w : l) {
             if (!ok.get() && webSocket != null) {
-                webSocket.addMessageListener(w);
+                webSocket.addWebSocketListener(w);
             }
             w.onError(t);
         }
