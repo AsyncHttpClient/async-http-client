@@ -23,7 +23,7 @@ import static org.testng.Assert.assertEquals;
  * @author Benjamin Hanzelmann
  */
 public class PropertiesBasedResumableProcesserTest {
-    @Test
+    @Test (enabled = false)
     public void testSaveLoad()
             throws Exception {
         PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
