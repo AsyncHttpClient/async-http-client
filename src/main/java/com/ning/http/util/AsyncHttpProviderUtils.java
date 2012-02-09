@@ -182,11 +182,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String contentToString(Collection<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
-        StringBuilder b = new StringBuilder();
-        for (HttpResponseBodyPart bp : bodyParts) {
-            b.append(new String(bp.getBodyPartBytes(), charset));
-        }
-        return b.toString();
+        return new String(contentToByte(bodyParts), charset);
     }
 
     public final static byte[] contentToByte(Collection<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
