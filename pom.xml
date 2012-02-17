@@ -441,8 +441,7 @@
                 <compiler.exclude>asdfasfd/**</compiler.exclude>
                 <test.compiler.exclude>asdfasdf/**</test.compiler.exclude>
                 <javadoc.package.exclude>asdfasdf</javadoc.package.exclude>
-                <source.property>1.6</source.property>
-                <target.property>1.6</target.property>
+                <target.property>1.5</target.property>
             </properties>
             <dependencies>
                 <dependency>
