@@ -19,6 +19,7 @@ package com.ning.http.client;
  * Per request configuration.
  *
  * @author Hubert Iwaniuk
+ * @deprecated Per request properties are set on request directly or via builder. This class will be gone in next major release.
  */
 public class PerRequestConfig {
     private final ProxyServer proxyServer;
