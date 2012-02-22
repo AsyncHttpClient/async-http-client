@@ -402,7 +402,6 @@
                 <version>2.3</version>
                 <configuration>
                     <excludes>
-                        <exclude>**/netty4/**</exclude>
                         <exclude>**/NettyAsyncHttpProvider$*</exclude>
                         <exclude>**/AsyncHandler$STATE</exclude>
                         <exclude>**/ProxyServer$Protocol</exclude>
@@ -414,6 +413,7 @@
                         <exclude>**/RequestBuilderBase</exclude>
                         <exclude>**/Response</exclude>
                         <exclude>**/Response$</exclude>
+                        <exclude>**/FilterContext</exclude>
                         <exclude>**/NettyResponseFuture</exclude>
                         <exclude>**/**ResponseBodyPart</exclude>
                         <exclude>**/**WebSocket</exclude>
