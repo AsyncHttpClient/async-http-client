@@ -1234,9 +1234,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     provider.getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
             final List<ResponseFilter> filters = context.provider.clientConfig.getResponseFilters();
+            final GrizzlyResponseHeaders responseHeaders = new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
+                                    null,
+                                    provider);
             if (!filters.isEmpty()) {
                 FilterContext fc = new FilterContext.FilterContextBuilder()
                         .asyncHandler(handler).request(context.request)
+                        .responseHeaders(responseHeaders)
                         .responseStatus(context.responseStatus).build();
                 try {
                     for (final ResponseFilter f : filters) {
@@ -1287,9 +1291,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 boolean upgrade = context.currentState == AsyncHandler.STATE.UPGRADE;
                 try {
                     context.currentState = handler.onHeadersReceived(
-                            new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                                    null,
-                                    provider));
+                            responseHeaders);
                 } catch (Exception e) {
                     httpHeader.setSkipRemainder(true);
                     context.abort(e);

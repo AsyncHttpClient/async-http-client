@@ -156,7 +156,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
                 if (replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext(ctx.getAsyncHandler(), request, true);
+                    return new FilterContext.FilterContextBuilder().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -188,7 +188,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext(ctx.getAsyncHandler(), request, true);
+                    return new FilterContext.FilterContextBuilder().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -203,6 +203,45 @@ public abstract class FilterTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Replay"), "true");
+        } catch (IOException ex) {
+            fail("Should have timed out");
+        }
+        c.close();
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void replayHeaderResponseFilterTest() throws Throwable {
+        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+        final AtomicBoolean replay = new AtomicBoolean(true);
+
+        b.addResponseFilter(new ResponseFilter() {
+
+            public FilterContext filter(FilterContext ctx) throws FilterException {
+
+                if (ctx.getResponseHeaders() != null
+                        && ctx.getResponseHeaders().getHeaders().getFirstValue("Ping").equals("Pong")
+                        && replay.getAndSet(false)) {
+
+                    Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
+                    return new FilterContext.FilterContextBuilder()
+                            .asyncHandler(ctx.getAsyncHandler())
+                            .request(request)
+                            .replayRequest(true)
+                            .build();
+                }
+                return ctx;
+            }
+
+        });
+        AsyncHttpClient c = getAsyncHttpClient(b.build());
+
+        try {
+            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong")
+                    .execute().get();
+
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("Ping"), "Pong");
         } catch (IOException ex) {
             fail("Should have timed out");
         }

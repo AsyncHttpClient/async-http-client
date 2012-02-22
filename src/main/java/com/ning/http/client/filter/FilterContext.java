@@ -13,6 +13,7 @@
 package com.ning.http.client.filter;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 
@@ -32,67 +33,15 @@ import java.io.IOException;
  */
 public class FilterContext<T> {
 
-    private final AsyncHandler<T> asyncHandler;
-    private final Request request;
-    private final HttpResponseStatus responseStatus;
-    private final boolean replayRequest;
-    private final IOException ioException;
+    private final FilterContextBuilder b;
 
     /**
      * Create a new {@link FilterContext}
      *
-     * @param asyncHandler an {@link AsyncHandler}
-     * @param request      a {@link Request}
-     * @deprecated use {@link FilterContextBuilder} instead
+     * @param b a {@link FilterContextBuilder}
      */
-    public FilterContext(AsyncHandler<T> asyncHandler, Request request) {
-        this(asyncHandler, request, null, false, null);
-    }
-
-    /**
-     * Create a new {@link FilterContext}
-     *
-     * @param asyncHandler an {@link AsyncHandler}
-     * @param request      a {@link Request}
-     * @param ioException  an {@link IOException}
-     * @deprecated use {@link FilterContextBuilder} instead
-     */
-    public FilterContext(AsyncHandler<T> asyncHandler, Request request, IOException ioException) {
-        this(asyncHandler, request, null, false, ioException);
-    }
-
-    /**
-     * Create a new {@link FilterContext}
-     *
-     * @param asyncHandler   an {@link AsyncHandler}
-     * @param request        a {@link Request}
-     * @param responseStatus a {@link HttpResponseStatus}
-     * @deprecated use {@link FilterContextBuilder} instead
-     */
-    public FilterContext(AsyncHandler<T> asyncHandler, Request request, HttpResponseStatus responseStatus) {
-        this(asyncHandler, request, responseStatus, false, null);
-
-    }
-
-    private FilterContext(AsyncHandler<T> asyncHandler, Request request, HttpResponseStatus responseStatus,
-                          boolean replayRequest, IOException ioException) {
-        this.asyncHandler = asyncHandler;
-        this.request = request;
-        this.responseStatus = responseStatus;
-        this.replayRequest = replayRequest;
-        this.ioException = ioException;
-    }
-
-    /**
-     * Create a new {@link FilterContext}
-     *
-     * @param asyncHandler  an {@link AsyncHandler}
-     * @param request       a {@link Request}
-     * @param replayRequest true if the current response processing needs to be interrupted, and a new {@link Request} be processed.
-     * @deprecated use {@link FilterContextBuilder} instead
-     */
-    public FilterContext(AsyncHandler<T> asyncHandler, Request request, boolean replayRequest) {
-        this(asyncHandler, request, null, replayRequest, null);
+    private FilterContext(FilterContextBuilder b) {
+        this.b = b;
     }
 
     /**
@@ -101,7 +50,7 @@ public class FilterContext<T> {
      * @return the original or decorated {@link AsyncHandler}
      */
     public AsyncHandler<T> getAsyncHandler() {
-        return asyncHandler;
+        return b.asyncHandler;
     }
 
     /**
@@ -110,7 +59,7 @@ public class FilterContext<T> {
      * @return the original or decorated {@link Request}
      */
     public Request getRequest() {
-        return request;
+        return b.request;
     }
 
     /**
@@ -119,7 +68,15 @@ public class FilterContext<T> {
      * @return the unprocessed response's {@link HttpResponseStatus}
      */
     public HttpResponseStatus getResponseStatus() {
-        return responseStatus;
+        return b.responseStatus;
+    }
+
+    /**
+     * Return the response {@link HttpResponseHeaders}
+     * @return
+     */
+    public HttpResponseHeaders getResponseHeaders() {
+        return b.headers;
     }
 
     /**
@@ -128,7 +85,7 @@ public class FilterContext<T> {
      * @return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
      */
     public boolean replayRequest() {
-        return replayRequest;
+        return b.replayRequest;
     }
 
     /**
@@ -137,7 +94,7 @@ public class FilterContext<T> {
      * @return the {@link IOException}
      */
     public IOException getIOException() {
-        return ioException;
+        return b.ioException;
     }
 
     public static class FilterContextBuilder<T> {
@@ -146,6 +103,7 @@ public class FilterContext<T> {
         private HttpResponseStatus responseStatus = null;
         private boolean replayRequest = false;
         private IOException ioException = null;
+        private HttpResponseHeaders headers;
 
         public FilterContextBuilder() {
         }
@@ -176,26 +134,19 @@ public class FilterContext<T> {
             return this;
         }
 
-        public HttpResponseStatus getResponseStatus() {
-            return responseStatus;
-        }
-
         public FilterContextBuilder responseStatus(HttpResponseStatus responseStatus) {
             this.responseStatus = responseStatus;
             return this;
         }
 
-        public boolean replayRequest() {
-            return replayRequest;
+        public FilterContextBuilder responseHeaders(HttpResponseHeaders headers) {
+            this.headers = headers;
+            return this;
         }
 
         public FilterContextBuilder replayRequest(boolean replayRequest) {
             this.replayRequest = replayRequest;
             return this;
-        }
-
-        public IOException getIoException() {
-            return ioException;
         }
 
         public FilterContextBuilder ioException(IOException ioException) {
@@ -204,7 +155,7 @@ public class FilterContext<T> {
         }
 
         public FilterContext build() {
-            return new FilterContext(asyncHandler, request, responseStatus, replayRequest, ioException);
+            return new FilterContext(this);
         }
     }
 
