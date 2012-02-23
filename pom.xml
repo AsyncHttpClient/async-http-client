@@ -111,31 +111,31 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>8.1.0.RC1</version>
+            <version>8.1.1.v20120215</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>8.1.0.RC1</version>
+            <version>8.1.1.v20120215</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-websocket</artifactId>
-            <version>8.1.0.RC1</version>
+            <version>8.1.1.v20120215</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
-            <version>8.1.0.RC1</version>
+            <version>8.1.1.v20120215</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
-            <version>8.1.0.RC1</version>
+            <version>8.1.1.v20120215</version>
             <scope>test</scope>
         </dependency>
         <dependency>
