@@ -114,7 +114,8 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 
 Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConfig object:
 
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
+            .setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
         AsyncHttpClient c = new AsyncHttpClient(cf);
 
 Async Http Client also support WebSocket by simply doing:
