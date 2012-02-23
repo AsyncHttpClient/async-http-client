@@ -141,7 +141,7 @@ Async Http Client also support WebSocket by simply doing:
                     }
                 }).build()).get();
 
-The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of Netty (http://www.jboss.org/netty), but the library exposes a configurable provider SPI which allows to easily plug in other frameworks like Grizzly (http://grizzly.java.net)
+The library uses Java non blocking I/O for supporting asynchronous operations. The default asynchronous provider is build on top of [Netty](http://www.jboss.org/netty), but the library exposes a configurable provider SPI which allows to easily plug in other frameworks like [Grizzly](http://grizzly.java.net)
 
        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
        AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
