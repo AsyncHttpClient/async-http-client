@@ -1,0 +1,25 @@
+                                    ------
+                           Async Http Client - Using the WebDav protocol
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Using the WebDav protocol
+
+  The <<<AsyncHttpClient>>> has build in support for the WebDav protocol. The API can be used the same way normal HTTP
+  request are made, and everything discussed in this documentation works with WebDAV as well:
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient();
+Request mkcolRequest = new RequestBuilder("MKCOL").setUrl("http://host:port/folder1").build();
+Response response = c.executeRequest(mkcolRequest).get();
++-----+
+
+  or
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient();
+Request propFindRequest = new RequestBuilder("PROPFIND").setUrl("http://host:port).build();
+Response response = c.executeRequest(propFindRequest, new AsyncHandler(){...}).get();
++-----+
