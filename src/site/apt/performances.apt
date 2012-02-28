@@ -1,0 +1,22 @@
+                                    ------
+                           Async Http Client - Limiting the number of connections to improve raw performance
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Limiting the number of connections to improve raw performance
+
+  By default the library uses a connection pool and re-use connections as needed. It is important to not let the
+  connection pool grow too large as it takes resources in memory. One way consist of setting the maximum number of
+  connection per host or in total:
+
++-----+
+AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+                                        .setMaximumConnectionsPerHost(10)
+                                        .setMaximumConnectionsTotal(100)
+                                        .build();
+AsyncHttpClient c = new AsyncHttpClient(config);
++-----+
+
+  There is no magic number, so you will need to try it and decide which one gives the best result.
