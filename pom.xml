@@ -451,6 +451,25 @@
             </plugin>
         </plugins>
     </build>
+    <reporting>
+      <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.8.1</version>
+            <configuration>
+                <aggregate>true</aggregate>
+                <source>1.6</source>
+                <encoding>UTF-8</encoding>
+                <maxmemory>1g</maxmemory>
+                <links>
+                    <link>http://java.sun.com/javase/6/docs/api/</link>
+                </links>
+                <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
+            </configuration>
+        </plugin>
+      </plugins>
+    </reporting>
     <profiles>
         <profile>
             <id>grizzly</id>
