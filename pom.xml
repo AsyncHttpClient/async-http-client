@@ -50,6 +50,12 @@
             <name>Hubert Iwaniuk</name>
         </developer>
     </developers>
+    <contributors>
+        <contributor>
+            <name>Simone Tripodi</name>
+            <email>simonetripodi@apache.org</email>
+        </contributor>
+    </contributors>
     <licenses>
         <license>
             <name>Apache License 2.0</name>
