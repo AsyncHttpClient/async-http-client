@@ -1,0 +1,48 @@
+                                    ------
+                           Async Http Client - Executing request
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Executing request synchronously or asynchronously.
+
+  The first thing to decide when using the library is if your application can handle asynchronous response or not.
+  If not, the library has been designed using the Future API, hence you can always execute synchronous call by blocking
+  on the <<<Future.get()>>> method:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.prepareGet(("http://sonatype.com").execute().get();
++-----+
+
+  The above means the request will block until the full Response has been received. It also made your application's
+  blocking, waiting for the response to comes back. This could be potentially an issue to block for every request,
+  specially when doing <<<POST>>> or <<<PUT>>> operations where you don't necessarily need to wait for the response.
+  A simple way consist of not calling the <<<Future.get()>>>
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.preparePut(("http://sonatype.com/myFile.avi").execute();
++-----+
+
+  A better way than above would consist of using an AsyncHandler. The AynchHandler API is fairly simple and just
+  consists of 5 methods to implements:
+
++-----+
+public interface AsyncHandler<T> {
+    void onThrowable(Throwable t);
+
+    STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
+        throws Exception;
+
+    STATE onStatusReceived(HttpResponseStatus responseStatus)
+        throws Exception;
+
+    STATE onHeadersReceived(HttpResponseHeaders headers)
+        throws Exception;
+
+    T onCompleted() throws Exception;
+}
++-----+
+  

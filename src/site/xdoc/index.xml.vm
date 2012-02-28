@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+
+  <properties>
+    <title>Async Http Client - Home</title>
+    <author>Jeanfrancois Arcand</author>
+  </properties>
+
+  <body>
+    <div class="hero-unit">
+      <h1>Welcome to the Async Http Client!</h1>
+      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
+      easily execute HTTP requests and asynchronously process the HTTP responses.
+      The library also supports the WebSocket Protocol.</p>
+    </div>
+
+    <section name="Get started">
+      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
+      this dependency:</p>
+      <source><![CDATA[<dependency>
+   <groupId>${project.groupId}</groupId>
+   <artifactId>${project.artifactId}</artifactId>
+   <version>${project.version}</version>
+</dependency>]]></source>
+    </section>
+  </body>
+</document>
