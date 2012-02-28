@@ -30,8 +30,8 @@
       <item name="Configuring the AsyncHttpClient" href="configuring.html" />
       <item name="SSL" href="ssl.html" />
       <item name="Using Filters" href="filters.html" />
-      <item name="Uploading file" href="uploading.html" />
-      <item name="Authentication" href="authentication.html" />
+      <item name="Uploading file" href="upload.html" />
+      <item name="Authentication" href="auth.html" />
       <item name="Proxy" href="proxy.html" />
       <item name="Switching Provider" href="providers.html" />
       <item name="Using the WebDav protocol" href="webdav.html" />
@@ -45,4 +45,3 @@
     <menu ref="reports" inherit="bottom" />
   </body>
 </project>
-
