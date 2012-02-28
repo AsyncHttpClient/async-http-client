@@ -1,0 +1,151 @@
+                                    ------
+                           Async Http Client - Using Filters
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Using Filters
+
+  The library supports three types of <<<Filter>>> who can intercept, transform, decorate and replay transactions:
+  <<<Request>>>, <<<Response>>> and <<<IOException>>>.
+
+* Request Filter
+
+  Request Filters are useful if you need to manipulate the Request or AsyncHandler object before the request is made. As an example, you can throttle requests using the following RequestFilter implementation:
+
++-----+
+public class ThrottleRequestFilter implements RequestFilter {
+    private final int maxConnections;
+    private final Semaphore available;
+    private final int maxWait;
+
+    public ThrottleRequestFilter(int maxConnections) {
+        this.maxConnections = maxConnections;
+        this.maxWait = Integer.MAX_VALUE;
+        available = new Semaphore(maxConnections, true);
+    }
+
+    public ThrottleRequestFilter(int maxConnections, int maxWait) {
+        this.maxConnections = maxConnections;
+        this.maxWait = maxWait;
+        available = new Semaphore(maxConnections, true);
+    }
+
+    public FilterContext filter(FilterContext ctx) throws FilterException {
+        try {
+            if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS))
+                throw new FilterException(String.format("No slot available for Request %s with AsyncHandler %s",
+                                                        ctx.getRequest(),
+                                                        ctx.getAsyncHandler()));
+            }
+        } catch (InterruptedException e) {
+            throw new FilterException( String.format("Interrupted Request %s with AsyncHandler %s",
+                                                     ctx.getRequest(),
+                                                     ctx.getAsyncHandler()));
+        }
+
+        return new FilterContext(new AsyncHandlerWrapper(ctx.getAsyncHandler()), ctx.getRequest());
+    }
+
+}
+
+private class AsyncHandlerWrapper implements AsyncHandler<T> {
+    private final AsyncHandler asyncHandler;
+
+    public AsyncHandlerWrapper(AsyncHandler asyncHandler) {
+        this.asyncHandler = asyncHandler;
+    }
+
+    public void onThrowable(Throwable t) {
+        asyncHandler.onThrowable(t);
+    }
+
+    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+        return asyncHandler.onBodyPartReceived(bodyPart);
+    }
+
+    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+        return asyncHandler.onStatusReceived(responseStatus);
+    }
+
+    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+        return asyncHandler.onHeadersReceived(headers); }
+
+    public T onCompleted() throws Exception {
+        available.release();
+        return asyncHandler.onCompleted();
+    }
+}
++-----+
+
+  In the above, we decorate the original <<<AsyncHandler>>> and use semaphore to throttle requests.
+  To add <<<RequestFilter>>>, all you need to do is to configure it on the <<<AsyncHttpClientConfig>>>:
+
++-----+
+AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+b.addRequestFilter(new ThrottleRequestFilter(100));
+AsyncHttpClient c = new AsyncHttpClient(b.build());
++-----+
+
+ * Response Filter
+
+  Like with <<<Request>>>, you can also filter the <<<Response>>>'s bytes before an <<<AsyncHandler>>> gets called.
+  <<<Response Filters>>> are always invoked before the library executes the logic for authentication, proxy challenging,
+  redirection etc. That means an application can takes control of those operations at any moment using a <<<Response Filter>>>.
+
+  As an example, the following <<<Response Filter>>> redirect request from <<<google.ca>>> to <<<google.com>>> in case
+  <<<.ca>>> is not responding:
+
++-----+
+AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
+b.addResponseFilter(new ResponseFilter() {
+    public FilterContext filter(FilterContext ctx) throws FilterException {
+        if (ctx.getResponseStatus().getStatusCode() == 503) {
+            return new FilterContext.FilterContextBuilder(ctx)
+                .request(new RequestBuilder("GET")
+                .setUrl("http://google.com").build())
+                .build();
+        }
+    }
+});
+AsyncHttpClient c = new AsyncHttpClient(b.build());
++-----+
+
+* IOException Filter
+
+  The AsyncHttpClient library support <<<IOExceptionFilter>>> that can be used to replay a request in case server a
+  server goes down or unresponsive, a network outage occurs, or nay kind of I/O abnormal situation.
+
+  In those cases, the library will catch the <<<IOException>>> and delegate the <<<IOException>>> handling to the <<<Filter>>>.
+
+  As an example, the following filter will resume an interrupted download instead of restarting downloading the file
+  from the beginning:
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient(
+    new AsyncHttpClientConfig.Builder()
+        .addIOExceptionFilter(new ResumableIOExceptionFilter()).build());
+
+Response r = c.prepareGet("http://host:port/LargeFile.avi").execute(new AsyncHandler(){...}).get();
++-----+
+
+  The <<<IOExceptionFilter>>> is defined as
+  
++-----+
+public class ResumableIOExceptionFilter implements IOExceptionFilter {
+    public FilterContext filter(FilterContext ctx) throws FilterException {
+        if (ctx.getIOException() != null ) {
+            Request request = new RequestBuilder(ctx.getRequest()).setRangeOffset(file.length());
+            return new FilterContext.FilterContextBuilder(ctx)
+                .request(request)
+                .replayRequest(true)
+                .build();
+        }
+        return ctx;
+    }
+}
++-----+
+
+In the above we just catch any <<<IOException>>> and replay the request using the <<<Range>>> header to tell the remote
+server to restart sending bytes at that position. This way we don't need to re download the entire file.
