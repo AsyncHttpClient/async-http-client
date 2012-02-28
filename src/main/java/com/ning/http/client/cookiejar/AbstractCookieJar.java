@@ -7,6 +7,7 @@ import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
 
 public abstract class AbstractCookieJar
+    implements CookieJar
 {
 
     private final RequestFilter requestFilter = new CookieJarRequestFilter( this );
