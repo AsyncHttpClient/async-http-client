@@ -198,6 +198,21 @@
                 <artifactId>wagon-ssh-external</artifactId>
                 <version>1.0-beta-6</version>
             </extension>
+            <extension>
+                <groupId>org.apache.maven.scm</groupId>
+                <artifactId>maven-scm-provider-gitexe</artifactId>
+                <version>1.6</version>
+            </extension>
+            <extension>
+                <groupId>org.apache.maven.scm</groupId>
+                <artifactId>maven-scm-manager-plexus</artifactId>
+                <version>1.6</version>
+            </extension>
+            <extension>
+                <groupId>org.kathrynhuxtable.maven.wagon</groupId>
+                <artifactId>wagon-gitsite</artifactId>
+                <version>0.3.1</version>
+            </extension>
         </extensions>
         <defaultGoal>install</defaultGoal>
         <plugins>
@@ -342,8 +357,13 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.</version>
+                <version>2.8.1</version>
                 <configuration>
                     <aggregate>true</aggregate>
                     <source>1.6</source>
@@ -526,6 +546,10 @@
             <name>sonatype-nexus-snapshots</name>
             <url>${distMgmtSnapshotsUrl}</url>
         </snapshotRepository>
+        <site>
+            <id>github</id>
+            <url>gitsite:git@github.com/sonatype/async-http-client.git</url>
+        </site>
     </distributionManagement>
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
