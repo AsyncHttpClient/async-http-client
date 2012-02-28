@@ -1,6 +1,5 @@
 package com.ning.http.client.cookiejar;
 
-import java.util.Collection;
 import java.util.Timer;
 
 import com.ning.http.client.Cookie;
@@ -53,12 +52,6 @@ public abstract class AbstractCookieJar
         }
     }
 
-    protected abstract void persist( String host, Cookie cookie )
-        throws Exception;
-
-    protected abstract Collection<Cookie> retrieve( String host )
-        throws Exception;
-
     final void delete( String host, Cookie cookie )
         throws Exception
     {
@@ -70,8 +63,5 @@ public abstract class AbstractCookieJar
             remove( domain, cookie );
         }
     }
-
-    protected abstract void remove( String host, Cookie cookie )
-        throws Exception;
 
 }

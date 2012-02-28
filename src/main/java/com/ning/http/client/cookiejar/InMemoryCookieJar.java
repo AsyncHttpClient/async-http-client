@@ -17,8 +17,7 @@ public final class InMemoryCookieJar
 
     private final Lock lock = new ReentrantLock();
 
-    @Override
-    protected void persist( String host, Cookie cookie )
+    public void persist( String host, Cookie cookie )
         throws Exception
     {
         lock.lock();
@@ -41,8 +40,7 @@ public final class InMemoryCookieJar
         }
     }
 
-    @Override
-    protected Collection<Cookie> retrieve( String host )
+    public Collection<Cookie> retrieve( String host )
         throws Exception
     {
         lock.lock();
@@ -62,8 +60,7 @@ public final class InMemoryCookieJar
         }
     }
 
-    @Override
-    protected void remove( String host, Cookie cookie )
+    public void remove( String host, Cookie cookie )
         throws Exception
     {
         lock.lock();
