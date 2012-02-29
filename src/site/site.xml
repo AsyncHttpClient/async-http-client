@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/DECORATION/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/DECORATION/1.1.0 http://maven.apache.org/xsd/decoration-1.1.0.xsd"
+  name="${project.name}">
+
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>1.1</version>
+  </skin>
+
+  <custom>
+    <fluidoSkin>
+      <topBarEnabled>true</topBarEnabled>
+      <sideBarEnabled>false</sideBarEnabled>
+      <twitter>
+        <user>jfarcand</user>
+        <showUser>true</showUser>
+        <showFollowers>true</showFollowers>
+      </twitter>
+    </fluidoSkin>
+  </custom>
+
+  <publishDate format="dd MMMM yyyy" position="left" />
+  <version position="left" />
+
+  <body>
+    <menu name="User guide">
+      <item name="Executing request" href="request.html" />
+      <item name="Configuring the AsyncHttpClient" href="configuring.html" />
+      <item name="SSL" href="ssl.html" />
+      <item name="Using Filters" href="filters.html" />
+      <item name="Uploading file" href="upload.html" />
+      <item name="Authentication" href="auth.html" />
+      <item name="Proxy" href="proxy.html" />
+      <item name="Switching Provider" href="providers.html" />
+      <item name="Using the WebDav protocol" href="webdav.html" />
+      <item name="Resumable Dowload" href="resumable-download.html" />
+      <item name="TransferListener" href="transfer-listener.html" />
+      <item name="Zero Bytes Copy" href="zero-bytes-copy.html" />
+      <item name="Improve raw performance" href="performances.html" />
+      <item name="OAuth" href="oauth.html" />
+    </menu>
+
+    <menu ref="reports" inherit="bottom" />
+  </body>
+</project>

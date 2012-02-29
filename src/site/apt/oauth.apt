@@ -1,0 +1,26 @@
+                                    ------
+                           Async Http Client - Using OAuth
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Using OAuth
+
+  You can use the library to pull data from any OAuth site (like Twitter). This is as simple as:
+
++-----+
+private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
+private static final String CONSUMER_SECRET = "kd94hf93k423k f44";
+public static final String TOKEN_KEY = "nnch734d00sl2jdk";
+public static final String TOKEN_SECRET = "pfkkdhi9sl3r4s00";
+public static final String NONCE = "kllo9940pd9333jh";
+final static long TIMESTAMP = 1191242096;
+
+public void oAuth() {
+ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
+RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
+OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.prepareGet("http://...").setSignatureCalculator(calc).execute().get();
++-----+

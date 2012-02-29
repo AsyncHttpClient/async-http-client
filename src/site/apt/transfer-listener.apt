@@ -1,0 +1,34 @@
+                                    ------
+                           Async Http Client - TransferListener
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+TransferListener
+
+  In some scenario an application may need to manipulate the received bytes in more than one place, e.g. saves the bytes
+  on disk but also accumulate it for checksum checking later. In that case, instead of using an <<<AsyncHandler>>> and
+  mixes logic inside an <<<AsyncHandler.onBodyPartReceived>>>, it is recommended to use the <<<TransferListener>>>
+  simple API:
+
++-----+
+public interface TransferListener {
+    public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers);
+    public void onResponseHeadersReceived (FluentCaseInsensitiveStringsMap headers);
+    public void onBytesReceived(ByteBuffer buffer) throws IOException;
+    public void onBytesSent(ByteBuffer buffer);
+    public void onRequestResponseCompleted();
+    public void onThrowable(Throwable t);
+}
++-----+
+
+  All you need to do in that case is to create a <<<TransferCompletionHandler>>> and add as many <<<TransferListener>>>
+  as you need:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+TransferCompletionHandler tl = new TransferCompletionHandler();
+tl.addTransferListener(new TransferListener(){...});
+Response response = httpClient.prepareGet("http://...").execute(tl).get();
++-----+

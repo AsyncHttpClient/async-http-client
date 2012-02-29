@@ -1,0 +1,32 @@
+                                    ------
+                           Async Http Client - Uploading file: Progress Listener
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Uploading file: Progress Listener
+
+  When uploading bytes, an application might need to take some action depending on where the upload status is.
+
+  The AsyncHttpClient library support a special <<<AsyncHandler>>> called <<<ProgressAsyncHandler>>> that can be used to
+  track the upload operation:
+
++-----+
+public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
+    STATE onHeaderWriteCompleted();
+    STATE onContentWriteCompleted();
+    STATE onContentWriteProgress(long amount, long current, long total);
+}
++-----+
+
+  The methods are called in the following order:
+
+  * <<<onHeaderWriteCompleted>>>: invoked when the headers has been flushed to the remote server
+
+  * <<<onContentWriteProgress>>>: as soon as some response's body bytes are written. Might be invoked many times.
+
+  * <<<onContentWriteCompleted>>>: invoked when the response has been sent or aborted.
+
+
+  Like with <<<AsyncHandler>>>, you can always always abort the processing at any moment in the upload process.
