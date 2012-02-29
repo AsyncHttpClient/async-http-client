@@ -241,7 +241,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.8.1</version>
+                <version>${surefire.version}</version>
                 <configuration>
                     <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
                 </configuration>
@@ -474,6 +474,11 @@
                 <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
             </configuration>
         </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-report-plugin</artifactId>
+            <version>${surefire.version}</version>
+        </plugin>
       </plugins>
     </reporting>
     <profiles>
@@ -584,6 +589,7 @@
         <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
         <source.property>1.5</source.property>
         <target.property>1.5</target.property>
+        <surefire.version>2.12</surefire.version>
     </properties>
 </project>
 
