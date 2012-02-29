@@ -13,7 +13,7 @@ Async Http Client library purpose is to allow Java applications to easily execut
 
 You can also download the artifact
 
-    [Maven Search](http://search.maven.org)
+[Maven Search](http://search.maven.org)
 
 Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-http-client/apidocs/index.html))
 
@@ -149,7 +149,7 @@ The library uses Java non blocking I/O for supporting asynchronous operations. T
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
-       [Google Group](http://groups.google.com/group/asynchttpclient)
+[Google Group](http://groups.google.com/group/asynchttpclient)
 
 or follow us on [Twitter](http://twitter.com/jfarcand)
 
