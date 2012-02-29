@@ -1,0 +1,63 @@
+                                    ------
+                           Async Http Client - Configuring a Proxy
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Configuring a Proxy
+
+  The AsyncHttpClient library supports proxy, proxy authentication and proxy tunneling.
+  Just need to create a <<<ProxyServer>>> instance:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Future<Response> f = client.prepareGet("http://....)
+                           .setProxyServer(new ProxyServer("127.0.0.1", 8080))
+                           .execute();
++-----+
+
+  If you need to use an SSL tunnel, all you need to do is:
+
++-----+
+ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", 8080);
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+RequestBuilder rb = new RequestBuilder("GET")
+                                .setProxyServer(ps)
+                                .setUrl("https://twitpic.com:443");
+Future responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+    @Override
+    public void onThrowable(Throwable t) {}
+
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+        return response;
+    }
+
+});
+Response r = responseFuture.get();
++-----+
+
+  You can also set the authentication token on the <<<ProxyServer>>> instance:
+
++-----+
+ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", 8080, "admin", "password");
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+RequestBuilder rb = new RequestBuilder("GET")
+                            .setProxyServer(ps)
+                            .setUrl("https://twitpic.com:443");
+Future responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+    @Override
+    public void onThrowable(Throwable t) {}
+
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+        return response;
+    }
+
+});
+Response r = responseFuture.get();
++-----+
+
+  You can also set the <<<ProxyServer>>> at the <<<AsyncHttpClientConfig>>> level. In that case, all request will share
+  the same proxy information.

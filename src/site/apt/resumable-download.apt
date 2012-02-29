@@ -1,0 +1,75 @@
+                                    ------
+                           Async Http Client - Resumable Dowload
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Uploading file: Progress Listener
+
+  The AsyncHttpClient supports resumable download in two different scenarios:
+
+  * <<<IOException>>>: If an <<<IOException>>> occurs (for whatever reason), you can configure the library to restart
+    the download automatically without having to restart the download from the beginning.
+
+  * <<<JVM crashes>>>: If your application or the JVM goes down during a file download, the library can also restart the
+    download automatically when the same download is requested.
+
+
+  You can configure the <<<AsyncHttpClient>>> Library to survive <<<IOException>> using the <<<IOException Filter>>>:
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
+                                            .addIOExceptionFilter(new ResumableIOExceptionFilter()).build());
+ResumableAsyncHandler a = new ResumableAsyncHandler(new ResumableRandomAccessFileListener());
+a.setResumableListener(new ResumableRandomAccessFileListener(new RandomAccessFile("file.avi", "rw")));
+Response r = c.prepareGet("http://host:port/file.avi").execute(a).get();
++-----+
+
+  If you need something more high level and configurable, you can use a <<<ResumableAsyncHandler>>>, and or implement
+  a <<<ResumableProcessor>>>:
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient();
+ResumableAsyncHandler a = new ResumableAsyncHandler(new PropertiesBasedResumableProcessor());
+a.setResumableListener(new ResumableRandomAccessFileListener(new RandomAccessFile("file.avi", "rw")));
+Response r = c.prepareGet( "http://localhost:8081/file.AVI" ).execute( a ).get();
++-----+
+
+  You can also simply use a <<<ResumableListener>>> (or use the <<<ResumableRandomAccessFileListener>>>,
+  which does what's described below):
+
++-----+
+public interface ResumableListener {
+    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
+
+    public void onAllBytesReceived();
+
+    public long length();
+}
++-----+
+
+  As simple as:
+
++-----+
+AsyncHttpClient c = new AsyncHttpClient();
+final RandomAccessFile file = new RandomAccessFile("file.avi", "rw");
+ResumableAsyncHandler a = new ResumableAsyncHandler();
+a.setResumableListener(new ResumableListener() {
+
+    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException {
+        file.seek(file.length());
+        file.write(byteBuffer.array());
+    }
+
+    public void onAllBytesReceived() {
+        file.close();
+    }
+
+    public long length() {
+        return file.length();
+    }
+
+});
+Response r = c.prepareGet( "http://localhost:8081/file.AVI" ).execute( a ).get();
++-----+

@@ -1,0 +1,38 @@
+                                    ------
+                           Async Http Client - Switching Provider
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Switching Provider
+
+  By default, the <<<AsyncHttpClient>>> is using the powerful {{{http://netty.io/}Netty}}'s framework as the
+  HTTP processor. There might be environment where you can't use Netty. Fortunately, the <<<AsyncHttpClient>>> library
+  supports two other http runtime: the <<<JDKAsyncHttpProvider>>>, which build around the <<<URLConnection>>>, and
+  <<<ApacheAsyncHttpProvider>>> which build on top of the
+  {{{http://hc.apache.org/httpcomponents-client-ga/index.html}Apache HttpClient}}.
+
+  To change provider, all you need to do is:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient(new ApacheAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build()));
++-----+
+
+  Same for the JDK:
+
++-----+
+AsyncHttpclient client = new AsyncHttpClient(new JDKAsyncHttpProvider(new AsyncHttpClientConfig.Builder().build()));
++-----+
+
+  Also every <<<AsyncHttpClientProvider>>> can be configured with their native functionality.
+
+  As an example, you can switch the <<<NettyAsyncHttpProvider>>> to use blocking I/O instead of NIO:
+
++-----+
+NettyAsyncHttpProviderConfig config = new NettyAsyncHttpProviderConfig();
+config.setProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
+
+AsyncHttpClientConfig c = new AsyncHttpClientConfig().setAsyncHttpClientProviderConfig(config).build();
+AsyncHttpClient client = new AsyncHttpClient(new NettyAsyncHttpProvider(config));
++-----+

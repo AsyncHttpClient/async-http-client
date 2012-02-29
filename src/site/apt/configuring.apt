@@ -1,0 +1,50 @@
+                                    ------
+                           Async Http Client - Configuring the AsyncHttpClient
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Configuring the AsyncHttpClient.
+
+  You can configure the <<<AsyncHttpClient>>> class using the <<<AsyncHttpClientConfig>>>'s Builder:
+
++-----+
+Builder builder = new AsyncHttpClientConfig.Builder();
+builder.setCompressionEnabled(true)
+    .setAllowPoolingConnection(true)
+    .setRequestTimesout(30000)
+    .build();
+
+AsyncHttpClient client = new AsyncHttpClient(builder.build());
++-----+
+
+  You can set the ExecutorServices as well if you don't want to use the default, which is a cached threads pool:
+
++-----+
+Builder builder = new AsyncHttpClientConfig.Builder();
+builder.setExecutorService(myOwnThreadPool);
+AsyncHttpClient client = new AsyncHttpClient(builder.build());
++-----+
+
+  You can also configure the connection pool the library is using and implement your own polling strategy:
+
++-----+
+Builder builder = new AsyncHttpClientConfig.Builder();
+builder.setConnectionsPool(new ConnectionsPoo<U,V>() {
+    public boolean offer(U uri, V connection) {...}
+
+    public V poll(U uri) {...}
+
+    public boolean removeAll(V connection) {...}
+
+    public boolean canCacheConnection() {...}
+
+    public void destroy() {...}
+});
+AsyncHttpClient client = new AsyncHttpClient(builder.build());
++-----+
+
+  It is recommended to use the default connections pool for performance reason, but you are always free to design a better one.
+
+  You can also set the SSL information, Filters, etc. Those topics will be covered inside their own section.

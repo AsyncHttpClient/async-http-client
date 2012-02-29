@@ -1,0 +1,180 @@
+                                    ------
+                           Async Http Client - Executing request
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Executing request synchronously or asynchronously.
+
+  The first thing to decide when using the library is if your application can handle asynchronous response or not.
+  If not, the library has been designed using the Future API, hence you can always execute synchronous call by blocking
+  on the <<<Future.get()>>> method:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.prepareGet(("http://sonatype.com").execute().get();
++-----+
+
+  The above means the request will block until the full Response has been received. It also made your application's
+  blocking, waiting for the response to comes back. This could be potentially an issue to block for every request,
+  specially when doing <<<POST>>> or <<<PUT>>> operations where you don't necessarily need to wait for the response.
+  A simple way consist of not calling the <<<Future.get()>>>
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.preparePut(("http://sonatype.com/myFile.avi").execute();
++-----+
+
+  A better way than above would consist of using an AsyncHandler. The AynchHandler API is fairly simple and just
+  consists of 5 methods to implements:
+
++-----+
+public interface AsyncHandler<T> {
+    void onThrowable(Throwable t);
+
+    STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
+        throws Exception;
+
+    STATE onStatusReceived(HttpResponseStatus responseStatus)
+        throws Exception;
+
+    STATE onHeadersReceived(HttpResponseHeaders headers)
+        throws Exception;
+
+    T onCompleted() throws Exception;
+}
++-----+
+
+* Creating a Request object
+
+  The AsynHttpClient uses the builder pattern when it is time to create Request object. The simplest way consist of:
+
++-----+
+RequestBuilder builder = new RequestBuilder("PUT");
+Request request = builder..setUrl("http://")
+    .addHeader("name", "value")
+    .setBody(new File("myUpload.avi"))
+    .build();
+AsyncHttpClient client = new AsyncHttpClient();
+client.execute(request, new AsyncHandler<...>() {
+.....
+} );
++-----+
+
+  If you need to work with File, the library supports the {{{./zero-bytes-copy.html}zero copy in memory concept}},
+  e.g the File can be uploaded or downloaded without loading its associated bytes in memory, preventing out of memory
+  errors in case you need to upload or download many large files. Although the library support the following:
+
++-----+
+Request request = builder.setUrl("http://")
+    .addHeader("name", "value")
+    .setBody(myInputStream))
+    .build();
++-----+
+
+  it is discouraged to use <<<InputStream>>> as the library will need to buffer bytes in memory in order to determine
+  the length of the stream, and instead highly recommended to either use a File or the <<<BodyGenerator>>> API to avoid
+  loading unnecessary bytes in memory:
+
++-----+
+public interface BodyGenerator {
+    Body createBody() throws IOException;
+}
++-----+
+
+  where a Body is defined as:
+
++-----+
+public interface Body {
+    long getContentLength();
+
+    long read(ByteBuffer buffer)
+        throws IOException;
+
+    void close() throws IOException;
+}
++-----+
+
+  This way the library will never read unnecessary bytes in memory, which could significantly improve the performance
+  your application.
+
+  The <<<RequestBuilder>>> can also be used to create per <<<Request>>> configuration,
+  like setting a Proxy or request timeout:
+
++-----+
+PerRequestConfig requestConfig = new PerRequestConfig();
+requestConfig.setRequestTimeoutInMs(5 * 1000);
+requestConfig.setProxy(new ProxyServer(...));
+Future responseFuture = client.prepareGet("http://").setPerRequestConfig(requestConfig).execute();
++-----+
+
+* Creating a Response object
+
+  The AsyncHandler is typed, e.g you can return any object from the <<<AsyncHandler.onCompleted()>>>. One useful object
+  of the library is the <<<Response>>> object and it's associate builder. You can incrementally create a <<<Response>>>
+  object using the <<<ResponseBuilder.accumulate()>>> method:
+
++-----+
+MyAsyncHandler<Response> asyncHandler = new MyAsyncHanfler<Response>() {
+    private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
+
+    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        builder.accumulate(content);
+        return STATE.CONTINUE;
+    }
+
+    public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+        builder.accumulate(status);
+        return STATE.CONTINUE;
+    }
+
+    public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        builder.accumulate(headers);
+        return STATE.CONTINUE;
+    }
+
+    public Response onCompleted() throws Exception {
+        return builder.build();
+    }
+
+}
+
+Response response = client.prepareGet("http://sonatype.com").execute(asyncHandler).get();
++-----+
+
+  One thing to consider when creating a <<<Response>>> object is the size of the response body. By default,
+  a <<<Response>>> object will accumulate all response's bytes in memory, and that could potentially create an out of
+  memory error. If you are planning to use the API for downloading large files, it is not recommended to accumulate
+  bytes in memory and instead flush the bytes on disk as soon as they are available. Note that you can still use the
+  <<<Response>>> object, except you don't accumulate the response's bytes as demonstrated below:
+
++-----+
+MyAsyncHandler<Response> asyncHandler = new MyAsyncHanfler<Response>() {
+    private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
+
+    public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
+        content.write(myOutputStream);
+        return STATE.CONTINUE;
+    }
+
+    public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+        builder.accumulate(status); return STATE.CONTINUE;
+    }
+
+    public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
+        builder.accumulate(headers);
+        return STATE.CONTINUE;
+    }
+
+    public Response onCompleted() throws Exception {
+        return builder.build();
+    }
+
+}
+
+Response response = client.prepareGet("http://sonatype.com").execute(asyncHandler).get();
++-----+
+
+  Note that in the above scenario invoking <<<Response.getResponseBodyAsStream()>>> or <<<getResponseBody()>>> will
+  return an <<<IllegalStateException>>> because the body wasn't accumulated by the <<<Response>>> object.

@@ -1,0 +1,39 @@
+                                    ------
+                           Async Http Client - Configuring Authentication: BASIC, DIGEST or NTLM
+                                    ------
+                              Jeanfrancois Arcand
+                                    ------
+                                       2012
+
+Configuring Authentication: BASIC, DIGEST or NTLM
+
+  Configuring authentication with AsyncHttpClient is simple. You can configure it at the <<<Request>>> level using the
+  <<<RealmBuilder>>>:
+
++-----+
+AsyncHttpClient client = new AsyncHttpClient();
+Realm realm = new Realm.RealmBuilder()
+                       .setPrincipal(user)
+                       .setPassword(admin)
+                       .setUsePreemptiveAuth(true)
+                       .setScheme(AuthScheme.BASIC)
+                       .build();
+client.prepareGet("http://...").setRealm(realm).execute();
++-----+
+
+  You can also set the realm at the AsyncHttpClientConfig level:
+
++-----+
+Builder builder = new AsyncHttpClientConfig.Builder();
+Realm realm = new Realm.RealmBuilder()
+                       .setPrincipal(user)
+                       .setPassword(admin)
+                       .setUsePreemptiveAuth(true)
+                       .setScheme(AuthScheme.BASIC)
+                       .build();
+builder.setRealm(realm).build();
+AsyncHttpClient client = new AsyncHttpClient(builder.build());
++-----+
+
+  The authentication type supported are <<<BASIC>>>, <<<DIGEST>>> and <<<NTLM>>>. You can also customize your own
+  authentication mechanism by using the Response Filter.
