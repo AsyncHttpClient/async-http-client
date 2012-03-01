@@ -472,7 +472,28 @@
                     <link>http://java.sun.com/javase/6/docs/api/</link>
                 </links>
                 <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
+                <bootclasspath>${sun.boot.class.path}</bootclasspath>
+                <doclet>com.google.doclava.Doclava</doclet>
+                <useStandardDocletOptions>false</useStandardDocletOptions>
+                <additionalJOption>-J-Xmx1024m</additionalJOption>
+                <docletArtifact>
+                    <groupId>com.google.doclava</groupId>
+                    <artifactId>doclava</artifactId>
+                    <version>1.0.3</version>
+                </docletArtifact>
+                <additionalparam>
+                    -hdf project.name "${project.name} ${project.version}"
+                    -d ${project.reporting.outputDirectory}/apidocs
+                </additionalparam>
             </configuration>
+            <reportSets>
+                <reportSet>
+                    <id>default</id>
+                    <reports>
+                        <report>javadoc</report>
+                    </reports>
+                </reportSet>
+            </reportSets>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
