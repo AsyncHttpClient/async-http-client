@@ -25,6 +25,15 @@
         <system>jira</system>
         <url>https://issues.sonatype.org/browse/AHC</url>
     </issueManagement>
+    <mailingLists>
+        <mailingList>
+            <name>asynchttpclient</name>
+            <archive>http://groups.google.com/group/asynchttpclient/topics</archive>
+            <subscribe>http://groups.google.com/group/asynchttpclient/subscribe</subscribe>
+            <unsubscribe>http://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
+            <post>asynchttpclient@googlegroups.com</post>
+        </mailingList>
+    </mailingLists>
 
     <prerequisites>
         <maven>2.0.9</maven>
@@ -472,7 +481,28 @@
                     <link>http://java.sun.com/javase/6/docs/api/</link>
                 </links>
                 <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
+                <bootclasspath>${sun.boot.class.path}</bootclasspath>
+                <doclet>com.google.doclava.Doclava</doclet>
+                <useStandardDocletOptions>false</useStandardDocletOptions>
+                <additionalJOption>-J-Xmx1024m</additionalJOption>
+                <docletArtifact>
+                    <groupId>com.google.doclava</groupId>
+                    <artifactId>doclava</artifactId>
+                    <version>1.0.3</version>
+                </docletArtifact>
+                <additionalparam>
+                    -hdf project.name "${project.name} ${project.version}"
+                    -d ${project.reporting.outputDirectory}/apidocs
+                </additionalparam>
             </configuration>
+            <reportSets>
+                <reportSet>
+                    <id>default</id>
+                    <reports>
+                        <report>javadoc</report>
+                    </reports>
+                </reportSet>
+            </reportSets>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
