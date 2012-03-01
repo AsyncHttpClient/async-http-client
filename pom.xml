@@ -25,6 +25,15 @@
         <system>jira</system>
         <url>https://issues.sonatype.org/browse/AHC</url>
     </issueManagement>
+    <mailingLists>
+        <mailingList>
+            <name>asynchttpclient</name>
+            <archive>http://groups.google.com/group/asynchttpclient/topics</archive>
+            <subscribe>http://groups.google.com/group/asynchttpclient/subscribe</subscribe>
+            <unsubscribe>http://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
+            <post>asynchttpclient@googlegroups.com</post>
+        </mailingList>
+    </mailingLists>
 
     <prerequisites>
         <maven>2.0.9</maven>
