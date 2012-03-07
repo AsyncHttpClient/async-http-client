@@ -1432,7 +1432,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                      final HttpTransactionContext httpTransactionContext,
                                      final FilterChainContext ctx) {
 
-                responsePacket.setSkipRemainder(true); // ignore the remainder of the response
                 final String auth = responsePacket.getHeader(Header.WWWAuthenticate);
                 if (auth == null) {
                     throw new IllegalStateException("401 response received, but no WWW-Authenticate header was present");
@@ -1446,6 +1445,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     httpTransactionContext.invocationStatus = InvocationStatus.STOP;
                     return true;
                 }
+
+                responsePacket.setSkipRemainder(true); // ignore the remainder of the response
+
                 final Request req = httpTransactionContext.request;
                 realm = new Realm.RealmBuilder().clone(realm)
                                 .setScheme(realm.getAuthScheme())
