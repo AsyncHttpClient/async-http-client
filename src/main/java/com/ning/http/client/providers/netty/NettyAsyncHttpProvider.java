@@ -2107,7 +2107,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
 
                     boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-                    if (redirectEnabled && (statusCode == 302 || statusCode == 301 || statusCode == 307)) {
+                    if (redirectEnabled && (statusCode == 302
+                            || statusCode == 301
+                            || statusCode == 303
+                            || statusCode == 307)) {
 
                         if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
                             // We must allow 401 handling again.
@@ -2116,12 +2119,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             String location = response.getHeader(HttpHeaders.Names.LOCATION);
                             URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
                             boolean stripQueryString = config.isRemoveQueryParamOnRedirect();
-
                             if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
                                 final RequestBuilder nBuilder = stripQueryString ?
                                         new RequestBuilder(future.getRequest()).setQueryParameters(null)
                                         : new RequestBuilder(future.getRequest());
 
+                                if (!(statusCode < 302 || statusCode > 303)
+                                                          && !(statusCode == 302
+                                                             && config.isStrict302Handling())) {
+                                    nBuilder.setMethod("GET");
+                                }
                                 final URI initialConnectionUri = future.getURI();
                                 final boolean initialConnectionKeepAlive = future.getKeepAlive();
                                 future.setURI(uri);

@@ -83,6 +83,7 @@ public class AsyncHttpClientConfig {
     protected boolean removeQueryParamOnRedirect;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
+    protected boolean strict302Handling;
 
     protected AsyncHttpClientConfig() {
     }
@@ -115,7 +116,8 @@ public class AsyncHttpClientConfig {
                                   boolean useRawUrl,
                                   boolean removeQueryParamOnRedirect,
                                   HostnameVerifier hostnameVerifier,
-                                  int ioThreadMultiplier) {
+                                  int ioThreadMultiplier,
+                                  boolean strict302Handling) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -144,6 +146,7 @@ public class AsyncHttpClientConfig {
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
         this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
+        this.strict302Handling = strict302Handling;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -457,6 +460,23 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * <p>
+     * In the case of a POST/Redirect/Get scenario where the server uses a 302
+     * for the redirect, should AHC respond to the redirect with a GET or
+     * whatever the original method was.  Unless configured otherwise,
+     * for a 302, AHC, will use a GET for this case.
+     * </p>
+     *
+     * @return <code>true</code> if string 302 handling is to be used,
+     *  otherwise <code>false</code>.
+     *
+     * @since 1.7.2
+     */
+    public boolean isStrict302Handling() {
+        return strict302Handling;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -503,6 +523,7 @@ public class AsyncHttpClientConfig {
         private boolean removeQueryParamOnRedirect = true;
         private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
         private int ioThreadMultiplier = 2;
+        private boolean strict302Handling;
 
         public Builder() {
         }
@@ -921,6 +942,21 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures this AHC instance to be strict in it's handling of 302 redirects
+         * in a POST/Redirect/GET situation.
+         *
+         * @param strict302Handling strict handling
+         *
+         * @return this
+         *
+         * @since 1.7.2
+         */
+        public Builder setStrict302Handling(final boolean strict302Handling) {
+            this.strict302Handling = strict302Handling;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -961,6 +997,7 @@ public class AsyncHttpClientConfig {
             allowSslConnectionPool = prototype.getAllowPoolingConnection();
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
+            strict302Handling = prototype.isStrict302Handling();
         }
 
         /**
@@ -1007,7 +1044,8 @@ public class AsyncHttpClientConfig {
                     useRawUrl,
                     removeQueryParamOnRedirect,
                     hostnameVerifier,
-                    ioThreadMultiplier);
+                    ioThreadMultiplier,
+                    strict302Handling);
         }
     }
 }

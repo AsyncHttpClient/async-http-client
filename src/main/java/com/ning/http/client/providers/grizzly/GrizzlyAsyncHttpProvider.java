@@ -1406,6 +1406,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             return HttpStatus.MOVED_PERMANENTLY_301.statusMatches(status)
                     || HttpStatus.FOUND_302.statusMatches(status)
+                    || HttpStatus.SEE_OTHER_303.statusMatches(status)
                     || HttpStatus.TEMPORARY_REDIRECT_307.statusMatches(status);
 
         }
@@ -1538,7 +1539,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 if (!uri.toString().equalsIgnoreCase(orig.toString())) {
                     requestToSend = newRequest(uri,
                                                responsePacket,
-                                               httpTransactionContext);
+                                               httpTransactionContext,
+                                               sendAsGet(responsePacket,  httpTransactionContext));
                 } else {
                     httpTransactionContext.statusHandler = null;
                     httpTransactionContext.invocationStatus = InvocationStatus.CONTINUE;
@@ -1585,6 +1587,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             // ------------------------------------------------- Private Methods
 
+            private boolean sendAsGet(final HttpResponsePacket response,
+                                      final HttpTransactionContext ctx) {
+                final int statusCode = response.getStatus();
+                return !(statusCode < 302 || statusCode > 303)
+                          && !(statusCode == 302
+                             && ctx.provider.clientConfig.isStrict302Handling());
+            }
+
 
             private boolean switchingSchemes(final URI oldUri,
                                              final URI newUri) {
@@ -1609,9 +1619,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         private static Request newRequest(final URI uri,
                                           final HttpResponsePacket response,
-                                          final HttpTransactionContext ctx) {
+                                          final HttpTransactionContext ctx,
+                                          boolean asGet) {
 
             final RequestBuilder builder = new RequestBuilder(ctx.request);
+            if (asGet) {
+                builder.setMethod("GET");
+            }
             builder.setUrl(uri.toString());
 
             if (ctx.provider.clientConfig.isRemoveQueryParamOnRedirect()) {

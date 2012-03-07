@@ -49,7 +49,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public int getStatusCode() {
@@ -60,7 +60,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public String getStatusText() {
@@ -71,7 +71,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public String getProtocolName() {
@@ -82,7 +82,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public int getProtocolMajorVersion() {
@@ -93,7 +93,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public int getProtocolMinorVersion() {
@@ -104,7 +104,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public String getProtocolText() {
