@@ -1998,9 +1998,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
 
-                    if (realm != null && !future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
-                        builder.setUrl(future.getURI().toString());
-                    }
+                    //if (realm != null && !future.getURI().getPath().equalsIgnoreCase(realm.getUri())) {
+                    //    builder.setUrl(future.getURI().toString());
+                    //}
 
                     if (statusCode == 401
                             && wwwAuth.size() > 0
