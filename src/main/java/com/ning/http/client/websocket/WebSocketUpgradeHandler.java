@@ -64,7 +64,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
-            throw new IllegalStateException("Invalid Upgrade protocol");
+            throw new IllegalStateException("Invalid upgrade protocol, status should be 101 but was " + responseStatus.getStatusCode());
         }
     }
 
