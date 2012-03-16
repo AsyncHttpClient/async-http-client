@@ -400,7 +400,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             doDefaultTransportConfig();
         }
         fcb.add(new WebSocketFilter());
-
+        clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
         clientTransport.setProcessor(fcb.build());
 
     }
