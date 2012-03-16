@@ -1,0 +1,3231 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.ico" />
+<title>
+
+  AsyncHttpClientConfig.Builder
+
+
+| Asynchronous Http Client 1.8.0-SNAPSHOT
+
+</title>
+<link href="../../../../../assets/android-developer-docs.css" rel="stylesheet" type="text/css" />
+<link href="../../../../../assets/customizations.css" rel="stylesheet" type="text/css" />
+<script src="../../../../../assets/search_autocomplete.js" type="text/javascript"></script>
+<script src="../../../../../assets/jquery-resizable.min.js" type="text/javascript"></script>
+<script src="../../../../../assets/android-developer-docs.js" type="text/javascript"></script>
+<script src="../../../../../assets/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  setToRoot("../../../../", "../../../../../assets/");
+</script>
+<script src="../../../../../assets/android-developer-reference.js" type="text/javascript"></script>
+<script src="../../../../../assets/navtree_data.js" type="text/javascript"></script>
+<script src="../../../../../assets/customizations.js" type="text/javascript"></script>
+<noscript>
+  <style type="text/css">
+    html,body{overflow:auto;}
+    #body-content{position:relative; top:0;}
+    #doc-content{overflow:visible;border-left:3px solid #666;}
+    #side-nav{padding:0;}
+    #side-nav .toggle-list ul {display:block;}
+    #resize-packages-nav{border-bottom:3px solid #666;}
+  </style>
+</noscript>
+</head>
+
+<body class="">
+
+<div id="header">
+    <div id="headerLeft">
+    
+      <span id="masthead-title">Asynchronous Http Client 1.8.0-SNAPSHOT</span>
+    
+    </div>
+    <div id="headerRight">
+      
+  <div id="search" >
+      <div id="searchForm">
+          <form accept-charset="utf-8" class="gsc-search-box" 
+                onsubmit="return submit_search()">
+            <table class="gsc-search-box" cellpadding="0" cellspacing="0"><tbody>
+                <tr>
+                  <td class="gsc-input">
+                    <input id="search_autocomplete" class="gsc-input" type="text" size="33" autocomplete="off"
+                      title="search developer docs" name="q"
+                      value="search developer docs"
+                      onFocus="search_focus_changed(this, true)"
+                      onBlur="search_focus_changed(this, false)"
+                      onkeydown="return search_changed(event, true, '../../../../')"
+                      onkeyup="return search_changed(event, false, '../../../../')" />
+                  <div id="search_filtered_div" class="no-display">
+                      <table id="search_filtered" cellspacing=0>
+                      </table>
+                  </div>
+                  </td>
+                  <td class="gsc-search-button">
+                    <input type="submit" value="Search" title="search" id="search-button" class="gsc-search-button" />
+                  </td>
+                  <td class="gsc-clear-button">
+                    <div title="clear results" class="gsc-clear-button">&nbsp;</div>
+                  </td>
+                </tr></tbody>
+              </table>
+          </form>
+      </div><!-- searchForm -->
+  </div><!-- search -->
+      
+    </div>
+</div><!-- header -->
+
+
+  <div class="g-section g-tpl-240" id="body-content">
+    <div class="g-unit g-first side-nav-resizable" id="side-nav">
+      <div id="swapper">
+        <div id="nav-panels">
+          <div id="resize-packages-nav">
+            <div id="packages-nav">
+              <div id="index-links"><nobr>
+                <a href="../../../../packages.html"  >Package Index</a> | 
+                <a href="../../../../classes.html" >Class Index</a></nobr>
+              </div>
+              <ul>
+                
+    <li class="selected api apilevel-">
+  <a href="../../../../com/ning/http/client/package-summary.html">com.ning.http.client</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/consumers/package-summary.html">com.ning.http.client.consumers</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/extra/package-summary.html">com.ning.http.client.extra</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/filter/package-summary.html">com.ning.http.client.filter</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/generators/package-summary.html">com.ning.http.client.generators</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listenable/package-summary.html">com.ning.http.client.listenable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listener/package-summary.html">com.ning.http.client.listener</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/ntlm/package-summary.html">com.ning.http.client.ntlm</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/oauth/package-summary.html">com.ning.http.client.oauth</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/apache/package-summary.html">com.ning.http.client.providers.apache</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/grizzly/package-summary.html">com.ning.http.client.providers.grizzly</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/jdk/package-summary.html">com.ning.http.client.providers.jdk</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/package-summary.html">com.ning.http.client.providers.netty</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/spnego/package-summary.html">com.ning.http.client.providers.netty.spnego</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/resumable/package-summary.html">com.ning.http.client.resumable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/simple/package-summary.html">com.ning.http.client.simple</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/webdav/package-summary.html">com.ning.http.client.webdav</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/websocket/package-summary.html">com.ning.http.client.websocket</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/multipart/package-summary.html">com.ning.http.multipart</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/util/package-summary.html">com.ning.http.util</a></li>
+              </ul><br/>
+            </div> <!-- end packages -->
+          </div> <!-- end resize-packages -->
+          <div id="classes-nav">
+            <ul>
+              
+    <li><h2>Interfaces</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.html">AsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProvider.html">AsyncHttpProvider</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Body.html">Body</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyConsumer.html">BodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyGenerator.html">BodyGenerator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ListenableFuture.html">ListenableFuture</a>&lt;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Part.html">Part</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProgressAsyncHandler.html">ProgressAsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RandomAccessBody.html">RandomAccessBody</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.html">Request</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.html">Response</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ResumableBodyConsumer.html">ResumableBodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SignatureCalculator.html">SignatureCalculator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.DerivedBuilder.html">SimpleAsyncHttpClient.DerivedBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ThrowableHandler.html">ThrowableHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/UpgradeHandler.html">UpgradeHandler</a>&lt;T&gt;</li>
+      </ul>
+    </li>
+              
+    <li><h2>Classes</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandler.html">AsyncCompletionHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">AsyncCompletionHandlerBase</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.BoundRequestBuilder.html">AsyncHttpClient.BoundRequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></li>
+          <li class="selected api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfigBean.html">AsyncHttpClientConfigBean</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html">BodyDeferringAsyncHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html">BodyDeferringAsyncHandler.BodyDeferringInputStream</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ByteArrayPart.html">ByteArrayPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Cookie.html">Cookie</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FilePart.html">FilePart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpContent.html">HttpContent</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.html">Realm</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.RealmBuilder.html">Realm.RealmBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&nbsp;extends&nbsp;<a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&gt;&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.ResponseBuilder.html">Response.ResponseBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.html">SimpleAsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.Builder.html">SimpleAsyncHttpClient.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/StringPart.html">StringPart</a></li>
+      </ul>
+    </li>
+              
+              
+    <li><h2>Enums</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.Protocol.html">ProxyServer.Protocol</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.AuthScheme.html">Realm.AuthScheme</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.ErrorDocumentBehaviour.html">SimpleAsyncHttpClient.ErrorDocumentBehaviour</a></li>
+      </ul>
+    </li>
+              
+    <li><h2>Exceptions</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/MaxRedirectException.html">MaxRedirectException</a></li>
+      </ul>
+    </li>
+              
+            </ul><br/>
+          </div><!-- end classes -->
+        </div><!-- end nav-panels -->
+        <div id="nav-tree" style="display:none">
+          <div id="index-links"><nobr>
+            <a href="../../../../packages.html"  >Package Index</a> | 
+            <a href="../../../../classes.html" >Class Index</a></nobr>
+          </div>
+        </div><!-- end nav-tree -->
+      </div><!-- end swapper -->
+    </div> <!-- end side-nav -->
+    <script>
+      if (!isMobile) {
+        $("<a href='#' id='nav-swap' onclick='swapNav();return false;' style='font-size:10px;line-height:9px;margin-left:1em;text-decoration:none;'><span id='tree-link'>Use Tree Navigation</span><span id='panel-link' style='display:none'>Use Panel Navigation</span></a>").appendTo("#side-nav");
+        chooseDefaultNav();
+        if ($("#nav-tree").is(':visible')) {
+          init_default_navtree("../../../../");
+        } else {
+          addLoadEvent(function() {
+            scrollIntoView("packages-nav");
+            scrollIntoView("classes-nav");
+          });
+        }
+        $("#swapper").css({borderBottom:"2px solid #aaa"});
+      } else {
+        swapNav(); // tree view should be used on mobile
+      }
+    </script>
+
+
+
+<div class="g-unit" id="doc-content">
+
+<div id="api-info-block">
+
+
+
+  
+   
+  
+  
+  
+  
+
+
+<div class="sum-details-links">
+
+Summary:
+
+
+
+
+
+
+
+
+
+  <a href="#pubctors">Ctors</a>
+  
+
+
+
+  &#124; <a href="#pubmethods">Methods</a>
+  
+
+
+
+  &#124; <a href="#inhmethods">Inherited Methods</a>
+
+&#124; <a href="#" onclick="return toggleAllClassInherited()" id="toggleAllClassInherited">[Expand All]</a>
+
+</div><!-- end sum-details-links -->
+<div class="api-level">
+  
+
+
+  
+  
+
+</div>
+</div><!-- end api-info-block -->
+
+
+<!-- ======== START OF CLASS DATA ======== -->
+
+<div id="jd-header">
+    public
+    static 
+     
+    
+    class
+<h1>AsyncHttpClientConfig.Builder</h1>
+
+
+
+  
+    extends Object<br/>
+  
+  
+  
+
+  
+  
+  
+
+
+</div><!-- end header -->
+
+<div id="naMessage"></div>
+
+<div id="jd-content" class="api apilevel-">
+<table class="jd-inheritance-table">
+
+
+    <tr>
+         	
+        <td colspan="2" class="jd-inheritance-class-cell">java.lang.Object</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="1" class="jd-inheritance-class-cell">com.ning.http.client.AsyncHttpClientConfig.Builder</td>
+    </tr>
+    
+
+</table>
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Class Overview</h2>
+<p>Builder for an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code>
+</p>
+
+
+
+
+
+</div><!-- jd-descr -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Summary</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<table id="pubctors" class="jd-sumtable"><tr><th colspan="12">Public Constructors</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#AsyncHttpClientConfig.Builder()">AsyncHttpClientConfig.Builder</a></span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#AsyncHttpClientConfig.Builder(com.ning.http.client.AsyncHttpClientConfig)">AsyncHttpClientConfig.Builder</a></span>(<a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> prototype)</nobr>
+        
+        <div class="jd-descrdiv">Create a config builder with values taken from the given prototype configuration.</div>
+  
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="pubmethods" class="jd-sumtable"><tr><th colspan="12">Public Methods</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#addIOExceptionFilter(com.ning.http.client.filter.IOExceptionFilter)">addIOExceptionFilter</a></span>(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter)</nobr>
+        
+        <div class="jd-descrdiv">Add an <code><a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a></code> that will be invoked when an java.io.IOException
+ occurs during the download/upload operations.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#addRequestFilter(com.ning.http.client.filter.RequestFilter)">addRequestFilter</a></span>(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter)</nobr>
+        
+        <div class="jd-descrdiv">Add an <code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code> that will be invoked before <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html#executeRequest(com.ning.http.client.Request)">executeRequest(Request)</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#addResponseFilter(com.ning.http.client.filter.ResponseFilter)">addResponseFilter</a></span>(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter)</nobr>
+        
+        <div class="jd-descrdiv">Add an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code> that will be invoked as soon as the response is
+ received, and before <code><a href="../../../../com/ning/http/client/AsyncHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived(HttpResponseStatus)</a></code>.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#build()">build</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Build an <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#getRequestCompressionLevel()">getRequestCompressionLevel</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Return the compression level, or -1 if no compression is used.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#removeIOExceptionFilter(com.ning.http.client.filter.IOExceptionFilter)">removeIOExceptionFilter</a></span>(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter)</nobr>
+        
+        <div class="jd-descrdiv">Remove an <code><a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a></code> tthat will be invoked when an java.io.IOException
+ occurs during the download/upload operations.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#removeRequestFilter(com.ning.http.client.filter.RequestFilter)">removeRequestFilter</a></span>(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter)</nobr>
+        
+        <div class="jd-descrdiv">Remove an <code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code> that will be invoked before <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html#executeRequest(com.ning.http.client.Request)">executeRequest(Request)</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#removeResponseFilter(com.ning.http.client.filter.ResponseFilter)">removeResponseFilter</a></span>(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter)</nobr>
+        
+        <div class="jd-descrdiv">Remove an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code> that will be invoked as soon as the response is
+ received, and before <code><a href="../../../../com/ning/http/client/AsyncHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived(HttpResponseStatus)</a></code>.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setAllowPoolingConnection(boolean)">setAllowPoolingConnection</a></span>(boolean allowPoolingConnection)</nobr>
+        
+        <div class="jd-descrdiv">Set true if connection can be pooled by a <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code>.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setAllowSslConnectionPool(boolean)">setAllowSslConnectionPool</a></span>(boolean allowSslConnectionPool)</nobr>
+        
+        <div class="jd-descrdiv">Return true is if connections pooling is enabled.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setAsyncHttpClientProviderConfig(com.ning.http.client.AsyncHttpProviderConfig<?, ?>)">setAsyncHttpClientProviderConfig</a></span>(<a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a>&lt;?,&nbsp;?&gt; providerConfig)</nobr>
+        
+        <div class="jd-descrdiv">Set the <code><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setCompressionEnabled(boolean)">setCompressionEnabled</a></span>(boolean compressionEnabled)</nobr>
+        
+        <div class="jd-descrdiv">Enable HTTP compression.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setConnectionTimeoutInMs(int)">setConnectionTimeoutInMs</a></span>(int defaultConnectionTimeOutInMs)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can wait when connecting to a remote host</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setConnectionsPool(com.ning.http.client.ConnectionsPool<?, ?>)">setConnectionsPool</a></span>(<a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a>&lt;?,&nbsp;?&gt; connectionsPool)</nobr>
+        
+        <div class="jd-descrdiv">Set the <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setExecutorService(java.util.concurrent.ExecutorService)">setExecutorService</a></span>(ExecutorService applicationThreadPool)</nobr>
+        
+        <div class="jd-descrdiv">Set the java.util.concurrent.ExecutorService an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> use for handling
+ asynchronous response.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setFollowRedirects(boolean)">setFollowRedirects</a></span>(boolean redirectEnabled)</nobr>
+        
+        <div class="jd-descrdiv">Set to true to enable HTTP redirect</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setHostnameVerifier(javax.net.ssl.HostnameVerifier)">setHostnameVerifier</a></span>(HostnameVerifier hostnameVerifier)</nobr>
+        
+        <div class="jd-descrdiv">Set the HostnameVerifier</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setIOThreadMultiplier(int)">setIOThreadMultiplier</a></span>(int multiplier)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setIdleConnectionInPoolTimeoutInMs(int)">setIdleConnectionInPoolTimeoutInMs</a></span>(int defaultIdleConnectionInPoolTimeoutInMs)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> will keep connection
+ idle in pool.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setIdleConnectionTimeoutInMs(int)">setIdleConnectionTimeoutInMs</a></span>(int defaultIdleConnectionTimeoutInMs)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can stay idle.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setKeepAlive(boolean)">setKeepAlive</a></span>(boolean allowPoolingConnection)</nobr>
+        
+        <div class="jd-descrdiv">
+      <em>
+  This method is deprecated.
+      - Use <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setAllowPoolingConnection(boolean)">setAllowPoolingConnection(boolean)</a></code>
+</em></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setMaxRequestRetry(int)">setMaxRequestRetry</a></span>(int maxRequestRetry)</nobr>
+        
+        <div class="jd-descrdiv">Set the number of time a request will be retried when an java.io.IOException occurs because of a Network exception.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setMaximumConnectionsPerHost(int)">setMaximumConnectionsPerHost</a></span>(int defaultMaxConnectionPerHost)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum number of connections per hosts an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setMaximumConnectionsTotal(int)">setMaximumConnectionsTotal</a></span>(int defaultMaxTotalConnections)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum number of connections an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setMaximumNumberOfRedirects(int)">setMaximumNumberOfRedirects</a></span>(int maxDefaultRedirects)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum number of HTTP redirect</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setProxyServer(com.ning.http.client.ProxyServer)">setProxyServer</a></span>(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer)</nobr>
+        
+        <div class="jd-descrdiv">Set an instance of <code><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></code> used by an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setRealm(com.ning.http.client.Realm)">setRealm</a></span>(<a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm)</nobr>
+        
+        <div class="jd-descrdiv">Set the <code><a href="../../../../com/ning/http/client/Realm.html">Realm</a></code>  that will be used for all requests.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setRemoveQueryParamsOnRedirect(boolean)">setRemoveQueryParamsOnRedirect</a></span>(boolean removeQueryParamOnRedirect)</nobr>
+        
+        <div class="jd-descrdiv">Set to false if you don't want the query parameters removed when a redirect occurs.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setRequestCompressionLevel(int)">setRequestCompressionLevel</a></span>(int requestCompressionLevel)</nobr>
+        
+        <div class="jd-descrdiv">Set the compression level, or -1 if no compression is used.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setRequestTimeoutInMs(int)">setRequestTimeoutInMs</a></span>(int defaultRequestTimeoutInMs)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> wait for a response</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setSSLContext(javax.net.ssl.SSLContext)">setSSLContext</a></span>(SSLContext sslContext)</nobr>
+        
+        <div class="jd-descrdiv">Set the SSLContext for secure connection.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setSSLEngineFactory(com.ning.http.client.SSLEngineFactory)">setSSLEngineFactory</a></span>(<a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory)</nobr>
+        
+        <div class="jd-descrdiv">Set the <code><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></code> for secure connection.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setScheduledExecutorService(java.util.concurrent.ScheduledExecutorService)">setScheduledExecutorService</a></span>(ScheduledExecutorService reaper)</nobr>
+        
+        <div class="jd-descrdiv">Set theScheduledExecutorService used to expire idle connections.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setStrict302Handling(boolean)">setStrict302Handling</a></span>(boolean strict302Handling)</nobr>
+        
+        <div class="jd-descrdiv">Configures this AHC instance to be strict in it's handling of 302 redirects
+ in a POST/Redirect/GET situation.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setUseProxyProperties(boolean)">setUseProxyProperties</a></span>(boolean useProxyProperties)</nobr>
+        
+        <div class="jd-descrdiv">Sets whether AHC should use the default http.proxy* system properties
+ to obtain proxy information.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setUseRawUrl(boolean)">setUseRawUrl</a></span>(boolean useRawUrl)</nobr>
+        
+        <div class="jd-descrdiv">Allows use unescaped URLs in requests
+ useful for retrieving data from broken sites</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setUserAgent(java.lang.String)">setUserAgent</a></span>(String userAgent)</nobr>
+        
+        <div class="jd-descrdiv">Set the USER_AGENT header value</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setWebSocketIdleTimeoutInMs(int)">setWebSocketIdleTimeoutInMs</a></span>(int defaultWebSocketIdleTimeoutInMs)</nobr>
+        
+        <div class="jd-descrdiv">Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/websocket/WebSocket.html">WebSocket</a></code> can stay idle.</div>
+  
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="inhmethods" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Methods</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.lang.Object" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.lang.Object-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.lang.Object
+
+<div id="inherited-methods-java.lang.Object">
+  <div id="inherited-methods-java.lang.Object-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.lang.Object-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            Object</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">clone</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">equals</span>(Object arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">finalize</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            Class&lt;?&gt;</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">getClass</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">hashCode</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notify</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notifyAll</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            String</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">toString</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0, int arg1)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+</table>
+
+
+</div><!-- jd-descr (summary) -->
+
+<!-- Details -->
+
+
+
+
+
+
+
+
+<!-- XML Attributes -->
+
+
+<!-- Enum Values -->
+
+
+<!-- Constants -->
+
+
+<!-- Fields -->
+
+
+<!-- Public ctors -->
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<h2>Public Constructors</h2>
+
+
+
+<A NAME="AsyncHttpClientConfig.Builder()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">AsyncHttpClientConfig.Builder</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="AsyncHttpClientConfig.Builder(com.ning.http.client.AsyncHttpClientConfig)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">AsyncHttpClientConfig.Builder</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> prototype)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Create a config builder with values taken from the given prototype configuration.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>prototype</td>
+          <td>the configuration to use as a prototype.
+</td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<!-- Protected ctors -->
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+<!-- Public methdos -->
+
+<h2>Public Methods</h2>
+
+
+
+<A NAME="addIOExceptionFilter(com.ning.http.client.filter.IOExceptionFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">addIOExceptionFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Add an <code><a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a></code> that will be invoked when an java.io.IOException
+ occurs during the download/upload operations.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>ioExceptionFilter</td>
+          <td>an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="addRequestFilter(com.ning.http.client.filter.RequestFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">addRequestFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Add an <code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code> that will be invoked before <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html#executeRequest(com.ning.http.client.Request)">executeRequest(Request)</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>requestFilter</td>
+          <td><code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="addResponseFilter(com.ning.http.client.filter.ResponseFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">addResponseFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Add an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code> that will be invoked as soon as the response is
+ received, and before <code><a href="../../../../com/ning/http/client/AsyncHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived(HttpResponseStatus)</a></code>.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>responseFilter</td>
+          <td>an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="build()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a>
+      </span>
+      <span class="sympad">build</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Build an <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>an <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="getRequestCompressionLevel()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        int
+      </span>
+      <span class="sympad">getRequestCompressionLevel</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Return the compression level, or -1 if no compression is used.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>the compression level, or -1 if no compression is use
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="removeIOExceptionFilter(com.ning.http.client.filter.IOExceptionFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">removeIOExceptionFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Remove an <code><a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a></code> tthat will be invoked when an java.io.IOException
+ occurs during the download/upload operations.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>ioExceptionFilter</td>
+          <td>an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="removeRequestFilter(com.ning.http.client.filter.RequestFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">removeRequestFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Remove an <code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code> that will be invoked before <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html#executeRequest(com.ning.http.client.Request)">executeRequest(Request)</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>requestFilter</td>
+          <td><code><a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="removeResponseFilter(com.ning.http.client.filter.ResponseFilter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">removeResponseFilter</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Remove an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code> that will be invoked as soon as the response is
+ received, and before <code><a href="../../../../com/ning/http/client/AsyncHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived(HttpResponseStatus)</a></code>.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>responseFilter</td>
+          <td>an <code><a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setAllowPoolingConnection(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setAllowPoolingConnection</span>
+      <span class="normal">(boolean allowPoolingConnection)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set true if connection can be pooled by a <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code>. Default is true.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>allowPoolingConnection</td>
+          <td>true if connection can be pooled by a <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setAllowSslConnectionPool(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setAllowSslConnectionPool</span>
+      <span class="normal">(boolean allowSslConnectionPool)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Return true is if connections pooling is enabled.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>allowSslConnectionPool</td>
+          <td>true if enabled</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setAsyncHttpClientProviderConfig(com.ning.http.client.AsyncHttpProviderConfig<?, ?>)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setAsyncHttpClientProviderConfig</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a>&lt;?,&nbsp;?&gt; providerConfig)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the <code><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>providerConfig</td>
+          <td>the <code><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setCompressionEnabled(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setCompressionEnabled</span>
+      <span class="normal">(boolean compressionEnabled)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Enable HTTP compression.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>compressionEnabled</td>
+          <td>true if compression is enabled</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setConnectionTimeoutInMs(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setConnectionTimeoutInMs</span>
+      <span class="normal">(int defaultConnectionTimeOutInMs)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can wait when connecting to a remote host</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultConnectionTimeOutInMs</td>
+          <td>the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can wait when connecting to a remote host</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setConnectionsPool(com.ning.http.client.ConnectionsPool<?, ?>)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setConnectionsPool</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a>&lt;?,&nbsp;?&gt; connectionsPool)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>connectionsPool</td>
+          <td>the <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setExecutorService(java.util.concurrent.ExecutorService)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setExecutorService</span>
+      <span class="normal">(ExecutorService applicationThreadPool)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the java.util.concurrent.ExecutorService an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> use for handling
+ asynchronous response.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>applicationThreadPool</td>
+          <td>the java.util.concurrent.ExecutorService an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> use for handling
+                              asynchronous response.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setFollowRedirects(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setFollowRedirects</span>
+      <span class="normal">(boolean redirectEnabled)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set to true to enable HTTP redirect</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>redirectEnabled</td>
+          <td>true if enabled.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setHostnameVerifier(javax.net.ssl.HostnameVerifier)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setHostnameVerifier</span>
+      <span class="normal">(HostnameVerifier hostnameVerifier)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the HostnameVerifier</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>hostnameVerifier</td>
+          <td>HostnameVerifier</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setIOThreadMultiplier(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setIOThreadMultiplier</span>
+      <span class="normal">(int multiplier)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setIdleConnectionInPoolTimeoutInMs(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setIdleConnectionInPoolTimeoutInMs</span>
+      <span class="normal">(int defaultIdleConnectionInPoolTimeoutInMs)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> will keep connection
+ idle in pool.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultIdleConnectionInPoolTimeoutInMs</td>
+          <td>the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> will keep connection
+         idle in pool.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setIdleConnectionTimeoutInMs(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setIdleConnectionTimeoutInMs</span>
+      <span class="normal">(int defaultIdleConnectionTimeoutInMs)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can stay idle.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultIdleConnectionTimeoutInMs</td>
+          <td>the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can stay idle.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setKeepAlive(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setKeepAlive</span>
+      <span class="normal">(boolean allowPoolingConnection)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      <p>
+  <p class="caution">
+      <strong>
+  This method is deprecated.</strong><br/> - Use <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setAllowPoolingConnection(boolean)">setAllowPoolingConnection(boolean)</a></code>
+
+  </p>
+  <div class="jd-tagdata jd-tagdescr"><p>Set true if connection can be pooled by a <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code>. Default is true.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>allowPoolingConnection</td>
+          <td>true if connection can be pooled by a <code><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code></li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setMaxRequestRetry(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setMaxRequestRetry</span>
+      <span class="normal">(int maxRequestRetry)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the number of time a request will be retried when an java.io.IOException occurs because of a Network exception.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>maxRequestRetry</td>
+          <td>the number of time a request will be retried</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setMaximumConnectionsPerHost(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setMaximumConnectionsPerHost</span>
+      <span class="normal">(int defaultMaxConnectionPerHost)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum number of connections per hosts an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultMaxConnectionPerHost</td>
+          <td>the maximum number of connections per host an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setMaximumConnectionsTotal(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setMaximumConnectionsTotal</span>
+      <span class="normal">(int defaultMaxTotalConnections)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum number of connections an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultMaxTotalConnections</td>
+          <td>the maximum number of connections an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> can handle.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setMaximumNumberOfRedirects(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setMaximumNumberOfRedirects</span>
+      <span class="normal">(int maxDefaultRedirects)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum number of HTTP redirect</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>maxDefaultRedirects</td>
+          <td>the maximum number of HTTP redirect</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setProxyServer(com.ning.http.client.ProxyServer)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setProxyServer</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set an instance of <code><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></code> used by an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>proxyServer</td>
+          <td>instance of <code><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setRealm(com.ning.http.client.Realm)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setRealm</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the <code><a href="../../../../com/ning/http/client/Realm.html">Realm</a></code>  that will be used for all requests.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>realm</td>
+          <td>the <code><a href="../../../../com/ning/http/client/Realm.html">Realm</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setRemoveQueryParamsOnRedirect(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setRemoveQueryParamsOnRedirect</span>
+      <span class="normal">(boolean removeQueryParamOnRedirect)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set to false if you don't want the query parameters removed when a redirect occurs.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setRequestCompressionLevel(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setRequestCompressionLevel</span>
+      <span class="normal">(int requestCompressionLevel)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the compression level, or -1 if no compression is used.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>requestCompressionLevel</td>
+          <td>compression level, or -1 if no compression is use</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setRequestTimeoutInMs(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setRequestTimeoutInMs</span>
+      <span class="normal">(int defaultRequestTimeoutInMs)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> wait for a response</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultRequestTimeoutInMs</td>
+          <td>the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></code> wait for a response</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setSSLContext(javax.net.ssl.SSLContext)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setSSLContext</span>
+      <span class="normal">(SSLContext sslContext)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the SSLContext for secure connection.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>sslContext</td>
+          <td>the SSLContext for secure connection</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setSSLEngineFactory(com.ning.http.client.SSLEngineFactory)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setSSLEngineFactory</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the <code><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></code> for secure connection.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>sslEngineFactory</td>
+          <td>the <code><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></code> for secure connection</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setScheduledExecutorService(java.util.concurrent.ScheduledExecutorService)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setScheduledExecutorService</span>
+      <span class="normal">(ScheduledExecutorService reaper)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set theScheduledExecutorService used to expire idle connections.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>reaper</td>
+          <td>theScheduledExecutorService used to expire idle connections.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setStrict302Handling(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setStrict302Handling</span>
+      <span class="normal">(boolean strict302Handling)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Configures this AHC instance to be strict in it's handling of 302 redirects
+ in a POST/Redirect/GET situation.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>strict302Handling</td>
+          <td>strict handling</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setUseProxyProperties(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setUseProxyProperties</span>
+      <span class="normal">(boolean useProxyProperties)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Sets whether AHC should use the default http.proxy* system properties
+ to obtain proxy information.
+ <p/>
+ If useProxyProperties is set to <code>true</code> but <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html#setProxyServer(com.ning.http.client.ProxyServer)">setProxyServer(ProxyServer)</a></code> was used
+ to explicitly set a proxy server, the latter is preferred.
+ <p/>
+ See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
+</p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setUseRawUrl(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setUseRawUrl</span>
+      <span class="normal">(boolean useRawUrl)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Allows use unescaped URLs in requests
+ useful for retrieving data from broken sites</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setUserAgent(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setUserAgent</span>
+      <span class="normal">(String userAgent)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the USER_AGENT header value</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>userAgent</td>
+          <td>the USER_AGENT header value</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setWebSocketIdleTimeoutInMs(int)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a>
+      </span>
+      <span class="sympad">setWebSocketIdleTimeoutInMs</span>
+      <span class="normal">(int defaultWebSocketIdleTimeoutInMs)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Set the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/websocket/WebSocket.html">WebSocket</a></code> can stay idle.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>defaultWebSocketIdleTimeoutInMs</td>
+          <td>the maximum time in millisecond an <code><a href="../../../../com/ning/http/client/websocket/WebSocket.html">WebSocket</a></code> can stay idle.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></code>
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+
+
+
+<!-- ========= END OF CLASS DATA ========= -->
+<A NAME="navbar_top"></A>
+
+<div id="footer">
+Generated by <a href="http://code.google.com/p/doclava/">Doclava</a>.
+</div> <!-- end footer -->
+
+</div> <!-- jd-content -->
+
+</div><!-- end doc-content -->
+
+</div> <!-- end body-content --> 
+
+<script type="text/javascript">
+init(); /* initialize android-developer-docs.js */
+</script>
+
+</body>
+</html>

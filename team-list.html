@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Team list</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -14,7 +13,6 @@
     <script type="text/javascript" src="./js/apache-maven-fluido.min.js"></script>
 
     
-      <meta name="author" content="Jeanfrancois Arcand" />
     <meta name="Date-Revision-yyyymmdd" content="20120316" />
     <meta http-equiv="Content-Language" content="en" />
     
@@ -105,27 +103,22 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
+          <div class="section"><h2>The Team<a name="The_Team"></a></h2><a name="The_Team"></a><p>A successful project requires many people to play many roles. Some members write code or documentation, while others are valuable as testers, submitting patches and suggestions.</p><p>The team is comprised of Members and Contributors. Members have direct access to the source of a project and actively evolve the code-base. Contributors improve the project through submission of patches and suggestions to the Members. The number of Contributors to the project is unbounded. Get involved today. All contributions to the project are greatly appreciated.</p><div class="section"><h3>Members<a name="Members"></a></h3><a name="Members"></a><p>The following is a list of developers with commit privileges that have directly contributed to the project in one way or another.</p><table border="0" class="zebra-striped"><tr class="a"><th>Id</th><th>Name</th><th>Email</th></tr><tr class="b"><td><a name="brianm"></a>brianm</td><td>Brian McCallister</td><td><a class="externalLink" href="mailto:brianm@skife.org">brianm@skife.org</a></td></tr><tr class="a"><td><a name="jfarcand"></a>jfarcand</td><td>Jeanfrancois Arcand</td><td><a class="externalLink" href="mailto:jfarcand@apache.org">jfarcand@apache.org</a></td></tr><tr class="b"><td><a name="thomd"></a>thomd</td><td>Thomas Dudziak</td><td><a class="externalLink" href="mailto:tomdz@apache.org">tomdz@apache.org</a></td></tr><tr class="a"><td><a name="neotyk"></a>neotyk</td><td>Hubert Iwaniuk</td><td>-</td></tr></table></div><div class="section"><h3>Contributors<a name="Contributors"></a></h3><a name="Contributors"></a><p>The following additional people have contributed to this project through the way of suggestions, patches or documentation.</p><table border="0" class="zebra-striped"><tr class="a"><th>Name</th><th>Email</th></tr><tr class="b"><td>Simone Tripodi</td><td><a class="externalLink" href="mailto:simonetripodi@apache.org">simonetripodi@apache.org</a></td></tr></table><script type="text/javascript">
+function offsetDate(id, offset) {
+    var now = new Date();
+    var nowTime = now.getTime();
+    var localOffset = now.getTimezoneOffset();
+    var developerTime = nowTime + ( offset * 60 * 60 * 1000 )+ ( localOffset * 60 * 1000 );
+    var developerDate = new Date(developerTime);
 
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
+    document.getElementById(id).innerHTML = developerDate;
+}
 
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
+function init(){
+}
 
+window.onLoad = init();
+</script></div></div>
                   </div>
       </div>
     </div>

@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Async Http Client - Uploading file: Progress Listener</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -105,27 +104,11 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
-
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
-
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
-
+          <div class="section"><h2>Uploading file: Progress Listener<a name="Uploading_file:_Progress_Listener"></a></h2><p>When uploading bytes, an application might need to take some action depending on where the upload status is.</p><p>The AsyncHttpClient library support a special <tt>AsyncHandler</tt> called <tt>ProgressAsyncHandler</tt> that can be used to track the upload operation:</p><div class="source"><pre class="prettyprint">public interface ProgressAsyncHandler&lt;T&gt; extends AsyncHandler&lt;T&gt; {
+    STATE onHeaderWriteCompleted();
+    STATE onContentWriteCompleted();
+    STATE onContentWriteProgress(long amount, long current, long total);
+}</pre></div><p>The methods are called in the following order:</p><ul><li><tt>onHeaderWriteCompleted</tt>: invoked when the headers has been flushed to the remote server</li><li><tt>onContentWriteProgress</tt>: as soon as some response's body bytes are written. Might be invoked many times.</li><li><tt>onContentWriteCompleted</tt>: invoked when the response has been sent or aborted.<p>Like with <tt>AsyncHandler</tt>, you can always always abort the processing at any moment in the upload process.</p></li></ul></div>
                   </div>
       </div>
     </div>

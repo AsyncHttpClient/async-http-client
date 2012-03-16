@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.ico" />
+<title>
+
+  BodyDeferringAsyncHandler.BodyDeferringInputStream
+
+
+| Asynchronous Http Client 1.8.0-SNAPSHOT
+
+</title>
+<link href="../../../../../assets/android-developer-docs.css" rel="stylesheet" type="text/css" />
+<link href="../../../../../assets/customizations.css" rel="stylesheet" type="text/css" />
+<script src="../../../../../assets/search_autocomplete.js" type="text/javascript"></script>
+<script src="../../../../../assets/jquery-resizable.min.js" type="text/javascript"></script>
+<script src="../../../../../assets/android-developer-docs.js" type="text/javascript"></script>
+<script src="../../../../../assets/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  setToRoot("../../../../", "../../../../../assets/");
+</script>
+<script src="../../../../../assets/android-developer-reference.js" type="text/javascript"></script>
+<script src="../../../../../assets/navtree_data.js" type="text/javascript"></script>
+<script src="../../../../../assets/customizations.js" type="text/javascript"></script>
+<noscript>
+  <style type="text/css">
+    html,body{overflow:auto;}
+    #body-content{position:relative; top:0;}
+    #doc-content{overflow:visible;border-left:3px solid #666;}
+    #side-nav{padding:0;}
+    #side-nav .toggle-list ul {display:block;}
+    #resize-packages-nav{border-bottom:3px solid #666;}
+  </style>
+</noscript>
+</head>
+
+<body class="">
+
+<div id="header">
+    <div id="headerLeft">
+    
+      <span id="masthead-title">Asynchronous Http Client 1.8.0-SNAPSHOT</span>
+    
+    </div>
+    <div id="headerRight">
+      
+  <div id="search" >
+      <div id="searchForm">
+          <form accept-charset="utf-8" class="gsc-search-box" 
+                onsubmit="return submit_search()">
+            <table class="gsc-search-box" cellpadding="0" cellspacing="0"><tbody>
+                <tr>
+                  <td class="gsc-input">
+                    <input id="search_autocomplete" class="gsc-input" type="text" size="33" autocomplete="off"
+                      title="search developer docs" name="q"
+                      value="search developer docs"
+                      onFocus="search_focus_changed(this, true)"
+                      onBlur="search_focus_changed(this, false)"
+                      onkeydown="return search_changed(event, true, '../../../../')"
+                      onkeyup="return search_changed(event, false, '../../../../')" />
+                  <div id="search_filtered_div" class="no-display">
+                      <table id="search_filtered" cellspacing=0>
+                      </table>
+                  </div>
+                  </td>
+                  <td class="gsc-search-button">
+                    <input type="submit" value="Search" title="search" id="search-button" class="gsc-search-button" />
+                  </td>
+                  <td class="gsc-clear-button">
+                    <div title="clear results" class="gsc-clear-button">&nbsp;</div>
+                  </td>
+                </tr></tbody>
+              </table>
+          </form>
+      </div><!-- searchForm -->
+  </div><!-- search -->
+      
+    </div>
+</div><!-- header -->
+
+
+  <div class="g-section g-tpl-240" id="body-content">
+    <div class="g-unit g-first side-nav-resizable" id="side-nav">
+      <div id="swapper">
+        <div id="nav-panels">
+          <div id="resize-packages-nav">
+            <div id="packages-nav">
+              <div id="index-links"><nobr>
+                <a href="../../../../packages.html"  >Package Index</a> | 
+                <a href="../../../../classes.html" >Class Index</a></nobr>
+              </div>
+              <ul>
+                
+    <li class="selected api apilevel-">
+  <a href="../../../../com/ning/http/client/package-summary.html">com.ning.http.client</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/consumers/package-summary.html">com.ning.http.client.consumers</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/extra/package-summary.html">com.ning.http.client.extra</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/filter/package-summary.html">com.ning.http.client.filter</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/generators/package-summary.html">com.ning.http.client.generators</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listenable/package-summary.html">com.ning.http.client.listenable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listener/package-summary.html">com.ning.http.client.listener</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/ntlm/package-summary.html">com.ning.http.client.ntlm</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/oauth/package-summary.html">com.ning.http.client.oauth</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/apache/package-summary.html">com.ning.http.client.providers.apache</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/grizzly/package-summary.html">com.ning.http.client.providers.grizzly</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/jdk/package-summary.html">com.ning.http.client.providers.jdk</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/package-summary.html">com.ning.http.client.providers.netty</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/spnego/package-summary.html">com.ning.http.client.providers.netty.spnego</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/resumable/package-summary.html">com.ning.http.client.resumable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/simple/package-summary.html">com.ning.http.client.simple</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/webdav/package-summary.html">com.ning.http.client.webdav</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/websocket/package-summary.html">com.ning.http.client.websocket</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/multipart/package-summary.html">com.ning.http.multipart</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/util/package-summary.html">com.ning.http.util</a></li>
+              </ul><br/>
+            </div> <!-- end packages -->
+          </div> <!-- end resize-packages -->
+          <div id="classes-nav">
+            <ul>
+              
+    <li><h2>Interfaces</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.html">AsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProvider.html">AsyncHttpProvider</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Body.html">Body</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyConsumer.html">BodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyGenerator.html">BodyGenerator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ListenableFuture.html">ListenableFuture</a>&lt;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Part.html">Part</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProgressAsyncHandler.html">ProgressAsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RandomAccessBody.html">RandomAccessBody</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.html">Request</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.html">Response</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ResumableBodyConsumer.html">ResumableBodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SignatureCalculator.html">SignatureCalculator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.DerivedBuilder.html">SimpleAsyncHttpClient.DerivedBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ThrowableHandler.html">ThrowableHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/UpgradeHandler.html">UpgradeHandler</a>&lt;T&gt;</li>
+      </ul>
+    </li>
+              
+    <li><h2>Classes</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandler.html">AsyncCompletionHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">AsyncCompletionHandlerBase</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.BoundRequestBuilder.html">AsyncHttpClient.BoundRequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfigBean.html">AsyncHttpClientConfigBean</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html">BodyDeferringAsyncHandler</a></li>
+          <li class="selected api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html">BodyDeferringAsyncHandler.BodyDeferringInputStream</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ByteArrayPart.html">ByteArrayPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Cookie.html">Cookie</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FilePart.html">FilePart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpContent.html">HttpContent</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.html">Realm</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.RealmBuilder.html">Realm.RealmBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&nbsp;extends&nbsp;<a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&gt;&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.ResponseBuilder.html">Response.ResponseBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.html">SimpleAsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.Builder.html">SimpleAsyncHttpClient.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/StringPart.html">StringPart</a></li>
+      </ul>
+    </li>
+              
+              
+    <li><h2>Enums</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.Protocol.html">ProxyServer.Protocol</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.AuthScheme.html">Realm.AuthScheme</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.ErrorDocumentBehaviour.html">SimpleAsyncHttpClient.ErrorDocumentBehaviour</a></li>
+      </ul>
+    </li>
+              
+    <li><h2>Exceptions</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/MaxRedirectException.html">MaxRedirectException</a></li>
+      </ul>
+    </li>
+              
+            </ul><br/>
+          </div><!-- end classes -->
+        </div><!-- end nav-panels -->
+        <div id="nav-tree" style="display:none">
+          <div id="index-links"><nobr>
+            <a href="../../../../packages.html"  >Package Index</a> | 
+            <a href="../../../../classes.html" >Class Index</a></nobr>
+          </div>
+        </div><!-- end nav-tree -->
+      </div><!-- end swapper -->
+    </div> <!-- end side-nav -->
+    <script>
+      if (!isMobile) {
+        $("<a href='#' id='nav-swap' onclick='swapNav();return false;' style='font-size:10px;line-height:9px;margin-left:1em;text-decoration:none;'><span id='tree-link'>Use Tree Navigation</span><span id='panel-link' style='display:none'>Use Panel Navigation</span></a>").appendTo("#side-nav");
+        chooseDefaultNav();
+        if ($("#nav-tree").is(':visible')) {
+          init_default_navtree("../../../../");
+        } else {
+          addLoadEvent(function() {
+            scrollIntoView("packages-nav");
+            scrollIntoView("classes-nav");
+          });
+        }
+        $("#swapper").css({borderBottom:"2px solid #aaa"});
+      } else {
+        swapNav(); // tree view should be used on mobile
+      }
+    </script>
+
+
+
+<div class="g-unit" id="doc-content">
+
+<div id="api-info-block">
+
+
+
+  
+   
+  
+  
+  
+   
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+
+<div class="sum-details-links">
+
+Summary:
+
+
+
+
+
+
+
+
+  <a href="#inhfields">Inherited Fields</a>
+  
+
+
+  &#124; <a href="#pubctors">Ctors</a>
+  
+
+
+
+  &#124; <a href="#pubmethods">Methods</a>
+  
+
+
+
+  &#124; <a href="#inhmethods">Inherited Methods</a>
+
+&#124; <a href="#" onclick="return toggleAllClassInherited()" id="toggleAllClassInherited">[Expand All]</a>
+
+</div><!-- end sum-details-links -->
+<div class="api-level">
+  
+
+
+  
+  
+
+</div>
+</div><!-- end api-info-block -->
+
+
+<!-- ======== START OF CLASS DATA ======== -->
+
+<div id="jd-header">
+    public
+    static 
+     
+    
+    class
+<h1>BodyDeferringAsyncHandler.BodyDeferringInputStream</h1>
+
+
+
+  
+  
+  
+
+  
+  
+  
+
+  
+    extends FilterInputStream<br/>
+  
+  
+  
+
+  
+  
+  
+
+
+</div><!-- end header -->
+
+<div id="naMessage"></div>
+
+<div id="jd-content" class="api apilevel-">
+<table class="jd-inheritance-table">
+
+
+    <tr>
+         	
+        <td colspan="4" class="jd-inheritance-class-cell">java.lang.Object</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="3" class="jd-inheritance-class-cell">java.io.InputStream</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="2" class="jd-inheritance-class-cell">java.io.FilterInputStream</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="1" class="jd-inheritance-class-cell">com.ning.http.client.BodyDeferringAsyncHandler.BodyDeferringInputStream</td>
+    </tr>
+    
+
+</table>
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Class Overview</h2>
+<p>A simple helper class that is used to perform automatic "join" for async
+ download and the error checking of the Future of the request.
+</p>
+
+
+
+
+
+</div><!-- jd-descr -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Summary</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========== FIELD SUMMARY =========== -->
+<table id="inhfields" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Fields</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-fields-java.io.FilterInputStream" class="jd-expando-trigger closed"
+          ><img id="inherited-fields-java.io.FilterInputStream-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>From class
+java.io.FilterInputStream
+<div id="inherited-fields-java.io.FilterInputStream">
+  <div id="inherited-fields-java.io.FilterInputStream-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-fields-java.io.FilterInputStream-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+    
+      <tr class="alt-color api apilevel-" >
+          <td class="jd-typecol"><nobr>
+          protected
+          
+          
+          InputStream</nobr></td>
+          <td class="jd-linkcol">in</td>
+          <td class="jd-descrcol" width="100%"></td>
+      </tr>
+      
+    
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+
+
+
+
+
+</table>
+
+
+
+
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<table id="pubctors" class="jd-sumtable"><tr><th colspan="12">Public Constructors</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html#BodyDeferringAsyncHandler.BodyDeferringInputStream(java.util.concurrent.Future<com.ning.http.client.Response>, com.ning.http.client.BodyDeferringAsyncHandler, java.io.InputStream)">BodyDeferringAsyncHandler.BodyDeferringInputStream</a></span>(Future&lt;<a href="../../../../com/ning/http/client/Response.html">Response</a>&gt; future, <a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html">BodyDeferringAsyncHandler</a> bdah, InputStream in)</nobr>
+        
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="pubmethods" class="jd-sumtable"><tr><th colspan="12">Public Methods</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html#close()">close</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Closes the input stream, and "joins" (wait for complete execution
+ together with potential exception thrown) of the async request.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/Response.html">Response</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html#getAsapResponse()">getAsapResponse</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Delegates to <code><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html#getResponse()">getResponse()</a></code>.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/Response.html">Response</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html#getLastResponse()">getLastResponse</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Delegates to <code>Future<Response>#get()</code> method.</div>
+  
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="inhmethods" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Methods</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.io.FilterInputStream" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.io.FilterInputStream-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.io.FilterInputStream
+
+<div id="inherited-methods-java.io.FilterInputStream">
+  <div id="inherited-methods-java.io.FilterInputStream-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.io.FilterInputStream-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">available</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">close</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            synchronized
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">mark</span>(int arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">markSupported</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>(byte[] arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>(byte[] arg0, int arg1, int arg2)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            synchronized
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">reset</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            long</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">skip</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.io.InputStream" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.io.InputStream-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.io.InputStream
+
+<div id="inherited-methods-java.io.InputStream">
+  <div id="inherited-methods-java.io.InputStream-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.io.InputStream-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">available</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">close</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            synchronized
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">mark</span>(int arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">markSupported</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>(byte[] arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">read</span>(byte[] arg0, int arg1, int arg2)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            synchronized
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">reset</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            long</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">skip</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.lang.Object" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.lang.Object-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.lang.Object
+
+<div id="inherited-methods-java.lang.Object">
+  <div id="inherited-methods-java.lang.Object-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.lang.Object-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            Object</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">clone</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">equals</span>(Object arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">finalize</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            Class&lt;?&gt;</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">getClass</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">hashCode</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notify</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notifyAll</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            String</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">toString</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0, int arg1)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.io.Closeable" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.io.Closeable-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From interface
+
+  java.io.Closeable
+
+<div id="inherited-methods-java.io.Closeable">
+  <div id="inherited-methods-java.io.Closeable-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.io.Closeable-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">close</span>()</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+</table>
+
+
+</div><!-- jd-descr (summary) -->
+
+<!-- Details -->
+
+
+
+
+
+
+
+
+<!-- XML Attributes -->
+
+
+<!-- Enum Values -->
+
+
+<!-- Constants -->
+
+
+<!-- Fields -->
+
+
+<!-- Public ctors -->
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<h2>Public Constructors</h2>
+
+
+
+<A NAME="BodyDeferringAsyncHandler.BodyDeferringInputStream(java.util.concurrent.Future<com.ning.http.client.Response>, com.ning.http.client.BodyDeferringAsyncHandler, java.io.InputStream)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">BodyDeferringAsyncHandler.BodyDeferringInputStream</span>
+      <span class="normal">(Future&lt;<a href="../../../../com/ning/http/client/Response.html">Response</a>&gt; future, <a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html">BodyDeferringAsyncHandler</a> bdah, InputStream in)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<!-- Protected ctors -->
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+<!-- Public methdos -->
+
+<h2>Public Methods</h2>
+
+
+
+<A NAME="close()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        void
+      </span>
+      <span class="sympad">close</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Closes the input stream, and "joins" (wait for complete execution
+ together with potential exception thrown) of the async request.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IOException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="getAsapResponse()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/Response.html">Response</a>
+      </span>
+      <span class="sympad">getAsapResponse</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Delegates to <code><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html#getResponse()">getResponse()</a></code>. Will
+ blocks as long as headers arrives only. Might return
+ <code>null</code>. See
+ <code><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html#getResponse()">getResponse()</a></code> method for details.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/Response.html">Response</a></code></li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>InterruptedException</td>
+            <td></td>
+        </tr>  
+        <tr>
+            <th>IOException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="getLastResponse()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/Response.html">Response</a>
+      </span>
+      <span class="sympad">getLastResponse</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Delegates to <code>Future<Response>#get()</code> method. Will block
+ as long as complete response arrives.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/Response.html">Response</a></code></li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th></td>
+            <td>InterruptedException</td>
+        </tr>  
+        <tr>
+            <th>ExecutionException</td>
+            <td></td>
+        </tr>  
+        <tr>
+            <th>InterruptedException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+
+
+
+<!-- ========= END OF CLASS DATA ========= -->
+<A NAME="navbar_top"></A>
+
+<div id="footer">
+Generated by <a href="http://code.google.com/p/doclava/">Doclava</a>.
+</div> <!-- end footer -->
+
+</div> <!-- jd-content -->
+
+</div><!-- end doc-content -->
+
+</div> <!-- end body-content --> 
+
+<script type="text/javascript">
+init(); /* initialize android-developer-docs.js */
+</script>
+
+</body>
+</html>

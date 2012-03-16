@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Async Http Client - Using OAuth</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -105,27 +104,19 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
+          <div class="section"><h2>Using OAuth<a name="Using_OAuth"></a></h2><p>You can use the library to pull data from any OAuth site (like Twitter). This is as simple as:</p><div class="source"><pre class="prettyprint">private static final String CONSUMER_KEY = &quot;dpf43f3p2l4k3l03&quot;;
+private static final String CONSUMER_SECRET = &quot;kd94hf93k423k f44&quot;;
+public static final String TOKEN_KEY = &quot;nnch734d00sl2jdk&quot;;
+public static final String TOKEN_SECRET = &quot;pfkkdhi9sl3r4s00&quot;;
+public static final String NONCE = &quot;kllo9940pd9333jh&quot;;
+final static long TIMESTAMP = 1191242096;
 
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
-
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
-
+public void oAuth() {
+ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
+RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
+OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
+AsyncHttpClient client = new AsyncHttpClient();
+Response response = client.prepareGet(&quot;http://...&quot;).setSignatureCalculator(calc).execute().get();</pre></div></div>
                   </div>
       </div>
     </div>

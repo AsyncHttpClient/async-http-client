@@ -1,0 +1,2742 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.ico" />
+<title>
+
+  RequestBuilder
+
+
+| Asynchronous Http Client 1.8.0-SNAPSHOT
+
+</title>
+<link href="../../../../../assets/android-developer-docs.css" rel="stylesheet" type="text/css" />
+<link href="../../../../../assets/customizations.css" rel="stylesheet" type="text/css" />
+<script src="../../../../../assets/search_autocomplete.js" type="text/javascript"></script>
+<script src="../../../../../assets/jquery-resizable.min.js" type="text/javascript"></script>
+<script src="../../../../../assets/android-developer-docs.js" type="text/javascript"></script>
+<script src="../../../../../assets/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  setToRoot("../../../../", "../../../../../assets/");
+</script>
+<script src="../../../../../assets/android-developer-reference.js" type="text/javascript"></script>
+<script src="../../../../../assets/navtree_data.js" type="text/javascript"></script>
+<script src="../../../../../assets/customizations.js" type="text/javascript"></script>
+<noscript>
+  <style type="text/css">
+    html,body{overflow:auto;}
+    #body-content{position:relative; top:0;}
+    #doc-content{overflow:visible;border-left:3px solid #666;}
+    #side-nav{padding:0;}
+    #side-nav .toggle-list ul {display:block;}
+    #resize-packages-nav{border-bottom:3px solid #666;}
+  </style>
+</noscript>
+</head>
+
+<body class="">
+
+<div id="header">
+    <div id="headerLeft">
+    
+      <span id="masthead-title">Asynchronous Http Client 1.8.0-SNAPSHOT</span>
+    
+    </div>
+    <div id="headerRight">
+      
+  <div id="search" >
+      <div id="searchForm">
+          <form accept-charset="utf-8" class="gsc-search-box" 
+                onsubmit="return submit_search()">
+            <table class="gsc-search-box" cellpadding="0" cellspacing="0"><tbody>
+                <tr>
+                  <td class="gsc-input">
+                    <input id="search_autocomplete" class="gsc-input" type="text" size="33" autocomplete="off"
+                      title="search developer docs" name="q"
+                      value="search developer docs"
+                      onFocus="search_focus_changed(this, true)"
+                      onBlur="search_focus_changed(this, false)"
+                      onkeydown="return search_changed(event, true, '../../../../')"
+                      onkeyup="return search_changed(event, false, '../../../../')" />
+                  <div id="search_filtered_div" class="no-display">
+                      <table id="search_filtered" cellspacing=0>
+                      </table>
+                  </div>
+                  </td>
+                  <td class="gsc-search-button">
+                    <input type="submit" value="Search" title="search" id="search-button" class="gsc-search-button" />
+                  </td>
+                  <td class="gsc-clear-button">
+                    <div title="clear results" class="gsc-clear-button">&nbsp;</div>
+                  </td>
+                </tr></tbody>
+              </table>
+          </form>
+      </div><!-- searchForm -->
+  </div><!-- search -->
+      
+    </div>
+</div><!-- header -->
+
+
+  <div class="g-section g-tpl-240" id="body-content">
+    <div class="g-unit g-first side-nav-resizable" id="side-nav">
+      <div id="swapper">
+        <div id="nav-panels">
+          <div id="resize-packages-nav">
+            <div id="packages-nav">
+              <div id="index-links"><nobr>
+                <a href="../../../../packages.html"  >Package Index</a> | 
+                <a href="../../../../classes.html" >Class Index</a></nobr>
+              </div>
+              <ul>
+                
+    <li class="selected api apilevel-">
+  <a href="../../../../com/ning/http/client/package-summary.html">com.ning.http.client</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/consumers/package-summary.html">com.ning.http.client.consumers</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/extra/package-summary.html">com.ning.http.client.extra</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/filter/package-summary.html">com.ning.http.client.filter</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/generators/package-summary.html">com.ning.http.client.generators</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listenable/package-summary.html">com.ning.http.client.listenable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/listener/package-summary.html">com.ning.http.client.listener</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/ntlm/package-summary.html">com.ning.http.client.ntlm</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/oauth/package-summary.html">com.ning.http.client.oauth</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/apache/package-summary.html">com.ning.http.client.providers.apache</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/grizzly/package-summary.html">com.ning.http.client.providers.grizzly</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/jdk/package-summary.html">com.ning.http.client.providers.jdk</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/package-summary.html">com.ning.http.client.providers.netty</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/providers/netty/spnego/package-summary.html">com.ning.http.client.providers.netty.spnego</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/resumable/package-summary.html">com.ning.http.client.resumable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/simple/package-summary.html">com.ning.http.client.simple</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/webdav/package-summary.html">com.ning.http.client.webdav</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/client/websocket/package-summary.html">com.ning.http.client.websocket</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/multipart/package-summary.html">com.ning.http.multipart</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../com/ning/http/util/package-summary.html">com.ning.http.util</a></li>
+              </ul><br/>
+            </div> <!-- end packages -->
+          </div> <!-- end resize-packages -->
+          <div id="classes-nav">
+            <ul>
+              
+    <li><h2>Interfaces</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.html">AsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProvider.html">AsyncHttpProvider</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpProviderConfig.html">AsyncHttpProviderConfig</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Body.html">Body</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyConsumer.html">BodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyGenerator.html">BodyGenerator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ConnectionsPool.html">ConnectionsPool</a>&lt;U,&nbsp;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ListenableFuture.html">ListenableFuture</a>&lt;V&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Part.html">Part</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProgressAsyncHandler.html">ProgressAsyncHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RandomAccessBody.html">RandomAccessBody</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.html">Request</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.html">Response</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ResumableBodyConsumer.html">ResumableBodyConsumer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SignatureCalculator.html">SignatureCalculator</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.DerivedBuilder.html">SimpleAsyncHttpClient.DerivedBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ThrowableHandler.html">ThrowableHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/UpgradeHandler.html">UpgradeHandler</a>&lt;T&gt;</li>
+      </ul>
+    </li>
+              
+    <li><h2>Classes</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandler.html">AsyncCompletionHandler</a>&lt;T&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">AsyncCompletionHandlerBase</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.html">AsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClient.BoundRequestBuilder.html">AsyncHttpClient.BoundRequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfig.Builder.html">AsyncHttpClientConfig.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHttpClientConfigBean.html">AsyncHttpClientConfigBean</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.html">BodyDeferringAsyncHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/BodyDeferringAsyncHandler.BodyDeferringInputStream.html">BodyDeferringAsyncHandler.BodyDeferringInputStream</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ByteArrayPart.html">ByteArrayPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Cookie.html">Cookie</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FilePart.html">FilePart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpContent.html">HttpContent</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.html">Realm</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.RealmBuilder.html">Realm.RealmBuilder</a></li>
+          <li class="selected api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&nbsp;extends&nbsp;<a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&gt;&gt;</li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Response.ResponseBuilder.html">Response.ResponseBuilder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.html">SimpleAsyncHttpClient</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.Builder.html">SimpleAsyncHttpClient.Builder</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/StringPart.html">StringPart</a></li>
+      </ul>
+    </li>
+              
+              
+    <li><h2>Enums</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/ProxyServer.Protocol.html">ProxyServer.Protocol</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/Realm.AuthScheme.html">Realm.AuthScheme</a></li>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/SimpleAsyncHttpClient.ErrorDocumentBehaviour.html">SimpleAsyncHttpClient.ErrorDocumentBehaviour</a></li>
+      </ul>
+    </li>
+              
+    <li><h2>Exceptions</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../com/ning/http/client/MaxRedirectException.html">MaxRedirectException</a></li>
+      </ul>
+    </li>
+              
+            </ul><br/>
+          </div><!-- end classes -->
+        </div><!-- end nav-panels -->
+        <div id="nav-tree" style="display:none">
+          <div id="index-links"><nobr>
+            <a href="../../../../packages.html"  >Package Index</a> | 
+            <a href="../../../../classes.html" >Class Index</a></nobr>
+          </div>
+        </div><!-- end nav-tree -->
+      </div><!-- end swapper -->
+    </div> <!-- end side-nav -->
+    <script>
+      if (!isMobile) {
+        $("<a href='#' id='nav-swap' onclick='swapNav();return false;' style='font-size:10px;line-height:9px;margin-left:1em;text-decoration:none;'><span id='tree-link'>Use Tree Navigation</span><span id='panel-link' style='display:none'>Use Panel Navigation</span></a>").appendTo("#side-nav");
+        chooseDefaultNav();
+        if ($("#nav-tree").is(':visible')) {
+          init_default_navtree("../../../../");
+        } else {
+          addLoadEvent(function() {
+            scrollIntoView("packages-nav");
+            scrollIntoView("classes-nav");
+          });
+        }
+        $("#swapper").css({borderBottom:"2px solid #aaa"});
+      } else {
+        swapNav(); // tree view should be used on mobile
+      }
+    </script>
+
+
+
+<div class="g-unit" id="doc-content">
+
+<div id="api-info-block">
+
+
+
+  
+   
+  
+  
+  
+   
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+
+<div class="sum-details-links">
+
+Summary:
+
+
+
+
+
+
+
+
+  <a href="#inhfields">Inherited Fields</a>
+  
+
+
+  &#124; <a href="#pubctors">Ctors</a>
+  
+
+
+
+  &#124; <a href="#pubmethods">Methods</a>
+  
+
+
+
+  &#124; <a href="#inhmethods">Inherited Methods</a>
+
+&#124; <a href="#" onclick="return toggleAllClassInherited()" id="toggleAllClassInherited">[Expand All]</a>
+
+</div><!-- end sum-details-links -->
+<div class="api-level">
+  
+
+
+  
+  
+
+</div>
+</div><!-- end api-info-block -->
+
+
+<!-- ======== START OF CLASS DATA ======== -->
+
+<div id="jd-header">
+    public
+     
+     
+    
+    class
+<h1>RequestBuilder</h1>
+
+
+
+  
+  
+  
+
+  
+    extends <a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&nbsp;extends&nbsp;<a href="../../../../com/ning/http/client/RequestBuilderBase.html">RequestBuilderBase</a>&lt;T&gt;&gt;<br/>
+  
+  
+  
+
+  
+  
+  
+
+
+</div><!-- end header -->
+
+<div id="naMessage"></div>
+
+<div id="jd-content" class="api apilevel-">
+<table class="jd-inheritance-table">
+
+
+    <tr>
+         	
+        <td colspan="3" class="jd-inheritance-class-cell">java.lang.Object</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="2" class="jd-inheritance-class-cell"><a href="../../../../com/ning/http/client/RequestBuilderBase.html">com.ning.http.client.RequestBuilderBase</a>&lt;T&nbsp;extends&nbsp;<a href="../../../../com/ning/http/client/RequestBuilderBase.html">com.ning.http.client.RequestBuilderBase</a>&lt;T&gt;&gt;</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="1" class="jd-inheritance-class-cell">com.ning.http.client.RequestBuilder</td>
+    </tr>
+    
+
+</table>
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Class Overview</h2>
+<p>Builder for a <code><a href="../../../../com/ning/http/client/Request.html">Request</a></code>.
+</p>
+
+
+
+
+
+</div><!-- jd-descr -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Summary</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========== FIELD SUMMARY =========== -->
+<table id="inhfields" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Fields</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-fields-com.ning.http.client.RequestBuilderBase" class="jd-expando-trigger closed"
+          ><img id="inherited-fields-com.ning.http.client.RequestBuilderBase-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>From class
+<a href="../../../../com/ning/http/client/RequestBuilderBase.html">com.ning.http.client.RequestBuilderBase</a>
+<div id="inherited-fields-com.ning.http.client.RequestBuilderBase">
+  <div id="inherited-fields-com.ning.http.client.RequestBuilderBase-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-fields-com.ning.http.client.RequestBuilderBase-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+    
+      <tr class="alt-color api apilevel-" >
+          <td class="jd-typecol"><nobr>
+          protected
+          
+          final
+          RequestBuilderBase.RequestImpl</nobr></td>
+          <td class="jd-linkcol"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#request">request</a></td>
+          <td class="jd-descrcol" width="100%"></td>
+      </tr>
+      
+    
+      <tr class=" api apilevel-" >
+          <td class="jd-typecol"><nobr>
+          protected
+          
+          
+          boolean</nobr></td>
+          <td class="jd-linkcol"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#useRawUrl">useRawUrl</a></td>
+          <td class="jd-descrcol" width="100%"></td>
+      </tr>
+      
+    
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+
+</table>
+
+
+
+
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<table id="pubctors" class="jd-sumtable"><tr><th colspan="12">Public Constructors</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#RequestBuilder()">RequestBuilder</a></span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#RequestBuilder(com.ning.http.client.Request)">RequestBuilder</a></span>(<a href="../../../../com/ning/http/client/Request.html">Request</a> prototype)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#RequestBuilder(java.lang.String)">RequestBuilder</a></span>(String method)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#RequestBuilder(java.lang.String, boolean)">RequestBuilder</a></span>(String method, boolean useRawUrl)</nobr>
+        
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="pubmethods" class="jd-sumtable"><tr><th colspan="12">Public Methods</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addBodyPart(com.ning.http.client.Part)">addBodyPart</a></span>(<a href="../../../../com/ning/http/client/Part.html">Part</a> part)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addCookie(com.ning.http.client.Cookie)">addCookie</a></span>(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> cookie)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addHeader(java.lang.String, java.lang.String)">addHeader</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addOrReplaceCookie(com.ning.http.client.Cookie)">addOrReplaceCookie</a></span>(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> c)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addParameter(java.lang.String, java.lang.String)">addParameter</a></span>(String key, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#addQueryParameter(java.lang.String, java.lang.String)">addQueryParameter</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/Request.html">Request</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#build()">build</a></span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setBody(byte[])">setBody</a></span>(byte[] data)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setBody(com.ning.http.client.Request.EntityWriter)">setBody</a></span>(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setBody(com.ning.http.client.Request.EntityWriter, long)">setBody</a></span>(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter, long length)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setBody(java.io.InputStream)">setBody</a></span>(InputStream stream)</nobr>
+        
+        <div class="jd-descrdiv">
+      <em>
+  This method is deprecated.
+      #setBody(BodyGenerator) setBody(new InputStreamBodyGenerator(inputStream))
+</em></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setBody(java.lang.String)">setBody</a></span>(String data)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setFollowRedirects(boolean)">setFollowRedirects</a></span>(boolean followRedirects)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setHeader(java.lang.String, java.lang.String)">setHeader</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setHeaders(com.ning.http.client.FluentCaseInsensitiveStringsMap)">setHeaders</a></span>(<a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a> headers)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setHeaders(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)">setHeaders</a></span>(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; headers)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setMethod(java.lang.String)">setMethod</a></span>(String method)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setParameters(com.ning.http.client.FluentStringsMap)">setParameters</a></span>(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setParameters(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)">setParameters</a></span>(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setProxyServer(com.ning.http.client.ProxyServer)">setProxyServer</a></span>(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setQueryParameters(com.ning.http.client.FluentStringsMap)">setQueryParameters</a></span>(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setUrl(java.lang.String)">setUrl</a></span>(String url)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilder.html#setVirtualHost(java.lang.String)">setVirtualHost</a></span>(String virtualHost)</nobr>
+        
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="inhmethods" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Methods</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-com.ning.http.client.RequestBuilderBase" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-com.ning.http.client.RequestBuilderBase-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  <a href="../../../../com/ning/http/client/RequestBuilderBase.html">com.ning.http.client.RequestBuilderBase</a>
+
+<div id="inherited-methods-com.ning.http.client.RequestBuilderBase">
+  <div id="inherited-methods-com.ning.http.client.RequestBuilderBase-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-com.ning.http.client.RequestBuilderBase-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addBodyPart(com.ning.http.client.Part)">addBodyPart</a></span>(<a href="../../../../com/ning/http/client/Part.html">Part</a> part)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addCookie(com.ning.http.client.Cookie)">addCookie</a></span>(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> cookie)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addHeader(java.lang.String, java.lang.String)">addHeader</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addOrReplaceCookie(com.ning.http.client.Cookie)">addOrReplaceCookie</a></span>(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> cookie)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addParameter(java.lang.String, java.lang.String)">addParameter</a></span>(String key, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#addQueryParameter(java.lang.String, java.lang.String)">addQueryParameter</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../com/ning/http/client/Request.html">Request</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#build()">build</a></span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(byte[])">setBody</a></span>(byte[] data)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(com.ning.http.client.BodyGenerator)">setBody</a></span>(<a href="../../../../com/ning/http/client/BodyGenerator.html">BodyGenerator</a> bodyGenerator)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(com.ning.http.client.Request.EntityWriter)">setBody</a></span>(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(com.ning.http.client.Request.EntityWriter, long)">setBody</a></span>(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter, long length)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(java.io.File)">setBody</a></span>(File file)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(java.io.InputStream)">setBody</a></span>(InputStream stream)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBody(java.lang.String)">setBody</a></span>(String data)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setBodyEncoding(java.lang.String)">setBodyEncoding</a></span>(String charset)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setContentLength(int)">setContentLength</a></span>(int length)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setFollowRedirects(boolean)">setFollowRedirects</a></span>(boolean followRedirects)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setHeader(java.lang.String, java.lang.String)">setHeader</a></span>(String name, String value)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setHeaders(com.ning.http.client.FluentCaseInsensitiveStringsMap)">setHeaders</a></span>(<a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a> headers)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setHeaders(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)">setHeaders</a></span>(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; headers)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setInetAddress(java.net.InetAddress)">setInetAddress</a></span>(InetAddress address)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setMethod(java.lang.String)">setMethod</a></span>(String method)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setParameters(com.ning.http.client.FluentStringsMap)">setParameters</a></span>(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setParameters(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)">setParameters</a></span>(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setPerRequestConfig(com.ning.http.client.PerRequestConfig)">setPerRequestConfig</a></span>(<a href="../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a> perRequestConfig)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setProxyServer(com.ning.http.client.ProxyServer)">setProxyServer</a></span>(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setQueryParameters(com.ning.http.client.FluentStringsMap)">setQueryParameters</a></span>(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setRangeOffset(long)">setRangeOffset</a></span>(long rangeOffset)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setRealm(com.ning.http.client.Realm)">setRealm</a></span>(<a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setUrl(java.lang.String)">setUrl</a></span>(String url)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../com/ning/http/client/RequestBuilderBase.html#setVirtualHost(java.lang.String)">setVirtualHost</a></span>(String virtualHost)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.lang.Object" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.lang.Object-trigger"
+          src="../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.lang.Object
+
+<div id="inherited-methods-java.lang.Object">
+  <div id="inherited-methods-java.lang.Object-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.lang.Object-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            Object</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">clone</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">equals</span>(Object arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">finalize</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            Class&lt;?&gt;</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">getClass</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">hashCode</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notify</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notifyAll</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            String</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">toString</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0, int arg1)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+</table>
+
+
+</div><!-- jd-descr (summary) -->
+
+<!-- Details -->
+
+
+
+
+
+
+
+
+<!-- XML Attributes -->
+
+
+<!-- Enum Values -->
+
+
+<!-- Constants -->
+
+
+<!-- Fields -->
+
+
+<!-- Public ctors -->
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<h2>Public Constructors</h2>
+
+
+
+<A NAME="RequestBuilder()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">RequestBuilder</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="RequestBuilder(com.ning.http.client.Request)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">RequestBuilder</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Request.html">Request</a> prototype)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="RequestBuilder(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">RequestBuilder</span>
+      <span class="normal">(String method)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="RequestBuilder(java.lang.String, boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">RequestBuilder</span>
+      <span class="normal">(String method, boolean useRawUrl)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<!-- Protected ctors -->
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+<!-- Public methdos -->
+
+<h2>Public Methods</h2>
+
+
+
+<A NAME="addBodyPart(com.ning.http.client.Part)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addBodyPart</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Part.html">Part</a> part)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="addCookie(com.ning.http.client.Cookie)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addCookie</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> cookie)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="addHeader(java.lang.String, java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addHeader</span>
+      <span class="normal">(String name, String value)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="addOrReplaceCookie(com.ning.http.client.Cookie)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addOrReplaceCookie</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Cookie.html">Cookie</a> c)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="addParameter(java.lang.String, java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addParameter</span>
+      <span class="normal">(String key, String value)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="addQueryParameter(java.lang.String, java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">addQueryParameter</span>
+      <span class="normal">(String name, String value)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="build()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/Request.html">Request</a>
+      </span>
+      <span class="sympad">build</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setBody(byte[])"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setBody</span>
+      <span class="normal">(byte[] data)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setBody(com.ning.http.client.Request.EntityWriter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setBody</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setBody(com.ning.http.client.Request.EntityWriter, long)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setBody</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/Request.EntityWriter.html">Request.EntityWriter</a> dataWriter, long length)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setBody(java.io.InputStream)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setBody</span>
+      <span class="normal">(InputStream stream)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      <p>
+  <p class="caution">
+      <strong>
+  This method is deprecated.</strong><br/> #setBody(BodyGenerator) setBody(new InputStreamBodyGenerator(inputStream))
+
+  </p>
+  <div class="jd-tagdata jd-tagdescr"><p>Deprecated - Use setBody(new InputStreamBodyGenerator(inputStream)).</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>stream</td>
+          <td>- An InputStream</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a></code></li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th></td>
+            <td>IllegalArgumentException</td>
+        </tr>  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">See Also</h5>
+      <ul class="nolist"><li>#setBody(BodyGenerator) InputStreamBodyGenerator(inputStream)</li><li><code><a href="../../../../com/ning/http/client/generators/InputStreamBodyGenerator.html">InputStreamBodyGenerator</a></code></li>
+      </ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setBody(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setBody</span>
+      <span class="normal">(String data)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setFollowRedirects(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setFollowRedirects</span>
+      <span class="normal">(boolean followRedirects)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setHeader(java.lang.String, java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setHeader</span>
+      <span class="normal">(String name, String value)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setHeaders(com.ning.http.client.FluentCaseInsensitiveStringsMap)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setHeaders</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a> headers)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setHeaders(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setHeaders</span>
+      <span class="normal">(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; headers)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setMethod(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setMethod</span>
+      <span class="normal">(String method)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setParameters(com.ning.http.client.FluentStringsMap)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setParameters</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setParameters(java.util.Map<java.lang.String, java.util.Collection<java.lang.String>>)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setParameters</span>
+      <span class="normal">(Map&lt;String,&nbsp;Collection&lt;String&gt;&gt; parameters)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>IllegalArgumentException</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="setProxyServer(com.ning.http.client.ProxyServer)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setProxyServer</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setQueryParameters(com.ning.http.client.FluentStringsMap)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setQueryParameters</span>
+      <span class="normal">(<a href="../../../../com/ning/http/client/FluentStringsMap.html">FluentStringsMap</a> parameters)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setUrl(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setUrl</span>
+      <span class="normal">(String url)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+<A NAME="setVirtualHost(java.lang.String)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>
+      </span>
+      <span class="sympad">setVirtualHost</span>
+      <span class="normal">(String virtualHost)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p></p></div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+
+
+
+<!-- ========= END OF CLASS DATA ========= -->
+<A NAME="navbar_top"></A>
+
+<div id="footer">
+Generated by <a href="http://code.google.com/p/doclava/">Doclava</a>.
+</div> <!-- end footer -->
+
+</div> <!-- jd-content -->
+
+</div><!-- end doc-content -->
+
+</div> <!-- end body-content --> 
+
+<script type="text/javascript">
+init(); /* initialize android-developer-docs.js */
+</script>
+
+</body>
+</html>

@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Async Http Client - Configuring a Proxy</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -105,27 +104,40 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
+          <div class="section"><h2>Configuring a Proxy<a name="Configuring_a_Proxy"></a></h2><p>The AsyncHttpClient library supports proxy, proxy authentication and proxy tunneling. Just need to create a <tt>ProxyServer</tt> instance:</p><div class="source"><pre class="prettyprint">AsyncHttpClient client = new AsyncHttpClient();
+Future&lt;Response&gt; f = client.prepareGet(&quot;http://....)
+                           .setProxyServer(new ProxyServer(&quot;127.0.0.1&quot;, 8080))
+                           .execute();</pre></div><p>If you need to use an SSL tunnel, all you need to do is:</p><div class="source"><pre class="prettyprint">ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, &quot;127.0.0.1&quot;, 8080);
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+RequestBuilder rb = new RequestBuilder(&quot;GET&quot;)
+                                .setProxyServer(ps)
+                                .setUrl(&quot;https://twitpic.com:443&quot;);
+Future responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+    @Override
+    public void onThrowable(Throwable t) {}
 
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+        return response;
+    }
 
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
+});
+Response r = responseFuture.get();</pre></div><p>You can also set the authentication token on the <tt>ProxyServer</tt> instance:</p><div class="source"><pre class="prettyprint">ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, &quot;127.0.0.1&quot;, 8080, &quot;admin&quot;, &quot;password&quot;);
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
+RequestBuilder rb = new RequestBuilder(&quot;GET&quot;)
+                            .setProxyServer(ps)
+                            .setUrl(&quot;https://twitpic.com:443&quot;);
+Future responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+    @Override
+    public void onThrowable(Throwable t) {}
 
+    @Override
+    public Response onCompleted(Response response) throws Exception {
+        return response;
+    }
+
+});
+Response r = responseFuture.get();</pre></div><p>You can also set the <tt>ProxyServer</tt> at the <tt>AsyncHttpClientConfig</tt> level. In that case, all request will share the same proxy information.</p></div>
                   </div>
       </div>
     </div>

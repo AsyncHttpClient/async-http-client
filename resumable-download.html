@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Async Http Client - Resumable Dowload</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -105,27 +104,39 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
+          <div class="section"><h2>Uploading file: Progress Listener<a name="Uploading_file:_Progress_Listener"></a></h2><p>The AsyncHttpClient supports resumable download in two different scenarios:</p><ul><li><tt>IOException</tt>: If an <tt>IOException</tt> occurs (for whatever reason), you can configure the library to restart the download automatically without having to restart the download from the beginning.</li><li><tt>JVM crashes</tt>: If your application or the JVM goes down during a file download, the library can also restart the download automatically when the same download is requested.<p>You can configure the <tt>AsyncHttpClient</tt> Library to survive <tt>IOException&gt;&gt; using the &lt;&lt;&lt;IOException Filter</tt>:</p><div class="source"><pre class="prettyprint">AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
+                                            .addIOExceptionFilter(new ResumableIOExceptionFilter()).build());
+ResumableAsyncHandler a = new ResumableAsyncHandler(new ResumableRandomAccessFileListener());
+a.setResumableListener(new ResumableRandomAccessFileListener(new RandomAccessFile(&quot;file.avi&quot;, &quot;rw&quot;)));
+Response r = c.prepareGet(&quot;http://host:port/file.avi&quot;).execute(a).get();</pre></div><p>If you need something more high level and configurable, you can use a <tt>ResumableAsyncHandler</tt>, and or implement a <tt>ResumableProcessor</tt>:</p><div class="source"><pre class="prettyprint">AsyncHttpClient c = new AsyncHttpClient();
+ResumableAsyncHandler a = new ResumableAsyncHandler(new PropertiesBasedResumableProcessor());
+a.setResumableListener(new ResumableRandomAccessFileListener(new RandomAccessFile(&quot;file.avi&quot;, &quot;rw&quot;)));
+Response r = c.prepareGet( &quot;http://localhost:8081/file.AVI&quot; ).execute( a ).get();</pre></div><p>You can also simply use a <tt>ResumableListener</tt> (or use the <tt>ResumableRandomAccessFileListener</tt>, which does what's described below):</p><div class="source"><pre class="prettyprint">public interface ResumableListener {
+    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
 
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
+    public void onAllBytesReceived();
 
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
+    public long length();
+}</pre></div><p>As simple as:</p><div class="source"><pre class="prettyprint">AsyncHttpClient c = new AsyncHttpClient();
+final RandomAccessFile file = new RandomAccessFile(&quot;file.avi&quot;, &quot;rw&quot;);
+ResumableAsyncHandler a = new ResumableAsyncHandler();
+a.setResumableListener(new ResumableListener() {
 
+    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException {
+        file.seek(file.length());
+        file.write(byteBuffer.array());
+    }
+
+    public void onAllBytesReceived() {
+        file.close();
+    }
+
+    public long length() {
+        return file.length();
+    }
+
+});
+Response r = c.prepareGet( &quot;http://localhost:8081/file.AVI&quot; ).execute( a ).get();</pre></div></li></ul></div>
                   </div>
       </div>
     </div>

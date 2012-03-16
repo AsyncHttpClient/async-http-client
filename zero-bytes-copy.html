@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>
-    Async Http Client - Home</title>
+    <title>Async Http Client - Zero Bytes Copy</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -105,27 +104,21 @@
       <div id="bodyColumn" class="content">
         <div id="contentBox">
                               
-          
+          <div class="section"><h2>Zero Bytes Copy<a name="Zero_Bytes_Copy"></a></h2><p>When uploading or downloading bytes, it is important to try to avoid buffering bytes in memory.</p><div class="section"><h3>Upload<a name="Upload"></a></h3><p>On the upload side, the mechanism is enabled by default when setting the <tt>Request</tt>'s body to a File:</p><div class="source"><pre class="prettyprint">AsyncHttpClient client = new AsyncHttpClient();
+File file = new File(&quot;file.avi&quot;);
+Future f = client.preparePut(&quot;http://localhost&quot;).setBody(file).execute();</pre></div><p>If you can't use a File, the recommended way is to use a <tt>BodyGenerator</tt>. It is strongly recommended to avoid using <tt>InputStream</tt> as the library will unfortunately buffer the entire content in memory in order to set the <tt>content-lenght</tt>, which can cause out of memory error.</p></div><div class="section"><h3>Download<a name="Download"></a></h3><p>On the download side, you can use the <tt>HttpResponseBodyPart.writeTo</tt> to avoid loading bytes in memory and unnecessary copy:</p><div class="source"><pre class="prettyprint">AsyncHttpClient client = new AsyncHttpClient();
+File tmp = new File(&quot;zeroCopy.txt&quot;);
+final FileOutputStream stream = new FileOutputStream(tmp);
+Future f = client.prepareGet(&quot;http://localhost/largefile.avi&quot;).execute(new AsyncHandler() {
+    public void onThrowable(Throwable t) { }
 
-  
-    <div class="hero-unit">
-      <h1>Welcome to the Async Http Client!</h1>
-      <p>The <span style="font-weight: bold">Async Http Client</span> library purpose is to allow Java applications to
-      easily execute HTTP requests and asynchronously process the HTTP responses.
-      The library also supports the WebSocket Protocol.</p>
-    </div>
+    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+        bodyPart.writeTo(stream);
+        return STATE.CONTINUE;
+    }
 
-    <div class="section"><h2>Get started<a name="Get_started"></a></h2>
-      <p>The Async HTTP Client library is simple to use. First, in order to add it to your Maven project, simply add
-      this dependency:</p>
-      <div class="source"><pre class="prettyprint">&lt;dependency&gt;
-   &lt;groupId&gt;com.ning&lt;/groupId&gt;
-   &lt;artifactId&gt;async-http-client&lt;/artifactId&gt;
-   &lt;version&gt;1.8.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</pre></div>
-    </div>
-  
-
+{ .... } });
+Response resp = f.get();</pre></div></div></div>
                   </div>
       </div>
     </div>

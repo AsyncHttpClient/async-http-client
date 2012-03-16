@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="../../../../../favicon.ico" />
+<title>
+
+  TransferCompletionHandler
+
+
+| Asynchronous Http Client 1.8.0-SNAPSHOT
+
+</title>
+<link href="../../../../../../assets/android-developer-docs.css" rel="stylesheet" type="text/css" />
+<link href="../../../../../../assets/customizations.css" rel="stylesheet" type="text/css" />
+<script src="../../../../../../assets/search_autocomplete.js" type="text/javascript"></script>
+<script src="../../../../../../assets/jquery-resizable.min.js" type="text/javascript"></script>
+<script src="../../../../../../assets/android-developer-docs.js" type="text/javascript"></script>
+<script src="../../../../../../assets/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  setToRoot("../../../../../", "../../../../../../assets/");
+</script>
+<script src="../../../../../../assets/android-developer-reference.js" type="text/javascript"></script>
+<script src="../../../../../../assets/navtree_data.js" type="text/javascript"></script>
+<script src="../../../../../../assets/customizations.js" type="text/javascript"></script>
+<noscript>
+  <style type="text/css">
+    html,body{overflow:auto;}
+    #body-content{position:relative; top:0;}
+    #doc-content{overflow:visible;border-left:3px solid #666;}
+    #side-nav{padding:0;}
+    #side-nav .toggle-list ul {display:block;}
+    #resize-packages-nav{border-bottom:3px solid #666;}
+  </style>
+</noscript>
+</head>
+
+<body class="">
+
+<div id="header">
+    <div id="headerLeft">
+    
+      <span id="masthead-title">Asynchronous Http Client 1.8.0-SNAPSHOT</span>
+    
+    </div>
+    <div id="headerRight">
+      
+  <div id="search" >
+      <div id="searchForm">
+          <form accept-charset="utf-8" class="gsc-search-box" 
+                onsubmit="return submit_search()">
+            <table class="gsc-search-box" cellpadding="0" cellspacing="0"><tbody>
+                <tr>
+                  <td class="gsc-input">
+                    <input id="search_autocomplete" class="gsc-input" type="text" size="33" autocomplete="off"
+                      title="search developer docs" name="q"
+                      value="search developer docs"
+                      onFocus="search_focus_changed(this, true)"
+                      onBlur="search_focus_changed(this, false)"
+                      onkeydown="return search_changed(event, true, '../../../../../')"
+                      onkeyup="return search_changed(event, false, '../../../../../')" />
+                  <div id="search_filtered_div" class="no-display">
+                      <table id="search_filtered" cellspacing=0>
+                      </table>
+                  </div>
+                  </td>
+                  <td class="gsc-search-button">
+                    <input type="submit" value="Search" title="search" id="search-button" class="gsc-search-button" />
+                  </td>
+                  <td class="gsc-clear-button">
+                    <div title="clear results" class="gsc-clear-button">&nbsp;</div>
+                  </td>
+                </tr></tbody>
+              </table>
+          </form>
+      </div><!-- searchForm -->
+  </div><!-- search -->
+      
+    </div>
+</div><!-- header -->
+
+
+  <div class="g-section g-tpl-240" id="body-content">
+    <div class="g-unit g-first side-nav-resizable" id="side-nav">
+      <div id="swapper">
+        <div id="nav-panels">
+          <div id="resize-packages-nav">
+            <div id="packages-nav">
+              <div id="index-links"><nobr>
+                <a href="../../../../../packages.html"  >Package Index</a> | 
+                <a href="../../../../../classes.html" >Class Index</a></nobr>
+              </div>
+              <ul>
+                
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/package-summary.html">com.ning.http.client</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/consumers/package-summary.html">com.ning.http.client.consumers</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/extra/package-summary.html">com.ning.http.client.extra</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/filter/package-summary.html">com.ning.http.client.filter</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/generators/package-summary.html">com.ning.http.client.generators</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/listenable/package-summary.html">com.ning.http.client.listenable</a></li>
+    <li class="selected api apilevel-">
+  <a href="../../../../../com/ning/http/client/listener/package-summary.html">com.ning.http.client.listener</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/ntlm/package-summary.html">com.ning.http.client.ntlm</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/oauth/package-summary.html">com.ning.http.client.oauth</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/providers/apache/package-summary.html">com.ning.http.client.providers.apache</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/providers/grizzly/package-summary.html">com.ning.http.client.providers.grizzly</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/providers/jdk/package-summary.html">com.ning.http.client.providers.jdk</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/providers/netty/package-summary.html">com.ning.http.client.providers.netty</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/providers/netty/spnego/package-summary.html">com.ning.http.client.providers.netty.spnego</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/resumable/package-summary.html">com.ning.http.client.resumable</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/simple/package-summary.html">com.ning.http.client.simple</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/webdav/package-summary.html">com.ning.http.client.webdav</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/client/websocket/package-summary.html">com.ning.http.client.websocket</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/multipart/package-summary.html">com.ning.http.multipart</a></li>
+    <li class="api apilevel-">
+  <a href="../../../../../com/ning/http/util/package-summary.html">com.ning.http.util</a></li>
+              </ul><br/>
+            </div> <!-- end packages -->
+          </div> <!-- end resize-packages -->
+          <div id="classes-nav">
+            <ul>
+              
+    <li><h2>Interfaces</h2>
+      <ul>
+          <li class="api apilevel-"><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></li>
+      </ul>
+    </li>
+              
+    <li><h2>Classes</h2>
+      <ul>
+          <li class="selected api apilevel-"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html">TransferCompletionHandler</a></li>
+          <li class="api apilevel-"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a></li>
+      </ul>
+    </li>
+              
+              
+              
+              
+            </ul><br/>
+          </div><!-- end classes -->
+        </div><!-- end nav-panels -->
+        <div id="nav-tree" style="display:none">
+          <div id="index-links"><nobr>
+            <a href="../../../../../packages.html"  >Package Index</a> | 
+            <a href="../../../../../classes.html" >Class Index</a></nobr>
+          </div>
+        </div><!-- end nav-tree -->
+      </div><!-- end swapper -->
+    </div> <!-- end side-nav -->
+    <script>
+      if (!isMobile) {
+        $("<a href='#' id='nav-swap' onclick='swapNav();return false;' style='font-size:10px;line-height:9px;margin-left:1em;text-decoration:none;'><span id='tree-link'>Use Tree Navigation</span><span id='panel-link' style='display:none'>Use Panel Navigation</span></a>").appendTo("#side-nav");
+        chooseDefaultNav();
+        if ($("#nav-tree").is(':visible')) {
+          init_default_navtree("../../../../../");
+        } else {
+          addLoadEvent(function() {
+            scrollIntoView("packages-nav");
+            scrollIntoView("classes-nav");
+          });
+        }
+        $("#swapper").css({borderBottom:"2px solid #aaa"});
+      } else {
+        swapNav(); // tree view should be used on mobile
+      }
+    </script>
+
+
+
+<div class="g-unit" id="doc-content">
+
+<div id="api-info-block">
+
+
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+  
+   
+  
+  
+  
+  
+
+
+<div class="sum-details-links">
+
+Summary:
+
+  <a href="#nestedclasses">Nested Classes</a>
+  
+
+
+
+
+
+
+
+
+
+  &#124; <a href="#pubctors">Ctors</a>
+  
+
+
+
+  &#124; <a href="#pubmethods">Methods</a>
+  
+
+
+
+  &#124; <a href="#inhmethods">Inherited Methods</a>
+
+&#124; <a href="#" onclick="return toggleAllClassInherited()" id="toggleAllClassInherited">[Expand All]</a>
+
+</div><!-- end sum-details-links -->
+<div class="api-level">
+  
+
+
+  
+  
+
+</div>
+</div><!-- end api-info-block -->
+
+
+<!-- ======== START OF CLASS DATA ======== -->
+
+<div id="jd-header">
+    public
+     
+     
+    
+    class
+<h1>TransferCompletionHandler</h1>
+
+
+
+  
+  
+  
+
+  
+  
+  
+
+  
+    extends <a href="../../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">AsyncCompletionHandlerBase</a><br/>
+  
+  
+  
+
+  
+  
+  
+
+
+</div><!-- end header -->
+
+<div id="naMessage"></div>
+
+<div id="jd-content" class="api apilevel-">
+<table class="jd-inheritance-table">
+
+
+    <tr>
+         	
+        <td colspan="4" class="jd-inheritance-class-cell">java.lang.Object</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="3" class="jd-inheritance-class-cell"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html">com.ning.http.client.AsyncCompletionHandler</a>&lt;T&gt;</td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="2" class="jd-inheritance-class-cell"><a href="../../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">com.ning.http.client.AsyncCompletionHandlerBase</a></td>
+    </tr>
+    
+
+    <tr>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;</td>
+        
+            <td class="jd-inheritance-space">&nbsp;&nbsp;&nbsp;&#x21b3;</td>
+         	
+        <td colspan="1" class="jd-inheritance-class-cell">com.ning.http.client.listener.TransferCompletionHandler</td>
+    </tr>
+    
+
+</table>
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Class Overview</h2>
+<p>A <code><a href="../../../../../com/ning/http/client/AsyncHandler.html">AsyncHandler</a></code> that can be used to notify a set of <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code>
+ <p/>
+ <blockquote><pre>
+ AsyncHttpClient client = new AsyncHttpClient();
+ TransferCompletionHandler tl = new TransferCompletionHandler();
+ tl.addTransferListener(new TransferListener() {
+ <p/>
+ public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+ }
+ <p/>
+ public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+ }
+ <p/>
+ public void onBytesReceived(ByteBuffer buffer) {
+ }
+ <p/>
+ public void onBytesSent(ByteBuffer buffer) {
+ }
+ <p/>
+ public void onRequestResponseCompleted() {
+ }
+ <p/>
+ public void onThrowable(Throwable t) {
+ }
+ });
+ <p/>
+ Response response = httpClient.prepareGet("http://...").execute(tl).get();
+ </pre></blockquote>
+</p>
+
+
+
+
+
+</div><!-- jd-descr -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="jd-descr">
+
+
+<h2>Summary</h2>
+
+
+
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<table id="nestedclasses" class="jd-sumtable"><tr><th colspan="12">Nested Classes</th></tr>
+
+
+  
+    <tr class="alt-color api apilevel-" >
+      <td class="jd-typecol"><nobr>
+        
+         
+         
+        
+        class</nobr></td>
+      <td class="jd-linkcol"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a></td>
+      <td class="jd-descrcol" width="100%">&nbsp;</td>
+    </tr>
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<table id="pubctors" class="jd-sumtable"><tr><th colspan="12">Public Constructors</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#TransferCompletionHandler()">TransferCompletionHandler</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Create a TransferCompletionHandler that will not accumulate bytes.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            </nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#TransferCompletionHandler(boolean)">TransferCompletionHandler</a></span>(boolean accumulateResponseBytes)</nobr>
+        
+        <div class="jd-descrdiv">Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when
+ <code><a href="../../../../../com/ning/http/client/Response.html#getResponseBody()">getResponseBody()</a></code> get called.</div>
+  
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="pubmethods" class="jd-sumtable"><tr><th colspan="12">Public Methods</th></tr>
+
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html">TransferCompletionHandler</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#addTransferListener(com.ning.http.client.listener.TransferListener)">addTransferListener</a></span>(<a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a> t)</nobr>
+        
+        <div class="jd-descrdiv">Add a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onBodyPartReceived(com.ning.http.client.HttpResponseBodyPart)">onBodyPartReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a> content)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as some response body part are received.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/Response.html">Response</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onCompleted(com.ning.http.client.Response)">onCompleted</a></span>(<a href="../../../../../com/ning/http/client/Response.html">Response</a> response)</nobr>
+        
+        <div class="jd-descrdiv">Invoked once the HTTP response processing is finished.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onContentWriteCompleted()">onContentWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onContentWriteProgress(long, long, long)">onContentWriteProgress</a></span>(long amount, long current, long total)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the I/O operation associated with the <code><a href="../../../../../com/ning/http/client/Request.html">Request</a></code> body as been progressed.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onHeaderWriteCompleted()">onHeaderWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onHeadersReceived(com.ning.http.client.HttpResponseHeaders)">onHeadersReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a> headers)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as the HTTP headers has been received.
+
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#onThrowable(java.lang.Throwable)">onThrowable</a></span>(Throwable t)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when an unexpected exception occurs during the processing of the response.
+
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html">TransferCompletionHandler</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#removeTransferListener(com.ning.http.client.listener.TransferListener)">removeTransferListener</a></span>(<a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a> t)</nobr>
+        
+        <div class="jd-descrdiv">Remove a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html#transferAdapter(com.ning.http.client.listener.TransferCompletionHandler.TransferAdapter)">transferAdapter</a></span>(<a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a> transferAdapter)</nobr>
+        
+        <div class="jd-descrdiv">Associate a <code><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a></code> with this listener.</div>
+  
+  </td></tr>
+
+
+
+</table>
+
+
+
+
+
+
+
+<!-- ========== METHOD SUMMARY =========== -->
+<table id="inhmethods" class="jd-sumtable"><tr><th>
+  <a href="#" class="toggle-all" onclick="return toggleAllInherited(this, null)">[Expand]</a>
+  <div style="clear:left;">Inherited Methods</div></th></tr>
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-com.ning.http.client.AsyncCompletionHandlerBase" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-com.ning.http.client.AsyncCompletionHandlerBase-trigger"
+          src="../../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  <a href="../../../../../com/ning/http/client/AsyncCompletionHandlerBase.html">com.ning.http.client.AsyncCompletionHandlerBase</a>
+
+<div id="inherited-methods-com.ning.http.client.AsyncCompletionHandlerBase">
+  <div id="inherited-methods-com.ning.http.client.AsyncCompletionHandlerBase-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-com.ning.http.client.AsyncCompletionHandlerBase-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/Response.html">Response</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandlerBase.html#onCompleted(com.ning.http.client.Response)">onCompleted</a></span>(<a href="../../../../../com/ning/http/client/Response.html">Response</a> response)</nobr>
+        
+        <div class="jd-descrdiv">Invoked once the HTTP response processing is finished.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandlerBase.html#onThrowable(java.lang.Throwable)">onThrowable</a></span>(Throwable t)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when an unexpected exception occurs during the processing of the response.
+
+</div>
+  
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-com.ning.http.client.AsyncCompletionHandler" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-com.ning.http.client.AsyncCompletionHandler-trigger"
+          src="../../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  <a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html">com.ning.http.client.AsyncCompletionHandler</a>
+
+<div id="inherited-methods-com.ning.http.client.AsyncCompletionHandler">
+  <div id="inherited-methods-com.ning.http.client.AsyncCompletionHandler-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-com.ning.http.client.AsyncCompletionHandler-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onBodyPartReceived(com.ning.http.client.HttpResponseBodyPart)">onBodyPartReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a> content)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as some response body part are received.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onCompleted()">onCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked once the HTTP response processing is finished.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onCompleted(com.ning.http.client.Response)">onCompleted</a></span>(<a href="../../../../../com/ning/http/client/Response.html">Response</a> response)</nobr>
+        
+        <div class="jd-descrdiv">Invoked once the HTTP response processing is finished.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onContentWriteCompleted()">onContentWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onContentWriteProgress(long, long, long)">onContentWriteProgress</a></span>(long amount, long current, long total)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the I/O operation associated with the <code><a href="../../../../../com/ning/http/client/Request.html">Request</a></code> body as been progressed.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onHeaderWriteCompleted()">onHeaderWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onHeadersReceived(com.ning.http.client.HttpResponseHeaders)">onHeadersReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a> headers)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as the HTTP headers has been received.
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a> status)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as the HTTP status line has been received
+</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncCompletionHandler.html#onThrowable(java.lang.Throwable)">onThrowable</a></span>(Throwable t)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when an unexpected exception occurs during the processing of the response.
+</div>
+  
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-java.lang.Object" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-java.lang.Object-trigger"
+          src="../../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From class
+
+  java.lang.Object
+
+<div id="inherited-methods-java.lang.Object">
+  <div id="inherited-methods-java.lang.Object-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-java.lang.Object-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            Object</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">clone</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            boolean</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">equals</span>(Object arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">finalize</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            Class&lt;?&gt;</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">getClass</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            int</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">hashCode</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notify</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">notifyAll</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            
+            
+            
+            String</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">toString</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>()</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0)</nobr>
+        
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            
+            
+            final
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad">wait</span>(long arg0, int arg1)</nobr>
+        
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-com.ning.http.client.AsyncHandler" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-com.ning.http.client.AsyncHandler-trigger"
+          src="../../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From interface
+
+  <a href="../../../../../com/ning/http/client/AsyncHandler.html">com.ning.http.client.AsyncHandler</a>
+
+<div id="inherited-methods-com.ning.http.client.AsyncHandler">
+  <div id="inherited-methods-com.ning.http.client.AsyncHandler-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-com.ning.http.client.AsyncHandler-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncHandler.html#onBodyPartReceived(com.ning.http.client.HttpResponseBodyPart)">onBodyPartReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a> bodyPart)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as some response body part are received.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            T</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncHandler.html#onCompleted()">onCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked once the HTTP response processing is finished.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncHandler.html#onHeadersReceived(com.ning.http.client.HttpResponseHeaders)">onHeadersReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a> headers)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as the HTTP headers has been received.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncHandler.html#onStatusReceived(com.ning.http.client.HttpResponseStatus)">onStatusReceived</a></span>(<a href="../../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a> responseStatus)</nobr>
+        
+        <div class="jd-descrdiv">Invoked as soon as the HTTP status line has been received</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            void</nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/AsyncHandler.html#onThrowable(java.lang.Throwable)">onThrowable</a></span>(Throwable t)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when an unexpected exception occurs during the processing of the response.</div>
+  
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+
+<tr class="api apilevel-" >
+<td colspan="12">
+  <a href="#" onclick="return toggleInherited(this, null)" id="inherited-methods-com.ning.http.client.ProgressAsyncHandler" class="jd-expando-trigger closed"
+          ><img id="inherited-methods-com.ning.http.client.ProgressAsyncHandler-trigger"
+          src="../../../../../../assets/images/triangle-closed.png"
+          class="jd-expando-trigger-img" /></a>
+From interface
+
+  <a href="../../../../../com/ning/http/client/ProgressAsyncHandler.html">com.ning.http.client.ProgressAsyncHandler</a>
+
+<div id="inherited-methods-com.ning.http.client.ProgressAsyncHandler">
+  <div id="inherited-methods-com.ning.http.client.ProgressAsyncHandler-list"
+        class="jd-inheritedlinks">
+  </div>
+  <div id="inherited-methods-com.ning.http.client.ProgressAsyncHandler-summary" style="display: none;">
+    <table class="jd-sumtable-expando">
+    
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/ProgressAsyncHandler.html#onContentWriteCompleted()">onContentWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class=" api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/ProgressAsyncHandler.html#onContentWriteProgress(long, long, long)">onContentWriteProgress</a></span>(long amount, long current, long total)</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the I/O operation associated with the <code><a href="../../../../../com/ning/http/client/Request.html">Request</a></code> body wasn't fully written in a single I/O write
+ operation.</div>
+  
+  </td></tr>
+
+
+	 
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-typecol"><nobr>
+            abstract
+            
+            
+            
+            
+            <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></nobr>
+        </td>
+        <td class="jd-linkcol" width="100%"><nobr>
+        <span class="sympad"><a href="../../../../../com/ning/http/client/ProgressAsyncHandler.html#onHeaderWriteCompleted()">onHeaderWriteCompleted</a></span>()</nobr>
+        
+        <div class="jd-descrdiv">Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.</div>
+  
+  </td></tr>
+
+
+</table>
+  </div>
+</div>
+</td></tr>
+
+
+</table>
+
+
+</div><!-- jd-descr (summary) -->
+
+<!-- Details -->
+
+
+
+
+
+
+
+
+<!-- XML Attributes -->
+
+
+<!-- Enum Values -->
+
+
+<!-- Constants -->
+
+
+<!-- Fields -->
+
+
+<!-- Public ctors -->
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<h2>Public Constructors</h2>
+
+
+
+<A NAME="TransferCompletionHandler()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">TransferCompletionHandler</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Create a TransferCompletionHandler that will not accumulate bytes. The resulting <code><a href="../../../../../com/ning/http/client/Response.html#getResponseBody()">getResponseBody()</a></code>,
+ <code><a href="../../../../../com/ning/http/client/Response.html#getResponseBodyAsStream()">getResponseBodyAsStream()</a></code> and <code><a href="../../../../../com/ning/http/client/Response.html#getResponseBodyExcerpt(int)">getResponseBodyExcerpt(int)</a></code> will
+ throw an IllegalStateException if called.
+</p></div>
+
+    </div>
+</div>
+
+
+<A NAME="TransferCompletionHandler(boolean)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        
+      </span>
+      <span class="sympad">TransferCompletionHandler</span>
+      <span class="normal">(boolean accumulateResponseBytes)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when
+ <code><a href="../../../../../com/ning/http/client/Response.html#getResponseBody()">getResponseBody()</a></code> get called. The default is false.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>accumulateResponseBytes</td>
+          <td>true to accumulates bytes in memory.
+</td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<!-- Protected ctors -->
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+<!-- Public methdos -->
+
+<h2>Public Methods</h2>
+
+
+
+<A NAME="addTransferListener(com.ning.http.client.listener.TransferListener)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html">TransferCompletionHandler</a>
+      </span>
+      <span class="sympad">addTransferListener</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a> t)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Add a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>t</td>
+          <td>a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onBodyPartReceived(com.ning.http.client.HttpResponseBodyPart)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a>
+      </span>
+      <span class="sympad">onBodyPartReceived</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/HttpResponseBodyPart.html">HttpResponseBodyPart</a> content)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked as soon as some response body part are received. Could be invoked many times.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>content</td>
+          <td>response's body part.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></code> telling to CONTINUE or ABORT the current processing.</li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>Exception</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onCompleted(com.ning.http.client.Response)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/Response.html">Response</a>
+      </span>
+      <span class="sympad">onCompleted</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/Response.html">Response</a> response)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked once the HTTP response processing is finished.
+ <p/>
+ <p/>
+ Gets always invoked as last callback method.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>response</td>
+          <td>The <code><a href="../../../../../com/ning/http/client/Response.html">Response</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>T Value that will be returned by the associated java.util.concurrent.Future</li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>Exception</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onContentWriteCompleted()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a>
+      </span>
+      <span class="sympad">onContentWriteCompleted</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></code> telling to CONTINUE or ABORT the current processing.
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onContentWriteProgress(long, long, long)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a>
+      </span>
+      <span class="sympad">onContentWriteProgress</span>
+      <span class="normal">(long amount, long current, long total)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked when the I/O operation associated with the <code><a href="../../../../../com/ning/http/client/Request.html">Request</a></code> body as been progressed.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>amount</td>
+          <td>The amount of bytes to transfer.</td>
+        </tr>
+        <tr>
+          <th>current</td>
+          <td>The amount of bytes transferred</td>
+        </tr>
+        <tr>
+          <th>total</td>
+          <td>The total number of bytes transferred</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></code> telling to CONTINUE or ABORT the current processing.
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onHeaderWriteCompleted()"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a>
+      </span>
+      <span class="sympad">onHeaderWriteCompleted</span>
+      <span class="normal">()</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked when the content (a java.io.File, String or java.io.FileInputStream has been fully
+ written on the I/O socket.
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></code> telling to CONTINUE or ABORT the current processing.
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onHeadersReceived(com.ning.http.client.HttpResponseHeaders)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a>
+      </span>
+      <span class="sympad">onHeadersReceived</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a> headers)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked as soon as the HTTP headers has been received. Can potentially be invoked more than once if a broken server
+ sent trailing headers.
+
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>headers</td>
+          <td>the HTTP headers.</td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>a <code><a href="../../../../../com/ning/http/client/AsyncHandler.STATE.html">AsyncHandler.STATE</a></code> telling to CONTINUE or ABORT the current processing.</li></ul>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Throws</h5>
+      <table class="jd-tagtable">  
+        <tr>
+            <th>Exception</td>
+            <td></td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="onThrowable(java.lang.Throwable)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        void
+      </span>
+      <span class="sympad">onThrowable</span>
+      <span class="normal">(Throwable t)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
+ produced by implementation of onXXXReceived method invocation.
+
+</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>t</td>
+          <td>a Throwable
+</td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="removeTransferListener(com.ning.http.client.listener.TransferListener)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        <a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.html">TransferCompletionHandler</a>
+      </span>
+      <span class="sympad">removeTransferListener</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a> t)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Remove a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>t</td>
+          <td>a <code><a href="../../../../../com/ning/http/client/listener/TransferListener.html">TransferListener</a></code></td>
+        </tr>
+      </table>
+  </div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Returns</h5>
+      <ul class="nolist"><li>this
+</li></ul>
+  </div>
+
+    </div>
+</div>
+
+
+<A NAME="transferAdapter(com.ning.http.client.listener.TransferCompletionHandler.TransferAdapter)"></A>
+
+<div class="jd-details api apilevel-"> 
+    <h4 class="jd-details-title">
+      <span class="normal">
+        public 
+         
+         
+         
+         
+        void
+      </span>
+      <span class="sympad">transferAdapter</span>
+      <span class="normal">(<a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a> transferAdapter)</span>
+    </h4>
+      <div class="api-level">
+        <div>
+
+</div>
+        
+  
+
+      </div>
+    <div class="jd-details-descr">
+      
+  <div class="jd-tagdata jd-tagdescr"><p>Associate a <code><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a></code> with this listener.</p></div>
+  <div class="jd-tagdata">
+      <h5 class="jd-tagtitle">Parameters</h5>
+      <table class="jd-tagtable">
+        <tr>
+          <th>transferAdapter</td>
+          <td><code><a href="../../../../../com/ning/http/client/listener/TransferCompletionHandler.TransferAdapter.html">TransferCompletionHandler.TransferAdapter</a></code>
+</td>
+        </tr>
+      </table>
+  </div>
+
+    </div>
+</div>
+
+
+
+
+
+<!-- ========= METHOD DETAIL ======== -->
+
+
+
+<!-- ========= END OF CLASS DATA ========= -->
+<A NAME="navbar_top"></A>
+
+<div id="footer">
+Generated by <a href="http://code.google.com/p/doclava/">Doclava</a>.
+</div> <!-- end footer -->
+
+</div> <!-- jd-content -->
+
+</div><!-- end doc-content -->
+
+</div> <!-- end body-content --> 
+
+<script type="text/javascript">
+init(); /* initialize android-developer-docs.js */
+</script>
+
+</body>
+</html>
