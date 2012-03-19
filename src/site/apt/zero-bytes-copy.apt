@@ -21,7 +21,7 @@ Future f = client.preparePut("http://localhost").setBody(file).execute();
 
   If you can't use a File, the recommended way is to use a <<<BodyGenerator>>>. It is strongly recommended to avoid
   using <<<InputStream>>> as the library will unfortunately buffer the entire content in memory in order to set the
-  <<<content-lenght>>>, which can cause out of memory error.
+  <<<content-length>>>, which can cause out of memory error.
 
 * Download
 
