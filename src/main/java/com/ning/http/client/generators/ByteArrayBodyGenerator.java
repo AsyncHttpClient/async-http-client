@@ -43,14 +43,16 @@ public class ByteArrayBodyGenerator implements BodyGenerator {
                 return -1;
             }
 
-            if (bytes.length - lastPosition <= byteBuffer.capacity()) {
-                byteBuffer.put(bytes, lastPosition, bytes.length);
+            final int remaining = bytes.length - lastPosition;
+            if (remaining <= byteBuffer.capacity()) {
+                byteBuffer.put(bytes, lastPosition, remaining);
                 eof = true;
+                return remaining;
             } else {
                 byteBuffer.put(bytes, lastPosition, byteBuffer.capacity());
-                lastPosition = bytes.length - byteBuffer.capacity();
+                lastPosition = lastPosition + byteBuffer.capacity();
+                return byteBuffer.capacity();
             }
-            return bytes.length;
         }
 
         public void close() throws IOException {
