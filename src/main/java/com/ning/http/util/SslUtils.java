@@ -106,7 +106,7 @@ public class SslUtils {
         public static final LooseTrustManager INSTANCE = new LooseTrustManager();
 
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return null;
+            return new java.security.cert.X509Certificate[0];
         }
 
         public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
