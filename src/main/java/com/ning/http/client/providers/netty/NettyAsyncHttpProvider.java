@@ -1507,11 +1507,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 log.error(t.getMessage(), t);
             }
         }
-        closeChannel(ctx);
-        ctx.sendUpstream(e);
 
         Protocol p = (ctx.getPipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
         p.onError(ctx, e);
+
+        closeChannel(ctx);
+        ctx.sendUpstream(e);
     }
 
     protected static boolean abortOnConnectCloseException(Throwable cause) {
@@ -2125,8 +2126,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                         : new RequestBuilder(future.getRequest());
 
                                 if (!(statusCode < 302 || statusCode > 303)
-                                                          && !(statusCode == 302
-                                                             && config.isStrict302Handling())) {
+                                        && !(statusCode == 302
+                                        && config.isStrict302Handling())) {
                                     nBuilder.setMethod("GET");
                                 }
                                 final URI initialConnectionUri = future.getURI();
@@ -2337,7 +2338,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         @Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
-                log.trace("onError {}", e);
+                log.warn("onError {}", e);
                 if (!NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
                     return;
                 }
