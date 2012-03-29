@@ -460,7 +460,7 @@ public class AsyncHttpProviderUtils {
                 // favor 'max-age' field over 'expires'
                 if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
                     try {
-                        maxAge = Integer.valueOf(removeQuote(f[1]));
+                        maxAge = Math.max(Integer.valueOf(removeQuote(f[1])), 0);
                     } catch (NumberFormatException e1) {
                         // ignore failure to parse -> treat as session cookie
                         // invalidate a previously parsed expires-field
@@ -469,11 +469,11 @@ public class AsyncHttpProviderUtils {
                     maxAgeSet = true;
                 } else if (!maxAgeSet && !expiresSet && "expires".equalsIgnoreCase(f[0])) {
                     try {
-                        maxAge = convertExpireField(f[1]);
+                        maxAge = Math.max(convertExpireField(f[1]), 0);
                     } catch (Exception e) {
                         // original behavior, is this correct at all (expires field with max-age semantics)?
                         try {
-                            maxAge = Integer.valueOf(f[1]);
+                            maxAge = Math.max(Integer.valueOf(f[1]), 0);
                         } catch (NumberFormatException e1) {
                             // ignore failure to parse -> treat as session cookie
                         }
@@ -485,10 +485,6 @@ public class AsyncHttpProviderUtils {
                     path = f[1];
                 }
             }
-        }
-
-        if (maxAge < -1) {
-            maxAge = -1;
         }
 
         return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
