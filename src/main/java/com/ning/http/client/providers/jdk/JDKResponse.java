@@ -15,6 +15,7 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
@@ -102,53 +103,9 @@ public class JDKResponse implements Response {
         }
 
         if (bodyParts.size() > 0) {
-            return new ByteArrayCollectionInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
+            return new HttpResponseBodyPartsInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
         } else {
             return new ByteArrayInputStream("".getBytes());
-        }
-    }
-
-    private static class ByteArrayCollectionInputStream extends InputStream {
-
-        private final HttpResponseBodyPart[] parts;
-
-        private int currentPos = 0;
-        private int bytePos = -1;
-        private byte[] active;
-        private int available = 0;
-
-        public ByteArrayCollectionInputStream(HttpResponseBodyPart[] parts) {
-            this.parts = parts;
-            active = parts[0].getBodyPartBytes();
-            computeLength(parts);
-        }
-
-        private void computeLength(HttpResponseBodyPart[] parts) {
-            if (available == 0) {
-                for (HttpResponseBodyPart p : parts) {
-                    available += p.getBodyPartBytes().length;
-                }
-            }
-        }
-
-        @Override
-        public int available() throws IOException {
-            return available;
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (++bytePos >= active.length) {
-                // No more bytes, so step to the next array.
-                if (++currentPos >= parts.length) {
-                    return -1;
-                }
-
-                bytePos = 0;
-                active = parts[currentPos].getBodyPartBytes();
-            }
-
-            return active[bytePos] & 0xFF;
         }
     }
 
