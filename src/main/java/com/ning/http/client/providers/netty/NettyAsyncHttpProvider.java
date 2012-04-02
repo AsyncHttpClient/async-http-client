@@ -140,10 +140,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final static String HTTPS = "https";
     private final static String HTTP = "http";
     private static final String WEBSOCKET = "ws";
+    private static final String WEBSOCKET_SSL = "wss";
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
     private final ClientBootstrap plainBootstrap;
     private final ClientBootstrap secureBootstrap;
     private final ClientBootstrap webSocketBootstrap;
+    private final ClientBootstrap secureWebSocketBootstrap;
     private final static int MAX_BUFFERED_BYTES = 8192;
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
@@ -198,6 +200,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
         webSocketBootstrap = new ClientBootstrap(socketChannelFactory);
+        secureWebSocketBootstrap = new ClientBootstrap(socketChannelFactory);
         configureNetty();
 
         this.config = config;
@@ -305,9 +308,30 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         });
 
+        secureWebSocketBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+
+            /* @Override */
+            public ChannelPipeline getPipeline() throws Exception {
+                ChannelPipeline pipeline = pipeline();
+
+                try {
+                    pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                } catch (Throwable ex) {
+                    abort(cl.future(), ex);
+                }
+
+                pipeline.addLast("ws-decoder", new HttpResponseDecoder());
+                pipeline.addLast("ws-encoder", new HttpRequestEncoder());
+                pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
+
+                return pipeline;
+            }
+        });
+
         if (asyncHttpProviderConfig != null) {
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
                 secureBootstrap.setOption(entry.getKey(), entry.getValue());
+                secureWebSocketBootstrap.setOption(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -344,7 +368,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             channel.getPipeline().remove(SSL_HANDLER);
         } else if (channel.getPipeline().get(HTTP_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
             return channel;
-        } else if (channel.getPipeline().get(SSL_HANDLER) == null && HTTPS.equalsIgnoreCase(scheme)) {
+        } else if (channel.getPipeline().get(SSL_HANDLER) == null && isSecure(scheme)) {
             channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
         }
         return channel;
@@ -508,7 +532,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                     boolean allowConnect, ChannelBuffer buffer) throws IOException {
 
         String method = request.getMethod();
-        if (allowConnect && (isProxyServer(config, request) && HTTPS.equalsIgnoreCase(uri.getScheme()))) {
+        if (allowConnect && (isProxyServer(config, request) && isSecure(uri))) {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, buffer);
@@ -542,7 +566,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-        boolean webSocket = uri.getScheme().equalsIgnoreCase(WEBSOCKET);
+        boolean webSocket = isWebSocket(uri);
         if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
@@ -762,7 +786,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     /**
                      * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                      */
-                    if (uri.toString().startsWith(HTTPS)) {
+                    
+                    if (isSecure(uri)) {
                         ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                         mre.writeRequest(new ChannelBufferOutputStream(b));
                         nettyRequest.setContent(b);
@@ -810,6 +835,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             plainBootstrap.releaseExternalResources();
             secureBootstrap.releaseExternalResources();
             webSocketBootstrap.releaseExternalResources();
+            secureWebSocketBootstrap.releaseExternalResources();
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
@@ -872,7 +898,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             bufferedBytes = f.getNettyRequest().getContent();
         }
 
-        boolean useSSl = uri.getScheme().compareToIgnoreCase(HTTPS) == 0 && proxyServer == null;
+        boolean useSSl = isSecure(uri) && proxyServer == null;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
             HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes);
 
@@ -946,7 +972,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         ChannelFuture channelFuture;
-        ClientBootstrap bootstrap = request.getUrl().startsWith(WEBSOCKET) ? webSocketBootstrap : (useSSl ? secureBootstrap : plainBootstrap);
+        ClientBootstrap bootstrap = request.getUrl().startsWith(WEBSOCKET) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
@@ -1294,7 +1320,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             p.remove(HTTP_HANDLER);
         }
 
-        if (scheme.startsWith(HTTPS)) {
+        if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, new HttpClientCodec());
                 p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
@@ -2371,6 +2397,21 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 log.error("onError", t);
             }
         }
+    }
+
+    private static boolean isWebSocket(URI uri)
+    {
+        return WEBSOCKET.equalsIgnoreCase(uri.getScheme()) || WEBSOCKET_SSL.equalsIgnoreCase(uri.getScheme());
+    }
+
+    private static boolean isSecure(String scheme)
+    {
+    	return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
+    }
+
+    private static boolean isSecure(URI uri)
+    {
+    	return isSecure(uri.getScheme());
     }
 }
 
