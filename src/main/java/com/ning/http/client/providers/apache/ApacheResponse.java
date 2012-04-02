@@ -15,6 +15,7 @@ package com.ning.http.client.providers.apache;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
@@ -91,7 +92,7 @@ public class ApacheResponse implements Response {
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         if (bodyParts.size() > 0) {
-            return new ByteArrayInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()])[0].getBodyPartBytes());
+            return new HttpResponseBodyPartsInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
         } else {
             return new ByteArrayInputStream("".getBytes());
         }
