@@ -786,7 +786,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     /**
                      * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                      */
-                    
+
                     if (isSecure(uri)) {
                         ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
                         mre.writeRequest(new ChannelBufferOutputStream(b));
@@ -2399,19 +2399,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private static boolean isWebSocket(URI uri)
-    {
+    private static boolean isWebSocket(URI uri) {
         return WEBSOCKET.equalsIgnoreCase(uri.getScheme()) || WEBSOCKET_SSL.equalsIgnoreCase(uri.getScheme());
     }
 
-    private static boolean isSecure(String scheme)
-    {
-    	return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
+    private static boolean isSecure(String scheme) {
+        return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
     }
 
-    private static boolean isSecure(URI uri)
-    {
-    	return isSecure(uri.getScheme());
+    private static boolean isSecure(URI uri) {
+        return isSecure(uri.getScheme());
     }
 }
 
