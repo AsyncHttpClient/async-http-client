@@ -2116,7 +2116,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         try {
                             log.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                            upgradeProtocol(ctx.getChannel().getPipeline(), request.getUrl());
+                            upgradeProtocol(ctx.getChannel().getPipeline(), URI.create(request.getUrl()).getScheme());
                         } catch (Throwable ex) {
                             abort(future, ex);
                         }
