@@ -513,7 +513,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             future.touch();
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1 && !future.isDone() && !future.isCancelled()) {
-                ReaperFuture reaperFuture = new ReaperFuture(channel, future);
+                ReaperFuture reaperFuture = new ReaperFuture(future);
                 Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
@@ -1721,11 +1721,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
      */
     private final class ReaperFuture implements Future, Runnable {
         private Future scheduledFuture;
-        private Channel channel;
         private NettyResponseFuture<?> nettyResponseFuture;
 
-        public ReaperFuture(Channel channel, NettyResponseFuture<?> nettyResponseFuture) {
-            this.channel = channel;
+        public ReaperFuture(NettyResponseFuture<?> nettyResponseFuture) {
             this.nettyResponseFuture = nettyResponseFuture;
         }
 
@@ -1736,40 +1734,37 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         /**
          * @Override
          */
-        public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-            //cleanup references to allow gc to reclaim memory independently
-            //of this Future lifecycle
-            this.channel = null;
-            this.nettyResponseFuture = null;
-            return this.scheduledFuture.cancel(mayInterruptIfRunning);
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            nettyResponseFuture = null;
+            return scheduledFuture.cancel(mayInterruptIfRunning);
         }
 
         /**
          * @Override
          */
         public Object get() throws InterruptedException, ExecutionException {
-            return this.scheduledFuture.get();
+            return scheduledFuture.get();
         }
 
         /**
          * @Override
          */
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return this.scheduledFuture.get(timeout, unit);
+            return scheduledFuture.get(timeout, unit);
         }
 
         /**
          * @Override
          */
         public boolean isCancelled() {
-            return this.scheduledFuture.isCancelled();
+            return scheduledFuture.isCancelled();
         }
 
         /**
          * @Override
          */
         public boolean isDone() {
-            return this.scheduledFuture.isDone();
+            return scheduledFuture.isDone();
         }
 
         /**
@@ -1781,23 +1776,22 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return;
             }
 
-            if (this.nettyResponseFuture != null && this.nettyResponseFuture.hasExpired()
-                    && !this.nettyResponseFuture.isDone() && !this.nettyResponseFuture.isCancelled()) {
-                log.debug("Request Timeout expired for {}\n", this.nettyResponseFuture);
+            if (nettyResponseFuture != null && nettyResponseFuture.hasExpired()
+                    && !nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
+                log.debug("Request Timeout expired for {}\n", nettyResponseFuture);
 
                 int requestTimeout = config.getRequestTimeoutInMs();
-                PerRequestConfig p = this.nettyResponseFuture.getRequest().getPerRequestConfig();
+                PerRequestConfig p = nettyResponseFuture.getRequest().getPerRequestConfig();
                 if (p != null && p.getRequestTimeoutInMs() != -1) {
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                abort(this.nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
+                abort(nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
-                this.nettyResponseFuture = null;
-                this.channel = null;
+                nettyResponseFuture = null;
             }
 
-            if (this.nettyResponseFuture == null || this.nettyResponseFuture.isDone() || this.nettyResponseFuture.isCancelled()) {
+            if (nettyResponseFuture == null || nettyResponseFuture.isDone() || nettyResponseFuture.isCancelled()) {
                 cancel(true);
             }
         }
@@ -1958,7 +1952,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final class HttpProtocol implements Protocol {
-        @Override
+        // @Override
         public void handle(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception {
             final NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             future.touch();
@@ -2252,18 +2246,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        @Override
+        // @Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
         }
 
-        @Override
+        // @Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
         }
     }
 
     private final class WebSocketProtocol implements Protocol {
 
-        @Override
+        // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
             NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
@@ -2288,7 +2282,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
                     } catch (FilterException efe) {
                         abort(future, efe);
-                    }
+                    }                                                                                        // @Override
+
                 }
 
                 // The handler may have been wrapped.
@@ -2333,17 +2328,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 HttpChunk webSocketChunk = new HttpChunk() {
                     private ChannelBuffer content;
 
-                    @Override
+                    // @Override
                     public boolean isLast() {
                         return false;
                     }
 
-                    @Override
+                    // @Override
                     public ChannelBuffer getContent() {
                         return content;
                     }
 
-                    @Override
+                    // @Override
                     public void setContent(ChannelBuffer content) {
                         this.content = content;
                     }
@@ -2361,7 +2356,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        @Override
+        //@Override
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
                 log.warn("onError {}", e);
@@ -2380,7 +2375,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        @Override
+        //@Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
             log.trace("onClose {}", e);
             if (!NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
