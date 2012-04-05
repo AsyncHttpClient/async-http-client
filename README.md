@@ -135,7 +135,8 @@ Async Http Client also support WebSocket by simply doing:
 
 ```java
          WebSocket websocket = c.prepareGet(getTargetUrl())
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
+                    new WebSocketTextListener() {
 
                     @Override
                     public void onMessage(String message) {
