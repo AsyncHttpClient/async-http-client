@@ -58,7 +58,8 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(new AsyncCompletionHandler<Integer>(){
+    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(
+       new AsyncCompletionHandler<Integer>(){
         
         @Override
         public Integer onCompleted(Response response) throws Exception{
