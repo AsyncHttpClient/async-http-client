@@ -1299,6 +1299,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
                 if (upgrade) {
                     try {
+                        httpHeader.setChunked(false);
                         context.protocolHandler.setConnection(ctx.getConnection());
                         DefaultWebSocket ws = new DefaultWebSocket(context.protocolHandler);
                         ws.onConnect();
