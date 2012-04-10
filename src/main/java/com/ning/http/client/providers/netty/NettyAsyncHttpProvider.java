@@ -831,11 +831,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             config.executorService().shutdown();
             config.reaper().shutdown();
+            socketChannelFactory.releaseExternalResources();
             plainBootstrap.releaseExternalResources();
             secureBootstrap.releaseExternalResources();
             webSocketBootstrap.releaseExternalResources();
             secureWebSocketBootstrap.releaseExternalResources();
-            socketChannelFactory.releaseExternalResources();
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
