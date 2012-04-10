@@ -572,7 +572,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
             nettyRequest.addHeader("Sec-WebSocket-Origin", "http://" + uri.getHost());
             nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
-            nettyRequest.addHeader("Sec-WebSocket-Version", "8");
+            nettyRequest.addHeader("Sec-WebSocket-Version", "13");
         }
 
         if (host != null) {
@@ -831,11 +831,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             config.executorService().shutdown();
             config.reaper().shutdown();
-            socketChannelFactory.releaseExternalResources();
             plainBootstrap.releaseExternalResources();
             secureBootstrap.releaseExternalResources();
             webSocketBootstrap.releaseExternalResources();
             secureWebSocketBootstrap.releaseExternalResources();
+            socketChannelFactory.releaseExternalResources();
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
