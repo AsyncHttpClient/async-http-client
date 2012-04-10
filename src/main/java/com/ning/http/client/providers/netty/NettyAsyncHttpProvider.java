@@ -2344,13 +2344,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 };
 
-                webSocketChunk.setContent(ChannelBuffers.wrappedBuffer(frame.getBinaryData()));
-                ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, webSocketChunk, true);
-                h.onBodyPartReceived(rp);
+                if (frame.getBinaryData() != null) {
+                    webSocketChunk.setContent(ChannelBuffers.wrappedBuffer(frame.getBinaryData()));
+                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, webSocketChunk, true);
+                    h.onBodyPartReceived(rp);
 
-                NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-                webSocket.onMessage(rp.getBodyPartBytes());
-                webSocket.onTextMessage(frame.getBinaryData().toString("UTF-8"));
+                    NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
+                    webSocket.onMessage(rp.getBodyPartBytes());
+                    webSocket.onTextMessage(frame.getBinaryData().toString("UTF-8"));
+                }
             } else {
                 log.error("Invalid attachment {}", ctx.getAttachment());
             }
