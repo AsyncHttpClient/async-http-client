@@ -2292,8 +2292,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
-            connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                    createConnectionCompletionHandler(request, requestFuture, connectHandler));
+            if(request.getLocalAddress()!=null) {
+                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)), new InetSocketAddress(request.getLocalAddress(), 0),
+                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
+            } else {
+                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
+                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
+            }
 
         }
 
