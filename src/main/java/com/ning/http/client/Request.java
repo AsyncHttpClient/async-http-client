@@ -73,6 +73,8 @@ public interface Request {
      */
     public InetAddress getInetAddress();
 
+	public InetAddress getLocalAddress();
+
     /**
      * Return the undecoded url
      *
