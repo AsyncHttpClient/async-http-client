@@ -46,6 +46,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private String method;
         private String url = null;
         private InetAddress address = null;
+        private InetAddress localAddress = null;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
@@ -77,6 +78,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 int pos = prototype.getUrl().indexOf("?");
                 this.url = pos > 0 ? prototype.getUrl().substring(0, pos) : prototype.getUrl();
                 this.address = prototype.getInetAddress();
+                this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
                 this.cookies = new ArrayList<Cookie>(prototype.getCookies());
                 this.byteData = prototype.getByteData();
@@ -120,6 +122,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return address;
         }
 
+        public InetAddress getLocalAddress() {
+            return localAddress;
+        }
+        
         private String toUrl(boolean encode) {
 
             if (url == null) {
@@ -326,6 +332,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setInetAddress(InetAddress address) {
     	request.address = address;
     	return derived.cast(this);
+    }
+    
+    public T setLocalInetAddress(InetAddress address) {
+        request.localAddress = address;
+        return derived.cast(this);
     }
 
     private String buildUrl(String url) {
