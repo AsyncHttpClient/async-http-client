@@ -527,7 +527,7 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-websockets</artifactId>
-                    <version>2.2.4</version>
+                    <version>2.2.5</version>
                     <optional>true</optional>
                 </dependency>
             </dependencies>
@@ -611,6 +611,12 @@
             <url>gitsite:git@github.com/sonatype/async-http-client.git</url>
         </site>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <id>maven.java.net</id>
+            <url>https://maven.java.net/content/repositories/releases</url>
+        </repository>
+    </repositories>
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
