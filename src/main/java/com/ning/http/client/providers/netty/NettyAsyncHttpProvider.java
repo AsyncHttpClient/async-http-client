@@ -1483,7 +1483,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
+        /** Issue 81
         if (e.getCause() != null && e.getCause().getClass().isAssignableFrom(PrematureChannelClosureException.class)) {
+            return;
+        }
+        */
+        if (e.getCause() != null && e.getCause().getClass().getSimpleName().equals("PrematureChannelClosureException")) {
             return;
         }
 
