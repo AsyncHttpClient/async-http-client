@@ -75,6 +75,7 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.PrematureChannelClosureException;
 import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
@@ -1481,6 +1482,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Channel channel = e.getChannel();
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
+
+        if (e.getCause() != null && e.getCause().getClass().isAssignableFrom(PrematureChannelClosureException.class)) {
+            return;
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Unexpected I/O exception on channel {}", channel, cause);
