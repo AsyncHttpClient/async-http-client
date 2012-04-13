@@ -47,6 +47,7 @@ import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
@@ -350,6 +351,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
             ProxyHost proxyHost = proxyServer == null ? null : new ProxyHost(proxyServer.getHost(), proxyServer.getPort());
             client.getHostConfiguration().setProxyHost(proxyHost);
+        }
+        if(request.getLocalAddress()!=null) {
+            client.getHostConfiguration().setLocalAddress(request.getLocalAddress());
         }
 
         method.setFollowRedirects(false);
