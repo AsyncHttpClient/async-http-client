@@ -570,7 +570,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader("Sec-WebSocket-Origin", "http://" + uri.getHost());
+            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":" + uri.getPort());
             nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
             nettyRequest.addHeader("Sec-WebSocket-Version", "13");
         }
