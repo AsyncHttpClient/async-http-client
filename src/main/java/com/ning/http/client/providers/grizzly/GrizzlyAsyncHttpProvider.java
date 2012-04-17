@@ -2715,6 +2715,27 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AHCWebSocketListenerAdapter that = (AHCWebSocketListenerAdapter) o;
+
+            if (ahcListener != null ? !ahcListener.equals(that.ahcListener) : that.ahcListener != null)
+                return false;
+            if (webSocket != null ? !webSocket.equals(that.webSocket) : that.webSocket != null)
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = ahcListener != null ? ahcListener.hashCode() : 0;
+            result = 31 * result + (webSocket != null ? webSocket.hashCode() : 0);
+            return result;
+        }
     } // END AHCWebSocketListenerAdapter
     
 }
