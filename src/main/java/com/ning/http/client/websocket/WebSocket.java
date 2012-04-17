@@ -88,6 +88,13 @@ public interface WebSocket {
     WebSocket addWebSocketListener(WebSocketListener l);
 
     /**
+     * Add a {@link WebSocketListener}
+     * @param l a {@link WebSocketListener}
+     * @return this
+     */
+    WebSocket removeWebSocketListener(WebSocketListener l);
+
+    /**
      * Returns <code>true</code> if the WebSocket is open/connected.
      *
      * @return <code>true</code> if the WebSocket is open/connected.

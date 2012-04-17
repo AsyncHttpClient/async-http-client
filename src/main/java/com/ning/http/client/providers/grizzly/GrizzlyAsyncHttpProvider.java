@@ -2628,6 +2628,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
+        public WebSocket removeWebSocketListener(WebSocketListener l) {
+            gWebSocket.remove(new AHCWebSocketListenerAdapter(l, this));
+            return this;
+        }
+
+        @Override
         public boolean isOpen() {
             return gWebSocket.isConnected();
         }

@@ -81,12 +81,19 @@ public class NettyWebSocket implements WebSocket {
     }
 
     @Override
+    public WebSocket removeWebSocketListener(WebSocketListener l) {
+        listeners.remove(l);
+        return this;
+    }
+
+    @Override
     public boolean isOpen() {
         return channel.isOpen();
     }
 
     @Override
     public void close() {
+        listeners.clear();
         onClose();
         channel.close();
     }
