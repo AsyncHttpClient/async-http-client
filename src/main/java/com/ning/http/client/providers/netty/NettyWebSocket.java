@@ -93,8 +93,8 @@ public class NettyWebSocket implements WebSocket {
 
     @Override
     public void close() {
-        listeners.clear();
         onClose();
+        listeners.clear();
         channel.close();
     }
 
