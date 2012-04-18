@@ -2380,7 +2380,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
                 log.warn("onError {}", e);
-                if (!NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
+                if (ctx.getAttachment() == null || !NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
                     return;
                 }
 
@@ -2398,7 +2398,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         //@Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
             log.trace("onClose {}", e);
-            if (!NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
+            if (ctx.getAttachment() == null || !NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
                 return;
             }
 
