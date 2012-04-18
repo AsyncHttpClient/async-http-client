@@ -365,6 +365,19 @@ public class AsyncHttpClient {
         isClosed.set(true);
     }
 
+    /**
+     * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
+     */
+    public void closeAsynchronously() {
+        config.applicationThreadPool.submit(new Runnable() {
+
+            public void run() {
+                httpProvider.close();
+                isClosed.set(true);
+            }
+        });
+    }
+
     @Override
     protected void finalize() throws Throwable {
         try {
