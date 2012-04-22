@@ -429,7 +429,14 @@ public class AsyncHttpProviderUtils {
             if (part.trim().startsWith("charset=")) {
                 String[] val = part.split("=");
                 if (val.length > 1) {
-                    return val[1].trim();
+                    String charset = val[1].trim();
+                    // Quite a lot of sites have charset="CHARSET",
+                    // e.g. charset="utf-8". Note the quotes. This is 
+                    // not correct, but client should be able to handle
+                    // it (all browsers do, Apache HTTP Client and Grizzly 
+                    // strip it by default)
+                    // This is a poor man's trim("\"").trim("'")
+                    return charset.replaceAll("\"", "").replaceAll("'", "")
                 }
             }
         }
