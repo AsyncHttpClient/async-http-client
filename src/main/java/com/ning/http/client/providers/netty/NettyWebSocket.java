@@ -143,10 +143,13 @@ public class NettyWebSocket implements WebSocket {
 
     protected void onClose(int code, String reason) {
         for (WebSocketListener l : listeners) {
-            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(l.getClass())) {
-                WebSocketCloseCodeReasonListener.class.cast(l).onClose(this, code, reason);
-            } else {
+            try {
+                if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(l.getClass())) {
+                    WebSocketCloseCodeReasonListener.class.cast(l).onClose(this, code, reason);
+                }
                 l.onClose(this);
+            } catch (Throwable t) {
+                l.onError(t);
             }
         }
     }
