@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class NettyCloseCodeReasonMessageTest extends NettyTextMessageTest {
 
@@ -56,7 +57,7 @@ public class NettyCloseCodeReasonMessageTest extends NettyTextMessageTest {
                 .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
         latch.await();
-        assertEquals(text.get(), "1000-Idle for 10022ms > 10000ms");
+        assertTrue(text.get().startsWith("1000-Idle"));
     }
 
     public final static class Listener implements WebSocketListener, WebSocketCloseCodeReasonListener {
