@@ -39,63 +39,63 @@ public class NettyWebSocket implements WebSocket {
         this.channel = channel;
     }
 
-    @Override
+    // @Override
     public WebSocket sendMessage(byte[] message) {
         channel.write(new BinaryWebSocketFrame(wrappedBuffer(message)));
         return this;
     }
 
-    @Override
+    // @Override
     public WebSocket stream(byte[] fragment, boolean last) {
         throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
-    @Override
+    // @Override
     public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
         throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
-    @Override
+    // @Override
     public WebSocket sendTextMessage(String message) {
         channel.write(new TextWebSocketFrame(message));
         return this;
     }
 
-    @Override
+    // @Override
     public WebSocket streamText(String fragment, boolean last) {
         throw new UnsupportedOperationException("Streaming currently only supported by the Grizzly provider.");
     }
 
-    @Override
+    // @Override
     public WebSocket sendPing(byte[] payload) {
         channel.write(new PingWebSocketFrame(wrappedBuffer(payload)));
         return this;
     }
 
-    @Override
+    // @Override
     public WebSocket sendPong(byte[] payload) {
         channel.write(new PongWebSocketFrame(wrappedBuffer(payload)));
         return this;
     }
 
-    @Override
+    // @Override
     public WebSocket addWebSocketListener(WebSocketListener l) {
         listeners.add(l);
         return this;
     }
 
-    @Override
+    // @Override
     public WebSocket removeWebSocketListener(WebSocketListener l) {
         listeners.remove(l);
         return this;
     }
 
-    @Override
+    // @Override
     public boolean isOpen() {
         return channel.isOpen();
     }
 
-    @Override
+    // @Override
     public void close() {
         onClose();
         listeners.clear();
