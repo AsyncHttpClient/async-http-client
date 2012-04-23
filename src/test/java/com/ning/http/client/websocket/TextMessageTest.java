@@ -66,10 +66,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         };
     }
 
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
+
 
     @Test(timeOut = 60000)
     public void onOpen() throws Throwable {

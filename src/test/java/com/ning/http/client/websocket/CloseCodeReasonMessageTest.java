@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.ning.http.client.websocket.netty;
+package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -20,6 +20,7 @@ import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
+import com.ning.http.client.websocket.netty.NettyTextMessageTest;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-public class NettyCloseCodeReasonMessageTest extends NettyTextMessageTest {
+public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Throwable {
@@ -44,7 +45,7 @@ public class NettyCloseCodeReasonMessageTest extends NettyTextMessageTest {
         websocket.close();
 
         latch.await();
-        assertEquals(text.get(), "1000-Normal closure; the connection successfully completed whatever purpose for which it was created.");
+        assertTrue(text.get().startsWith("1000"));
     }
 
     @Test(timeOut = 60000)
@@ -57,7 +58,13 @@ public class NettyCloseCodeReasonMessageTest extends NettyTextMessageTest {
                 .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
         latch.await();
-        assertTrue(text.get().startsWith("1000-Idle"));
+        final String[] parts = text.get().split(" ");
+        assertEquals(parts.length, 5);
+        assertEquals(parts[0], "1000-Idle");
+        assertEquals(parts[1], "for");
+        assertTrue(Integer.parseInt(parts[2].substring(0, parts[2].indexOf('m'))) > 10000);
+        assertEquals(parts[3], ">");
+        assertEquals(parts[4], "10000ms");
     }
 
     public final static class Listener implements WebSocketListener, WebSocketCloseCodeReasonListener {

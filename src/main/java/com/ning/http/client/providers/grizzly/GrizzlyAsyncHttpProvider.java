@@ -40,6 +40,7 @@ import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
+import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketPingListener;
 import com.ning.http.client.websocket.WebSocketPongListener;
@@ -104,6 +105,7 @@ import org.glassfish.grizzly.websockets.ProtocolHandler;
 import org.glassfish.grizzly.websockets.Version;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
 import org.glassfish.grizzly.websockets.WebSocketFilter;
+import org.glassfish.grizzly.websockets.draft06.ClosingFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2665,7 +2667,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
-            ahcListener.onClose(webSocket);
+            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(ahcListener.getClass())) {
+                ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
+                WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+            } else {
+                ahcListener.onClose(webSocket);
+            }
         }
 
         @Override
