@@ -436,7 +436,7 @@ public class AsyncHttpProviderUtils {
                     // it (all browsers do, Apache HTTP Client and Grizzly 
                     // strip it by default)
                     // This is a poor man's trim("\"").trim("'")
-                    return charset.replaceAll("\"", "").replaceAll("'", "")
+                    return charset.replaceAll("\"", "").replaceAll("'", "");
                 }
             }
         }
