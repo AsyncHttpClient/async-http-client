@@ -2667,58 +2667,90 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
-            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(ahcListener.getClass())) {
-                ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
-                WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
-            } else {
-                ahcListener.onClose(webSocket);
+            try {
+                if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
+                    WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
+                } else {
+                    ahcListener.onClose(webSocket);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onConnect(org.glassfish.grizzly.websockets.WebSocket gWebSocket) {
-            ahcListener.onOpen(webSocket);
+            try {
+                ahcListener.onOpen(webSocket);
+            } catch (Throwable e) {
+                ahcListener.onError(e);
+            }
         }
 
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, String s) {
-            if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketTextListener.class.cast(ahcListener).onMessage(s);
+            try {
+                if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketTextListener.class.cast(ahcListener).onMessage(s);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketByteListener.class.cast(ahcListener).onMessage(bytes);
+            try {
+                if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketByteListener.class.cast(ahcListener).onMessage(bytes);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onPing(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            if (WebSocketPingListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketPingListener.class.cast(ahcListener).onPing(bytes);
+            try {
+                if (WebSocketPingListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketPingListener.class.cast(ahcListener).onPing(bytes);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onPong(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
-            if (WebSocketPongListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketPongListener.class.cast(ahcListener).onPong(bytes);
+            try {
+                if (WebSocketPongListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketPongListener.class.cast(ahcListener).onPong(bytes);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onFragment(org.glassfish.grizzly.websockets.WebSocket webSocket, String s, boolean b) {
-            if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketTextListener.class.cast(ahcListener).onFragment(s, b);
+            try {
+                if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketTextListener.class.cast(ahcListener).onFragment(s, b);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
         @Override
         public void onFragment(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes, boolean b) {
-            if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
-                WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, b);
+            try {
+                if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, b);
+                }
+            } catch (Throwable e) {
+                ahcListener.onError(e);
             }
         }
 
