@@ -14,6 +14,7 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
+import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
@@ -21,12 +22,15 @@ import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 public class NettyWebSocket implements WebSocket {
+    private final static Logger logger = LoggerFactory.getLogger(NettyWebSocket.class);
 
     private final Channel channel;
     private final ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
@@ -67,7 +71,7 @@ public class NettyWebSocket implements WebSocket {
         channel.write(new PingWebSocketFrame(wrappedBuffer(payload)));
         return this;
     }
-    
+
     @Override
     public WebSocket sendPong(byte[] payload) {
         channel.write(new PongWebSocketFrame(wrappedBuffer(payload)));
@@ -101,7 +105,11 @@ public class NettyWebSocket implements WebSocket {
     protected void onMessage(byte[] message) {
         for (WebSocketListener l : listeners) {
             if (WebSocketByteListener.class.isAssignableFrom(l.getClass())) {
-                WebSocketByteListener.class.cast(l).onMessage(message);
+                try {
+                    WebSocketByteListener.class.cast(l).onMessage(message);
+                } catch (Exception ex) {
+                    l.onError(ex);
+                }
             }
         }
     }
@@ -109,20 +117,37 @@ public class NettyWebSocket implements WebSocket {
     protected void onTextMessage(String message) {
         for (WebSocketListener l : listeners) {
             if (WebSocketTextListener.class.isAssignableFrom(l.getClass())) {
-                WebSocketTextListener.class.cast(l).onMessage(message);
+                try {
+                    WebSocketTextListener.class.cast(l).onMessage(message);
+                } catch (Exception ex) {
+                    l.onError(ex);
+                }
             }
         }
     }
 
     protected void onError(Throwable t) {
         for (WebSocketListener l : listeners) {
-            l.onError(t);
+            try {
+                l.onError(t);
+            } catch (Throwable t2) {
+                logger.error("", t2);
+            }
+
         }
     }
 
     protected void onClose() {
+        onClose(1000, "Normal closure; the connection successfully completed whatever purpose for which it was created.");
+    }
+
+    protected void onClose(int code, String reason) {
         for (WebSocketListener l : listeners) {
-            l.onClose(this);
+            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(l.getClass())) {
+                WebSocketCloseCodeReasonListener.class.cast(l).onClose(this, code, reason);
+            } else {
+                l.onClose(this);
+            }
         }
     }
 

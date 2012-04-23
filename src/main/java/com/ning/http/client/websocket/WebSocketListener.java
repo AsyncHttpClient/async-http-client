@@ -19,18 +19,21 @@ public interface WebSocketListener {
 
     /**
      * Invoked when the {@link WebSocket} is open.
+     *
      * @param websocket
      */
     void onOpen(WebSocket websocket);
 
     /**
      * Invoked when the {@link WebSocket} is close.
+     *
      * @param websocket
      */
     void onClose(WebSocket websocket);
 
     /**
      * Invoked when the {@link WebSocket} is open.
+     *
      * @param t a {@link Throwable}
      */
     void onError(Throwable t);

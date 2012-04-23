@@ -91,6 +91,7 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -2370,6 +2371,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                     webSocket.onMessage(rp.getBodyPartBytes());
                     webSocket.onTextMessage(frame.getBinaryData().toString("UTF-8"));
+
+                    if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
+                        try {
+                            webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
+                        } catch (Throwable t) {
+                            // Swallow any exception that may comes from a Netty version released before 3.4.0
+                            log.trace("", t);
+                        }
+                    }
                 }
             } else {
                 log.error("Invalid attachment {}", ctx.getAttachment());
