@@ -62,15 +62,6 @@ public class SpnegoEngine {
 
     private final SpnegoTokenGenerator spnegoGenerator;
 
-    private GSSContext gssContext = null;
-
-    /**
-     * base64 decoded challenge *
-     */
-    private byte[] token;
-
-    private Oid negotiationOid = null;
-
     public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
         this.spnegoGenerator = spnegoGenerator;
     }
@@ -80,6 +71,9 @@ public class SpnegoEngine {
     }
 
     public String generateToken(String server) throws Throwable {
+        GSSContext gssContext = null;
+        byte[] token = null; // base64 decoded challenge
+        Oid negotiationOid = null;
 
         try {
             log.debug("init {}", server);
