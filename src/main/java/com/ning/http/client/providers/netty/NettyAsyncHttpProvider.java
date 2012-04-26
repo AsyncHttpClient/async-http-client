@@ -987,13 +987,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
             } else if (proxyServer == null || avoidProxy) {
                 remoteAddress = new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
-            } else if(request.getLocalAddress() != null) {
-                remoteAddress = new InetSocketAddress(request.getLocalAddress(), 0);
             } else {
                 remoteAddress = new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort());
             }
 
-            channelFuture = bootstrap.connect(remoteAddress);
+            if(request.getLocalAddress() != null){
+                channelFuture = bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
+            }else{
+                channelFuture = bootstrap.connect(remoteAddress);
+            }
+
         } catch (Throwable t) {
             if (acquiredConnection) {
                 freeConnections.release();
