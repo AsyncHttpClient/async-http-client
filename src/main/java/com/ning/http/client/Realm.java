@@ -524,12 +524,23 @@ public class Realm {
             byte[] ha1 = md.digest();
 
             md.reset();
+
+            //HA2 if qop is auth-int is methodName:url:md5(entityBody)
             md.update(new StringBuilder(methodName)
                     .append(':')
                     .append(uri).toString().getBytes("ISO-8859-1"));
             byte[] ha2 = md.digest();
 
-            md.update(new StringBuilder(toBase16(ha1))
+            if(qop==null || qop.equals("")) {
+                 md.update(new StringBuilder(toBase16(ha1))
+                    .append(':')
+                    .append(nonce)
+                    .append(':')
+                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+
+             } else {
+                 //qop ="auth" or "auth-int"
+                 md.update(new StringBuilder(toBase16(ha1))
                     .append(':')
                     .append(nonce)
                     .append(':')
@@ -540,6 +551,8 @@ public class Realm {
                     .append(qop)
                     .append(':')
                     .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+            }
+
             byte[] digest = md.digest();
 
             response = toHexString(digest);
