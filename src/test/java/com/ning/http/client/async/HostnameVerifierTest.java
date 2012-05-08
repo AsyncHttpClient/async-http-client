@@ -41,11 +41,13 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 public abstract class HostnameVerifierTest extends AbstractBasicTest {
 
@@ -219,9 +221,10 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         File file = new File(url.toURI());
 
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            fail("ConnectException expected");
+        } catch (ExecutionException ex) {
+            assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
     }
 
@@ -236,15 +239,16 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         File file = new File(url.toURI());
 
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            fail("ConnectException expected");
+        } catch (ExecutionException ex) {
+            assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
     }
 
     @Test(groups = {"standalone", "default_provider"})
-    public void remotePosHostnameVerifierTest() throws Throwable {
-
+    public void remoteNegHostnameVerifierTest() throws Throwable {
+    	// request is made to 127.0.0.1, but cert presented for localhost - this should fail
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext()).build());
 
         ClassLoader cl = getClass().getClassLoader();
@@ -253,10 +257,27 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         File file = new File(url.toURI());
 
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            fail("ConnectException expected");
+        } catch (ExecutionException ex) {
+            assertEquals(ex.getCause().getClass(), ConnectException.class);
         }
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void remotePosHostnameVerifierTest() throws Throwable {
+
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("127.0.0.1")).setSSLContext(createSSLContext()).build());
+
+        ClassLoader cl = getClass().getClassLoader();
+        // override system properties
+        URL url = cl.getResource("SimpleTextFile.txt");
+        File file = new File(url.toURI());
+
+        Response resp = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getResponseBody(), "This is a simple test file");           
     }
 
     public static class PositiveHostVerifier implements HostnameVerifier {
@@ -269,7 +290,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
     public static class NegativeHostVerifier implements HostnameVerifier {
 
         public boolean verify(String s, SSLSession sslSession) {
-            return true;
+            return false;
         }
     }
 
@@ -334,6 +355,4 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             }
         }
     };
-
-
 }

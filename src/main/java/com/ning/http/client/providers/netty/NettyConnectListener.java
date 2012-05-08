@@ -71,11 +71,11 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             }
 
             HostnameVerifier v = config.getHostnameVerifier();
-            if (sslHandler != null && !AllowAllHostnameVerifier.class.isAssignableFrom(v.getClass())) {
-                // TODO: channel.getRemoteAddress()).getHostName() is very expensive. Should cache the result.
-                if (!v.verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
-                        sslHandler.getEngine().getSession())) {
-                    throw new ConnectException("HostnameVerifier exception.");
+            if (sslHandler != null) {
+                if (!v.verify(future.getURI().getHost(), sslHandler.getEngine().getSession())) {
+                	ConnectException exception = new ConnectException("HostnameVerifier exception.");
+                	future.abort(exception);
+                	throw exception;
                 }
             }
 
