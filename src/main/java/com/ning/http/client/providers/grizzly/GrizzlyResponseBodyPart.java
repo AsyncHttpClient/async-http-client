@@ -20,7 +20,9 @@ import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -38,7 +40,7 @@ import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.Co
 public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpContent content;
-    private final Connection connection;
+    private final Connection<?> connection;
     private final AtomicReference<byte[]> contentBytes =
             new AtomicReference<byte[]>();
 
@@ -48,7 +50,7 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     public GrizzlyResponseBodyPart(final HttpContent content,
                                    final URI uri,
-                                   final Connection connection,
+                                   final Connection<?> connection,
                                    final AsyncHttpProvider provider) {
         super(uri, provider);
         this.content = content;
@@ -65,7 +67,6 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
      */
     @Override
     public byte[] getBodyPartBytes() {
-
         byte[] bytes = contentBytes.get();
         if (bytes != null) {
             return bytes;
@@ -81,7 +82,17 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     }
 
+    @Override
+    public InputStream readBodyPartBytes() {
+        return new ByteArrayInputStream(getBodyPartBytes());
+    }
 
+    @Override
+    public int length() {
+        // this is ugly but...
+        return getBodyPartBytes().length;
+    }
+    
     /**
      * {@inheritDoc}
      */

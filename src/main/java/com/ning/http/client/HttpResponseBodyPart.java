@@ -16,6 +16,7 @@
 package com.ning.http.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -30,12 +31,26 @@ public abstract class HttpResponseBodyPart extends HttpContent {
     }
 
     /**
+     * Return length of this part in bytes.
+     * 
+     * @since 1.8.0
+     */
+    abstract public int length();
+    
+    /**
      * Return the response body's part bytes received.
      *
      * @return the response body's part bytes received.
      */
     abstract public byte[] getBodyPartBytes();
 
+    /**
+     * Method for accessing contents of this part via stream.
+     * 
+     * @since 1.8.0
+     */
+    abstract public InputStream readBodyPartBytes();
+    
     /**
      * Write the available bytes to the {@link java.io.OutputStream}
      *

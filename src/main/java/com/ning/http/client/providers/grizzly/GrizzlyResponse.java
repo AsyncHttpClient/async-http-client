@@ -49,7 +49,7 @@ public class GrizzlyResponse implements Response {
 
     private final HttpResponseStatus status;
     private final HttpResponseHeaders headers;
-    private final Collection<HttpResponseBodyPart> bodyParts;
+    private final List<HttpResponseBodyPart> bodyParts;
     private final Buffer responseBody;
 
     private List<Cookie> cookies;
@@ -60,7 +60,7 @@ public class GrizzlyResponse implements Response {
 
     public GrizzlyResponse(final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
-                           final Collection<HttpResponseBodyPart> bodyParts) {
+                           final List<HttpResponseBodyPart> bodyParts) {
 
         this.status = status;
         this.headers = headers;
@@ -170,7 +170,7 @@ public class GrizzlyResponse implements Response {
      * {@inheritDoc}
      */
     public byte[] getResponseBodyAsBytes() throws IOException {
-
+        // !!! TODO: wrong, very wasteful
         return getResponseBody().getBytes(Charsets.DEFAULT_CHARACTER_ENCODING);
 
     }
@@ -191,7 +191,7 @@ public class GrizzlyResponse implements Response {
      */
     public String getContentType() {
 
-        return headers.getHeaders().getFirstValue("Content-Type");
+        return getHeader("Content-Type");
 
     }
 
@@ -328,7 +328,7 @@ public class GrizzlyResponse implements Response {
     }
 
 
-    private boolean between(final int value,
+    private static boolean between(final int value,
                             final int lowerBound,
                             final int upperBound) {
 
