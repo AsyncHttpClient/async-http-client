@@ -14,11 +14,10 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
+import com.ning.http.client.providers.ResponseBase;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
@@ -30,11 +29,8 @@ import org.glassfish.grizzly.utils.BufferInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,11 +41,7 @@ import java.util.List;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyResponse implements Response {
-
-    private final HttpResponseStatus status;
-    private final HttpResponseHeaders headers;
-    private final List<HttpResponseBodyPart> bodyParts;
+public class GrizzlyResponse extends ResponseBase {
     private final Buffer responseBody;
 
     private List<Cookie> cookies;
@@ -61,57 +53,30 @@ public class GrizzlyResponse implements Response {
     public GrizzlyResponse(final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
                            final List<HttpResponseBodyPart> bodyParts) {
-
-        this.status = status;
-        this.headers = headers;
-        this.bodyParts = bodyParts;
+        super(status, headers, bodyParts);
 
         if (bodyParts != null && !bodyParts.isEmpty()) {
-            HttpResponseBodyPart[] parts =
-                    bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]);
-            if (parts.length == 1) {
-                responseBody = ((GrizzlyResponseBodyPart) parts[0]).getBodyBuffer();
+            if (bodyParts.size() == 1) {
+                responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
             } else {
-                final Buffer firstBuffer = ((GrizzlyResponseBodyPart) parts[0]).getBodyBuffer();
-                final MemoryManager mm = MemoryManager.DEFAULT_MEMORY_MANAGER;
+                final Buffer firstBuffer = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
+                final MemoryManager<?> mm = MemoryManager.DEFAULT_MEMORY_MANAGER;
                 Buffer constructedBodyBuffer = firstBuffer;
-                for (int i = 1, len = parts.length; i < len; i++) {
+                for (int i = 1, len = bodyParts.size(); i < len; i++) {
                     constructedBodyBuffer =
                             Buffers.appendBuffers(mm,
                                     constructedBodyBuffer,
-                                    ((GrizzlyResponseBodyPart) parts[i]).getBodyBuffer());
+                                    ((GrizzlyResponseBodyPart) bodyParts.get(i)).getBodyBuffer());
                 }
                 responseBody = constructedBodyBuffer;
             }
         } else {
             responseBody = Buffers.EMPTY_BUFFER;
         }
-
     }
 
 
     // --------------------------------------------------- Methods from Response
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public int getStatusCode() {
-
-        return status.getStatusCode();
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getStatusText() {
-
-        return status.getStatusText();
-
-    }
-
 
     /**
      * {@inheritDoc}
@@ -164,77 +129,6 @@ public class GrizzlyResponse implements Response {
         return getResponseBody(Charsets.DEFAULT_CHARACTER_ENCODING);
 
     }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public byte[] getResponseBodyAsBytes() throws IOException {
-        // !!! TODO: wrong, very wasteful
-        return getResponseBody().getBytes(Charsets.DEFAULT_CHARACTER_ENCODING);
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public URI getUri() throws MalformedURLException {
-
-        return status.getUrl();
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getContentType() {
-
-        return getHeader("Content-Type");
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getHeader(String name) {
-
-        return headers.getHeaders().getFirstValue(name);
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public List<String> getHeaders(String name) {
-
-        return headers.getHeaders().get(name);
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-
-        return headers.getHeaders();
-
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean isRedirected() {
-
-        return between(status.getStatusCode(), 300, 399);
-
-    }
-
 
     /**
      * {@inheritDoc}
@@ -326,14 +220,4 @@ public class GrizzlyResponse implements Response {
         return Charsets.lookupCharset(charsetLocal);
 
     }
-
-
-    private static boolean between(final int value,
-                            final int lowerBound,
-                            final int upperBound) {
-
-        return (value >= lowerBound && value <= upperBound);
-
-    }
-
 }
