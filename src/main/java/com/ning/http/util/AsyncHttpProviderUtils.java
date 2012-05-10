@@ -277,9 +277,12 @@ public class AsyncHttpProviderUtils {
 
         String scheme = newUri.getScheme();
 
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
+        if (scheme == null || !scheme.equalsIgnoreCase("http")
+                && !scheme.equalsIgnoreCase("https")
+                && !scheme.equals("ws")
+                && !scheme.equals("wss")) {
             throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
-                    + ", must be equal (ignoring case) to 'http' or 'https'");
+                    + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
         }
 
         return newUri;
