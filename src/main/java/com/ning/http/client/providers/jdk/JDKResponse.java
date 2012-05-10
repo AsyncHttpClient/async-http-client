@@ -15,19 +15,16 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +36,7 @@ public class JDKResponse implements Response {
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
-    private final Collection<HttpResponseBodyPart> bodyParts;
+    private final List<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
@@ -48,7 +45,7 @@ public class JDKResponse implements Response {
 
     public JDKResponse(HttpResponseStatus status,
                        HttpResponseHeaders headers,
-                       Collection<HttpResponseBodyPart> bodyParts) {
+                       List<HttpResponseBodyPart> bodyParts) {
 
         this.bodyParts = bodyParts;
         this.headers = headers;
@@ -92,21 +89,14 @@ public class JDKResponse implements Response {
 
         if (!contentComputed.get()) {
             content = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+            contentComputed.set(true);
         }
         return content;
     }
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        if (contentComputed.get()) {
-            return new ByteArrayInputStream(content.getBytes(DEFAULT_CHARSET));
-        }
-
-        if (bodyParts.size() > 0) {
-            return new HttpResponseBodyPartsInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
-        } else {
-            return new ByteArrayInputStream("".getBytes());
-        }
+        return AsyncHttpProviderUtils.contentAsStream(bodyParts);
     }
 
     /* @Override */

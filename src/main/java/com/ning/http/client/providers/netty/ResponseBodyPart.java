@@ -21,7 +21,9 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -34,7 +36,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpChunk chunk;
     private final HttpResponse response;
-    private final AtomicReference<byte[]> bytes = new AtomicReference(null);
+    private final AtomicReference<byte[]> bytes = new AtomicReference<byte[]>(null);
     private final boolean isLast;
     private boolean closeConnection = false;
 
@@ -58,12 +60,12 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      * @return the response body's part bytes received.
      */
     public byte[] getBodyPartBytes() {
-
-        if (bytes.get() != null) {
-            return bytes.get();
+        byte[] bp = bytes.get();
+        if (bp != null) {
+            return bp;
         }
 
-        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
+        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
         int read = b.readableBytes();
         int index = b.readerIndex();
 
@@ -74,6 +76,17 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return bytes.get();
     }
 
+    @Override
+    public InputStream readBodyPartBytes() {
+        return new ByteArrayInputStream(getBodyPartBytes());
+    }
+
+    @Override
+    public int length() {
+        // ugly...
+        return getBodyPartBytes().length;
+    }
+    
     public int writeTo(OutputStream outputStream) throws IOException {
         ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
         int read = b.readableBytes();

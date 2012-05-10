@@ -205,7 +205,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         isClose.set(true);
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, Collection<HttpResponseBodyPart> bodyParts) {
+    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new JDKResponse(status, headers, bodyParts);
     }
 

@@ -32,8 +32,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
@@ -43,8 +43,8 @@ import java.util.Collections;
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
-    private final Collection<HttpResponseBodyPart> bodies =
-            Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
+    private final List<HttpResponseBodyPart> bodies =
+            Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
 

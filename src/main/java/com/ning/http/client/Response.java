@@ -178,8 +178,8 @@ public interface Response {
 
 
     public static class ResponseBuilder {
-        private final Collection<HttpResponseBodyPart> bodies =
-                Collections.synchronizedCollection(new ArrayList<HttpResponseBodyPart>());
+        private final List<HttpResponseBodyPart> bodies =
+                Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
         private HttpResponseStatus status;
         private HttpResponseHeaders headers;
 

@@ -24,16 +24,20 @@ import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -181,31 +185,46 @@ public class AsyncHttpProviderUtils {
         return url;
     }
 
-    public final static String contentToString(Collection<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
+    public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
         return new String(contentToByte(bodyParts), charset);
     }
 
-    public final static byte[] contentToByte(Collection<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
-        if (bodyParts.size() == 1) {
-            return bodyParts.iterator().next().getBodyPartBytes();
-
-        } else {
-            int size = 0;
-            for (HttpResponseBodyPart body : bodyParts) {
-                size += body.getBodyPartBytes().length;
-            }
-            byte[] bytes = new byte[size];
-            int offset = 0;
-            for (HttpResponseBodyPart body : bodyParts) {
-                byte[] bodyBytes = body.getBodyPartBytes();
-                System.arraycopy(bodyBytes, 0, bytes, offset, bodyBytes.length);
-                offset += bodyBytes.length;
-            }
-
-            return bytes;
+    public final static byte[] contentToByte(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
+        final int partCount = bodyParts.size();
+        if (partCount == 1) {
+            return bodyParts.get(0).getBodyPartBytes();
         }
+        int size = 0;
+        ArrayList<byte[]> chunks = new ArrayList<byte[]>(partCount);
+        for (HttpResponseBodyPart part : bodyParts) {
+            byte[] chunk = part.getBodyPartBytes();
+            size += chunk.length;
+            chunks.add(chunk);
+        }
+        byte[] bytes = new byte[size];
+        int offset = 0;
+        for (byte[] chunk : chunks) {
+            System.arraycopy(chunk, 0, bytes, offset, chunk.length);
+            offset += chunk.length;
+        }
+        return bytes;
     }
 
+    public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts)
+    {
+        switch (bodyParts.size()) {
+        case 0:
+            return new ByteArrayInputStream(new byte[0]);
+        case 1:
+            return bodyParts.get(0).readBodyPartBytes();
+        }
+        Vector<InputStream> streams = new Vector<InputStream>(bodyParts.size());
+        for (HttpResponseBodyPart part : bodyParts) {
+            streams.add(part.readBodyPartBytes());
+        }
+        return new SequenceInputStream(streams.elements());
+    }
+    
     public final static String getHost(URI uri) {
         String host = uri.getHost();
         if (host == null) {
