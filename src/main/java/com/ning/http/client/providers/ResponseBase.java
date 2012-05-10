@@ -3,6 +3,7 @@ package com.ning.http.client.providers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -100,6 +101,19 @@ public abstract class ResponseBase implements Response
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         return AsyncHttpProviderUtils.contentAsStream(bodyParts);
+    }
+
+    protected String calculateCharset() {
+        String charset = null;
+        String contentType = getContentType();
+        if (contentType != null) {
+            charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        }
+
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
 }

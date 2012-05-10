@@ -19,6 +19,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
+import org.glassfish.grizzly.utils.BufferInputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -75,7 +76,6 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
         final int origPos = b.position();
         bytes = new byte[b.remaining()];
         b.get(bytes);
-        b.flip();
         b.position(origPos);
         contentBytes.compareAndSet(null, bytes);
         return bytes;
@@ -84,13 +84,12 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public InputStream readBodyPartBytes() {
-        return new ByteArrayInputStream(getBodyPartBytes());
+        return new BufferInputStream(content.getContent());
     }
 
     @Override
     public int length() {
-        // this is ugly but...
-        return getBodyPartBytes().length;
+        return content.getContent().remaining();
     }
     
     /**
@@ -100,7 +99,7 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     public int writeTo(OutputStream outputStream) throws IOException {
 
         final byte[] bytes = getBodyPartBytes();
-        outputStream.write(getBodyPartBytes());
+        outputStream.write(bytes);
         return bytes.length;
 
     }
@@ -112,7 +111,7 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public ByteBuffer getBodyByteBuffer() {
 
-        return ByteBuffer.wrap(getBodyPartBytes());
+        return content.getContent().toByteBuffer();
 
     }
 

@@ -92,7 +92,9 @@ public class GrizzlyResponse extends ResponseBase {
      * {@inheritDoc}
      */
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-
+        if (charset == null) {
+            charset = calculateCharset();
+        }
         final int len = Math.min(responseBody.remaining(), maxLength);
         final int pos = responseBody.position();
         return responseBody.toStringContent(getCharset(charset), pos, len + pos);
@@ -113,9 +115,21 @@ public class GrizzlyResponse extends ResponseBase {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public byte[] getResponseBodyAsBytes() throws IOException {
+        final byte[] responseBodyBytes = new byte[responseBody.remaining()];
+        final int origPos = responseBody.position();
+        responseBody.get(responseBodyBytes);
+        responseBody.position(origPos);
+        return responseBodyBytes;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
 
-        // TODO FIX NULL
         return getResponseBodyExcerpt(maxLength, null);
 
     }
