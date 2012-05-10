@@ -13,94 +13,27 @@
 package com.ning.http.client.providers.apache;
 
 import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
+import com.ning.http.client.providers.ResponseBase;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
-public class ApacheResponse implements Response {
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";
+public class ApacheResponse extends ResponseBase {
     private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
-    private final URI uri;
-    private final List<HttpResponseBodyPart> bodyParts;
-    private final HttpResponseHeaders headers;
-    private final HttpResponseStatus status;
     private final List<Cookie> cookies = new ArrayList<Cookie>();
 
     public ApacheResponse(HttpResponseStatus status,
                           HttpResponseHeaders headers,
                           List<HttpResponseBodyPart> bodyParts) {
-
-        this.bodyParts = bodyParts;
-        this.headers = headers;
-        this.status = status;
-
-        uri = this.status.getUrl();
-    }
-
-    /* @Override */
-
-    public int getStatusCode() {
-        return status.getStatusCode();
-    }
-
-    /* @Override */
-
-    public String getStatusText() {
-        return status.getStatusText();
-    }
-
-    /* @Override */
-    public byte[] getResponseBodyAsBytes() throws IOException {
-        return AsyncHttpProviderUtils.contentToByte(bodyParts);
-    }
-
-    /* @Override */
-    public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
-    }
-
-    public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
-    }
-
-    /* @Override */
-    public InputStream getResponseBodyAsStream() throws IOException {
-        switch (bodyParts.size()) {
-        case 0:
-            return new ByteArrayInputStream(new byte[0]);
-        case 1:
-            return bodyParts.get(0).readBodyPartBytes();
-        }
-        Vector<InputStream> streams = new Vector<InputStream>(bodyParts.size());
-        for (HttpResponseBodyPart part : bodyParts) {
-            streams.add(part.readBodyPartBytes());
-        }
-        return new SequenceInputStream(streams.elements());
+        super(status, headers, bodyParts);
     }
 
     /* @Override */
@@ -126,55 +59,6 @@ public class ApacheResponse implements Response {
     }
 
     /* @Override */
-
-    public URI getUri() throws MalformedURLException {
-        return uri;
-    }
-
-    /* @Override */
-
-    public String getContentType() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().getFirstValue("Content-Type");
-    }
-
-    /* @Override */
-
-    public String getHeader(String name) {
-        if (headers == null) {
-            throw new IllegalStateException();
-        }
-        return headers.getHeaders().getFirstValue(name);
-    }
-
-    /* @Override */
-
-    public List<String> getHeaders(String name) {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().get(name);
-    }
-
-    /* @Override */
-
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders();
-    }
-
-    /* @Override */
-
-    public boolean isRedirected() {
-        return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
-    }
-
-    /* @Override */
-
     public List<Cookie> getCookies() {
         if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);

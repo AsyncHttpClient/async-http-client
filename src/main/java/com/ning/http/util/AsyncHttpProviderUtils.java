@@ -45,6 +45,7 @@ import java.util.Vector;
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+    private final static byte[] NO_BYTES = new byte[0];
 
     public final static String DEFAULT_CHARSET = "ISO-8859-1";
 
@@ -186,11 +187,14 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
-        return new String(contentToByte(bodyParts), charset);
+        return new String(contentToBytes(bodyParts), charset);
     }
 
-    public final static byte[] contentToByte(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
+    public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
         final int partCount = bodyParts.size();
+        if (partCount == 0) {
+            return NO_BYTES;
+        }
         if (partCount == 1) {
             return bodyParts.get(0).getBodyPartBytes();
         }
@@ -210,11 +214,44 @@ public class AsyncHttpProviderUtils {
         return bytes;
     }
 
+    public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts, int maxLen) throws UnsupportedEncodingException {
+        final int partCount = bodyParts.size();
+        if (partCount == 0) {
+            return NO_BYTES;
+        }
+        if (partCount == 1) {
+            byte[] chunk = bodyParts.get(0).getBodyPartBytes();
+            if (chunk.length <= maxLen) {
+                return chunk;
+            }
+            byte[] result = new byte[maxLen];
+            System.arraycopy(chunk, 0, result, 0, maxLen);
+            return result;
+        }
+        int size = 0;
+        byte[] result = new byte[maxLen];
+        for (HttpResponseBodyPart part : bodyParts) {
+            byte[] chunk = part.getBodyPartBytes();
+            int amount = Math.min(maxLen-size, chunk.length);
+            System.arraycopy(chunk, 0, result, size, amount);
+            size += amount;
+            if (size == maxLen) {
+                return result;
+            }
+        }
+        if (size < maxLen) {
+            byte[] old = result;
+            result = new byte[old.length];
+            System.arraycopy(old, 0, result, 0, old.length);
+        }
+        return result;
+    }
+    
     public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts)
     {
         switch (bodyParts.size()) {
         case 0:
-            return new ByteArrayInputStream(new byte[0]);
+            return new ByteArrayInputStream(NO_BYTES);
         case 1:
             return bodyParts.get(0).readBodyPartBytes();
         }
