@@ -2002,7 +2002,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final boolean initialConnectionKeepAlive = future.getKeepAlive();
                     future.setURI(uri);
                     String newUrl = uri.toString();
-                    if (future.getNettyRequest().getUri().startsWith(WEBSOCKET)) {
+                    if (request.getUrl().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replace(HTTP, WEBSOCKET);
                     }
 
