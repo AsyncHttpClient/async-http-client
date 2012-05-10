@@ -15,7 +15,9 @@ package com.ning.http.client.providers.jdk;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -44,6 +46,16 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return chunk;
     }
 
+    @Override
+    public InputStream readBodyPartBytes() {
+        return new ByteArrayInputStream(chunk);
+    }
+
+    @Override
+    public int length() {
+        return chunk.length;
+    }
+    
     @Override
     public int writeTo(OutputStream outputStream) throws IOException {
         outputStream.write(chunk);

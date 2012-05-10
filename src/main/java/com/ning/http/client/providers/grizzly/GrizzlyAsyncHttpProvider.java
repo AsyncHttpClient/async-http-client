@@ -142,6 +142,7 @@ import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderCon
  * @author The Grizzly Team
  * @since 1.7.0
  */
+@SuppressWarnings("rawtypes")
 public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
@@ -270,7 +271,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
      */
     public Response prepareResponse(HttpResponseStatus status,
                                     HttpResponseHeaders headers,
-                                    Collection<HttpResponseBodyPart> bodyParts) {
+                                    List<HttpResponseBodyPart> bodyParts) {
 
         return new GrizzlyResponse(status, headers, bodyParts);
 
@@ -468,7 +469,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
         }
     }
-
 
     private <T> CompletionHandler<WriteResult> createWriteCompletionHandler(final GrizzlyResponseFuture<T> future) {
         return new CompletionHandler<WriteResult>() {

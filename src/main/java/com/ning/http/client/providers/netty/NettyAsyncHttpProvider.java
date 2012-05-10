@@ -515,7 +515,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
             if (delay != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
+                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -846,7 +846,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public Response prepareResponse(final HttpResponseStatus status,
                                     final HttpResponseHeaders headers,
-                                    final Collection<HttpResponseBodyPart> bodyParts) {
+                                    final List<HttpResponseBodyPart> bodyParts) {
         return new NettyResponse(status, headers, bodyParts);
     }
 
@@ -856,9 +856,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return doConnect(request, asyncHandler, null, true, executeConnectAsync, false);
     }
 
+    /*
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect) throws IOException {
         doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, false);
     }
+    */
 
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
         doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, reclaimCache);

@@ -202,7 +202,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         HttpMethodBase method = createMethod(httpClient, request);
-        ApacheResponseFuture f = new ApacheResponseFuture<T>(handler, requestTimeout, request, method);
+        ApacheResponseFuture<T> f = new ApacheResponseFuture<T>(handler, requestTimeout, request, method);
         f.touch();
 
         f.setInnerFuture(config.executorService().submit(new ApacheClientRunnable(request, handler, method, f, httpClient)));
@@ -224,7 +224,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, Collection<HttpResponseBodyPart> bodyParts) {
+    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new ApacheResponse(status, headers, bodyParts);
     }
 
