@@ -27,7 +27,7 @@ import static org.testng.Assert.fail;
 
 public abstract class TextMessageTest extends AbstractBasicTest {
 
-    private final class EchoTextWebSocket implements org.eclipse.jetty.websocket.WebSocket, org.eclipse.jetty.websocket.WebSocket.OnTextMessage {
+    public static final class EchoTextWebSocket implements org.eclipse.jetty.websocket.WebSocket, org.eclipse.jetty.websocket.WebSocket.OnTextMessage {
 
         private Connection connection;
 
