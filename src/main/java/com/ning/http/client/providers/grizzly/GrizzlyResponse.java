@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -171,7 +172,11 @@ public class GrizzlyResponse implements Response {
      */
     public byte[] getResponseBodyAsBytes() throws IOException {
 
-        return getResponseBody().getBytes(Charsets.DEFAULT_CHARACTER_ENCODING);
+        final byte[] responseBodyBytes = new byte[responseBody.remaining()];
+        final int origPos = responseBody.position();
+        responseBody.get(responseBodyBytes);
+        responseBody.position(origPos);
+        return responseBodyBytes;
 
     }
 
