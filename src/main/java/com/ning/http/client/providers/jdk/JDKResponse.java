@@ -17,86 +17,22 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
+import com.ning.http.client.providers.ResponseBase;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-
-public class JDKResponse implements Response {
-    private final static String DEFAULT_CHARSET = "ISO-8859-1";
-    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
-
-    private final URI uri;
-    private final List<HttpResponseBodyPart> bodyParts;
-    private final HttpResponseHeaders headers;
-    private final HttpResponseStatus status;
+public class JDKResponse extends ResponseBase {
     private final List<Cookie> cookies = new ArrayList<Cookie>();
-    private AtomicBoolean contentComputed = new AtomicBoolean(false);
-    private String content;
 
     public JDKResponse(HttpResponseStatus status,
                        HttpResponseHeaders headers,
                        List<HttpResponseBodyPart> bodyParts) {
-
-        this.bodyParts = bodyParts;
-        this.headers = headers;
-        this.status = status;
-
-        uri = this.status.getUrl();
-    }
-
-    /* @Override */
-
-    public int getStatusCode() {
-        return status.getStatusCode();
-    }
-
-    /* @Override */
-
-    public String getStatusText() {
-        return status.getStatusText();
-    }
-
-    /* @Override */
-
-    public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
-    }
-
-    /* @Override */
-    public byte[] getResponseBodyAsBytes() throws IOException {
-        return AsyncHttpProviderUtils.contentToByte(bodyParts);
-    }
-
-    public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        if (!contentComputed.get()) {
-            content = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
-            contentComputed.set(true);
-        }
-        return content;
-    }
-
-    /* @Override */
-    public InputStream getResponseBodyAsStream() throws IOException {
-        return AsyncHttpProviderUtils.contentAsStream(bodyParts);
+        super(status, headers, bodyParts);
     }
 
     /* @Override */
@@ -106,72 +42,12 @@ public class JDKResponse implements Response {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        if (!contentComputed.get()) {
-            content = AsyncHttpProviderUtils.contentToString(bodyParts, charset == null ? DEFAULT_CHARSET : charset);
-        }
-
-        return content.length() <= maxLength ? content : content.substring(0, maxLength);
+        // should be fine; except that it may split multi-byte chars (last char may become '?')
+        byte[] b = AsyncHttpProviderUtils.contentToBytes(bodyParts, maxLength);
+        return new String(b, charset);
     }
 
     /* @Override */
-
-    public URI getUri() throws MalformedURLException {
-        return uri;
-    }
-
-    /* @Override */
-
-    public String getContentType() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().getFirstValue("Content-Type");
-    }
-
-    /* @Override */
-
-    public String getHeader(String name) {
-        if (headers == null) {
-            throw new IllegalStateException();
-        }
-        return headers.getHeaders().getFirstValue(name);
-    }
-
-    /* @Override */
-
-    public List<String> getHeaders(String name) {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().get(name);
-    }
-
-    /* @Override */
-
-    public FluentCaseInsensitiveStringsMap getHeaders() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders();
-    }
-
-    /* @Override */
-
-    public boolean isRedirected() {
-        return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
-    }
-
-    /* @Override */
-
     public List<Cookie> getCookies() {
         if (headers == null) {
             throw new IllegalStateException(HEADERS_NOT_COMPUTED);

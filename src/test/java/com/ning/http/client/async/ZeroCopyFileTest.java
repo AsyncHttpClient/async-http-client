@@ -78,7 +78,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         final AtomicBoolean headerSent = new AtomicBoolean(false);
         final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler() {
+        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler<Response>() {
 
             public STATE onHeaderWriteCompleted() {
                 headerSent.set(true);
@@ -91,7 +91,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             }
 
             @Override
-            public Object onCompleted(Response response) throws Exception {
+            public Response onCompleted(Response response) throws Exception {
                 return response;
             }
         });
