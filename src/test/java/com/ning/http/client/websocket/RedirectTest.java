@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -48,20 +49,26 @@ public abstract class RedirectTest extends AbstractBasicTest {
         _connector.setPort(port1);
 
         addConnector(_connector);
-        WebSocketHandler _wsHandler = getWebSocketHandler();
 
-        setHandler(_wsHandler);
+
+
 
         port2 = findFreePort();
         final SelectChannelConnector connector2 = new SelectChannelConnector();
         connector2.setPort(port2);
         addConnector(connector2);
-        setHandler(new AbstractHandler() {
-            @Override
-            public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
-                httpServletResponse.sendRedirect(getTargetUrl());
-            }
-        });
+        WebSocketHandler _wsHandler = getWebSocketHandler();
+        HandlerList list = new HandlerList();
+        list.addHandler(new AbstractHandler() {
+                    @Override
+                    public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
+                        if (request.getLocalPort() == port2) {
+                            httpServletResponse.sendRedirect(getTargetUrl());
+                        }
+                    }
+                });
+        list.addHandler(_wsHandler);
+        setHandler(list);
 
         start();
         log.info("Local HTTP server started successfully");
@@ -81,11 +88,11 @@ public abstract class RedirectTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<String> text = new AtomicReference<String>("");
 
-        WebSocket websocket = c.prepareGet(getTargetUrl())
+        WebSocket websocket = c.prepareGet(getRedirectURL())
                 .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                     @Override
