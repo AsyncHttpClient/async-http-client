@@ -51,6 +51,9 @@ public class NettyResponse extends ResponseBase {
             charset = calculateCharset();
         }
         byte[] b = AsyncHttpProviderUtils.contentToBytes(bodyParts, maxLength);
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
         return new String(b, charset);
     }
 

@@ -856,12 +856,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return doConnect(request, asyncHandler, null, true, executeConnectAsync, false);
     }
 
-    /*
-    private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect) throws IOException {
-        doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, false);
-    }
-    */
-
     private <T> void execute(final Request request, final NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
         doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, reclaimCache);
     }
