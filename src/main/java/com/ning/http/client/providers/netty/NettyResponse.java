@@ -48,6 +48,9 @@ public class NettyResponse extends ResponseBase {
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         // should be fine; except that it may split multi-byte chars (last char may become '?')
         byte[] b = AsyncHttpProviderUtils.contentToBytes(bodyParts, maxLength);
+        if (charset == null) {
+            charset = DEFAULT_CHARSET;
+        }
         return new String(b, charset);
     }
 
