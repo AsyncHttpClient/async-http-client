@@ -2141,7 +2141,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         final Realm nr = new Realm.RealmBuilder().clone(newRealm)
-                                .setUri(request.getUrl()).build();
+                                .setUri(URI.create(request.getUrl()).getPath()).build();
 
                         log.debug("Sending authentication to {}", request.getUrl());
                         AsyncCallable ac = new AsyncCallable(future) {
