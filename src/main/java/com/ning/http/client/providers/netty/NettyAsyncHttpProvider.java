@@ -987,13 +987,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
             } else if (proxyServer == null || avoidProxy) {
                 remoteAddress = new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
-            } else if(request.getLocalAddress() != null) {
-                remoteAddress = new InetSocketAddress(request.getLocalAddress(), 0);
             } else {
                 remoteAddress = new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort());
             }
 
-            channelFuture = bootstrap.connect(remoteAddress);
+            if(request.getLocalAddress() != null){
+                channelFuture = bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
+            }else{
+                channelFuture = bootstrap.connect(remoteAddress);
+            }
+
         } catch (Throwable t) {
             if (acquiredConnection) {
                 freeConnections.release();
@@ -1966,6 +1969,81 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return true;
     }
 
+    private boolean redirect(Request request,
+                             NettyResponseFuture<?> future,
+                             HttpResponse response,
+                             final ChannelHandlerContext ctx) throws Exception {
+
+        int statusCode = response.getStatus().getCode();
+        boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
+        if (redirectEnabled && (statusCode == 302
+                || statusCode == 301
+                || statusCode == 303
+                || statusCode == 307)) {
+
+            if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
+                // We must allow 401 handling again.
+                future.getAndSetAuth(false);
+
+                String location = response.getHeader(HttpHeaders.Names.LOCATION);
+                URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
+                boolean stripQueryString = config.isRemoveQueryParamOnRedirect();
+                if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
+                    final RequestBuilder nBuilder = stripQueryString ?
+                            new RequestBuilder(future.getRequest()).setQueryParameters(null)
+                            : new RequestBuilder(future.getRequest());
+
+                    if (!(statusCode < 302 || statusCode > 303)
+                            && !(statusCode == 302
+                            && config.isStrict302Handling())) {
+                        nBuilder.setMethod("GET");
+                    }
+                    final URI initialConnectionUri = future.getURI();
+                    final boolean initialConnectionKeepAlive = future.getKeepAlive();
+                    future.setURI(uri);
+                    String newUrl = uri.toString();
+                    if (request.getUrl().startsWith(WEBSOCKET)) {
+                        newUrl = newUrl.replace(HTTP, WEBSOCKET);
+                    }
+
+                    log.debug("Redirecting to {}", newUrl);
+                    for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)) {
+                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
+                        nBuilder.addOrReplaceCookie(c);
+                    }
+
+                    for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)) {
+                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
+                        nBuilder.addOrReplaceCookie(c);
+                    }
+
+                    AsyncCallable ac = new AsyncCallable(future) {
+                        public Object call() throws Exception {
+                            if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
+                                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                return null;
+                            }
+                            finishChannel(ctx);
+                            return null;
+                        }
+                    };
+
+                    if (response.isChunked()) {
+                        // We must make sure there is no bytes left before executing the next request.
+                        ctx.setAttachment(ac);
+                    } else {
+                        ac.call();
+                    }
+                    nextRequest(nBuilder.setUrl(newUrl).build(), future);
+                    return true;
+                }
+            } else {
+                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+            }
+        }
+        return false;
+    }
+
     private final class HttpProtocol implements Protocol {
         // @Override
         public void handle(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception {
@@ -2142,69 +2220,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         return;
                     }
 
-                    boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-                    if (redirectEnabled && (statusCode == 302
-                            || statusCode == 301
-                            || statusCode == 303
-                            || statusCode == 307)) {
-
-                        if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
-                            // We must allow 401 handling again.
-                            future.getAndSetAuth(false);
-
-                            String location = response.getHeader(HttpHeaders.Names.LOCATION);
-                            URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
-                            boolean stripQueryString = config.isRemoveQueryParamOnRedirect();
-                            if (!uri.toString().equalsIgnoreCase(future.getURI().toString())) {
-                                final RequestBuilder nBuilder = stripQueryString ?
-                                        new RequestBuilder(future.getRequest()).setQueryParameters(null)
-                                        : new RequestBuilder(future.getRequest());
-
-                                if (!(statusCode < 302 || statusCode > 303)
-                                        && !(statusCode == 302
-                                        && config.isStrict302Handling())) {
-                                    nBuilder.setMethod("GET");
-                                }
-                                final URI initialConnectionUri = future.getURI();
-                                final boolean initialConnectionKeepAlive = future.getKeepAlive();
-                                future.setURI(uri);
-                                final String newUrl = uri.toString();
-
-                                log.debug("Redirecting to {}", newUrl);
-                                for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)) {
-                                    Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                                    nBuilder.addOrReplaceCookie(c);
-                                }
-
-                                for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)) {
-                                    Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                                    nBuilder.addOrReplaceCookie(c);
-                                }
-
-                                AsyncCallable ac = new AsyncCallable(future) {
-                                    public Object call() throws Exception {
-                                        if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
-                                                connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
-                                            return null;
-                                        }
-                                        finishChannel(ctx);
-                                        return null;
-                                    }
-                                };
-
-                                if (response.isChunked()) {
-                                    // We must make sure there is no bytes left before executing the next request.
-                                    ctx.setAttachment(ac);
-                                } else {
-                                    ac.call();
-                                }
-                                nextRequest(nBuilder.setUrl(newUrl).build(), future);
-                                return;
-                            }
-                        } else {
-                            throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
-                        }
-                    }
+                    if (redirect(request, future, response, ctx)) return;
 
                     if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
                         finishUpdate(future, ctx, response.isChunked());
@@ -2297,7 +2313,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
                     } catch (FilterException efe) {
                         abort(future, efe);
-                    }                                                                                        // @Override
+                    }
 
                 }
 
@@ -2309,6 +2325,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     replayRequest(future, fc, response, ctx);
                     return;
                 }
+
+                future.setHttpResponse(response);
+                if (redirect(request, future, response, ctx)) return;
 
                 final org.jboss.netty.handler.codec.http.HttpResponseStatus status =
                         new org.jboss.netty.handler.codec.http.HttpResponseStatus(101, "Web Socket Protocol Handshake");
