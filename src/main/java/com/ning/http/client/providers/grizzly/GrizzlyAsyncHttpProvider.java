@@ -522,9 +522,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase();
-            if ("http".equals(protocol)) {
+            if ("http".equals(protocol) || "ws".equals(protocol)) {
                 port = 80;
-            } else if ("https".equals(protocol)) {
+            } else if ("https".equals(protocol) || "wss".equals(protocol)) {
                 port = 443;
             } else {
                 throw new IllegalArgumentException("Unknown protocol: " + protocol);
