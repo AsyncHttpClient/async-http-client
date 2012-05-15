@@ -547,6 +547,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          ChannelBuffer buffer) throws IOException {
 
         String host = AsyncHttpProviderUtils.getHost(uri);
+        boolean webSocket = isWebSocket(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
@@ -567,11 +568,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-        boolean webSocket = isWebSocket(uri);
+
         if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":" + uri.getPort());
+            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":"
+                    + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
             nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
             nettyRequest.addHeader("Sec-WebSocket-Version", "13");
         }
