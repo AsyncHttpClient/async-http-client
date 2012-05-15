@@ -2346,7 +2346,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
+                if (!statusReceived) {
+                    h.onClose(new NettyWebSocket(ctx.getChannel()), 1002, "Bad response status " + response.getStatus().getCode());
+                    future.done(null);
+                    return;
+                }
+
+                if (!validStatus || !validUpgrade || !validConnection) {
                     throw new IOException("Invalid handshake response");
                 }
 
