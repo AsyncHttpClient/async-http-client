@@ -100,10 +100,8 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
         DelayedExecutor.IdleConnectionQueue conQueue = connectionsPool.get(uri);
         if (conQueue == null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Creating new Connection queue for uri [{}] and connection [{}]",
-                        new Object[]{uri, connection});
-            }
+            LOG.debug("Creating new Connection queue for uri [{}] and connection [{}]",
+                        uri, connection);
             DelayedExecutor.IdleConnectionQueue newPool =
                     delayedExecutor.createIdleConnectionQueue(timeout);
             conQueue = connectionsPool.putIfAbsent(uri, newPool);

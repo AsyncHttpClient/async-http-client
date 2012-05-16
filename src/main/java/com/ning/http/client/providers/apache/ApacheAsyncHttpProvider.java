@@ -859,7 +859,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
          */
         public synchronized void run() {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
-                logger.debug("Request Timeout expired for " + this.apacheResponseFuture);
+                logger.debug("Request Timeout expired for {}", this.apacheResponseFuture);
 
                 int requestTimeout = config.getRequestTimeoutInMs();
                 PerRequestConfig p = this.apacheResponseFuture.getRequest().getPerRequestConfig();
