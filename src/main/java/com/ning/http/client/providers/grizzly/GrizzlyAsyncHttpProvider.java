@@ -554,9 +554,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             ctx.write(requestPacket, ctx.getTransportContext().getCompletionHandler());
         }
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("REQUEST: " + requestPacket.toString());
-        }
+        LOGGER.debug("REQUEST: {}", requestPacket);
         
         return isWriteComplete;
     }
@@ -1221,9 +1219,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                            FilterChainContext ctx) {
 
             super.onHttpHeadersParsed(httpHeader, ctx);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("RESPONSE: " + httpHeader.toString());
-            }
+            LOGGER.debug("RESPONSE: {}", httpHeader);
             if (httpHeader.containsHeader(Header.Connection)) {
                 if ("close".equals(httpHeader.getHeader(Header.Connection))) {
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
