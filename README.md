@@ -29,7 +29,9 @@ Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-
     Response r = f.get();
 ```
 
-You can also accomplish asynchronous operation without using a Future if you want to receive and process the response in your handler:
+Note that in this case all the content must be read fully in memory, even if you used `getResponseBodyAsStream()' method on returned `Response` object.
+
+You can also accomplish asynchronous (non-blocking) operation without using a Future if you want to receive and process the response in your handler:
 
 ```java
     import com.ning.http.client.*;
@@ -51,6 +53,8 @@ You can also accomplish asynchronous operation without using a Future if you wan
         }
     });
 ```
+
+(this will also fully read `Response` in memory before calling `onCompleted`)
 
 You can also mix Future with AsyncHandler to only retrieve part of the asynchronous response
 
@@ -74,8 +78,10 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
         }
     });
     
-    int statuѕCode = f.get();
+    int statusCode = f.get();
 ```
+
+which is something you want to do for large responses: this way you can process content as soon as it becomes available, piece by piece, without having to buffer it all in memory.
 
  You have full control on the Response life cycle, so you can decide at any moment to stop processing what the server is sending back:
 
@@ -85,14 +91,16 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 
       AsyncHttpClient c = new AsyncHttpClient();
       Future<String> f = c.prepareGet("http://www.ning.com/ ").execute(new AsyncHandler<String>() {
-          private StringBuilder builder = new StringBuilder();
+          private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
           @Override
           public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
               int statusCode = status.getStatusCode();
-               // The Status have been read
-               // If you don't want to read the headers,body or stop processing the response
-               return STATE.ABORT;
+              // The Status have been read
+              // If you don't want to read the headers,body or stop processing the response
+              if (statusCode >= 500) {
+                  return STATE.ABORT;
+              }
           }
 
           @Override
@@ -105,7 +113,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 
           @Override
           public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-               builder.append(new String(bodyPart.getBodyPartBytes()));
+               bytes.write(bodyPart.getBodyPartBytes());
                return STATE.CONTINUE
           }
 
@@ -113,7 +121,8 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
           public String onCompleted() throws Exception {
                // Will be invoked once the response has been fully read or a ResponseComplete exception
                // has been thrown.
-               return builder.toString();
+               // NOTE: should probably use Content-Encoding from headers
+               return bytes.toString("UTF-8");
           }
 
           @Override
