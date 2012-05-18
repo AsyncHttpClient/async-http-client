@@ -305,7 +305,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final AtomicReference<String> text = new AtomicReference<String>("");
 
-        WebSocket websocket = c.prepareGet(getTargetUrl())
+        /*WebSocket websocket =*/ c.prepareGet(getTargetUrl())
                 .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
 
                     @Override
@@ -317,8 +317,6 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     @Override
                     public void onFragment(String fragment, boolean last) {
                     }
-
-                    boolean t = false;
 
                     @Override
                     public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {

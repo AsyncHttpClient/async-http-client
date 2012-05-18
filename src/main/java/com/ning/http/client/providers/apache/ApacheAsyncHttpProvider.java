@@ -323,8 +323,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
 
-            if (request.getHeaders().getFirstValue("Expect") != null
-                    && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
+            String expect = request.getHeaders().getFirstValue("Expect");
+            if (expect != null && expect.equalsIgnoreCase("100-Continue")) {
                 post.setUseExpectHeader(true);
             }
             method = post;
@@ -357,10 +357,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         method.setFollowRedirects(false);
-        if ((request.getCookies() != null) && !request.getCookies().isEmpty()) {
-            for (Cookie cookie : request.getCookies()) {
-                method.setRequestHeader("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
-            }
+        Collection<Cookie> cookies = request.getCookies();
+        if ((cookies != null) && !cookies.isEmpty()) {
+            method.setRequestHeader("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
         }
 
         if (request.getHeaders() != null) {
@@ -373,8 +372,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        if (request.getHeaders().getFirstValue("User-Agent") != null) {
-            method.setRequestHeader("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
+        String ua = request.getHeaders().getFirstValue("User-Agent");
+        if (ua != null) {
+            method.setRequestHeader("User-Agent", ua);
         } else if (config.getUserAgent() != null) {
             method.setRequestHeader("User-Agent", config.getUserAgent());
         } else {

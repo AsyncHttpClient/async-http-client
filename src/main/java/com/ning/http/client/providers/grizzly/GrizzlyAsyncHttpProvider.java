@@ -190,9 +190,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings({"unchecked"})
     public <T> ListenableFuture<T> execute(final Request request,
-                                           final AsyncHandler<T> handler) throws IOException {
+            final AsyncHandler<T> handler) throws IOException {
 
         final GrizzlyResponseFuture<T> future =
                 new GrizzlyResponseFuture<T>(this, request, handler);
@@ -1322,8 +1321,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-
-        @SuppressWarnings({"unchecked"})
         @Override
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
@@ -2211,6 +2208,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         // -------------------------------------------------------- Constructors
 
+        @SuppressWarnings("unchecked")
         ConnectionManager(final GrizzlyAsyncHttpProvider provider,
                           final TCPNIOTransport transport) {
 

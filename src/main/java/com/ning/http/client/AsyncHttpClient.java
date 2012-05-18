@@ -506,7 +506,7 @@ public class AsyncHttpClient {
      */
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).build();
+        FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
         fc = preProcessRequest(fc);
 
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
@@ -520,7 +520,7 @@ public class AsyncHttpClient {
      * @throws IOException
      */
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
+        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
         fc = preProcessRequest(fc);
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
@@ -531,7 +531,7 @@ public class AsyncHttpClient {
      * @param fc {@link FilterContext}
      * @return {@link FilterContext}
      */
-    private FilterContext preProcessRequest(FilterContext fc) throws IOException {
+    private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);

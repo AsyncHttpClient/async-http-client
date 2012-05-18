@@ -54,7 +54,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +61,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -207,9 +205,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     }
 
     private class RedirectHandler extends AbstractHandler {
-
-        private AtomicBoolean redirectOnce = new AtomicBoolean(false);
-
         public void handle(String s,
                            Request r,
                            HttpServletRequest request,

@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * A callback class used when an HTTP response body is received.
  */
 public class ResponseBodyPart extends HttpResponseBodyPart {
+    // Empty arrays are immutable, can freely reuse
+    private final static byte[] NO_BYTES = new byte[0];
 
     private final HttpChunk chunk;
     private final HttpResponse response;
@@ -40,11 +42,11 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final boolean isLast;
     private boolean closeConnection = false;
 
+    /**
+     * Constructor used for non-chunked GET requests and HEAD requests.
+     */
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
-        super(uri, provider);
-        isLast = last;
-        this.chunk = null;
-        this.response = response;
+        this(uri, response, provider, null, last);
     }
 
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
@@ -53,12 +55,13 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         this.response = response;
         isLast = last;
     }
-
+    
     /**
      * Return the response body's part bytes received.
      *
      * @return the response body's part bytes received.
      */
+    @Override
     public byte[] getBodyPartBytes() {
         byte[] bp = bytes.get();
         if (bp != null) {
@@ -66,14 +69,11 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         }
 
         ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
-        int read = b.readableBytes();
-        int index = b.readerIndex();
+        int available = b.readableBytes();
 
-        byte[] rb = new byte[read];
-        b.readBytes(rb);
-        bytes.set(rb);
-        b.readerIndex(index);
-        return bytes.get();
+        final byte[] rb = (available == 0) ? NO_BYTES : new byte[available];
+        b.getBytes(b.readerIndex(), rb, 0, available);
+        return rb;
     }
 
     @Override
@@ -83,19 +83,18 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public int length() {
-        // ugly...
-        return getBodyPartBytes().length;
+        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
+        return b.readableBytes();
     }
     
+    @Override
     public int writeTo(OutputStream outputStream) throws IOException {
-        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
-        int read = b.readableBytes();
-        int index = b.readerIndex();
-        if (read > 0) {
-            b.readBytes(outputStream, read);
+        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
+        int available = b.readableBytes();
+        if (available > 0) {
+            b.getBytes(b.readerIndex(), outputStream, available);
         }
-        b.readerIndex(index);
-        return read;
+        return available;
     }
 
     @Override

@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author The Grizzly Team
  * @since 1.7.0
  */
+@SuppressWarnings("rawtypes")
 public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection> {
 
     private final static Logger LOG = LoggerFactory.getLogger(GrizzlyConnectionsPool.class);
@@ -304,7 +305,6 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
         private class DelayedRunnable implements Runnable {
 
-            @SuppressWarnings("unchecked")
             @Override
             public void run() {
                 while (isStarted) {
@@ -315,8 +315,9 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
                         final TimeoutResolver resolver = delayQueue.resolver;
 
-                        for (Iterator<Connection> it = delayQueue.queue.iterator(); it.hasNext(); ) {
-                            final Connection element = it.next();
+                        for (@SuppressWarnings("rawtypes")
+                        Iterator<Connection> it = delayQueue.queue.iterator(); it.hasNext(); ) {
+                            final Connection<?> element = (Connection<?>) it.next();
                             final Long timeoutMs = resolver.getTimeoutMs(element);
 
                             if (timeoutMs == null || timeoutMs == UNSET_TIMEOUT) {

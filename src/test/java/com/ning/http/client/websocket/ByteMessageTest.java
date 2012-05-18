@@ -159,7 +159,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-            WebSocket websocket = c.prepareGet(getTargetUrl())
+            /*WebSocket websocket =*/ c.prepareGet(getTargetUrl())
                     .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
                         @Override

@@ -67,8 +67,6 @@ import static org.testng.Assert.fail;
  * @author dominict
  */
 public abstract class MultipartUploadTest extends AbstractBasicTest {
-    private String BASE_URL;
-
     private String servletEndpointRedirectUrl;
     public static byte GZIPTEXT[] = new byte[]{31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0};
 

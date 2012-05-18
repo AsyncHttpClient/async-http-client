@@ -678,7 +678,7 @@ public class SimpleAsyncHttpClient {
     }
 
     private final static class ResumableBodyConsumerAsyncHandler
-            extends ResumableAsyncHandler<Response>
+            extends ResumableAsyncHandler
             implements ProgressAsyncHandler<Response> {
 
         private final ProgressAsyncHandler<Response> delegate;

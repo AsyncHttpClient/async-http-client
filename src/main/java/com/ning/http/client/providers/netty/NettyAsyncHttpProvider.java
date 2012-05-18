@@ -113,10 +113,10 @@ import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -142,7 +142,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final static String HTTP = "http";
     private static final String WEBSOCKET = "ws";
     private static final String WEBSOCKET_SSL = "wss";
+
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
+    private final static Charset UTF8 = Charset.forName("UTF-8");
+    
     private final ClientBootstrap plainBootstrap;
     private final ClientBootstrap secureBootstrap;
     private final ClientBootstrap webSocketBootstrap;
@@ -539,7 +542,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return construct(config, request, new HttpMethod(method), uri, buffer);
     }
 
-    @SuppressWarnings("deprecation")
     private static HttpRequest construct(AsyncHttpClientConfig config,
                                          Request request,
                                          HttpMethod m,
@@ -1451,18 +1453,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         markAsDone(future, ctx);
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateStatusAndInterrupt(AsyncHandler handler, HttpResponseStatus c) throws Exception {
+    private final boolean updateStatusAndInterrupt(AsyncHandler<?> handler, HttpResponseStatus c) throws Exception {
         return handler.onStatusReceived(c) != STATE.CONTINUE;
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateHeadersAndInterrupt(AsyncHandler handler, HttpResponseHeaders c) throws Exception {
+    private final boolean updateHeadersAndInterrupt(AsyncHandler<?> handler, HttpResponseHeaders c) throws Exception {
         return handler.onHeadersReceived(c) != STATE.CONTINUE;
     }
 
-    @SuppressWarnings("unchecked")
-    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler handler, HttpResponseBodyPart c) throws Exception {
+    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
         boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
         if (c.closeUnderlyingConnection()) {
             future.setKeepAlive(false);
@@ -2385,7 +2384,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                     webSocket.onMessage(rp.getBodyPartBytes());
-                    webSocket.onTextMessage(frame.getBinaryData().toString("UTF-8"));
+                    webSocket.onTextMessage(frame.getBinaryData().toString(UTF8));
 
                     if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
                         try {

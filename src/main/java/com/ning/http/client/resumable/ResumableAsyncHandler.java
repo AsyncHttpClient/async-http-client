@@ -18,6 +18,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
 import com.ning.http.client.Response.ResponseBuilder;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import org.slf4j.Logger;
@@ -38,13 +39,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p/>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.
  */
-public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
+public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final AtomicLong byteTransferred;
     private Integer contentLength;
     private String url;
     private final ResumableProcessor resumableProcessor;
-    private final AsyncHandler<T> decoratedAsyncHandler;
+    private final AsyncHandler<Response> decoratedAsyncHandler;
     private static Map<String, Long> resumableIndex;
     private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private ResponseBuilder responseBuilder = new ResponseBuilder();
@@ -53,7 +54,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
 
     private ResumableAsyncHandler(long byteTransferred,
                                   ResumableProcessor resumableProcessor,
-                                  AsyncHandler<T> decoratedAsyncHandler,
+                                  AsyncHandler<Response> decoratedAsyncHandler,
                                   boolean accumulateBody) {
 
         this.byteTransferred = new AtomicLong(byteTransferred);
@@ -82,11 +83,11 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
         this(0, null, null, false);
     }
 
-    public ResumableAsyncHandler(AsyncHandler<T> decoratedAsyncHandler) {
+    public ResumableAsyncHandler(AsyncHandler<Response> decoratedAsyncHandler) {
         this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
 
-    public ResumableAsyncHandler(long byteTransferred, AsyncHandler<T> decoratedAsyncHandler) {
+    public ResumableAsyncHandler(long byteTransferred, AsyncHandler<Response> decoratedAsyncHandler) {
         this(byteTransferred, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
     }
 
@@ -160,7 +161,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
      * {@inheritDoc}
      */
     /* @Override */
-    public T onCompleted() throws Exception {
+    public Response onCompleted() throws Exception {
         resumableProcessor.remove(url);
         resumableListener.onAllBytesReceived();
 
@@ -168,7 +169,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
             decoratedAsyncHandler.onCompleted();
         }
         // Not sure
-        return (T) responseBuilder.build();
+        return responseBuilder.build();
     }
 
     /**

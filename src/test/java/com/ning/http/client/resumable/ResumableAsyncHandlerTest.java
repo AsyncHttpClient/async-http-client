@@ -15,7 +15,6 @@ package com.ning.http.client.resumable;
 
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -29,7 +28,7 @@ public class ResumableAsyncHandlerTest {
     public void testAdjustRange() {
         MapResumableProcessor proc = new MapResumableProcessor();
 
-        ResumableAsyncHandler<Response> h = new ResumableAsyncHandler<Response>(proc);
+        ResumableAsyncHandler h = new ResumableAsyncHandler(proc);
         Request request = new RequestBuilder("GET").setUrl("http://test/url").build();
         Request newRequest = h.adjustRequestRange(request);
         assertEquals(newRequest.getUrl(), request.getUrl());

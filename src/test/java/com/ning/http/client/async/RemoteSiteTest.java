@@ -161,7 +161,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         InputStream stream = r.getResponseBodyAsStream();
         int available = stream.available();
         int[] lengthWrapper = new int[1];
-        byte[] bytes = AsyncHttpProviderUtils.readFully(stream, lengthWrapper);
+        /*byte[] bytes =*/ AsyncHttpProviderUtils.readFully(stream, lengthWrapper);
         int byteToRead = lengthWrapper[0];
 
         Assert.assertEquals(available, byteToRead);
