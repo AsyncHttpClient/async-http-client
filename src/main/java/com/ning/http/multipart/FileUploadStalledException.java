@@ -17,6 +17,6 @@ import java.io.IOException;
 /**
  * @author Gail Hernandez
  */
+@SuppressWarnings("serial")
 public class FileUploadStalledException extends IOException {
-	
 }

@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ThrottleRequestFilter implements RequestFilter {
     private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
+    @SuppressWarnings("unused")
     private final int maxConnections;
     private final Semaphore available;
     private final int maxWait;
@@ -51,7 +52,7 @@ public class ThrottleRequestFilter implements RequestFilter {
      * {@inheritDoc}
      */
     /* @Override */
-    public FilterContext filter(FilterContext ctx) throws FilterException {
+    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
         try {
             if (logger.isDebugEnabled()) {
@@ -68,10 +69,10 @@ public class ThrottleRequestFilter implements RequestFilter {
                     String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
-        return new FilterContext.FilterContextBuilder(ctx).asyncHandler(new AsyncHandlerWrapper(ctx.getAsyncHandler())).build();
+        return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(new AsyncHandlerWrapper<T>(ctx.getAsyncHandler())).build();
     }
 
-    private class AsyncHandlerWrapper<T> implements AsyncHandler {
+    private class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 
         private final AsyncHandler<T> asyncHandler;
 

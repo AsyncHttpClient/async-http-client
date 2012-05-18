@@ -259,6 +259,7 @@ public class RetryNonBlockingIssue {
         }
     }
 
+    @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
         private Map<String, Integer> requests = new

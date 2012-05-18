@@ -47,7 +47,6 @@ import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
@@ -205,7 +204,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         ApacheResponseFuture<T> f = new ApacheResponseFuture<T>(handler, requestTimeout, request, method);
         f.touch();
 
-        f.setInnerFuture(config.executorService().submit(new ApacheClientRunnable(request, handler, method, f, httpClient)));
+        f.setInnerFuture(config.executorService().submit(new ApacheClientRunnable<T>(request, handler, method, f, httpClient)));
         maxConnections.incrementAndGet();
         return f;
     }
@@ -456,7 +455,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
                 if (delay != -1) {
                     ReaperFuture reaperFuture = new ReaperFuture(future);
-                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
+                    Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                     reaperFuture.setScheduledFuture(scheduledFuture);
                     future.setReaperFuture(reaperFuture);
                 }
@@ -475,7 +474,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
 
                 ApacheResponseStatus status = new ApacheResponseStatus(uri, method, ApacheAsyncHttpProvider.this);
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
+                FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);
                     if (fc == null) {
@@ -594,7 +593,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             } catch (Throwable t) {
 
                 if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
-                    FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
+                    FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(asyncHandler)
                             .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
 
                     try {
@@ -666,7 +665,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             return t;
         }
 
-        private FilterContext handleIoException(FilterContext fc) throws FilterException {
+        private FilterContext<T> handleIoException(FilterContext<T> fc) throws FilterException {
             for (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
                 fc = asyncFilter.filter(fc);
                 if (fc == null) {

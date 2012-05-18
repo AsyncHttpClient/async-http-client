@@ -28,8 +28,11 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     private WebSocket webSocket;
     private final ConcurrentLinkedQueue<WebSocketListener> l;
+    @SuppressWarnings("unused")
     private final String protocol;
+    @SuppressWarnings("unused")
     private final long maxByteSize;
+    @SuppressWarnings("unused")
     private final long maxTextSize;
     private final AtomicBoolean ok = new AtomicBoolean(false);
 

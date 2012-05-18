@@ -555,7 +555,7 @@ public class AsyncHttpClient {
             builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
             request = builder.build();
         }
-        fc = new FilterContext.FilterContextBuilder(fc).request(request).build();
+        fc = new FilterContext.FilterContextBuilder<T>(fc).request(request).build();
         return fc;
     }
 

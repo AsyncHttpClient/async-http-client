@@ -36,12 +36,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 /**
  * Proxy usage tests.
  */
-public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
+@SuppressWarnings("deprecation")
+public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
@@ -158,7 +158,6 @@ public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
                 .setUrl(getTargetUrl2())
                 .setHeader("Content-Type", "text/html").build();
 
-        StringBuffer s = new StringBuffer();
         Response r = client.get().get();
 
         assertEquals(r.getStatusCode(), 200);

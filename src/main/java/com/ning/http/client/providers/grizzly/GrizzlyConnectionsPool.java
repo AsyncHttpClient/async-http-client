@@ -315,8 +315,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
                         final TimeoutResolver resolver = delayQueue.resolver;
 
-                        for (@SuppressWarnings("rawtypes")
-                        Iterator<Connection> it = delayQueue.queue.iterator(); it.hasNext(); ) {
+                        for (Iterator<Connection> it = delayQueue.queue.iterator(); it.hasNext(); ) {
                             final Connection<?> element = (Connection<?>) it.next();
                             final Long timeoutMs = resolver.getTimeoutMs(element);
 

@@ -150,15 +150,15 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
 
     protected abstract AsyncHttpProviderConfig getProviderConfig();
 
-
+    @SuppressWarnings("serial")
     class MockRedirectHttpServlet extends HttpServlet {
         public void service(HttpServletRequest req, HttpServletResponse res)
                 throws ServletException, IOException {
             res.sendRedirect("/overthere");
         }
-
     }
 
+    @SuppressWarnings("serial")
     class MockFullResponseHttpServlet extends HttpServlet {
 
         private static final String contentType = "text/xml";

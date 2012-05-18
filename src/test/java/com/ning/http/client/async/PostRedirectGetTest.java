@@ -80,7 +80,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 setStrict302Handling(strict).
                 addResponseFilter(new ResponseFilter() {
                     @Override
-                    public FilterContext filter(FilterContext ctx) throws FilterException {
+                    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                         // pass on the x-expect-get and remove the x-redirect
                         // headers if found in the response
                         ctx.getResponseHeaders().getHeaders().get("x-expect-post");
@@ -118,7 +118,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
         AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).
                 addResponseFilter(new ResponseFilter() {
                     @Override
-                    public FilterContext filter(FilterContext ctx) throws FilterException {
+                    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                         // pass on the x-expect-get and remove the x-redirect
                         // headers if found in the response
                         ctx.getResponseHeaders().getHeaders().get("x-expect-get");

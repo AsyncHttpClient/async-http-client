@@ -508,7 +508,6 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = {"standalone", "default_provider"})
     public void closeConnectionTest() throws Throwable {
-        final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
 
         Response r = c.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {

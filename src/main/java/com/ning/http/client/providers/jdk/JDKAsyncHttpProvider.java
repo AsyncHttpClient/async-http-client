@@ -121,7 +121,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         return execute(request, handler, null);
     }
 
-    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<?> future) throws IOException {
+    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler, ListenableFuture<T> future) throws IOException {
         if (isClose.get()) {
             throw new IOException("Closed");
         }
@@ -133,10 +133,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
-        Proxy proxy = null;
         if (!avoidProxy && (proxyServer != null || realm != null)) {
             try {
-                proxy = configureProxyAndAuth(proxyServer, realm);
+                /*Proxy proxy =*/ configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
                 throw new IOException(e.getMessage());
             }
@@ -148,15 +147,15 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
                 conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
 
-        JDKDelegateFuture delegate = null;
+        JDKDelegateFuture<T> delegate = null;
         if (future != null) {
-            delegate = new JDKDelegateFuture(handler, requestTimeout, future, urlConnection);
+            delegate = new JDKDelegateFuture<T>(handler, requestTimeout, future, urlConnection);
         }
 
-        JDKFuture f = delegate == null ? new JDKFuture<T>(handler, requestTimeout, urlConnection) : delegate;
+        JDKFuture<T> f = (delegate == null) ? new JDKFuture<T>(handler, requestTimeout, urlConnection) : delegate;
         f.touch();
 
-        f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection(urlConnection, request, handler, f)));
+        f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection<T>(urlConnection, request, handler, f)));
         maxConnections.incrementAndGet();
 
         return f;
@@ -252,7 +251,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
                 ResponseStatus status = new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this);
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
+                FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);
                     if (fc == null) {

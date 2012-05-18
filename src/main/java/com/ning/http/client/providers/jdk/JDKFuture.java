@@ -58,7 +58,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
         this.innerFuture = innerFuture;
     }
 
-    public void done(Callable callable) {
+    public void done(Callable<?> callable) {
         isDone.set(true);
         super.done();
     }

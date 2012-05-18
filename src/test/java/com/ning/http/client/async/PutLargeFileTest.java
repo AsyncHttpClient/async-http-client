@@ -62,7 +62,7 @@ public abstract class PutLargeFileTest
             throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
         long repeats = (1024 / bytes.length) + 1;
-        int timeout = (5000);
+//        int timeout = (5000);
         largeFile = createTempFile(bytes, (int) repeats);
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();

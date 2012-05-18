@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
  */
 public class ResumableRandomAccessFileListener implements ResumableListener {
     private final RandomAccessFile file;
-    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
 
     public ResumableRandomAccessFileListener(RandomAccessFile file) {
         this.file = file;

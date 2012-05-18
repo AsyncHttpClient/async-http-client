@@ -174,6 +174,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
         return s;
     }
 
+    @SuppressWarnings("serial")
     public static class MockTimeoutHttpServlet extends HttpServlet {
         private static final String contentType = "text/plain";
         public static long DEFAULT_TIMEOUT = 2000;

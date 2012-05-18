@@ -107,8 +107,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl())
-                    .execute().get();
+            /*Response response =*/ c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (IOException ex) {
             assertNotNull(ex);
@@ -126,7 +125,8 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addResponseFilter(new ResponseFilter() {
 
-            public FilterContext filter(FilterContext ctx) throws FilterException {
+            //@Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
                 return ctx;
             }
 
@@ -152,11 +152,11 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         b.addResponseFilter(new ResponseFilter() {
 
-            public FilterContext filter(FilterContext ctx) throws FilterException {
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
                 if (replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -184,11 +184,11 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         b.addResponseFilter(new ResponseFilter() {
 
-            public FilterContext filter(FilterContext ctx) throws FilterException {
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -216,14 +216,14 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         b.addResponseFilter(new ResponseFilter() {
 
-            public FilterContext filter(FilterContext ctx) throws FilterException {
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
                 if (ctx.getResponseHeaders() != null
                         && ctx.getResponseHeaders().getHeaders().getFirstValue("Ping").equals("Pong")
                         && replay.getAndSet(false)) {
 
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
-                    return new FilterContext.FilterContextBuilder()
+                    return new FilterContext.FilterContextBuilder<T>()
                             .asyncHandler(ctx.getAsyncHandler())
                             .request(request)
                             .replayRequest(true)

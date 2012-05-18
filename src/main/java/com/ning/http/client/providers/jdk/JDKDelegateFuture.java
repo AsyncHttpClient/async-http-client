@@ -25,12 +25,13 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
 
     private final ListenableFuture<V> delegateFuture;
 
-    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs, ListenableFuture<V> delegateFuture, HttpURLConnection urlConnection) {
+    public JDKDelegateFuture(AsyncHandler<V> asyncHandler, int responseTimeoutInMs,
+            ListenableFuture<V> delegateFuture, HttpURLConnection urlConnection) {
         super(asyncHandler, responseTimeoutInMs, urlConnection);
         this.delegateFuture = delegateFuture;
     }
 
-    public void done(Callable callable) {
+    public void done(Callable<?> callable) {
         delegateFuture.done(callable);
         super.done(callable);
     }

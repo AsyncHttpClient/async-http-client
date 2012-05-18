@@ -15,9 +15,9 @@ package com.ning.http.client.async.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.async.ProxyyTunnellingTest;
+import com.ning.http.client.async.ProxyTunnellingTest;
 
-public class NettyProxyTunnellingTest extends ProxyyTunnellingTest {
+public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);

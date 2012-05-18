@@ -257,9 +257,6 @@ public class Realm {
      * A builder for {@link Realm}
      */
     public static class RealmBuilder {
-
-        private static final Logger logger = LoggerFactory.getLogger(RealmBuilder.class);
-
         //
         //  Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
         //  This code is already Apache licenced.

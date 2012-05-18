@@ -46,7 +46,7 @@ public interface ListenableFuture<V> extends Future<V> {
      *
      * @param callable
      */
-    void done(Callable callable);
+    void done(Callable<?> callable);
 
     /**
      * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}

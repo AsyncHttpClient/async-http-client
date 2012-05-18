@@ -109,7 +109,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                         .build()
         );
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Response>> futures = new ArrayList<Future<Response>>();
         boolean caughtError = false;
         for (int i = 0; i < urls.length; i++) {
             try {
@@ -126,9 +126,9 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
         Assert.assertTrue(caughtError);
 
         // get results of executed requests
-        for (Future future : futures) {
+        for (Future<Response> future : futures) {
             try {
-                Object res = future.get();
+                /*Response res =*/ future.get();
             } catch (InterruptedException e) {
                 log.error("Error!", e);
             } catch (ExecutionException e) {
