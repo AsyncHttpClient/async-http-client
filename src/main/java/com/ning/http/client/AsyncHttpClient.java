@@ -22,6 +22,7 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
+import java.io.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,7 +139,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.
  */
-public class AsyncHttpClient {
+public class AsyncHttpClient implements Closeable {
 
     private final static String DEFAULT_PROVIDER = "com.ning.http.client.providers.netty.NettyAsyncHttpProvider";
     private final AsyncHttpProvider httpProvider;
