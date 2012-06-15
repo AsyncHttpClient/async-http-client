@@ -55,7 +55,7 @@ public interface AsyncHandler<T> {
          */
         CONTINUE,
         /**
-         * Upgrade the protocol. When specified, the AsyncHttpProvider will try to invoke the {@link UpgradeHandler#onReady}
+         * Upgrade the protocol.
          */
         UPGRADE
     }
