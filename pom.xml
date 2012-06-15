@@ -529,7 +529,7 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-websockets</artifactId>
-                    <version>2.2.5</version>
+                    <version>2.2.10</version>
                     <optional>true</optional>
                 </dependency>
             </dependencies>

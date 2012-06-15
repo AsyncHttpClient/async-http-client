@@ -21,6 +21,7 @@ import com.ning.http.client.providers.ResponseBase;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.http.Cookies;
 import org.glassfish.grizzly.http.CookiesBuilder;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.memory.Buffers;
@@ -199,11 +200,12 @@ public class GrizzlyResponse extends ResponseBase {
     // --------------------------------------------------------- Private Methods
 
 
-    private List<Cookie> convertCookies(final List<org.glassfish.grizzly.http.Cookie> grizzlyCookies) {
+    private List<Cookie> convertCookies(Cookies cookies) {
 
-        List<Cookie> cookies = new ArrayList<Cookie>(grizzlyCookies.size());
+        final org.glassfish.grizzly.http.Cookie[] grizzlyCookies = cookies.get();
+        List<Cookie> convertedCookies = new ArrayList<Cookie>(grizzlyCookies.length);
         for (org.glassfish.grizzly.http.Cookie gCookie : grizzlyCookies) {
-            cookies.add(new Cookie(gCookie.getDomain(),
+            convertedCookies.add(new Cookie(gCookie.getDomain(),
                                    gCookie.getName(),
                                    gCookie.getValue(),
                                    gCookie.getPath(),
@@ -211,7 +213,7 @@ public class GrizzlyResponse extends ResponseBase {
                                    gCookie.isSecure(),
                                    gCookie.getVersion()));
         }
-        return Collections.unmodifiableList(cookies);
+        return Collections.unmodifiableList(convertedCookies);
 
     }
 
