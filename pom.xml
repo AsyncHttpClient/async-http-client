@@ -448,8 +448,9 @@
                         <exclude>**/Request$EntityWriter</exclude>
                         <exclude>**/RequestBuilderBase</exclude>
                         <exclude>**/Response</exclude>
-                        <exclude>**/Response$</exclude>
+                        <exclude>**/Response$*</exclude>
                         <exclude>**/FilterContext</exclude>
+                        <exclude>**/FilterContext$*</exclude>
                         <exclude>**/NettyResponseFuture</exclude>
                         <exclude>**/**ResponseBodyPart</exclude>
                         <exclude>**/**WebSocket</exclude>

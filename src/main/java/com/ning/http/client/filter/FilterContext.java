@@ -73,7 +73,6 @@ public class FilterContext<T> {
 
     /**
      * Return the response {@link HttpResponseHeaders}
-     * @return
      */
     public HttpResponseHeaders getResponseHeaders() {
         return b.headers;

@@ -521,9 +521,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase();
-            if ("http".equals(protocol)) {
+            if ("http".equals(protocol) || "ws".equals(protocol)) {
                 port = 80;
-            } else if ("https".equals(protocol)) {
+            } else if ("https".equals(protocol) || "wss".equals(protocol)) {
                 port = 443;
             } else {
                 throw new IllegalArgumentException("Unknown protocol: " + protocol);
@@ -1283,39 +1283,46 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     return;
                 }
             }
-
-            if (context.currentState != AsyncHandler.STATE.ABORT) {
-                boolean upgrade = context.currentState == AsyncHandler.STATE.UPGRADE;
+            if (context.isWSRequest) {
                 try {
-                    context.currentState = handler.onHeadersReceived(
-                            responseHeaders);
-                } catch (Exception e) {
-                    httpHeader.setSkipRemainder(true);
-                    context.abort(e);
-                    return;
-                }
-                if (upgrade) {
-                    try {
+                    context.protocolHandler.setConnection(ctx.getConnection());
+                    DefaultWebSocket ws = new DefaultWebSocket(context.protocolHandler);
+                    context.webSocket = new GrizzlyWebSocketAdapter(ws);
+                    if (context.currentState == AsyncHandler.STATE.UPGRADE) {
                         httpHeader.setChunked(false);
-                        context.protocolHandler.setConnection(ctx.getConnection());
-                        DefaultWebSocket ws = new DefaultWebSocket(context.protocolHandler);
                         ws.onConnect();
-                        context.webSocket = new GrizzlyWebSocketAdapter(ws);
                         WebSocketEngine.getEngine().setWebSocketHolder(ctx.getConnection(),
                                 context.protocolHandler,
                                 ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
                         final int wsTimeout = context.provider.clientConfig.getWebSocketIdleTimeoutInMs();
                         IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(),
-                                                           ((wsTimeout <= 0)
-                                                                   ? IdleTimeoutFilter.FOREVER
-                                                                   : wsTimeout),
-                                                           TimeUnit.MILLISECONDS);
+                                ((wsTimeout <= 0)
+                                        ? IdleTimeoutFilter.FOREVER
+                                        : wsTimeout),
+                                TimeUnit.MILLISECONDS);
                         context.result(handler.onCompleted());
+                    } else {
+                        httpHeader.setSkipRemainder(true);
+                        ((WebSocketUpgradeHandler) context.handler).
+                                onClose(context.webSocket,
+                                        1002,
+                                        "WebSocket protocol error: unexpected HTTP response status during handshake.");
+                        context.result(null);
+                    }
+                } catch (Exception e) {
+                    httpHeader.setSkipRemainder(true);
+                    context.abort(e);
+                }
+            } else {
+                if (context.currentState != AsyncHandler.STATE.ABORT) {
+                    try {
+                        context.currentState = handler.onHeadersReceived(
+                                responseHeaders);
                     } catch (Exception e) {
                         httpHeader.setSkipRemainder(true);
                         context.abort(e);
-                    } 
+                    }
                 }
             }
 

@@ -67,7 +67,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
-            throw new IllegalStateException("Invalid upgrade protocol, status should be 101 but was " + responseStatus.getStatusCode());
+            return STATE.ABORT;
         }
     }
 
@@ -113,6 +113,21 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
                 webSocket.addWebSocketListener(w);
             }
             w.onError(t);
+        }
+    }
+
+    public final void onClose(WebSocket webSocket, int status, String reasonPhrase) {
+        // Connect failure
+        if (this.webSocket == null) this.webSocket = webSocket;
+
+        for (WebSocketListener w : l) {
+            if (webSocket != null) {
+                webSocket.addWebSocketListener(w);
+            }
+            w.onClose(webSocket);
+            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(w.getClass())) {
+                WebSocketCloseCodeReasonListener.class.cast(w).onClose(webSocket, status, reasonPhrase);
+            }
         }
     }
 

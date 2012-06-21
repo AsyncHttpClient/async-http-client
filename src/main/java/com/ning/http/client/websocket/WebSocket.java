@@ -41,7 +41,7 @@ public interface WebSocket {
      * @param offset   starting offset.
      * @param len      length.
      * @param last     flag indicating whether or not this is the last fragment.
-     * @return
+     * @return this.
      */
     WebSocket stream(byte[] fragment, int offset, int len, boolean last);
 

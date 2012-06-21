@@ -14,7 +14,7 @@ package com.ning.http.client.websocket;
 
 /**
  * Extend the normal close listener with one that support the WebSocket's code and reason.
- * @See http://tools.ietf.org/html/rfc6455#section-5.5.1
+ * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
  */
 public interface WebSocketCloseCodeReasonListener {
 
