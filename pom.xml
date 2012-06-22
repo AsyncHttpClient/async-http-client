@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
@@ -7,19 +9,23 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
-    <artifactId>async-http-client</artifactId>
-    <name>Asynchronous Http Client</name>
+    <artifactId>async-http-client-project</artifactId>
+    <name>Asynchronous Http Client Project</name>
     <version>1.8.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <description>
-        Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
-        asynchronously process the HTTP responses.
+        The Async Http Client (AHC) library's purpose is to allow Java
+        applications to easily execute HTTP requests and
+        asynchronously process the response.
     </description>
     <url>http://github.com/sonatype/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:sonatype/async-http-client.git</connection>
+        <connection>scm:git:git@github.com:sonatype/async-http-client.git
+        </connection>
         <url>https://github.com/sonatype/async-http-client</url>
-        <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
+        <developerConnection>
+            scm:git:git@github.com:sonatype/async-http-client.git
+        </developerConnection>
     </scm>
     <issueManagement>
         <system>jira</system>
@@ -28,9 +34,14 @@
     <mailingLists>
         <mailingList>
             <name>asynchttpclient</name>
-            <archive>http://groups.google.com/group/asynchttpclient/topics</archive>
-            <subscribe>http://groups.google.com/group/asynchttpclient/subscribe</subscribe>
-            <unsubscribe>http://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
+            <archive>http://groups.google.com/group/asynchttpclient/topics
+            </archive>
+            <subscribe>
+                http://groups.google.com/group/asynchttpclient/subscribe
+            </subscribe>
+            <unsubscribe>
+                http://groups.google.com/group/asynchttpclient/subscribe
+            </unsubscribe>
             <post>asynchttpclient@googlegroups.com</post>
         </mailingList>
     </mailingLists>
@@ -58,6 +69,11 @@
             <id>neotyk</id>
             <name>Hubert Iwaniuk</name>
         </developer>
+        <developer>
+            <id>rlubke</id>
+            <name>Ryan Lubke</name>
+            <email>ryan.lubke@gmail.com</email>
+        </developer>
     </developers>
     <contributors>
         <contributor>
@@ -72,139 +88,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <dependencies>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>3.4.4.Final</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.6.2</version>
-        </dependency>
-
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>0.9.26</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.13</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>5.8</version>
-            <scope>test</scope>
-            <classifier>jdk15</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>8.1.1.v20120215</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>8.1.1.v20120215</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-websocket</artifactId>
-            <version>8.1.1.v20120215</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlets</artifactId>
-            <version>8.1.1.v20120215</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-security</artifactId>
-            <version>8.1.1.v20120215</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>coyote</artifactId>
-            <version>6.0.29</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>catalina</artifactId>
-            <version>6.0.29</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>servlet-api</artifactId>
-                    <groupId>org.apache.tomcat</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.0.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-            <version>1.2.2</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Optional Apache Http Client -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
     <build>
         <extensions>
             <!-- Enabling the use of SSH -->
@@ -239,12 +122,7 @@
                     <source>${source.property}</source>
                     <target>${target.property}</target>
                     <maxmem>1024m</maxmem>
-                    <excludes>
-                        <exclude>${compiler.exclude}</exclude>
-                    </excludes>
-                    <testExcludes>
-                        <testExclude>${test.compiler.exclude}</testExclude>
-                    </testExcludes>
+
                 </configuration>
             </plugin>
             <plugin>
@@ -252,7 +130,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
                 <configuration>
-                    <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+                    <redirectTestOutputToFile>
+                        ${surefire.redirectTestOutputToFile}
+                    </redirectTestOutputToFile>
                 </configuration>
             </plugin>
             <plugin>
@@ -284,18 +164,10 @@
                 <configuration>
                     <manifestLocation>META-INF</manifestLocation>
                     <instructions>
-                        <Bundle-Version>$(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))
+                        <Bundle-Version>
+                            $(replace;$(project.version);-SNAPSHOT;.$(tstamp;yyyyMMdd-HHmm))
                         </Bundle-Version>
                         <Bundle-Vendor>Sonatype</Bundle-Vendor>
-                        <Import-Package>
-                            org.jboss.netty.*;resolution:=optional,
-                            org.apache.commons.httpclient;resolution:=optional,
-                            org.apache.commons.httpclient.*;resolution:=optional,
-                            *
-                        </Import-Package>
-                        <Export-Package>
-                            com.ning.http.*;version="$(replace;$(project.version);-SNAPSHOT;"")"
-                        </Export-Package>
                     </instructions>
                 </configuration>
                 <executions>
@@ -387,7 +259,6 @@
                     <links>
                         <link>http://java.sun.com/javase/6/docs/api/</link>
                     </links>
-                    <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
@@ -399,6 +270,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -431,6 +303,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
             <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -470,71 +343,50 @@
         </plugins>
     </build>
     <reporting>
-      <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.8.1</version>
-            <configuration>
-                <aggregate>true</aggregate>
-                <source>1.6</source>
-                <encoding>UTF-8</encoding>
-                <maxmemory>1g</maxmemory>
-                <links>
-                    <link>http://java.sun.com/javase/6/docs/api/</link>
-                </links>
-                <excludePackageNames>${javadoc.package.exclude}</excludePackageNames>
-                <bootclasspath>${sun.boot.class.path}</bootclasspath>
-                <doclet>com.google.doclava.Doclava</doclet>
-                <useStandardDocletOptions>false</useStandardDocletOptions>
-                <additionalJOption>-J-Xmx1024m</additionalJOption>
-                <docletArtifact>
-                    <groupId>com.google.doclava</groupId>
-                    <artifactId>doclava</artifactId>
-                    <version>1.0.3</version>
-                </docletArtifact>
-                <additionalparam>
-                    -hdf project.name "${project.name} ${project.version}"
-                    -d ${project.reporting.outputDirectory}/apidocs
-                </additionalparam>
-            </configuration>
-            <reportSets>
-                <reportSet>
-                    <id>default</id>
-                    <reports>
-                        <report>javadoc</report>
-                    </reports>
-                </reportSet>
-            </reportSets>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-report-plugin</artifactId>
-            <version>${surefire.version}</version>
-        </plugin>
-      </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                    <source>1.6</source>
+                    <encoding>UTF-8</encoding>
+                    <maxmemory>1g</maxmemory>
+                    <links>
+                        <link>http://java.sun.com/javase/6/docs/api/</link>
+                    </links>
+                    <bootclasspath>${sun.boot.class.path}</bootclasspath>
+                    <doclet>com.google.doclava.Doclava</doclet>
+                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                    <additionalJOption>-J-Xmx1024m</additionalJOption>
+                    <docletArtifact>
+                        <groupId>com.google.doclava</groupId>
+                        <artifactId>doclava</artifactId>
+                        <version>1.0.3</version>
+                    </docletArtifact>
+                    <additionalparam>
+                        -hdf project.name "${project.name} ${project.version}"
+                        -d ${project.reporting.outputDirectory}/apidocs
+                    </additionalparam>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>default</id>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${surefire.version}</version>
+            </plugin>
+        </plugins>
     </reporting>
     <profiles>
-        <profile>
-            <id>grizzly</id>
-            <activation>
-                <jdk>[1.6,)</jdk>
-            </activation>
-            <properties>
-                <compiler.exclude>asdfasfd/**</compiler.exclude>
-                <test.compiler.exclude>asdfasdf/**</test.compiler.exclude>
-                <javadoc.package.exclude>asdfasdf</javadoc.package.exclude>
-                <target.property>1.5</target.property>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-websockets</artifactId>
-                    <version>2.2.10</version>
-                    <optional>true</optional>
-                </dependency>
-            </dependencies>
-        </profile>
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
@@ -570,7 +422,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone</groups>
-                            <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+                            <redirectTestOutputToFile>
+                                ${surefire.redirectTestOutputToFile}
+                            </redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -585,7 +439,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone, online</groups>
-                            <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+                            <redirectTestOutputToFile>
+                                ${surefire.redirectTestOutputToFile}
+                            </redirectTestOutputToFile>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -594,7 +450,8 @@
         <profile>
             <id>test-output</id>
             <properties>
-                <surefire.redirectTestOutputToFile>false</surefire.redirectTestOutputToFile>
+                <surefire.redirectTestOutputToFile>false
+                </surefire.redirectTestOutputToFile>
             </properties>
         </profile>
     </profiles>
@@ -602,7 +459,8 @@
         <repository>
             <id>sonatype-nexus-staging</id>
             <name>Sonatype Release</name>
-            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2
+            </url>
         </repository>
         <snapshotRepository>
             <id>sonatype-nexus-snapshots</id>
@@ -620,12 +478,99 @@
             <url>https://maven.java.net/content/repositories/releases</url>
         </repository>
     </repositories>
+    <modules>
+        <module>api</module>
+        <module>providers</module>
+        <module>site</module>
+    </modules>
+    <dependencies>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>0.9.26</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.13</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>5.8</version>
+            <scope>test</scope>
+            <classifier>jdk15</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>8.1.1.v20120215</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>8.1.1.v20120215</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-websocket</artifactId>
+            <version>8.1.1.v20120215</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>8.1.1.v20120215</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-security</artifactId>
+            <version>8.1.1.v20120215</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>coyote</artifactId>
+            <version>6.0.29</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>catalina</artifactId>
+            <version>6.0.29</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>servlet-api</artifactId>
+                    <groupId>org.apache.tomcat</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.2.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <properties>
-        <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
-        <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
-        <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
-        <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
-        <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
+        <distMgmtSnapshotsUrl>
+            http://oss.sonatype.org/content/repositories/snapshots
+        </distMgmtSnapshotsUrl>
+        <surefire.redirectTestOutputToFile>true
+        </surefire.redirectTestOutputToFile>
         <source.property>1.5</source.property>
         <target.property>1.5</target.property>
         <surefire.version>2.12</surefire.version>

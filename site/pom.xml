@@ -1,0 +1,16 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.ning</groupId>
+        <artifactId>async-http-client-project</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.ning</groupId>
+    <artifactId>async-http-client-site</artifactId>
+    <name>Asynchronous Http Client Project Site</name>
+    <version>1.8.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <description>
+        The Async Http Client site.
+    </description>
+</project>
