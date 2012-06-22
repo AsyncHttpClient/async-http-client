@@ -50,10 +50,14 @@ public class FilePartSource implements PartSource {
         this.file = file;
         if (file != null) {
             if (!file.isFile()) {
-                throw new FileNotFoundException("File is not a normal file.");
+                final String errorMessage = 
+                    String.format("File is not a normal file (%s).", file.getAbsolutePath());
+                throw new FileNotFoundException(errorMessage);
             }
             if (!file.canRead()) {
-                throw new FileNotFoundException("File is not readable.");
+                final String errorMessage = 
+                    String.format("File is not readable (%s).", file.getAbsolutePath());
+                throw new FileNotFoundException(errorMessage);
             }
             this.fileName = file.getName();
         }
