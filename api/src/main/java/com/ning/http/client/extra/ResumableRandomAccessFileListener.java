@@ -38,7 +38,7 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
         file.seek(file.length());
         if (buffer.hasArray()) {
-            file.write(buffer.array(), buffer.arrayOffset(), buffer.remaining());
+            file.write(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
         } else { // if the buffer is direct or backed by a String...
             byte[] b = new byte[buffer.remaining()];
             int pos = buffer.position();
