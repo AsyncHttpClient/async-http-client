@@ -75,8 +75,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.method = prototype.getMethod();
-                int pos = prototype.getUrl().indexOf("?");
-                this.url = pos > 0 ? prototype.getUrl().substring(0, pos) : prototype.getUrl();
+                String prototypeUrl = prototype.getUrl();
+                int pos = prototypeUrl.indexOf("?");
+                this.url = pos > 0 ? prototypeUrl.substring(0, pos) : prototypeUrl;
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
