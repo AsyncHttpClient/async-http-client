@@ -2114,6 +2114,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     //}
 
                     if (statusCode == 401
+                            && realm != null
                             && wwwAuth.size() > 0
                             && !future.getAndSetAuth(true)) {
 
@@ -2171,6 +2172,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     List<String> proxyAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.PROXY_AUTHENTICATE);
                     if (statusCode == 407
+                            && realm != null
                             && proxyAuth.size() > 0
                             && !future.getAndSetAuth(true)) {
 
