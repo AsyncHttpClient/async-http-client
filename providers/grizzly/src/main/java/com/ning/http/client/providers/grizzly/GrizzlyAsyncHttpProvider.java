@@ -148,7 +148,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
     private static final boolean SEND_FILE_SUPPORT;
     static {
-        SEND_FILE_SUPPORT = configSendFileSupport();
+        SEND_FILE_SUPPORT = /*configSendFileSupport();*/ false;
     }
     private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
@@ -616,6 +616,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         HandShake handshake;
         ProtocolHandler protocolHandler;
         WebSocket webSocket;
+        boolean establishingTunnel;
 
 
         // -------------------------------------------------------- Constructors
@@ -672,6 +673,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 future.delegate.result(result);
                 future.done(null);
             }
+        }
+
+        boolean isTunnelEstablished(final Connection c) {
+            return c.getAttributes().getAttribute("tunnel-established") != null;
+        }
+
+
+        void tunnelEstablished(final Connection c) {
+            c.getAttributes().setAttribute("tunnel-established", Boolean.TRUE);
         }
 
 
@@ -841,7 +851,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final ProxyServer proxy = getProxyServer(request);
             final boolean useProxy = (proxy != null);
             if (useProxy) {
-                if (secure) {
+                if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
+                    secure = false;
+                    httpCtx.establishingTunnel = true;
                     builder.method(Method.CONNECT);
                     builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
                 } else {
@@ -861,7 +873,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
             HttpRequestPacket requestPacket;
-            if (httpCtx.isWSRequest) {
+            if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
                 try {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
                     httpCtx.protocolHandler = Version.DRAFT17.createHandler(true);
@@ -874,7 +886,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             } else {
                 requestPacket = builder.build();
             }
-            requestPacket.setSecure(true);
+            requestPacket.setSecure(secure);
+            if (secure) {
+                ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(true, ctx.getConnection()));
+            }
             if (!useProxy && !httpCtx.isWSRequest) {
                 addQueryString(request, requestPacket);
             }
@@ -905,7 +920,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return sendRequest(ctx, request, requestPacket);
 
         }
-
 
         private boolean isUpgradeRequest(final AsyncHandler handler) {
             return (handler instanceof UpgradeHandler);
@@ -1136,13 +1150,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
+            final Connection connection = ctx.getConnection();
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
+                    provider.getHttpTransactionContext(connection);
             final int status = ((HttpResponsePacket) httpHeader).getStatus();
+            if (context.establishingTunnel && HttpStatus.OK_200.statusMatches(status)) {
+                return;
+            }
             if (HttpStatus.CONINTUE_100.statusMatches(status)) {
                 ctx.notifyUpstream(new ContinueEvent(context));
                 return;
             }
+
 
             if (context.statusHandler != null && !context.statusHandler.handlesStatus(status)) {
                 context.statusHandler = null;
@@ -1224,11 +1243,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
                 }
             }
-            if (httpHeader.isSkipRemainder()) {
+            final HttpTransactionContext context =
+                                provider.getHttpTransactionContext(ctx.getConnection());
+            if (httpHeader.isSkipRemainder() || context.establishingTunnel) {
                 return;
             }
-            final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
+
             final AsyncHandler handler = context.handler;
             final List<ResponseFilter> filters = context.provider.clientConfig.getResponseFilters();
             final GrizzlyResponseHeaders responseHeaders = new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
@@ -1328,6 +1348,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
@@ -1340,20 +1361,38 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             result = super.onHttpPacketParsed(httpHeader, ctx);
 
-            final HttpTransactionContext context = cleanup(ctx, provider);
-
-            final AsyncHandler handler = context.handler;
-            if (handler != null) {
+            final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
+            if (context.establishingTunnel
+                    && HttpStatus.OK_200.statusMatches(
+                        ((HttpResponsePacket) httpHeader).getStatus())) {
+                context.establishingTunnel = false;
+                final Connection c = ctx.getConnection();
+                context.tunnelEstablished(c);
                 try {
-                    context.result(handler.onCompleted());
-                } catch (Exception e) {
+                    context.provider.execute(c,
+                            context.request,
+                            context.handler,
+                            context.future);
+                    return result;
+                } catch (IOException e) {
                     context.abort(e);
+                    return result;
                 }
             } else {
-                context.done(null);
-            }
+                cleanup(ctx, provider);
+                final AsyncHandler handler = context.handler;
+                if (handler != null) {
+                    try {
+                        context.result(handler.onCompleted());
+                    } catch (Exception e) {
+                        context.abort(e);
+                    }
+                } else {
+                    context.done(null);
+                }
 
-            return result;
+                return result;
+            }
         }
 
 
@@ -1382,7 +1421,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 context.abort(new IOException("Maximum pooled connections exceeded"));
             } else {
                 if (!context.provider.connectionManager.returnConnection(context.requestUrl, c)) {
-                    ctx.getConnection().close().markForRecycle(true);
+                    ctx.getConnection().close();
                 }
             }
 

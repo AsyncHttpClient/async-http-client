@@ -111,7 +111,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(8.1.1.v20120215)");
+        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
 
         asyncHttpClient.close();
     }
@@ -142,7 +142,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         });
         Response r = responseFuture.get();
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(8.1.1.v20120215)");
+        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
 
         asyncHttpClient.close();
     }
@@ -161,7 +161,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         Response r = client.get().get();
 
         assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("server"), "Jetty(8.1.1.v20120215)");
+        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
 
         client.close();
     }
