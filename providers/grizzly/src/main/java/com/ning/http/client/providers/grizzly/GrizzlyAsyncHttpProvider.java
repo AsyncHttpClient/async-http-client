@@ -101,6 +101,7 @@ import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.DefaultWebSocket;
 import org.glassfish.grizzly.websockets.HandShake;
+import org.glassfish.grizzly.websockets.HandshakeException;
 import org.glassfish.grizzly.websockets.ProtocolHandler;
 import org.glassfish.grizzly.websockets.Version;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
@@ -1209,6 +1210,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     final AsyncHandler handler = context.handler;
                     if (handler != null) {
                         context.currentState = handler.onStatusReceived(responseStatus);
+                        if (context.isWSRequest && context.currentState == AsyncHandler.STATE.ABORT) {
+                            httpHeader.setSkipRemainder(true);
+                            context.abort(new HandshakeException("Upgrade failed"));
+                        }
                     }
                 } catch (Exception e) {
                     httpHeader.setSkipRemainder(true);
