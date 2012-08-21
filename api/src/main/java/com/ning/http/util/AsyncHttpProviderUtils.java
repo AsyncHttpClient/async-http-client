@@ -556,12 +556,14 @@ public class AsyncHttpProviderUtils {
         return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
     }
 
-    private static int convertExpireField(String timestring) throws Exception {
+    public static int convertExpireField(String timestring) throws Exception {
         Exception exception = null;
+        String trimmedTimeString = removeQuote(timestring.trim());
+        long now = System.currentTimeMillis();
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             try {
-                long expire = sdf.parse(removeQuote(timestring.trim())).getTime();
-                return (int) ((expire - System.currentTimeMillis()) / 1000);
+                long expire = sdf.parse(trimmedTimeString).getTime();
+                return (int) ((expire - now) / 1000);
             } catch (ParseException e) {
                 exception = e;
             } catch (NumberFormatException e) {
