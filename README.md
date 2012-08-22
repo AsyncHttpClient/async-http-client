@@ -25,7 +25,7 @@ Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute();
+    Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
     Response r = f.get();
 ```
 
@@ -38,7 +38,7 @@ You can also accomplish asynchronous (non-blocking) operation without using a Fu
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(new AsyncCompletionHandler<Response>(){
+    asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
         
         @Override
         public Response onCompleted(Response response) throws Exception{
@@ -63,7 +63,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
     import java.util.concurrent.Future;
 
     AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/ ").execute(
+    Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(
        new AsyncCompletionHandler<Integer>(){
         
         @Override
@@ -90,7 +90,7 @@ which is something you want to do for large responses: this way you can process 
       import java.util.concurrent.Future;
 
       AsyncHttpClient c = new AsyncHttpClient();
-      Future<String> f = c.prepareGet("http://www.ning.com/ ").execute(new AsyncHandler<String>() {
+      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
           private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
           @Override
