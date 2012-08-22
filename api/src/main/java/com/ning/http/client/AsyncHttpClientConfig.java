@@ -24,10 +24,13 @@ import com.ning.http.util.ProxyUtils;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,6 +55,27 @@ import java.util.concurrent.ThreadFactory;
 public class AsyncHttpClientConfig {
 
     protected final static String ASYNC_CLIENT = AsyncHttpClientConfig.class.getName() + ".";
+    public final static String AHC_VERSION;
+
+    static {
+        InputStream is = null;
+        Properties prop = new Properties();
+        try {
+            is = AsyncHttpClientConfig.class.getResourceAsStream("version.properties");
+            prop.load(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ignored) {
+
+                }
+            }
+        }
+        AHC_VERSION = prop.getProperty("ahc.version", "UNKNOWN");
+    }
 
     protected int maxTotalConnections;
     protected int maxConnectionPerHost;
@@ -490,7 +514,7 @@ public class AsyncHttpClientConfig {
         private boolean redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         private int maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
-        private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
+        private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "AsyncHttpClient/" + AHC_VERSION);
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean allowPoolingConnection = true;
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {

@@ -89,6 +89,15 @@
         </license>
     </licenses>
     <build>
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/java/</directory>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <extensions>
             <!-- Enabling the use of SSH -->
             <extension>
@@ -571,8 +580,8 @@
         </distMgmtSnapshotsUrl>
         <surefire.redirectTestOutputToFile>true
         </surefire.redirectTestOutputToFile>
-        <source.property>1.5</source.property>
-        <target.property>1.5</target.property>
+        <source.property>1.6</source.property>
+        <target.property>1.6</target.property>
         <surefire.version>2.12</surefire.version>
     </properties>
 </project>

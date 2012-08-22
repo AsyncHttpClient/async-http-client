@@ -715,7 +715,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (config.getUserAgent() != null) {
             nettyRequest.setHeader("User-Agent", config.getUserAgent());
         } else {
-            nettyRequest.setHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class));
+            nettyRequest.setHeader("User-Agent",
+                         AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class,
+                                                                   config));
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {

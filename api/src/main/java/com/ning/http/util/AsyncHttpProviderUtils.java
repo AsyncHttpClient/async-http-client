@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
@@ -466,10 +467,11 @@ public class AsyncHttpProviderUtils {
         sb.append((char) SEMICOLON);
     }
 
-    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider) {
-        StringBuffer b = new StringBuffer("AsyncHttpClient/1.0")
-                .append(" ")
-                .append("(")
+    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider,
+                                            AsyncHttpClientConfig config) {
+        return new StringBuffer(config.getUserAgent())
+                .append(' ')
+                .append('(')
                 .append(httpProvider.getSimpleName())
                 .append(" - ")
                 .append(System.getProperty("os.name"))
@@ -479,8 +481,7 @@ public class AsyncHttpProviderUtils {
                 .append(System.getProperty("java.version"))
                 .append(" - ")
                 .append(Runtime.getRuntime().availableProcessors())
-                .append(" core(s))");
-        return b.toString();
+                .append(" core(s))").toString();
     }
 
     public static String parseCharset(String contentType) {
