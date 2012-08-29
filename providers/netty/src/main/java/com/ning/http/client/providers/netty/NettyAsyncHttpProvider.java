@@ -1415,6 +1415,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
+        future.getAndSetStatusReceived(false);
 
         log.debug("Trying to recover request {}\n", future.getNettyRequest());
 
