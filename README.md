@@ -114,7 +114,7 @@ which is something you want to do for large responses: this way you can process 
           @Override
           public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                bytes.write(bodyPart.getBodyPartBytes());
-               return STATE.CONTINUE
+               return STATE.CONTINUE;
           }
 
           @Override
