@@ -2072,7 +2072,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     int statusCode = response.getStatus().getCode();
 
                     String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
-                    future.setKeepAlive(ka == null || ka.toLowerCase().equals("keep-alive"));
+                    future.setKeepAlive(ka == null || ! ka.toLowerCase().equals("close"));
 
                     List<String> wwwAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.WWW_AUTHENTICATE);
                     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
