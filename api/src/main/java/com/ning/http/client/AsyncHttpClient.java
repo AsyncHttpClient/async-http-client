@@ -524,6 +524,28 @@ public class AsyncHttpClient implements Closeable {
     }
 
     /**
+     * Prepare an HTTP client PATCH request.
+     *
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public BoundRequestBuilder preparePatch(String url) {
+        return requestBuilder("PATCH", url);
+    }
+
+    /**
+     * Prepare an HTTP client TRACE request.
+     *
+     * @param url A well formed URL.
+     * @return {@link RequestBuilder}
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public BoundRequestBuilder prepareTrace(String url) {
+        return requestBuilder("TRACE", url);
+    }
+
+    /**
      * Construct a {@link RequestBuilder} using a {@link Request}
      *
      * @param request a {@link Request}
