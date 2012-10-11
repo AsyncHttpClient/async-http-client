@@ -293,14 +293,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             sb.append("\t");
             sb.append(method);
-            sb.append("\theaders:"
+            sb.append("\theaders:");
             for (String name : headers.keySet()) {
                 sb.append("\t");
                 sb.append(name);
                 sb.append(":");
                 sb.append(headers.getJoinedValue(name, ", "));
             }
-            sb.append("\tparams:"
+            sb.append("\tparams:");
             for (String name : params.keySet()) {
                 sb.append("\t");
                 sb.append(name);
