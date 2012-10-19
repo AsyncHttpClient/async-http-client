@@ -52,11 +52,9 @@ public class OAuthSignatureCalculator
     private static final String KEY_OAUTH_TIMESTAMP = "oauth_timestamp";
     private static final String KEY_OAUTH_TOKEN = "oauth_token";
     private static final String KEY_OAUTH_VERSION = "oauth_version";
-    private static final String KEY_X_AUTH_MODE = "x_auth_mode";
 
     private static final String OAUTH_VERSION_1_0 = "1.0";
     private static final String OAUTH_SIGNATURE_METHOD = "HMAC-SHA1";
-    private static final String OAUTH_REVERSE_AUTH = "reverse_auth";
 
     /**
      * To generate Nonce, need some (pseudo)randomness; no need for
@@ -72,27 +70,15 @@ public class OAuthSignatureCalculator
 
     protected final RequestToken userAuth;
 
-    protected final Boolean useReverseAuth;
-
     /**
      * @param consumerAuth Consumer key to use for signature calculation
      * @param userAuth     Request/access token to use for signature calculation
      */
     public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
-      this(consumerAuth, userAuth, false);
-    }
-
-    /**
-     * @param consumerAuth   Consumer key to use for signature calculation
-     * @param userAuth       Request/access token to use for signature calculation
-     * @param useReverseAuth Whether or not to use the reverse auth signature or the regular one
-     */
-    public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth, Boolean useReverseAuth ) {
         mac = new ThreadSafeHMAC(consumerAuth, userAuth);
         this.consumerAuth = consumerAuth;
         this.userAuth = userAuth;
         random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
-        this.useReverseAuth = useReverseAuth;
     }
 
     //@Override // silly 1.5; doesn't allow this for interfaces
@@ -144,8 +130,6 @@ public class OAuthSignatureCalculator
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
         allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
-        if (useReverseAuth)
-            allParameters.add(KEY_X_AUTH_MODE, OAUTH_REVERSE_AUTH);
 
         if (formParams != null) {
             for (Map.Entry<String, List<String>> entry : formParams) {
@@ -196,8 +180,6 @@ public class OAuthSignatureCalculator
         sb.append("\", ");
 
         sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");
-        if (useReverseAuth)
-            sb.append(KEY_X_AUTH_MODE).append("=\"").append(OAUTH_REVERSE_AUTH).append("\"");
         return sb.toString();
     }
 
