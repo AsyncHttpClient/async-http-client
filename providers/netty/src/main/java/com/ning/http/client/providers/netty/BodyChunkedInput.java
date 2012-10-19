@@ -33,6 +33,8 @@ class BodyChunkedInput
 
     private static final ByteBuffer EOF = ByteBuffer.allocate(0);
 
+    private boolean endOfInput = false;
+
     public BodyChunkedInput(Body body) {
         if (body == null) {
             throw new IllegalArgumentException("no body specified");
@@ -40,13 +42,21 @@ class BodyChunkedInput
         this.body = body;
     }
 
-    private ByteBuffer peekNextChuck()
+    private ByteBuffer peekNextChunk()
             throws IOException {
 
         if (nextChunk == null) {
             ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-            if (body.read(buffer) < 0) {
-                nextChunk = EOF;
+            long length = body.read(buffer);
+            if (length < 0) {
+                // Negative means this is finished
+                buffer.flip();
+                nextChunk = buffer;
+                endOfInput = true;
+            } else if (length == 0) {
+                // Zero means we didn't get anything this time, but may get next time
+                buffer.flip();
+                nextChunk = null;
             } else {
                 buffer.flip();
                 nextChunk = buffer;
@@ -55,28 +65,28 @@ class BodyChunkedInput
         return nextChunk;
     }
 
-    public boolean hasNextChunk()
-            throws Exception {
-        return !isEndOfInput();
+    /**
+     * Having no next chunk does not necessarily means end of input, other chunks may arrive later
+     */
+    public boolean hasNextChunk() throws Exception {
+        return peekNextChunk() != null;
     }
 
-    public Object nextChunk()
-            throws Exception {
-        ByteBuffer buffer = peekNextChuck();
-        if (buffer == EOF) {
+    public Object nextChunk() throws Exception {
+        ByteBuffer buffer = peekNextChunk();
+        if (buffer == null || buffer == EOF) {
             return null;
         }
         nextChunk = null;
+
         return ChannelBuffers.wrappedBuffer(buffer);
     }
 
-    public boolean isEndOfInput()
-            throws Exception {
-        return peekNextChuck() == EOF;
+    public boolean isEndOfInput() throws Exception {
+        return endOfInput;
     }
 
-    public void close()
-            throws Exception {
+    public void close() throws Exception {
         body.close();
     }
 
