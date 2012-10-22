@@ -45,6 +45,7 @@ import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.ntlm.NTLMEngineException;
+import com.ning.http.client.providers.netty.FeedableBodyGenerator.FeedListener;
 import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartBody;
@@ -488,6 +489,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             writeFuture = channel.write(bodyFileRegion);
                         } else {
                             BodyChunkedInput bodyChunkedInput = new BodyChunkedInput(body);
+                            BodyGenerator bg = future.getRequest().getBodyGenerator();
+                                if (bg instanceof FeedableBodyGenerator) {
+                                    ((FeedableBodyGenerator)bg).setListener(new FeedListener() {
+                                        @Override public void onContentAdded() {
+                                            channel.getPipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                                        }
+                                    });
+                                }
                             writeFuture = channel.write(bodyChunkedInput);
                         }
 
