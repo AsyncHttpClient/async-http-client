@@ -904,9 +904,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
+         * Set the number of times a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
          *
-         * @param maxRequestRetry the number of time a request will be retried
+         * @param maxRequestRetry the number of times a request will be retried
          * @return this
          */
         public Builder setMaxRequestRetry(int maxRequestRetry) {
