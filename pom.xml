@@ -15,11 +15,11 @@
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
     </description>
-    <url>http://github.com/sonatype/async-http-client</url>
+    <url>http://github.com/AsyncHttpClientasync-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:sonatype/async-http-client.git</connection>
-        <url>https://github.com/sonatype/async-http-client</url>
-        <developerConnection>scm:git:git@github.com:sonatype/async-http-client.git</developerConnection>
+        <connection>scm:git:git@github.com:AsyncHttpClientasync-http-client.git</connection>
+        <url>https://github.com/AsyncHttpClientasync-http-client</url>
+        <developerConnection>scm:git:git@github.com:AsyncHttpClientasync-http-client.git</developerConnection>
     </scm>
     <issueManagement>
         <system>jira</system>
@@ -609,7 +609,7 @@
         </snapshotRepository>
         <site>
             <id>github</id>
-            <url>gitsite:git@github.com/sonatype/async-http-client.git</url>
+            <url>gitsite:git@github.com/AsyncHttpClientasync-http-client.git</url>
         </site>
     </distributionManagement>
     <repositories>
