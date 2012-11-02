@@ -151,6 +151,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
     private final ClientSocketChannelFactory socketChannelFactory;
+    private int httpClientCodecMaxInitialLineLength = 4096;
+    private int httpClientCodecMaxHeaderSize = 8192;
+    private int httpClientCodecMaxChunkSize = 8192;
+    private int httpsClientCodecMaxInitialLineLength = 4096;
+    private int httpsClientCodecMaxHeaderSize = 8192;
+    private int httpsClientCodecMaxChunkSize = 8192;
 
     private final ChannelGroup openChannels = new
             CleanupChannelGroup("asyncHttpClient") {
@@ -238,6 +244,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
                 plainBootstrap.setOption(entry.getKey(), entry.getValue());
             }
+            configureHttpClientCodec();
+            configureHttpsClientCodec();
         }
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
@@ -246,7 +254,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
 
-                pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+                pipeline.addLast(HTTP_HANDLER, createHttpClientCodec());
 
                 if (config.getRequestCompressionLevel() > 0) {
                     pipeline.addLast("deflater", new HttpContentCompressor(config.getRequestCompressionLevel()));
@@ -284,6 +292,42 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         });
     }
 
+    protected void configureHttpClientCodec() {
+        httpClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH,
+            Integer.class,
+            httpClientCodecMaxInitialLineLength
+        );
+        httpClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE,
+            Integer.class,
+            httpClientCodecMaxHeaderSize
+        );
+        httpClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE,
+            Integer.class,
+            httpClientCodecMaxChunkSize
+        );
+    }
+
+    protected void configureHttpsClientCodec() {
+        httpsClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH,
+            Integer.class,
+            httpsClientCodecMaxInitialLineLength
+        );
+        httpsClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE,
+            Integer.class,
+            httpsClientCodecMaxHeaderSize
+        );
+        httpsClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(
+            NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE,
+            Integer.class,
+            httpsClientCodecMaxChunkSize
+        );
+    }
+
     void constructSSLPipeline(final NettyConnectListener<?> cl) {
 
         secureBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
@@ -298,7 +342,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     abort(cl.future(), ex);
                 }
 
-                pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+                pipeline.addLast(HTTP_HANDLER, createHttpsClientCodec());
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
@@ -361,6 +405,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             sslEngine = SslUtils.getSSLEngine();
         }
         return sslEngine;
+    }
+
+    private HttpClientCodec createHttpClientCodec() {
+      return new HttpClientCodec(httpClientCodecMaxInitialLineLength, httpClientCodecMaxHeaderSize, httpClientCodecMaxChunkSize);
+    }
+
+    private HttpClientCodec createHttpsClientCodec() {
+      return new HttpClientCodec(httpsClientCodecMaxInitialLineLength, httpsClientCodecMaxHeaderSize, httpsClientCodecMaxChunkSize);
     }
 
     private Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
@@ -547,7 +599,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          ChannelBuffer buffer) throws IOException {
 
         String host = AsyncHttpProviderUtils.getHost(uri);
-        boolean webSocket = isWebSocket(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
@@ -568,12 +619,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
-
+        boolean webSocket = isWebSocket(uri);
         if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":"
-                    + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
+            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":" + uri.getPort());
             nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
             nettyRequest.addHeader("Sec-WebSocket-Version", "13");
         }
@@ -2346,13 +2396,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                if (!statusReceived) {
-                    h.onClose(new NettyWebSocket(ctx.getChannel()), 1002, "Bad response status " + response.getStatus().getCode());
-                    future.done(null);
-                    return;
-                }
-
-                if (!validStatus || !validUpgrade || !validConnection) {
+                if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
                     throw new IOException("Invalid handshake response");
                 }
 
@@ -2463,4 +2507,3 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return isSecure(uri.getScheme());
     }
 }
-

@@ -57,6 +57,20 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public final static String REUSE_ADDRESS = "reuseAddress";
 
+    /**
+     * Allow configuring the Netty's HttpClientCodec.
+    */
+    public final static String HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH = "httpClientCodecMaxInitialLineLength";
+    public final static String HTTP_CLIENT_CODEC_MAX_HEADER_SIZE = "httpClientCodecMaxHeaderSize";
+    public final static String HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpClientCodecMaxChunkSize";
+
+    /**
+     * Allow configuring the Netty's HttpClientCodec.
+     */
+    public final static String HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH = "httpsClientCodecMaxInitialLineLength";
+    public final static String HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE = "httpsClientCodecMaxHeaderSize";
+    public final static String HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpsClientCodecMaxChunkSize";
+
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
     public NettyAsyncHttpProviderConfig() {
@@ -83,6 +97,20 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public Object getProperty(String name) {
         return properties.get(name);
+    }
+
+    /**
+     * Return the value associated with the property's name
+     *
+     * @param name
+     * @return this instance of AsyncHttpProviderConfig
+     */
+    public <T> T getProperty(String name, Class<T> type, T defaultValue) {
+      Object value = properties.get(name);
+      if (value != null && type.isAssignableFrom(value.getClass())) {
+        return type.cast(value);
+      }
+      return defaultValue;
     }
 
     /**
