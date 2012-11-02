@@ -2277,7 +2277,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (!future.getAndSetStatusReceived(true) && updateStatusAndInterrupt(handler, status)) {
                         finishUpdate(future, ctx, response.isChunked());
                         return;
-                    } else if (updateHeadersAndInterrupt(handler, responseHeaders)) {
+                    } else if (response.getHeaders().size() > 0 && updateHeadersAndInterrupt(handler, responseHeaders)) {
                         finishUpdate(future, ctx, response.isChunked());
                         return;
                     } else if (!response.isChunked()) {
