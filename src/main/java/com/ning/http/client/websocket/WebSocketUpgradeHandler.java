@@ -33,7 +33,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private final long maxTextSize;
     private final AtomicBoolean ok = new AtomicBoolean(false);
 
-    private WebSocketUpgradeHandler(Builder b) {
+    protected WebSocketUpgradeHandler(Builder b) {
         l = b.l;
         protocol = b.protocol;
         maxByteSize = b.maxByteSize;
@@ -44,7 +44,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final void onThrowable(Throwable t) {
+    public void onThrowable(Throwable t) {
         onFailure(t);
     }
 
@@ -52,7 +52,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         return STATE.CONTINUE;
     }
 
@@ -60,7 +60,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
@@ -72,7 +72,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         return STATE.CONTINUE;
     }
 
@@ -80,7 +80,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final WebSocket onCompleted() throws Exception {
+    public WebSocket onCompleted() throws Exception {
         if (webSocket == null) {
             throw new IllegalStateException("WebSocket is null");
         }
@@ -91,7 +91,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final void onSuccess(WebSocket webSocket) {
+    public void onSuccess(WebSocket webSocket) {
         this.webSocket = webSocket;
         for (WebSocketListener w : l) {
             webSocket.addWebSocketListener(w);
@@ -104,7 +104,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      * {@inheritDoc}
      */
     @Override
-    public final void onFailure(Throwable t) {
+    public void onFailure(Throwable t) {
         for (WebSocketListener w : l) {
             if (!ok.get() && webSocket != null) {
                 webSocket.addWebSocketListener(w);
@@ -113,7 +113,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         }
     }
 
-    public final void onClose(WebSocket webSocket, int status, String reasonPhrase) {
+    public void onClose(WebSocket webSocket, int status, String reasonPhrase) {
         // Connect failure
         if (this.webSocket == null) this.webSocket = webSocket;
 
