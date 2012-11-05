@@ -7,7 +7,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
-    <artifactId>async-http-client</artifactId>
+    <artifactId>async-http-client</artifactId>                                                                                                                                                cd
     <name>Asynchronous Http Client</name>
     <version>1.7.7-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -17,9 +17,9 @@
     </description>
     <url>http://github.com/AsyncHttpClientasync-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:AsyncHttpClientasync-http-client.git</connection>
-        <url>https://github.com/AsyncHttpClientasync-http-client</url>
-        <developerConnection>scm:git:git@github.com:AsyncHttpClientasync-http-client.git</developerConnection>
+        <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
+        <url>https://github.com/AsyncHttpClient/async-http-client</url>
+        <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
     </scm>
     <issueManagement>
         <system>jira</system>
