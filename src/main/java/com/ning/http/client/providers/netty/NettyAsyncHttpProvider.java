@@ -2397,7 +2397,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
                 if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
-                    throw new IOException("Invalid handshake response");
+                    abort(future, new IOException("Invalid handshake response"));
+                    return;
                 }
 
                 String accept = response.getHeader("Sec-WebSocket-Accept");
