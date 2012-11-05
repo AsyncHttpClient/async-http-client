@@ -95,7 +95,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
-                this.followRedirects = prototype.isRedirectOverrideSet()? prototype.isRedirectEnabled() : null;
+                this.followRedirects = prototype.isRedirectOverrideSet() ? prototype.isRedirectEnabled() : null;
                 this.perRequestConfig = prototype.getPerRequestConfig();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
@@ -126,7 +126,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public InetAddress getLocalAddress() {
             return localAddress;
         }
-        
+
         private String toUrl(boolean encode) {
 
             if (url == null) {
@@ -271,7 +271,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return (followRedirects != null && followRedirects);
         }
 
-        public boolean isRedirectOverrideSet(){
+        public boolean isRedirectOverrideSet() {
             return followRedirects != null;
         }
 
@@ -294,18 +294,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             sb.append("\t");
             sb.append(method);
             sb.append("\theaders:");
-            for (String name : headers.keySet()) {
-                sb.append("\t");
-                sb.append(name);
-                sb.append(":");
-                sb.append(headers.getJoinedValue(name, ", "));
+            if (headers != null && !headers.isEmpty()) {
+                for (String name : headers.keySet()) {
+                    sb.append("\t");
+                    sb.append(name);
+                    sb.append(":");
+                    sb.append(headers.getJoinedValue(name, ", "));
+                }
             }
-            sb.append("\tparams:");
-            for (String name : params.keySet()) {
-                sb.append("\t");
-                sb.append(name);
-                sb.append(":");
-                sb.append(params.getJoinedValue(name, ", "));
+            if (params != null && !params.isEmpty()) {
+                sb.append("\tparams:");
+                for (String name : params.keySet()) {
+                    sb.append("\t");
+                    sb.append(name);
+                    sb.append(":");
+                    sb.append(params.getJoinedValue(name, ", "));
+                }
             }
 
             return sb.toString();
@@ -339,10 +343,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setInetAddress(InetAddress address) {
-    	request.address = address;
-    	return derived.cast(this);
+        request.address = address;
+        return derived.cast(this);
     }
-    
+
     public T setLocalInetAddress(InetAddress address) {
         request.localAddress = address;
         return derived.cast(this);
