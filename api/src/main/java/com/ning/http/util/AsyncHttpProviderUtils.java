@@ -505,7 +505,7 @@ public class AsyncHttpProviderUtils {
 
     public static Cookie parseCookie(String value) {
         String[] fields = value.split(";\\s*");
-        String[] cookie = fields[0].split("=");
+        String[] cookie = fields[0].split("=", 2);
         String cookieName = cookie[0];
         String cookieValue = (cookie.length == 1) ? null : cookie[1];
 
