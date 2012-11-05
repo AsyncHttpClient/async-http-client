@@ -7,7 +7,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ning</groupId>
-    <artifactId>async-http-client</artifactId>                                                                                                                                                cd
+    <artifactId>async-http-client</artifactId>
     <name>Asynchronous Http Client</name>
     <version>1.7.7-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -15,7 +15,7 @@
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
         asynchronously process the HTTP responses.
     </description>
-    <url>http://github.com/AsyncHttpClientasync-http-client</url>
+    <url>http://github.com/AsyncHttpClient/async-http-client</url>
     <scm>
         <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
         <url>https://github.com/AsyncHttpClient/async-http-client</url>
@@ -609,7 +609,7 @@
         </snapshotRepository>
         <site>
             <id>github</id>
-            <url>gitsite:git@github.com/AsyncHttpClientasync-http-client.git</url>
+            <url>gitsite:git@github.com/AsyncHttpClient/async-http-client.git</url>
         </site>
     </distributionManagement>
     <repositories>
