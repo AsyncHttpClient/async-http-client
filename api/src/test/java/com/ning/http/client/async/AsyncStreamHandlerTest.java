@@ -489,7 +489,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 Assert.assertNotNull(values);
                 Assert.assertEquals(values.length, expected.length);
                 Arrays.sort(values);
-                Assert.assertEquals(expected, values);
+                Assert.assertEquals(values, expected);
                 return STATE.ABORT;
             }
 
