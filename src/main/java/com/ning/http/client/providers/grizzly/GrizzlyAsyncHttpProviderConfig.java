@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
 import java.util.HashMap;
@@ -49,7 +50,17 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          *
          * @see TransportCustomizer
          */
-        TRANSPORT_CUSTOMIZER(TransportCustomizer.class);
+        TRANSPORT_CUSTOMIZER(TransportCustomizer.class),
+
+
+        /**
+         * Defines the maximum HTTP packet header size.
+         */
+        MAX_HTTP_PACKET_HEADER_SIZE(Integer.class, HttpCodecFilter.DEFAULT_MAX_HTTP_PACKET_HEADER_SIZE),
+
+
+
+        ;
         
         
         final Object defaultValue;

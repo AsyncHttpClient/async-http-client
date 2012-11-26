@@ -51,7 +51,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
-
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
@@ -77,13 +76,12 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.Protocol;
-import org.glassfish.grizzly.impl.FutureImpl;
-import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.DataChunk;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.http.util.MimeHeaders;
+import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.impl.SafeFutureImpl;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
@@ -95,6 +93,7 @@ import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.BufferOutputStream;
+import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -135,6 +134,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
 /**
@@ -370,8 +370,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         false);
         final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
         fcb.add(filter);
+        final GrizzlyAsyncHttpProviderConfig providerConfig =
+                clientConfig.getAsyncHttpProviderConfig() instanceof GrizzlyAsyncHttpProviderConfig ?
+                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig()
+                : new GrizzlyAsyncHttpProviderConfig();
         final AsyncHttpClientEventFilter eventFilter = new
-                AsyncHttpClientEventFilter(this);
+                AsyncHttpClientEventFilter(this, (Integer) providerConfig.getProperty(MAX_HTTP_PACKET_HEADER_SIZE));
         final AsyncHttpClientFilter clientFilter =
                 new AsyncHttpClientFilter(clientConfig);
         ContentEncoding[] encodings = eventFilter.getContentEncodings();
@@ -389,8 +393,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         fcb.add(eventFilter);
         fcb.add(clientFilter);
         
-        GrizzlyAsyncHttpProviderConfig providerConfig =
-                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
@@ -1069,15 +1071,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         private final GrizzlyAsyncHttpProvider provider;
 
-
         // -------------------------------------------------------- Constructors
 
 
-        AsyncHttpClientEventFilter(final GrizzlyAsyncHttpProvider provider) {
+        AsyncHttpClientEventFilter(final GrizzlyAsyncHttpProvider provider, int maxHerdersSizeProperty) {
+            super(maxHerdersSizeProperty);
 
             this.provider = provider;
             HANDLER_MAP.put(HttpStatus.UNAUTHORIZED_401.getStatusCode(),
-                            AuthorizationHandler.INSTANCE);
+                    AuthorizationHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(),
                     RedirectHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(),
