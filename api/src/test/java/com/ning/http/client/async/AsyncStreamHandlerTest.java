@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -475,13 +476,20 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncOptionsTest() throws Throwable {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
+        final String[] expected = {
+            "GET","HEAD","OPTIONS","POST","TRACE"
+        };
         c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
 
             @Override
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getJoinedValue("Allow", ", "), "GET,HEAD,POST,OPTIONS,TRACE");
+                String[] values = h.get("Allow").get(0).split(",|, ");
+                Assert.assertNotNull(values);
+                Assert.assertEquals(values.length, expected.length);
+                Arrays.sort(values);
+                Assert.assertEquals(expected, values);
                 return STATE.ABORT;
             }
 
