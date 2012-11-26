@@ -135,6 +135,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
 /**
@@ -370,8 +371,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         false);
         final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
         fcb.add(filter);
-        final AsyncHttpClientEventFilter eventFilter = new
-                AsyncHttpClientEventFilter(this);
+        GrizzlyAsyncHttpProviderConfig providerConfig =
+                        (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
+        final AsyncHttpClientEventFilter eventFilter;
+        if (providerConfig != null) {
+            eventFilter = new AsyncHttpClientEventFilter(this, (Integer) providerConfig.getProperty(MAX_HTTP_PACKET_HEADER_SIZE));
+        } else {
+            eventFilter = new AsyncHttpClientEventFilter(this);
+        }
         final AsyncHttpClientFilter clientFilter =
                 new AsyncHttpClientFilter(clientConfig);
         ContentEncoding[] encodings = eventFilter.getContentEncodings();
@@ -389,8 +396,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         fcb.add(eventFilter);
         fcb.add(clientFilter);
         
-        GrizzlyAsyncHttpProviderConfig providerConfig =
-                (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
@@ -1070,7 +1075,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         AsyncHttpClientEventFilter(final GrizzlyAsyncHttpProvider provider) {
+            this(provider, DEFAULT_MAX_HTTP_PACKET_HEADER_SIZE);
+        }
 
+
+        AsyncHttpClientEventFilter(final GrizzlyAsyncHttpProvider provider,
+                                   final int maxHeaderSize) {
+
+            super(maxHeaderSize);
             this.provider = provider;
             HANDLER_MAP.put(HttpStatus.UNAUTHORIZED_401.getStatusCode(),
                             AuthorizationHandler.INSTANCE);
