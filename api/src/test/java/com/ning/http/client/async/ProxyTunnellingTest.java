@@ -28,14 +28,17 @@ import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * Proxy usage tests.
@@ -162,6 +165,21 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         assertEquals(r.getStatusCode(), 200);
         assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+
+        client.close();
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void testNonProxyHostsSsl() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = getAsyncHttpClient(null);
+
+        Response resp = client.prepareGet(getTargetUrl2()).setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)
+                .addNonProxyHost("127.0.0.1"))
+                .execute().get(3, TimeUnit.SECONDS);
+
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("X-pathInfo"), "/foo/test");
 
         client.close();
     }
