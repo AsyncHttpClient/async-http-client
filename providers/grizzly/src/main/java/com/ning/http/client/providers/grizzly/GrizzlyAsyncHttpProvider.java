@@ -850,7 +850,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             final ProxyServer proxy = getProxyServer(request);
-            final boolean useProxy = (proxy != null);
+            boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
+            final boolean useProxy = !(avoidProxy || proxy == null);
             if (useProxy) {
                 if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
                     secure = false;
@@ -898,16 +899,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             addCookies(request, requestPacket);
 
             if (useProxy) {
-                boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
-                if (!avoidProxy) {
-                    if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
-                        requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
-                    }
+                if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
+                    requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
+                }
 
-                    if (proxy.getPrincipal() != null) {
-                        requestPacket.setHeader(Header.ProxyAuthorization,
-                                AuthenticatorUtils.computeBasicAuthentication(proxy));
-                    }
+                if (proxy.getPrincipal() != null) {
+                    requestPacket.setHeader(Header.ProxyAuthorization,
+                            AuthenticatorUtils.computeBasicAuthentication(proxy));
                 }
             }
             final AsyncHandler h = httpCtx.handler;
