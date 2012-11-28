@@ -211,7 +211,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             }
 
             if (expired) {
-                isCancelled.set(false);
+                isCancelled.set(true);
                 try {
                     channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
                     channel.close();
