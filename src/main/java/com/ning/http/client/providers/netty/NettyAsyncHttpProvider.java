@@ -578,7 +578,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private static boolean isProxyServer(AsyncHttpClientConfig config, Request request) {
-        return request.getProxyServer() != null || config.getProxyServer() != null;
+        ProxyServer proxyServer = request.getProxyServer();
+        if (proxyServer == null) {
+            proxyServer = config.getProxyServer();
+        }
+        if (proxyServer == null) {
+            return false;
+        } else {
+            return !ProxyUtils.avoidProxy(proxyServer, request);
+        }
     }
 
     protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri,
@@ -951,7 +959,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             bufferedBytes = f.getNettyRequest().getContent();
         }
 
-        boolean useSSl = isSecure(uri) && proxyServer == null;
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
+        boolean useProxy = !(avoidProxy || proxyServer == null);
+
+        boolean useSSl = isSecure(uri) && !useProxy;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
             HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes);
 
@@ -1018,7 +1029,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         NettyConnectListener<T> c = new NettyConnectListener.Builder<T>(config, request, asyncHandler, f, this, bufferedBytes).build(uri);
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
 
         if (useSSl) {
             constructSSLPipeline(c);
@@ -1037,7 +1047,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             InetSocketAddress remoteAddress;
             if (request.getInetAddress() != null) {
                 remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
-            } else if (proxyServer == null || avoidProxy) {
+            } else if (!useProxy) {
                 remoteAddress = new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
             } else {
                 remoteAddress = new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort());
