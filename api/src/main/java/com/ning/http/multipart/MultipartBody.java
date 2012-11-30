@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
+import java.nio.channels.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class MultipartBody implements RandomAccessBody {
 
@@ -569,22 +569,47 @@ public class MultipartBody implements RandomAccessBody {
         int maxSpin = 0;
         synchronized (byteWriter) {
             ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
-            while ((target.isOpen()) && (written < byteWriter.size())) {
-                long nWrite = target.write(message);
-                written += nWrite;
-                if (nWrite == 0 && maxSpin++ < 10) {
-                    logger.info("Waiting for writing...");
-                    try {
-                        byteWriter.wait(1000);
-                    } catch (InterruptedException e) {
-                        logger.trace(e.getMessage(), e);
-                    }
-                } else {
-                    if (maxSpin >= 10) {
-                        throw new IOException("Unable to write on channel " + target);
-                    }
-                    maxSpin = 0;
-                }
+
+            if (target instanceof SocketChannel) {
+		final Selector selector =  Selector.open();
+		try {
+			final SocketChannel channel = (SocketChannel) target;
+			channel.register(selector, SelectionKey.OP_WRITE);
+
+			while(written < byteWriter.size() && selector.select() != 0) {
+				final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+
+				for (SelectionKey key : selectedKeys) {
+					if (key.isWritable()) {
+						written += target.write(message);  					
+					}
+				}
+			}
+
+			if (written < byteWriter.size()) {
+				throw new IOException("Unable to write on channel " + target);
+			}
+	            } finally {
+			selector.close();
+	            }
+            } else {
+	            while ((target.isOpen()) && (written < byteWriter.size())) {
+	                long nWrite = target.write(message);
+	                written += nWrite;
+	                if (nWrite == 0 && maxSpin++ < 10) {
+	                    logger.info("Waiting for writing...");
+	                    try {
+	                        byteWriter.wait(1000);
+	                    } catch (InterruptedException e) {
+	                        logger.trace(e.getMessage(), e);
+	                    }
+	                } else {
+	                    if (maxSpin >= 10) {
+	                        throw new IOException("Unable to write on channel " + target);
+	                    }
+	                    maxSpin = 0;
+	                }
+	            }
             }
         }
         return written;
