@@ -212,6 +212,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
             if (expired) {
                 isCancelled.set(true);
+                try {
+                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+                    channel.close();
+                } catch (Throwable t) {
+                    // Ignore
+                }
                 TimeoutException te = new TimeoutException(String.format("No response received after %s %s", l, tu.name().toLowerCase()));
                 if (!throwableCalled.getAndSet(true)) {
                     try {
