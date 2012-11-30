@@ -435,11 +435,11 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
-    	FilePartStallHandler handler = new FilePartStallHandler(
-    		filePart.getStalledTime(), filePart);
-    	
-    	handler.start();
-    	
+        FilePartStallHandler handler = new FilePartStallHandler(
+                filePart.getStalledTime(), filePart);
+
+        handler.start();
+
         if (FilePartSource.class.isAssignableFrom(filePart.getSource().getClass())) {
             int length = 0;
 
@@ -458,13 +458,13 @@ public class MultipartBody implements RandomAccessBody {
             long nWrite = 0;
             synchronized (fc) {
                 while (fileLength != l) {
-                	if(handler.isFailed()) {
-                		logger.debug("Stalled error");
+                    if (handler.isFailed()) {
+                        logger.debug("Stalled error");
                         throw new FileUploadStalledException();
-                	}
+                    }
                     try {
                         nWrite = fc.transferTo(fileLength, l, target);
-                       
+
                         if (nWrite == 0) {
                             logger.info("Waiting for writing...");
                             try {
@@ -472,9 +472,8 @@ public class MultipartBody implements RandomAccessBody {
                             } catch (InterruptedException e) {
                                 logger.trace(e.getMessage(), e);
                             }
-                        }
-                        else {
-                        	handler.writeHappened();
+                        } else {
+                            handler.writeHappened();
                         }
                     } catch (IOException ex) {
                         String message = ex.getMessage();
@@ -496,7 +495,7 @@ public class MultipartBody implements RandomAccessBody {
                 }
             }
             handler.completed();
-            
+
             fc.close();
 
             length += handleFileEnd(target, filePart);
@@ -556,7 +555,7 @@ public class MultipartBody implements RandomAccessBody {
             return handleStringPart(target, (StringPart) currentPart);
         } else if (currentPart.getClass().equals(FilePart.class)) {
             FilePart filePart = (FilePart) currentPart;
-            
+
             return handleFilePart(target, filePart);
         }
         return 0;
@@ -571,45 +570,45 @@ public class MultipartBody implements RandomAccessBody {
             ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
 
             if (target instanceof SocketChannel) {
-		final Selector selector =  Selector.open();
-		try {
-			final SocketChannel channel = (SocketChannel) target;
-			channel.register(selector, SelectionKey.OP_WRITE);
+                final Selector selector = Selector.open();
+                try {
+                    final SocketChannel channel = (SocketChannel) target;
+                    channel.register(selector, SelectionKey.OP_WRITE);
 
-			while(written < byteWriter.size() && selector.select() != 0) {
-				final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                    while (written < byteWriter.size() && selector.select() != 0) {
+                        final Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
-				for (SelectionKey key : selectedKeys) {
-					if (key.isWritable()) {
-						written += target.write(message);  					
-					}
-				}
-			}
+                        for (SelectionKey key : selectedKeys) {
+                            if (key.isWritable()) {
+                                written += target.write(message);
+                            }
+                        }
+                    }
 
-			if (written < byteWriter.size()) {
-				throw new IOException("Unable to write on channel " + target);
-			}
-	            } finally {
-			selector.close();
-	            }
+                    if (written < byteWriter.size()) {
+                        throw new IOException("Unable to write on channel " + target);
+                    }
+                } finally {
+                    selector.close();
+                }
             } else {
-	            while ((target.isOpen()) && (written < byteWriter.size())) {
-	                long nWrite = target.write(message);
-	                written += nWrite;
-	                if (nWrite == 0 && maxSpin++ < 10) {
-	                    logger.info("Waiting for writing...");
-	                    try {
-	                        byteWriter.wait(1000);
-	                    } catch (InterruptedException e) {
-	                        logger.trace(e.getMessage(), e);
-	                    }
-	                } else {
-	                    if (maxSpin >= 10) {
-	                        throw new IOException("Unable to write on channel " + target);
-	                    }
-	                    maxSpin = 0;
-	                }
-	            }
+                while ((target.isOpen()) && (written < byteWriter.size())) {
+                    long nWrite = target.write(message);
+                    written += nWrite;
+                    if (nWrite == 0 && maxSpin++ < 10) {
+                        logger.info("Waiting for writing...");
+                        try {
+                            byteWriter.wait(1000);
+                        } catch (InterruptedException e) {
+                            logger.trace(e.getMessage(), e);
+                        }
+                    } else {
+                        if (maxSpin >= 10) {
+                            throw new IOException("Unable to write on channel " + target);
+                        }
+                        maxSpin = 0;
+                    }
+                }
             }
         }
         return written;
