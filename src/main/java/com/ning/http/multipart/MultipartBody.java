@@ -80,7 +80,7 @@ public class MultipartBody implements RandomAccessBody {
             int maxLength = buffer.capacity();
 
             if (startPart == parts.size() && endWritten) {
-                return overallLength;
+                return -1;
             }
 
             boolean full = false;
@@ -437,9 +437,9 @@ public class MultipartBody implements RandomAccessBody {
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
     	FilePartStallHandler handler = new FilePartStallHandler(
     		filePart.getStalledTime(), filePart);
-    	
+
     	handler.start();
-    	
+
         if (FilePartSource.class.isAssignableFrom(filePart.getSource().getClass())) {
             int length = 0;
 
@@ -464,7 +464,7 @@ public class MultipartBody implements RandomAccessBody {
                 	}
                     try {
                         nWrite = fc.transferTo(fileLength, l, target);
-                       
+
                         if (nWrite == 0) {
                             logger.info("Waiting for writing...");
                             try {
@@ -496,7 +496,7 @@ public class MultipartBody implements RandomAccessBody {
                 }
             }
             handler.completed();
-            
+
             fc.close();
 
             length += handleFileEnd(target, filePart);
@@ -556,7 +556,7 @@ public class MultipartBody implements RandomAccessBody {
             return handleStringPart(target, (StringPart) currentPart);
         } else if (currentPart.getClass().equals(FilePart.class)) {
             FilePart filePart = (FilePart) currentPart;
-            
+
             return handleFilePart(target, filePart);
         }
         return 0;
