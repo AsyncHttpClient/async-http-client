@@ -146,7 +146,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private final static Logger log = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
     private final static Charset UTF8 = Charset.forName("UTF-8");
-    
+
     private final ClientBootstrap plainBootstrap;
     private final ClientBootstrap secureBootstrap;
     private final ClientBootstrap webSocketBootstrap;
@@ -654,8 +654,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     break;
                 case NTLM:
                     try {
-                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
-                                ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
+                        String msg = ntlmEngine.generateType1Msg("NTLM " + domain, authHost);
+                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, "NTLM " + msg);
                     } catch (NTLMEngineException e) {
                         IOException ie = new IOException();
                         ie.initCause(e);
@@ -2472,4 +2472,3 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return isSecure(uri.getScheme());
     }
 }
-
