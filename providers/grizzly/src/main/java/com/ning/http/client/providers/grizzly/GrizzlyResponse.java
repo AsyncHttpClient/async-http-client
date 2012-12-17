@@ -45,9 +45,6 @@ import java.util.List;
 public class GrizzlyResponse extends ResponseBase {
     private final Buffer responseBody;
 
-    private List<Cookie> cookies;
-
-
     // ------------------------------------------------------------ Constructors
 
 
@@ -93,9 +90,7 @@ public class GrizzlyResponse extends ResponseBase {
      * {@inheritDoc}
      */
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        if (charset == null) {
-            charset = calculateCharset();
-        }
+       charset = calculateCharset(charset);
         final int len = Math.min(responseBody.remaining(), maxLength);
         final int pos = responseBody.position();
         return responseBody.toStringContent(getCharset(charset), pos, len + pos);
@@ -148,54 +143,20 @@ public class GrizzlyResponse extends ResponseBase {
     /**
      * {@inheritDoc}
      */
-    public List<Cookie> getCookies() {
+    public List<Cookie> buildCookies() {
 
-        if (headers == null) {
-            return Collections.emptyList();
-        }
-
-        if (cookies == null) {
-            List<String> values = headers.getHeaders().get("set-cookie");
-            if (values != null && !values.isEmpty()) {
-                CookiesBuilder.ServerCookiesBuilder builder =
-                    new CookiesBuilder.ServerCookiesBuilder(false);
-                for (String header : values) {
-                    builder.parse(header);
-                }
-                cookies = convertCookies(builder.build());
-
-            } else {
-                cookies = Collections.unmodifiableList(Collections.<Cookie>emptyList());
+        List<String> values = headers.getHeaders().get("set-cookie");
+        if (values != null && !values.isEmpty()) {
+            CookiesBuilder.ServerCookiesBuilder builder = new CookiesBuilder.ServerCookiesBuilder(false);
+            for (String header : values) {
+                builder.parse(header);
             }
+            return convertCookies(builder.build());
+
+        } else {
+        	return Collections.unmodifiableList(Collections.<Cookie>emptyList());
         }
-        return cookies;
-
     }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasResponseStatus() {
-        return (status != null);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasResponseHeaders() {
-        return (headers != null && !headers.getHeaders().isEmpty());
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasResponseBody() {
-        return (bodyParts != null && !bodyParts.isEmpty());
-    }
-
 
     // --------------------------------------------------------- Private Methods
 

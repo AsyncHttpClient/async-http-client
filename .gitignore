@@ -15,6 +15,6 @@ nbproject
 .DS_Store
 target
 test-output
-/META-INF/MANIFEST.MF
+MANIFEST.MF
 work
 atlassian-ide-plugin.xml

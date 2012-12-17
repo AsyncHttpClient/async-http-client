@@ -3,8 +3,10 @@ package com.ning.http.client.providers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
+import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -19,6 +21,7 @@ public abstract class ResponseBase implements Response
     protected final List<HttpResponseBodyPart> bodyParts;
     protected final HttpResponseHeaders headers;
     protected final HttpResponseStatus status;
+    private List<Cookie> cookies;
 
     protected ResponseBase(HttpResponseStatus status,
             HttpResponseHeaders headers,
@@ -81,34 +84,52 @@ public abstract class ResponseBase implements Response
     }
 
     public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        return AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
     }
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         return AsyncHttpProviderUtils.contentAsStream(bodyParts);
     }
+    
+    protected abstract List<Cookie> buildCookies();
+    
+    public List<Cookie> getCookies() {
 
-    protected String calculateCharset() {
-        String charset = null;
-        String contentType = getContentType();
-        if (contentType != null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        if (headers == null) {
+            return Collections.emptyList();
         }
 
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
+        if (cookies == null) {
+            cookies = buildCookies();
         }
+        return cookies;
+
+    }
+
+    protected String calculateCharset(String charset) {
+        
+    	if (charset == null) {
+	        String contentType = getContentType();
+	        if (contentType != null) {
+	            charset = AsyncHttpProviderUtils.parseCharset(contentType);
+	        } else {
+	        	charset = DEFAULT_CHARSET;
+	        }
+    	}
+
         return charset;
     }
 
+    public boolean hasResponseStatus() {
+        return status != null;
+    }
+
+    public boolean hasResponseHeaders() {
+        return headers != null && !headers.getHeaders().isEmpty();
+    }
+
+    public boolean hasResponseBody() {
+        return bodyParts != null && !bodyParts.isEmpty();
+    }
 }
