@@ -35,7 +35,6 @@ import java.util.Map;
 
 public class ApacheResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
-    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
@@ -129,37 +128,25 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public String getContentType() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().getFirstValue("Content-Type");
+        return headers != null? headers.getHeaders().getFirstValue("Content-Type"): null;
     }
 
     /* @Override */
 
     public String getHeader(String name) {
-        if (headers == null) {
-            throw new IllegalStateException();
-        }
-        return headers.getHeaders().getFirstValue(name);
+        return headers != null? headers.getHeaders().getFirstValue(name): null;
     }
 
     /* @Override */
 
     public List<String> getHeaders(String name) {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().get(name);
+        return headers != null? headers.getHeaders().get(name): Collections.<String> emptyList();
     }
 
     /* @Override */
 
     public FluentCaseInsensitiveStringsMap getHeaders() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders();
+        return headers != null? headers.getHeaders(): new FluentCaseInsensitiveStringsMap();
     }
 
     /* @Override */
@@ -172,7 +159,7 @@ public class ApacheResponse implements Response {
 
     public List<Cookie> getCookies() {
         if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+            return Collections.emptyList();
         }
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
