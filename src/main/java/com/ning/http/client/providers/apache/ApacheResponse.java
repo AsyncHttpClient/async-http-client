@@ -76,16 +76,18 @@ public class ApacheResponse implements Response {
     }
 
     public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
+        return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
         if (charset == null) {
-            charset = DEFAULT_CHARSET;
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
         }
-
-        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        return charset;
     }
 
     /* @Override */
@@ -181,7 +183,7 @@ public class ApacheResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseStatus() {
-        return (bodyParts != null ? true : false);
+        return bodyParts != null;
     }
 
     /**
@@ -189,7 +191,7 @@ public class ApacheResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
+        return headers != null;
     }
 
     /**
@@ -197,6 +199,6 @@ public class ApacheResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
+        return bodyParts != null && bodyParts.size() > 0;
     }
 }

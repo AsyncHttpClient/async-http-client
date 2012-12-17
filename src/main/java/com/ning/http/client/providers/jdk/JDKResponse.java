@@ -80,19 +80,22 @@ public class JDKResponse implements Response {
     }
 
     public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
 
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        if (!contentComputed.get()) {
-            content = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+    	if (!contentComputed.get()) {
+            content = AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
         }
         return content;
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
+        if (charset == null) {
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
     /* @Override */
@@ -193,7 +196,7 @@ public class JDKResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseStatus() {
-        return (bodyParts != null ? true : false);
+        return bodyParts != null;
     }
 
     /**
@@ -201,7 +204,7 @@ public class JDKResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
+        return headers != null;
     }
 
     /**
@@ -209,6 +212,6 @@ public class JDKResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
+        return bodyParts != null && bodyParts.size() > 0;
     }
 }

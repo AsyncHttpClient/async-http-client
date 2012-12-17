@@ -81,16 +81,7 @@ public class NettyResponse implements Response {
     }
 
     public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
     }
 
     /* @Override */
@@ -115,17 +106,19 @@ public class NettyResponse implements Response {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        String response = AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
+        if (charset == null) {
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
     /* @Override */
@@ -190,7 +183,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseStatus() {
-        return (status != null ? true : false);
+        return status != null;
     }
 
     /**
@@ -198,7 +191,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
+        return headers != null;
     }
 
     /**
@@ -206,7 +199,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
+        return bodyParts != null && bodyParts.size() > 0;
     }
 
 }
