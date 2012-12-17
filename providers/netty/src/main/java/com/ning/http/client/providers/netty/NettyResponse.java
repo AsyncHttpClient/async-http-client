@@ -32,7 +32,6 @@ import java.util.Map;
  * Wrapper around the {@link com.ning.http.client.Response} API.
  */
 public class NettyResponse extends ResponseBase {
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
 
     public NettyResponse(HttpResponseStatus status,
                          HttpResponseHeaders headers,
@@ -47,56 +46,23 @@ public class NettyResponse extends ResponseBase {
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
         // should be fine; except that it may split multi-byte chars (last char may become '?')
-        if (charset == null) {
-            charset = calculateCharset();
-        }
+        charset = calculateCharset(charset);
         byte[] b = AsyncHttpProviderUtils.contentToBytes(bodyParts, maxLength);
         return new String(b, charset);
     }
-
-    /* @Override */
-
-    public List<Cookie> getCookies() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        if (cookies.isEmpty()) {
-            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    List<String> v = header.getValue();
-                    for (String value : v) {
-                        Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
-                    }
+    
+    protected List<Cookie> buildCookies() {
+    	List<Cookie> cookies = new ArrayList<Cookie>();
+        for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
+            if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                // TODO: ask for parsed header
+                List<String> v = header.getValue();
+                for (String value : v) {
+                    Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
+                    cookies.add(cookie);
                 }
             }
         }
         return Collections.unmodifiableList(cookies);
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseStatus() {
-        return (status != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
-    }
-
 }
