@@ -13,7 +13,6 @@
 package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -50,7 +49,7 @@ public class JDKResponse extends ResponseBase {
     /* @Override */
     public List<Cookie> getCookies() {
         if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+            return Collections.emptyList();
         }
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {

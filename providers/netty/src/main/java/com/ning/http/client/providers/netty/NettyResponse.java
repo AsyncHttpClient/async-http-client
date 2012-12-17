@@ -58,7 +58,7 @@ public class NettyResponse extends ResponseBase {
 
     public List<Cookie> getCookies() {
         if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+            return Collections.emptyList();
         }
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {

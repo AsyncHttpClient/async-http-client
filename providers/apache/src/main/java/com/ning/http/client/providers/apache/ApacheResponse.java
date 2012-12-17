@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ApacheResponse extends ResponseBase {
-    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final List<Cookie> cookies = new ArrayList<Cookie>();
 
@@ -61,7 +60,7 @@ public class ApacheResponse extends ResponseBase {
     /* @Override */
     public List<Cookie> getCookies() {
         if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+            return Collections.emptyList();
         }
         if (cookies.isEmpty()) {
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {

@@ -15,7 +15,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 public abstract class ResponseBase implements Response
 {
     protected final static String DEFAULT_CHARSET = "ISO-8859-1";
-    protected final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     protected final List<HttpResponseBodyPart> bodyParts;
     protected final HttpResponseHeaders headers;
@@ -48,25 +47,22 @@ public abstract class ResponseBase implements Response
 
     /* @Override */
     public final String getContentType() {
-        return getHeader("Content-Type");
+        return headers != null? getHeader("Content-Type"): null;
     }
 
     /* @Override */
     public final String getHeader(String name) {
-        return getHeaders().getFirstValue(name);
+        return headers != null? getHeaders().getFirstValue(name): null;
     }
 
     /* @Override */
     public final List<String> getHeaders(String name) {
-        return getHeaders().get(name);
+        return headers != null? getHeaders().get(name): null;
     }
 
     /* @Override */
     public final FluentCaseInsensitiveStringsMap getHeaders() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders();
+        return headers != null? headers.getHeaders(): new FluentCaseInsensitiveStringsMap();
     }
 
     /* @Override */
