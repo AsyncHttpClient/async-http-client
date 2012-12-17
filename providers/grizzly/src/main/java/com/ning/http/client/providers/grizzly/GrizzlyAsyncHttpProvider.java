@@ -320,6 +320,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             int delay = 500;
             if (timeout < delay) {
                 delay = timeout - 10;
+                if (delay <= 0) {
+                    delay = timeout;
+                }
             }
             timeoutExecutor = IdleTimeoutFilter.createDefaultIdleDelayedExecutor(delay, TimeUnit.MILLISECONDS);
             timeoutExecutor.start();
