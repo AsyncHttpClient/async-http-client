@@ -41,13 +41,12 @@ import java.util.Map;
  */
 public class NettyResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
-    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
     private final URI uri;
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
+    private List<Cookie> cookies;
 
     public NettyResponse(HttpResponseStatus status,
                          HttpResponseHeaders headers,
@@ -82,16 +81,7 @@ public class NettyResponse implements Response {
     }
 
     public String getResponseBody(String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        return AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
     }
 
     /* @Override */
@@ -116,17 +106,19 @@ public class NettyResponse implements Response {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
-        String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
+        String response = AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
+        if (charset == null) {
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
     /* @Override */
@@ -138,37 +130,25 @@ public class NettyResponse implements Response {
     /* @Override */
 
     public String getContentType() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().getFirstValue("Content-Type");
+        return getHeader("Content-Type");
     }
 
     /* @Override */
 
     public String getHeader(String name) {
-        if (headers == null) {
-            throw new IllegalStateException();
-        }
-        return headers.getHeaders().getFirstValue(name);
+        return headers != null? headers.getHeaders().getFirstValue(name): null;
     }
 
     /* @Override */
 
     public List<String> getHeaders(String name) {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders().get(name);
+        return headers != null? headers.getHeaders().get(name): Collections.<String> emptyList();
     }
 
     /* @Override */
 
     public FluentCaseInsensitiveStringsMap getHeaders() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        return headers.getHeaders();
+        return headers != null? headers.getHeaders(): new FluentCaseInsensitiveStringsMap();
     }
 
     /* @Override */
@@ -181,21 +161,23 @@ public class NettyResponse implements Response {
 
     public List<Cookie> getCookies() {
         if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
+            return Collections.emptyList();
         }
-        if (cookies.isEmpty()) {
+        if (cookies == null) {
+        	List<Cookie> localCookies = new ArrayList<Cookie>();
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
                         Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
+                        localCookies.add(cookie);
                     }
                 }
             }
+            cookies = Collections.unmodifiableList(localCookies);
         }
-        return Collections.unmodifiableList(cookies);
+        return cookies;
     }
 
     /**
@@ -203,7 +185,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseStatus() {
-        return (status != null ? true : false);
+        return status != null;
     }
 
     /**
@@ -211,7 +193,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
+        return headers != null;
     }
 
     /**
@@ -219,7 +201,7 @@ public class NettyResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
+        return bodyParts != null && !bodyParts.isEmpty();
     }
 
 }
