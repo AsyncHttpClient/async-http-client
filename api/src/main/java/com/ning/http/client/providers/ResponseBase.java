@@ -109,16 +109,12 @@ public abstract class ResponseBase implements Response
 
     protected String calculateCharset(String charset) {
         
-    	if (charset == null) {
-	        String contentType = getContentType();
-	        if (contentType != null) {
-	            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-	        } else {
-	        	charset = DEFAULT_CHARSET;
-	        }
-    	}
-
-        return charset;
+        if (charset == null) {
+        	String contentType = getContentType();
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
+        }
+        return charset != null? charset: DEFAULT_CHARSET;
     }
 
     public boolean hasResponseStatus() {
