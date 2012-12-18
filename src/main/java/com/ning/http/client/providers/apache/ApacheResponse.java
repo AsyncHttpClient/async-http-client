@@ -40,7 +40,7 @@ public class ApacheResponse implements Response {
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
+    private List<Cookie> cookies;
 
     public ApacheResponse(HttpResponseStatus status,
                           HttpResponseHeaders headers,
@@ -79,20 +79,9 @@ public class ApacheResponse implements Response {
         return AsyncHttpProviderUtils.contentToString(bodyParts, computeCharset(charset));
     }
     
-    private String computeCharset(String charset) {
-    	String contentType = getContentType();
-        if (charset == null) {
-        	if (contentType != null)
-        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        	else
-        		charset = DEFAULT_CHARSET;
-        }
-        return charset;
-    }
-
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        if (bodyParts.size() > 0) {
+        if (!bodyParts.isEmpty()) {
             return new HttpResponseBodyPartsInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
         } else {
             return new ByteArrayInputStream("".getBytes());
@@ -108,17 +97,21 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
+        charset = computeCharset(charset);
 
         String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
+        if (charset == null) {
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
     /* @Override */
@@ -130,7 +123,7 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public String getContentType() {
-        return headers != null? headers.getHeaders().getFirstValue("Content-Type"): null;
+        return getHeader("Content-Type");
     }
 
     /* @Override */
@@ -163,19 +156,21 @@ public class ApacheResponse implements Response {
         if (headers == null) {
             return Collections.emptyList();
         }
-        if (cookies.isEmpty()) {
+        if (cookies == null) {
+        	List<Cookie> localCookies = new ArrayList<Cookie>();
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
                         Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
+                        localCookies.add(cookie);
                     }
                 }
             }
+            cookies = Collections.unmodifiableList(localCookies);
         }
-        return Collections.unmodifiableList(cookies);
+        return cookies;
     }
 
     /**
@@ -199,6 +194,6 @@ public class ApacheResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return bodyParts != null && bodyParts.size() > 0;
+        return bodyParts != null && !bodyParts.isEmpty();
     }
 }

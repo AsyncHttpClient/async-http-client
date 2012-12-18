@@ -41,7 +41,7 @@ public class JDKResponse implements Response {
     private final Collection<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
+    private List<Cookie> cookies;
     private AtomicBoolean contentComputed = new AtomicBoolean(false);
     private String content;
 
@@ -87,24 +87,13 @@ public class JDKResponse implements Response {
         return content;
     }
     
-    private String computeCharset(String charset) {
-    	String contentType = getContentType();
-        if (charset == null) {
-        	if (contentType != null)
-        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        	else
-        		charset = DEFAULT_CHARSET;
-        }
-        return charset;
-    }
-
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
         if (contentComputed.get()) {
             return new ByteArrayInputStream(content.getBytes(DEFAULT_CHARSET));
         }
 
-        if (bodyParts.size() > 0) {
+        if (!bodyParts.isEmpty()) {
             return new HttpResponseBodyPartsInputStream(bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]));
         } else {
             return new ByteArrayInputStream("".getBytes());
@@ -118,20 +107,24 @@ public class JDKResponse implements Response {
     }
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
+        charset = computeCharset(charset);
 
         if (!contentComputed.get()) {
             content = AsyncHttpProviderUtils.contentToString(bodyParts, charset == null ? DEFAULT_CHARSET : charset);
         }
 
         return content.length() <= maxLength ? content : content.substring(0, maxLength);
+    }
+    
+    private String computeCharset(String charset) {
+    	String contentType = getContentType();
+        if (charset == null) {
+        	if (contentType != null)
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
+        	else
+        		charset = DEFAULT_CHARSET;
+        }
+        return charset;
     }
 
     /* @Override */
@@ -143,7 +136,7 @@ public class JDKResponse implements Response {
     /* @Override */
 
     public String getContentType() {
-        return headers != null? headers.getHeaders().getFirstValue("Content-Type"): null;
+        return getHeader("Content-Type");
     }
 
     /* @Override */
@@ -177,18 +170,20 @@ public class JDKResponse implements Response {
             return Collections.emptyList();
         }
         if (cookies.isEmpty()) {
+        	List<Cookie> localCookies = new ArrayList<Cookie>();
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
                         Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
+                        localCookies.add(cookie);
                     }
                 }
             }
+            cookies = Collections.unmodifiableList(localCookies);
         }
-        return Collections.unmodifiableList(cookies);
+        return cookies;
     }
 
     /**
@@ -212,6 +207,6 @@ public class JDKResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return bodyParts != null && bodyParts.size() > 0;
+        return bodyParts != null && !bodyParts.isEmpty();
     }
 }
