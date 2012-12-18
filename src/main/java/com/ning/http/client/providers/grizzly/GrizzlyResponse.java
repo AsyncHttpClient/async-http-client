@@ -257,7 +257,7 @@ public class GrizzlyResponse implements Response {
                 cookies = convertCookies(builder.build());
 
             } else {
-                cookies = Collections.unmodifiableList(Collections.<Cookie>emptyList());
+                cookies = Collections.emptyList();
             }
         }
         return cookies;
