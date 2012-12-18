@@ -111,14 +111,12 @@ public class NettyResponse implements Response {
     }
     
     private String computeCharset(String charset) {
-    	String contentType = getContentType();
         if (charset == null) {
+        	String contentType = getContentType();
         	if (contentType != null)
-        		charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        	else
-        		charset = DEFAULT_CHARSET;
+        		charset = AsyncHttpProviderUtils.parseCharset(contentType); // parseCharset can return null
         }
-        return charset;
+        return charset != null? charset: DEFAULT_CHARSET;
     }
 
     /* @Override */
