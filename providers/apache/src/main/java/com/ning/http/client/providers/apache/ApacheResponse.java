@@ -26,11 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ApacheResponse extends ResponseBase {
-    private final static String HEADERS_NOT_COMPUTED = "Response's headers hasn't been computed by your AsyncHandler.";
 
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
-
-    public ApacheResponse(HttpResponseStatus status,
+	public ApacheResponse(HttpResponseStatus status,
                           HttpResponseHeaders headers,
                           List<HttpResponseBodyPart> bodyParts) {
         super(status, headers, bodyParts);
@@ -45,60 +42,24 @@ public class ApacheResponse extends ResponseBase {
     /* @Override */
 
     public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-        String contentType = getContentType();
-        if (contentType != null && charset == null) {
-            charset = AsyncHttpProviderUtils.parseCharset(contentType);
-        }
-
-        if (charset == null) {
-            charset = DEFAULT_CHARSET;
-        }
-
+        charset = calculateCharset(charset);
         String response = AsyncHttpProviderUtils.contentToString(bodyParts, charset);
         return response.length() <= maxLength ? response : response.substring(0, maxLength);
     }
 
     /* @Override */
-    public List<Cookie> getCookies() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        if (cookies.isEmpty()) {
-            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    List<String> v = header.getValue();
-                    for (String value : v) {
-                        Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
-                    }
+    public List<Cookie> buildCookies() {
+    	List<Cookie> cookies = new ArrayList<Cookie>();
+        for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
+            if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                // TODO: ask for parsed header
+                List<String> v = header.getValue();
+                for (String value : v) {
+                    Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
+                    cookies.add(cookie);
                 }
             }
         }
         return Collections.unmodifiableList(cookies);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseStatus() {
-        return (bodyParts != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
     }
 }

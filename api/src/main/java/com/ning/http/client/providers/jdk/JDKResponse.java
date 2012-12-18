@@ -13,7 +13,6 @@
 package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 public class JDKResponse extends ResponseBase {
-    private final List<Cookie> cookies = new ArrayList<Cookie>();
 
     public JDKResponse(HttpResponseStatus status,
                        HttpResponseHeaders headers,
@@ -48,46 +46,18 @@ public class JDKResponse extends ResponseBase {
     }
 
     /* @Override */
-    public List<Cookie> getCookies() {
-        if (headers == null) {
-            throw new IllegalStateException(HEADERS_NOT_COMPUTED);
-        }
-        if (cookies.isEmpty()) {
-            for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-                if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
-                    // TODO: ask for parsed header
-                    List<String> v = header.getValue();
-                    for (String value : v) {
-                        Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        cookies.add(cookie);
-                    }
+    public List<Cookie> buildCookies() {
+    	List<Cookie> cookies = new ArrayList<Cookie>();
+        for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
+            if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+                // TODO: ask for parsed header
+                List<String> v = header.getValue();
+                for (String value : v) {
+                    Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
+                    cookies.add(cookie);
                 }
             }
         }
         return Collections.unmodifiableList(cookies);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseStatus() {
-        return (bodyParts != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseHeaders() {
-        return (headers != null ? true : false);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public boolean hasResponseBody() {
-        return (bodyParts != null && bodyParts.size() > 0 ? true : false);
     }
 }
