@@ -844,7 +844,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final URI uri = AsyncHttpProviderUtils.createUri(httpCtx.requestUrl);
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-            boolean secure = "https".equals(uri.getScheme());
+            final String scheme = uri.getScheme();
+            boolean secure = "https".equals(scheme) || "wss".equals(scheme);
             builder.method(request.getMethod());
             builder.protocol(Protocol.HTTP_1_1);
             String host = request.getVirtualHost();
@@ -861,6 +862,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final boolean useProxy = (proxy != null);
             if (useProxy) {
                 if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
+                    ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(false, ctx.getConnection()));
                     secure = false;
                     httpCtx.establishingTunnel = true;
                     builder.method(Method.CONNECT);
