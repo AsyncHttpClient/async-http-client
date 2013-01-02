@@ -18,13 +18,13 @@
         applications to easily execute HTTP requests and
         asynchronously process the response.
     </description>
-    <url>http://github.com/sonatype/async-http-client</url>
+    <url>http://github.com/AsyncHttpClient/async-http-client</url>
     <scm>
-        <connection>scm:git:git@github.com:sonatype/async-http-client.git
+        <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git
         </connection>
-        <url>https://github.com/sonatype/async-http-client</url>
+        <url>https://github.com/AsyncHttpClient/async-http-client</url>
         <developerConnection>
-            scm:git:git@github.com:sonatype/async-http-client.git
+            scm:git:git@github.com:AsyncHttpClient/async-http-client.git
         </developerConnection>
     </scm>
     <issueManagement>
