@@ -459,8 +459,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private void checkIfBodyAllowed() {
-        if ("GET".equals(request.method) || "HEAD".equals(request.method)) {
-            throw new IllegalArgumentException("Can NOT set Body on HTTP Request Method GET nor HEAD.");
+        if ("HEAD".equals(request.method)) {
+            throw new IllegalArgumentException("Can NOT set Body on HTTP Request Method HEAD.");
         }
     }
 
