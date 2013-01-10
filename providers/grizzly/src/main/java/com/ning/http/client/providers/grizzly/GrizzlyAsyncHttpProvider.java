@@ -915,9 +915,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
 
                     if (proxy.getPrincipal() != null) {
-                        requestPacket.setHeader(Header.ProxyAuthorization,
-                                AuthenticatorUtils.computeBasicAuthentication(proxy));
+                    	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
                     }
+                    
                 }
             }
             final AsyncHandler h = httpCtx.handler;
@@ -1091,6 +1091,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             this.provider = provider;
             HANDLER_MAP.put(HttpStatus.UNAUTHORIZED_401.getStatusCode(),
                             AuthorizationHandler.INSTANCE);
+            HANDLER_MAP.put(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.getStatusCode(),
+                    ProxyAuthorizationHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(),
                     RedirectHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(),
@@ -1265,9 +1267,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
                 }
             }
-            final HttpTransactionContext context =
-                                provider.getHttpTransactionContext(ctx.getConnection());
-            if (httpHeader.isSkipRemainder() || context.establishingTunnel) {
+            final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
+            
+            if (httpHeader.isSkipRemainder() || (context.establishingTunnel && context.statusHandler==null)) {
                 return;
             }
 
@@ -1327,6 +1329,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             if (context.isWSRequest) {
                 try {
+                	//in case of DIGEST auth protocol handler is null and just returning here is working
+                	if(context.protocolHandler == null) 
+                	{
+                		return;
+                		//context.protocolHandler = Version.DRAFT17.createHandler(true);
+                		//context.currentState = AsyncHandler.STATE.UPGRADE;
+                	}
+                	
                     context.protocolHandler.setConnection(ctx.getConnection());
                     DefaultWebSocket ws = new DefaultWebSocket(context.protocolHandler);
                     context.webSocket = new GrizzlyWebSocketAdapter(ws);
@@ -1539,6 +1549,90 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 } else {
                     throw new IllegalStateException("Unsupported authorization method: " + auth);
+                }
+
+                final ConnectionManager m = httpTransactionContext.provider.connectionManager;
+                try {
+                    final Connection c = m.obtainConnection(req,
+                                                            httpTransactionContext.future);
+                    final HttpTransactionContext newContext =
+                            httpTransactionContext.copy();
+                    httpTransactionContext.future = null;
+                    httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
+                    newContext.invocationStatus = InvocationStatus.STOP;
+                    try {
+                        httpTransactionContext.provider.execute(c,
+                                                                req,
+                                                                httpTransactionContext.handler,
+                                                                httpTransactionContext.future);
+                        return false;
+                    } catch (IOException ioe) {
+                        newContext.abort(ioe);
+                        return false;
+                    }
+                } catch (Exception e) {
+                    httpTransactionContext.abort(e);
+                }
+                httpTransactionContext.invocationStatus = InvocationStatus.STOP;
+                return false;
+            }
+
+        } // END AuthorizationHandler
+
+        private static final class ProxyAuthorizationHandler implements StatusHandler {
+
+            private static final ProxyAuthorizationHandler INSTANCE =
+                    new ProxyAuthorizationHandler();
+
+            // -------------------------------------- Methods from StatusHandler
+
+
+            public boolean handlesStatus(int statusCode) {
+                return (HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.statusMatches(statusCode));
+            }
+
+            @SuppressWarnings({"unchecked"})
+            public boolean handleStatus(final HttpResponsePacket responsePacket,
+                                     final HttpTransactionContext httpTransactionContext,
+                                     final FilterChainContext ctx) {
+
+                final String proxy_auth = responsePacket.getHeader(Header.ProxyAuthenticate);
+                if (proxy_auth == null) {
+                    throw new IllegalStateException("407 response received, but no Proxy Authenticate header was present");
+                }
+
+                final Request req = httpTransactionContext.request;
+                ProxyServer proxyServer = httpTransactionContext.provider.clientConfig.getProxyServer();
+                String principal = proxyServer.getPrincipal();
+                String password = proxyServer.getPassword();
+                Realm realm = new Realm.RealmBuilder().setPrincipal(principal)
+                				.setPassword(password)
+                                .setUri("/")
+                                .setMethodName("CONNECT")
+                                .setUsePreemptiveAuth(true)
+                                .parseProxyAuthenticateHeader(proxy_auth)
+                                .build();
+                if (proxy_auth.toLowerCase().startsWith("basic")) {
+                    req.getHeaders().remove(Header.ProxyAuthenticate.toString());
+                    req.getHeaders().remove(Header.ProxyAuthorization.toString());
+                    try {
+                        req.getHeaders().add(Header.ProxyAuthorization.toString(),
+                                             AuthenticatorUtils.computeBasicAuthentication(realm));
+                    } catch (UnsupportedEncodingException ignored) {
+                    }
+                } else if (proxy_auth.toLowerCase().startsWith("digest")) {
+                    req.getHeaders().remove(Header.ProxyAuthenticate.toString());
+                    req.getHeaders().remove(Header.ProxyAuthorization.toString());
+                    try {
+                        req.getHeaders().add(Header.ProxyAuthorization.toString(),
+                                             AuthenticatorUtils.computeDigestAuthentication(realm));
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new IllegalStateException("Digest authentication not supported", e);
+                    } catch (UnsupportedEncodingException e) {
+                        throw new IllegalStateException("Unsupported encoding.", e);
+                    }
+                } else {
+                    throw new IllegalStateException("Unsupported authorization method: " + proxy_auth);
                 }
 
                 final ConnectionManager m = httpTransactionContext.provider.connectionManager;

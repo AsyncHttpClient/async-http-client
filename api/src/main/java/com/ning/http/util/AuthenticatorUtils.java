@@ -49,6 +49,18 @@ public final class AuthenticatorUtils {
         return new String(builder.toString().getBytes("ISO_8859_1"));
     }
 
+	public static String computeDigestAuthentication(ProxyServer proxy) {
+		try{
+	        StringBuilder builder = new StringBuilder().append("Digest ");
+	        construct(builder, "username", proxy.getPrincipal(),true);
+	        return new String(builder.toString().getBytes("ISO_8859_1"));
+		}
+		catch (Exception e){
+			e.printStackTrace();
+		}
+		return null;
+	}
+
     private static StringBuilder construct(StringBuilder builder, String name, String value) {
         return construct(builder, name, value, false);
     }

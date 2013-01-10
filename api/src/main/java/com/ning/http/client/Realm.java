@@ -439,6 +439,19 @@ public class Realm {
             return this;
         }
 
+        public RealmBuilder parseProxyAuthenticateHeader(String headerLine) {
+            setRealmName(match(headerLine, "realm"));
+            setNonce(match(headerLine, "nonce"));
+            setOpaque(match(headerLine, "opaque"));
+            setQop(match(headerLine, "qop"));
+            if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
+                setScheme(AuthScheme.DIGEST);
+            } else {
+                setScheme(AuthScheme.BASIC);
+            }
+            return this;
+        }
+        
         public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
             this.messageType2Received = messageType2Received;
             return this;
