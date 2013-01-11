@@ -914,7 +914,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
                     }
 
-                    if (proxy.getPrincipal() != null) {
+                    if (proxy.getPrincipal() != null && proxy.isBasic()) {
                     	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
                     }
                     
