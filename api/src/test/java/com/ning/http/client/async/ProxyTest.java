@@ -51,6 +51,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getUri().getPath());
+                response.addHeader("targetUri", r.getUri().toString());
                 response.setStatus(HttpServletResponse.SC_OK);
             } else { // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -130,6 +131,22 @@ public abstract class ProxyTest extends AbstractBasicTest {
             assertEquals(e.getCause().getClass(), ConnectException.class);
         }
 
+        client.close();
+    }
+
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testNonProxyHostIssue202() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = getAsyncHttpClient(null);
+        String target = "http://127.0.0.1:"+ port1+"/";
+        Future<Response> f = client
+                .prepareGet(target)
+                .setProxyServer(new ProxyServer("127.0.0.1", port1-1).addNonProxyHost("127.0.0.1"))
+                .execute();
+        Response resp = f.get(3, TimeUnit.SECONDS);
+        assertNotNull(resp);
+        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        assertEquals(resp.getHeader("targetUri"), "/");
         client.close();
     }
 

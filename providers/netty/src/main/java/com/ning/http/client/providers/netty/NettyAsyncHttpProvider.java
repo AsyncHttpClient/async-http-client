@@ -564,12 +564,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             host = request.getVirtualHost();
         }
 
+        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
+
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             StringBuilder path = null;
-            if (isProxyServer(config, request))
+            if (!avoidProxy )
                 path = new StringBuilder(uri.toString());
             else {
                 path = new StringBuilder(uri.getRawPath());
@@ -622,7 +625,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.addHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
@@ -686,7 +689,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
         }
 
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
+
         if (!avoidProxy) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
                 nettyRequest.setHeader("Proxy-Connection", "keep-alive");
