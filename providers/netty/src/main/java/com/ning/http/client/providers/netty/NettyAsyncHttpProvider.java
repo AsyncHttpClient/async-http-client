@@ -175,7 +175,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final boolean trackConnections;
     private final boolean useRawUrl;
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
-    private final static SpnegoEngine spnegoEngine = new SpnegoEngine();
+    private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
 
@@ -555,6 +555,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return construct(config, request, new HttpMethod(method), uri, buffer);
     }
 
+    private static SpnegoEngine getSpnegoEngine() {
+        if(spnegoEngine == null)
+            spnegoEngine = new SpnegoEngine();
+        return spnegoEngine;
+    }
+
     private static HttpRequest construct(AsyncHttpClientConfig config,
                                          Request request,
                                          HttpMethod m,
@@ -671,7 +677,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     String challengeHeader = null;
                     String server = proxyServer == null ? host : proxyServer.getHost();
                     try {
-                        challengeHeader = spnegoEngine.generateToken(server);
+                        challengeHeader = getSpnegoEngine().generateToken(server);
                     } catch (Throwable e) {
                         IOException ie = new IOException();
                         ie.initCause(e);
@@ -1152,7 +1158,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
-            String challengeHeader = spnegoEngine.generateToken(server);
+            String challengeHeader = getSpnegoEngine().generateToken(server);
             headers.remove(HttpHeaders.Names.AUTHORIZATION);
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
