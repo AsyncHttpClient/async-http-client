@@ -126,7 +126,6 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
-import com.ning.http.client.ntlm.NTLMEngineException;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
@@ -552,7 +551,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     throws IOException {
 
         boolean isWriteComplete = true;
-        LOGGER.debug("@@@@@@@@@@@@@@@@@@@@@  sendRequest sending message .... context = "+ctx + " connection is "+ctx.getConnection());
+        
         if (requestHasEntityBody(request)) {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
@@ -840,8 +839,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                           final FilterChainContext ctx)
         throws IOException {
 
-        	//LOGGER.debug("@@@@@@@@@@@@@@@@@@@@@  sendAsGrizzlyRequest sending message .... context = "+ctx + " connection is "+ctx.getConnection());
-        	
             final HttpTransactionContext httpCtx = getHttpTransactionContext(ctx.getConnection());
             if (isUpgradeRequest(httpCtx.handler) && isWSRequest(httpCtx.requestUrl)) {
                 httpCtx.isWSRequest = true;
@@ -916,7 +913,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
                 if (!avoidProxy) {
                     if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
-                        requestPacket.setHeader(Header.ProxyConnection, "Keep-Alive");
+                        requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
                     }
 
                     if(proxy.getNtlmDomain() != null && proxy.getNtlmDomain().length() > 0)
@@ -928,10 +925,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     
                 }
             }
-            
-            String userAgent = "Apache-HttpClient/4.2.2 (java 1.5)";
-            requestPacket.setHeader(Header.UserAgent,  userAgent);
-            
             final AsyncHandler h = httpCtx.handler;
             if (h != null) {
                 if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
@@ -940,15 +933,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
                 }
             }
-            
-            boolean returnVal = false;
-            try{
-            	returnVal = sendRequest(ctx, request, requestPacket); 
-            }catch(RuntimeException e)
-            {
-            	e.printStackTrace();
-            }
-            return returnVal;
+            return sendRequest(ctx, request, requestPacket);
 
         }
 
@@ -1005,7 +990,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final MimeHeaders headers = requestPacket.getHeaders();
             if (!headers.contains(Header.Connection)) {
-                requestPacket.addHeader(Header.Connection, "Keep-Alive");
+                requestPacket.addHeader(Header.Connection, "keep-alive");
             }
 
             if (!headers.contains(Header.Accept)) {
@@ -1186,10 +1171,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onInitialLineParsed(HttpHeader httpHeader,
                                            FilterChainContext ctx) {
 
-        	
             super.onInitialLineParsed(httpHeader, ctx);
-            
-            LOGGER.debug("printing ..... RESPONSE: {}", httpHeader);
             if (httpHeader.isSkipRemainder()) {
                 return;
             }
@@ -1243,10 +1225,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                                   getURI(context.requestUrl),
                                                   provider);
             context.responseStatus = responseStatus;
-            LOGGER.debug("auth header "+httpHeader.getHeader(Header.ProxyAuthenticate));
-            LOGGER.debug("############### status handler is not null....so returning here "+context.statusHandler);
             if (context.statusHandler != null) {
-            	
                 return;
             }
             if (context.currentState != AsyncHandler.STATE.ABORT) {
@@ -1296,7 +1275,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
             
             if (httpHeader.isSkipRemainder() || (context.establishingTunnel && context.statusHandler==null)) {
-            	LOGGER.debug("returning skipping remainder");
                 return;
             }
 
@@ -1412,7 +1390,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
             boolean result;
-            LOGGER.debug("onHttpPacketParsed "+ctx + " http header = "+httpHeader);
             final String proxy_auth = httpHeader.getHeader(Header.ProxyAuthenticate);
             
             if (httpHeader.isSkipRemainder() ) {
@@ -1422,21 +1399,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 	                cleanup(ctx, provider);
 	                return false;
             	}else{
-            		LOGGER.debug("!!!!!! onHttpPacketParsed this is second handshake so not cleaning up");
             		super.onHttpPacketParsed(httpHeader, ctx);
             		httpHeader.getProcessingState().setKeepAlive(true);
-            		/*final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
-            		final AsyncHandler handler = context.handler;
-                    if (handler != null) {
-                        try {
-                            context.result(handler.onCompleted());
-                        } catch (Exception e) {
-                            context.abort(e);
-                        }
-                    } else {
-                        context.done(null);
-                    }*/
-                    LOGGER.debug("!!!!!! onHttpPacketParsed this is second handshake so not cleaning up ctx = "+ctx);
             		return false;
             	}
             }
@@ -1548,7 +1512,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
             public boolean handlesStatus(int statusCode) {
-            	LOGGER.debug("inside handle status returning  = "+HttpStatus.UNAUTHORIZED_401.statusMatches(statusCode));
                 return (HttpStatus.UNAUTHORIZED_401.statusMatches(statusCode));
             }
 
@@ -1556,8 +1519,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             public boolean handleStatus(final HttpResponsePacket responsePacket,
                                      final HttpTransactionContext httpTransactionContext,
                                      final FilterChainContext ctx) {
-            	
-            	LOGGER.debug("inside handle status returning context = "+ctx);
+
                 final String auth = responsePacket.getHeader(Header.WWWAuthenticate);
                 if (auth == null) {
                     throw new IllegalStateException("401 response received, but no WWW-Authenticate header was present");
@@ -1640,7 +1602,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
             public boolean handlesStatus(int statusCode) {
-            	LOGGER.debug("inside proxy handle status returning  "+HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.statusMatches(statusCode));
                 return (HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.statusMatches(statusCode));
             }
 
@@ -1648,8 +1609,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             public boolean handleStatus(final HttpResponsePacket responsePacket,
                                      final HttpTransactionContext httpTransactionContext,
                                      final FilterChainContext ctx) {
-            	
-            	LOGGER.debug("inside proxy handle status returning  context = "+ctx);
+
                 final String proxy_auth = responsePacket.getHeader(Header.ProxyAuthenticate);
                 if (proxy_auth == null) {
                     throw new IllegalStateException("407 response received, but no Proxy Authenticate header was present");
@@ -1689,27 +1649,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     
                     req.getHeaders().remove(Header.ProxyAuthenticate.toString());
                     req.getHeaders().remove(Header.ProxyAuthorization.toString());
-                    req.getHeaders().remove(Header.Accept.toString());
-                    req.getHeaders().remove("CLIENT_ID");
+
                     String msg = null;
 					try {
 						
-						if(proxy_auth.toLowerCase().equals("ntlm"))
+						if(isFirstHandShake(proxy_auth))
 						{
-							
 							msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), "");
-							//msg = ApacheNTLMWrapper.generateType1Msg(proxyServer.getNtlmDomain(), "");
-
 						}else {
 							String serverChallenge = proxy_auth.trim().substring("NTLM ".length());
-							//String serverChallenge1 = "TlRMTVNTUAACAAAAEgASADAAAAA1AokgNc3mBXra8i8AAAAAAAAAAIgAiABCAAAAUwBGAEQAQwBQAFIATwBYAFkAAgASAFMARgBEAEMAUABSAE8AWABZAAEAEgBJAFAAQQBTAEUAUgBWAEUAUgAEAB4AcwBmAGQAYwBwAHIAbwB4AHkALgBsAG8AYwBhAGwAAwAyAGkAcABhAHMAZQByAHYAZQByAC4AcwBmAGQAYwBwAHIAbwB4AHkALgBsAG8AYwBhAGwAAAAAAA==";
-							//System.out.println("Server Challenge  :: " + serverChallenge);
-							//System.out.println("Server Challenge1 :: " + serverChallenge1);
-							
-							
 							msg = ntlmEngine.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
-							//msg = ApacheNTLMWrapper.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), "", serverChallenge);
-							//msg = "TlRMTVNTUAADAAAAGAAYAEAAAAC0ALQAWAAAABIAEgAMAQAACgAKAB4BAAAAAAAAKAEAAAAAAAAoAQAANQIIIGYSPmcl/CPV8YAkN+5e1A1MmwI0Ekz0aS41p9y413TiBLJA82wTL4UBAQAAAAAAAJD+rq/r8s0BTJsCNBJM9GkAAAAAAgASAFMARgBEAEMAUABSAE8AWABZAAEAEgBJAFAAQQBTAEUAUgBWAEUAUgAEAB4AcwBmAGQAYwBwAHIAbwB4AHkALgBsAG8AYwBhAGwAAwAyAGkAcABhAHMAZQByAHYAZQByAC4AcwBmAGQAYwBwAHIAbwB4AHkALgBsAG8AYwBhAGwAAAAAAFMARgBEAEMAUABSAE8AWABZAHUAcwBlAHIANQA=";
 						}
 						
 						req.getHeaders().add(Header.ProxyAuthorization.toString(), "NTLM " + msg);
@@ -1724,14 +1673,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 InvocationStatus tempInvocationStatus = InvocationStatus.STOP;
                 
                 try {
-                    
-                	/*if(proxy_auth.toLowerCase().startsWith("ntlm") && !isSecondHandShake(proxy_auth))
-                	{
-                		httpTransactionContext.done(null);
-                	}*/
-                	
-                    if(proxy_auth.toLowerCase().startsWith("ntlm"))
-                    //if(isSecondHandShake(proxy_auth))
+                    if(isFirstHandShake(proxy_auth))
                     {
                     	tempInvocationStatus = InvocationStatus.CONTINUE;
                     	
@@ -1742,9 +1684,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     	final Connection c = ctx.getConnection();
                         final HttpTransactionContext newContext = httpTransactionContext.copy(); //httpTransactionContext.copy();
                      
-                        tempInvocationStatus = InvocationStatus.STOP;
-                        
-                        LOGGER.debug("is connection cacheable "+m.isConnectionCacheable(c));
                         httpTransactionContext.future = null;
                         httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
                         
@@ -1763,23 +1702,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 	                        return false;
 	                    }
                     	
-                    	/*final Connection c = m.obtainConnection(req, httpTransactionContext.future);
-                        final HttpTransactionContext newContext = httpTransactionContext.copy();
-                        httpTransactionContext.future = null;
-                        httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
-                        
-                        newContext.invocationStatus = tempInvocationStatus;
-                        
-	                    try {
-	                        httpTransactionContext.provider.execute(c,
-	                                                                req,
-	                                                                httpTransactionContext.handler,
-	                                                                httpTransactionContext.future);
-	                        return false;
-	                    } catch (IOException ioe) {
-	                        newContext.abort(ioe);
-	                        return false;
-	                    }*/
                     }
                     else{
                     	final Connection c = m.obtainConnection(req, httpTransactionContext.future);
@@ -1809,8 +1731,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 			public static boolean isSecondHandShake(final String proxy_auth) {
 				return (proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
-				//return proxy_auth.toLowerCase().startsWith("ntlm");
 			}
+			public static boolean isFirstHandShake(final String proxy_auth) {
+				return (proxy_auth.equalsIgnoreCase("ntlm"));
+			}
+
 
         } // END AuthorizationHandler
 
@@ -2740,7 +2665,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             @Override
             public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
 
-            	LOGGER.debug("!!!!!!!!!!!!!!!! close getting invoked..... connection = "+connection+" closetype "+closeType);
                 if (connections != null) {
                     connections.release();
                 }
