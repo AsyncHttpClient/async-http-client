@@ -812,12 +812,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     /**
                      * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                      */
-
-                    if (isSecure(uri)) {
-                        ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
-                        mre.writeRequest(new ChannelBufferOutputStream(b));
-                        nettyRequest.setContent(b);
-                    }
                 } else if (request.getEntityWriter() != null) {
                     int lenght = computeAndSetContentLength(request, nettyRequest);
 
