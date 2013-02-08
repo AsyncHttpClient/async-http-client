@@ -67,6 +67,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long rangeOffset = 0;
         public String charset;
         private boolean useRawUrl = false;
+        private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
 
         public RequestImpl(boolean useRawUrl) {
             this.useRawUrl = useRawUrl;
@@ -100,6 +101,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.useRawUrl = prototype.isUseRawUrl();
+                this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
             }
         }
 
@@ -285,6 +287,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public String getBodyEncoding() {
             return charset;
+        }
+
+        public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
+        	return connectionPoolKeyStrategy;
         }
 
         @Override
@@ -601,6 +607,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setBodyEncoding(String charset) {
         request.charset = charset;
         return derived.cast(this);
+    }
+
+    public T setConnectionPoolKeyStrategy(ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+    	request.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+    	return derived.cast(this);
     }
 
     public Request build() {
