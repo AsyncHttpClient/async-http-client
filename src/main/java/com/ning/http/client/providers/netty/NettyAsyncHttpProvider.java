@@ -21,6 +21,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -381,8 +382,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private Channel lookupInCache(URI uri) {
-        final Channel channel = connectionsPool.poll(AsyncHttpProviderUtils.getBaseUrl(uri));
+    private Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+        final Channel channel = connectionsPool.poll(connectionPoolKeyStrategy.getKey(uri));
 
         if (channel != null) {
             log.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -955,7 +956,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (f != null && f.reuseChannel() && f.channel() != null) {
                 channel = f.channel();
             } else {
-                channel = lookupInCache(uri);
+                channel = lookupInCache(uri, request.getConnectionPoolKeyStrategy());
             }
         }
 
@@ -1318,7 +1319,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(uri), ctx.getChannel())) {
+                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(uri), ctx.getChannel())) {
                     return null;
                 }
 
@@ -1514,7 +1515,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
             if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
-                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getURI()), ctx.getChannel())) {
+                    connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(future.getURI()), ctx.getChannel())) {
                 markAsDone(future, ctx);
                 return;
             }
@@ -1715,7 +1716,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                        NettyAsyncHttpProvider provider) {
 
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider);
+                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy());
 
         if (request.getHeaders().getFirstValue("Expect") != null
                 && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
@@ -2085,10 +2086,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         nBuilder.addOrReplaceCookie(c);
                     }
 
+                    final String connectionPoolKey = future.getConnectionPoolKeyStrategy().getKey(initialConnectionUri);
                     AsyncCallable ac = new AsyncCallable(future) {
                         public Object call() throws Exception {
                             if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
-                                    connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(initialConnectionUri), ctx.getChannel())) {
+                                    connectionsPool.offer(connectionPoolKey, ctx.getChannel())) {
                                 return null;
                             }
                             finishChannel(ctx);
