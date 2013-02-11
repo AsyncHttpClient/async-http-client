@@ -347,7 +347,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-
     	final Channel channel = connectionsPool.poll(connectionPoolKeyStrategy.getKey(uri));
 
         if (channel != null) {
@@ -1273,7 +1272,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-            	// TODO POOL
                 if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(uri), ctx.getChannel())) {
                     return null;
                 }
@@ -1470,7 +1468,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (lastValidChunk && future.getKeepAlive()) {
             drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
-        	// TODO POOL
             if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
                     connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(future.getURI()), ctx.getChannel())) {
                 markAsDone(future, ctx);
