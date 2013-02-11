@@ -16,6 +16,7 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
@@ -85,6 +86,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean writeBody;
     private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
     private boolean allowConnect = false;
+    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
 
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -92,7 +94,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                                HttpRequest nettyRequest,
                                int responseTimeoutInMs,
                                int idleConnectionTimeoutInMs,
-                               NettyAsyncHttpProvider asyncHttpProvider) {
+                               NettyAsyncHttpProvider asyncHttpProvider,
+                                  ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
@@ -101,6 +104,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.nettyRequest = nettyRequest;
         this.uri = uri;
         this.asyncHttpProvider = asyncHttpProvider;
+        this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
 
         if (System.getProperty(MAX_RETRY) != null) {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
@@ -117,6 +121,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     protected void setURI(URI uri) {
         this.uri = uri;
+    }
+
+    public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
+        return connectionPoolKeyStrategy;
     }
 
     /**

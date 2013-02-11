@@ -232,4 +232,5 @@ public interface Request {
 
     public boolean isUseRawUrl();
 
+    ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
 }
