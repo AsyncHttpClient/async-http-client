@@ -93,7 +93,9 @@ import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -2310,7 +2312,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final class WebSocketProtocol implements Protocol {
+        private static final byte OPCODE_CONT = 0x0;
+        private static final byte OPCODE_TEXT = 0x1;
+        private static final byte OPCODE_BINARY = 0x2;
+        private static final byte OPCODE_UNKNOWN = -1;
 
+    	   protected ChannelBuffer byteBuffer = null;
+    	   protected StringBuilder textBuffer = null;
+    	   protected byte pendingOpcode = OPCODE_UNKNOWN;
+ 
         // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
             NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
@@ -2392,6 +2402,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else if (e.getMessage() instanceof WebSocketFrame) {
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
+                if(frame instanceof TextWebSocketFrame) {
+                	pendingOpcode = OPCODE_TEXT;
+                }
+                else if(frame instanceof BinaryWebSocketFrame) {
+                	pendingOpcode = OPCODE_BINARY;
+                }
+                
                 HttpChunk webSocketChunk = new HttpChunk() {
                     private ChannelBuffer content;
 
@@ -2417,8 +2434,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     h.onBodyPartReceived(rp);
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-                    webSocket.onMessage(rp.getBodyPartBytes());
-                    webSocket.onTextMessage(frame.getBinaryData().toString(UTF8));
+                   
+                    if(pendingOpcode == OPCODE_BINARY) {
+                        webSocket.onBinaryFragment(rp.getBodyPartBytes(),frame.isFinalFragment());
+                    }
+                    else {
+                        webSocket.onTextFragment(frame.getBinaryData().toString(UTF8),frame.isFinalFragment());
+                    }
 
                     if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
                         try {
