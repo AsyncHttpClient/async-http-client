@@ -51,6 +51,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Allow configuring the Netty's boss executor service.
      */
     public final static String BOSS_EXECUTOR_SERVICE = "bossExecutorService";
+    
+    /**
+     * Allow configuring the Netty's socket channel factory.
+     */
+    public final static String SOCKET_CHANNEL_FACTORY = "socketChannelFactory";
 
     /**
      * See {@link java.net.Socket#setReuseAddress(boolean)}
