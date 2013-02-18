@@ -152,6 +152,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final AsyncHttpClientConfig config;
     private final AtomicBoolean isClose = new AtomicBoolean(false);
     private final ClientSocketChannelFactory socketChannelFactory;
+    private final boolean allowReleaseSocketChannelFactory;
     private int httpClientCodecMaxInitialLineLength = 4096;
     private int httpClientCodecMaxHeaderSize = 8192;
     private int httpClientCodecMaxChunkSize = 8192;
@@ -193,17 +194,28 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
+            this.allowReleaseSocketChannelFactory = true;
         } else {
-            ExecutorService e;
-            Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
-            if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
-                e = ExecutorService.class.cast(o);
+        	// check if external NioClientSocketChannelFactory is defined
+            Object oo = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY);
+            if (oo != null && NioClientSocketChannelFactory.class.isAssignableFrom(oo.getClass())) {
+            	this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
+
+            	// cannot allow releasing shared channel factory
+            	this.allowReleaseSocketChannelFactory = false;
             } else {
-                e = Executors.newCachedThreadPool();
+            	ExecutorService e;
+            	Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
+            	if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
+            		e = ExecutorService.class.cast(o);
+            	} else {
+            		e = Executors.newCachedThreadPool();
+            	}
+            	int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
+            	log.debug("Number of application's worker threads is {}", numWorkers);
+            	socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
+            	this.allowReleaseSocketChannelFactory = true;
             }
-            int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
-            log.debug("Number of application's worker threads is {}", numWorkers);
-            socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
@@ -899,11 +911,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             config.executorService().shutdown();
             config.reaper().shutdown();
-            socketChannelFactory.releaseExternalResources();
-            plainBootstrap.releaseExternalResources();
-            secureBootstrap.releaseExternalResources();
-            webSocketBootstrap.releaseExternalResources();
-            secureWebSocketBootstrap.releaseExternalResources();
+            if (this.allowReleaseSocketChannelFactory) {
+            	socketChannelFactory.releaseExternalResources();
+            	plainBootstrap.releaseExternalResources();
+            	secureBootstrap.releaseExternalResources();
+            	webSocketBootstrap.releaseExternalResources();
+            	secureWebSocketBootstrap.releaseExternalResources();
+            }
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
