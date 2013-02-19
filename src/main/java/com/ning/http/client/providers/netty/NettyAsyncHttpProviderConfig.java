@@ -71,6 +71,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public final static String HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE = "httpsClientCodecMaxHeaderSize";
     public final static String HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpsClientCodecMaxChunkSize";
 
+    /**
+     * Allow configuring the Netty's socket channel factory.
+     */
+    public final static String SOCKET_CHANNEL_FACTORY = "socketChannelFactory";
+
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
     public NettyAsyncHttpProviderConfig() {
