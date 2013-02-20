@@ -271,7 +271,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
      */
     public Response prepareResponse(HttpResponseStatus status,
                                     HttpResponseHeaders headers,
-                                    Collection<HttpResponseBodyPart> bodyParts) {
+                                    List<HttpResponseBodyPart> bodyParts) {
 
         return new GrizzlyResponse(status, headers, bodyParts);
 

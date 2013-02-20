@@ -117,7 +117,6 @@ import java.nio.channels.WritableByteChannel;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -927,7 +926,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public Response prepareResponse(final HttpResponseStatus status,
                                     final HttpResponseHeaders headers,
-                                    final Collection<HttpResponseBodyPart> bodyParts) {
+                                    final List<HttpResponseBodyPart> bodyParts) {
         return new NettyResponse(status, headers, bodyParts);
     }
 

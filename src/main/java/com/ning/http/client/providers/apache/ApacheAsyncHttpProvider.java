@@ -47,7 +47,6 @@ import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
@@ -102,7 +101,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -224,7 +222,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, Collection<HttpResponseBodyPart> bodyParts) {
+    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new ApacheResponse(status, headers, bodyParts);
     }
 

@@ -14,26 +14,27 @@ package com.ning.http.client;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * An {@link InputStream} that reads all the elements in an array of {@link HttpResponseBodyPart}s.
  */
 public class HttpResponseBodyPartsInputStream extends InputStream {
 
-    private final HttpResponseBodyPart[] parts;
+    private final List<HttpResponseBodyPart> parts;
 
     private int currentPos = 0;
     private int bytePos = -1;
     private byte[] active;
     private int available = 0;
 
-    public HttpResponseBodyPartsInputStream(HttpResponseBodyPart[] parts) {
+    public HttpResponseBodyPartsInputStream(List<HttpResponseBodyPart> parts) {
         this.parts = parts;
-        active = parts[0].getBodyPartBytes();
+        active = parts.get(0).getBodyPartBytes();
         computeLength(parts);
     }
 
-    private void computeLength(HttpResponseBodyPart[] parts) {
+    private void computeLength(List<HttpResponseBodyPart> parts) {
         if (available == 0) {
             for (HttpResponseBodyPart p : parts) {
                 available += p.getBodyPartBytes().length;
@@ -50,12 +51,12 @@ public class HttpResponseBodyPartsInputStream extends InputStream {
     public int read() throws IOException {
         if (++bytePos >= active.length) {
             // No more bytes, so step to the next array.
-            if (++currentPos >= parts.length) {
+            if (++currentPos >= parts.size()) {
                 return -1;
             }
 
             bytePos = 0;
-            active = parts[currentPos].getBodyPartBytes();
+            active = parts.get(currentPos).getBodyPartBytes();
         }
 
         return active[bytePos] & 0xFF;
