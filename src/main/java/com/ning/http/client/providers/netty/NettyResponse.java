@@ -22,16 +22,12 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,14 +39,14 @@ public class NettyResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
 
     private final URI uri;
-    private final Collection<HttpResponseBodyPart> bodyParts;
+    private final List<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
     private List<Cookie> cookies;
 
     public NettyResponse(HttpResponseStatus status,
                          HttpResponseHeaders headers,
-                         Collection<HttpResponseBodyPart> bodyParts) {
+                         List<HttpResponseBodyPart> bodyParts) {
 
         this.status = status;
         this.headers = headers;
@@ -86,17 +82,7 @@ public class NettyResponse implements Response {
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        ChannelBuffer buf = ChannelBuffers.dynamicBuffer();
-        for (HttpResponseBodyPart bp : bodyParts) {
-            // Ugly. TODO
-            // (1) We must remove the downcast,
-            // (2) we need a CompositeByteArrayInputStream to avoid
-            // copying the bytes.
-            if (bp.getClass().isAssignableFrom(ResponseBodyPart.class)) {
-                buf.writeBytes(bp.getBodyPartBytes());
-            }
-        }
-        return new ChannelBufferInputStream(buf);
+    	return AsyncHttpProviderUtils.contentToInputStream(bodyParts);
     }
 
     /* @Override */

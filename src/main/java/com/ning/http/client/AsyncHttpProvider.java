@@ -16,7 +16,7 @@
 package com.ning.http.client;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
@@ -48,6 +48,6 @@ public interface AsyncHttpProvider {
      */
     public Response prepareResponse(HttpResponseStatus status,
                                     HttpResponseHeaders headers,
-                                    Collection<HttpResponseBodyPart> bodyParts);
+                                    List<HttpResponseBodyPart> bodyParts);
 
 }
