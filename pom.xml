@@ -451,8 +451,25 @@
                         <exclude>**/FilterContext</exclude>
                         <exclude>**/FilterContext$*</exclude>
                         <exclude>**/NettyResponseFuture</exclude>
+                        <exclude>**/NettyResponseFuture$*</exclude>
                         <exclude>**/**ResponseBodyPart</exclude>
                         <exclude>**/**WebSocket</exclude>
+                        <exclude>**/AsyncHttpProvider</exclude>
+                        <exclude>**/HttpResponseBodyPartsInputStream</exclude>
+                        <exclude>**/AsyncHttpProvider</exclude>
+                        <exclude>**/ApacheAsyncHttpProvider</exclude>
+                        <exclude>**/ApacheAsyncHttpProvider$*</exclude>
+                        <exclude>**/ApacheResponse</exclude>
+                        <exclude>**/GrizzlyAsyncHttpProvider</exclude>
+                        <exclude>**/GrizzlyAsyncHttpProvider$*</exclude>
+                        <exclude>**/GrizzlyResponse</exclude>
+                        <exclude>**/JDKAsyncHttpProvider</exclude>
+                        <exclude>**/JDKAsyncHttpProvider$*</exclude>
+                        <exclude>**/JDKResponse</exclude>
+                        <exclude>**/NettyAsyncHttpProvider</exclude>
+                        <exclude>**/NettyAsyncHttpProvider$*</exclude>
+                        <exclude>**/NettyResponse</exclude>
+                        <exclude>**/AsyncHttpProviderUtils</exclude>
                     </excludes>
                 </configuration>
                 <executions>
