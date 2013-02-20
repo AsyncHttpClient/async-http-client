@@ -61,26 +61,24 @@ public class GrizzlyResponse implements Response {
 
     public GrizzlyResponse(final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
-                           final Collection<HttpResponseBodyPart> bodyParts) {
+                           final List<HttpResponseBodyPart> bodyParts) {
 
         this.status = status;
         this.headers = headers;
         this.bodyParts = bodyParts;
 
         if (bodyParts != null && !bodyParts.isEmpty()) {
-            HttpResponseBodyPart[] parts =
-                    bodyParts.toArray(new HttpResponseBodyPart[bodyParts.size()]);
-            if (parts.length == 1) {
-                responseBody = ((GrizzlyResponseBodyPart) parts[0]).getBodyBuffer();
+            if (bodyParts.size() == 1) {
+                responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
             } else {
-                final Buffer firstBuffer = ((GrizzlyResponseBodyPart) parts[0]).getBodyBuffer();
+                final Buffer firstBuffer = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
                 final MemoryManager mm = MemoryManager.DEFAULT_MEMORY_MANAGER;
                 Buffer constructedBodyBuffer = firstBuffer;
-                for (int i = 1, len = parts.length; i < len; i++) {
+                for (int i = 1, len = bodyParts.size(); i < len; i++) {
                     constructedBodyBuffer =
                             Buffers.appendBuffers(mm,
                                     constructedBodyBuffer,
-                                    ((GrizzlyResponseBodyPart) parts[i]).getBodyBuffer());
+                                    ((GrizzlyResponseBodyPart) bodyParts.get(i)).getBodyBuffer());
                 }
                 responseBody = constructedBodyBuffer;
             }

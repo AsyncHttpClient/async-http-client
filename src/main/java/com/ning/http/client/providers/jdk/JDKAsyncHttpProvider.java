@@ -68,7 +68,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -205,7 +204,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         isClose.set(true);
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, Collection<HttpResponseBodyPart> bodyParts) {
+    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new JDKResponse(status, headers, bodyParts);
     }
 

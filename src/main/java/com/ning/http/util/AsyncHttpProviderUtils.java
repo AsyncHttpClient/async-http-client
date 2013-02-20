@@ -18,12 +18,14 @@ import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Part;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,6 +136,8 @@ public class AsyncHttpProviderUtils {
 
     static final String VERSION = "Version";
 
+    static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
+
     public final static URI createUri(String u) {
         URI uri = URI.create(u);
         final String scheme = uri.getScheme();
@@ -181,13 +185,13 @@ public class AsyncHttpProviderUtils {
         return url;
     }
 
-    public final static String contentToString(Collection<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
+    public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
         return new String(contentToByte(bodyParts), charset);
     }
 
-    public final static byte[] contentToByte(Collection<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
+    public final static byte[] contentToByte(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
         if (bodyParts.size() == 1) {
-            return bodyParts.iterator().next().getBodyPartBytes();
+            return bodyParts.get(0).getBodyPartBytes();
 
         } else {
             int size = 0;
@@ -204,6 +208,10 @@ public class AsyncHttpProviderUtils {
 
             return bytes;
         }
+    }
+
+    public final static InputStream contentToInputStream(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
+        return bodyParts.isEmpty()? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
 
     public final static String getHost(URI uri) {
