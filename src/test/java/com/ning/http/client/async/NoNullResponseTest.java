@@ -72,11 +72,11 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
 
     private static class MockTrustManager implements X509TrustManager {
         public X509Certificate[] getAcceptedIssuers() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
-            throw new UnsupportedOperationException();
+            // Do nothing.
         }
 
         public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
