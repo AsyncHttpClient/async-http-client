@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -72,11 +72,11 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
 
     private static class MockTrustManager implements X509TrustManager {
         public X509Certificate[] getAcceptedIssuers() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
-            throw new UnsupportedOperationException();
+            // do nothing.
         }
 
         public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
