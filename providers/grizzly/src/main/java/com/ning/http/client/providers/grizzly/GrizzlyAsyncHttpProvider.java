@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -18,6 +18,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -214,9 +215,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     execute(c, request, handler, future);
                 } catch (Exception e) {
-                    if (e instanceof RuntimeException) {
-                        failed(e);
-                    } else if (e instanceof IOException) {
+                    if (e instanceof RuntimeException || e instanceof IOException) {
                         failed(e);
                     }
                     if (LOGGER.isWarnEnabled()) {
@@ -1452,7 +1451,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (!context.provider.connectionManager.canReturnConnection(c)) {
                 context.abort(new IOException("Maximum pooled connections exceeded"));
             } else {
-                if (!context.provider.connectionManager.returnConnection(context.requestUrl, c)) {
+                if (!context.provider.connectionManager.returnConnection(context.request, c)) {
                     ctx.getConnection().close();
                 }
             }
@@ -2412,7 +2411,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                       final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
             final String url = request.getUrl();
-            Connection c = pool.poll(AsyncHttpProviderUtils.getBaseUrl(url));
+            Connection c = pool.poll(getPoolKey(request));
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
@@ -2497,9 +2496,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-        boolean returnConnection(final String url, final Connection c) {
+        boolean returnConnection(final Request request, final Connection c) {
             final boolean result = (DO_NOT_CACHE.get(c) == null
-                                       && pool.offer(AsyncHttpProviderUtils.getBaseUrl(url), c));
+                                       && pool.offer(getPoolKey(request), c));
             if (result) {
                 if (provider.resolver != null) {
                     provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
@@ -2558,6 +2557,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
             };
+        }
+
+        private static String getPoolKey(final Request request) {
+            final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
+            return keyStrategy.getKey(AsyncHttpProviderUtils.createUri(AsyncHttpProviderUtils.getBaseUrl(request.getUrl())));
         }
 
         // ------------------------------------------------------ Nested Classes
