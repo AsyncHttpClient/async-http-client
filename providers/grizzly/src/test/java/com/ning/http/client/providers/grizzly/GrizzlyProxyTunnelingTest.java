@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -16,6 +16,12 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProxyTunnellingTest;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 
 public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
 
@@ -27,4 +33,21 @@ public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
     }
 
+    @Test(enabled=false)
+    @Override
+    public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        super.testRequestProxy();
+    }
+
+    @Test(enabled=false)
+    @Override
+    public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        super.testConfigProxy();
+    }
+
+    @Test(enabled=false)
+    @Override
+    public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        super.testSimpleAHCConfigProxy();
+    }
 }
