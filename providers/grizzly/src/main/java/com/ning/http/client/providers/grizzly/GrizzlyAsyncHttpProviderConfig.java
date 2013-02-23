@@ -57,7 +57,15 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          *
          * @since 1.8
          */
-        MAX_HTTP_PACKET_HEADER_SIZE(Integer.class, HttpCodecFilter.DEFAULT_MAX_HTTP_PACKET_HEADER_SIZE);
+        MAX_HTTP_PACKET_HEADER_SIZE(Integer.class, HttpCodecFilter.DEFAULT_MAX_HTTP_PACKET_HEADER_SIZE),
+
+        /**
+         * By default, Websocket messages that are fragmented will be buffered.  Once all
+         * fragments have been accumulated, the appropriate onMessage() call back will be
+         * invoked with the complete message.  If this functionality is not desired, set
+         * this property to false.
+         */
+        BUFFER_WEBSOCKET_FRAGMENTS(Boolean.class, true);
         
         
         final Object defaultValue;
