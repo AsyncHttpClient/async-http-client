@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +66,10 @@ public class ApacheResponse implements Response {
     /* @Override */
     public byte[] getResponseBodyAsBytes() throws IOException {
         return AsyncHttpProviderUtils.contentToByte(bodyParts);
+    }
+
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+        return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
 
     /* @Override */
