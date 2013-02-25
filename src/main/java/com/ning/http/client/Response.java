@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,6 +50,14 @@ public interface Response {
      * @throws IOException
      */
     public byte[] getResponseBodyAsBytes() throws IOException;
+
+    /**
+     * Return the entire response body as a ByteBuffer.
+     *
+     * @return the entire response body as a ByteBuffer.
+     * @throws IOException
+     */
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException;
 
     /**
      * Returns an input stream for the response body. Note that you should not try to get this more than once,

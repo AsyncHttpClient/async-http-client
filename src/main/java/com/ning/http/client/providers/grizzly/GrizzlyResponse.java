@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,6 +173,10 @@ public class GrizzlyResponse implements Response {
 
         return getResponseBody().getBytes();
 
+    }
+
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+        return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
 
     /**
