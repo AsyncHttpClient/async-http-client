@@ -481,7 +481,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                 FluentCaseInsensitiveStringsMap h = content.getHeaders();
                 Assert.assertNotNull(h);
-                Assert.assertEquals(h.getJoinedValue("Allow", ", "), "GET,HEAD,POST,OPTIONS,TRACE");
+                Assert.assertEquals(h.getJoinedValue("Allow", ", "), "OPTIONS,GET,HEAD,POST,TRACE");
                 return STATE.ABORT;
             }
 
