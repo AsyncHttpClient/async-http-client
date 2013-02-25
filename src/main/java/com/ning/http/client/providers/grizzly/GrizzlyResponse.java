@@ -180,7 +180,7 @@ public class GrizzlyResponse implements Response {
      * @since 1.7.11.
      */
     @SuppressWarnings("UnusedDeclaration")
-    private Buffer getResponseAsBuffer() {
+    private Buffer getResponseBodyAsBuffer() {
         return responseBody;
     }
 
