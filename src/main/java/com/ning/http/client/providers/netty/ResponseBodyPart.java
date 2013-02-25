@@ -63,19 +63,14 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bytes.get();
         }
 
-        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
-        int read = b.readableBytes();
-        int index = b.readerIndex();
-
-        byte[] rb = new byte[read];
-        b.readBytes(rb);
+        ChannelBuffer b = getChannelBuffer();
+        byte[] rb = b.toByteBuffer().array();
         bytes.set(rb);
-        b.readerIndex(index);
-        return bytes.get();
+        return rb;
     }
 
     public int writeTo(OutputStream outputStream) throws IOException {
-        ChannelBuffer b = chunk != null ? chunk.getContent() : response.getContent();
+        ChannelBuffer b = getChannelBuffer();
         int read = b.readableBytes();
         int index = b.readerIndex();
         if (read > 0) {
@@ -83,6 +78,10 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         }
         b.readerIndex(index);
         return read;
+    }
+
+    public ChannelBuffer getChannelBuffer() {
+        return chunk != null ? chunk.getContent() : response.getContent();
     }
 
     @Override

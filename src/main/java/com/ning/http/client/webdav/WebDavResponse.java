@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
@@ -47,6 +48,10 @@ public class WebDavResponse implements Response {
     /* @Override */
     public byte[] getResponseBodyAsBytes() throws IOException {
         return response.getResponseBodyAsBytes();
+    }
+
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+        return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
 
     public InputStream getResponseBodyAsStream() throws IOException {
