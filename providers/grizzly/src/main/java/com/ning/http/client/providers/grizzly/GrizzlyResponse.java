@@ -136,8 +136,16 @@ public class GrizzlyResponse extends ResponseBase {
      */
     public String getResponseBody() throws IOException {
 
-        return getResponseBody(Charsets.DEFAULT_CHARACTER_ENCODING);
+        return getResponseBody(null);
 
+    }
+
+    /**
+     * @return the response body as a Grizzly {@link Buffer}.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public Buffer getResponseBodyAsBuffer() {
+        return responseBody;
     }
 
     /**
