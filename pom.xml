@@ -58,6 +58,11 @@
             <id>neotyk</id>
             <name>Hubert Iwaniuk</name>
         </developer>
+        <developer>
+            <id>slandelle</id>
+            <name>Stephane Landelle</name>
+            <email>slandelle@excilys.com</email>
+        </developer>
     </developers>
     <contributors>
         <contributor>
