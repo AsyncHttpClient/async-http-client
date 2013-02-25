@@ -160,7 +160,7 @@ public class GrizzlyResponse implements Response {
      */
     public String getResponseBody() throws IOException {
 
-        return getResponseBody(Charsets.DEFAULT_CHARACTER_ENCODING);
+        return getResponseBody(null);
 
     }
 
@@ -170,8 +170,18 @@ public class GrizzlyResponse implements Response {
      */
     public byte[] getResponseBodyAsBytes() throws IOException {
 
-        return getResponseBody().getBytes(Charsets.DEFAULT_CHARACTER_ENCODING);
+        return getResponseBody().getBytes();
 
+    }
+
+    /**
+     * @return the response body as a Grizzly {@link Buffer}.
+     *
+     * @since 1.7.11.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    private Buffer getResponseAsBuffer() {
+        return responseBody;
     }
 
 
