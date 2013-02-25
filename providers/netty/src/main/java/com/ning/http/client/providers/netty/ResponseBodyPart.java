@@ -33,8 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * A callback class used when an HTTP response body is received.
  */
 public class ResponseBodyPart extends HttpResponseBodyPart {
-    // Empty arrays are immutable, can freely reuse
-    private final static byte[] NO_BYTES = new byte[0];
 
     private final HttpChunk chunk;
     private final HttpResponse response;
@@ -68,11 +66,9 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bp;
         }
 
-        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
-        int available = b.readableBytes();
-
-        final byte[] rb = (available == 0) ? NO_BYTES : new byte[available];
-        b.getBytes(b.readerIndex(), rb, 0, available);
+        ChannelBuffer b = getChannelBuffer();
+        byte[] rb = b.toByteBuffer().array();
+        bytes.set(rb);
         return rb;
     }
 
@@ -89,7 +85,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     
     @Override
     public int writeTo(OutputStream outputStream) throws IOException {
-        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
+        ChannelBuffer b = getChannelBuffer();
         int available = b.readableBytes();
         if (available > 0) {
             b.getBytes(b.readerIndex(), outputStream, available);
@@ -100,6 +96,10 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public ByteBuffer getBodyByteBuffer() {
         return ByteBuffer.wrap(getBodyPartBytes());
+    }
+
+    public ChannelBuffer getChannelBuffer() {
+        return chunk != null ? chunk.getContent() : response.getContent();
     }
 
     /**
