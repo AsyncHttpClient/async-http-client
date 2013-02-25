@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,14 +34,14 @@ public interface Response {
      *
      * @return The status code
      */
-    public int getStatusCode();
+    int getStatusCode();
 
     /**
      * Returns the status text for the request.
      *
      * @return The status text
      */
-    public String getStatusText();
+    String getStatusText();
 
     /**
      * Return the entire response body as a byte[].
@@ -48,7 +49,15 @@ public interface Response {
      * @return the entire response body as a byte[].
      * @throws IOException
      */
-    public byte[] getResponseBodyAsBytes() throws IOException;
+    byte[] getResponseBodyAsBytes() throws IOException;
+    
+    /**
+     * Return the entire response body as a ByteBuffer.
+     *
+     * @return the entire response body as a ByteBuffer.
+     * @throws IOException
+     */
+    ByteBuffer getResponseBodyAsByteBuffer() throws IOException;
 
     /**
      * Returns an input stream for the response body. Note that you should not try to get this more than once,
@@ -57,7 +66,7 @@ public interface Response {
      * @return The input stream
      * @throws java.io.IOException
      */
-    public InputStream getResponseBodyAsStream() throws IOException;
+    InputStream getResponseBodyAsStream() throws IOException;
 
     /**
      * Returns the first maxLength bytes of the response body as a string. Note that this does not check
@@ -69,7 +78,7 @@ public interface Response {
      * @return The response body
      * @throws java.io.IOException
      */
-    public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException;
+    String getResponseBodyExcerpt(int maxLength, String charset) throws IOException;
 
     /**
      * Return the entire response body as a String.
@@ -78,7 +87,7 @@ public interface Response {
      * @return the entire response body as a String.
      * @throws IOException
      */
-    public String getResponseBody(String charset) throws IOException;
+    String getResponseBody(String charset) throws IOException;
 
     /**
      * Returns the first maxLength bytes of the response body as a string. Note that this does not check
@@ -89,7 +98,7 @@ public interface Response {
      * @return The response body
      * @throws java.io.IOException
      */
-    public String getResponseBodyExcerpt(int maxLength) throws IOException;
+    String getResponseBodyExcerpt(int maxLength) throws IOException;
 
     /**
      * Return the entire response body as a String.
@@ -97,7 +106,7 @@ public interface Response {
      * @return the entire response body as a String.
      * @throws IOException
      */
-    public String getResponseBody() throws IOException;
+    String getResponseBody() throws IOException;
 
     /**
      * Return the request {@link URI}. Note that if the request got redirected, the value of the {@link URI} will be
@@ -106,30 +115,30 @@ public interface Response {
      * @return the request {@link URI}.
      * @throws MalformedURLException
      */
-    public URI getUri() throws MalformedURLException;
+    URI getUri() throws MalformedURLException;
 
     /**
      * Return the content-type header value.
      *
      * @return the content-type header value.
      */
-    public String getContentType();
+    String getContentType();
 
     /**
      * Return the response header
      *
      * @return the response header
      */
-    public String getHeader(String name);
+    String getHeader(String name);
 
     /**
      * Return a {@link List} of the response header value.
      *
      * @return the response header
      */
-    public List<String> getHeaders(String name);
+    List<String> getHeaders(String name);
 
-    public FluentCaseInsensitiveStringsMap getHeaders();
+    FluentCaseInsensitiveStringsMap getHeaders();
 
     /**
      * Return true if the response redirects to another object.
@@ -143,19 +152,19 @@ public interface Response {
      *
      * @return The textual representation
      */
-    public String toString();
+    String toString();
 
     /**
      * Return the list of {@link Cookie}.
      */
-    public List<Cookie> getCookies();
+    List<Cookie> getCookies();
 
     /**
      * Return true if the response's status has been computed by an {@link AsyncHandler}
      *
      * @return true if the response's status has been computed by an {@link AsyncHandler}
      */
-    public boolean hasResponseStatus();
+    boolean hasResponseStatus();
 
     /**
      * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the
@@ -164,7 +173,7 @@ public interface Response {
      *
      * @return true if the response's headers has been computed by an {@link AsyncHandler}
      */
-    public boolean hasResponseHeaders();
+    boolean hasResponseHeaders();
 
     /**
      * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the
@@ -173,8 +182,7 @@ public interface Response {
      *
      * @return true if the response's body has been computed by an {@link AsyncHandler}
      */
-    public boolean hasResponseBody();
-
+    boolean hasResponseBody();
 
     public static class ResponseBuilder {
         private final List<HttpResponseBodyPart> bodies =
