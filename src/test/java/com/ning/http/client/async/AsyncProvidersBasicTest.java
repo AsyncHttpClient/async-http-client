@@ -906,6 +906,9 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             public void onThrowable(Throwable t) {
             }
         });
+
+        // Make sure we are connected before cancelling. I know, Thread.sleep sucks!
+        Thread.sleep(1000);
         future.cancel(true);
         Response response = future.get(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNull(response);
@@ -1553,6 +1556,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 
             });
 
+            Thread.sleep(1000);
             future.cancel(true);
         } catch (IllegalStateException ise) {
             fail();
