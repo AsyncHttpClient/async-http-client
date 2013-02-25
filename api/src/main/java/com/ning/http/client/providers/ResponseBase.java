@@ -3,6 +3,7 @@ package com.ning.http.client.providers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +43,6 @@ public abstract class ResponseBase implements Response
         return status.getStatusText();
     }
 
-
     /* @Override */
     public final URI getUri() /*throws MalformedURLException*/ {
         return status.getUrl();
@@ -76,6 +76,10 @@ public abstract class ResponseBase implements Response
     /* @Override */
     public byte[] getResponseBodyAsBytes() throws IOException {
         return AsyncHttpProviderUtils.contentToBytes(bodyParts);
+    }
+
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+        return ByteBuffer.wrap(getResponseBodyAsBytes());
     }
 
     /* @Override */
