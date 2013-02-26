@@ -176,7 +176,7 @@ public class GrizzlyResponse implements Response {
     }
 
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
-        return ByteBuffer.wrap(getResponseBodyAsBytes());
+        return responseBody.toByteBuffer();
     }
 
     /**
