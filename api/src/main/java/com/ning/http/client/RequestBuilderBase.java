@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -163,7 +163,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         } else {
                             builder.append(name);
                         }
-                        if (value != null && !value.equals("")) {
+                        if (value != null) {
                             builder.append('=');
                             if (encode) {
                                 UTF8UrlEncoder.appendEncoded(builder, value);
@@ -384,11 +384,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
+        if (uri.getRawQuery() != null && uri.getRawQuery().length() > 0) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
             for (String query : queries) {
-                pos = query.indexOf("=");
+                pos = query.indexOf('=');
                 if (pos <= 0) {
                     addQueryParameter(query, null);
                 } else {

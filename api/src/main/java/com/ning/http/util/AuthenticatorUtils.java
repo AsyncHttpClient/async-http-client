@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -40,7 +40,7 @@ public final class AuthenticatorUtils {
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
-        if (realm.getOpaque() != null && realm.getOpaque() != null && realm.getOpaque().equals("") == false)
+        if (realm.getOpaque() != null && realm.getOpaque().length() > 0)
             construct(builder, "opaque", realm.getOpaque());
         builder.append("qop").append('=').append(realm.getQop()).append(", ");
         builder.append("nc").append('=').append(realm.getNc()).append(", ");

@@ -122,10 +122,15 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
                 size = httpRequest.getContentLength();
             }
             byte[] bytes = new byte[size];
+            int pos = 0;
             if (bytes.length > 0) {
-                //noinspection ResultOfMethodCallIgnored
-                int read = httpRequest.getInputStream().read(bytes);
-                httpResponse.getOutputStream().write(bytes, 0, read);
+                int read = 0;
+                while (read != -1) {
+                    read = httpRequest.getInputStream().read(bytes, pos, bytes.length - pos);
+                    pos += read;
+                }
+
+                httpResponse.getOutputStream().write(bytes);
             }
 
             httpResponse.setStatus(200);

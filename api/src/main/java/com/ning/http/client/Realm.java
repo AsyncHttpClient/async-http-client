@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -538,7 +538,7 @@ public class Realm {
                     .append(uri).toString().getBytes("ISO-8859-1"));
             byte[] ha2 = md.digest();
 
-            if(qop==null || qop.equals("")) {
+            if(qop==null || qop.length() == 0) {
                  md.update(new StringBuilder(toBase16(ha1))
                     .append(':')
                     .append(nonce)
@@ -599,7 +599,7 @@ public class Realm {
         public Realm build() {
 
             // Avoid generating
-            if (nonce != null && !nonce.equals("")) {
+            if (nonce != null && nonce.length() > 0) {
                 newCnonce();
                 try {
                     newResponse();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -668,7 +668,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             AuthenticatorUtils.computeBasicAuthentication(realm));
                     break;
                 case DIGEST:
-                    if (realm.getNonce() != null && !realm.getNonce().equals("")) {
+                    if (realm.getNonce() != null && realm.getNonce().length() > 0) {
                         try {
                             nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
                                     AuthenticatorUtils.computeDigestAuthentication(realm));
