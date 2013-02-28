@@ -89,7 +89,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
             /* @Override */
             public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a")) {
+                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=")) {
                     throw new IOException(status.getUrl().toURL().toString());
                 }
                 return super.onStatusReceived(status);
@@ -109,7 +109,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
             /* @Override */
             public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
                     throw new IOException("failed to parse the query properly");
                 }
                 return super.onStatusReceived(status);
