@@ -1860,7 +1860,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             String charset = request.getBodyEncoding();
             if (charset == null) {
-                charset = Charsets.DEFAULT_CHARACTER_ENCODING;
+                charset = Charsets.ASCII_CHARSET.name();
             }
             final byte[] data = new String(request.getByteData(), charset).getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
@@ -1896,7 +1896,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             String charset = request.getBodyEncoding();
             if (charset == null) {
-                charset = Charsets.DEFAULT_CHARACTER_ENCODING;
+                charset = Charsets.ASCII_CHARSET.name();
             }
             final byte[] data = request.getStringData().getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
@@ -1963,7 +1963,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             StringBuilder sb = null;
             String charset = request.getBodyEncoding();
             if (charset == null) {
-                charset = Charsets.DEFAULT_CHARACTER_ENCODING;
+                charset = Charsets.ASCII_CHARSET.name();
             }
             final FluentStringsMap params = request.getParams();
             if (!params.isEmpty()) {
