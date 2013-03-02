@@ -2001,7 +2001,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             String charset = request.getBodyEncoding();
             if (charset == null) {
-                charset = Charsets.DEFAULT_CHARACTER_ENCODING;
+                charset = Charsets.ASCII_CHARSET.name();
             }
             final byte[] data = request.getStringData().getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
