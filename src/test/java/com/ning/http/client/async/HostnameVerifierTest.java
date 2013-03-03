@@ -212,6 +212,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBody(), "This is a simple test file");
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -229,6 +230,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         } catch (ConnectException ex) {
             assertEquals(ConnectException.class, ex.getClass());
         }
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -246,6 +248,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         } catch (ConnectException ex) {
             assertEquals(ConnectException.class, ex.getClass());
         }
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -263,6 +266,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         } catch (ConnectException ex) {
             assertEquals(ConnectException.class, ex.getClass());
         }
+        client.close();
     }
 
     public static class PositiveHostVerifier implements HostnameVerifier {

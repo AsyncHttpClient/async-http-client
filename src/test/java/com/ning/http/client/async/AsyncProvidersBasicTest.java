@@ -1568,17 +1568,25 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = {"standalone", "default_provider"}, expectedExceptions = IllegalArgumentException.class)
     public void getShouldNotAllowBody() throws IllegalArgumentException, IOException {
         AsyncHttpClient c = getAsyncHttpClient(null);
-        AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
-        builder.setBody("Boo!");
-        builder.execute();
+        try {
+            AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
+            builder.setBody("Boo!");
+            builder.execute();
+        } finally {
+            c.close();
+        }
     }
 
     @Test(groups = {"standalone", "default_provider"}, expectedExceptions = IllegalArgumentException.class)
     public void headShouldNotAllowBody() throws IllegalArgumentException, IOException {
         AsyncHttpClient c = getAsyncHttpClient(null);
-        AsyncHttpClient.BoundRequestBuilder builder = c.prepareHead(getTargetUrl());
-        builder.setBody("Boo!");
-        builder.execute();
+        try {
+            AsyncHttpClient.BoundRequestBuilder builder = c.prepareHead(getTargetUrl());
+            builder.setBody("Boo!");
+            builder.execute();
+        } finally {
+            c.close();
+        }
     }
 
     protected String getBrokenTargetUrl() {
@@ -1591,6 +1599,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getBrokenTargetUrl());
         Response r = c.executeRequest(builder.build()).get();
         assertEquals(200, r.getStatusCode());
+        c.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -1599,6 +1608,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
         Response r = c.executeRequest(builder.build()).get();
         assertEquals(200, r.getStatusCode());
+        c.close();
     }
 
     @Test(groups = {"default_provider", "async"})

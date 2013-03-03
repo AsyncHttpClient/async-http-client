@@ -239,6 +239,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
                 <configuration>
+                    <!--<argLine>-Dorg.jboss.netty.tryUnsafe=true</argLine>-->
                     <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
                 </configuration>
             </plugin>

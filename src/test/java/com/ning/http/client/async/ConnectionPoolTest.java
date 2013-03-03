@@ -65,6 +65,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
         }
         assertNull(exception);
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
@@ -96,6 +97,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
         assertNotNull(exception);
         assertNotNull(exception.getMessage());
         assertEquals(exception.getMessage(),"Too many connections 1");
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider", "async"}, enabled = true, invocationCount = 10, alwaysRun = true)

@@ -12,6 +12,7 @@
  */
 package com.ning.http.client.async;
 
+import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
@@ -135,6 +136,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         SimpleAsyncHttpClient derived = client.derive().build();
 
         assertNotSame(derived, client);
+        client.close();
+        derived.close();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -207,8 +210,9 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
         try {
-            new SimpleAsyncHttpClient.Builder().build().derive().build();
+            SimpleAsyncHttpClient c = new SimpleAsyncHttpClient.Builder().build().derive().build();
             assertTrue(true);
+            c.close();
         } catch (NullPointerException ex) {
             fail();
         }
@@ -226,6 +230,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         Response response = client.get().get();
 
         assertEquals(response.getStatusCode(), 200);
+
+        client.close();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -262,6 +268,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         assertTrue(body.contains("Content-Type: application/test"));
         assertTrue(body.contains("name=\"baPart"));
         assertTrue(body.contains("filename=\"fileName"));
+
+        client.close();
         
     }
     
@@ -284,6 +292,8 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         assertTrue(body.contains("Content-Type: application/test"));
         assertTrue(body.contains("name=\"baPart"));
         assertTrue(body.contains("filename=\"fileName"));
+
+        client.close();
         
     }
 

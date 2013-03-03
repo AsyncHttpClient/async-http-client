@@ -56,6 +56,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         // Works
         Response response = c.prepareGet("http://www.google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -65,6 +66,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Response response = c.prepareGet("http://mail.google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -75,6 +77,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Response response = c.prepareGet("http://microsoft.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 301);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -84,6 +87,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 302);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -93,6 +97,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Response response = c.prepareGet("http://update.microsoft.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 302);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -103,6 +108,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         Response response = c.prepareGet("http://google.com/").execute().get(10,TimeUnit.SECONDS);
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 301);
+        c.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -175,6 +181,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         log.info(String.format("Executing request [%s] ...", requestUrl2));
         Response response = client.prepareGet(requestUrl2).execute().get();
         Assert.assertEquals(response.getStatusCode(), 301);
+        client.close();
     }
 
     /**
@@ -186,6 +193,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         AsyncHttpClient client = getAsyncHttpClient(null);
         Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get();
         Assert.assertEquals(response.getStatusCode(), 200);
+        client.close();
     }
 
     @Test(groups = {"online", "default_provider"})
@@ -273,6 +281,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest{
         }).get(10, TimeUnit.SECONDS);
         assertNotNull(response);
         assertTrue(response.getResponseBody().length() >= 3870);
+        c.close();
     }
 
 }

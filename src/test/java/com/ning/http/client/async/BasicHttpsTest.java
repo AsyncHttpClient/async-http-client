@@ -224,6 +224,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
         assertNotNull(resp);
         assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         assertEquals(resp.getResponseBody(), "This is a simple test file");
+        client.close();
     }
 
     @Test(groups = {"standalone", "default_provider"})
