@@ -33,21 +33,4 @@ public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
         return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
     }
 
-    @Test(enabled=false)
-    @Override
-    public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        super.testRequestProxy();
-    }
-
-    @Test(enabled=false)
-    @Override
-    public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        super.testConfigProxy();
-    }
-
-    @Test(enabled=false)
-    @Override
-    public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        super.testSimpleAHCConfigProxy();
-    }
 }
