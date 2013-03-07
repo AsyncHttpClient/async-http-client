@@ -12,10 +12,12 @@
  */
 package com.ning.http.client.websocket;
 
+import java.io.Closeable;
+
 /**
  * A Websocket client
  */
-public interface WebSocket {
+public interface WebSocket extends Closeable {
 
     /**
      * Send a byte message.
