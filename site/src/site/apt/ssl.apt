@@ -35,6 +35,6 @@ SecureRandom secureRandom = new SecureRandom();
 SSLContext sslContext = SSLContext.getInstance("TLS");
 sslContext.init(keyManagers, trustManagers, secureRandom);
 Builder builder = new AsyncHttpClientConfig.Builder();
-builder.setSSLContext(myOwnThreadPool);
+builder.setSSLContext(sslContext);
 AsyncHttpClient client = new AsyncHttpClient(builder.build());
 +-----+
