@@ -642,7 +642,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 path = uri.getRawPath() + "?" + uri.getRawQuery();
             else
                 path = uri.getRawPath();
-            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
+            nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path);
         }
         boolean webSocket = isWebSocket(uri);
         if (webSocket) {
@@ -955,13 +955,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        String requestUrl;
+        URI uri;
         if (useRawUrl) {
-            requestUrl = request.getRawUrl();
+            uri = request.getRawURI();
         } else {
-            requestUrl = request.getUrl();
+            uri = request.getURI();
         }
-        URI uri = AsyncHttpProviderUtils.createUri(requestUrl);
         Channel channel = null;
 
         if (useCache) {
@@ -1214,7 +1213,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     Realm realm,
                                     NettyResponseFuture<?> future) throws NTLMEngineException {
 
-        URI uri = URI.create(request.getUrl());
+        URI uri = request.getURI();
         String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
@@ -1228,7 +1227,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 realmBuilder = new Realm.RealmBuilder();
             }
-            return realmBuilder.setUri(uri.getPath())
+            return realmBuilder.setUri(uri.getRawPath())
                     .setMethodName(request.getMethod())
                     .setScheme(Realm.AuthScheme.KERBEROS)
                     .build();
@@ -1259,9 +1258,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
+            URI uri = request.getURI();
             headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
             newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
-                    .setUri(URI.create(request.getUrl()).getPath())
+                    .setUri(uri.getRawPath())
                     .setMethodName(request.getMethod())
                     .setNtlmMessageType2Received(true)
                     .build();
@@ -1287,7 +1287,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 authScheme = Realm.AuthScheme.NTLM;
             }
             newRealm = realmBuilder.setScheme(authScheme)
-                    .setUri(URI.create(request.getUrl()).getPath())
+                    .setUri(request.getURI().getPath())
                     .setMethodName(request.getMethod())
                     .build();
         }
@@ -1321,7 +1321,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             realmBuilder = new Realm.RealmBuilder();
         }
         newRealm = realmBuilder//.setScheme(realm.getAuthScheme())
-                .setUri(URI.create(request.getUrl()).getPath())
+                .setUri(request.getURI().getPath())
                 .setMethodName(request.getMethod())
                 .build();
 
@@ -2220,7 +2220,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 realmBuilder = new Realm.RealmBuilder();
                             }
                             newRealm = realmBuilder
-                                    .setUri(URI.create(request.getUrl()).getPath())
+                                    .setUri(request.getURI().getPath())
                                     .setMethodName(request.getMethod())
                                     .setUsePreemptiveAuth(true)
                                     .parseWWWAuthenticateHeader(wwwAuth.get(0))
@@ -2293,7 +2293,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         try {
                             log.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                            upgradeProtocol(ctx.getChannel().getPipeline(), URI.create(request.getUrl()).getScheme());
+                            upgradeProtocol(ctx.getChannel().getPipeline(), request.getURI().getScheme());
                         } catch (Throwable ex) {
                             abort(future, ex);
                         }

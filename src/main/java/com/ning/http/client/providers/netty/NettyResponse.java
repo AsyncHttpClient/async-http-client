@@ -46,7 +46,6 @@ import org.jboss.netty.buffer.ChannelBuffers;
 public class NettyResponse implements Response {
     private final static Charset DEFAULT_CHARSET = Charset.forName("ISO-8859-1");
 
-    private final URI uri;
     private final List<HttpResponseBodyPart> bodyParts;
     private final HttpResponseHeaders headers;
     private final HttpResponseStatus status;
@@ -59,7 +58,6 @@ public class NettyResponse implements Response {
         this.status = status;
         this.headers = headers;
         this.bodyParts = bodyParts;
-        uri = status.getUrl();
     }
 
     /* @Override */
@@ -140,7 +138,7 @@ public class NettyResponse implements Response {
     /* @Override */
 
     public URI getUri() throws MalformedURLException {
-        return uri;
+        return status.getUrl();
     }
 
     /* @Override */
