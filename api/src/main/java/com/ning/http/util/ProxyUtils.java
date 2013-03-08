@@ -18,7 +18,6 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
 import com.ning.http.client.Request;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
@@ -72,7 +71,7 @@ public class ProxyUtils {
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(URI.create(request.getUrl())));
+        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(request.getOriginalURI()));
     }
 
     /**
