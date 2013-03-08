@@ -137,15 +137,19 @@ public class AsyncHttpProviderUtils {
     static final String VERSION = "Version";
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
-
-    public final static URI createUri(String u) {
-        URI uri = URI.create(u);
+    
+    public static final void validateSupportedScheme(URI uri) {
         final String scheme = uri.getScheme();
         if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
                 && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + u
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
                     + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
+    }
+
+    public final static URI createUri(String u) {
+        URI uri = URI.create(u);
+        validateSupportedScheme(uri);
 
         String path = uri.getPath();
         if (path == null) {

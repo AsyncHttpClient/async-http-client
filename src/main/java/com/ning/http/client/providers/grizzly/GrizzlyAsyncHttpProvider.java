@@ -846,7 +846,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 httpCtx.isWSRequest = true;
                 convertToUpgradeRequest(httpCtx);
             }
-            final URI uri = AsyncHttpProviderUtils.createUri(httpCtx.requestUrl);
+            final URI uri = httpCtx.request.getURI();
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             boolean secure = "https".equals(uri.getScheme());
             builder.method(request.getMethod());
@@ -1209,7 +1209,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final GrizzlyResponseStatus responseStatus =
                     new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
-                            getURI(context.requestUrl),
+                            context.request.getURI(),
                             provider);
             context.responseStatus = responseStatus;
             if (context.statusHandler != null) {
@@ -1457,14 +1457,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-
-        private static URI getURI(String url) {
-
-            return AsyncHttpProviderUtils.createUri(url);
-
-        }
-
-
         private static boolean redirectCountExceeded(final HttpTransactionContext context) {
 
             return (context.redirectCount.get() > context.maxRedirectCount);
@@ -1521,7 +1513,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final Request req = httpTransactionContext.request;
                 realm = new Realm.RealmBuilder().clone(realm)
                                 .setScheme(realm.getAuthScheme())
-                                .setUri(URI.create(httpTransactionContext.requestUrl).getPath())
+                                .setUri(httpTransactionContext.request.getURI().getPath())
                                 .setMethodName(req.getMethod())
                                 .setUsePreemptiveAuth(true)
                                 .parseWWWAuthenticateHeader(auth)
@@ -1600,9 +1592,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                 URI orig;
                 if (httpTransactionContext.lastRedirectURI == null) {
-                    orig = AsyncHttpProviderUtils.createUri(httpTransactionContext.requestUrl);
+                    orig = httpTransactionContext.request.getURI();
                 } else {
-                    orig = AsyncHttpProviderUtils.getRedirectUri(AsyncHttpProviderUtils.createUri(httpTransactionContext.requestUrl),
+                    orig = AsyncHttpProviderUtils.getRedirectUri(httpTransactionContext.request.getURI(),
                                                                  httpTransactionContext.lastRedirectURI);
                 }
                 httpTransactionContext.lastRedirectURI = redirectURL;
@@ -2320,13 +2312,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                       final GrizzlyResponseFuture requestFuture,
                                       final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
-            final String url = request.getUrl();
             Connection c = pool.poll(getPoolKey(request));
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
                 }
-                doAsyncConnect(url, request, requestFuture, connectHandler);
+                doAsyncConnect(request, requestFuture, connectHandler);
             } else {
                 provider.touchConnection(c, request);
                 connectHandler.completed(c);
@@ -2338,25 +2329,23 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     final GrizzlyResponseFuture requestFuture)
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-            final Connection c = (obtainConnection0(request.getUrl(),
-                                                    request,
+            final Connection c = (obtainConnection0(request,
                                                     requestFuture));
             DO_NOT_CACHE.set(c, Boolean.TRUE);
             return c;
 
         }
 
-        void doAsyncConnect(final String url,
-                            final Request request,
+        void doAsyncConnect(final Request request,
                             final GrizzlyResponseFuture requestFuture,
                             final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
 
-            final URI uri = AsyncHttpProviderUtils.createUri(url);
             ProxyServer proxy = getProxyServer(request);
             if (ProxyUtils.avoidProxy(proxy, request)) {
                 proxy = null;
             }
+            final URI uri = request.getURI();
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             if(request.getLocalAddress()!=null) {
@@ -2369,12 +2358,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-        private Connection obtainConnection0(final String url,
-                                             final Request request,
+        private Connection obtainConnection0(final Request request,
                                              final GrizzlyResponseFuture requestFuture)
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-            final URI uri = AsyncHttpProviderUtils.createUri(url);
+            final URI uri = request.getURI();
             ProxyServer proxy = getProxyServer(request);
             if (ProxyUtils.avoidProxy(proxy, request)) {
                 proxy = null;
@@ -2471,7 +2459,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         private static String getPoolKey(final Request request) {
             final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-            return keyStrategy.getKey(AsyncHttpProviderUtils.createUri(AsyncHttpProviderUtils.getBaseUrl(request.getUrl())));
+            return keyStrategy.getKey(request.getURI());
         }
 
         // ------------------------------------------------------ Nested Classes
