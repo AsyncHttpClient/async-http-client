@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -60,7 +62,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
@@ -1482,7 +1483,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void testAwsS3() throws Exception {
         final AsyncHttpClient c = getAsyncHttpClient(new Builder().build());
         Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
-        if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
+        if (!isNonEmpty(response.getResponseBody())) {
             fail("No response Body");
         } else {
             assertEquals(response.getStatusCode(), 403);
@@ -1495,7 +1496,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
         final AsyncHttpClient c = getAsyncHttpClient(new Builder().setAsyncHttpClientProviderConfig(getProviderConfig()).build());
         Response response = c.prepareGet("http://test.s3.amazonaws.com/").execute().get();
-        if (response.getResponseBody() == null || response.getResponseBody().equals("")) {
+        if (!isNonEmpty(response.getResponseBody())) {
             fail("No response Body");
         } else {
             assertEquals(response.getStatusCode(), 403);

@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.providers.netty;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -617,7 +619,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return spnegoEngine;
     }
 
-    @SuppressWarnings("deprecation")
     private static HttpRequest construct(AsyncHttpClientConfig config,
                                          Request request,
                                          HttpMethod m,
@@ -634,15 +635,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
-            StringBuilder path = null;
+            String path = null;
             if (isProxyServer(config, request))
-                path = new StringBuilder(uri.toString());
-            else {
-                path = new StringBuilder(uri.getRawPath());
-                if (uri.getQuery() != null) {
-                    path.append("?").append(uri.getRawQuery());
-                }
-            }
+                path = uri.toString();
+            else if (uri.getRawQuery() != null)
+                path = uri.getRawPath() + "?" + uri.getRawQuery();
+            else
+                path = uri.getRawPath();
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path.toString());
         }
         boolean webSocket = isWebSocket(uri);
@@ -708,7 +707,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             AuthenticatorUtils.computeBasicAuthentication(realm));
                     break;
                 case DIGEST:
-                    if (realm.getNonce() != null && !realm.getNonce().equals("")) {
+                    if (isNonEmpty(realm.getNonce())) {
                         try {
                             nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
                                     AuthenticatorUtils.computeDigestAuthentication(realm));
@@ -793,7 +792,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
-            if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+            if (isNonEmpty(request.getCookies())) {
                 CookieEncoder httpCookieEncoder = new CookieEncoder(false);
                 Iterator<Cookie> ic = request.getCookies().iterator();
                 Cookie c;
@@ -830,7 +829,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
                     nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes, 0, length));
-                } else if (request.getParams() != null && !request.getParams().isEmpty()) {
+                } else if (isNonEmpty(request.getParams())) {
                     StringBuilder sb = new StringBuilder();
                     for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                         final String key = paramEntry.getKey();
