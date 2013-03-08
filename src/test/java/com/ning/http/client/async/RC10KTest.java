@@ -132,7 +132,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
 
         public STATE onBodyPartReceived(HttpResponseBodyPart event) throws Exception {
             String s = new String(event.getBodyPartBytes());
-            result.compareAndSet(-1, new Integer(s.trim().equals("") ? "-1" : s));
+            result.compareAndSet(-1, new Integer(s.trim().isEmpty() ? "-1" : s));
             return STATE.CONTINUE;
         }
 

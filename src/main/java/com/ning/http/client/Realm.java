@@ -16,6 +16,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -579,7 +581,7 @@ public class Realm {
         public Realm build() {
 
             // Avoid generating
-            if (nonce != null && !nonce.equals("")) {
+            if (isNonEmpty(nonce)) {
                 newCnonce();
                 try {
                     newResponse();
