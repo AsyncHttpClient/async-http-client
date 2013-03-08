@@ -42,10 +42,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
     private class BasicHandler extends AbstractHandler {
 
-        public void handle(String s,
-                           org.eclipse.jetty.server.Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
@@ -65,63 +62,65 @@ public abstract class FilterTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
         AsyncHttpClient c = getAsyncHttpClient(b.build());
-
-        Response response = c.preparePost(getTargetUrl())
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        c.close();
+        try {
+            Response response = c.preparePost(getTargetUrl()).execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void loadThrottleTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
         AsyncHttpClient c = getAsyncHttpClient(b.build());
+        try {
+            List<Future<Response>> futures = new ArrayList<Future<Response>>();
+            for (int i = 0; i < 200; i++) {
+                futures.add(c.preparePost(getTargetUrl()).execute());
+            }
 
-        List<Future<Response>> futures = new ArrayList<Future<Response>>();
-        for (int i = 0; i < 200; i++) {
-            futures.add(c.preparePost(getTargetUrl()).execute());
+            for (Future<Response> f : futures) {
+                Response r = f.get();
+                assertNotNull(f.get());
+                assertEquals(r.getStatusCode(), 200);
+            }
+        } finally {
+            c.close();
         }
-
-        for (Future<Response> f : futures) {
-            Response r = f.get();
-            assertNotNull(f.get());
-            assertEquals(r.getStatusCode(), 200);
-        }
-
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void maxConnectionsText() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl())
-                    .execute().get();
+            c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (IOException ex) {
             assertNotNull(ex);
             assertEquals(ex.getCause().getClass(), FilterException.class);
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
     public String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addResponseFilter(new ResponseFilter() {
@@ -134,18 +133,18 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl())
-                    .execute().get();
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void replayResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -165,19 +164,19 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl())
-                    .execute().get();
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Replay"), "true");
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void replayStatusCodeResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -197,19 +196,19 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl())
-                    .execute().get();
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-Replay"), "true");
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void replayHeaderResponseFilterTest() throws Throwable {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         final AtomicBoolean replay = new AtomicBoolean(true);
@@ -218,16 +217,10 @@ public abstract class FilterTest extends AbstractBasicTest {
 
             public FilterContext filter(FilterContext ctx) throws FilterException {
 
-                if (ctx.getResponseHeaders() != null
-                        && ctx.getResponseHeaders().getHeaders().getFirstValue("Ping").equals("Pong")
-                        && replay.getAndSet(false)) {
+                if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().getHeaders().getFirstValue("Ping").equals("Pong") && replay.getAndSet(false)) {
 
                     Request request = new RequestBuilder(ctx.getRequest()).addHeader("Ping", "Pong").build();
-                    return new FilterContext.FilterContextBuilder()
-                            .asyncHandler(ctx.getAsyncHandler())
-                            .request(request)
-                            .replayRequest(true)
-                            .build();
+                    return new FilterContext.FilterContextBuilder().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -236,15 +229,15 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong")
-                    .execute().get();
+            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("Ping"), "Pong");
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 }

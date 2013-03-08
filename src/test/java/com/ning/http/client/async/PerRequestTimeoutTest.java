@@ -1,18 +1,18 @@
 /*
-* Copyright 2010 Ning, Inc.
-*
-* Ning licenses this file to you under the Apache License, version 2.0
-* (the "License"); you may not use this file except in compliance with the
-* License. You may obtain a copy of the License at:
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations
-* under the License.
-*/
+ * Copyright 2010 Ning, Inc.
+ *
+ * Ning licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncCompletionHandler;
@@ -44,7 +44,7 @@ import static org.testng.Assert.fail;
 
 /**
  * Per request timeout configuration test.
- *
+ * 
  * @author Hubert Iwaniuk
  */
 public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
@@ -95,14 +95,13 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testRequestTimeout() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         PerRequestConfig requestConfig = new PerRequestConfig();
         requestConfig.setRequestTimeoutInMs(100);
-        Future<Response> responseFuture =
-                client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
         try {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
             client.close();
@@ -113,18 +112,18 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
         } catch (TimeoutException e) {
             fail("Timeout.", e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         PerRequestConfig requestConfig = new PerRequestConfig();
         requestConfig.setRequestTimeoutInMs(-1);
-        Future<Response> responseFuture =
-                client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
         try {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
             Response response = responseFuture.get();
             assertNotNull(response);
             client.close();
@@ -133,15 +132,16 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof TimeoutException);
             assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testGlobalRequestTimeout() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
-        Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
         try {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
             client.close();
@@ -152,44 +152,45 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
         } catch (TimeoutException e) {
             fail("Timeout.", e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testGlobalIdleTimeout() throws IOException {
-        final long times[] = new long[]{-1, -1};
+        final long times[] = new long[] { -1, -1 };
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).build());
-        Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                return response;
-            }
-
-            @Override
-            public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                times[0] = System.currentTimeMillis();
-                return super.onBodyPartReceived(content);
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                times[1] = System.currentTimeMillis();
-                super.onThrowable(t);
-            }
-        });
         try {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    return response;
+                }
+
+                @Override
+                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
+                    times[0] = System.currentTimeMillis();
+                    return super.onBodyPartReceived(content);
+                }
+
+                @Override
+                public void onThrowable(Throwable t) {
+                    times[1] = System.currentTimeMillis();
+                    super.onThrowable(t);
+                }
+            });
             Response response = responseFuture.get();
             assertNotNull(response);
             assertEquals(response.getResponseBody(), MSG + MSG);
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            log.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.",
-                    times[0], times[1], (times[1] - times[0])));
+            log.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.", times[0], times[1], (times[1] - times[0])));
             fail("Timeouted on idle.", e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 }

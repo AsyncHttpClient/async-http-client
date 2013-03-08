@@ -33,40 +33,35 @@ import java.security.cert.X509Certificate;
 public abstract class NoNullResponseTest extends AbstractBasicTest {
     private static final String VERISIGN_HTTPS_URL = "https://www.verisign.com";
 
-    @Test(invocationCount = 4, groups = {"online", "default_provider"})
+    @Test(invocationCount = 4, groups = { "online", "default_provider" })
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Throwable {
         final AsyncHttpClient client = create();
-        final BoundRequestBuilder builder = client.prepareGet(VERISIGN_HTTPS_URL);
-        final Response response1 = builder.execute().get();
-        Thread.sleep(5000);
-        final Response response2 = builder.execute().get();
-        if (response2 != null) {
-            System.out.println("Success (2nd response was not null).");
-        } else {
-            System.out.println("Failed (2nd response was null).");
+        try {
+            final BoundRequestBuilder builder = client.prepareGet(VERISIGN_HTTPS_URL);
+            final Response response1 = builder.execute().get();
+            Thread.sleep(5000);
+            final Response response2 = builder.execute().get();
+            if (response2 != null) {
+                System.out.println("Success (2nd response was not null).");
+            } else {
+                System.out.println("Failed (2nd response was null).");
+            }
+            Assert.assertNotNull(response1);
+            Assert.assertNotNull(response2);
+        } finally {
+            client.close();
         }
-        Assert.assertNotNull(response1);
-        Assert.assertNotNull(response2);
-        client.close();
     }
 
     private AsyncHttpClient create() throws GeneralSecurityException {
-        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder()
-                .setCompressionEnabled(true)
-                .setFollowRedirects(true)
-                .setSSLContext(getSSLContext())
-                .setAllowPoolingConnection(true)
-                .setConnectionTimeoutInMs(10000)
-                .setIdleConnectionInPoolTimeoutInMs(60000)
-                .setRequestTimeoutInMs(10000)
-                .setMaximumConnectionsPerHost(-1)
-                .setMaximumConnectionsTotal(-1);
+        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirects(true).setSSLContext(getSSLContext()).setAllowPoolingConnection(true).setConnectionTimeoutInMs(10000)
+                .setIdleConnectionInPoolTimeoutInMs(60000).setRequestTimeoutInMs(10000).setMaximumConnectionsPerHost(-1).setMaximumConnectionsTotal(-1);
         return getAsyncHttpClient(configBuilder.build());
     }
 
     private SSLContext getSSLContext() throws GeneralSecurityException {
         final SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, new TrustManager[]{new MockTrustManager()}, null);
+        sslContext.init(null, new TrustManager[] { new MockTrustManager() }, null);
         return sslContext;
     }
 

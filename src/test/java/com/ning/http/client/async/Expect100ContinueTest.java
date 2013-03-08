@@ -15,22 +15,24 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.Future;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Response;
 
 /**
  * Test the Expect: 100-Continue.
@@ -38,10 +40,7 @@ import static org.testng.Assert.assertNotNull;
 public abstract class Expect100ContinueTest extends AbstractBasicTest {
 
     private class ZeroCopyHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int size = 10 * 1024;
             if (httpRequest.getContentLength() > 0) {
@@ -58,26 +57,26 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void Expect100Continue() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
-        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(file).execute();
-        Response resp = f.get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file");
-        client.close();
-
+            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setHeader("Expect", "100-continue").setBody(file).execute();
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), "This is a simple test file");
+        } finally {
+            client.close();
+        }
     }
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new ZeroCopyHandler();
     }
-
 }

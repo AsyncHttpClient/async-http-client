@@ -16,7 +16,7 @@ package com.ning.http.client.async.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.PerRequestTimeoutTest;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import com.ning.http.client.async.ProviderUtil;
 
 public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {
 
@@ -27,10 +27,7 @@ public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
 
 }

@@ -43,116 +43,118 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Hubert Iwaniuk
  */
-public abstract class MultipleHeaderTest extends AbstractBasicTest{
+public abstract class MultipleHeaderTest extends AbstractBasicTest {
     private ExecutorService executorService;
     private ServerSocket serverSocket;
     private Future<?> voidFuture;
 
-    @Test(groups = {"standalone", "default_provider"})
-    public void testMultipleOtherHeaders()
-            throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        final String[] xffHeaders = new String[]{null, null};
+    @Test(groups = { "standalone", "default_provider" })
+    public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        final String[] xffHeaders = new String[] { null, null };
 
         AsyncHttpClient ahc = getAsyncHttpClient(null);
-        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
-        final CountDownLatch latch = new CountDownLatch(1);
-        ahc.executeRequest(req, new AsyncHandler<Void>() {
-            public void onThrowable(Throwable t) {
-                t.printStackTrace(System.out);
-            }
-
-            public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
-                return STATE.CONTINUE;
-            }
-
-            public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
-                return STATE.CONTINUE;
-            }
-
-            public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
-                int i = 0;
-                for (String header : response.getHeaders().get("X-Forwarded-For")) {
-                    xffHeaders[i++] = header;
-                }
-                latch.countDown();
-                return STATE.CONTINUE;
-            }
-
-            public Void onCompleted() throws Exception {
-                return null;
-            }
-        }).get(3, TimeUnit.SECONDS);
-
-        if (!latch.await(2, TimeUnit.SECONDS)) {
-            Assert.fail("Time out");
-        }
-        Assert.assertNotNull(xffHeaders[0]);
-        Assert.assertNotNull(xffHeaders[1]);
         try {
-            Assert.assertEquals(xffHeaders[0], "abc");
-            Assert.assertEquals(xffHeaders[1], "def");
-        } catch (AssertionError ex) {
-            Assert.assertEquals(xffHeaders[1], "abc");
-            Assert.assertEquals(xffHeaders[0], "def");
+            Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiOther").build();
+            final CountDownLatch latch = new CountDownLatch(1);
+            ahc.executeRequest(req, new AsyncHandler<Void>() {
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace(System.out);
+                }
+
+                public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                    int i = 0;
+                    for (String header : response.getHeaders().get("X-Forwarded-For")) {
+                        xffHeaders[i++] = header;
+                    }
+                    latch.countDown();
+                    return STATE.CONTINUE;
+                }
+
+                public Void onCompleted() throws Exception {
+                    return null;
+                }
+            }).get(3, TimeUnit.SECONDS);
+
+            if (!latch.await(2, TimeUnit.SECONDS)) {
+                Assert.fail("Time out");
+            }
+            Assert.assertNotNull(xffHeaders[0]);
+            Assert.assertNotNull(xffHeaders[1]);
+            try {
+                Assert.assertEquals(xffHeaders[0], "abc");
+                Assert.assertEquals(xffHeaders[1], "def");
+            } catch (AssertionError ex) {
+                Assert.assertEquals(xffHeaders[1], "abc");
+                Assert.assertEquals(xffHeaders[0], "def");
+            }
+        } finally {
+            ahc.close();
         }
-        ahc.close();
     }
 
-
-    @Test(groups = {"standalone", "default_provider"})
-    public void testMultipleEntityHeaders()
-            throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        final String[] clHeaders = new String[]{null, null};
+    @Test(groups = { "standalone", "default_provider" })
+    public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        final String[] clHeaders = new String[] { null, null };
 
         AsyncHttpClient ahc = getAsyncHttpClient(null);
-        Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
-        final CountDownLatch latch = new CountDownLatch(1);
-        ahc.executeRequest(req, new AsyncHandler<Void>() {
-            public void onThrowable(Throwable t) {
-                t.printStackTrace(System.out);
-            }
-
-            public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
-                return STATE.CONTINUE;
-            }
-
-            public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
-                return STATE.CONTINUE;
-            }
-
-            public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
-                try {
-                    int i = 0;
-                    for (String header : response.getHeaders().get("Content-Length")) {
-                        clHeaders[i++] = header;
-                    }
-                } finally {
-                    latch.countDown();
-                }
-                return STATE.CONTINUE;
-            }
-
-            public Void onCompleted() throws Exception {
-                return null;
-            }
-        }).get(3, TimeUnit.SECONDS);
-
-        if (!latch.await(2, TimeUnit.SECONDS)) {
-            Assert.fail("Time out");
-        }
-        Assert.assertNotNull(clHeaders[0]);
-        Assert.assertNotNull(clHeaders[1]);
-
-        // We can predict the order
         try {
-            Assert.assertEquals(clHeaders[0], "2");
-            Assert.assertEquals(clHeaders[1], "1");
-        } catch (Throwable ex) {
-            Assert.assertEquals(clHeaders[0], "1");
-            Assert.assertEquals(clHeaders[1], "2");
-        }
-        ahc.close();
+            Request req = new RequestBuilder("GET").setUrl("http://localhost:" + port1 + "/MultiEnt").build();
+            final CountDownLatch latch = new CountDownLatch(1);
+            ahc.executeRequest(req, new AsyncHandler<Void>() {
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace(System.out);
+                }
 
+                public STATE onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public STATE onStatusReceived(HttpResponseStatus objectHttpResponseStatus) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public STATE onHeadersReceived(HttpResponseHeaders response) throws Exception {
+                    try {
+                        int i = 0;
+                        for (String header : response.getHeaders().get("Content-Length")) {
+                            clHeaders[i++] = header;
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                    return STATE.CONTINUE;
+                }
+
+                public Void onCompleted() throws Exception {
+                    return null;
+                }
+            }).get(3, TimeUnit.SECONDS);
+
+            if (!latch.await(2, TimeUnit.SECONDS)) {
+                Assert.fail("Time out");
+            }
+            Assert.assertNotNull(clHeaders[0]);
+            Assert.assertNotNull(clHeaders[1]);
+
+            // We can predict the order
+            try {
+                Assert.assertEquals(clHeaders[0], "2");
+                Assert.assertEquals(clHeaders[1], "1");
+            } catch (Throwable ex) {
+                Assert.assertEquals(clHeaders[0], "1");
+                Assert.assertEquals(clHeaders[1], "2");
+            }
+        } finally {
+            ahc.close();
+        }
     }
 
     @BeforeClass(alwaysRun = true)
@@ -174,23 +176,12 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest{
                     socket.shutdownInput();
                     if (req.endsWith("MultiEnt")) {
                         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-                        outputStreamWriter.append("HTTP/1.0 200 OK\n" +
-                                "Connection: close\n" +
-                                "Content-Type: text/plain; charset=iso-8859-1\n" +
-                                "Content-Length: 2\n" +
-                                "Content-Length: 1\n" +
-                                "\n0\n");
+                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 2\n" + "Content-Length: 1\n" + "\n0\n");
                         outputStreamWriter.flush();
                         socket.shutdownOutput();
                     } else if (req.endsWith("MultiOther")) {
                         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-                        outputStreamWriter.append("HTTP/1.0 200 OK\n" +
-                                "Connection: close\n" +
-                                "Content-Type: text/plain; charset=iso-8859-1\n" +
-                                "Content-Length: 1\n" +
-                                "X-Forwarded-For: abc\n" +
-                                "X-Forwarded-For: def\n" +
-                                "\n0\n");
+                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 1\n" + "X-Forwarded-For: abc\n" + "X-Forwarded-For: def\n" + "\n0\n");
                         outputStreamWriter.flush();
                         socket.shutdownOutput();
                     }

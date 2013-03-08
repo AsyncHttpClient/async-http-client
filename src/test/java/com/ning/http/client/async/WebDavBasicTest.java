@@ -38,7 +38,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-
 public abstract class WebDavBasicTest extends AbstractBasicTest {
 
     public Embedded embedded;
@@ -94,91 +93,100 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
         embedded.stop();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-        Response response = c.executeRequest(mkcolRequest).get();
+        try {
+            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+            Response response = c.executeRequest(mkcolRequest).get();
 
-        assertEquals(response.getStatusCode(), 201);
-
-        c.close();
+            assertEquals(response.getStatusCode(), 201);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
-
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
-        Response response = c.executeRequest(mkcolRequest).get();
-        assertEquals(response.getStatusCode(), 409);
-        c.close();
+        try {
+            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
+            Response response = c.executeRequest(mkcolRequest).get();
+            assertEquals(response.getStatusCode(), 409);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
-        Response response = c.executeRequest(propFindRequest).get();
+        try {
+            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
+            Response response = c.executeRequest(propFindRequest).get();
 
-        assertEquals(response.getStatusCode(), 404);
-        c.close();
+            assertEquals(response.getStatusCode(), 404);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+            Response response = c.executeRequest(mkcolRequest).get();
+            assertEquals(response.getStatusCode(), 201);
 
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-        Response response = c.executeRequest(mkcolRequest).get();
-        assertEquals(response.getStatusCode(), 201);
+            Request putRequest = new RequestBuilder("PUT").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
+            response = c.executeRequest(putRequest).get();
+            assertEquals(response.getStatusCode(), 201);
 
-        Request putRequest = new RequestBuilder("PUT").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
-        response = c.executeRequest(putRequest).get();
-        assertEquals(response.getStatusCode(), 201);
+            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).build();
+            response = c.executeRequest(propFindRequest).get();
 
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).build();
-        response = c.executeRequest(propFindRequest).get();
-
-        assertEquals(response.getStatusCode(), 207);
-        assertTrue(response.getResponseBody().contains("<status>HTTP/1.1 200 OK</status>"));
-        c.close();
-
+            assertEquals(response.getStatusCode(), 207);
+            assertTrue(response.getResponseBody().contains("<status>HTTP/1.1 200 OK</status>"));
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+            Response response = c.executeRequest(mkcolRequest).get();
+            assertEquals(response.getStatusCode(), 201);
 
-        Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-        Response response = c.executeRequest(mkcolRequest).get();
-        assertEquals(response.getStatusCode(), 201);
+            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
+            WebDavResponse webDavResponse = c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
+                /**
+                 * {@inheritDoc}
+                 */
+                /* @Override */
+                public void onThrowable(Throwable t) {
 
-        Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
-        WebDavResponse webDavResponse = c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
-            /**
-             * {@inheritDoc}
-             */
-            /* @Override */
-            public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                }
 
-                t.printStackTrace();
-            }
+                @Override
+                public WebDavResponse onCompleted(WebDavResponse response) throws Exception {
+                    return response;
+                }
+            }).get();
 
-            @Override
-            public WebDavResponse onCompleted(WebDavResponse response) throws Exception {
-                return response;
-            }
-        }).get();
-
-        assertNotNull(webDavResponse);
-        assertEquals(webDavResponse.getStatusCode(), 200);
-        c.close();
+            assertNotNull(webDavResponse);
+            assertEquals(webDavResponse.getStatusCode(), 200);
+        } finally {
+            c.close();
+        }
     }
-
 }

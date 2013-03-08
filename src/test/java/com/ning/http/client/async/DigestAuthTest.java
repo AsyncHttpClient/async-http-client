@@ -38,7 +38,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -61,8 +60,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         server = new Server();
         Logger root = Logger.getRootLogger();
         root.setLevel(Level.DEBUG);
-        root.addAppender(new ConsoleAppender(
-                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
+        root.addAppender(new ConsoleAppender(new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
 
         port1 = findFreePort();
         Connector listener = new SelectChannelConnector();
@@ -77,7 +75,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
         Constraint constraint = new Constraint();
         constraint.setName(Constraint.__BASIC_AUTH);
-        constraint.setRoles(new String[]{user, admin});
+        constraint.setRoles(new String[] { user, admin });
         constraint.setAuthenticate(true);
 
         ConstraintMapping mapping = new ConstraintMapping();
@@ -104,10 +102,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
     }
 
     private class SimpleHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
             response.addHeader("X-Auth", request.getHeader("Authorization"));
             response.setStatus(200);
@@ -116,50 +111,51 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
-                .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
-                        .setPassword(admin)
-                        .setRealmName("MyRealm")
-                        .setScheme(Realm.AuthScheme.DIGEST).build());
+        try {
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").setScheme(Realm.AuthScheme.DIGEST).build());
 
-        Future<Response> f = r.execute();
-        Response resp = f.get(60, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertNotNull(resp.getHeader("X-Auth"));
-        client.close();
+            Future<Response> f = r.execute();
+            Response resp = f.get(60, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertNotNull(resp.getHeader("X-Auth"));
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
-                .setRealm((new Realm.RealmBuilder()).setPrincipal(user)
-                        .setPassword(admin)
-                        .setRealmName("MyRealm").build());
+        try {
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").build());
 
-        Future<Response> f = r.execute();
-        Response resp = f.get(60, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertNotNull(resp.getHeader("X-Auth"));
-        client.close();
+            Future<Response> f = r.execute();
+            Response resp = f.get(60, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertNotNull(resp.getHeader("X-Auth"));
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/")
-                .setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).setScheme(Realm.AuthScheme.DIGEST).build());
+        try {
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).setScheme(Realm.AuthScheme.DIGEST).build());
 
-        Future<Response> f = r.execute();
-        Response resp = f.get(20, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), 401);
-        client.close();
+            Future<Response> f = r.execute();
+            Response resp = f.get(20, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), 401);
+        } finally {
+            client.close();
+        }
     }
 
     @Override

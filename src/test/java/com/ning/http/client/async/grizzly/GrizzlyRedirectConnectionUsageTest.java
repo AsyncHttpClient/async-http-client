@@ -13,27 +13,25 @@
 
 package com.ning.http.client.async.grizzly;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.async.RedirectConnectionUsageTest;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
-import com.ning.http.client.providers.grizzly.TransportCustomizer;
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.async.ProviderUtil;
+import com.ning.http.client.async.RedirectConnectionUsageTest;
+import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
+import com.ning.http.client.providers.grizzly.TransportCustomizer;
 
 public class GrizzlyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
 
     @Override

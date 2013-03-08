@@ -34,60 +34,57 @@ import com.ning.http.client.consumers.OutputStreamBodyConsumer;
 
 /**
  * @author Benjamin Hanzelmann
- *
+ * 
  */
 public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testAccumulateErrorBody() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour( ErrorDocumentBehaviour.ACCUMULATE ).build();
-    
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
-    
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 404);
-        assertEquals(o.toString(), "");
-        assertTrue(response.getResponseBody().startsWith("<html>"));
-    
-        client.close();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build();
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+            Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
+
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 404);
+            assertEquals(o.toString(), "");
+            assertTrue(response.getResponseBody().startsWith("<html>"));
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testOmitErrorBody() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour( ErrorDocumentBehaviour.OMIT ).build();
-    
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
-    
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 404);
-        assertEquals(o.toString(), "");
-        assertEquals(response.getResponseBody(), "");
-        client.close();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build();
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+            Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
+
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 404);
+            assertEquals(o.toString(), "");
+            assertEquals(response.getResponseBody(), "");
+        } finally {
+            client.close();
+        }
     }
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient( AsyncHttpClientConfig config )
-    {
+    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         // disabled
         return null;
     }
 
     @Override
-    public AbstractHandler configureHandler()
-        throws Exception
-    {
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
-    
-            public void handle( String target, org.eclipse.jetty.server.Request baseRequest,
-                                HttpServletRequest request, HttpServletResponse response )
-                throws IOException, ServletException
-            {
-                response.sendError( 404 );
-                baseRequest.setHandled( true );
+
+            public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+                response.sendError(404);
+                baseRequest.setHandled(true);
             }
         };
     }

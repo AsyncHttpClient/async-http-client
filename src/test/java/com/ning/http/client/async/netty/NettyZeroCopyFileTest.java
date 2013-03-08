@@ -15,7 +15,6 @@ package com.ning.http.client.async.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.async.TransferListenerTest;
 import com.ning.http.client.async.ZeroCopyFileTest;
 
 public class NettyZeroCopyFileTest extends ZeroCopyFileTest {

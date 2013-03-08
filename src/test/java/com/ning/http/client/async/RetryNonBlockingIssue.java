@@ -259,6 +259,7 @@ public class RetryNonBlockingIssue {
         }
     }
 
+    @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
         private Map<String, Integer> requests = new
@@ -325,7 +326,6 @@ public class RetryNonBlockingIssue {
             if (error != null && error.trim().length() > 0)
                 res.sendError(500, "servlet process was 500");
         }
-
     }
 }
 
