@@ -12,6 +12,8 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 
@@ -40,7 +42,7 @@ public final class AuthenticatorUtils {
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
-        if (realm.getOpaque() != null && realm.getOpaque() != null && realm.getOpaque().equals("") == false)
+        if (isNonEmpty(realm.getOpaque()))
             construct(builder, "opaque", realm.getOpaque());
         builder.append("qop").append('=').append(realm.getQop()).append(", ");
         builder.append("nc").append('=').append(realm.getNc()).append(", ");

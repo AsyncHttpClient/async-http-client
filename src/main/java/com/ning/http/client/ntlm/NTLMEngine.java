@@ -38,15 +38,18 @@
 
 package com.ning.http.client.ntlm;
 
-import com.ning.http.util.Base64;
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Locale;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.ning.http.util.Base64;
 
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM
@@ -123,12 +126,12 @@ public class NTLMEngine {
                                 String host, String domain) throws NTLMEngineException {
 
         final String response;
-        if (message == null || message.trim().equals("")) {
-            response = getType1Message(host, domain);
-        } else {
+        if (isNonEmpty(message)) {
             Type2Message t2m = new Type2Message(message);
             response = getType3Message(username, password, host, domain, t2m.getChallenge(), t2m
                     .getFlags(), t2m.getTarget(), t2m.getTargetInfo());
+        } else {
+            response = getType1Message(host, domain);
         }
         return response;
     }

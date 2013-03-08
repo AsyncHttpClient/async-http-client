@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
@@ -42,7 +44,7 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String p = request.getParameter("test");
-                if (p != null && !p.equals("")) {
+                if (isNonEmpty(p)) {
                     response.setStatus(HttpServletResponse.SC_OK);
                     response.addHeader("X-Param", p);
                 } else {

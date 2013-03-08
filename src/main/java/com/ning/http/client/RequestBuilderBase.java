@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
@@ -145,7 +147,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
 
-            if (queryParams != null && !queryParams.isEmpty()) {
+            if (isNonEmpty(queryParams)) {
 
                 StringBuilder builder = new StringBuilder();
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
@@ -300,7 +302,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             sb.append("\t");
             sb.append(method);
             sb.append("\theaders:");
-            if (headers != null && !headers.isEmpty()) {
+            if (isNonEmpty(headers)) {
                 for (String name : headers.keySet()) {
                     sb.append("\t");
                     sb.append(name);
@@ -308,7 +310,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     sb.append(headers.getJoinedValue(name, ", "));
                 }
             }
-            if (params != null && !params.isEmpty()) {
+            if (isNonEmpty(params)) {
                 sb.append("\tparams:");
                 for (String name : params.keySet()) {
                     sb.append("\t");
@@ -384,7 +386,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
+        if (isNonEmpty(uri.getRawQuery())) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
             for (String query : queries) {

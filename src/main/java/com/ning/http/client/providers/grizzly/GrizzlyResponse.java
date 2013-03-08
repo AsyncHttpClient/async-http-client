@@ -13,6 +13,8 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -68,7 +70,7 @@ public class GrizzlyResponse implements Response {
         this.headers = headers;
         this.bodyParts = bodyParts;
 
-        if (bodyParts != null && !bodyParts.isEmpty()) {
+        if (isNonEmpty(bodyParts)) {
             if (bodyParts.size() == 1) {
                 responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
             } else {
@@ -261,7 +263,7 @@ public class GrizzlyResponse implements Response {
 
         if (cookies == null) {
             List<String> values = headers.getHeaders().get("set-cookie");
-            if (values != null && !values.isEmpty()) {
+            if (isNonEmpty(values)) {
                 CookiesBuilder.ServerCookiesBuilder builder =
                     new CookiesBuilder.ServerCookiesBuilder(false);
                 for (String header : values) {
@@ -290,7 +292,7 @@ public class GrizzlyResponse implements Response {
      * {@inheritDoc}
      */
     public boolean hasResponseHeaders() {
-        return (headers != null && !headers.getHeaders().isEmpty());
+        return headers != null && !headers.getHeaders().isEmpty();
     }
 
 
@@ -298,7 +300,7 @@ public class GrizzlyResponse implements Response {
      * {@inheritDoc}
      */
     public boolean hasResponseBody() {
-        return (bodyParts != null && !bodyParts.isEmpty());
+        return isNonEmpty(bodyParts);
     }
 
 

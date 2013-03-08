@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Request;
@@ -49,7 +51,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                if (qs != null && !qs.equals("")) {
+                if (isNonEmpty(qs)) {
                     for (String qnv : qs.split("&")) {
                         String nv[] = qnv.split("=");
                         response.addHeader(nv[0], nv[1]);

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -190,6 +192,6 @@ public class ApacheResponse implements Response {
      */
     /* @Override */
     public boolean hasResponseBody() {
-        return bodyParts != null && !bodyParts.isEmpty();
+        return isNonEmpty(bodyParts);
     }
 }
