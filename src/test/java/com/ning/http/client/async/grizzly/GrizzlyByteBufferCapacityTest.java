@@ -13,23 +13,21 @@
 
 package com.ning.http.client.async.grizzly;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ByteBufferCapacityTest;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
-import org.testng.annotations.Test;
+import com.ning.http.client.async.ProviderUtil;
 
 public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled=false)
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicByteBufferTest() throws Throwable {
     }
 }

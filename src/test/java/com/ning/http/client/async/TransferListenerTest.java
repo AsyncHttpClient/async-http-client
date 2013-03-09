@@ -40,15 +40,11 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-"
-            + UUID.randomUUID().toString().substring(0, 8));
+    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
 
     private class BasicHandler extends AbstractHandler {
 
-        public void handle(String s,
-                           org.eclipse.jetty.server.Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
@@ -78,10 +74,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -115,9 +109,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Response response = c.prepareGet(getTargetUrl())
-                    .execute(tl).get();
+            Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -127,13 +121,13 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertNull(throwable.get());
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicPutTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
 
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -175,9 +169,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(largeFile)
-                    .execute(tl).get();
+            Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -187,13 +181,13 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertEquals(bbSentLenght.get(), largeFile.length());
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicPutBodyTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
 
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -235,9 +229,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
         });
 
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile))
-                    .execute(tl).get();
+            Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -247,16 +241,16 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             assertEquals(bbSentLenght.get(), largeFile.length());
         } catch (IOException ex) {
             fail("Should have timed out");
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
     public String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
-    public static File createTempFile(byte[] pattern, int repeat)
-            throws IOException {
+    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
         TMP.mkdirs();
         TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
@@ -265,8 +259,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         return tmpFile;
     }
 
-    public static void write(byte[] pattern, int repeat, File file)
-            throws IOException {
+    public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
         FileOutputStream out = null;
@@ -275,8 +268,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
             }
-        }
-        finally {
+        } finally {
             if (out != null) {
                 out.close();
             }

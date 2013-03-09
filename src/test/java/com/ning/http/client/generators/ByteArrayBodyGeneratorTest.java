@@ -13,16 +13,15 @@
 
 package com.ning.http.client.generators;
 
-import com.ning.http.client.Body;
-
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.Body;
 
 /**
  * @author Bryan Davis bpd@keynetics.com

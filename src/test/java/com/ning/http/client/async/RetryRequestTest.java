@@ -29,9 +29,7 @@ import static org.testng.Assert.*;
 public abstract class RetryRequestTest extends AbstractBasicTest {
     public static class SlowAndBigHandler extends AbstractHandler {
 
-        public void handle(String pathInContext, Request request,
-                           HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-                throws IOException, ServletException {
+        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int load = 100;
             httpResponse.setStatus(200);
@@ -39,7 +37,6 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
             httpResponse.setContentType("application/octet-stream");
 
             httpResponse.flushBuffer();
-
 
             OutputStream os = httpResponse.getOutputStream();
             for (int i = 0; i < load; i++) {
@@ -50,7 +47,6 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
                 } catch (InterruptedException ex) {
                     // nuku
                 }
-
 
                 if (i > load / 10) {
                     httpResponse.sendError(500);
@@ -71,8 +67,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
         return new SlowAndBigHandler();
     }
 
-
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Throwable {
         AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
         try {
@@ -84,8 +79,8 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
             if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
                 fail();
             }
+        } finally {
+            ahc.close();
         }
-
-        ahc.close();
     }
 }

@@ -31,9 +31,8 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
 
     private final static String MY_MESSAGE = "my message";
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void negativeContentTypeTest() throws Throwable {
-
         AsyncHttpClientConfig.Builder confbuilder = new AsyncHttpClientConfig.Builder();
         confbuilder = confbuilder.setConnectionTimeoutInMs(100);
         confbuilder = confbuilder.setMaximumConnectionsTotal(50);
@@ -41,23 +40,19 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
 
         // Create client
         AsyncHttpClient client = getAsyncHttpClient(confbuilder.build());
+        try {
+            RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");
 
-        RequestBuilder requestBuilder = new RequestBuilder("POST")
-                .setUrl(getTargetUrl())
-                .setHeader("Content-Type", "message/rfc822");
+            requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
-        requestBuilder.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
+            Future<Response> future = client.executeRequest(requestBuilder.build());
 
-        Future<Response> future = client.executeRequest(requestBuilder.build());
-
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getResponseBody(), MY_MESSAGE);
-        
-        client.close();
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getResponseBody(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
-
 }
-
-

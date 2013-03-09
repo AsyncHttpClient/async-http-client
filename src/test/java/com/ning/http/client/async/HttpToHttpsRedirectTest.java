@@ -45,11 +45,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     private class Relative302Handler extends AbstractHandler {
 
-
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;
             httpResponse.setContentType("text/html; charset=utf-8");
@@ -120,33 +116,14 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    private String getBaseUrl(URI uri) {
-        String url = uri.toString();
-        int port = uri.getPort();
-        if (port == -1) {
-            port = getPort(uri);
-            url = url.substring(0, url.length() - 1) + ":" + port;
-        }
-        return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
-    }
-
-    private static int getPort(URI uri) {
-        int port = uri.getPort();
-        if (port == -1)
-            port = uri.getScheme().equals("http") ? 80 : 443;
-        return port;
-    }
-
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void httpToHttpsRedirect() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2())
-                .execute().get();
+        Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
         assertNotNull(response);
         assertEquals(response.getStatusCode(), 200);
         assertEquals(response.getHeader("X-httpToHttps"), "PASS");
@@ -157,43 +134,41 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void httpToHttpsProperConfig() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
+        try {
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("X-httpToHttps"), "PASS");
 
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2() + "/test2")
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-
-        // Test if the internal channel is downgraded to clean http.
-        response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", getTargetUrl2() + "/foo2")
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getHeader("X-httpToHttps"), "PASS");
-        c.close();
+            // Test if the internal channel is downgraded to clean http.
+            response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/foo2").execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getHeader("X-httpToHttps"), "PASS");
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
-
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", "/foo/test")
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 302);
-        assertEquals(response.getUri().toString(), getTargetUrl());
-        c.close();
+        try {
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 302);
+            assertEquals(response.getUri().toString(), getTargetUrl());
+        } finally {
+            c.close();
+        }
     }
 }

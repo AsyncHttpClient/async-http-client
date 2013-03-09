@@ -26,7 +26,7 @@ public class NettyRedirectConnectionUsageTest extends RedirectConnectionUsageTes
     }
 
     @Override
-    protected AsyncHttpProviderConfig getProviderConfig() {
+    protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final NettyAsyncHttpProviderConfig config = 
                 new NettyAsyncHttpProviderConfig();
         if (System.getProperty("blockingio") != null) {

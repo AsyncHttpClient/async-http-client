@@ -35,7 +35,7 @@ import static org.testng.FileAssert.fail;
 
 /**
  * Test that the url fetcher is able to communicate via a proxy
- *
+ * 
  * @author dominict
  */
 abstract public class ChunkingTest extends AbstractBasicTest {
@@ -58,8 +58,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                 baos.write(buf, 0, len);
             }
             LARGE_IMAGE_BYTES = baos.toByteArray();
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             LARGE_IMAGE_BYTES = new byte[265495];
             Random x = new Random();
             x.nextBytes(LARGE_IMAGE_BYTES);
@@ -67,20 +66,17 @@ abstract public class ChunkingTest extends AbstractBasicTest {
     }
 
     /**
-     * Tests that the custom chunked stream result in success and
-     * content returned that is unchunked
+     * Tests that the custom chunked stream result in success and content returned that is unchunked
      */
     @Test()
     public void testCustomChunking() throws Throwable {
         doTest(true);
     }
 
-
     private void doTest(boolean customChunkedInputStream) throws Exception {
         AsyncHttpClient c = null;
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
+            AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
             bc.setAllowPoolingConnection(true);
             bc.setMaximumConnectionsPerHost(1);
@@ -88,7 +84,6 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             bc.setConnectionTimeoutInMs(1000);
             bc.setRequestTimeoutInMs(1000);
             bc.setFollowRedirects(true);
-
 
             c = getAsyncHttpClient(bc.build());
 
@@ -120,14 +115,13 @@ abstract public class ChunkingTest extends AbstractBasicTest {
                 } else {
                     assertEquals(LARGE_IMAGE_BYTES, readInputStreamToBytes(res.getResponseBodyAsStream()));
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
 
                 fail("Exception Thrown:" + e.getMessage());
             }
-        }
-        finally {
-            if (c != null) c.close();
+        } finally {
+            if (c != null)
+                c.close();
         }
     }
 
@@ -143,11 +137,9 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             }
             buffer.flush();
             data = buffer.toByteArray();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
 
-        }
-        finally {
+        } finally {
             try {
                 stream.close();
             } catch (Exception e2) {

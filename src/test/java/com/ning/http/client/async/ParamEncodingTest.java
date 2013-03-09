@@ -38,10 +38,7 @@ import static org.testng.Assert.assertNotNull;
 public abstract class ParamEncodingTest extends AbstractBasicTest {
 
     private class ParamEncoding extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String p = request.getParameter("test");
                 if (isNonEmpty(p)) {
@@ -58,20 +55,20 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
         AsyncHttpClient client = getAsyncHttpClient(null);
-        Future<Response> f = client
-                .preparePost("http://127.0.0.1:" + port1)
-                .addParameter("test", value)
-                .execute();
-        Response resp = f.get(10, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Param"), value.trim());
-        client.close();
+        try {
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addParameter("test", value).execute();
+            Response resp = f.get(10, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("X-Param"), value.trim());
+        } finally {
+            client.close();
+        }
     }
 
     @Override

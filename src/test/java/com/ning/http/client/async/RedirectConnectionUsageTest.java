@@ -21,7 +21,6 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -144,8 +143,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             // can hang here
             if (c != null) c.close();
         }
-
-
     }
 
     protected abstract AsyncHttpProviderConfig getProviderConfig();
@@ -182,6 +179,4 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             os.close();
         }
     }
-
-
 }

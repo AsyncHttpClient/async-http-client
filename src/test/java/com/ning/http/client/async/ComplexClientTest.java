@@ -25,44 +25,38 @@ import static org.testng.Assert.assertEquals;
 
 public abstract class ComplexClientTest extends AbstractBasicTest {
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void multipleRequestsTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            String body = "hello there";
 
-        String body = "hello there";
+            // once
+            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        // once
-        Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(response.getResponseBody(), body);
 
-        assertEquals(response.getResponseBody(), body);
+            // twice
+            response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        // twice
-        response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-        c.close();
+            assertEquals(response.getResponseBody(), body);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void urlWithoutSlashTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            String body = "hello there";
 
-        String body = "hello there";
+            // once
+            Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1)).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
-        // once
-        Response response = c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port1))
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-        c.close();
+            assertEquals(response.getResponseBody(), body);
+        } finally {
+            c.close();
+        }
     }
-
 }

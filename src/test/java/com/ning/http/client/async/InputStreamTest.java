@@ -36,10 +36,7 @@ import static org.testng.Assert.assertNotNull;
 public abstract class InputStreamTest extends AbstractBasicTest {
 
     private class InputStreamHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 byte[] b = new byte[3];
                 request.getInputStream().read(b, 0, 3);
@@ -54,43 +51,46 @@ public abstract class InputStreamTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
-        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        h.add("Content-Type", "application/x-www-form-urlencoded");
+        try {
+            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            h.add("Content-Type", "application/x-www-form-urlencoded");
 
-        InputStream is = new InputStream() {
+            InputStream is = new InputStream() {
 
-            public int readAllowed;
+                public int readAllowed;
 
-            @Override
-            public int available() {
-                return 1; // Fake
-            }
-
-            @Override
-            public int read() throws IOException {
-                int fakeCount = readAllowed++;
-                if (fakeCount == 0) {
-                    return (int) 'a';
-                } else if (fakeCount == 1) {
-                    return (int) 'b';
-                } else if (fakeCount == 2) {
-                    return (int) 'c';
-                } else {
-                    return -1;
+                @Override
+                public int available() {
+                    return 1; // Fake
                 }
 
-            }
-        };
+                @Override
+                public int read() throws IOException {
+                    int fakeCount = readAllowed++;
+                    if (fakeCount == 0) {
+                        return (int) 'a';
+                    } else if (fakeCount == 1) {
+                        return (int) 'b';
+                    } else if (fakeCount == 2) {
+                        return (int) 'c';
+                    } else {
+                        return -1;
+                    }
 
-        Response resp = c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute().get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("X-Param"), "abc");
-        c.close();
+                }
+            };
+
+            Response resp = c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute().get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("X-Param"), "abc");
+        } finally {
+            c.close();
+        }
     }
 
     @Override
