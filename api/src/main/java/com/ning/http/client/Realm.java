@@ -16,6 +16,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -431,7 +433,7 @@ public class Realm {
             setAlgorithm(match(headerLine, "algorithm"));
             setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
-            if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
+            if (isNonEmpty(getNonce())) {
                 setScheme(AuthScheme.DIGEST);
             } else {
                 setScheme(AuthScheme.BASIC);
@@ -444,7 +446,7 @@ public class Realm {
             setNonce(match(headerLine, "nonce"));
             setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
-            if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
+            if (isNonEmpty(getNonce())) {
                 setScheme(AuthScheme.DIGEST);
             } else {
                 setScheme(AuthScheme.BASIC);
@@ -599,7 +601,7 @@ public class Realm {
         public Realm build() {
 
             // Avoid generating
-            if (nonce != null && nonce.length() > 0) {
+            if (isNonEmpty(nonce)) {
                 newCnonce();
                 try {
                     newResponse();

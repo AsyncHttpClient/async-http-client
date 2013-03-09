@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
@@ -145,7 +147,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
 
-            if (queryParams != null && !queryParams.isEmpty()) {
+            if (isNonEmpty(queryParams)) {
 
                 StringBuilder builder = new StringBuilder();
                 if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
@@ -384,7 +386,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        if (uri.getRawQuery() != null && uri.getRawQuery().length() > 0) {
+        if (isNonEmpty(uri.getRawQuery())) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
             for (String query : queries) {

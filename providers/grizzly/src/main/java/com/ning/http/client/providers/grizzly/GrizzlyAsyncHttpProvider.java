@@ -139,6 +139,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
@@ -974,11 +975,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 final HttpRequestPacket requestPacket) {
 
             final FluentCaseInsensitiveStringsMap map = request.getHeaders();
-            if (map != null && !map.isEmpty()) {
+            if (isNonEmpty(map)) {
                 for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
                     final String headerName = entry.getKey();
                     final List<String> headerValues = entry.getValue();
-                    if (headerValues != null && !headerValues.isEmpty()) {
+                    if (isNonEmpty(headerValues)) {
                         for (final String headerValue : headerValues) {
                             requestPacket.addHeader(headerName, headerValue);
                         }
@@ -1007,7 +1008,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 final HttpRequestPacket requestPacket) {
 
             final Collection<Cookie> cookies = request.getCookies();
-            if (cookies != null && !cookies.isEmpty()) {
+            if (isNonEmpty(cookies)) {
                 StringBuilder sb = new StringBuilder(128);
                 org.glassfish.grizzly.http.Cookie[] gCookies =
                         new org.glassfish.grizzly.http.Cookie[cookies.size()];
@@ -1041,16 +1042,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     final HttpRequestPacket requestPacket) {
 
             final FluentStringsMap map = request.getQueryParams();
-            if (map != null && !map.isEmpty()) {
+            if (isNonEmpty(map)) {
                 StringBuilder sb = new StringBuilder(128);
                 for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
                     final String name = entry.getKey();
                     final List<String> values = entry.getValue();
-                    if (values != null && !values.isEmpty()) {
+                    if (isNonEmpty(values)) {
                         try {
                             for (int i = 0, len = values.size(); i < len; i++) {
                                 final String value = values.get(i);
-                                if (value != null && value.length() > 0) {
+                                if (isNonEmpty(value)) {
                                     sb.append(URLEncoder.encode(name, "UTF-8")).append('=')
                                         .append(URLEncoder.encode(values.get(i), "UTF-8")).append('&');
                                 } else {
@@ -2054,7 +2055,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         public boolean handlesBodyType(final Request request) {
             final FluentStringsMap params = request.getParams();
-            return (params != null && !params.isEmpty());
+            return isNonEmpty(params);
         }
 
         @SuppressWarnings({"unchecked"})
@@ -2076,7 +2077,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 for (Map.Entry<String, List<String>> entry : params.entrySet()) {
                     String name = entry.getKey();
                     List<String> values = entry.getValue();
-                    if (values != null && !values.isEmpty()) {
+                    if (isNonEmpty(values)) {
                         if (sb == null) {
                             sb = new StringBuilder(128);
                         }
@@ -2201,7 +2202,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         public boolean handlesBodyType(final Request request) {
             final List<Part> parts = request.getParts();
-            return (parts != null && !parts.isEmpty());
+            return isNonEmpty(parts);
         }
 
         @SuppressWarnings({"unchecked"})
@@ -2768,7 +2769,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public WebSocket stream(byte[] fragment, boolean last) {
-            if (fragment != null && fragment.length > 0) {
+            if (isNonEmpty(fragment)) {
                 gWebSocket.stream(last, fragment, 0, fragment.length);
             }
             return this;
@@ -2776,7 +2777,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
-            if (fragment != null && fragment.length > 0) {
+            if (isNonEmpty(fragment)) {
                 gWebSocket.stream(last, fragment, offset, len);
             }
             return this;

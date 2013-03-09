@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.listener;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncCompletionHandlerBase;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -144,7 +146,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public STATE onHeaderWriteCompleted() {
         List<String> list = transferAdapter.getHeaders().get("Content-Length");
-        if (list != null && list.size() > 0 && list.get(0) != "") {
+        if (isNonEmpty(list) && list.get(0).length() != 0) {
             totalBytesToTransfer.set(Long.valueOf(list.get(0)));
         }
 

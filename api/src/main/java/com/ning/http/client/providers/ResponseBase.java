@@ -1,5 +1,7 @@
 package com.ning.http.client.providers;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -126,10 +128,10 @@ public abstract class ResponseBase implements Response
     }
 
     public boolean hasResponseHeaders() {
-        return headers != null && !headers.getHeaders().isEmpty();
+        return headers != null && isNonEmpty(headers.getHeaders());
     }
 
     public boolean hasResponseBody() {
-        return bodyParts != null && !bodyParts.isEmpty();
+        return isNonEmpty(bodyParts);
     }
 }

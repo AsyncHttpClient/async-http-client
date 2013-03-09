@@ -135,6 +135,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -643,7 +644,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            if (auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM")) {
+            if (isNonEmpty(auth) && auth.get(0).startsWith("NTLM")) {
                 nettyRequest.addHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
@@ -668,7 +669,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             AuthenticatorUtils.computeBasicAuthentication(realm));
                     break;
                 case DIGEST:
-                    if (realm.getNonce() != null && realm.getNonce().length() > 0) {
+                    if (isNonEmpty(realm.getNonce())) {
                         try {
                             nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION,
                                     AuthenticatorUtils.computeDigestAuthentication(realm));
@@ -718,10 +719,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (proxyServer.getPrincipal() != null) {
-                if (proxyServer.getNtlmDomain() != null && proxyServer.getNtlmDomain().length() > 0) {
+                if (isNonEmpty(proxyServer.getNtlmDomain())) {
 
                     List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-                    if (!(auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM"))) {
+                    if (!(isNonEmpty(auth) && auth.get(0).startsWith("NTLM"))) {
                         try {
                             String msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(),
                                     proxyServer.getHost());
@@ -755,7 +756,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
-            if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+            if (isNonEmpty(request.getCookies())) {
                 CookieEncoder httpCookieEncoder = new CookieEncoder(false);
                 Iterator<Cookie> ic = request.getCookies().iterator();
                 Cookie c;
@@ -792,7 +793,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
                     nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes, 0, length));
-                } else if (request.getParams() != null && !request.getParams().isEmpty()) {
+                } else if (isNonEmpty(request.getParams())) {
                     StringBuilder sb = new StringBuilder();
                     for (final Entry<String, List<String>> paramEntry : request.getParams()) {
                         final String key = paramEntry.getKey();

@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -42,7 +43,7 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String p = request.getParameter("test");
-                if (p != null && !p.equals("")) {
+                if (isNonEmpty(p)) {
                     response.setStatus(HttpServletResponse.SC_OK);
                     response.addHeader("X-Param", p);
                 } else {

@@ -12,6 +12,8 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
 import com.ning.http.client.Request;
@@ -89,7 +91,7 @@ public class ProxyUtils {
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
-            if (nonProxyHosts != null && nonProxyHosts.size() > 0) {
+            if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
                     if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
                             && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase())) {

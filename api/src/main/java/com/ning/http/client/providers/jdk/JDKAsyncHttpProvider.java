@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.jdk;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
@@ -373,7 +375,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             } catch (Throwable t) {
                 logger.debug(t.getMessage(), t);
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(request).ioException(IOException.class.cast(t)).build();
 
@@ -516,7 +518,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                                 AuthenticatorUtils.computeBasicAuthentication(realm));
                         break;
                     case DIGEST:
-                        if (realm.getNonce() != null && realm.getNonce().length() > 0) {
+                        if (isNonEmpty(realm.getNonce())) {
                             try {
                                 urlConnection.setRequestProperty("Authorization",
                                         AuthenticatorUtils.computeDigestAuthentication(realm));
@@ -552,7 +554,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                                                                   config));
             }
 
-            if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+            if (isNonEmpty(request.getCookies())) {
                 urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
             }
 

@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -54,7 +55,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                if (qs != null && !qs.equals("") && request.getContentLength() == 3) {
+                if (isNonEmpty(qs) && request.getContentLength() == 3) {
                     ServletInputStream is = request.getInputStream();
                     response.setStatus(HttpServletResponse.SC_OK);
                     byte buf[] = new byte[is.available()];

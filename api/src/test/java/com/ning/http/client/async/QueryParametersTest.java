@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -49,7 +50,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
                            HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                if (qs != null && !qs.equals("")) {
+                if (isNonEmpty(qs)) {
                     for (String qnv : qs.split("&")) {
                         String nv[] = qnv.split("=");
                         response.addHeader(nv[0], nv[1]);
