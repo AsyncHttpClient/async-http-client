@@ -16,17 +16,12 @@ package com.ning.http.client.async.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.AuthTimeoutTest;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import com.ning.http.client.async.ProviderUtil;
 
 public class GrizzlyAuthTimeoutTest extends AuthTimeoutTest {
 
-
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
-
 }

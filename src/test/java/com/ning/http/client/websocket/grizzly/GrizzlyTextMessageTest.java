@@ -12,25 +12,22 @@
  */
 package com.ning.http.client.websocket.grizzly;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.websocket.ByteMessageTest;
-import org.testng.annotations.Test;
 
 public class GrizzlyTextMessageTest extends ByteMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
 
     @Test(timeOut = 60000)
     @Override
     public void echoFragments() throws Exception {
-        super.echoFragments();    //To change body of overridden methods use File | Settings | File Templates.
+        super.echoFragments(); // To change body of overridden methods use File | Settings | File Templates.
     }
 }

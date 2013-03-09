@@ -14,7 +14,6 @@ package com.ning.http.client.async.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.AbstractBasicTest;
 import com.ning.http.client.async.ByteBufferCapacityTest;
 import com.ning.http.client.async.ProviderUtil;
 

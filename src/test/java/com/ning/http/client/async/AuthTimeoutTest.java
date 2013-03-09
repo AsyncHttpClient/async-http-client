@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,8 +49,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-public abstract class AuthTimeoutTest
-        extends AbstractBasicTest {
+public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     private final static String user = "user";
 
@@ -59,8 +57,7 @@ public abstract class AuthTimeoutTest
 
     protected AsyncHttpClient client;
 
-    public void setUpServer(String auth)
-            throws Exception {
+    public void setUpServer(String auth) throws Exception {
         server = new Server();
         Logger root = Logger.getRootLogger();
         root.setLevel(Level.DEBUG);
@@ -79,7 +76,7 @@ public abstract class AuthTimeoutTest
 
         Constraint constraint = new Constraint();
         constraint.setName(auth);
-        constraint.setRoles(new String[]{user, admin});
+        constraint.setRoles(new String[] { user, admin });
         constraint.setAuthenticate(true);
 
         ConstraintMapping mapping = new ConstraintMapping();
@@ -106,10 +103,8 @@ public abstract class AuthTimeoutTest
         log.info("Local HTTP server started successfully");
     }
 
-    private class SimpleHandler
-            extends AbstractHandler {
-        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response)
-                throws IOException, ServletException {
+    private class SimpleHandler extends AbstractHandler {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
             // NOTE: handler sends less bytes than are given in Content-Length, which should lead to timeout
 
@@ -129,150 +124,138 @@ public abstract class AuthTimeoutTest
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void basicAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void basicAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-
-        Future<Response> f = execute(false);
         try {
-            f.get();
-            fail("expected timeout");
+            Future<Response> f = execute(false);
+            try {
+                f.get();
+                fail("expected timeout");
+            } catch (Exception e) {
+                inspectException(e);
+            }
+        } finally {
+            client.close();
         }
-        catch (Exception e) {
-            inspectException(e);
-        }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void basicPreemptiveAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void basicPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-
-        Future<Response> f = execute(true);
         try {
-            f.get();
-            fail("expected timeout");
+            Future<Response> f = execute(true);
+            try {
+                f.get();
+                fail("expected timeout");
+            } catch (Exception e) {
+                inspectException(e);
+            }
+        } finally {
+            client.close();
         }
-        catch (Exception e) {
-            inspectException(e);
-        }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void digestAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void digestAuthTimeoutTest() throws Exception {
+        setUpServer(Constraint.__DIGEST_AUTH);
+        try {
+            Future<Response> f = execute(false);
+            try {
+                f.get();
+                fail("expected timeout");
+            } catch (Exception e) {
+                inspectException(e);
+            }
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void digestPreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
 
-        Future<Response> f = execute(false);
         try {
+            Future<Response> f = execute(true);
             f.get();
             fail("expected timeout");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             inspectException(e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void digestPreemptiveAuthTimeoutTest()
-            throws Exception {
-        setUpServer(Constraint.__DIGEST_AUTH);
-
-        Future<Response> f = execute(true);
-        try {
-            f.get();
-            fail("expected timeout");
-        }
-        catch (Exception e) {
-            inspectException(e);
-        }
-        client.close();
-    }
-
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void basicFutureAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void basicFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-
-        Future<Response> f = execute(false);
         try {
+            Future<Response> f = execute(false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             inspectException(e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void basicFuturePreemptiveAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__BASIC_AUTH);
-
-        Future<Response> f = execute(true);
         try {
+            Future<Response> f = execute(true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             inspectException(e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void digestFutureAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void digestFutureAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
-
-        Future<Response> f = execute(false);
         try {
+            Future<Response> f = execute(false);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             inspectException(e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = false)
-    public void digestFuturePreemptiveAuthTimeoutTest()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = false)
+    public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
         setUpServer(Constraint.__DIGEST_AUTH);
 
-        Future<Response> f = execute(true);
         try {
+            Future<Response> f = execute(true);
             f.get(1, TimeUnit.SECONDS);
             fail("expected timeout");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             inspectException(e);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
     protected void inspectException(Throwable t) {
         assertNotNull(t.getCause());
         assertEquals(t.getCause().getClass(), IOException.class);
-        if (!t.getCause().getMessage().startsWith("Remotely Closed")){
+        if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
             fail();
-        };
+        }
+        ;
     }
 
-    protected Future<Response> execute(boolean preemptive)
-            throws IOException {
-        client =
-                getAsyncHttpClient(
-                        new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
-        AsyncHttpClient.BoundRequestBuilder r =
-                client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content",
-                        "Test");
+    protected Future<Response> execute(boolean preemptive) throws IOException {
+        client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
+        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test");
         Future<Response> f = r.execute();
         return f;
     }
@@ -287,8 +270,7 @@ public abstract class AuthTimeoutTest
     }
 
     @Override
-    public AbstractHandler configureHandler()
-            throws Exception {
+    public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
 }

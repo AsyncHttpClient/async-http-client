@@ -12,7 +12,6 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
@@ -43,67 +42,68 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void inpuStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50)
-                .setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        try {
+            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
-
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getResponseBody(), MY_MESSAGE);
-
-        client.close();
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getResponseBody(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void StringBufferBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50)
-                .setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        try {
+            StringBuilder s = new StringBuilder();
+            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
 
-        StringBuilder s = new StringBuilder();
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
-
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(s.toString(), MY_MESSAGE);
-
-        client.close();
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(s.toString(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50)
-                .setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
-
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(o.toString(), MY_MESSAGE);
-
-        client.close();
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(o.toString(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void RequestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-        Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
-
-        System.out.println("waiting for response");
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(o.toString(), MY_MESSAGE);
-
-        client.close();
+            System.out.println("waiting for response");
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(o.toString(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
 
     /**
@@ -111,53 +111,55 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
      */
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutZeroBytesFileTest() throws Throwable {
-        System.err.println("setting up client");
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50)
-                .setRequestTimeoutInMs(5 * 1000).setUrl(getTargetUrl() + "/testPutZeroBytesFileTest.txt").setHeader("Content-Type", "text/plain").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 1000).setUrl(getTargetUrl() + "/testPutZeroBytesFileTest.txt").setHeader("Content-Type", "text/plain")
+                .build();
+        try {
+            File tmpfile = File.createTempFile("testPutZeroBytesFile", ".tmp");
+            tmpfile.deleteOnExit();
 
-        File tmpfile = File.createTempFile("testPutZeroBytesFile", ".tmp");
-        tmpfile.deleteOnExit();
+            Future<Response> future = client.put(new FileBodyGenerator(tmpfile));
 
-        Future<Response> future = client.put(new FileBodyGenerator(tmpfile));
+            Response response = future.get();
 
-        System.out.println("waiting for response");
-        Response response = future.get();
+            tmpfile.delete();
 
-        tmpfile.delete();
-
-        assertEquals(response.getStatusCode(), 200);
-
-        client.close();
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testDerive() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
         SimpleAsyncHttpClient derived = client.derive().build();
-
-        assertNotSame(derived, client);
-        client.close();
-        derived.close();
+        try {
+            assertNotSame(derived, client);
+        } finally {
+            client.close();
+            derived.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testDeriveOverrideURL() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
-
-        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
-        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
-
         SimpleAsyncHttpClient derived = client.derive().setUrl(getTargetUrl()).build();
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
 
-        Future<Response> future = derived.post(generator, consumer);
+            InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+            OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
 
-        Response response = future.get();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(o.toString(), MY_MESSAGE);
+            Future<Response> future = derived.post(generator, consumer);
 
-        client.close();
-        derived.close();
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(o.toString(), MY_MESSAGE);
+        } finally {
+            client.close();
+            derived.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -194,44 +196,47 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         };
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).setHeader("Custom", "custom").setListener(listener).build();
-        ByteArrayOutputStream o = new ByteArrayOutputStream(10);
+        try {
+            ByteArrayOutputStream o = new ByteArrayOutputStream(10);
 
-        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
-        OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
+            InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
+            OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(o);
 
-        Future<Response> future = client.post(generator, consumer);
+            Future<Response> future = client.post(generator, consumer);
 
-        Response response = future.get();
-        client.close();
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(o.toString(), MY_MESSAGE);
+            Response response = future.get();
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(o.toString(), MY_MESSAGE);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
+        SimpleAsyncHttpClient c = new SimpleAsyncHttpClient.Builder().build().derive().build();
         try {
-            SimpleAsyncHttpClient c = new SimpleAsyncHttpClient.Builder().build().derive().build();
             assertTrue(true);
+        } finally {
             c.close();
-        } catch (NullPointerException ex) {
-            fail();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void testCloseDerivedValidMaster() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
-        SimpleAsyncHttpClient derived = client.derive().build();
+        try {
+            SimpleAsyncHttpClient derived = client.derive().build();
+            derived.get().get();
 
-        derived.get().get();
+            derived.close();
 
-        derived.close();
+            Response response = client.get().get();
 
-        Response response = client.get().get();
-
-        assertEquals(response.getStatusCode(), 200);
-
-        client.close();
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -252,49 +257,49 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testMultiPartPut() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
-        
-        Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
-        
-        String body = response.getResponseBody();
-        String contentType = response.getHeader("X-Content-Type");
-        
-        assertTrue(contentType.contains("multipart/form-data"));
-        
-        String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
-        
-        assertTrue(body.startsWith("--" + boundary));
-        assertTrue(body.trim().endsWith("--" + boundary + "--"));
-        assertTrue(body.contains("Content-Disposition:"));
-        assertTrue(body.contains("Content-Type: application/test"));
-        assertTrue(body.contains("name=\"baPart"));
-        assertTrue(body.contains("filename=\"fileName"));
+        try {
+            Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
 
-        client.close();
-        
+            String body = response.getResponseBody();
+            String contentType = response.getHeader("X-Content-Type");
+
+            assertTrue(contentType.contains("multipart/form-data"));
+
+            String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+
+            assertTrue(body.startsWith("--" + boundary));
+            assertTrue(body.trim().endsWith("--" + boundary + "--"));
+            assertTrue(body.contains("Content-Disposition:"));
+            assertTrue(body.contains("Content-Type: application/test"));
+            assertTrue(body.contains("name=\"baPart"));
+            assertTrue(body.contains("filename=\"fileName"));
+        } finally {
+            client.close();
+        }
     }
-    
+
     @Test(groups = { "standalone", "default_provider" })
     public void testMultiPartPost() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
-        
-        Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
-        
-        String body = response.getResponseBody();
-        String contentType = response.getHeader("X-Content-Type");
-        
-        assertTrue(contentType.contains("multipart/form-data"));
-        
-        String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
-        
-        assertTrue(body.startsWith("--" + boundary));
-        assertTrue(body.trim().endsWith("--" + boundary + "--"));
-        assertTrue(body.contains("Content-Disposition:"));
-        assertTrue(body.contains("Content-Type: application/test"));
-        assertTrue(body.contains("name=\"baPart"));
-        assertTrue(body.contains("filename=\"fileName"));
+        try {
+            Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
 
-        client.close();
-        
+            String body = response.getResponseBody();
+            String contentType = response.getHeader("X-Content-Type");
+
+            assertTrue(contentType.contains("multipart/form-data"));
+
+            String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+
+            assertTrue(body.startsWith("--" + boundary));
+            assertTrue(body.trim().endsWith("--" + boundary + "--"));
+            assertTrue(body.contains("Content-Disposition:"));
+            assertTrue(body.contains("Content-Type: application/test"));
+            assertTrue(body.contains("name=\"baPart"));
+            assertTrue(body.contains("filename=\"fileName"));
+        } finally {
+            client.close();
+        }
     }
 
 }

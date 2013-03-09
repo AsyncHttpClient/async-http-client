@@ -54,10 +54,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
     public static class EchoHandler extends AbstractHandler {
 
         /* @Override */
-        public void handle(String pathInContext,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws ServletException, IOException {
+        public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
             Enumeration<?> e = httpRequest.getHeaderNames();
@@ -113,7 +110,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             byte[] bytes = new byte[size];
             int pos = 0;
             if (bytes.length > 0) {
-                //noinspection ResultOfMethodCallIgnored
+                // noinspection ResultOfMethodCallIgnored
                 int read = 0;
                 while (read != -1) {
                     read = httpRequest.getInputStream().read(bytes, pos, bytes.length - pos);
@@ -197,76 +194,84 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void positiveHostnameVerifierTest() throws Throwable {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext()).build());
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
-        Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        Response resp = f.get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file");
-        client.close();
+            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), "This is a simple test file");
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void negativeHostnameVerifierTest() throws Throwable {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext()).build());
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
+
+            try {
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
+            } catch (ConnectException ex) {
+                assertEquals(ConnectException.class, ex.getClass());
+            }
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void remoteIDHostnameVerifierTest() throws Throwable {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext()).build());
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
+
+            try {
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
+            } catch (ConnectException ex) {
+                assertEquals(ConnectException.class, ex.getClass());
+            }
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void remotePosHostnameVerifierTest() throws Throwable {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext()).build());
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
         try {
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        } catch (ConnectException ex) {
-            assertEquals(ConnectException.class, ex.getClass());
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
+
+            try {
+                client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
+            } catch (ConnectException ex) {
+                assertEquals(ConnectException.class, ex.getClass());
+            }
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
     public static class PositiveHostVerifier implements HostnameVerifier {
@@ -315,7 +320,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
 
             // Initialize the SSLContext to work with our key managers.
             KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[]{DUMMY_TRUST_MANAGER};
+            TrustManager[] trustManagers = new TrustManager[] { DUMMY_TRUST_MANAGER };
             SecureRandom secureRandom = new SecureRandom();
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -333,17 +338,14 @@ public abstract class HostnameVerifierTest extends AbstractBasicTest {
             return new X509Certificate[0];
         }
 
-        public void checkClientTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         }
 
-        public void checkServerTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             if (!TRUST_SERVER_CERT.get()) {
                 throw new CertificateException("Server certificate not trusted.");
             }
         }
     };
-
 
 }

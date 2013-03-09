@@ -27,7 +27,7 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     }
 
     @Override
-    protected AsyncHttpProviderConfig getProviderConfig() {
+    protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final NettyAsyncHttpProviderConfig config = 
                 new NettyAsyncHttpProviderConfig();
         config.addProperty("tcpNoDelay", true);

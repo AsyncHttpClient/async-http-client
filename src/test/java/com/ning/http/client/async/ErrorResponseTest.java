@@ -16,34 +16,35 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Response;
 
 /**
  * Tests to reproduce issues with handling of error responses
- *
+ * 
  * @author Tatu Saloranta
  */
 public abstract class ErrorResponseTest extends AbstractBasicTest {
     final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
     private static class ErrorHandler extends AbstractHandler {
-        public void handle(String s, Request r,
-                           HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             try {
                 Thread.sleep(210L);
             } catch (InterruptedException e) {
@@ -61,18 +62,18 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
         return new ErrorHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        Future<Response> f = client
-                .prepareGet("http://127.0.0.1:" + port1 + "/foo")
-                .addHeader("Accepts", "*/*")
-                .execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), 400);
-        String respStr = resp.getResponseBody();
-        assertEquals(BAD_REQUEST_STR, respStr);
-        client.close();
+        try {
+            Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), 400);
+            String respStr = resp.getResponseBody();
+            assertEquals(BAD_REQUEST_STR, respStr);
+        } finally {
+            client.close();
+        }
     }
 }

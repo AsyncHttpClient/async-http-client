@@ -70,7 +70,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
     private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
-    public static byte GZIPTEXT[] = new byte[]{31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0};
+    public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0 };
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -130,7 +130,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
     /**
      * Tests that the streaming of a file works.
      */
-    @Test (enabled = true)
+    @Test(enabled = true)
     public void testSendingSmallFilesAndByteArray() {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -155,7 +155,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             fail("unable to find " + testResource2);
         }
 
-
         File testResource3File = null;
         try {
             testResource3File = getClasspathFile(testResource3);
@@ -179,7 +178,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         gzipped.add(true);
         gzipped.add(false);
 
-
         boolean tmpFileCreated = false;
         File tmpFile = null;
         FileOutputStream os = null;
@@ -192,7 +190,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             testFiles.add(tmpFile);
             expected.add(expectedContents);
             gzipped.add(false);
-
 
         } catch (FileNotFoundException e1) {
             // TODO Auto-generated catch block
@@ -210,12 +207,9 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             fail("Unable to test ByteArrayMultiPart, as unable to write to filesystem the tmp test content");
         }
 
-
-        AsyncHttpClientConfig.Builder bc =
-                new AsyncHttpClientConfig.Builder();
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
         bc.setFollowRedirects(true);
-
 
         AsyncHttpClient c = new AsyncHttpClient(bc.build());
 
@@ -232,8 +226,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes("UTF-8") ,"text/plain", "UTF-8"));
-
+            builder.addBodyPart(new ByteArrayPart("file4", "bytearray.txt", expectedContents.getBytes("UTF-8"), "text/plain", "UTF-8"));
 
             com.ning.http.client.Request r = builder.build();
 
@@ -243,26 +236,24 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             testSentFile(expected, testFiles, res, gzipped);
 
-            c.close();
         } catch (Exception e) {
             e.printStackTrace();
             fail("Download Exception");
         } finally {
+            c.close();
             FileUtils.deleteQuietly(tmpFile);
         }
     }
 
-
     /**
      * Test that the files were sent, based on the response from the servlet
-     *
+     * 
      * @param expectedContents
      * @param sourceFiles
      * @param r
      * @param deflate
      */
-    private void testSentFile(List<String> expectedContents, List<File> sourceFiles,
-                              Response r, List<Boolean> deflate) {
+    private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r, List<Boolean> deflate) {
         String content = null;
         try {
             content = r.getResponseBody();
@@ -283,11 +274,10 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         String[] responseFiles = tmpFiles.split(",");
         assertNotNull(responseFiles);
-        assertEquals( sourceFiles.size(), responseFiles.length);
-
+        assertEquals(sourceFiles.size(), responseFiles.length);
 
         System.out.println(Arrays.toString(responseFiles));
-        //assertTrue("File should exist: " + tmpFile.getAbsolutePath(),tmpFile.exists());
+        // assertTrue("File should exist: " + tmpFile.getAbsolutePath(),tmpFile.exists());
 
         int i = 0;
         for (File sourceFile : sourceFiles) {
@@ -315,14 +305,12 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                     IOUtils.closeQuietly(instream);
                 }
 
-
                 tmp = new File(responseFiles[i].trim());
                 System.out.println("==============================");
                 System.out.println(tmp.getAbsolutePath());
                 System.out.println("==============================");
                 System.out.flush();
                 assertTrue(tmp.exists());
-
 
                 instream = new FileInputStream(tmp);
                 ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
@@ -359,7 +347,8 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 e.printStackTrace();
                 fail("Download Exception");
             } finally {
-                if (tmp != null) FileUtils.deleteQuietly(tmp);
+                if (tmp != null)
+                    FileUtils.deleteQuietly(tmp);
                 IOUtils.closeQuietly(instream);
                 i++;
             }
@@ -368,7 +357,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
     /**
      * Takes the content that is being passed to it, and streams to a file on disk
-     *
+     * 
      * @author dominict
      */
     public static class MockMultipartUploadServlet extends HttpServlet {
@@ -378,7 +367,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         private static final long serialVersionUID = 1L;
         private int filesProcessed = 0;
         private int stringsProcessed = 0;
-
 
         public MockMultipartUploadServlet() {
 
@@ -411,8 +399,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         }
 
         @Override
-        public void service(HttpServletRequest request, HttpServletResponse response)
-                throws ServletException, IOException {
+        public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             // Check that we have a file upload request
             boolean isMultipart = ServletFileUpload.isMultipartContent(request);
             if (isMultipart) {
@@ -430,12 +417,10 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                             stream = item.openStream();
 
                             if (item.isFormField()) {
-                                System.out.println("Form field " + name + " with value "
-                                        + Streams.asString(stream) + " detected.");
+                                System.out.println("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
                                 incrementStringsProcessed();
                             } else {
-                                System.out.println("File field " + name + " with file name "
-                                        + item.getName() + " detected.");
+                                System.out.println("File field " + name + " with file name " + item.getName() + " detected.");
                                 // Process the input stream
                                 OutputStream os = null;
                                 try {
@@ -479,6 +464,5 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         }
 
     }
-
 
 }

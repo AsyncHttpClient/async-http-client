@@ -16,16 +16,12 @@ package com.ning.http.client.async.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.Expect100ContinueTest;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import com.ning.http.client.async.ProviderUtil;
 
-public class GrizzlyExpectContinue100Test extends Expect100ContinueTest{
+public class GrizzlyExpectContinue100Test extends Expect100ContinueTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return ProviderUtil.grizzlyProvider(config);
     }
-
 }

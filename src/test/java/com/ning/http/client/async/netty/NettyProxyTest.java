@@ -22,7 +22,6 @@ public class NettyProxyTest extends ProxyTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
     }
-
 }
 
 

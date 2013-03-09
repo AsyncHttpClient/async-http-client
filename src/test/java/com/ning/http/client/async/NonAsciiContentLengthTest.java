@@ -36,61 +36,62 @@ import static org.testng.Assert.assertEquals;
 
 public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
 
+    public void setUpServer() throws Exception {
+        server = new Server();
+        port1 = findFreePort();
+        Connector listener = new SelectChannelConnector();
 
-	public void setUpServer() throws Exception {
-		server = new Server();
-		port1 = findFreePort();
-		Connector listener = new SelectChannelConnector();
+        listener.setHost("127.0.0.1");
+        listener.setPort(port1);
+        server.addConnector(listener);
+        server.setHandler(new AbstractHandler() {
 
-		listener.setHost("127.0.0.1");
-		listener.setPort(port1);
-		server.addConnector(listener);
-		server.setHandler(new AbstractHandler() {
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+                int MAX_BODY_SIZE = 1024; // Can only handle bodies of up to 1024 bytes.
+                byte[] b = new byte[MAX_BODY_SIZE];
+                int offset = 0;
+                int numBytesRead;
+                ServletInputStream is = request.getInputStream();
+                try {
+                    while ((numBytesRead = is.read(b, offset, MAX_BODY_SIZE - offset)) != -1) {
+                        offset += numBytesRead;
+                    }
+                } finally {
+                    is.close();
+                }
+                assertEquals(request.getContentLength(), offset);
+                response.setStatus(200);
+                response.setCharacterEncoding(request.getCharacterEncoding());
+                response.setContentLength(request.getContentLength());
+                ServletOutputStream os = response.getOutputStream();
+                try {
+                    os.write(b, 0, offset);
+                } finally {
+                    os.close();
+                }
+            }
+        });
+        server.start();
+    }
 
-			public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
-			    throws IOException, ServletException {
-				int MAX_BODY_SIZE = 1024; //Can only handle bodies of up to 1024 bytes.
-				byte[] b = new byte[MAX_BODY_SIZE];
-				int offset = 0;
-				int numBytesRead;
-				ServletInputStream is = request.getInputStream();
-				try {
-					while ((numBytesRead = is.read(b, offset, MAX_BODY_SIZE - offset)) != -1) {
-						offset += numBytesRead;
-					}
-				} finally {
-					is.close();
-				}
-				assertEquals(request.getContentLength(), offset);
-				response.setStatus(200);
-				response.setCharacterEncoding(request.getCharacterEncoding());
-				response.setContentLength(request.getContentLength());
-				ServletOutputStream os = response.getOutputStream();
-				try {
-					os.write(b, 0, offset);
-				} finally {
-					os.close();
-				}
-			}
-		});
-		server.start();
-	}
+    @Test(groups = { "standalone", "default_provider" })
+    public void testNonAsciiContentLength() throws Exception {
+        setUpServer();
+        execute("test");
+        execute("\u4E00"); // Unicode CJK ideograph for one
+    }
 
-	@Test(groups = { "standalone", "default_provider" })
-	public void testNonAsciiContentLength() throws Exception {
-		setUpServer();
-		execute("test");
-		execute("\u4E00"); // Unicode CJK ideograph for one
-	}
-
-	protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-		AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-		BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
-		Future<Response> f = r.execute();
-		Response resp = f.get();
-		assertEquals(resp.getStatusCode(), 200);
-		assertEquals(body, resp.getResponseBody("UTF-8"));
-		client.close();
-	}
+    protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        try {
+            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
+            Future<Response> f = r.execute();
+            Response resp = f.get();
+            assertEquals(resp.getStatusCode(), 200);
+            assertEquals(body, resp.getResponseBody("UTF-8"));
+        } finally {
+            client.close();
+        }
+    }
 
 }
