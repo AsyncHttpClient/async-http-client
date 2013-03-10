@@ -47,10 +47,7 @@ import static org.testng.Assert.assertTrue;
 public abstract class ZeroCopyFileTest extends AbstractBasicTest {
 
     private class ZeroCopyHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int size = 10 * 1024;
             if (httpRequest.getContentLength() > 0) {
@@ -67,59 +64,62 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
+            final AtomicBoolean headerSent = new AtomicBoolean(false);
+            final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-        final AtomicBoolean headerSent = new AtomicBoolean(false);
-        final AtomicBoolean operationCompleted = new AtomicBoolean(false);
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler<Response>() {
 
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler<Response>() {
+                public STATE onHeaderWriteCompleted() {
+                    headerSent.set(true);
+                    return STATE.CONTINUE;
+                }
 
-            public STATE onHeaderWriteCompleted() {
-                headerSent.set(true);
-                return STATE.CONTINUE;
-            }
+                public STATE onContentWriteCompleted() {
+                    operationCompleted.set(true);
+                    return STATE.CONTINUE;
+                }
 
-            public STATE onContentWriteCompleted() {
-                operationCompleted.set(true);
-                return STATE.CONTINUE;
-            }
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                return response;
-            }
-        });
-        Response resp = f.get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file");
-        assertTrue(operationCompleted.get());
-        assertTrue(headerSent.get());
-        client.close();
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    return response;
+                }
+            });
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), "This is a simple test file");
+            assertTrue(operationCompleted.get());
+            assertTrue(headerSent.get());
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
-        Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(file).execute();
-        Response resp = f.get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file");
-        client.close();
-
+            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(file).execute();
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), "This is a simple test file");
+        } finally {
+            client.close();
+        }
     }
 
     @Override
@@ -127,92 +127,92 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
+            File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+            tmp.deleteOnExit();
+            final FileOutputStream stream = new FileOutputStream(tmp);
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
+                public void onThrowable(Throwable t) {
+                }
 
-        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
-        tmp.deleteOnExit();
-        final FileOutputStream stream = new FileOutputStream(tmp);
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
-            public void onThrowable(Throwable t) {
-            }
+                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                    bodyPart.writeTo(stream);
+                    return STATE.CONTINUE;
+                }
 
-            public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                bodyPart.writeTo(stream);
-                return STATE.CONTINUE;
-            }
+                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                    return STATE.CONTINUE;
+                }
 
-            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                return STATE.CONTINUE;
-            }
+                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    return STATE.CONTINUE;
+                }
 
-            public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                return STATE.CONTINUE;
-            }
-
-            public Response onCompleted() throws Exception {
-                return null;
-            }
-        });
-        Response resp = f.get();
-        stream.close();
-        assertNull(resp);
-        assertEquals(file.length(), tmp.length());
-        client.close();
-
+                public Response onCompleted() throws Exception {
+                    return null;
+                }
+            });
+            Response resp = f.get();
+            stream.close();
+            assertNull(resp);
+            assertEquals(file.length(), tmp.length());
+        } finally {
+            client.close();
+        }
     }
 
-
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
-        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
-        tmp.deleteOnExit();
-        final FileOutputStream stream = new FileOutputStream(tmp);
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
-            public void onThrowable(Throwable t) {
-            }
-
-            public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                bodyPart.writeTo(stream);
-
-                if (bodyPart.getBodyPartBytes().length == 0) {
-                    return STATE.ABORT;
+            File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+            tmp.deleteOnExit();
+            final FileOutputStream stream = new FileOutputStream(tmp);
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
+                public void onThrowable(Throwable t) {
                 }
-                          
-                return STATE.CONTINUE;
-            }
 
-            public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                return STATE.CONTINUE;
-            }
+                public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                    bodyPart.writeTo(stream);
 
-            public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-                return STATE.CONTINUE;
-            }
+                    if (bodyPart.getBodyPartBytes().length == 0) {
+                        return STATE.ABORT;
+                    }
 
-            public Response onCompleted() throws Exception {
-                return null;
-            }
-        });
-        Response resp = f.get();
-        stream.close();
-        assertNull(resp);
-        assertEquals(file.length(), tmp.length());
-        client.close();
+                    return STATE.CONTINUE;
+                }
 
+                public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+                    return STATE.CONTINUE;
+                }
+
+                public Response onCompleted() throws Exception {
+                    return null;
+                }
+            });
+            Response resp = f.get();
+            stream.close();
+            assertNull(resp);
+            assertEquals(file.length(), tmp.length());
+        } finally {
+            client.close();
+        }
     }
-
 }

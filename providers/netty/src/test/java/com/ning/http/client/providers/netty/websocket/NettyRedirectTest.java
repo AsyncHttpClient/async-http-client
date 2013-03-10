@@ -14,14 +14,14 @@ package com.ning.http.client.providers.netty.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProviderUtil;
+import com.ning.http.client.providers.netty.NettyProviderUtil;
 import com.ning.http.client.websocket.RedirectTest;
 
 public class NettyRedirectTest extends RedirectTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
 }

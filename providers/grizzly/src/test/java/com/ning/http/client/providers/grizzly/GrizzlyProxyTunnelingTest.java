@@ -16,21 +16,12 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProxyTunnellingTest;
-import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 
 public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
 }

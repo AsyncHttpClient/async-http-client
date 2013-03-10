@@ -43,96 +43,82 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     private static URI servletEndpointUri;
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = { "online", "default_provider" })
     public void testMaxConnectionsWithinThreads() {
 
-        String[] urls = new String[]{
-                servletEndpointUri.toString(),
-                servletEndpointUri.toString()};
+        String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).setMaximumConnectionsPerHost(1).build());
 
-        final AsyncHttpClient client =
-               getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                        .setConnectionTimeoutInMs(1000)
-                        .setRequestTimeoutInMs(5000)
-                        .setAllowPoolingConnection(true)
-                        .setMaximumConnectionsTotal(1)
-                        .setMaximumConnectionsPerHost(1)
-                        .build());
+        try {
+            final Boolean[] caughtError = new Boolean[] { Boolean.FALSE };
+            List<Thread> ts = new ArrayList<Thread>();
+            for (int i = 0; i < urls.length; i++) {
+                final String url = urls[i];
+                Thread t = new Thread() {
+                    public void run() {
+                        try {
+                            client.prepareGet(url).execute();
+                        } catch (IOException e) {
+                            // assert that 2nd request fails, because maxTotalConnections=1
+                            // System.out.println(i);
+                            caughtError[0] = true;
+                            System.err.println("============");
+                            e.printStackTrace();
+                            System.err.println("============");
 
-
-        final Boolean[] caughtError = new Boolean[]{Boolean.FALSE};
-        List<Thread> ts = new ArrayList<Thread>();
-        for (int i = 0; i < urls.length; i++) {
-            final String url = urls[i];
-            Thread t = new Thread() {
-                public void run() {
-                    try {
-                        client.prepareGet(url).execute();
-                    } catch (IOException e) {
-                        // assert that 2nd request fails, because maxTotalConnections=1
-                        //            		System.out.println(i);
-                        caughtError[0] = true;
-                        System.err.println("============");
-                        e.printStackTrace();
-                        System.err.println("============");
-
+                        }
                     }
+                };
+                t.start();
+                ts.add(t);
+            }
+
+            for (Thread t : ts) {
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
-            };
-            t.start();
-            ts.add(t);
-        }
+            }
 
-        for (Thread t : ts) {
+            // Let the threads finish
             try {
-                t.join();
-            } catch (InterruptedException e) {
+                Thread.sleep(4500);
+            } catch (InterruptedException e1) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
+                e1.printStackTrace();
             }
-        }
 
+            assertTrue("Max Connections should have been reached", caughtError[0]);
 
-        // Let the threads finish
-        try {
-            Thread.sleep(4500);
-        } catch (InterruptedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
-        assertTrue("Max Connections should have been reached", caughtError[0]);
-
-
-        boolean errorInNotThread = false;
-        for (int i = 0; i < urls.length; i++) {
-            final String url = urls[i];
+            boolean errorInNotThread = false;
+            for (int i = 0; i < urls.length; i++) {
+                final String url = urls[i];
+                try {
+                    client.prepareGet(url).execute();
+                    // client.prepareGet(url).execute();
+                } catch (IOException e) {
+                    // assert that 2nd request fails, because maxTotalConnections=1
+                    // System.out.println(i);
+                    errorInNotThread = true;
+                    System.err.println("============");
+                    e.printStackTrace();
+                    System.err.println("============");
+                }
+            }
+            // Let the request finish
             try {
-                client.prepareGet(url).execute();
-                // client.prepareGet(url).execute();
-            } catch (IOException e) {
-                // assert that 2nd request fails, because maxTotalConnections=1
-                // System.out.println(i);
-                errorInNotThread = true;
-                System.err.println("============");
-                e.printStackTrace();
-                System.err.println("============");
+                Thread.sleep(2500);
+            } catch (InterruptedException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
             }
+            assertTrue("Max Connections should have been reached", errorInNotThread);
+        } finally {
+            client.close();
         }
-        // Let the request finish
-        try {
-            Thread.sleep(2500);
-        } catch (InterruptedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        assertTrue("Max Connections should have been reached", errorInNotThread);
-
-
-        client.close();
-
-
     }
 
     @Override
@@ -148,7 +134,6 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
         listener.setPort(port1);
 
         server.addConnector(listener);
-
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
@@ -186,8 +171,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
             try {
                 sleepTime = Integer.parseInt(req.getParameter("timeout"));
 
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 sleepTime = DEFAULT_TIMEOUT;
             }
 
@@ -201,8 +185,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 System.out.println("Servlet is awake for");
                 System.out.println("=======================================");
                 System.out.flush();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
 
             }
 

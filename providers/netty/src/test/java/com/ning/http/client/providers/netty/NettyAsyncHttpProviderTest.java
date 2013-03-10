@@ -12,16 +12,16 @@
  */
 package com.ning.http.client.providers.netty;
 
+import static org.testng.Assert.assertEquals;
+
+import java.util.concurrent.Executors;
+
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest;
-import com.ning.http.client.async.ProviderUtil;
-import org.testng.annotations.Test;
-
-import java.util.concurrent.Executors;
-
-import static org.testng.Assert.assertEquals;
 
 public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
 
@@ -32,14 +32,16 @@ public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(conf).build();
         AsyncHttpClient c = getAsyncHttpClient(cf);
-
-        Response r = c.prepareGet(getTargetUrl()).execute().get();
-        assertEquals(r.getStatusCode(), 200);
+        try {
+            Response r = c.prepareGet(getTargetUrl()).execute().get();
+            assertEquals(r.getStatusCode(), 200);
+        } finally {
+            c.close();
+        }
     }
-
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 }

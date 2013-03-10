@@ -35,43 +35,45 @@ import java.util.UUID;
 
 import static org.testng.FileAssert.fail;
 
-public abstract class FilePartLargeFileTest
-        extends AbstractBasicTest {
+public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
     private File largeFile;
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = true)
-    public void testPutImageFile()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    public void testPutImageFile() throws Exception {
         largeFile = getTestFile();
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build();
         AsyncHttpClient client = getAsyncHttpClient(config);
-        BoundRequestBuilder rb = client.preparePut(getTargetUrl());
+        try {
+            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
-        rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream" , "UTF-8"));
+            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", "UTF-8"));
 
-        Response response = rb.execute().get();
-        Assert.assertEquals(200, response.getStatusCode());
-
-        client.close();
+            Response response = rb.execute().get();
+            Assert.assertEquals(200, response.getStatusCode());
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"}, enabled = true)
-    public void testPutLargeTextFile()
-            throws Exception {
+    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    public void testPutLargeTextFile() throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
         long repeats = (1024 * 1024 / bytes.length) + 1;
         largeFile = createTempFile(bytes, (int) repeats);
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
         AsyncHttpClient client = getAsyncHttpClient(config);
-        BoundRequestBuilder rb = client.preparePut(getTargetUrl());
+        try {
+            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
-        rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream" , "UTF-8"));
+            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", "UTF-8"));
 
-        Response response = rb.execute().get();
-        Assert.assertEquals(200, response.getStatusCode());
-        client.close();
+            Response response = rb.execute().get();
+            Assert.assertEquals(200, response.getStatusCode());
+        } finally {
+            client.close();
+        }
     }
 
     private static File getTestFile() {
@@ -96,12 +98,10 @@ public abstract class FilePartLargeFileTest
     }
 
     @Override
-    public AbstractHandler configureHandler()
-            throws Exception {
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
-            public void handle(String arg0, Request arg1, HttpServletRequest req, HttpServletResponse resp)
-                    throws IOException, ServletException {
+            public void handle(String arg0, Request arg1, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 
                 ServletInputStream in = req.getInputStream();
                 byte[] b = new byte[8192];
@@ -125,11 +125,9 @@ public abstract class FilePartLargeFileTest
         };
     }
 
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-"
-            + UUID.randomUUID().toString().substring(0, 8));
+    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
 
-    public static File createTempFile(byte[] pattern, int repeat)
-            throws IOException {
+    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
         TMP.mkdirs();
         TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
@@ -139,8 +137,7 @@ public abstract class FilePartLargeFileTest
         return tmpFile;
     }
 
-    public static void write(byte[] pattern, int repeat, File file)
-            throws IOException {
+    public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
         FileOutputStream out = null;
@@ -149,8 +146,7 @@ public abstract class FilePartLargeFileTest
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
             }
-        }
-        finally {
+        } finally {
             if (out != null) {
                 out.close();
             }

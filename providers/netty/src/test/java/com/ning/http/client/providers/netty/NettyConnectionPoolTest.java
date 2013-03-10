@@ -12,24 +12,24 @@
  */
 package com.ning.http.client.providers.netty;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+
+import java.util.concurrent.TimeUnit;
+
+import org.jboss.netty.channel.Channel;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.async.ConnectionPoolTest;
-import com.ning.http.client.async.ProviderUtil;
-import org.jboss.netty.channel.Channel;
-
-import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
     @Override
@@ -57,22 +57,20 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder()
-                        .setConnectionsPool(cp)
-                        .build()
-        );
-
-        Exception exception = null;
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
         try {
-            client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            Exception exception = null;
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
+            }
+            assertNotNull(exception);
+            assertEquals(exception.getMessage(), "Too many connections -1");
+        } finally {
+            client.close();
         }
-        assertNotNull(exception);
-        assertEquals(exception.getMessage(), "Too many connections -1");
-        client.close();
     }
 
     @Override
@@ -100,20 +98,18 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder()
-                        .setConnectionsPool(cp)
-                        .build()
-        );
-
-        Exception exception = null;
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
         try {
-            client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            Exception exception = null;
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
+            }
+            assertNull(exception);
+        } finally {
+            client.close();
         }
-        assertNull(exception);
-        client.close();
     }
 }

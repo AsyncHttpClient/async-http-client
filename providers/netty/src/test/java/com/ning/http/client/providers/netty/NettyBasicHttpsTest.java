@@ -15,12 +15,11 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicHttpsTest;
-import com.ning.http.client.async.ProviderUtil;
 
 public class NettyBasicHttpsTest extends BasicHttpsTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 }

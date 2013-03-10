@@ -65,10 +65,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     public static class EchoHandler extends AbstractHandler {
 
         /* @Override */
-        public void handle(String pathInContext,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws ServletException, IOException {
+        public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
             Enumeration<?> e = httpRequest.getHeaderNames();
@@ -166,8 +163,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             socket = new ServerSocket(0);
 
             return socket.getLocalPort();
-        }
-        finally {
+        } finally {
             if (socket != null) {
                 socket.close();
             }
@@ -208,110 +204,96 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Throwable {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            // override system properties
+            URL url = cl.getResource("SimpleTextFile.txt");
+            File file = new File(url.toURI());
 
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL url = cl.getResource("SimpleTextFile.txt");
-        File file = new File(url.toURI());
-
-        Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-        Response resp = f.get();
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getResponseBody(), "This is a simple test file");
+            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
+            Response resp = f.get();
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getResponseBody(), "This is a simple test file");
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Throwable {
         final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-        // twice
-        response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-        c.close();
-    }
-
-    @Test(groups = {"standalone", "default_provider"})
-    public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
-
-        String body = "hello there";
-        c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute();
-
-        c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute();
-
-       Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .setHeader("Content-Type", "text/html")
-                .execute().get();
-
-        assertEquals(response.getResponseBody(), body);
-        c.close();
-    }
-
-    @Test(groups = {"standalone", "default_provider"})
-    public void reconnectsAfterFailedCertificationPath() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
-
-        final String body = "hello there";
-
-        TRUST_SERVER_CERT.set(false);
         try {
-            // first request fails because server certificate is rejected
-            try {
-                c.preparePost(getTargetUrl())
-                        .setBody(body)
-                        .setHeader("Content-Type", "text/html")
-                        .execute().get(TIMEOUT, TimeUnit.SECONDS);
-            }
-            catch (final ExecutionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof ConnectException) {
-                    assertNotNull(cause.getCause());
-                    assertTrue(cause.getCause() instanceof SSLHandshakeException);
-                } else {
-                    assertTrue(cause instanceof SSLHandshakeException);
-                }
-            }
+            String body = "hello there";
 
-            TRUST_SERVER_CERT.set(true);
-
-            // second request should succeed
-            final Response response = c.preparePost(getTargetUrl())
-                    .setBody(body)
-                    .setHeader("Content-Type", "text/html")
-                    .execute().get(TIMEOUT, TimeUnit.SECONDS);
+            // once
+            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
+
+            // twice
+            response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(response.getResponseBody(), body);
+        } finally {
+            c.close();
         }
-        finally {
-            TRUST_SERVER_CERT.set(true);
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void multipleSSLWithoutCacheTest() throws Throwable {
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
+        try {
+            String body = "hello there";
+            c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
+
+            c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
+
+            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get();
+
+            assertEquals(response.getResponseBody(), body);
+        } finally {
+            c.close();
         }
-        c.close();
+    }
+
+    @Test(groups = { "standalone", "default_provider" })
+    public void reconnectsAfterFailedCertificationPath() throws Throwable {
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        try {
+            final String body = "hello there";
+
+            TRUST_SERVER_CERT.set(false);
+            try {
+                // first request fails because server certificate is rejected
+                try {
+                    c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+                } catch (final ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof ConnectException) {
+                        assertNotNull(cause.getCause());
+                        assertTrue(cause.getCause() instanceof SSLHandshakeException);
+                    } else {
+                        assertTrue(cause instanceof SSLHandshakeException);
+                    }
+                }
+
+                TRUST_SERVER_CERT.set(true);
+
+                // second request should succeed
+                final Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+                assertEquals(response.getResponseBody(), body);
+            } finally {
+                TRUST_SERVER_CERT.set(true);
+            }
+        } finally {
+            c.close();
+        }
     }
 
     private static SSLContext createSSLContext() {
@@ -328,15 +310,14 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
             // Initialize the SSLContext to work with our key managers.
             KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[]{DUMMY_TRUST_MANAGER};
+            TrustManager[] trustManagers = new TrustManager[] { DUMMY_TRUST_MANAGER };
             SecureRandom secureRandom = new SecureRandom();
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagers, trustManagers, secureRandom);
 
             return sslContext;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new Error("Failed to initialize the server-side SSLContext", e);
         }
     }
@@ -347,17 +328,14 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             return new X509Certificate[0];
         }
 
-        public void checkClientTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         }
 
-        public void checkServerTrusted(
-                X509Certificate[] chain, String authType) throws CertificateException {
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             if (!TRUST_SERVER_CERT.get()) {
                 throw new CertificateException("Server certificate not trusted.");
             }
         }
     };
-
 
 }

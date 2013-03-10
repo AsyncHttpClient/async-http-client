@@ -33,42 +33,36 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
     @Override
     @Test
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder()
-                        .setAllowPoolingConnection(true)
-                        .setMaximumConnectionsTotal(1)
-                        .build()
-        );
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        try {
+            String url = getTargetUrl();
+            int i;
+            Exception exception = null;
+            for (i = 0; i < 20; i++) {
+                try {
+                    log.info("{} requesting url [{}]...", i, url);
 
-        String url = getTargetUrl();
-        int i;
-        Exception exception = null;
-        for (i = 0; i < 20; i++) {
-            try {
-                log.info("{} requesting url [{}]...", i, url);
-
-                if (i < 5) {
-                    client.prepareGet(url).execute().get();
-                } else {
-                    client.prepareGet(url).execute();
+                    if (i < 5) {
+                        client.prepareGet(url).execute().get();
+                    } else {
+                        client.prepareGet(url).execute();
+                    }
+                } catch (Exception ex) {
+                    exception = ex;
+                    break;
                 }
-            } catch (Exception ex) {
-                exception = ex;
-                break;
             }
+            assertNotNull(exception);
+            assertNotNull(exception.getMessage());
+        } finally {
+            client.close();
         }
-        assertNotNull(exception);
-        assertNotNull(exception.getMessage());
-
     }
 
     @Override
@@ -96,24 +90,22 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder()
-                        .setConnectionsPool(cp)
-                        .build()
-        );
-
-        Exception exception = null;
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
         try {
-            client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            Exception exception = null;
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
+            }
+            assertNull(exception);
+        } finally {
+            client.close();
         }
-        assertNull(exception);
-        client.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testInvalidConnectionsPool() {
 
         ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {
@@ -139,52 +131,48 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder()
-                        .setConnectionsPool(cp)
-                        .build()
-        );
-
-        Exception exception = null;
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
         try {
-            client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            Exception exception = null;
+            try {
+                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
+            }
+            assertNotNull(exception);
+        } finally {
+            client.close();
         }
-        assertNotNull(exception);
-        client.close();
     }
 
     @Override
     @Test
     public void multipleMaxConnectionOpenTest() throws Throwable {
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true)
-                .setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
-
-        String body = "hello there";
-
-        // once
-        Response response = c.preparePost(getTargetUrl())
-                .setBody(body)
-                .execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-        assertEquals(response.getResponseBody(), body);
-
-        // twice
-        Exception exception = null;
         try {
-            c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            fail("Should throw exception. Too many connections issued.");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
-        }
-        assertNotNull(exception);
-        c.close();
-    }
+            String body = "hello there";
 
+            // once
+            Response response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(response.getResponseBody(), body);
+
+            // twice
+            Exception exception = null;
+            try {
+                c.preparePost(String.format("http://127.0.0.1:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
+                fail("Should throw exception. Too many connections issued.");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                exception = ex;
+            }
+            assertNotNull(exception);
+        } finally {
+            c.close();
+        }
+    }
 
     @Override
     @Test
@@ -192,22 +180,20 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
         final AtomicInteger count = new AtomicInteger(0);
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        AsyncCompletionHandler<Response> handler = new
-                AsyncCompletionHandlerAdapter() {
-
-                    @Override
-                    public Response onCompleted(Response response) throws
-                            Exception {
-
-                        count.incrementAndGet();
-                        StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
-                        IOException t = new IOException();
-                        t.setStackTrace(new StackTraceElement[]{e});
-                        throw t;
-                    }
-                };
-
         try {
+            AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
+
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+
+                    count.incrementAndGet();
+                    StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
+                    IOException t = new IOException();
+                    t.setStackTrace(new StackTraceElement[] { e });
+                    throw t;
+                }
+            };
+
             client.prepareGet(getTargetUrl()).execute(handler).get();
             fail("Must have received an exception");
         } catch (ExecutionException ex) {
@@ -215,8 +201,9 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             assertNotNull(ex.getCause());
             assertEquals(ex.getCause().getClass(), IOException.class);
             assertEquals(count.get(), 1);
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
 }

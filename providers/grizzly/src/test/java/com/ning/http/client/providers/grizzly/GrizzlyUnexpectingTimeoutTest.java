@@ -48,10 +48,7 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
     @Override
@@ -78,45 +75,47 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void unexpectingTimeoutTest() throws IOException {
         final AtomicInteger counts = new AtomicInteger();
         final int timeout = 100;
 
         final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(timeout).build());
-        Future<Response> responseFuture =
-                client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
-                    @Override
-                    public Response onCompleted(Response response) throws Exception {
-                        counts.incrementAndGet();
-                        return response;
-                    }
+        try {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    counts.incrementAndGet();
+                    return response;
+                }
 
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        counts.incrementAndGet();
-                        super.onThrowable(t);
-                    }
-                });
-        // currently, an exception is expected
-        // because the grizzly provider would throw IllegalStateException if WWW-Authenticate header doesn't exist with 401 response status.
-        try {
-            Response response = responseFuture.get();
-            assertNull(response);
-        } catch (InterruptedException e) {
-            fail("Interrupted.", e);
-        } catch (ExecutionException e) {
-            assertFalse(e.getCause() instanceof TimeoutException);
-            assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
+                @Override
+                public void onThrowable(Throwable t) {
+                    counts.incrementAndGet();
+                    super.onThrowable(t);
+                }
+            });
+            // currently, an exception is expected
+            // because the grizzly provider would throw IllegalStateException if WWW-Authenticate header doesn't exist with 401 response status.
+            try {
+                Response response = responseFuture.get();
+                assertNull(response);
+            } catch (InterruptedException e) {
+                fail("Interrupted.", e);
+            } catch (ExecutionException e) {
+                assertFalse(e.getCause() instanceof TimeoutException);
+                assertEquals(e.getCause().getMessage(), getExpectedTimeoutMessage());
+            }
+            // wait for timeout again.
+            try {
+                Thread.sleep(timeout * 2);
+            } catch (InterruptedException e) {
+                fail("Interrupted.", e);
+            }
+            // the result should be either onCompleted or onThrowable.
+            assertEquals(1, counts.get(), "result should be one");
+        } finally {
+            client.close();
         }
-        // wait for timeout again.
-        try {
-            Thread.sleep(timeout*2);
-        } catch (InterruptedException e) {
-            fail("Interrupted.", e);
-        }
-        // the result should be either onCompleted or onThrowable.
-        assertEquals(1, counts.get(), "result should be one");
-        client.close();
     }
 }

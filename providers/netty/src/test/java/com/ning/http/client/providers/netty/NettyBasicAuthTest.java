@@ -12,25 +12,25 @@
  */
 package com.ning.http.client.providers.netty;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicAuthTest;
-import com.ning.http.client.async.ProviderUtil;
-import org.testng.annotations.Test;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
     @Override
     @Test
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        super.redirectAndBasicAuthTest();    //To change body of overridden methods use File | Settings | File Templates.
+        super.redirectAndBasicAuthTest(); // To change body of overridden methods use File | Settings | File Templates.
     }
 }

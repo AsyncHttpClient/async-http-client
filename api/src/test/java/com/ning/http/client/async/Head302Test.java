@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Tests HEAD request that gets 302 response.
- *
+ * 
  * @author Hubert Iwaniuk
  */
 public abstract class Head302Test extends AbstractBasicTest {
@@ -44,10 +44,7 @@ public abstract class Head302Test extends AbstractBasicTest {
      * Handler that does Found (302) in response to HEAD method.
      */
     private class Head302handler extends AbstractHandler {
-        public void handle(String s,
-                           org.eclipse.jetty.server.Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("HEAD".equalsIgnoreCase(request.getMethod())) {
                 if (request.getPathInfo().endsWith("_moved")) {
                     response.setStatus(HttpServletResponse.SC_OK);
@@ -61,24 +58,27 @@ public abstract class Head302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testHEAD302() throws IOException, BrokenBarrierException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder("HEAD").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            Request request = new RequestBuilder("HEAD").setUrl("http://127.0.0.1:" + port1 + "/Test").build();
 
-        client.executeRequest(request, new AsyncCompletionHandlerBase() {
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                l.countDown();
-                return super.onCompleted(response);
+            client.executeRequest(request, new AsyncCompletionHandlerBase() {
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    l.countDown();
+                    return super.onCompleted(response);
+                }
+            }).get(3, TimeUnit.SECONDS);
+
+            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                Assert.fail("Timeout out");
             }
-        }).get(3, TimeUnit.SECONDS);
-
-        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-            Assert.fail("Timeout out");
+        } finally {
+            client.close();
         }
-        client.close();
     }
 
     @Override

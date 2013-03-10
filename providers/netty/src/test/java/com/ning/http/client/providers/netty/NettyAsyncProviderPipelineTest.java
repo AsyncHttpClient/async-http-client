@@ -25,7 +25,6 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
@@ -42,35 +41,37 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
         return new AsyncHttpClient(new CopyEncodingNettyAsyncHttpProvider(config), config);
     }
 
-    @Test(groups = {"standalone", "netty_provider"})
+    @Test(groups = { "standalone", "netty_provider" })
     public void asyncPipelineTest() throws Throwable {
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setCompressionEnabled(true).build());
-
-        final CountDownLatch l = new CountDownLatch(1);
-        Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
-        p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                try {
-                    assertEquals(response.getStatusCode(), 200);
-                    assertEquals(response.getHeader("X-Original-Content-Encoding"), "<original encoding>");
-                } finally {
-                    l.countDown();
+        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build());
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
+            p.executeRequest(request, new AsyncCompletionHandlerAdapter() {
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    try {
+                        assertEquals(response.getStatusCode(), 200);
+                        assertEquals(response.getHeader("X-Original-Content-Encoding"), "<original encoding>");
+                    } finally {
+                        l.countDown();
+                    }
+                    return response;
                 }
-                return response;
+            }).get();
+            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                Assert.fail("Timeout out");
             }
-        }).get();
-        if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-            Assert.fail("Timeout out");
+        } finally {
+            p.close();
         }
-        p.close();
     }
 
     private static class CopyEncodingNettyAsyncHttpProvider extends NettyAsyncHttpProvider {
         public CopyEncodingNettyAsyncHttpProvider(AsyncHttpClientConfig config) {
             super(config);
         }
+
         protected ChannelPipelineFactory createPlainPipelineFactory() {
             final ChannelPipelineFactory pipelineFactory = super.createPlainPipelineFactory();
             return new ChannelPipelineFactory() {

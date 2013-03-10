@@ -16,13 +16,12 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.PostRedirectGetTest;
-import com.ning.http.client.async.ProviderUtil;
 
 public class NettyPostRedirectGetTest extends PostRedirectGetTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
 }

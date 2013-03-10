@@ -15,16 +15,14 @@ package com.ning.http.client.providers.grizzly.websocket;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
+import com.ning.http.client.providers.grizzly.GrizzlyProviderUtil;
 import com.ning.http.client.websocket.ByteMessageTest;
 import org.testng.annotations.Test;
 
 public class GrizzlyByteMessageTest extends ByteMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
     @Test(timeOut = 60000)

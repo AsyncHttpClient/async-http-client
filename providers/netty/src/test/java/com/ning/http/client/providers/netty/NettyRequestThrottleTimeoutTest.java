@@ -12,25 +12,33 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.*;
-import com.ning.http.client.async.AbstractBasicTest;
-import com.ning.http.client.async.ProviderUtil;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
-
-import static org.testng.Assert.*;
-import static org.testng.Assert.fail;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.PerRequestConfig;
+import com.ning.http.client.Response;
+import com.ning.http.client.async.AbstractBasicTest;
 
 public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
@@ -38,7 +46,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
     @Override
@@ -69,68 +77,64 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "netty_provider"})
+    @Test(groups = { "standalone", "netty_provider" })
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setCompressionEnabled(true)
-                .setAllowPoolingConnection(true)
-                .setMaximumConnectionsTotal(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        try {
+            final CountDownLatch latch = new CountDownLatch(2);
 
-        final CountDownLatch latch = new CountDownLatch(2);
+            final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
+            for (int i = 0; i < 2; i++) {
+                final int threadNumber = i;
+                new Thread(new Runnable() {
 
-        final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
-        for(int i=0;i<2;i++) {
-            final int threadNumber = i;
-            new Thread(new Runnable() {
-
-                public void run() {
-                    try {
-                        requestThrottle.acquire();
-                        PerRequestConfig requestConfig = new PerRequestConfig();
-                        requestConfig.setRequestTimeoutInMs(SLEEPTIME_MS/2);
-                        Future<Response> responseFuture = null;
+                    public void run() {
                         try {
-                             responseFuture =
-                                    client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute(new AsyncCompletionHandler<Response>() {
+                            requestThrottle.acquire();
+                            PerRequestConfig requestConfig = new PerRequestConfig();
+                            requestConfig.setRequestTimeoutInMs(SLEEPTIME_MS / 2);
+                            Future<Response> responseFuture = null;
+                            try {
+                                responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute(new AsyncCompletionHandler<Response>() {
 
-                                        @Override
-                                        public Response onCompleted(Response response) throws Exception {
-                                            requestThrottle.release();
-                                            return response;
-                                        }
+                                    @Override
+                                    public Response onCompleted(Response response) throws Exception {
+                                        requestThrottle.release();
+                                        return response;
+                                    }
 
-                                        @Override
-                                        public void onThrowable(Throwable t) {
-                                            requestThrottle.release();
-                                        }
-                                    });
-                        } catch(Exception e) {
-                            tooManyConnections.add(e);
+                                    @Override
+                                    public void onThrowable(Throwable t) {
+                                        requestThrottle.release();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                tooManyConnections.add(e);
+                            }
+
+                            if (responseFuture != null)
+                                responseFuture.get();
+                        } catch (Exception e) {
+                        } finally {
+                            latch.countDown();
                         }
 
-                        if(responseFuture!=null)
-                            responseFuture.get();
-                    } catch (Exception e) {
-                    } finally {
-                        latch.countDown();
                     }
+                }).start();
 
-                }
-            }).start();
+            }
 
+            try {
+                latch.await(30, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                fail("failed to wait for requests to complete");
+            }
 
+            assertTrue(tooManyConnections.size() == 0, "Should not have any connection errors where too many connections have been attempted");
+        } finally {
+            client.close();
         }
-
-        try {
-            latch.await(30,TimeUnit.SECONDS);
-        } catch (Exception e) {
-            fail("failed to wait for requests to complete");
-        }
-
-        assertTrue(tooManyConnections.size()==0,"Should not have any connection errors where too many connections have been attempted");
-
-        client.close();
     }
 }

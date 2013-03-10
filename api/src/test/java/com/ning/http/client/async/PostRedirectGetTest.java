@@ -35,9 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
-
     // ------------------------------------------------------ Test Configuration
-
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -46,123 +44,111 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
     // ------------------------------------------------------------ Test Methods
 
-    @Test(groups = {"standalone", "post_redirect_get"})
+    @Test(groups = { "standalone", "post_redirect_get" })
     public void postRedirectGet302Test() throws Exception {
         doTestPositive(302);
     }
 
-    @Test(groups = {"standalone", "post_redirect_get"})
+    @Test(groups = { "standalone", "post_redirect_get" })
     public void postRedirectGet302StrictTest() throws Exception {
         doTestNegative(302, true);
     }
 
-    @Test(groups = {"standalone", "post_redirect_get"})
+    @Test(groups = { "standalone", "post_redirect_get" })
     public void postRedirectGet303Test() throws Exception {
         doTestPositive(303);
     }
 
-    @Test(groups = {"standalone", "post_redirect_get"})
+    @Test(groups = { "standalone", "post_redirect_get" })
     public void postRedirectGet301Test() throws Exception {
         doTestNegative(301, false);
     }
 
-    @Test(groups = {"standalone", "post_redirect_get"})
+    @Test(groups = { "standalone", "post_redirect_get" })
     public void postRedirectGet307Test() throws Exception {
         doTestNegative(307, false);
     }
 
-
     // --------------------------------------------------------- Private Methods
 
-
     private void doTestNegative(final int status, boolean strict) throws Exception {
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).
-                setStrict302Handling(strict).
-                addResponseFilter(new ResponseFilter() {
-                    @Override
-                    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
-                        // pass on the x-expect-get and remove the x-redirect
-                        // headers if found in the response
-                        ctx.getResponseHeaders().getHeaders().get("x-expect-post");
-                        ctx.getRequest().getHeaders().add("x-expect-post", "true");
-                        ctx.getRequest().getHeaders().remove("x-redirect");
-                        return ctx;
-                    }
-                }).build());
-        Request request = new RequestBuilder("POST").setUrl(getTargetUrl())
-                .addParameter("q", "a b")
-                .addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz")
-                .addHeader("x-negative", "true")
-                .build();
-        Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
-
+        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setStrict302Handling(strict).addResponseFilter(new ResponseFilter() {
             @Override
-            public Integer onCompleted(Response response) throws Exception {
-                return response.getStatusCode();
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+                // pass on the x-expect-get and remove the x-redirect
+                // headers if found in the response
+                ctx.getResponseHeaders().getHeaders().get("x-expect-post");
+                ctx.getRequest().getHeaders().add("x-expect-post", "true");
+                ctx.getRequest().getHeaders().remove("x-redirect");
+                return ctx;
             }
+        }).build());
+        try {
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addParameter("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
+            Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
-            /* @Override */
-            public void onThrowable(Throwable t) {
-                t.printStackTrace();
-                Assert.fail("Unexpected exception: " + t.getMessage(), t);
-            }
+                @Override
+                public Integer onCompleted(Response response) throws Exception {
+                    return response.getStatusCode();
+                }
 
-        });
-        int statusCode = responseFuture.get();
-        Assert.assertEquals(statusCode, 200);
-        p.close();
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                }
+
+            });
+            int statusCode = responseFuture.get();
+            Assert.assertEquals(statusCode, 200);
+        } finally {
+            p.close();
+        }
     }
-
 
     private void doTestPositive(final int status) throws Exception {
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).
-                addResponseFilter(new ResponseFilter() {
-                    @Override
-                    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
-                        // pass on the x-expect-get and remove the x-redirect
-                        // headers if found in the response
-                        ctx.getResponseHeaders().getHeaders().get("x-expect-get");
-                        ctx.getRequest().getHeaders().add("x-expect-get", "true");
-                        ctx.getRequest().getHeaders().remove("x-redirect");
-                        return ctx;
-                    }
-                }).build());
-        Request request = new RequestBuilder("POST").setUrl(getTargetUrl())
-                .addParameter("q", "a b")
-                .addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz")
-                .build();
-        Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
-
+        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).addResponseFilter(new ResponseFilter() {
             @Override
-            public Integer onCompleted(Response response) throws Exception {
-                return response.getStatusCode();
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+                // pass on the x-expect-get and remove the x-redirect
+                // headers if found in the response
+                ctx.getResponseHeaders().getHeaders().get("x-expect-get");
+                ctx.getRequest().getHeaders().add("x-expect-get", "true");
+                ctx.getRequest().getHeaders().remove("x-redirect");
+                return ctx;
             }
+        }).build());
+        try {
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addParameter("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
+            Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
-            /* @Override */
-            public void onThrowable(Throwable t) {
-                t.printStackTrace();
-                Assert.fail("Unexpected exception: " + t.getMessage(), t);
-            }
+                @Override
+                public Integer onCompleted(Response response) throws Exception {
+                    return response.getStatusCode();
+                }
 
-        });
-        int statusCode = responseFuture.get();
-        Assert.assertEquals(statusCode, 200);
-        p.close();
+                /* @Override */
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                }
+
+            });
+            int statusCode = responseFuture.get();
+            Assert.assertEquals(statusCode, 200);
+        } finally {
+            p.close();
+        }
     }
 
-
     // ---------------------------------------------------------- Nested Classes
-
 
     public static class PostRedirectGetHandler extends AbstractHandler {
 
         final AtomicInteger counter = new AtomicInteger();
 
         /* @Override */
-        public void handle(String pathInContext,
-                           org.eclipse.jetty.server.Request request,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             final boolean expectGet = (httpRequest.getHeader("x-expect-get") != null);
             final boolean expectPost = (httpRequest.getHeader("x-expect-post") != null);
@@ -211,7 +197,6 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 httpResponse.getOutputStream().flush();
                 return;
             }
-
 
             httpResponse.sendError(500);
             httpResponse.getOutputStream().flush();

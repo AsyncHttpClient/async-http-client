@@ -15,19 +15,17 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.async.RedirectConnectionUsageTest;
 
 public class NettyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 
     @Override
     protected AsyncHttpProviderConfig getProviderConfig() {
-        final NettyAsyncHttpProviderConfig config = 
-                new NettyAsyncHttpProviderConfig();
+        final NettyAsyncHttpProviderConfig config = new NettyAsyncHttpProviderConfig();
         if (System.getProperty("blockingio") != null) {
             config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
         }

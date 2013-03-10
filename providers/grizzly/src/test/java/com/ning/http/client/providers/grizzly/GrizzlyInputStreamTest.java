@@ -21,10 +21,7 @@ public class GrizzlyInputStreamTest extends InputStreamTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
 }

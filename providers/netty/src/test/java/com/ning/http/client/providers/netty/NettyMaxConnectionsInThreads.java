@@ -14,11 +14,10 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.MaxConnectionsInThreads;
-import com.ning.http.client.async.ProviderUtil;
 
 public class NettyMaxConnectionsInThreads extends MaxConnectionsInThreads {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 }

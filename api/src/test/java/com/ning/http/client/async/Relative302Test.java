@@ -45,11 +45,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
     private class Relative302Handler extends AbstractHandler {
 
-
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;
             httpResponse.setContentType("text/html; charset=utf-8");
@@ -89,26 +85,25 @@ public abstract class Relative302Test extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
-        // once
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", "http://www.google.com/")
-                .execute().get();
+        try {
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
 
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        
-        String anyGoogleSubdomain = "http://www\\.google\\.[a-z]+(\\.[a-z]+)*:80";
-        String baseUrl = getBaseUrl( response.getUri() );
-        
-        assertTrue(baseUrl.matches( anyGoogleSubdomain ), "response does not show redirection to " + anyGoogleSubdomain);
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
 
-        c.close();
+            String anyGoogleSubdomain = "http://www\\.google\\.[a-z]+(\\.[a-z]+)*:80";
+            String baseUrl = getBaseUrl(response.getUri());
+
+            assertTrue(baseUrl.matches(anyGoogleSubdomain), "response does not show redirection to " + anyGoogleSubdomain);
+        } finally {
+            c.close();
+        }
     }
 
     private String getBaseUrl(URI uri) {
@@ -128,7 +123,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
         return port;
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
@@ -136,59 +131,56 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
-            Response response = c.prepareGet(getTargetUrl())
-                    .setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2))
-                    .execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 404);
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void absolutePathRedirectTest() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
+        try {
+            String redirectTarget = "/bar/test";
+            String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
-        String redirectTarget = "/bar/test";
-        String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
-        
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", redirectTarget)
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getUri().toString(), destinationUrl);
-        
-        log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
-        
-        c.close();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getUri().toString(), destinationUrl);
+
+            log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        } finally {
+            c.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void relativePathRedirectTest() throws Throwable {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
+        try {
+            String redirectTarget = "bar/test1";
+            String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
-        String redirectTarget = "bar/test1";
-        String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
-        
-        Response response = c.prepareGet(getTargetUrl())
-                .setHeader("X-redirect", redirectTarget)
-                .execute().get();
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 200);
-        assertEquals(response.getUri().toString(), destinationUrl);
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get();
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 200);
+            assertEquals(response.getUri().toString(), destinationUrl);
 
-        log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
-        
-        c.close();
+            log.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        } finally {
+            c.close();
+        }
     }
 }
