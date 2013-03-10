@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private final AtomicBoolean done = new AtomicBoolean(false);
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final AsyncHandler handler;
     private final GrizzlyAsyncHttpProvider provider;
     private final Request request;
@@ -66,17 +67,28 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public void done(Callable callable) {
 
-        done.compareAndSet(false, true);
-        super.done();
+        if (!done.compareAndSet(false, true) || cancelled.get()) {
+            return;
+        }
+        done();
+
 
     }
 
 
     public void abort(Throwable t) {
 
+        if (done.get() || !cancelled.compareAndSet(false, true)) {
+            return;
+        }
+
         delegate.failure(t);
         if (handler != null) {
-            handler.onThrowable(t);
+            try {
+                handler.onThrowable(t);
+            } catch (Throwable ignore) {
+            }
+
         }
         closeConnection();
         done();
@@ -121,7 +133,15 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     public boolean cancel(boolean mayInterruptIfRunning) {
 
-        handler.onThrowable(new CancellationException());
+        if (done.get() || !cancelled.compareAndSet(false, true)) {
+            return false;
+        }
+        if (handler != null) {
+            try {
+                handler.onThrowable(new CancellationException());
+            } catch (Throwable ignore) {
+            }
+        }
         done();
         return delegate.cancel(mayInterruptIfRunning);
 
@@ -182,7 +202,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private void closeConnection() {
 
-        if (connection != null && !connection.isOpen()) {
+        if (connection != null && connection.isOpen()) {
             connection.close().markForRecycle(true);
         }
 
