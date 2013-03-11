@@ -13,6 +13,8 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Cookie;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -53,7 +55,7 @@ public class GrizzlyResponse extends ResponseBase {
                            final List<HttpResponseBodyPart> bodyParts) {
         super(status, headers, bodyParts);
 
-        if (bodyParts != null && !bodyParts.isEmpty()) {
+        if (isNonEmpty(bodyParts)) {
             if (bodyParts.size() == 1) {
                 responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
             } else {
@@ -136,8 +138,16 @@ public class GrizzlyResponse extends ResponseBase {
      */
     public String getResponseBody() throws IOException {
 
-        return getResponseBody(Charsets.DEFAULT_CHARACTER_ENCODING);
+        return getResponseBody(null);
 
+    }
+
+    /**
+     * @return the response body as a Grizzly {@link Buffer}.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public Buffer getResponseBodyAsBuffer() {
+        return responseBody;
     }
 
     /**
@@ -146,7 +156,7 @@ public class GrizzlyResponse extends ResponseBase {
     public List<Cookie> buildCookies() {
 
         List<String> values = headers.getHeaders().get("set-cookie");
-        if (values != null && !values.isEmpty()) {
+        if (isNonEmpty(values)) {
             CookiesBuilder.ServerCookiesBuilder builder = new CookiesBuilder.ServerCookiesBuilder(false);
             for (String header : values) {
                 builder.parse(header);

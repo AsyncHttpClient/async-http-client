@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -11,6 +11,8 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.ning.http.client.providers.jdk;
+
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -373,7 +375,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             } catch (Throwable t) {
                 logger.debug(t.getMessage(), t);
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(request).ioException(IOException.class.cast(t)).build();
 
@@ -516,7 +518,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                                 AuthenticatorUtils.computeBasicAuthentication(realm));
                         break;
                     case DIGEST:
-                        if (realm.getNonce() != null && !realm.getNonce().equals("")) {
+                        if (isNonEmpty(realm.getNonce())) {
                             try {
                                 urlConnection.setRequestProperty("Authorization",
                                         AuthenticatorUtils.computeDigestAuthentication(realm));
@@ -552,7 +554,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                                                                   config));
             }
 
-            if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+            if (isNonEmpty(request.getCookies())) {
                 urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
             }
 

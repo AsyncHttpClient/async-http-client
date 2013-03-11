@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -15,7 +15,10 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,15 +39,19 @@ import java.util.Map.Entry;
 
 /**
  * Builder for {@link Request}
- *
+ * 
  * @param <T>
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
 
+    private static final URI DEFAULT_REQUEST_URL = URI.create("http://localhost");
+
     private static final class RequestImpl implements Request {
         private String method;
-        private String url = null;
+        private URI originalUri = null;
+        private URI uri = null;
+        private URI rawUri = null;
         private InetAddress address = null;
         private InetAddress localAddress = null;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
@@ -67,6 +74,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long rangeOffset = 0;
         public String charset;
         private boolean useRawUrl = false;
+        private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
 
         public RequestImpl(boolean useRawUrl) {
             this.useRawUrl = useRawUrl;
@@ -75,9 +83,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.method = prototype.getMethod();
-                String prototypeUrl = prototype.getUrl();
-                int pos = prototypeUrl.indexOf("?");
-                this.url = pos > 0 ? prototypeUrl.substring(0, pos) : prototypeUrl;
+                this.originalUri = prototype.getOriginalURI();
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
@@ -100,6 +106,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.useRawUrl = prototype.isUseRawUrl();
+                this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
             }
         }
 
@@ -113,12 +120,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return method;
         }
 
-        /* @Override */
-
-        public String getUrl() {
-            return toUrl(true);
-        }
-
         public InetAddress getInetAddress() {
             return address;
         }
@@ -126,42 +127,74 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public InetAddress getLocalAddress() {
             return localAddress;
         }
-        
-        private String toUrl(boolean encode) {
 
-            if (url == null) {
+        private String removeTrailingSlash(URI uri) {
+            String uriString = uri.toString();
+            if (uriString.endsWith("/")) {
+                return uriString.substring(0, uriString.length() - 1);
+            } else {
+                return uriString;
+            }
+        }
+
+        /* @Override */
+        public String getUrl() {
+            return removeTrailingSlash(getURI());
+        }
+
+        /* @Override */
+        public String getRawUrl() {
+            return removeTrailingSlash(getRawURI());
+        }
+
+        public URI getOriginalURI() {
+            return originalUri;
+        }
+
+        public URI getURI() {
+            if (uri == null)
+                uri = toURI(true);
+            return uri;
+        }
+
+        public URI getRawURI() {
+            if (rawUri == null)
+                rawUri = toURI(false);
+            return rawUri;
+        }
+
+        private URI toURI(boolean encode) {
+
+            if (originalUri == null) {
                 logger.debug("setUrl hasn't been invoked. Using http://localhost");
-                url = "http://localhost";
+                originalUri = DEFAULT_REQUEST_URL;
             }
 
-            String uri = url;
-            if (!uri.startsWith("ws")) {
-                try {
-                    uri = URI.create(url).toURL().toString();
-                } catch (Throwable e) {
-                    throw new IllegalArgumentException("Illegal URL: " + url, e);
-                }
+            AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
+
+            StringBuilder builder = new StringBuilder();
+            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
+            if (isNonEmpty(originalUri.getRawPath())) {
+                builder.append(originalUri.getRawPath());
+            } else {
+                builder.append("/");
             }
 
-            if (queryParams != null && !queryParams.isEmpty()) {
+            if (isNonEmpty(queryParams)) {
 
-                StringBuilder builder = new StringBuilder();
-                if (!url.substring(8).contains("/")) { // no other "/" than http[s]:// -> http://localhost:1234
-                    builder.append("/");
-                }
                 builder.append("?");
 
-                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext(); ) {
+                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
                     Map.Entry<String, List<String>> param = i.next();
                     String name = param.getKey();
-                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext(); ) {
+                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
                         if (encode) {
                             UTF8UrlEncoder.appendEncoded(builder, name);
                         } else {
                             builder.append(name);
                         }
-                        if (value != null && !value.equals("")) {
+                        if (value != null) {
                             builder.append('=');
                             if (encode) {
                                 UTF8UrlEncoder.appendEncoded(builder, value);
@@ -177,14 +210,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         builder.append('&');
                     }
                 }
-                uri += builder.toString();
             }
-            return uri;
-        }
 
-        /* @Override */
-        public String getRawUrl() {
-            return toUrl(false);
+            return URI.create(builder.toString());
         }
 
         /* @Override */
@@ -287,9 +315,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return charset;
         }
 
+        public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
+            return connectionPoolKeyStrategy;
+        }
+
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(url);
+            StringBuilder sb = new StringBuilder(getURI().toString());
 
             sb.append("\t");
             sb.append(method);
@@ -338,7 +370,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setUrl(String url) {
-        request.url = buildUrl(url);
+        request.originalUri = buildURI(url);
         return derived.cast(this);
     }
 
@@ -352,7 +384,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private String buildUrl(String url) {
+    private URI buildURI(String url) {
         URI uri = URI.create(url);
         StringBuilder buildedUrl = new StringBuilder();
 
@@ -372,22 +404,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             if (url.indexOf("://") == -1) {
                 String s = buildedUrl.toString();
                 url = s + url.substring(uri.getScheme().length() + 1);
-                return buildUrl(url);
+                return buildURI(url);
             } else {
                 throw new IllegalArgumentException("Invalid url " + uri.toString());
             }
         }
 
-        if (uri.getRawQuery() != null && !uri.getRawQuery().equals("")) {
+        if (isNonEmpty(uri.getRawQuery())) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
             for (String query : queries) {
-                pos = query.indexOf("=");
+                pos = query.indexOf('=');
                 if (pos <= 0) {
                     addQueryParameter(query, null);
                 } else {
                     try {
-                        if (this.useRawUrl) {
+                        if (useRawUrl) {
                             addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
                         } else {
                             addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
@@ -398,9 +430,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
         }
-        return buildedUrl.toString();
+        return uri;
     }
-
 
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
@@ -603,6 +634,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setConnectionPoolKeyStrategy(ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+        request.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+        return derived.cast(this);
+    }
+
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) && allowBody(request.getMethod())) {
             // can't concatenate content-length
@@ -620,13 +656,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private boolean allowBody(String method) {
-        if (method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS")
-                && method.equalsIgnoreCase("TRACE")
-                && method.equalsIgnoreCase("HEAD")) {
-            return false;
-        } else {
-            return true;
-        }
+        return !(method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS") || method.equalsIgnoreCase("TRACE") || method.equalsIgnoreCase("HEAD"));
     }
 
     public T addOrReplaceCookie(Cookie cookie) {

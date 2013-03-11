@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 /**
  * @author Bryan Davis bpd@keynetics.com

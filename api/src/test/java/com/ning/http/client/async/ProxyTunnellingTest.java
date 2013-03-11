@@ -86,7 +86,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = { "online", "default_provider" })
     public void testRequestProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);
@@ -95,28 +95,29 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = b.build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        try {
+            RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
+            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
-        RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
-        Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    log.debug(t.getMessage(), t);
+                }
 
-            public void onThrowable(Throwable t) {
-                t.printStackTrace();
-                log.debug(t.getMessage(), t);
-            }
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                return response;
-            }
-        });
-        Response r = responseFuture.get();
-        assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
-
-        asyncHttpClient.close();
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    return response;
+                }
+            });
+            Response r = responseFuture.get();
+            assertEquals(r.getStatusCode(), 200);
+            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+        } finally {
+            asyncHttpClient.close();
+        }
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = { "online", "default_provider" })
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.setFollowRedirects(true);
@@ -126,44 +127,39 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = b.build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        try {
+            RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
+            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
 
-        RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
-        Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+                public void onThrowable(Throwable t) {
+                    t.printStackTrace();
+                    log.debug(t.getMessage(), t);
+                }
 
-            public void onThrowable(Throwable t) {
-                t.printStackTrace();
-                log.debug(t.getMessage(), t);
-            }
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-                return response;
-            }
-        });
-        Response r = responseFuture.get();
-        assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
-
-        asyncHttpClient.close();
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    return response;
+                }
+            });
+            Response r = responseFuture.get();
+            assertEquals(r.getStatusCode(), 200);
+            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+        } finally {
+            asyncHttpClient.close();
+        }
     }
 
-    @Test(groups = {"online", "default_provider"})
+    @Test(groups = { "online", "default_provider" })
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
-                .setProxyProtocol(ProxyServer.Protocol.HTTPS)
-                .setProxyHost("127.0.0.1")
-                .setProxyPort(port1)
-                .setFollowRedirects(true)
-                .setUrl(getTargetUrl2())
-                .setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProxyProtocol(ProxyServer.Protocol.HTTPS).setProxyHost("127.0.0.1").setProxyPort(port1).setFollowRedirects(true).setUrl(getTargetUrl2()).setHeader("Content-Type", "text/html").build();
+        try {
+            Response r = client.get().get();
 
-        Response r = client.get().get();
-
-        assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
-
-        client.close();
+            assertEquals(r.getStatusCode(), 200);
+            assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
+        } finally {
+            client.close();
+        }
     }
 }
-

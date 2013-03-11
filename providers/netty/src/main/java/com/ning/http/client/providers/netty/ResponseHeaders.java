@@ -54,7 +54,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
             }
         }
 
-        if (trailingHeaders != null && trailingHeaders.getHeaderNames().size() > 0) {
+        if (trailingHeaders != null) {
             for (final String s : trailingHeaders.getHeaderNames()) {
                 for (String header : response.getHeaders(s)) {
                     h.add(s, header);

@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
@@ -357,7 +359,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
         method.setFollowRedirects(false);
         Collection<Cookie> cookies = request.getCookies();
-        if ((cookies != null) && !cookies.isEmpty()) {
+        if (isNonEmpty(cookies)) {
             method.setRequestHeader("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
         }
 

@@ -129,9 +129,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     }
                 }
 
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
+                    int openChannels = 0;
+                    for (ConcurrentLinkedQueue<IdleChannel> hostChannels: connectionsPool.values()) {
+                        openChannels += hostChannels.size();
+                    }
                     log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
-                        connectionsPool.size(), channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
+                            openChannels, channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
+                }
             } catch (Throwable t) {
                 log.error("uncaught exception!", t);
             }

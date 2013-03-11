@@ -16,6 +16,7 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
@@ -85,14 +86,16 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean writeBody;
     private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
     private boolean allowConnect = false;
-
+    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    
     public NettyResponseFuture(URI uri,
                                Request request,
                                AsyncHandler<V> asyncHandler,
                                HttpRequest nettyRequest,
                                int responseTimeoutInMs,
                                int idleConnectionTimeoutInMs,
-                               NettyAsyncHttpProvider asyncHttpProvider) {
+                               NettyAsyncHttpProvider asyncHttpProvider,
+                               ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
@@ -101,6 +104,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.nettyRequest = nettyRequest;
         this.uri = uri;
         this.asyncHttpProvider = asyncHttpProvider;
+        this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
 
         if (System.getProperty(MAX_RETRY) != null) {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
@@ -118,6 +122,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     protected void setURI(URI uri) {
         this.uri = uri;
     }
+
+	public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
+		return connectionPoolKeyStrategy;
+	}
 
     /**
      * {@inheritDoc}
@@ -270,6 +278,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void done(Callable callable) {
+
+        Throwable exception = null;
+
         try {
             cancelReaper();
 
@@ -282,16 +293,21 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 try {
                     callable.call();
                 } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                    exception = ex;
                 }
             }
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
-            exEx.compareAndSet(null, new ExecutionException(t));
+            exception = t.getCause() != null ? t.getCause() : t;
+
         } finally {
             latch.countDown();
         }
+
+        if (exception != null)
+            exEx.compareAndSet(null, new ExecutionException(exception));
+
         super.done();
     }
 

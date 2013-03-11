@@ -40,15 +40,12 @@ import org.testng.annotations.Test;
 
 /**
  * Proxy usage tests.
- *
+ * 
  * @author Hubert Iwaniuk
  */
 public abstract class ProxyTest extends AbstractBasicTest {
     private class ProxyHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getUri().getPath());
                 response.addHeader("targetUri", r.getUri().toString());
@@ -65,73 +62,68 @@ public abstract class ProxyTest extends AbstractBasicTest {
         return new ProxyHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        String target = "http://127.0.0.1:1234/";
-        Future<Response> f = client
-                .prepareGet(target)
-                .setProxyServer(new ProxyServer("127.0.0.1", port1))
-                .execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
-        client.close();
+        try {
+            String target = "http://127.0.0.1:1234/";
+            Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1)).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg
-                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
+        AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
         AsyncHttpClient client = getAsyncHttpClient(cfg);
-        String target = "http://127.0.0.1:1234/";
-        Future<Response> f = client
-                .prepareGet(target)
-                .execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
-        client.close();
+        try {
+            String target = "http://127.0.0.1:1234/";
+            Future<Response> f = client.prepareGet(target).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg
-                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
+        AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
         AsyncHttpClient client = getAsyncHttpClient(cfg);
-        String target = "http://127.0.0.1:1234/";
-        Future<Response> f = client
-                .prepareGet(target)
-                .setProxyServer(new ProxyServer("127.0.0.1", port1))
-                .execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(resp.getHeader("target"), "/");
-        client.close();
+        try {
+            String target = "http://127.0.0.1:1234/";
+            Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1)).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            client.close();
+        }
     }
 
-
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void testNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClientConfig cfg
-                = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
+        AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
         AsyncHttpClient client = getAsyncHttpClient(cfg);
         try {
 
             String target = "http://127.0.0.1:1234/";
-            client.prepareGet(target)
-                    .setProxyServer(new ProxyServer("127.0.0.1", port1).addNonProxyHost("127.0.0.1"))
-                    .execute().get();
+            client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1).addNonProxyHost("127.0.0.1")).execute().get();
             assertFalse(true);
         } catch (Throwable e) {
             assertNotNull(e.getCause());
             assertEquals(e.getCause().getClass(), ConnectException.class);
+        } finally {
+            client.close();
         }
-
-        client.close();
     }
 
 
@@ -165,29 +157,30 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
             AsyncHttpClient client = getAsyncHttpClient(cfg);
-
-            String target = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(target).execute();
-            Response resp = f.get(3, TimeUnit.SECONDS);
-            assertNotNull(resp);
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("target"), "/");
-
-            target = "http://localhost:1234/";
-            f = client.prepareGet(target).execute();
             try {
-                resp = f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
+                String target = "http://127.0.0.1:1234/";
+                Future<Response> f = client.prepareGet(target).execute();
+                Response resp = f.get(3, TimeUnit.SECONDS);
+                assertNotNull(resp);
+                assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+                assertEquals(resp.getHeader("target"), "/");
+
+                target = "http://localhost:1234/";
+                f = client.prepareGet(target).execute();
+                try {
+                    resp = f.get(3, TimeUnit.SECONDS);
+                    fail("should not be able to connect");
+                } catch (ExecutionException e) {
+                    // ok, no proxy used
+                }
+            } finally {
+                client.close();
             }
-            
-            client.close();
         } finally {
             System.setProperties(originalProps);
         }
     }
-    
+
     @Test(groups = { "standalone", "default_provider" })
     public void testIgnoreProxyPropertiesByDefault() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
@@ -201,24 +194,24 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.proxyPort", String.valueOf(port1));
             System.setProperty("http.nonProxyHosts", "localhost");
 
-            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
-
-            String target = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(target).execute();
+            AsyncHttpClient client = getAsyncHttpClient(null);
             try {
-                f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
+                String target = "http://127.0.0.1:1234/";
+                Future<Response> f = client.prepareGet(target).execute();
+                try {
+                    f.get(3, TimeUnit.SECONDS);
+                    fail("should not be able to connect");
+                } catch (ExecutionException e) {
+                    // ok, no proxy used
+                }
+            } finally {
+                client.close();
             }
-
-            client.close();
         } finally {
             System.setProperties(originalProps);
         }
     }
-    
+
     @Test(groups = { "standalone", "default_provider" })
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
@@ -233,29 +226,29 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.nonProxyHosts", "localhost");
             System.setProperty("com.ning.http.client.AsyncHttpClientConfig.useProxyProperties", "true");
 
-            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
-
-            String target = "http://127.0.0.1:1234/";
-            Future<Response> f = client.prepareGet(target).execute();
-            Response resp = f.get(3, TimeUnit.SECONDS);
-            assertNotNull(resp);
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getHeader("target"), "/");
-
-            target = "http://localhost:1234/";
-            f = client.prepareGet(target).execute();
+            AsyncHttpClient client = getAsyncHttpClient(null);
             try {
-                resp = f.get(3, TimeUnit.SECONDS);
-                fail("should not be able to connect");
-            } catch (ExecutionException e) {
-                // ok, no proxy used
+                String target = "http://127.0.0.1:1234/";
+                Future<Response> f = client.prepareGet(target).execute();
+                Response resp = f.get(3, TimeUnit.SECONDS);
+                assertNotNull(resp);
+                assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+                assertEquals(resp.getHeader("target"), "/");
+
+                target = "http://localhost:1234/";
+                f = client.prepareGet(target).execute();
+                try {
+                    resp = f.get(3, TimeUnit.SECONDS);
+                    fail("should not be able to connect");
+                } catch (ExecutionException e) {
+                    // ok, no proxy used
+                }
+            } finally {
+                client.close();
             }
-            
-            client.close();
         } finally {
             System.setProperties(originalProps);
         }
     }
-    
+
 }

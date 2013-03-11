@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import java.io.ByteArrayOutputStream;
+
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 public class NettyWebSocket implements WebSocket {
@@ -34,6 +36,10 @@ public class NettyWebSocket implements WebSocket {
 
     private final Channel channel;
     private final ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
+
+    private StringBuilder textBuffer;
+    private ByteArrayOutputStream byteBuffer;
+    private int maxBufferSize = 128000000;
 
     public NettyWebSocket(Channel channel) {
         this.channel = channel;
@@ -90,6 +96,17 @@ public class NettyWebSocket implements WebSocket {
         return this;
     }
 
+    public int getMaxBufferSize() {
+    	return maxBufferSize;
+    }
+    
+    public void setMaxBufferSize(int bufferSize) {
+    	maxBufferSize = bufferSize;
+    	
+    	if(maxBufferSize < 8192)
+    		maxBufferSize = 8192;
+    }
+    
     // @Override
     public boolean isOpen() {
         return channel.isOpen();
@@ -102,11 +119,31 @@ public class NettyWebSocket implements WebSocket {
         channel.close();
     }
 
-    protected void onMessage(byte[] message) {
+    protected void onBinaryFragment(byte[] message, boolean last) {
         for (WebSocketListener l : listeners) {
             if (WebSocketByteListener.class.isAssignableFrom(l.getClass())) {
                 try {
-                    WebSocketByteListener.class.cast(l).onMessage(message);
+                	WebSocketByteListener.class.cast(l).onFragment(message,last);
+                	
+                	if(byteBuffer == null) {
+                		byteBuffer = new ByteArrayOutputStream();
+                	}
+                	
+                	byteBuffer.write(message);
+                	
+                	if(byteBuffer.size() > maxBufferSize) {
+                		Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
+                        l.onError(e);
+                		this.close();
+                		return;
+                	}
+                	
+
+                	if(last) {
+                    	WebSocketByteListener.class.cast(l).onMessage(byteBuffer.toByteArray());
+                    	byteBuffer = null;
+                    	textBuffer = null;
+                	}
                 } catch (Exception ex) {
                     l.onError(ex);
                 }
@@ -114,11 +151,30 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
-    protected void onTextMessage(String message) {
+    protected void onTextFragment(String message, boolean last) {
         for (WebSocketListener l : listeners) {
             if (WebSocketTextListener.class.isAssignableFrom(l.getClass())) {
                 try {
-                    WebSocketTextListener.class.cast(l).onMessage(message);
+                    WebSocketTextListener.class.cast(l).onFragment(message,last);
+                    
+                	if(textBuffer == null) {
+                		textBuffer = new StringBuilder();
+                	}
+                	
+                	textBuffer.append(message);
+                	
+                	if(textBuffer.length() > maxBufferSize) {
+                		Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
+                        l.onError(e);
+                		this.close();
+                		return;
+                	}
+                	
+                	if(last) {
+                    	WebSocketTextListener.class.cast(l).onMessage(textBuffer.toString());
+                    	byteBuffer = null;
+                    	textBuffer = null;
+                	}
                 } catch (Exception ex) {
                     l.onError(ex);
                 }

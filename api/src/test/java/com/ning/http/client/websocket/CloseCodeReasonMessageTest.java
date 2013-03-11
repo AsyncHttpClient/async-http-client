@@ -13,7 +13,6 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -26,36 +25,42 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<String> text = new AtomicReference<String>("");
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<String>("");
 
-        WebSocket websocket = c.prepareGet(getTargetUrl())
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
-        websocket.close();
+            websocket.close();
 
-        latch.await();
-        assertTrue(text.get().startsWith("1000"));
+            latch.await();
+            assertTrue(text.get().startsWith("1000"));
+        } finally {
+            c.close();
+        }
     }
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<String> text = new AtomicReference<String>("");
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<String>("");
 
-        c.prepareGet(getTargetUrl())
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
-        latch.await();
-        final String[] parts = text.get().split(" ");
-        assertEquals(parts.length, 5);
-        assertEquals(parts[0], "1000-Idle");
-        assertEquals(parts[1], "for");
-        assertTrue(Integer.parseInt(parts[2].substring(0, parts[2].indexOf('m'))) > 10000);
-        assertEquals(parts[3], ">");
-        assertEquals(parts[4], "10000ms");
+            latch.await();
+            final String[] parts = text.get().split(" ");
+            assertEquals(parts.length, 5);
+            assertEquals(parts[0], "1000-Idle");
+            assertEquals(parts[1], "for");
+            assertTrue(Integer.parseInt(parts[2].substring(0, parts[2].indexOf('m'))) > 10000);
+            assertEquals(parts[3], ">");
+            assertEquals(parts[4], "10000ms");
+        } finally {
+            c.close();
+        }
     }
 
     public final static class Listener implements WebSocketListener, WebSocketCloseCodeReasonListener {
@@ -68,11 +73,11 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             this.text = text;
         }
 
-        //@Override
+        // @Override
         public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
         }
 
-        //@Override
+        // @Override
         public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
         }
 
@@ -81,7 +86,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             latch.countDown();
         }
 
-        //@Override
+        // @Override
         public void onError(Throwable t) {
             t.printStackTrace();
             latch.countDown();

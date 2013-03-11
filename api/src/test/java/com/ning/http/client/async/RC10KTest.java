@@ -46,7 +46,7 @@ import static org.testng.Assert.assertNotNull;
 
 /**
  * Reverse C10K Problem test.
- *
+ * 
  * @author Hubert Iwaniuk
  */
 public abstract class RC10KTest extends AbstractBasicTest {
@@ -102,20 +102,22 @@ public abstract class RC10KTest extends AbstractBasicTest {
 
     @Test(timeOut = 10 * 60 * 1000, groups = "scalability")
     public void rc10kProblem() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient ahc = getAsyncHttpClient(
-                new AsyncHttpClientConfig.Builder().setMaximumConnectionsPerHost(C10K).setAllowPoolingConnection(true).build());
-        List<Future<Integer>> resps = new ArrayList<Future<Integer>>(C10K);
-        int i = 0;
-        while (i < C10K) {
-            resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
+        AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaximumConnectionsPerHost(C10K).setAllowPoolingConnection(true).build());
+        try {
+            List<Future<Integer>> resps = new ArrayList<Future<Integer>>(C10K);
+            int i = 0;
+            while (i < C10K) {
+                resps.add(ahc.prepareGet(String.format("http://127.0.0.1:%d/%d", ports[i % SRV_COUNT], i)).execute(new MyAsyncHandler(i++)));
+            }
+            i = 0;
+            for (Future<Integer> fResp : resps) {
+                Integer resp = fResp.get();
+                assertNotNull(resp);
+                assertEquals(resp.intValue(), i++);
+            }
+        } finally {
+            ahc.close();
         }
-        i = 0;
-        for (Future<Integer> fResp : resps) {
-            Integer resp = fResp.get();
-            assertNotNull(resp);
-            assertEquals(resp.intValue(), i++);
-        }
-        ahc.close();
     }
 
     private class MyAsyncHandler implements AsyncHandler<Integer> {

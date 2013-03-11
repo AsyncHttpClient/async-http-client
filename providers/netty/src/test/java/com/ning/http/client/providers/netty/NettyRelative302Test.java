@@ -14,13 +14,12 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.async.Relative302Test;
 
 public class NettyRelative302Test extends Relative302Test {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return ProviderUtil.nettyProvider(config);
+        return NettyProviderUtil.nettyProvider(config);
     }
 }

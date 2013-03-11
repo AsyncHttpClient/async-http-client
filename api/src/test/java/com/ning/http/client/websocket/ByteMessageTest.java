@@ -13,7 +13,6 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -66,184 +65,191 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
 
-        WebSocket websocket = c.prepareGet(getTargetUrl())
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
-                    @Override
-                    public void onOpen(WebSocket websocket) {
-                    }
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
 
-                    @Override
-                    public void onClose(WebSocket websocket) {
-                        latch.countDown();
-                    }
+                @Override
+                public void onClose(WebSocket websocket) {
+                    latch.countDown();
+                }
 
-                    @Override
-                    public void onError(Throwable t) {
-                        t.printStackTrace();
-                        latch.countDown();
-                    }
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                    latch.countDown();
+                }
 
-                    @Override
-                    public void onMessage(byte[] message) {
-                        text.set(message);
-                        latch.countDown();
-                    }
+                @Override
+                public void onMessage(byte[] message) {
+                    text.set(message);
+                    latch.countDown();
+                }
 
-                    @Override
-                    public void onFragment(byte[] fragment, boolean last) {
-                    }
-                }).build()).get();
+                @Override
+                public void onFragment(byte[] fragment, boolean last) {
+                }
+            }).build()).get();
 
-        websocket.sendMessage("ECHO".getBytes());
+            websocket.sendMessage("ECHO".getBytes());
 
-        latch.await();
-        assertEquals(text.get(), "ECHO".getBytes());
+            latch.await();
+            assertEquals(text.get(), "ECHO".getBytes());
+        } finally {
+            c.close();
+        }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        final CountDownLatch latch = new CountDownLatch(2);
-        final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(2);
+            final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-        WebSocket websocket = c.prepareGet(getTargetUrl())
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
-                    @Override
-                    public void onOpen(WebSocket websocket) {
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket) {
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                    latch.countDown();
+                }
+
+                @Override
+                public void onMessage(byte[] message) {
+                    if (text.get() == null) {
+                        text.set(message);
+                    } else {
+                        byte[] n = new byte[text.get().length + message.length];
+                        System.arraycopy(text.get(), 0, n, 0, text.get().length);
+                        System.arraycopy(message, 0, n, text.get().length, message.length);
+                        text.set(n);
                     }
+                    latch.countDown();
+                }
 
-                    @Override
-                    public void onClose(WebSocket websocket) {
-                        latch.countDown();
-                    }
+                @Override
+                public void onFragment(byte[] fragment, boolean last) {
+                }
+            }).build()).get();
 
-                    @Override
-                    public void onError(Throwable t) {
-                        t.printStackTrace();
-                        latch.countDown();
-                    }
+            websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
 
-                    @Override
-                    public void onMessage(byte[] message) {
-                        if (text.get() == null) {
-                            text.set(message);
-                        } else {
-                            byte[] n = new byte[text.get().length + message.length];
-                            System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                            System.arraycopy(message, 0, n, text.get().length, message.length);
-                            text.set(n);
-                        }
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onFragment(byte[] fragment, boolean last) {
-                    }
-                }).build()).get();
-
-        websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
-
-        latch.await();
-        assertEquals(text.get(), "ECHOECHO".getBytes());
+            latch.await();
+            assertEquals(text.get(), "ECHOECHO".getBytes());
+        } finally {
+            c.close();
+        }
     }
 
     @Test
     public void echoOnOpenMessagesTest() throws Throwable {
-            AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-            /*WebSocket websocket =*/ c.prepareGet(getTargetUrl())
-                    .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+            /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
-                        @Override
-                        public void onOpen(WebSocket websocket) {
-                            websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
-                        }
+                @Override
+                public void onOpen(WebSocket websocket) {
+                    websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
+                }
 
-                        @Override
-                        public void onClose(WebSocket websocket) {
-                            latch.countDown();
-                        }
+                @Override
+                public void onClose(WebSocket websocket) {
+                    latch.countDown();
+                }
 
-                        @Override
-                        public void onError(Throwable t) {
-                            t.printStackTrace();
-                            latch.countDown();
-                        }
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                    latch.countDown();
+                }
 
-                        @Override
-                        public void onMessage(byte[] message) {
-                            if (text.get() == null) {
-                                text.set(message);
-                            } else {
-                                byte[] n = new byte[text.get().length + message.length];
-                                System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                                System.arraycopy(message, 0, n, text.get().length, message.length);
-                                text.set(n);
-                            }
-                            latch.countDown();
-                        }
+                @Override
+                public void onMessage(byte[] message) {
+                    if (text.get() == null) {
+                        text.set(message);
+                    } else {
+                        byte[] n = new byte[text.get().length + message.length];
+                        System.arraycopy(text.get(), 0, n, 0, text.get().length);
+                        System.arraycopy(message, 0, n, text.get().length, message.length);
+                        text.set(n);
+                    }
+                    latch.countDown();
+                }
 
-                        @Override
-                        public void onFragment(byte[] fragment, boolean last) {
-                        }
-                    }).build()).get();
+                @Override
+                public void onFragment(byte[] fragment, boolean last) {
+                }
+            }).build()).get();
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
+        } finally {
+            c.close();
+        }
     }
 
-
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-                final CountDownLatch latch = new CountDownLatch(1);
-                final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
 
-                WebSocket websocket = c.prepareGet(getTargetUrl())
-                        .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
+        WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener() {
 
-                            @Override
-                            public void onOpen(WebSocket websocket) {
-                            }
+            @Override
+            public void onOpen(WebSocket websocket) {
+            }
 
-                            @Override
-                            public void onClose(WebSocket websocket) {
-                                latch.countDown();
-                            }
+            @Override
+            public void onClose(WebSocket websocket) {
+                latch.countDown();
+            }
 
-                            @Override
-                            public void onError(Throwable t) {
-                                t.printStackTrace();
-                                latch.countDown();
-                            }
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+                latch.countDown();
+            }
 
-                            @Override
-                            public void onMessage(byte[] message) {
-                                if (text.get() == null) {
-                                    text.set(message);
-                                } else {
-                                    byte[] n = new byte[text.get().length + message.length];
-                                    System.arraycopy(text.get(), 0, n, 0, text.get().length);
-                                    System.arraycopy(message, 0, n, text.get().length, message.length);
-                                    text.set(n);
-                                }
-                                latch.countDown();
-                            }
+            @Override
+            public void onMessage(byte[] message) {
+                if (text.get() == null) {
+                    text.set(message);
+                } else {
+                    byte[] n = new byte[text.get().length + message.length];
+                    System.arraycopy(text.get(), 0, n, 0, text.get().length);
+                    System.arraycopy(message, 0, n, text.get().length, message.length);
+                    text.set(n);
+                }
+                latch.countDown();
+            }
 
-                            @Override
-                            public void onFragment(byte[] fragment, boolean last) {
-                            }
-                        }).build()).get();
-                websocket.stream("ECHO".getBytes(), false);
-                websocket.stream("ECHO".getBytes(), true);
-                latch.await();
-                assertEquals(text.get(), "ECHOECHO".getBytes());
+            @Override
+            public void onFragment(byte[] fragment, boolean last) {
+            }
+        }).build()).get();
+        websocket.stream("ECHO".getBytes(), false);
+        websocket.stream("ECHO".getBytes(), true);
+        latch.await();
+        assertEquals(text.get(), "ECHOECHO".getBytes());
     }
 }

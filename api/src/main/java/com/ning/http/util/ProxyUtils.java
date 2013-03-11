@@ -12,11 +12,12 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
 import com.ning.http.client.Request;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
@@ -70,7 +71,7 @@ public class ProxyUtils {
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(URI.create(request.getUrl())));
+        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(request.getOriginalURI()));
     }
 
     /**
@@ -89,7 +90,7 @@ public class ProxyUtils {
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
-            if (nonProxyHosts != null && nonProxyHosts.size() > 0) {
+            if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
                     if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
                             && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase())) {

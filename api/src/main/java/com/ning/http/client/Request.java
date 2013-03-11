@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
@@ -65,6 +66,10 @@ public interface Request {
      * @return the decoded url
      */
     public String getUrl();
+
+    public URI getOriginalURI();
+    public URI getURI();
+    public URI getRawURI();
 
     /**
      * Return the InetAddress to override
@@ -232,4 +237,5 @@ public interface Request {
 
     public boolean isUseRawUrl();
 
+    ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
 }

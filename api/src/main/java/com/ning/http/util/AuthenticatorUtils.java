@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -11,6 +11,8 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.ning.http.util;
+
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -40,7 +42,7 @@ public final class AuthenticatorUtils {
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
-        if (realm.getOpaque() != null && realm.getOpaque() != null && realm.getOpaque().equals("") == false)
+        if (isNonEmpty(realm.getOpaque()))
             construct(builder, "opaque", realm.getOpaque());
         builder.append("qop").append('=').append(realm.getQop()).append(", ");
         builder.append("nc").append('=').append(realm.getNc()).append(", ");

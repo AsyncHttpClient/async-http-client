@@ -34,12 +34,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
  * Tests POST request with Query String.
- *
+ * 
  * @author Hubert Iwaniuk
  */
 public abstract class PostWithQSTest extends AbstractBasicTest {
@@ -48,13 +49,10 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
      * POST with QS server part.
      */
     private class PostWithQSHandler extends AbstractHandler {
-        public void handle(String s,
-                           Request r,
-                           HttpServletRequest request,
-                           HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String qs = request.getQueryString();
-                if (qs != null && !qs.equals("") && request.getContentLength() == 3) {
+                if (isNonEmpty(qs) && request.getContentLength() == 3) {
                     ServletInputStream is = request.getInputStream();
                     response.setStatus(HttpServletResponse.SC_OK);
                     byte buf[] = new byte[is.available()];
@@ -72,54 +70,63 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void postWithQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        client.close();
+        try {
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void postWithNulParamQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+        try {
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-            /* @Override */
-            public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a")) {
-                    throw new IOException(status.getUrl().toURL().toString());
+                /* @Override */
+                public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+                    if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=")) {
+                        throw new IOException(status.getUrl().toURL().toString());
+                    }
+                    return super.onStatusReceived(status);
                 }
-                return super.onStatusReceived(status);
-            }
 
-        });
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        client.close();
+            });
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            client.close();
+        }
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void postWithNulParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
-        Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+        try {
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-            /* @Override */
-            public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
-                    throw new IOException("failed to parse the query properly");
+                /* @Override */
+                public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+                    if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
+                        throw new IOException("failed to parse the query properly");
+                    }
+                    return super.onStatusReceived(status);
                 }
-                return super.onStatusReceived(status);
-            }
 
-        });
-        Response resp = f.get(3, TimeUnit.SECONDS);
-        assertNotNull(resp);
-        assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-        client.close();
+            });
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            client.close();
+        }
     }
 
     @Override

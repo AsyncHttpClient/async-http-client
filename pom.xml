@@ -74,6 +74,11 @@
             <name>Ryan Lubke</name>
             <email>ryan.lubke@gmail.com</email>
         </developer>
+        <developer>
+            <id>slandelle</id>
+            <name>Stephane Landelle</name>
+            <email>slandelle@excilys.com</email>
+        </developer>
     </developers>
     <contributors>
         <contributor>
@@ -490,6 +495,7 @@
     <modules>
         <module>api</module>
         <module>providers</module>
+        <module>extras</module>
         <module>site</module>
     </modules>
     <dependencies>

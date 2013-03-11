@@ -40,15 +40,11 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-"
-            + UUID.randomUUID().toString().substring(0, 8));
+    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
 
     private class BasicHandler extends AbstractHandler {
 
-        public void handle(String s,
-                           org.eclipse.jetty.server.Request r,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
@@ -78,185 +74,187 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicGetTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
-
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<ByteBuffer> bb = new AtomicReference<ByteBuffer>();
-        final AtomicBoolean completed = new AtomicBoolean(false);
-
-        TransferCompletionHandler tl = new TransferCompletionHandler();
-        tl.addTransferListener(new TransferListener() {
-
-            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
-                hSent.set(headers);
-            }
-
-            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
-                hRead.set(headers);
-            }
-
-            public void onBytesReceived(ByteBuffer buffer) {
-                bb.set(buffer);
-            }
-
-            public void onBytesSent(ByteBuffer buffer) {
-            }
-
-            public void onRequestResponseCompleted() {
-                completed.set(true);
-            }
-
-            public void onThrowable(Throwable t) {
-                throwable.set(t);
-            }
-        });
-
         try {
-            Response response = c.prepareGet(getTargetUrl())
-                    .execute(tl).get();
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicReference<ByteBuffer> bb = new AtomicReference<ByteBuffer>();
+            final AtomicBoolean completed = new AtomicBoolean(false);
 
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertNotNull(hRead.get());
-            assertNotNull(hSent.get());
-            assertNotNull(bb.get());
-            assertNull(throwable.get());
-        } catch (IOException ex) {
-            fail("Should have timed out");
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
+
+                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                    hSent.set(headers);
+                }
+
+                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                    hRead.set(headers);
+                }
+
+                public void onBytesReceived(ByteBuffer buffer) {
+                    bb.set(buffer);
+                }
+
+                public void onBytesSent(ByteBuffer buffer) {
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            try {
+                Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
+
+                assertNotNull(response);
+                assertEquals(response.getStatusCode(), 200);
+                assertNotNull(hRead.get());
+                assertNotNull(hSent.get());
+                assertNotNull(bb.get());
+                assertNull(throwable.get());
+            } catch (IOException ex) {
+                fail("Should have timed out");
+            }
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicPutTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
-
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-        final AtomicInteger bbSentLenght = new AtomicInteger(0);
-
-        final AtomicBoolean completed = new AtomicBoolean(false);
-
-        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-        File largeFile = createTempFile(bytes, (int) repeats);
-
-        TransferCompletionHandler tl = new TransferCompletionHandler();
-        tl.addTransferListener(new TransferListener() {
-
-            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
-                hSent.set(headers);
-            }
-
-            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
-                hRead.set(headers);
-            }
-
-            public void onBytesReceived(ByteBuffer buffer) {
-                bbReceivedLenght.addAndGet(buffer.capacity());
-            }
-
-            public void onBytesSent(ByteBuffer buffer) {
-                bbSentLenght.addAndGet(buffer.capacity());
-            }
-
-            public void onRequestResponseCompleted() {
-                completed.set(true);
-            }
-
-            public void onThrowable(Throwable t) {
-                throwable.set(t);
-            }
-        });
-
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(largeFile)
-                    .execute(tl).get();
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
+            final AtomicInteger bbSentLenght = new AtomicInteger(0);
 
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertNotNull(hRead.get());
-            assertNotNull(hSent.get());
-            assertEquals(bbReceivedLenght.get(), largeFile.length());
-            assertEquals(bbSentLenght.get(), largeFile.length());
-        } catch (IOException ex) {
-            fail("Should have timed out");
+            final AtomicBoolean completed = new AtomicBoolean(false);
+
+            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
+            long repeats = (1024 * 100 * 10 / bytes.length) + 1;
+            File largeFile = createTempFile(bytes, (int) repeats);
+
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
+
+                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                    hSent.set(headers);
+                }
+
+                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                    hRead.set(headers);
+                }
+
+                public void onBytesReceived(ByteBuffer buffer) {
+                    bbReceivedLenght.addAndGet(buffer.capacity());
+                }
+
+                public void onBytesSent(ByteBuffer buffer) {
+                    bbSentLenght.addAndGet(buffer.capacity());
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            try {
+                Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
+
+                assertNotNull(response);
+                assertEquals(response.getStatusCode(), 200);
+                assertNotNull(hRead.get());
+                assertNotNull(hSent.get());
+                assertEquals(bbReceivedLenght.get(), largeFile.length());
+                assertEquals(bbSentLenght.get(), largeFile.length());
+            } catch (IOException ex) {
+                fail("Should have timed out");
+            }
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
-    @Test(groups = {"standalone", "default_provider"})
+    @Test(groups = { "standalone", "default_provider" })
     public void basicPutBodyTest() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(null);
-
-        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-        final AtomicInteger bbSentLenght = new AtomicInteger(0);
-
-        final AtomicBoolean completed = new AtomicBoolean(false);
-
-        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-        File largeFile = createTempFile(bytes, (int) repeats);
-
-        TransferCompletionHandler tl = new TransferCompletionHandler();
-        tl.addTransferListener(new TransferListener() {
-
-            public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
-                hSent.set(headers);
-            }
-
-            public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
-                hRead.set(headers);
-            }
-
-            public void onBytesReceived(ByteBuffer buffer) {
-                bbReceivedLenght.addAndGet(buffer.capacity());
-            }
-
-            public void onBytesSent(ByteBuffer buffer) {
-                bbSentLenght.addAndGet(buffer.capacity());
-            }
-
-            public void onRequestResponseCompleted() {
-                completed.set(true);
-            }
-
-            public void onThrowable(Throwable t) {
-                throwable.set(t);
-            }
-        });
-
         try {
-            Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile))
-                    .execute(tl).get();
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+            final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
+            final AtomicInteger bbSentLenght = new AtomicInteger(0);
 
-            assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertNotNull(hRead.get());
-            assertNotNull(hSent.get());
-            assertEquals(bbReceivedLenght.get(), largeFile.length());
-            assertEquals(bbSentLenght.get(), largeFile.length());
-        } catch (IOException ex) {
-            fail("Should have timed out");
+            final AtomicBoolean completed = new AtomicBoolean(false);
+
+            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
+            long repeats = (1024 * 100 * 10 / bytes.length) + 1;
+            File largeFile = createTempFile(bytes, (int) repeats);
+
+            TransferCompletionHandler tl = new TransferCompletionHandler();
+            tl.addTransferListener(new TransferListener() {
+
+                public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers) {
+                    hSent.set(headers);
+                }
+
+                public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers) {
+                    hRead.set(headers);
+                }
+
+                public void onBytesReceived(ByteBuffer buffer) {
+                    bbReceivedLenght.addAndGet(buffer.capacity());
+                }
+
+                public void onBytesSent(ByteBuffer buffer) {
+                    bbSentLenght.addAndGet(buffer.capacity());
+                }
+
+                public void onRequestResponseCompleted() {
+                    completed.set(true);
+                }
+
+                public void onThrowable(Throwable t) {
+                    throwable.set(t);
+                }
+            });
+
+            try {
+                Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
+
+                assertNotNull(response);
+                assertEquals(response.getStatusCode(), 200);
+                assertNotNull(hRead.get());
+                assertNotNull(hSent.get());
+                assertEquals(bbReceivedLenght.get(), largeFile.length());
+                assertEquals(bbSentLenght.get(), largeFile.length());
+            } catch (IOException ex) {
+                fail("Should have timed out");
+            }
+        } finally {
+            c.close();
         }
-        c.close();
     }
 
     public String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
     }
 
-    public static File createTempFile(byte[] pattern, int repeat)
-            throws IOException {
+    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
         TMP.mkdirs();
         TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
@@ -265,8 +263,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         return tmpFile;
     }
 
-    public static void write(byte[] pattern, int repeat, File file)
-            throws IOException {
+    public static void write(byte[] pattern, int repeat, File file) throws IOException {
         file.deleteOnExit();
         file.getParentFile().mkdirs();
         FileOutputStream out = null;
@@ -275,8 +272,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
             }
-        }
-        finally {
+        } finally {
             if (out != null) {
                 out.close();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2010-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -34,7 +34,9 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
      */
     /* @Override */
     public void consume(ByteBuffer byteBuffer) throws IOException {
-        outputStream.write(byteBuffer.array(), byteBuffer.arrayOffset(), byteBuffer.remaining());
+        outputStream.write(byteBuffer.array(),
+                           byteBuffer.arrayOffset() + byteBuffer.position(),
+                           byteBuffer.remaining());
     }
 
     /**
