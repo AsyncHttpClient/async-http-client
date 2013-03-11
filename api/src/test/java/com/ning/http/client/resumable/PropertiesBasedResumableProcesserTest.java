@@ -23,9 +23,8 @@ import static org.testng.Assert.assertEquals;
  * @author Benjamin Hanzelmann
  */
 public class PropertiesBasedResumableProcesserTest {
-    @Test (enabled = false)
-    public void testSaveLoad()
-            throws Exception {
+    @Test
+    public void testSaveLoad() throws Exception {
         PropertiesBasedResumableProcessor p = new PropertiesBasedResumableProcessor();
         p.put("http://localhost/test.url", 15L);
         p.put("http://localhost/test2.url", 50L);
