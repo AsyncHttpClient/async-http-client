@@ -18,15 +18,11 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.glassfish.grizzly.Connection;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
@@ -176,38 +172,6 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             assertNotNull(exception);
         } finally {
             c.close();
-        }
-    }
-
-    @Override
-    @Test
-    public void win7DisconnectTest() throws Throwable {
-        final AtomicInteger count = new AtomicInteger(0);
-
-        AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
-
-            @Override
-            public Response onCompleted(Response response) throws Exception {
-
-                count.incrementAndGet();
-                StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
-                IOException t = new IOException();
-                t.setStackTrace(new StackTraceElement[] { e });
-                throw t;
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
-        try {
-            client.prepareGet(getTargetUrl()).execute(handler).get();
-            fail("Must have received an exception");
-        } catch (ExecutionException ex) {
-            assertNotNull(ex);
-            assertNotNull(ex.getCause());
-            assertEquals(ex.getCause().getClass(), IOException.class);
-            assertEquals(count.get(), 1);
-        } finally {
-            client.close();
         }
     }
 }

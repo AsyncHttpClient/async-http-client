@@ -278,6 +278,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void done(Callable callable) {
+
+        Throwable exception = null;
+
         try {
             cancelReaper();
 
@@ -290,16 +293,21 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 try {
                     callable.call();
                 } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                    exception = ex;
                 }
             }
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
-            exEx.compareAndSet(null, new ExecutionException(t));
+            exception = t.getCause() != null ? t.getCause() : t;
+
         } finally {
             latch.countDown();
         }
+
+        if (exception != null)
+            exEx.compareAndSet(null, new ExecutionException(exception));
+
         super.done();
     }
 
