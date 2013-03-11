@@ -203,7 +203,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void win7DisconnectTest() throws Throwable {
         final AtomicInteger count = new AtomicInteger(0);
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
@@ -234,7 +234,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncHandlerOnThrowableTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicInteger count = new AtomicInteger();
             final String THIS_IS_NOT_FOR_YOU = "This is not for you";

@@ -162,7 +162,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncFullBodyProperlyRead() throws Throwable {
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
 

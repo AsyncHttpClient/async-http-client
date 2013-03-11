@@ -179,7 +179,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     public void win7DisconnectTest() throws Throwable {
         final AtomicInteger count = new AtomicInteger(0);
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 

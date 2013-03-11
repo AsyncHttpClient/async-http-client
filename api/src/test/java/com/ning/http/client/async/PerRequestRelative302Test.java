@@ -88,8 +88,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Throwable {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirects(true).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
 
@@ -140,8 +139,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Throwable {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
             Response response = c.preparePost(getTargetUrl()).setFollowRedirects(true).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
@@ -159,8 +157,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Response response = c.preparePost(getTargetUrl()).setFollowRedirects(true).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
