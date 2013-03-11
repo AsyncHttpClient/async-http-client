@@ -224,7 +224,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             } catch (ExecutionException ex) {
                 assertNotNull(ex);
                 assertNotNull(ex.getCause());
-                assertEquals(ex.getCause().getCause().getClass(), IOException.class);
+                assertEquals(ex.getCause().getClass(), IOException.class);
                 assertEquals(count.get(), 1);
             }
         } finally {
