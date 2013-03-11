@@ -14,7 +14,6 @@ package com.ning.http.client.async;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
@@ -82,7 +81,7 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
             Future<Response> f = r.execute();

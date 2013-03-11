@@ -13,16 +13,11 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.websocket.TextMessageTest;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
-import com.ning.http.client.websocket.netty.NettyTextMessageTest;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +30,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -53,7 +48,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");

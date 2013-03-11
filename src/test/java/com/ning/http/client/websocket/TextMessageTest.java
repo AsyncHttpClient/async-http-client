@@ -13,7 +13,6 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -68,7 +67,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onOpen() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -101,7 +100,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onEmptyListenerTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             WebSocket websocket = null;
             try {
@@ -117,7 +116,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onFailureTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Throwable t = null;
             try {
@@ -133,7 +132,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onTimeoutCloseTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -166,7 +165,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onClose() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -201,7 +200,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoText() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -245,7 +244,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoDoubleListenerText() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -315,7 +314,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -359,7 +358,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");

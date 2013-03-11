@@ -828,7 +828,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncRequestVirtualServerPOSTTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -1716,7 +1716,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "default_provider", "async" })
     public void mirrorByteTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
 

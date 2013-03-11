@@ -178,8 +178,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.proxyPort", String.valueOf(port1));
             System.setProperty("http.nonProxyHosts", "localhost");
 
-            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
+            AsyncHttpClient client = getAsyncHttpClient(null);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();
@@ -212,8 +211,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.nonProxyHosts", "localhost");
             System.setProperty("com.ning.http.client.AsyncHttpClientConfig.useProxyProperties", "true");
 
-            AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
+            AsyncHttpClient client = getAsyncHttpClient(null);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();

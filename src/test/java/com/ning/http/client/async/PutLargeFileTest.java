@@ -64,8 +64,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
         long repeats = (1024 / bytes.length) + 1;
         largeFile = createTempFile(bytes, (int) repeats);
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
-        AsyncHttpClient client = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             BoundRequestBuilder rb = client.preparePut(getTargetUrl());
 
