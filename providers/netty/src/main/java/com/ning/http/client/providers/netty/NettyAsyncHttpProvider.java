@@ -193,23 +193,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
         }
 
-        if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
+        if (asyncHttpProviderConfig.isUseBlockingIO()) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
             this.allowReleaseSocketChannelFactory = true;
         } else {
             // check if external NioClientSocketChannelFactory is defined
-            Object oo = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY);
-            if (oo != null && NioClientSocketChannelFactory.class.isAssignableFrom(oo.getClass())) {
-            	this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
+            NioClientSocketChannelFactory scf = asyncHttpProviderConfig.getSocketChannelFactory();
+            if (scf != null) {
+            	this.socketChannelFactory = scf;
 
             	// cannot allow releasing shared channel factory
             	this.allowReleaseSocketChannelFactory = false;
             } else {
-                ExecutorService e = null;
-                Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
-                if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
-                    e = ExecutorService.class.cast(o);
-                } else {
+                ExecutorService e = asyncHttpProviderConfig.getBossExecutorService();
+                if (e == null) {
             		e = Executors.newCachedThreadPool();
             	}
             	int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
@@ -256,7 +253,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     void configureNetty() {
         if (asyncHttpProviderConfig != null) {
             for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
-                plainBootstrap.setOption(entry.getKey(), entry.getValue());
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                plainBootstrap.setOption(key, value);
+                webSocketBootstrap.setOption(key, value);
+                secureBootstrap.setOption(key, value);
+                secureWebSocketBootstrap.setOption(key, value);
             }
         }
 
@@ -264,10 +266,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         DefaultChannelFuture.setUseDeadLockChecker(false);
 
         if (asyncHttpProviderConfig != null) {
-            Object value = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT);
-            if (value != null && Boolean.class.isAssignableFrom(value.getClass())) {
-                executeConnectAsync = Boolean.class.cast(value);
-            } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
+            executeConnectAsync = asyncHttpProviderConfig.isAsyncConnect();
+            if (!executeConnectAsync) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
             }
         }
@@ -352,13 +352,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return pipeline;
             }
         });
-
-        if (asyncHttpProviderConfig != null) {
-            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
-                secureBootstrap.setOption(entry.getKey(), entry.getValue());
-                secureWebSocketBootstrap.setOption(entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     private Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
@@ -1011,11 +1004,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         ChannelFuture channelFuture;
         ClientBootstrap bootstrap = request.getUrl().startsWith(WEBSOCKET) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
-
-        // Do no enable this with win.
-        if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
-            bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.REUSE_ADDRESS));
-        }
 
         try {
             InetSocketAddress remoteAddress;
@@ -1694,10 +1682,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private class ProgressListener implements ChannelFutureProgressListener {
 
         private final boolean notifyHeaders;
-        private final AsyncHandler asyncHandler;
+        private final AsyncHandler<?> asyncHandler;
         private final NettyResponseFuture<?> future;
 
-        public ProgressListener(boolean notifyHeaders, AsyncHandler asyncHandler, NettyResponseFuture<?> future) {
+        public ProgressListener(boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
             this.notifyHeaders = notifyHeaders;
             this.asyncHandler = asyncHandler;
             this.future = future;
@@ -2166,14 +2154,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future);
                             if (newRealm == null) return;
                         } else {
-                            Realm.RealmBuilder realmBuilder;
-                            if (realm != null) {
-                                realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
-                                ;
-                            } else {
-                                realmBuilder = new Realm.RealmBuilder();
-                            }
-                            newRealm = realmBuilder
+                            newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme())
                                     .setUri(request.getURI().getPath())
                                     .setMethodName(request.getMethod())
                                     .setUsePreemptiveAuth(true)
@@ -2325,18 +2306,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private final class WebSocketProtocol implements Protocol {
-        private static final byte OPCODE_CONT = 0x0;
         private static final byte OPCODE_TEXT = 0x1;
         private static final byte OPCODE_BINARY = 0x2;
         private static final byte OPCODE_UNKNOWN = -1;
 
-    	   protected ChannelBuffer byteBuffer = null;
-    	   protected StringBuilder textBuffer = null;
     	   protected byte pendingOpcode = OPCODE_UNKNOWN;
  
         // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-            NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
+            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(ctx.getAttachment());
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
             Request request = future.getRequest();
 
@@ -2345,7 +2323,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
-                FilterContext<?> fc = new FilterContext.FilterContextBuilder()
+                FilterContext fc = new FilterContext.FilterContextBuilder()
                         .asyncHandler(h)
                         .request(request)
                         .responseStatus(s)

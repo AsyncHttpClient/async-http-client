@@ -185,7 +185,7 @@ public class RetryNonBlockingIssue {
 
             NettyAsyncHttpProviderConfig config = new
                     NettyAsyncHttpProviderConfig();
-            config.addProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT, "true");
+            config.setAsyncConnect(true);
 
             bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
@@ -230,7 +230,7 @@ public class RetryNonBlockingIssue {
 
             NettyAsyncHttpProviderConfig config = new
                     NettyAsyncHttpProviderConfig();
-            config.addProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO, "true");
+            config.setUseBlockingIO(true);
 
             bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());

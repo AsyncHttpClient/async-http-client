@@ -16,21 +16,43 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
-
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.AsyncHttpProviderConfig;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
  */
 public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, Object> {
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProviderConfig.class);
+
     /**
      * Use Netty's blocking IO stategy.
      */
-    public final static String USE_BLOCKING_IO = "useBlockingIO";
+    private boolean useBlockingIO;
+
+    /**
+     * Allow configuring the Netty's socket channel factory.
+     */
+    private NioClientSocketChannelFactory socketChannelFactory;
+
+    /**
+     * Allow configuring the Netty's boss executor service.
+     */
+    private ExecutorService bossExecutorService;
+
+    /**
+     * Execute the connect operation asynchronously.
+     */
+    private boolean asyncConnect;
 
     /**
      * Use direct {@link java.nio.ByteBuffer}
@@ -38,51 +60,44 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
 
     /**
-     * Execute the connect operation asynchronously.
-     */
-    public final static String EXECUTE_ASYNC_CONNECT = "asyncConnect";
-
-    /**
      * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
      */
     public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
-
-    /**
-     * Allow configuring the Netty's boss executor service.
-     */
-    public final static String BOSS_EXECUTOR_SERVICE = "bossExecutorService";
-    
-    /**
-     * Allow configuring the Netty's socket channel factory.
-     */
-    public final static String SOCKET_CHANNEL_FACTORY = "socketChannelFactory";
 
     /**
      * See {@link java.net.Socket#setReuseAddress(boolean)}
      */
     public final static String REUSE_ADDRESS = "reuseAddress";
 
-    private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
+    private final Map<String, Object> properties = new HashMap<String, Object>();
 
     public NettyAsyncHttpProviderConfig() {
-        properties.put(REUSE_ADDRESS, "false");
+        properties.put(REUSE_ADDRESS, Boolean.FALSE);
     }
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
-     *
-     * @param name  the name of the property
-     * @param value the value of the property
+     * 
+     * @param name
+     *            the name of the property
+     * @param value
+     *            the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
-        properties.put(name, value);
+
+        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase().contains("win")) {
+            LOGGER.warn("Can't enable {} on Windows", REUSE_ADDRESS);
+        } else {
+            properties.put(name, value);
+        }
+
         return this;
     }
 
     /**
      * Return the value associated with the property's name
-     *
+     * 
      * @param name
      * @return this instance of AsyncHttpProviderConfig
      */
@@ -92,7 +107,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Remove the value associated with the property's name
-     *
+     * 
      * @param name
      * @return true if removed
      */
@@ -102,10 +117,42 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Return the curent entry set.
-     *
+     * 
      * @return a the curent entry set.
      */
     public Set<Map.Entry<String, Object>> propertiesSet() {
         return properties.entrySet();
+    }
+
+    public boolean isUseBlockingIO() {
+        return useBlockingIO;
+    }
+
+    public void setUseBlockingIO(boolean useBlockingIO) {
+        this.useBlockingIO = useBlockingIO;
+    }
+
+    public NioClientSocketChannelFactory getSocketChannelFactory() {
+        return socketChannelFactory;
+    }
+
+    public void setSocketChannelFactory(NioClientSocketChannelFactory socketChannelFactory) {
+        this.socketChannelFactory = socketChannelFactory;
+    }
+
+    public ExecutorService getBossExecutorService() {
+        return bossExecutorService;
+    }
+
+    public void setBossExecutorService(ExecutorService bossExecutorService) {
+        this.bossExecutorService = bossExecutorService;
+    }
+
+    public boolean isAsyncConnect() {
+        return asyncConnect;
+    }
+
+    public void setAsyncConnect(boolean asyncConnect) {
+        this.asyncConnect = asyncConnect;
     }
 }
