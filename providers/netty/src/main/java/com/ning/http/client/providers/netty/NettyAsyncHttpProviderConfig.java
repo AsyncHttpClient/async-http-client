@@ -55,6 +55,21 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private boolean asyncConnect;
 
     /**
+     * HttpClientCodec's maxInitialLineLength
+     */
+    private int maxInitialLineLength = 4096;
+
+    /**
+     * HttpClientCodec's maxHeaderSize
+     */
+    private int maxHeaderSize = 8192;
+
+    /**
+     * HttpClientCodec's maxChunkSize
+     */
+    private int maxChunkSize = 8192;
+
+    /**
      * Use direct {@link java.nio.ByteBuffer}
      */
     public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
@@ -154,5 +169,29 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setAsyncConnect(boolean asyncConnect) {
         this.asyncConnect = asyncConnect;
+    }
+
+    public int getMaxInitialLineLength() {
+        return maxInitialLineLength;
+    }
+
+    public void setMaxInitialLineLength(int maxInitialLineLength) {
+        this.maxInitialLineLength = maxInitialLineLength;
+    }
+
+    public int getMaxHeaderSize() {
+        return maxHeaderSize;
+    }
+
+    public void setMaxHeaderSize(int maxHeaderSize) {
+        this.maxHeaderSize = maxHeaderSize;
+    }
+
+    public int getMaxChunkSize() {
+        return maxChunkSize;
+    }
+
+    public void setMaxChunkSize(int maxChunkSize) {
+        this.maxChunkSize = maxChunkSize;
     }
 }

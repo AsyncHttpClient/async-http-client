@@ -285,6 +285,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         });
     }
 
+    protected HttpClientCodec newHttpClientCodec() {
+        if (asyncHttpProviderConfig != null) {
+            return new HttpClientCodec(asyncHttpProviderConfig.getMaxInitialLineLength(), asyncHttpProviderConfig.getMaxHeaderSize(), asyncHttpProviderConfig.getMaxChunkSize(), false);
+
+        } else {
+            return new HttpClientCodec();
+        }
+    }
+
     protected ChannelPipelineFactory createPlainPipelineFactory() {
     	return new ChannelPipelineFactory() {
 
@@ -292,7 +301,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
 
-                pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+                pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.getRequestCompressionLevel() > 0) {
                     pipeline.addLast("deflater", new HttpContentCompressor(config.getRequestCompressionLevel()));
@@ -322,7 +331,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     abort(cl.future(), ex);
                 }
 
-                pipeline.addLast(HTTP_HANDLER, new HttpClientCodec());
+                pipeline.addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
@@ -1356,14 +1365,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
-                p.addFirst(HTTP_HANDLER, new HttpClientCodec());
+                p.addFirst(HTTP_HANDLER, newHttpClientCodec());
                 p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
             } else {
-                p.addAfter(SSL_HANDLER, HTTP_HANDLER, new HttpClientCodec());
+                p.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             }
 
         } else {
-            p.addFirst(HTTP_HANDLER, new HttpClientCodec());
+            p.addFirst(HTTP_HANDLER, newHttpClientCodec());
         }
     }
 
