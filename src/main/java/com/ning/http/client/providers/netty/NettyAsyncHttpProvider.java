@@ -595,26 +595,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     }
 
-    private static boolean isProxyServer(AsyncHttpClientConfig config, Request request) {
-        ProxyServer proxyServer = request.getProxyServer();
-        if (proxyServer == null) {
-            proxyServer = config.getProxyServer();
-        }
-        if (proxyServer == null) {
-            return false;
-        } else {
-            return !ProxyUtils.avoidProxy(proxyServer, request);
-        }
-    }
-
     protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri,
-                                                    boolean allowConnect, ChannelBuffer buffer) throws IOException {
+                                                    boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
 
         String method = request.getMethod();
-        if (allowConnect && (isProxyServer(config, request) && isSecure(uri))) {
+        if (allowConnect && proxyServer != null && isSecure(uri)) {
             method = HttpMethod.CONNECT.toString();
         }
-        return construct(config, request, new HttpMethod(method), uri, buffer);
+        return construct(config, request, new HttpMethod(method), uri, buffer, proxyServer);
     }
 
     private static SpnegoEngine getSpnegoEngine() {
@@ -627,7 +615,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                          Request request,
                                          HttpMethod m,
                                          URI uri,
-                                         ChannelBuffer buffer) throws IOException {
+                                         ChannelBuffer buffer,
+                                         ProxyServer proxyServer) throws IOException {
 
         String host = AsyncHttpProviderUtils.getHost(uri);
 
@@ -640,7 +629,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             String path = null;
-            if (isProxyServer(config, request))
+            if (proxyServer != null)
                 path = uri.toString();
             else if (uri.getRawQuery() != null)
                 path = uri.getRawPath() + "?" + uri.getRawQuery();
@@ -690,7 +679,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.addHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         if (realm != null && realm.getUsePreemptiveAuth()) {
@@ -754,8 +742,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
         }
 
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
-        if (!avoidProxy) {
+        if (proxyServer != null) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
                 nettyRequest.setHeader("Proxy-Connection", "keep-alive");
             }
@@ -958,7 +945,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throw new IOException("WebSocket method must be a GET");
         }
 
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
+        boolean useProxy = proxyServer != null;
+
         URI uri;
         if (useRawUrl) {
             uri = request.getRawURI();
@@ -981,17 +970,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             bufferedBytes = f.getNettyRequest().getContent();
         }
 
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
-        boolean useProxy = !(avoidProxy || proxyServer == null);
-
         boolean useSSl = isSecure(uri) && !useProxy;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
-            HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes);
+            HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes, proxyServer);
 
             if (f == null) {
-                f = newFuture(uri, request, asyncHandler, nettyRequest, config, this);
+                f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
             } else {
-                nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes);
+                nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes, proxyServer);
                 f.setNettyRequest(nettyRequest);
             }
             f.setState(NettyResponseFuture.STATE.POOLED);
@@ -1729,10 +1715,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                        AsyncHandler<T> asyncHandler,
                                                        HttpRequest nettyRequest,
                                                        AsyncHttpClientConfig config,
-                                                       NettyAsyncHttpProvider provider) {
+                                                       NettyAsyncHttpProvider provider,
+                                                       ProxyServer proxyServer) {
 
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy());
+                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy(), proxyServer);
 
         if (request.getHeaders().getFirstValue("Expect") != null
                 && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
@@ -2145,6 +2132,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             HttpRequest nettyRequest = future.getNettyRequest();
             AsyncHandler handler = future.getAsyncHandler();
             Request request = future.getRequest();
+            ProxyServer proxyServer = future.getProxyServer();
             HttpResponse response = null;
             try {
                 if (e.getMessage() instanceof HttpResponse) {
@@ -2194,7 +2182,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
 
                     Realm newRealm = null;
-                    ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
                     final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
                     final RequestBuilder builder = new RequestBuilder(future.getRequest());
 
