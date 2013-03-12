@@ -629,7 +629,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             String path = null;
-            if (proxyServer != null)
+            if (proxyServer != null && !isSecure(uri))
                 path = uri.toString();
             else if (uri.getRawQuery() != null)
                 path = uri.getRawPath() + "?" + uri.getRawQuery();
