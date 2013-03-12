@@ -14,6 +14,7 @@
 package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 
@@ -41,7 +42,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AsyncHandler handler;
     private final GrizzlyAsyncHttpProvider provider;
     private final Request request;
-
+    private final ProxyServer proxyServer;
     private Connection connection;
 
     FutureImpl<V> delegate;
@@ -52,12 +53,13 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider,
                           final Request request,
-                          final AsyncHandler handler) {
+                          final AsyncHandler handler,
+                          final ProxyServer proxyServer) {
 
         this.provider = provider;
         this.request = request;
         this.handler = handler;
-
+        this.proxyServer = proxyServer;
     }
 
 
@@ -204,4 +206,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     }
 
+    public ProxyServer getProxyServer() {
+        return proxyServer;
+    }
 }

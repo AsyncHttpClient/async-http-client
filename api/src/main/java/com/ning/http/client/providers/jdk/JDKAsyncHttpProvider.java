@@ -136,7 +136,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         if (!avoidProxy && (proxyServer != null || realm != null)) {
             try {
-                /*Proxy proxy =*/ configureProxyAndAuth(proxyServer, realm);
+                configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
                 throw new IOException(e.getMessage());
             }
@@ -163,11 +163,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     }
 
     private HttpURLConnection createUrlConnection(Request request) throws IOException {
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
         Proxy proxy = null;
-        if (!avoidProxy && proxyServer != null || realm != null) {
+        if (proxyServer != null || realm != null) {
             try {
                 proxy = configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
@@ -496,9 +495,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
             String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
             urlConnection.setRequestProperty("Connection", ka);
-            ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-            boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
-            if (!avoidProxy) {
+            ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
+            if (proxyServer != null) {
                 urlConnection.setRequestProperty("Proxy-Connection", ka);
                 if (proxyServer.getPrincipal() != null) {
                     urlConnection.setRequestProperty("Proxy-Authorization", AuthenticatorUtils.computeBasicAuthentication(proxyServer));

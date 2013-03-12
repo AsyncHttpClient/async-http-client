@@ -341,9 +341,8 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             throw new IllegalStateException(String.format("Invalid Method", methodName));
         }
 
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
-        if (!avoidProxy) {
+        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
+        if (proxyServer != null) {
 
             if (proxyServer.getPrincipal() != null) {
                 Credentials defaultcreds = new UsernamePasswordCredentials(proxyServer.getPrincipal(), proxyServer.getPassword());

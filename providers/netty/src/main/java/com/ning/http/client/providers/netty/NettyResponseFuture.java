@@ -17,6 +17,7 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.ConnectionPoolKeyStrategy;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
@@ -87,6 +88,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
     private boolean allowConnect = false;
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    private final ProxyServer proxyServer;
     
     public NettyResponseFuture(URI uri,
                                Request request,
@@ -95,7 +97,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                                int responseTimeoutInMs,
                                int idleConnectionTimeoutInMs,
                                NettyAsyncHttpProvider asyncHttpProvider,
-                               ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+                               ConnectionPoolKeyStrategy connectionPoolKeyStrategy,
+                               ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
         this.responseTimeoutInMs = responseTimeoutInMs;
@@ -105,6 +108,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.uri = uri;
         this.asyncHttpProvider = asyncHttpProvider;
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
+        this.proxyServer = proxyServer;
 
         if (System.getProperty(MAX_RETRY) != null) {
             maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
@@ -126,6 +130,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 	public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
 		return connectionPoolKeyStrategy;
 	}
+
+	public ProxyServer getProxyServer() {
+        return proxyServer;
+    }
 
     /**
      * {@inheritDoc}
