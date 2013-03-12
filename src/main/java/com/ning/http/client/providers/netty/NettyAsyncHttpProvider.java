@@ -972,7 +972,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         boolean useSSl = isSecure(uri) && !useProxy;
         if (channel != null && channel.isOpen() && channel.isConnected()) {
-            HttpRequest nettyRequest = buildRequest(config, request, uri, f == null ? false : f.isConnectAllowed(), bufferedBytes, proxyServer);
+            HttpRequest nettyRequest = buildRequest(config, request, uri, f != null && f.isConnectAllowed(), bufferedBytes, proxyServer);
 
             if (f == null) {
                 f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
