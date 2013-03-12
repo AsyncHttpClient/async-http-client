@@ -18,8 +18,11 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.util.AllowAllHostnameVerifier;
+import com.ning.http.util.ProxyUtils;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -137,9 +140,10 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         }
 
         public NettyConnectListener<T> build(final URI uri) throws IOException {
-            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer);
+            ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
+            HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer, proxyServer);
             if (future == null) {
-                future = NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider);
+                future = NettyAsyncHttpProvider.newFuture(uri, request, asyncHandler, nettyRequest, config, provider, proxyServer);
             } else {
                 future.setNettyRequest(nettyRequest);
                 future.setRequest(request);
