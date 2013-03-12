@@ -200,8 +200,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public <T> ListenableFuture<T> execute(final Request request,
                                            final AsyncHandler<T> handler) throws IOException {
 
-        final GrizzlyResponseFuture<T> future =
-                new GrizzlyResponseFuture<T>(this, request, handler);
+        final ProxyServer proxy = ProxyUtils.getProxyServer(clientConfig, request);
+        final GrizzlyResponseFuture<T> future = new GrizzlyResponseFuture<T>(this, request, handler, proxy);
         future.setDelegate(SafeFutureImpl.<T>create());
         final CompletionHandler<Connection>  connectHandler = new CompletionHandler<Connection>() {
             @Override
@@ -816,24 +816,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-//        @Override
-//        public NextAction handleRead(FilterChainContext ctx) throws IOException {
-//            Object message = ctx.getMessage();
-//            if (HttpPacket.isHttp(message)) {
-//                final HttpPacket packet = (HttpPacket) message;
-//                HttpResponsePacket responsePacket;
-//                if (HttpContent.isContent(packet)) {
-//                    responsePacket = (HttpResponsePacket) ((HttpContent) packet).getHttpHeader();
-//                } else {
-//                    responsePacket = (HttpResponsePacket) packet;
-//                }
-//                if (HttpStatus.SWITCHING_PROTOCOLS_101.statusMatches(responsePacket.getStatus())) {
-//                    return ctx.getStopAction();
-//                }
-//            }
-//            return super.handleRead(ctx);
-//        }
-
         // ----------------------------------------------------- Private Methods
 
 
@@ -861,9 +843,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
                 }
             }
-            final ProxyServer proxy = getProxyServer(request);
-            boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
-            final boolean useProxy = !(avoidProxy || proxy == null);
+            final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
+            final boolean useProxy = proxy != null;
             if (useProxy) {
                 if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
                     secure = false;
@@ -955,18 +936,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.wsRequestURI = ctx.requestUrl;
             ctx.requestUrl = sb.toString();
         }
-
-        
-        private ProxyServer getProxyServer(Request request) {
-
-            ProxyServer proxyServer = request.getProxyServer();
-            if (proxyServer == null) {
-                proxyServer = config.getProxyServer();
-            }
-            return proxyServer;
-
-        }
-
 
         private void addHeaders(final Request request,
                                 final HttpRequestPacket requestPacket) {
@@ -2329,8 +2298,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     final GrizzlyResponseFuture requestFuture)
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-            final Connection c = (obtainConnection0(request,
-                                                    requestFuture));
+            final Connection c = obtainConnection0(request, requestFuture);
             DO_NOT_CACHE.set(c, Boolean.TRUE);
             return c;
 
@@ -2341,10 +2309,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
 
-            ProxyServer proxy = getProxyServer(request);
-            if (ProxyUtils.avoidProxy(proxy, request)) {
-                proxy = null;
-            }
+            ProxyServer proxy = requestFuture.getProxy();
             final URI uri = request.getURI();
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
@@ -2363,10 +2328,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final URI uri = request.getURI();
-            ProxyServer proxy = getProxyServer(request);
-            if (ProxyUtils.avoidProxy(proxy, request)) {
-                proxy = null;
-            }
+            final ProxyServer proxy = requestFuture.getProxy();
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();

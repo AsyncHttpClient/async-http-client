@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
 import com.ning.http.client.Request;
@@ -58,6 +59,19 @@ public class ProxyUtils {
      */
     public static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
 
+    /**
+     * @param config the global config
+     * @param request the request
+     * @return the proxy server to be used for this request (can be null)
+     */
+    public static ProxyServer getProxyServer(AsyncHttpClientConfig config, Request request) {
+        ProxyServer proxyServer = request.getProxyServer();
+        if (proxyServer == null) {
+            proxyServer = config.getProxyServer();
+        }
+        return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
+    }
+    
     /**
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
