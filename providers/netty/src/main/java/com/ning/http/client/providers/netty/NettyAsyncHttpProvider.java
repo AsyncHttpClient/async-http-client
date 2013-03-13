@@ -1284,7 +1284,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(uri), ctx.getChannel())) {
+                URI connUrl = future.getRequest().getProxyServer() == null ? future.getURI() : AsyncHttpProviderUtils.createUri(future.getRequest().getProxyServer().toString());
+                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(connUrl), ctx.getChannel())) {
                     return null;
                 }
 
@@ -1481,7 +1482,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
         } else {
             if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
-                    connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(future.getURI()), ctx.getChannel())) {
+                    (connectionsPool.offer(AsyncHttpProviderUtils.getBaseUrl(future.getRequest().getProxyServer() == null ? future.getURI() : AsyncHttpProviderUtils.createUri(future.getRequest().getProxyServer().toString())), ctx.getChannel()))){
                 markAsDone(future, ctx);
                 return;
             }
