@@ -131,10 +131,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             throw new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
         }
 
-        ProxyServer proxyServer = request.getProxyServer() != null ? request.getProxyServer() : config.getProxyServer();
+        ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, request);
-        if (!avoidProxy && (proxyServer != null || realm != null)) {
+        if (proxyServer != null || realm != null) {
             try {
                 configureProxyAndAuth(proxyServer, realm);
             } catch (AuthenticationException e) {
@@ -176,10 +175,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         HttpURLConnection urlConnection = null;
         if (proxy == null) {
-            urlConnection =
-                    (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(Proxy.NO_PROXY);
+            urlConnection = (HttpURLConnection) request.getURI().toURL().openConnection(Proxy.NO_PROXY);
         } else {
-            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(proxyServer.toString()).toURL().openConnection(proxy);
+            urlConnection = (HttpURLConnection) proxyServer.getURI().toURL().openConnection(proxy);
         }
 
         if (request.getUrl().startsWith("https")) {

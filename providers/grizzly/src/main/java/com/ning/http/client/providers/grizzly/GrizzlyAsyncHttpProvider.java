@@ -448,29 +448,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
-
-
-    private static boolean configSendFileSupport() {
-
-        return !((System.getProperty("os.name").equalsIgnoreCase("linux")
-                && !linuxSendFileSupported())
-                || System.getProperty("os.name").equalsIgnoreCase("HP-UX"));
-    }
-
-
-    private static boolean linuxSendFileSupported() {
-        final String version = System.getProperty("java.version");
-        if (version.startsWith("1.6")) {
-            int idx = version.indexOf('_');
-            if (idx == -1) {
-                return false;
-            }
-            final int patchRev = Integer.parseInt(version.substring(idx + 1));
-            return (patchRev >= 18);
-        } else {
-            return version.startsWith("1.7") || version.startsWith("1.8");
-        }
-    }
     
     private void doDefaultTransportConfig() {
         final ExecutorService service = clientConfig.executorService();
@@ -2409,7 +2386,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                       final GrizzlyResponseFuture requestFuture,
                                       final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
-            Connection c = pool.poll(getPoolKey(request));
+            Connection c = pool.poll(getPoolKey(request, requestFuture.getProxyServer()));
             if (c == null) {
                 if (!connectionMonitor.acquire()) {
                     throw new IOException("Max connections exceeded");
@@ -2436,14 +2413,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             final CompletionHandler<Connection> connectHandler)
         throws IOException, ExecutionException, InterruptedException {
 
-            ProxyServer proxy = getProxyServer(request);
-            if (ProxyUtils.avoidProxy(proxy, request)) {
-                proxy = null;
-            }
+            ProxyServer proxy = requestFuture.getProxyServer();
             final URI uri = request.getURI();
-            String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
-            int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
-            if(request.getLocalAddress()!=null) {
+            String host = proxy != null ? proxy.getHost() : uri.getHost();
+            int port = proxy != null ? proxy.getPort() : uri.getPort();
+            if (request.getLocalAddress() != null) {
                 connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)), new InetSocketAddress(request.getLocalAddress(), 0),
                         createConnectionCompletionHandler(request, requestFuture, connectHandler));
             } else {
@@ -2459,8 +2433,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final URI uri = request.getURI();
-            String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
-            int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
+            String host = proxy != null ? proxy.getHost() : uri.getHost();
+            int port = proxy != null ? proxy.getPort() : uri.getPort();
             int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
             FutureImpl<Connection> future = Futures.createSafeFuture();
             CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
@@ -2476,26 +2450,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        private ProxyServer getProxyServer(Request request) {
-
-            ProxyServer proxyServer = request.getProxyServer();
-            if (proxyServer == null) {
-                proxyServer = provider.clientConfig.getProxyServer();
-            }
-            return proxyServer;
-
-        }
-
         boolean returnConnection(final Request request, final Connection c) {
+            ProxyServer proxyServer = ProxyUtils.getProxyServer(provider.clientConfig, request);
             final boolean result = (DO_NOT_CACHE.get(c) == null
-                                       && pool.offer(getPoolKey(request), c));
+                                       && pool.offer(getPoolKey(request, proxyServer), c));
             if (result) {
                 if (provider.resolver != null) {
                     provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
                 }
             }
             return result;
-
         }
 
 
@@ -2549,10 +2513,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             };
         }
 
-        private static String getPoolKey(final Request request) {
+        private static String getPoolKey(final Request request, ProxyServer proxyServer) {
             final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-            String savedUrlInConnPool = request.getProxyServer() != null ? request.getProxyServer().toString() : request.getUrl();
-            return keyStrategy.getKey(AsyncHttpProviderUtils.createUri(AsyncHttpProviderUtils.getBaseUrl(savedUrlInConnPool)));
+            URI uri = proxyServer != null? proxyServer.getURI(): request.getURI();
+            return keyStrategy.getKey(uri);
         }
 
         // ------------------------------------------------------ Nested Classes
