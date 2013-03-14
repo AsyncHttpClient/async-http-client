@@ -179,7 +179,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             urlConnection =
                     (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(Proxy.NO_PROXY);
         } else {
-            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(request.getUrl()).toURL().openConnection(proxy);
+            urlConnection = (HttpURLConnection) AsyncHttpProviderUtils.createUri(proxyServer.toString()).toURL().openConnection(proxy);
         }
 
         if (request.getUrl().startsWith("https")) {
