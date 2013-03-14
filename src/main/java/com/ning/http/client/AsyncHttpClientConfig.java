@@ -84,6 +84,7 @@ public class AsyncHttpClientConfig {
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
     protected boolean strict302Handling;
+    protected boolean useRelativeURIsWithSSLProxies;
 
     protected AsyncHttpClientConfig() {
     }
@@ -117,7 +118,8 @@ public class AsyncHttpClientConfig {
                                   boolean removeQueryParamOnRedirect,
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
-                                  boolean strict302Handling) {
+                                  boolean strict302Handling,
+                                  boolean useRelativeURIsWithSSLProxies) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -477,6 +479,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy,
+     *  otherwise <code>false</code>.
+     *  
+     *  @since 1.7.12
+     */
+    public boolean isUseRelativeURIsWithSSLProxies() {
+        return useRelativeURIsWithSSLProxies;
+    }
+    
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -493,6 +505,7 @@ public class AsyncHttpClientConfig {
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean allowPoolingConnection = true;
+        private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "AsyncHttpClient-Reaper");
@@ -955,6 +968,19 @@ public class AsyncHttpClientConfig {
             this.strict302Handling = strict302Handling;
             return this;
         }
+      
+        /**
+         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy.
+         *
+         * @param useRelativeURIsWithSSLProxies
+         * @return this
+         *
+         * @since 1.7.2
+         */
+        public Builder setUseRelativeURIsWithSSLProxies(boolean useRelativeURIsWithSSLProxies) {
+            this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+            return this;
+        }
 
         /**
          * Create a config builder with values taken from the given prototype configuration.
@@ -1045,7 +1071,8 @@ public class AsyncHttpClientConfig {
                     removeQueryParamOnRedirect,
                     hostnameVerifier,
                     ioThreadMultiplier,
-                    strict302Handling);
+                    strict302Handling,
+                    useRelativeURIsWithSSLProxies);
         }
     }
 }
