@@ -109,6 +109,7 @@ public class AsyncHttpClientConfig {
     protected int ioThreadMultiplier;
     protected boolean strict302Handling;
     protected int maxConnectionLifeTimeInMs;
+    protected boolean useRelativeURIsWithSSLProxies;
 
     protected AsyncHttpClientConfig() {
     }
@@ -143,7 +144,8 @@ public class AsyncHttpClientConfig {
                                   boolean removeQueryParamOnRedirect,
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
-                                  boolean strict302Handling) {
+                                  boolean strict302Handling,
+                                  boolean useRelativeURIsWithSSLProxies) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -174,6 +176,7 @@ public class AsyncHttpClientConfig {
         this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
+        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -504,6 +507,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return<code>true</code> if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy,
+     *  otherwise <code>false</code>.
+     *  
+     *  @since 1.7.12
+     */
+    public boolean isUseRelativeURIsWithSSLProxies() {
+        return useRelativeURIsWithSSLProxies;
+    }
+
+    /**
      * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
      *
      * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
@@ -530,6 +543,7 @@ public class AsyncHttpClientConfig {
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "AsyncHttpClient/" + AHC_VERSION);
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean allowPoolingConnection = true;
+        private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
         private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "AsyncHttpClient-Reaper");
@@ -1005,6 +1019,19 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy.
+         *
+         * @param useRelativeURIsWithSSLProxies
+         * @return this
+         *
+         * @since 1.7.2
+         */
+        public Builder setUseRelativeURIsWithSSLProxies(boolean useRelativeURIsWithSSLProxies) {
+            this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1047,6 +1074,7 @@ public class AsyncHttpClientConfig {
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
+            useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
         }
 
         /**
@@ -1095,7 +1123,8 @@ public class AsyncHttpClientConfig {
                     removeQueryParamOnRedirect,
                     hostnameVerifier,
                     ioThreadMultiplier,
-                    strict302Handling);
+                    strict302Handling,
+                    useRelativeURIsWithSSLProxies);
         }
     }
 }
