@@ -49,11 +49,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private String method;
-        private URI originalUri = null;
-        private URI uri = null;
-        private URI rawUri = null;
-        private InetAddress address = null;
-        private InetAddress localAddress = null;
+        private URI originalUri;
+        private URI uri;
+        private URI rawUri;
+        private InetAddress address;
+        private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
@@ -71,9 +71,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private File file;
         private Boolean followRedirects;
         private PerRequestConfig perRequestConfig;
-        private long rangeOffset = 0;
+        private long rangeOffset;
         public String charset;
-        private boolean useRawUrl = false;
+        private boolean useRawUrl;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
 
         public RequestImpl(boolean useRawUrl) {
@@ -93,9 +93,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
-                this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
-                this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
-                this.parts = (prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts()));
+                this.params = prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams());
+                this.queryParams = prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams());
+                this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getContentLength();
                 this.proxyServer = prototype.getProxyServer();

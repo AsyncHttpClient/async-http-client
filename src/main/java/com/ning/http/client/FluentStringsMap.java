@@ -16,6 +16,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,7 +63,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * @return This object
      */
     public FluentStringsMap add(String key, String... values) {
-        if ((values != null) && (values.length > 0)) {
+        if (isNonEmpty(values)) {
             add(key, Arrays.asList(values));
         }
         return this;

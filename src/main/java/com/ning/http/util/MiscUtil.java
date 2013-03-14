@@ -23,6 +23,10 @@ public class MiscUtil {
     public static boolean isNonEmpty(String string) {
         return string != null && string.length() != 0;
     }
+    
+    public static boolean isNonEmpty(Object[] array) {
+        return array != null && array.length != 0;
+    }
 
     public static boolean isNonEmpty(Collection<?> collection) {
         return collection != null && !collection.isEmpty();
