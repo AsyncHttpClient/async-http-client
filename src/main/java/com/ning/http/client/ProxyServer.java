@@ -102,7 +102,7 @@ public class ProxyServer {
         return password;
     }
 
-    public URI getUri() {
+    public URI getURI() {
         return uri;
     }
 

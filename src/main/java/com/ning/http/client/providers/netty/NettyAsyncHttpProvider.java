@@ -201,25 +201,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
             this.allowReleaseSocketChannelFactory = true;
         } else {
-        	// check if external NioClientSocketChannelFactory is defined
+            // check if external NioClientSocketChannelFactory is defined
             Object oo = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY);
             if (oo != null && NioClientSocketChannelFactory.class.isAssignableFrom(oo.getClass())) {
-            	this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
+                this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
 
-            	// cannot allow releasing shared channel factory
-            	this.allowReleaseSocketChannelFactory = false;
+                // cannot allow releasing shared channel factory
+                this.allowReleaseSocketChannelFactory = false;
             } else {
-            	ExecutorService e;
-            	Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
-            	if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
-            		e = ExecutorService.class.cast(o);
-            	} else {
-            		e = Executors.newCachedThreadPool();
-            	}
-            	int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
-            	log.debug("Number of application's worker threads is {}", numWorkers);
-            	socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
-            	this.allowReleaseSocketChannelFactory = true;
+                ExecutorService e;
+                Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
+                if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
+                    e = ExecutorService.class.cast(o);
+                } else {
+                    e = Executors.newCachedThreadPool();
+                }
+                int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
+                log.debug("Number of application's worker threads is {}", numWorkers);
+                socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
+                this.allowReleaseSocketChannelFactory = true;
             }
         }
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
@@ -629,7 +629,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
             String path = null;
-            if (proxyServer != null && !isSecure(uri) && !config.isUseRelativeURIsWithSSLProxies())
+            if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
                 path = uri.toString();
             else if (uri.getRawQuery() != null)
                 path = uri.getRawPath() + "?" + uri.getRawQuery();
@@ -901,11 +901,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             config.executorService().shutdown();
             config.reaper().shutdown();
             if (this.allowReleaseSocketChannelFactory) {
-            	socketChannelFactory.releaseExternalResources();
-            	plainBootstrap.releaseExternalResources();
-            	secureBootstrap.releaseExternalResources();
-            	webSocketBootstrap.releaseExternalResources();
-            	secureWebSocketBootstrap.releaseExternalResources();
+                socketChannelFactory.releaseExternalResources();
+                plainBootstrap.releaseExternalResources();
+                secureBootstrap.releaseExternalResources();
+                webSocketBootstrap.releaseExternalResources();
+                secureWebSocketBootstrap.releaseExternalResources();
             }
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
@@ -956,7 +956,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (f != null && f.reuseChannel() && f.channel() != null) {
                 channel = f.channel();
             } else {
-                channel = lookupInCache(uri, request.getConnectionPoolKeyStrategy());
+                URI connectionKeyUri = useProxy? proxyServer.getURI() : uri;
+                channel = lookupInCache(connectionKeyUri, request.getConnectionPoolKeyStrategy());
             }
         }
 
@@ -1306,18 +1307,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             realmBuilder = new Realm.RealmBuilder();
         }
-        newRealm = realmBuilder//.setScheme(realm.getAuthScheme())
+        newRealm = realmBuilder
                 .setUri(request.getURI().getPath())
                 .setMethodName(request.getMethod())
                 .build();
 
         return newRealm;
     }
+    
+    private String getPoolKey(NettyResponseFuture<?> future) throws MalformedURLException {
+        URI uri = future.getProxyServer() != null ? future.getProxyServer().getURI() : future.getURI();
+        return future.getConnectionPoolKeyStrategy().getKey(uri);
+    }
 
-    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final boolean keepAlive, final URI uri) {
+    private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (keepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(uri), ctx.getChannel())) {
+                
+                if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
                     return null;
                 }
 
@@ -1353,7 +1360,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.touch();
 
         log.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
-        drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
+        drainChannel(ctx, future);
         nextRequest(newRequest, future);
         return;
     }
@@ -1510,10 +1517,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
         if (lastValidChunk && future.getKeepAlive()) {
-            drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
+            drainChannel(ctx, future);
         } else {
-            if (future.getKeepAlive() && ctx.getChannel().isReadable() &&
-                    connectionsPool.offer(future.getConnectionPoolKeyStrategy().getKey(future.getURI()), ctx.getChannel())) {
+            if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
                 markAsDone(future, ctx);
                 return;
             }
@@ -2066,8 +2072,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");
                     }
-                    final URI initialConnectionUri = future.getURI();
                     final boolean initialConnectionKeepAlive = future.getKeepAlive();
+                    final String initialPoolKey = getPoolKey(future);
                     future.setURI(uri);
                     String newUrl = uri.toString();
                     if (request.getUrl().startsWith(WEBSOCKET)) {
@@ -2085,11 +2091,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         nBuilder.addOrReplaceCookie(c);
                     }
 
-                    final String connectionPoolKey = future.getConnectionPoolKeyStrategy().getKey(initialConnectionUri);
                     AsyncCallable ac = new AsyncCallable(future) {
                         public Object call() throws Exception {
-                            if (initialConnectionKeepAlive && ctx.getChannel().isReadable() &&
-                                    connectionsPool.offer(connectionPoolKey, ctx.getChannel())) {
+                            if (initialConnectionKeepAlive && ctx.getChannel().isReadable() && connectionsPool.offer(initialPoolKey, ctx.getChannel())) {
                                 return null;
                             }
                             finishChannel(ctx);
@@ -2186,7 +2190,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     //}
 
                     if (statusCode == 401
-                    		&& realm != null
+                            && realm != null
                             && wwwAuth.size() > 0
                             && !future.getAndSetAuth(true)) {
 
@@ -2220,7 +2224,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         log.debug("Sending authentication to {}", request.getUrl());
                         AsyncCallable ac = new AsyncCallable(future) {
                             public Object call() throws Exception {
-                                drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
+                                drainChannel(ctx, future);
                                 nextRequest(builder.setHeaders(headers).setRealm(nr).build(), future);
                                 return null;
                             }
@@ -2244,7 +2248,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     List<String> proxyAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.PROXY_AUTHENTICATE);
                     if (statusCode == 407
-                    		&& realm != null
+                            && realm != null
                             && proxyAuth.size() > 0
                             && !future.getAndSetAuth(true)) {
 
@@ -2310,7 +2314,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
                         updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
                         markAsDone(future, ctx);
-                        drainChannel(ctx, future, future.getKeepAlive(), future.getURI());
+                        drainChannel(ctx, future);
                     }
 
                 } else if (e.getMessage() instanceof HttpChunk) {
@@ -2363,9 +2367,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_BINARY = 0x2;
         private static final byte OPCODE_UNKNOWN = -1;
 
-    	   protected ChannelBuffer byteBuffer = null;
-    	   protected StringBuilder textBuffer = null;
-    	   protected byte pendingOpcode = OPCODE_UNKNOWN;
+           protected ChannelBuffer byteBuffer = null;
+           protected StringBuilder textBuffer = null;
+           protected byte pendingOpcode = OPCODE_UNKNOWN;
  
         // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
@@ -2444,10 +2448,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
                 if(frame instanceof TextWebSocketFrame) {
-                	pendingOpcode = OPCODE_TEXT;
+                    pendingOpcode = OPCODE_TEXT;
                 }
                 else if(frame instanceof BinaryWebSocketFrame) {
-                	pendingOpcode = OPCODE_BINARY;
+                    pendingOpcode = OPCODE_BINARY;
                 }
                 
                 HttpChunk webSocketChunk = new HttpChunk() {
