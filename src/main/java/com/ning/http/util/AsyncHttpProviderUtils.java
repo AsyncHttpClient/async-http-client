@@ -12,6 +12,19 @@
  */
 package com.ning.http.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
@@ -24,18 +37,6 @@ import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
-
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -549,5 +550,9 @@ public class AsyncHttpProviderUtils {
 
             throw new IllegalStateException(BODY_NOT_COMPUTED);
         }
+    }
+
+    public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
+        return config.getAllowPoolingConnection() ? "keep-alive" : "close";
     }
 }
