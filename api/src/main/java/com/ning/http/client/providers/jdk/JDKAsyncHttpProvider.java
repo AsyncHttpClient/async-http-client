@@ -491,7 +491,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
 
-            String ka = config.getAllowPoolingConnection() ? "keep-alive" : "close";
+            String ka = AsyncHttpProviderUtils.keepAliveHeaderValue(config);
             urlConnection.setRequestProperty("Connection", ka);
             ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
             if (proxyServer != null) {

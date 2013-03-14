@@ -599,4 +599,8 @@ public class AsyncHttpProviderUtils {
             throw new IllegalStateException(BODY_NOT_COMPUTED);
         }
     }
+
+    public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
+        return config.getAllowPoolingConnection() ? "keep-alive" : "close";
+    }
 }

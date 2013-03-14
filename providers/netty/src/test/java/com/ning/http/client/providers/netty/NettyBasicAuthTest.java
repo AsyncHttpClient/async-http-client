@@ -21,6 +21,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicAuthTest;
 
+@Test
 public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override

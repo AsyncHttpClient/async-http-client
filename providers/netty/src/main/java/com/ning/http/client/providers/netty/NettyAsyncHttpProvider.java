@@ -705,12 +705,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!webSocket && !request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
-            nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, "keep-alive");
+            nettyRequest.setHeader(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
         if (proxyServer != null) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
-                nettyRequest.setHeader("Proxy-Connection", "keep-alive");
+                nettyRequest.setHeader("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
             }
 
             if (proxyServer.getPrincipal() != null) {
