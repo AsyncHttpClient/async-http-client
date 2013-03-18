@@ -543,6 +543,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
             if (requestPacket.getHeaders().contains(Header.Expect)
                     && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
+                // We have to set the content-length now as the headers will be flushed
+                // before the FileBodyHandler is invoked.  If we don't do it here, and
+                // the user didn't explicitly set the length, then the transfer-encoding
+                // will be chunked and zero-copy file transfer will not occur.
+                final File f = request.getFile();
+                if (f != null) {
+                    requestPacket.setContentLengthLong(f.length());
+                }
                 handler = new ExpectHandler(handler);
             }
             context.bodyHandler = handler;
@@ -2219,9 +2227,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final File f = request.getFile();
             requestPacket.setContentLengthLong(f.length());
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
-            if (!SEND_FILE_SUPPORT
-                    || requestPacket.isSecure()
-                    || requestPacket.getHeaders().contains(Header.TransferEncoding)) {
+            if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
                 final FileInputStream fis = new FileInputStream(request.getFile());
                 final MemoryManager mm = ctx.getMemoryManager();
                 AtomicInteger written = new AtomicInteger();
