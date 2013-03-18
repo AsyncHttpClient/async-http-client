@@ -700,7 +700,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 case NONE:
                     break;
                 default:
-                    throw new IllegalStateException(String.format("Invalid Authentication %s", realm.toString()));
+                    throw new IllegalStateException("Invalid Authentication " + realm);
             }
         }
 
@@ -973,7 +973,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do not throw an exception when we need an extra connection for a redirect.
         if (!reclaimCache && !connectionsPool.canCacheConnection()) {
-            IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+            IOException ex = new IOException("Too many connections " + config.getMaxTotalConnections());
             try {
                 asyncHandler.onThrowable(ex);
             } catch (Throwable t) {
@@ -987,7 +987,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (trackConnections) {
             if (!reclaimCache) {
                 if (!freeConnections.tryAcquire()) {
-                    IOException ex = new IOException(String.format("Too many connections %s", config.getMaxTotalConnections()));
+                    IOException ex = new IOException("Too many connections " +  config.getMaxTotalConnections());
                     try {
                         asyncHandler.onThrowable(ex);
                     } catch (Throwable t) {
@@ -1296,7 +1296,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             @Override
             public String toString() {
-                return String.format("Draining task for channel %s", ctx.getChannel());
+                return "Draining task for channel " + ctx.getChannel();
             }
         });
     }
@@ -1838,7 +1838,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     requestTimeout = p.getRequestTimeoutInMs();
                 }
 
-                abort(nettyResponseFuture, new TimeoutException(String.format("No response received after %s", requestTimeout)));
+                abort(nettyResponseFuture, new TimeoutException("No response received after " + requestTimeout));
 
                 nettyResponseFuture = null;
             }
