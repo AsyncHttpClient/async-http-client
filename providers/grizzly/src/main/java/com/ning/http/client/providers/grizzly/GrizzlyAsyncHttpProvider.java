@@ -2220,8 +2220,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             requestPacket.setContentLengthLong(f.length());
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             if (!SEND_FILE_SUPPORT
-                    || requestPacket.isSecure()) {
-                    //|| requestPacket.getHeaders().contains(Header.TransferEncoding)) {
+                    || requestPacket.isSecure()
+                    || requestPacket.getHeaders().contains(Header.TransferEncoding)) {
                 final FileInputStream fis = new FileInputStream(request.getFile());
                 final MemoryManager mm = ctx.getMemoryManager();
                 AtomicInteger written = new AtomicInteger();
