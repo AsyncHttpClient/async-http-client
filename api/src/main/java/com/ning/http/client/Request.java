@@ -46,14 +46,6 @@ public interface Request {
     }
 
     /**
-     * Return the request's type (GET, POST, etc.)
-     *
-     * @return the request's type (GET, POST, etc.)
-     * @deprecated - use getMethod
-     */
-    public String getReqType();
-
-    /**
      * Return the request's method name (GET, POST, etc.)
      *
      * @return the request's method name (GET, POST, etc.)
