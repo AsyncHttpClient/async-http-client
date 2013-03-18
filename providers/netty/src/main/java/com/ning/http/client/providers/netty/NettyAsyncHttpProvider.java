@@ -1286,7 +1286,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
         ctx.setAttachment(new AsyncCallable(future) {
             public Object call() throws Exception {
-                if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
+                if (future.isKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
                     return null;
                 }
 
@@ -1473,16 +1473,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug(t.getMessage(), t);
         }
 
-        if (!future.getKeepAlive() || !ctx.getChannel().isReadable()) {
+        if (!future.isKeepAlive() || !ctx.getChannel().isReadable()) {
             closeChannel(ctx);
         }
     }
 
     private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
-        if (lastValidChunk && future.getKeepAlive()) {
+        if (lastValidChunk && future.isKeepAlive()) {
             drainChannel(ctx, future);
         } else {
-            if (future.getKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
+            if (future.isKeepAlive() && ctx.getChannel().isReadable() && connectionsPool.offer(getPoolKey(future), ctx.getChannel())) {
                 markAsDone(future, ctx);
                 return;
             }
@@ -2032,7 +2032,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");
                     }
-                    final boolean initialConnectionKeepAlive = future.getKeepAlive();
+                    final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final String initialPoolKey = getPoolKey(future);
                     future.setURI(uri);
                     String newUrl = uri.toString();
@@ -2183,7 +2183,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             }
                         };
 
-                        if (future.getKeepAlive() && response.isChunked()) {
+                        if (future.isKeepAlive() && response.isChunked()) {
                             // We must make sure there is no bytes left before executing the next request.
                             ctx.setAttachment(ac);
                         } else {
@@ -2231,7 +2231,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         log.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
 
-                        if (future.getKeepAlive()) {
+                        if (future.isKeepAlive()) {
                             future.attachChannel(ctx.getChannel(), true);
                         }
 
