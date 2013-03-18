@@ -155,7 +155,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
     private static final boolean SEND_FILE_SUPPORT;
     static {
-        SEND_FILE_SUPPORT = /*configSendFileSupport();*/ false;
+        SEND_FILE_SUPPORT = configSendFileSupport();
     }
     private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
@@ -398,7 +398,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
         fcb.add(eventFilter);
         fcb.add(clientFilter);
-        
+
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
@@ -433,7 +433,29 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
-    
+
+    private static boolean configSendFileSupport() {
+
+        return !((System.getProperty("os.name").equalsIgnoreCase("linux")
+                && !linuxSendFileSupported())
+                || System.getProperty("os.name").equalsIgnoreCase("HP-UX"));
+    }
+
+
+    private static boolean linuxSendFileSupported() {
+        final String version = System.getProperty("java.version");
+        if (version.startsWith("1.6")) {
+            int idx = version.indexOf('_');
+            if (idx == -1) {
+                return false;
+            }
+            final int patchRev = Integer.parseInt(version.substring(idx + 1));
+            return (patchRev >= 18);
+        } else {
+            return version.startsWith("1.7") || version.startsWith("1.8");
+        }
+    }
+
     private void doDefaultTransportConfig() {
         final ExecutorService service = clientConfig.executorService();
         if (service != null) {
@@ -515,7 +537,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     throws IOException {
 
         boolean isWriteComplete = true;
-        
+
         if (requestHasEntityBody(request)) {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
@@ -529,7 +551,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.write(requestPacket, ctx.getTransportContext().getCompletionHandler());
         }
         LOGGER.debug("REQUEST: {}", requestPacket);
-        
+
         return isWriteComplete;
     }
 
@@ -585,7 +607,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         String lastRedirectURI;
         AtomicLong totalBodyWritten = new AtomicLong();
         AsyncHandler.STATE currentState;
-        
+
         String wsRequestURI;
         boolean isWSRequest;
         HandShake handshake;
@@ -883,9 +905,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
 
                     if (proxy.getPrincipal() != null && proxy.isBasic()) {
-                    	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
+                        requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
                     }
-                    
+
                 }
             }
             final AsyncHandler h = httpCtx.handler;
@@ -909,7 +931,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return (requestUri.charAt(0) == 'w' && requestUri.charAt(1) == 's');
         }
 
-        
+
         private void convertToUpgradeRequest(final HttpTransactionContext ctx) {
             final int colonIdx = ctx.requestUrl.indexOf(':');
 
@@ -1224,7 +1246,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
-            
+
             if (httpHeader.isSkipRemainder() || (context.establishingTunnel && context.statusHandler==null)) {
                 return;
             }
@@ -2132,7 +2154,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
-            
+
             return true;
         }
 
@@ -2197,7 +2219,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final File f = request.getFile();
             requestPacket.setContentLengthLong(f.length());
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
-            if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
+            if (!SEND_FILE_SUPPORT
+                    || requestPacket.isSecure()) {
+                    //|| requestPacket.getHeaders().contains(Header.TransferEncoding)) {
                 final FileInputStream fis = new FileInputStream(request.getFile());
                 final MemoryManager mm = ctx.getMemoryManager();
                 AtomicInteger written = new AtomicInteger();
@@ -2236,7 +2260,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         final AsyncHandler handler = context.handler;
                         if (handler != null) {
                             if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                                final long written = result.getWrittenSize();
+                                // WriteResult keeps a track of the total amount written,
+                                // so we need to calculate the delta ourselves.
+                                final long resultTotal = result.getWrittenSize();
+                                final long written = resultTotal - context.totalBodyWritten.get();
                                 final long total = context.totalBodyWritten.addAndGet(written);
                                 ((TransferCompletionHandler) handler).onContentWriteProgress(
                                         written,
