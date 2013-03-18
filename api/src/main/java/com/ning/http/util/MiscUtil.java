@@ -21,7 +21,7 @@ public class MiscUtil {
     }
 
     public static boolean isNonEmpty(String string) {
-        return string != null && string.length() != 0;
+        return string != null && !string.isEmpty();
     }
 
     public static boolean isNonEmpty(Object[] array) {
