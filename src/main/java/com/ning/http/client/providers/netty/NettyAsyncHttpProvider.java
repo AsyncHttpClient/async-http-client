@@ -1405,14 +1405,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
-                p.addFirst(HTTP_HANDLER, new HttpClientCodec());
+                p.addFirst(HTTP_HANDLER, createHttpClientCodec);
                 p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
             } else {
-                p.addAfter(SSL_HANDLER, HTTP_HANDLER, new HttpClientCodec());
+                p.addAfter(SSL_HANDLER, HTTP_HANDLER, createHttpClientCodec);
             }
 
         } else {
-            p.addFirst(HTTP_HANDLER, new HttpClientCodec());
+            p.addFirst(HTTP_HANDLER, createHttpClientCodec);
         }
     }
 
