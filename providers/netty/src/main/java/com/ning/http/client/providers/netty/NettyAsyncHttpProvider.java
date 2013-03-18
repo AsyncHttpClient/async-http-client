@@ -30,7 +30,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RandomAccessBody;
@@ -546,10 +545,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             future.touch();
-            int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
-            if (delay != -1 && !future.isDone() && !future.isCancelled()) {
+            int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
+            if (requestTimeout != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
+                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, requestTimeout, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -1076,17 +1075,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             c.future().attachChannel(channelFuture.getChannel(), false);
         }
         return c.future();
-    }
-
-    protected static int requestTimeout(AsyncHttpClientConfig config, PerRequestConfig perRequestConfig) {
-        int result;
-        if (perRequestConfig != null) {
-            int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-            result = (prRequestTimeout != 0 ? prRequestTimeout : config.getRequestTimeoutInMs());
-        } else {
-            result = config.getRequestTimeoutInMs();
-        }
-        return result;
     }
 
     private void closeChannel(final ChannelHandlerContext ctx) {
@@ -1680,8 +1668,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                                        NettyAsyncHttpProvider provider,
                                                        ProxyServer proxyServer) {
 
-        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest,
-                requestTimeout(config, request.getPerRequestConfig()), config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy(), proxyServer);
+        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
+        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest, requestTimeout, config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy(), proxyServer);
 
         if (request.getHeaders().getFirstValue("Expect") != null
                 && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
@@ -1832,11 +1820,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     && !nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
                 log.debug("Request Timeout expired for {}\n", nettyResponseFuture);
 
-                int requestTimeout = config.getRequestTimeoutInMs();
-                PerRequestConfig p = nettyResponseFuture.getRequest().getPerRequestConfig();
-                if (p != null && p.getRequestTimeoutInMs() != -1) {
-                    requestTimeout = p.getRequestTimeoutInMs();
-                }
+                int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, nettyResponseFuture.getRequest());
 
                 abort(nettyResponseFuture, new TimeoutException("No response received after " + requestTimeout));
 

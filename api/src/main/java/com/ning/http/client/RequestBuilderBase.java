@@ -49,11 +49,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private String method;
-        private URI originalUri = null;
-        private URI uri = null;
-        private URI rawUri = null;
-        private InetAddress address = null;
-        private InetAddress localAddress = null;
+        private URI originalUri;
+        private URI uri;
+        private URI rawUri;
+        private InetAddress address;
+        private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         private Collection<Cookie> cookies = new ArrayList<Cookie>();
         private byte[] byteData;
@@ -70,10 +70,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private Realm realm;
         private File file;
         private Boolean followRedirects;
-        private PerRequestConfig perRequestConfig;
-        private long rangeOffset = 0;
+        private int requestTimeoutInMs;
+        private long rangeOffset;
         public String charset;
-        private boolean useRawUrl = false;
+        private boolean useRawUrl;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
 
         public RequestImpl(boolean useRawUrl) {
@@ -102,7 +102,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
                 this.followRedirects = prototype.isRedirectOverrideSet()? prototype.isRedirectEnabled() : null;
-                this.perRequestConfig = prototype.getPerRequestConfig();
+                this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.useRawUrl = prototype.isUseRawUrl();
@@ -299,8 +299,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return followRedirects != null;
         }
 
-        public PerRequestConfig getPerRequestConfig() {
-            return perRequestConfig;
+        public int getRequestTimeoutInMs() {
+            return requestTimeoutInMs;
         }
 
         public long getRangeOffset() {
@@ -610,8 +610,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setPerRequestConfig(PerRequestConfig perRequestConfig) {
-        request.perRequestConfig = perRequestConfig;
+    public T setRequestTimeoutInMs(int requestTimeoutInMs) {
+        request.requestTimeoutInMs = requestTimeoutInMs;
         return derived.cast(this);
     }
 

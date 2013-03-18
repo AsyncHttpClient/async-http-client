@@ -19,7 +19,6 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.Response;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
@@ -99,12 +98,9 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testRequestTimeout() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            PerRequestConfig requestConfig = new PerRequestConfig();
-            requestConfig.setRequestTimeoutInMs(100);
-            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(100).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
-            client.close();
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
@@ -121,12 +117,9 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         try {
-            PerRequestConfig requestConfig = new PerRequestConfig();
-            requestConfig.setRequestTimeoutInMs(-1);
-            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute();
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(-1).execute();
             Response response = responseFuture.get();
             assertNotNull(response);
-            client.close();
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
@@ -144,7 +137,6 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
-            client.close();
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {

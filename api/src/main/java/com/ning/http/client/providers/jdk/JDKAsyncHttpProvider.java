@@ -25,7 +25,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -143,9 +142,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         HttpURLConnection urlConnection = createUrlConnection(request);
 
-        PerRequestConfig conf = request.getPerRequestConfig();
-        int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
-                conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
         JDKDelegateFuture<T> delegate = null;
         if (future != null) {
@@ -428,12 +425,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
 
             if (SocketTimeoutException.class.isAssignableFrom(t.getClass())) {
-                int responseTimeoutInMs = config.getRequestTimeoutInMs();
-
-                if (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
-                    responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
-                }
-                t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
+                int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
+                t = new TimeoutException("No response received after " + requestTimeout);
             }
 
             if (SSLHandshakeException.class.isAssignableFrom(t.getClass())) {
@@ -447,14 +440,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         private void configure(URI uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
 
-            PerRequestConfig conf = request.getPerRequestConfig();
-            int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
-                    conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+            int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
-            urlConnection.setConnectTimeout(config.getConnectionTimeoutInMs());
-
-            if (requestTimeout != -1)
+            if (requestTimeout != 0) {
+                urlConnection.setConnectTimeout(requestTimeout);
                 urlConnection.setReadTimeout(requestTimeout);
+            }
 
             urlConnection.setInstanceFollowRedirects(false);
             String host = uri.getHost();

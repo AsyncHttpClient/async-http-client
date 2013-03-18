@@ -36,7 +36,6 @@ import org.testng.annotations.Test;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.AbstractBasicTest;
 
@@ -87,17 +86,14 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
             final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
             for (int i = 0; i < 2; i++) {
-                final int threadNumber = i;
                 new Thread(new Runnable() {
 
                     public void run() {
                         try {
                             requestThrottle.acquire();
-                            PerRequestConfig requestConfig = new PerRequestConfig();
-                            requestConfig.setRequestTimeoutInMs(SLEEPTIME_MS / 2);
                             Future<Response> responseFuture = null;
                             try {
-                                responseFuture = client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute(new AsyncCompletionHandler<Response>() {
+                                responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(SLEEPTIME_MS / 2).execute(new AsyncCompletionHandler<Response>() {
 
                                     @Override
                                     public Response onCompleted(Response response) throws Exception {

@@ -207,11 +207,11 @@ public interface Request {
     public boolean isRedirectOverrideSet();
 
     /**
-     * Return Per request configuration.
+     * Return the request time out in milliseconds.
      *
-     * @return Per request configuration.
+     * @return requestTimeoutInMs.
      */
-    public PerRequestConfig getPerRequestConfig();
+    public int getRequestTimeoutInMs();
 
     /**
      * Return the HTTP Range header value, or

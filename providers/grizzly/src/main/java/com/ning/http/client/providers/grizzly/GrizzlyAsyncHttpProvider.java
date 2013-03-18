@@ -30,7 +30,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
@@ -340,12 +339,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 if (context.isWSRequest) {
                                     return clientConfig.getWebSocketIdleTimeoutInMs();
                                 }
-                                final PerRequestConfig config = context.request.getPerRequestConfig();
-                                if (config != null) {
-                                    final long timeout = config.getRequestTimeoutInMs();
-                                    if (timeout > 0) {
-                                        return timeout;
-                                    }
+                                int requestTimeout = AsyncHttpProviderUtils.requestTimeout(clientConfig, context.request);
+                                if (requestTimeout > 0) {
+                                    return requestTimeout;
                                 }
                             }
                             return timeout;
@@ -426,21 +422,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     void touchConnection(final Connection c, final Request request) {
 
-        final PerRequestConfig config = request.getPerRequestConfig();
-        if (config != null) {
-            final long timeout = config.getRequestTimeoutInMs();
-            if (timeout > 0) {
-                final long newTimeout = System.currentTimeMillis() + timeout;
-                if (resolver != null) {
-                    resolver.setTimeoutMillis(c, newTimeout);
-                }
-            }
-        } else {
-            final long timeout = clientConfig.getRequestTimeoutInMs();
-            if (timeout > 0) {
-                if (resolver != null) {
-                    resolver.setTimeoutMillis(c, System.currentTimeMillis() + timeout);
-                }
+        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(clientConfig, request);
+        if (requestTimeout > 0) {
+            if (resolver != null) {
+                resolver.setTimeoutMillis(c, System.currentTimeMillis() + requestTimeout);
             }
         }
 
@@ -2936,6 +2921,3 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END AHCWebSocketListenerAdapter
     
 }
-
-
-

@@ -20,6 +20,7 @@ import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.Part;
+import com.ning.http.client.Request;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -602,5 +603,9 @@ public class AsyncHttpProviderUtils {
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
         return config.getAllowPoolingConnection() ? "keep-alive" : "close";
+    }
+
+    public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
+        return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
     }
 }
