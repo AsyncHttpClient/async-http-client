@@ -7,11 +7,8 @@
         <version>1.8.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ning</groupId>
     <artifactId>async-http-client-extras-guava</artifactId>
     <name>Asynchronous Http Client Guava Extras</name>
-    <version>1.8.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
     <description>
         The Async Http Client Guava Extras.
     </description>

@@ -7,11 +7,8 @@
         <version>1.8.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ning</groupId>
     <artifactId>async-http-client-netty-provider</artifactId>
     <name>Asynchronous Http Client Netty Provider</name>
-    <version>1.8.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
     <description>
         The Async Http Client Netty Provider.
     </description>
