@@ -54,6 +54,9 @@ import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.CloseListener;
+import org.glassfish.grizzly.CloseType;
+import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
@@ -219,7 +222,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     execute(c, request, handler, future);
                 } catch (Exception e) {
-                    if (e instanceof RuntimeException || e instanceof IOException) {
+                    if (e instanceof IOException) {
                         failed(e);
                     }
                     if (LOGGER.isWarnEnabled()) {
@@ -299,9 +302,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             c.write(request, createWriteCompletionHandler(future));
         } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else if (e instanceof IOException) {
+            if (e instanceof IOException) {
                 throw (IOException) e;
             }
             if (LOGGER.isWarnEnabled()) {
@@ -740,7 +741,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     if (throwable instanceof EOFException) {
                         context.abort(new IOException("Remotely Closed"));
                     }
-                    context.abort(throwable);
                 }
 
                 @Override
@@ -808,23 +808,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-//        @Override
-//        public NextAction handleRead(FilterChainContext ctx) throws IOException {
-//            Object message = ctx.getMessage();
-//            if (HttpPacket.isHttp(message)) {
-//                final HttpPacket packet = (HttpPacket) message;
-//                HttpResponsePacket responsePacket;
-//                if (HttpContent.isContent(packet)) {
-//                    responsePacket = (HttpResponsePacket) ((HttpContent) packet).getHttpHeader();
-//                } else {
-//                    responsePacket = (HttpResponsePacket) packet;
-//                }
-//                if (HttpStatus.SWITCHING_PROTOCOLS_101.statusMatches(responsePacket.getStatus())) {
-//                    return ctx.getStopAction();
-//                }
-//            }
-//            return super.handleRead(ctx);
-//        }
 
         // ----------------------------------------------------- Private Methods
 
@@ -841,19 +824,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final URI uri = httpCtx.request.getURI();
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             final String scheme = uri.getScheme();
-            boolean secure = "https".equals(scheme) || "wss".equals(scheme);
+            boolean secure = isSecure(scheme);
             builder.method(request.getMethod());
             builder.protocol(Protocol.HTTP_1_1);
-            String host = request.getVirtualHost();
-            if (host != null) {
-                builder.header(Header.Host, host);
-            } else {
-                if (uri.getPort() == -1) {
-                    builder.header(Header.Host, uri.getHost());
-                } else {
-                    builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
-                }
-            }
+            addHostHeader(request, uri, builder);
             final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
             final boolean useProxy = proxy != null;
             if (useProxy) {
@@ -902,22 +876,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (!useProxy && !httpCtx.isWSRequest) {
                 addQueryString(request, requestPacket);
             }
-            addHeaders(request, requestPacket);
+            addHeaders(request, requestPacket, proxy);
             addCookies(request, requestPacket);
 
-            if (useProxy) {
-                boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
-                if (!avoidProxy) {
-                    if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
-                        requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
-                    }
-
-                    if (proxy.getPrincipal() != null && proxy.isBasic()) {
-                        requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
-                    }
-
-                }
-            }
             final AsyncHandler h = httpCtx.handler;
             if (h != null) {
                 if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
@@ -928,6 +889,25 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             return sendRequest(ctx, request, requestPacket);
 
+        }
+
+        private boolean isSecure(String scheme) {
+            return "https".equals(scheme) || "wss".equals(scheme);
+        }
+
+        private void addHostHeader(final Request request,
+                                   final URI uri,
+                                   final HttpRequestPacket.Builder builder) {
+            String host = request.getVirtualHost();
+            if (host != null) {
+                builder.header(Header.Host, host);
+            } else {
+                if (uri.getPort() == -1) {
+                    builder.header(Header.Host, uri.getHost());
+                } else {
+                    builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
+                }
+            }
         }
 
         private boolean isUpgradeRequest(final AsyncHandler handler) {
@@ -954,7 +934,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         private void addHeaders(final Request request,
-                                final HttpRequestPacket requestPacket) {
+                                final HttpRequestPacket requestPacket,
+                                final ProxyServer proxy) throws IOException {
 
             final FluentCaseInsensitiveStringsMap map = request.getHeaders();
             if (isNonEmpty(map)) {
@@ -971,7 +952,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final MimeHeaders headers = requestPacket.getHeaders();
             if (!headers.contains(Header.Connection)) {
-                requestPacket.addHeader(Header.Connection, "keep-alive");
+                //final boolean canCache = context.provider.clientConfig.getAllowPoolingConnection();
+                requestPacket.addHeader(Header.Connection, /*(canCache ? */"keep-alive" /*: "close")*/);
             }
 
             if (!headers.contains(Header.Accept)) {
@@ -980,6 +962,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             if (!headers.contains(Header.UserAgent)) {
                 requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
+            }
+
+            boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
+            if (!avoidProxy) {
+                if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
+                    requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
+                }
+
+                if (proxy.getPrincipal() != null && proxy.isBasic()) {
+                    requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
+                }
+
             }
 
 
@@ -2422,7 +2416,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
             final Connection c = obtainConnection0(request, requestFuture, requestFuture.getProxyServer());
-            DO_NOT_CACHE.set(c, Boolean.TRUE);
+            markConnectionAsDoNotCache(c);
             return c;
         }
 
@@ -2539,7 +2533,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         // ------------------------------------------------------ Nested Classes
 
-        private static class ConnectionMonitor implements Connection.CloseListener {
+        private static class ConnectionMonitor implements CloseListener<Closeable,CloseType> {
 
         private final Semaphore connections;
 
@@ -2564,7 +2558,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
             @Override
-            public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
+            public void onClosed(Closeable closeable, CloseType closeType) throws IOException {
 
                 if (connections != null) {
                     connections.release();
@@ -2939,6 +2933,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             if (ahcListener != null ? !ahcListener.equals(that.ahcListener) : that.ahcListener != null)
                 return false;
+            //noinspection RedundantIfStatement
             if (webSocket != null ? !webSocket.equals(that.webSocket) : that.webSocket != null)
                 return false;
 
