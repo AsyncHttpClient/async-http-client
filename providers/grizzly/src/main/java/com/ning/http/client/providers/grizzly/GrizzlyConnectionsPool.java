@@ -16,11 +16,12 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
 
+import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.attributes.NullaryFunction;
 import org.glassfish.grizzly.utils.DataStructures;
+import org.glassfish.grizzly.utils.NullaryFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
     private final boolean unlimitedConnections;
     private final long timeout;
     private final DelayedExecutor delayedExecutor;
-    private final Connection.CloseListener listener;
+    private final CloseListener listener;
 
 
     // ------------------------------------------------------------ Constructors
@@ -335,7 +336,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
                                         if (LOG.isDebugEnabled()) {
                                             LOG.debug("Idle connection ({}) detected.  Removing from cache.", element.toString());
                                         }
-                                        element.close().markForRecycle(true);
+                                        element.close().recycle(true);
                                     } catch (Exception ignored) {
                                     }
                                 }
@@ -409,7 +410,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
             void destroy() {
                 for (Connection c : queue) {
-                    c.close().markForRecycle(true);
+                    c.close().recycle(true);
                 }
                 queue.clear();
                 queues.remove(this);
