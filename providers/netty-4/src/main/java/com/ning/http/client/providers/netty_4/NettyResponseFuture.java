@@ -20,9 +20,10 @@ import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final int responseTimeoutInMs;
     private final int idleConnectionTimeoutInMs;
     private Request request;
-    private HttpRequest nettyRequest;
+    private FullHttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
     private URI uri;
     private boolean keepAlive = true;
@@ -93,7 +94,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public NettyResponseFuture(URI uri,
                                Request request,
                                AsyncHandler<V> asyncHandler,
-                               HttpRequest nettyRequest,
+                               FullHttpRequest nettyRequest,
                                int responseTimeoutInMs,
                                int idleConnectionTimeoutInMs,
                                NettyAsyncHttpProvider asyncHttpProvider,
@@ -165,7 +166,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (isCancelled.get()) return false;
 
         try {
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel.pipeline().context(NettyAsyncHttpProvider.class).attr(NettyAsyncHttpProvider.DEFAULT_ATTRIBUTE).set(new NettyAsyncHttpProvider.DiscardEvent());
             channel.close();
         } catch (Throwable t) {
             // Ignore
@@ -229,7 +230,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             if (expired) {
                 isCancelled.set(true);
                 try {
-                    channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+                    channel.pipeline().context(NettyAsyncHttpProvider.class).attr(NettyAsyncHttpProvider.DEFAULT_ATTRIBUTE).set(new NettyAsyncHttpProvider.DiscardEvent());
                     channel.close();
                 } catch (Throwable t) {
                     // Ignore
@@ -346,7 +347,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return request;
     }
 
-    public final HttpRequest getNettyRequest() {
+    public final FullHttpRequest getNettyRequest() {
         return nettyRequest;
     }
 

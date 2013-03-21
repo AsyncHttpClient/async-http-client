@@ -12,16 +12,13 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
+import io.netty.channel.ChannelHandlerContext;
 
-public interface Protocol {
+public interface Protocol<T> {
 
-    void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception;
+    void handle(ChannelHandlerContext ctx, T message) throws Exception;
 
-    void onError(ChannelHandlerContext ctx, ExceptionEvent e);
+    void onError(ChannelHandlerContext ctx, Throwable error);
 
-    void onClose(ChannelHandlerContext ctx, ChannelStateEvent e);
+    void onClose(ChannelHandlerContext ctx);
 }

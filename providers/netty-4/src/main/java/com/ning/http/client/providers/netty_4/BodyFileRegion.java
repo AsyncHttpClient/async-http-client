@@ -13,7 +13,9 @@
 package com.ning.http.client.providers.netty_4;
 
 import com.ning.http.client.RandomAccessBody;
-import org.jboss.netty.channel.FileRegion;
+import io.netty.buffer.AbstractReferenceCounted;
+import io.netty.buffer.ReferenceCounted;
+import io.netty.channel.FileRegion;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
@@ -22,6 +24,7 @@ import java.nio.channels.WritableByteChannel;
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
 class BodyFileRegion
+        extends AbstractReferenceCounted
         implements FileRegion {
 
     private final RandomAccessBody body;
@@ -33,11 +36,11 @@ class BodyFileRegion
         this.body = body;
     }
 
-    public long getPosition() {
+    public long position() {
         return 0;
     }
 
-    public long getCount() {
+    public long count() {
         return body.getContentLength();
     }
 
@@ -46,12 +49,11 @@ class BodyFileRegion
         return body.transferTo(position, Long.MAX_VALUE, target);
     }
 
-    public void releaseExternalResources() {
+    public void deallocate() {
         try {
             body.close();
         } catch (IOException e) {
             // we tried
         }
     }
-
 }

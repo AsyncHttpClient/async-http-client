@@ -18,7 +18,7 @@ package com.ning.http.client.providers.netty_4;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.URI;
 
@@ -40,7 +40,7 @@ public class ResponseStatus extends HttpResponseStatus {
      * @return the response status code
      */
     public int getStatusCode() {
-        return response.getStatus().getCode();
+        return response.getStatus().code();
     }
 
     /**
@@ -49,27 +49,27 @@ public class ResponseStatus extends HttpResponseStatus {
      * @return the response status text
      */
     public String getStatusText() {
-        return response.getStatus().getReasonPhrase();
+        return response.getStatus().reasonPhrase();
     }
 
     @Override
     public String getProtocolName() {
-        return response.getProtocolVersion().getProtocolName();
+        return response.getProtocolVersion().protocolName();
     }
 
     @Override
     public int getProtocolMajorVersion() {
-        return response.getProtocolVersion().getMajorVersion();
+        return response.getProtocolVersion().majorVersion();
     }
 
     @Override
     public int getProtocolMinorVersion() {
-        return response.getProtocolVersion().getMinorVersion();
+        return response.getProtocolVersion().minorVersion();
     }
 
     @Override
     public String getProtocolText() {
-        return response.getProtocolVersion().getText();
+        return response.getProtocolVersion().text();
     }
 
 }

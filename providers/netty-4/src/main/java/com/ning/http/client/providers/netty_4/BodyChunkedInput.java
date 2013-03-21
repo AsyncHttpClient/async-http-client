@@ -13,8 +13,9 @@
 package com.ning.http.client.providers.netty_4;
 
 import com.ning.http.client.Body;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.stream.ChunkedInput;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.stream.ChunkedInput;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -23,7 +24,7 @@ import java.nio.ByteBuffer;
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
  */
 class BodyChunkedInput
-        implements ChunkedInput {
+        implements ChunkedInput<ByteBuf> {
 
     private final Body body;
 
@@ -72,14 +73,16 @@ class BodyChunkedInput
         return peekNextChunk() != null;
     }
 
-    public Object nextChunk() throws Exception {
+    @Override
+    public boolean readChunk(ByteBuf b) throws Exception {
         ByteBuffer buffer = peekNextChunk();
         if (buffer == null || buffer == EOF) {
-            return null;
+            return false;
         }
         nextChunk = null;
 
-        return ChannelBuffers.wrappedBuffer(buffer);
+        b.writeBytes(buffer);
+        return true;
     }
 
     public boolean isEndOfInput() throws Exception {

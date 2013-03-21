@@ -21,11 +21,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
@@ -40,14 +42,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private boolean useBlockingIO;
 
     /**
-     * Allow configuring the Netty's socket channel factory.
+     * Allow configuring the Netty's event loop.
      */
-    private NioClientSocketChannelFactory socketChannelFactory;
+    private EventLoopGroup eventLoopGroup;
 
     /**
-     * Allow configuring the Netty's boss executor service.
+     * Allow configuring the Netty's used socket channel.
      */
-    private ExecutorService bossExecutorService;
+    private Class<? extends SocketChannel> socketChannel;
 
     /**
      * Execute the connect operation asynchronously.
@@ -82,7 +84,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     /**
      * See {@link java.net.Socket#setReuseAddress(boolean)}
      */
-    public final static String REUSE_ADDRESS = "reuseAddress";
+    public final static String REUSE_ADDRESS = ChannelOption.SO_REUSEADDR.name();
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -147,20 +149,20 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.useBlockingIO = useBlockingIO;
     }
 
-    public NioClientSocketChannelFactory getSocketChannelFactory() {
-        return socketChannelFactory;
+    public Class<? extends SocketChannel> getSocketChannel() {
+        return socketChannel;
     }
 
-    public void setSocketChannelFactory(NioClientSocketChannelFactory socketChannelFactory) {
-        this.socketChannelFactory = socketChannelFactory;
+    public void setSocketChannel(Class<? extends SocketChannel> socketChannel) {
+        this.socketChannel = socketChannel;
     }
 
-    public ExecutorService getBossExecutorService() {
-        return bossExecutorService;
+    public EventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
     }
 
-    public void setBossExecutorService(ExecutorService bossExecutorService) {
-        this.bossExecutorService = bossExecutorService;
+    public void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+        this.eventLoopGroup = eventLoopGroup;
     }
 
     public boolean isAsyncConnect() {

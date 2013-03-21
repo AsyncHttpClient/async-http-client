@@ -31,9 +31,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
@@ -80,7 +80,7 @@ public class NettyResponse extends ResponseBase {
 
     /* @Override */
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
-        return getResponseBodyAsChannelBuffer().toByteBuffer();
+        return getResponseBodyAsByteBuf().nioBuffer();
     }
 
     /* @Override */
@@ -90,29 +90,29 @@ public class NettyResponse extends ResponseBase {
 
     /* @Override */
     public String getResponseBody(String charset) throws IOException {
-        return getResponseBodyAsChannelBuffer().toString(Charset.forName(calculateCharset(charset)));
+        return getResponseBodyAsByteBuf().toString(Charset.forName(calculateCharset(charset)));
     }
 
     /* @Override */
     public InputStream getResponseBodyAsStream() throws IOException {
-        return new ChannelBufferInputStream(getResponseBodyAsChannelBuffer());
+        return new ByteBufInputStream(getResponseBodyAsByteBuf());
     }
 
-    public ChannelBuffer getResponseBodyAsChannelBuffer() throws IOException {
-        ChannelBuffer b = null;
+    public ByteBuf getResponseBodyAsByteBuf() throws IOException {
+        ByteBuf b = null;
         switch (bodyParts.size()) {
         case 0:
-            b = ChannelBuffers.EMPTY_BUFFER;
+            b = Unpooled.EMPTY_BUFFER;
             break;
         case 1:
             b = ResponseBodyPart.class.cast(bodyParts.get(0)).getChannelBuffer();
             break;
         default:
-            ChannelBuffer[] channelBuffers = new ChannelBuffer[bodyParts.size()];
+            ByteBuf[] channelBuffers = new ByteBuf[bodyParts.size()];
             for (int i = 0; i < bodyParts.size(); i++) {
                 channelBuffers[i] = ResponseBodyPart.class.cast(bodyParts.get(i)).getChannelBuffer();
             }
-            b = ChannelBuffers.wrappedBuffer(channelBuffers);
+            b = Unpooled.wrappedBuffer(channelBuffers);
         }
 
         return b;

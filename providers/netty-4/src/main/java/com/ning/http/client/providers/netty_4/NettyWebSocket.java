@@ -17,11 +17,11 @@ import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
-import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.io.ByteArrayOutputStream;
 
-import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
+import static io.netty.buffer.Unpooled.wrappedBuffer;
 
 public class NettyWebSocket implements WebSocket {
     private final static Logger logger = LoggerFactory.getLogger(NettyWebSocket.class);

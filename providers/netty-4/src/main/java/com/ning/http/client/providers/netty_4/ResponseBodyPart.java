@@ -17,9 +17,9 @@ package com.ning.http.client.providers.netty_4;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,8 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ResponseBodyPart extends HttpResponseBodyPart {
 
-    private final HttpChunk chunk;
-    private final HttpResponse response;
+    private final HttpContent chunk;
+    private final FullHttpResponse response;
     private final AtomicReference<byte[]> bytes = new AtomicReference<byte[]>(null);
     private final boolean isLast;
     private boolean closeConnection = false;
@@ -43,11 +43,11 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     /**
      * Constructor used for non-chunked GET requests and HEAD requests.
      */
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
+    public ResponseBodyPart(URI uri, FullHttpResponse response, AsyncHttpProvider provider, boolean last) {
         this(uri, response, provider, null, last);
     }
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
+    public ResponseBodyPart(URI uri, FullHttpResponse response, AsyncHttpProvider provider, HttpContent chunk, boolean last) {
         super(uri, provider);
         this.chunk = chunk;
         this.response = response;
@@ -66,8 +66,8 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bp;
         }
 
-        ChannelBuffer b = getChannelBuffer();
-        byte[] rb = b.toByteBuffer().array();
+        ByteBuf b = getChannelBuffer();
+        byte[] rb = b.nioBuffer().array();
         bytes.set(rb);
         return rb;
     }
@@ -79,13 +79,13 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     @Override
     public int length() {
-        ChannelBuffer b = (chunk != null) ? chunk.getContent() : response.getContent();
+        ByteBuf b = (chunk != null) ? chunk.data() : response.data();
         return b.readableBytes();
     }
     
     @Override
     public int writeTo(OutputStream outputStream) throws IOException {
-        ChannelBuffer b = getChannelBuffer();
+        ByteBuf b = getChannelBuffer();
         int available = b.readableBytes();
         if (available > 0) {
             b.getBytes(b.readerIndex(), outputStream, available);
@@ -98,8 +98,8 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return ByteBuffer.wrap(getBodyPartBytes());
     }
 
-    public ChannelBuffer getChannelBuffer() {
-        return chunk != null ? chunk.getContent() : response.getContent();
+    public ByteBuf getChannelBuffer() {
+        return chunk != null ? chunk.data() : response.data();
     }
 
     /**
@@ -126,7 +126,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         return closeConnection;
     }
 
-    protected HttpChunk chunk() {
+    protected HttpContent chunk() {
         return chunk;
     }
 }

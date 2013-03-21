@@ -18,8 +18,8 @@ package com.ning.http.client.providers.netty_4;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
-import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 
 import java.net.URI;
 
@@ -28,7 +28,7 @@ import java.net.URI;
  */
 public class ResponseHeaders extends HttpResponseHeaders {
 
-    private final HttpChunkTrailer trailingHeaders;
+    private final LastHttpContent trailingHeaders;
     private final HttpResponse response;
     private final FluentCaseInsensitiveStringsMap headers;
 
@@ -39,7 +39,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
         headers = computerHeaders();
     }
 
-    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunkTrailer traillingHeaders) {
+    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider, LastHttpContent traillingHeaders) {
         super(uri, provider, true);
         this.trailingHeaders = traillingHeaders;
         this.response = response;
@@ -48,15 +48,15 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     private FluentCaseInsensitiveStringsMap computerHeaders() {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (String s : response.getHeaderNames()) {
-            for (String header : response.getHeaders(s)) {
+        for (String s : response.headers().names()) {
+            for (String header : response.headers().getAll(s)) {
                 h.add(s, header);
             }
         }
 
         if (trailingHeaders != null) {
-            for (final String s : trailingHeaders.getHeaderNames()) {
-                for (String header : response.getHeaders(s)) {
+            for (final String s : trailingHeaders.trailingHeaders().names()) {
+                for (String header : response.headers().getAll(s)) {
                     h.add(s, header);
                 }
             }

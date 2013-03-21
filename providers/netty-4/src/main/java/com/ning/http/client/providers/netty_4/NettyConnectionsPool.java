@@ -13,7 +13,7 @@
 package com.ning.http.client.providers.netty_4;
 
 import com.ning.http.client.ConnectionsPool;
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,16 +111,16 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 long endConcurrentLoop = System.currentTimeMillis();
 
                 for (IdleChannel idleChannel : channelsInTimeout) {
-                    Object attachment = idleChannel.channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+                    Object attachment = idleChannel.channel.pipeline().context(NettyAsyncHttpProvider.class).attr(NettyAsyncHttpProvider.DEFAULT_ATTRIBUTE).get();
                     if (attachment != null) {
                         if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
                             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
 
-                            if (!future.isDone() && !future.isCancelled()) {
-                                log.debug("Future not in appropriate state %s\n", future);
-                                continue;
-                            }
+                        if (!future.isDone() && !future.isCancelled()) {
+                            log.debug("Future not in appropriate state %s\n", future);
+                            continue;
                         }
+                    }
                     }
 
                     if (remove(idleChannel)) {
@@ -163,7 +163,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
 
         log.debug("Adding uri: {} for channel {}", uri, channel);
-        channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+        channel.pipeline().context(NettyAsyncHttpProvider.class).attr(NettyAsyncHttpProvider.DEFAULT_ATTRIBUTE).set(new NettyAsyncHttpProvider.DiscardEvent());
 
         ConcurrentLinkedQueue<IdleChannel> idleConnectionForHost = connectionsPool.get(uri);
         if (idleConnectionForHost == null) {
@@ -214,7 +214,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
                 if (idleChannel == null) {
                     poolEmpty = true;
-                } else if (!idleChannel.channel.isConnected() || !idleChannel.channel.isOpen()) {
+                } else if (!idleChannel.channel.isActive() || !idleChannel.channel.isOpen()) {
                     idleChannel = null;
                     log.trace("Channel not connected or not opened!");
                 }
@@ -274,7 +274,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
     private void close(Channel channel) {
         try {
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel.pipeline().context(NettyAsyncHttpProvider.class).attr(NettyAsyncHttpProvider.DEFAULT_ATTRIBUTE).set(new NettyAsyncHttpProvider.DiscardEvent());
             channel2CreationDate.remove(channel);
             channel.close();
         } catch (Throwable t) {
