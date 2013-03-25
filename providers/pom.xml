@@ -47,7 +47,9 @@
         <module>apache</module>
         <module>grizzly</module>
         <module>netty</module>
+        <!--
         <module>netty-4</module>
+        -->
     </modules>
 
     <dependencies>
