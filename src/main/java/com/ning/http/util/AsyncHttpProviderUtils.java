@@ -533,7 +533,7 @@ public class AsyncHttpProviderUtils {
     }
 
     private final static String removeQuote(String s) {
-        if (!s.isEmpty()) {
+        if (MiscUtil.isNonEmpty(s)) {
             if (s.charAt(0) == '"')
                 s = s.substring(1);
 
