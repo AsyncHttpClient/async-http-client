@@ -18,9 +18,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -514,30 +515,30 @@ public class AsyncHttpProviderUtils {
     }
 
     public static int convertExpireField(String timestring) throws Exception {
-        Exception exception = null;
         String trimmedTimeString = removeQuote(timestring.trim());
         long now = System.currentTimeMillis();
+        Date date = null;
+
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
-            try {
-                long expire = sdf.parse(trimmedTimeString).getTime();
-                return (int) ((expire - now) / 1000);
-            } catch (ParseException e) {
-                exception = e;
-            } catch (NumberFormatException e) {
-                exception = e;
-            }
+            date = sdf.parse(trimmedTimeString, new ParsePosition(0));
+            if (date != null)
+                break;
         }
 
-        throw exception;
+        if (date != null) {
+            long expire = date.getTime();
+            return (int) ((expire - now) / 1000);
+        } else
+            throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
     }
 
     private final static String removeQuote(String s) {
-        if (s.startsWith("\"")) {
-            s = s.substring(1);
-        }
+        if (!s.isEmpty()) {
+            if (s.charAt(0) == '"')
+                s = s.substring(1);
 
-        if (s.endsWith("\"")) {
-            s = s.substring(0, s.length() - 1);
+            if (s.charAt(s.length() - 1) == '"')
+                s = s.substring(0, s.length() - 1);
         }
         return s;
     }
