@@ -56,14 +56,13 @@ public class AsyncHttpProviderUtils {
 
             return new SimpleDateFormat[]
                     {
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
+                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
                             new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
+                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US) // RFC1123
-
+                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US)
                     };
         }
     };
