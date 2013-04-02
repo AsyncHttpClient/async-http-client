@@ -12,6 +12,22 @@
  */
 package com.ning.http.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Vector;
+
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
@@ -25,21 +41,6 @@ import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
-
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Vector;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -59,14 +60,13 @@ public class AsyncHttpProviderUtils {
 
             return new SimpleDateFormat[]
                     {
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
+                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
                             new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
+                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US), //ASCTIME
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
                             new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US) // RFC1123
-
+                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US)
                     };
         }
     };
@@ -563,21 +563,18 @@ public class AsyncHttpProviderUtils {
     }
 
     public static int convertExpireField(String timestring) throws Exception {
-        Exception exception = null;
         String trimmedTimeString = removeQuote(timestring.trim());
-        long now = System.currentTimeMillis();
+
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
-            try {
-                long expire = sdf.parse(trimmedTimeString).getTime();
+            Date date = sdf.parse(trimmedTimeString, new ParsePosition(0));
+            if (date != null) {
+                long now = System.currentTimeMillis();
+                long expire = date.getTime();
                 return (int) ((expire - now) / 1000);
-            } catch (ParseException e) {
-                exception = e;
-            } catch (NumberFormatException e) {
-                exception = e;
             }
         }
 
-        throw exception;
+        throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
     }
 
     private final static String removeQuote(String s) {
