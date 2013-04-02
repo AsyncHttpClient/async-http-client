@@ -578,12 +578,12 @@ public class AsyncHttpProviderUtils {
     }
 
     private final static String removeQuote(String s) {
-        if (s.startsWith("\"")) {
-            s = s.substring(1);
-        }
+        if (MiscUtil.isNonEmpty(s)) {
+            if (s.charAt(0) == '"')
+                s = s.substring(1);
 
-        if (s.endsWith("\"")) {
-            s = s.substring(0, s.length() - 1);
+            if (s.charAt(s.length() - 1) == '"')
+                s = s.substring(0, s.length() - 1);
         }
         return s;
     }
