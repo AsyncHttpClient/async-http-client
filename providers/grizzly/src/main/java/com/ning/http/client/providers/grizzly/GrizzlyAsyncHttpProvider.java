@@ -168,7 +168,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
-
     // ------------------------------------------------------------ Constructors
 
 
@@ -916,12 +915,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
                     }
 
-                    if(proxy.getNtlmDomain() != null && proxy.getNtlmDomain().length() > 0)
+                    if(null == requestPacket.getHeader(Header.ProxyAuthorization) )
+                    {
+                    	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
+                    }
+                    /*if(proxy.getNtlmDomain() != null && proxy.getNtlmDomain().length() > 0)
                     {
                     	LOGGER.debug("probably ntlm.. not adding header..");
                     }else if (proxy.getPrincipal() != null && proxy.isBasic()) {
                     	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
-                    }
+                    }*/
                     
                 }
             }
@@ -1393,7 +1396,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final String proxy_auth = httpHeader.getHeader(Header.ProxyAuthenticate);
             
             if (httpHeader.isSkipRemainder() ) {
-            	if(!ProxyAuthorizationHandler.isSecondHandShake(proxy_auth))
+            	if(!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxy_auth))
             	{
 	                clearResponse(ctx.getConnection());
 	                cleanup(ctx, provider);
@@ -1653,7 +1656,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     String msg = null;
 					try {
 						
-						if(isFirstHandShake(proxy_auth))
+						if(isNTLMFirstHandShake(proxy_auth))
 						{
 							msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), "");
 						}else {
@@ -1665,7 +1668,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 					} catch (Exception e1) {
 						e1.printStackTrace();
 					}
-                }  else {
+                }   else if (proxy_auth.toLowerCase().startsWith("negotiate")){
+                	//this is for kerberos
+                	req.getHeaders().remove(Header.ProxyAuthenticate.toString());
+                    req.getHeaders().remove(Header.ProxyAuthorization.toString());
+                	
+                }else {
                     throw new IllegalStateException("Unsupported authorization method: " + proxy_auth);
                 }
 
@@ -1673,13 +1681,33 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 InvocationStatus tempInvocationStatus = InvocationStatus.STOP;
                 
                 try {
-                    if(isFirstHandShake(proxy_auth))
+                	
+                    if(isNTLMFirstHandShake(proxy_auth))
                     {
                     	tempInvocationStatus = InvocationStatus.CONTINUE;
                     	
                     }
                     
-                    if(isSecondHandShake(proxy_auth))
+                    if(proxy_auth.toLowerCase().startsWith("negotiate"))
+                    {
+                    	final Connection c = m.obtainConnection(req, httpTransactionContext.future);
+                        final HttpTransactionContext newContext = httpTransactionContext.copy();
+                        httpTransactionContext.future = null;
+                        httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
+                        
+                        newContext.invocationStatus = tempInvocationStatus;
+                        
+                        String challengeHeader = null;
+                        String server = proxyServer.getHost();
+                        
+                        challengeHeader = GSSSPNEGOWrapper.generateToken(server);
+
+                        req.getHeaders().add(Header.ProxyAuthorization.toString(), "Negotiate " + challengeHeader);
+                        
+                        
+	                    return exceuteRequest(httpTransactionContext, req, c,
+								newContext);
+                    }else if(isNTLMSecondHandShake(proxy_auth))
                     {
                     	final Connection c = ctx.getConnection();
                         final HttpTransactionContext newContext = httpTransactionContext.copy(); //httpTransactionContext.copy();
@@ -1690,17 +1718,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         newContext.invocationStatus = tempInvocationStatus;
                         httpTransactionContext.establishingTunnel = true;
                         
-                    	try {
-	                        httpTransactionContext.provider.execute(c,
-	                                                                req,
-	                                                                httpTransactionContext.handler,
-	                                                                httpTransactionContext.future);
-	                        return false;
-	                    } catch (IOException ioe) {
-	                    	ioe.printStackTrace();
-	                        newContext.abort(ioe);
-	                        return false;
-	                    }
+                    	return exceuteRequest(httpTransactionContext, req, c,
+								newContext);
                     	
                     }
                     else{
@@ -1711,28 +1730,39 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         
                         newContext.invocationStatus = tempInvocationStatus;
                         
-	                    try {
-	                        httpTransactionContext.provider.execute(c,
-	                                                                req,
-	                                                                httpTransactionContext.handler,
-	                                                                httpTransactionContext.future);
-	                        return false;
-	                    } catch (IOException ioe) {
-	                        newContext.abort(ioe);
-	                        return false;
-	                    }
+	                    return exceuteRequest(httpTransactionContext, req, c,
+								newContext);
                     }
                 } catch (Exception e) {
                     httpTransactionContext.abort(e);
-                }
+                } catch (Throwable e) {
+					e.printStackTrace();
+					httpTransactionContext.abort(e);
+				}
                 httpTransactionContext.invocationStatus = tempInvocationStatus;
                 return false;
             }
 
-			public static boolean isSecondHandShake(final String proxy_auth) {
+			private boolean exceuteRequest(
+					final HttpTransactionContext httpTransactionContext,
+					final Request req, final Connection c,
+					final HttpTransactionContext newContext) {
+				try {
+				    httpTransactionContext.provider.execute(c,
+				                                            req,
+				                                            httpTransactionContext.handler,
+				                                            httpTransactionContext.future);
+				    return false;
+				} catch (IOException ioe) {
+				    newContext.abort(ioe);
+				    return false;
+				}
+			}
+
+			public static boolean isNTLMSecondHandShake(final String proxy_auth) {
 				return (proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
 			}
-			public static boolean isFirstHandShake(final String proxy_auth) {
+			public static boolean isNTLMFirstHandShake(final String proxy_auth) {
 				return (proxy_auth.equalsIgnoreCase("ntlm"));
 			}
 

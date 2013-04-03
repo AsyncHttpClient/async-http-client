@@ -53,7 +53,7 @@ public class ProxyServer {
     private int port;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
-    private boolean isBasic = true;
+    /*private boolean isBasic = true;
     
     public boolean isBasic() {
 		return isBasic;
@@ -61,7 +61,7 @@ public class ProxyServer {
 
 	public void setBasic(boolean isBasic) {
 		this.isBasic = isBasic;
-	}
+	}*/
 
 	public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
