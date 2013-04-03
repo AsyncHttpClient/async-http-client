@@ -919,12 +919,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     {
                     	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
                     }
-                    /*if(proxy.getNtlmDomain() != null && proxy.getNtlmDomain().length() > 0)
-                    {
-                    	LOGGER.debug("probably ntlm.. not adding header..");
-                    }else if (proxy.getPrincipal() != null && proxy.isBasic()) {
-                    	requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
-                    }*/
                     
                 }
             }
@@ -1710,7 +1704,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }else if(isNTLMSecondHandShake(proxy_auth))
                     {
                     	final Connection c = ctx.getConnection();
-                        final HttpTransactionContext newContext = httpTransactionContext.copy(); //httpTransactionContext.copy();
+                        final HttpTransactionContext newContext = httpTransactionContext.copy();
                      
                         httpTransactionContext.future = null;
                         httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
@@ -1730,15 +1724,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         
                         newContext.invocationStatus = tempInvocationStatus;
                         
+                        //NTLM needs the same connection to be used for exchange of tokens
 	                    return exceuteRequest(httpTransactionContext, req, c,
 								newContext);
                     }
                 } catch (Exception e) {
                     httpTransactionContext.abort(e);
-                } catch (Throwable e) {
-					e.printStackTrace();
-					httpTransactionContext.abort(e);
-				}
+                }
                 httpTransactionContext.invocationStatus = tempInvocationStatus;
                 return false;
             }
