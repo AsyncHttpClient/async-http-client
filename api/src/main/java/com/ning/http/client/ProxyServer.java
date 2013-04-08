@@ -58,11 +58,13 @@ public class ProxyServer {
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
     private boolean isBasic = true;
-    
+
+    @Deprecated
     public boolean isBasic() {
 		return isBasic;
 	}
 
+    @Deprecated
 	public void setBasic(boolean isBasic) {
 		this.isBasic = isBasic;
 	}

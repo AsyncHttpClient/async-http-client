@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -39,6 +39,7 @@ import com.ning.http.client.UpgradeHandler;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
@@ -172,8 +173,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
 
-
-
+    private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
     // ------------------------------------------------------------ Constructors
 
@@ -222,7 +222,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     execute(c, request, handler, future);
                 } catch (Exception e) {
-                    if (e instanceof IOException) {
+                    if (e instanceof RuntimeException) {
+                        failed(e);
+                    } else if (e instanceof IOException) {
                         failed(e);
                     }
                     if (LOGGER.isWarnEnabled()) {
@@ -399,7 +401,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
         fcb.add(eventFilter);
         fcb.add(clientFilter);
-
+        
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
@@ -434,6 +436,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
+
 
     private static boolean configSendFileSupport() {
 
@@ -933,6 +936,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.requestUrl = sb.toString();
         }
 
+        
+       /* private ProxyServer getProxyServer(Request request) {
+
+            ProxyServer proxyServer = request.getProxyServer();
+            if (proxyServer == null) {
+                proxyServer = config.getProxyServer();
+            }
+            return proxyServer;
+
+        }*/
+
+
         private void addHeaders(final Request request,
                                 final HttpRequestPacket requestPacket,
                                 final ProxyServer proxy) throws IOException {
@@ -970,8 +985,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
                 }
 
-                if (proxy.getPrincipal() != null && proxy.isBasic()) {
-                    requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
+                if(null == requestPacket.getHeader(Header.ProxyAuthorization) )
+                {
+                 requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils.computeBasicAuthentication(proxy));
                 }
 
             }
@@ -1367,10 +1383,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
             boolean result;
-            if (httpHeader.isSkipRemainder()) {
-                clearResponse(ctx.getConnection());
-                cleanup(ctx, provider);
-                return false;
+            final String proxy_auth = httpHeader.getHeader(Header.ProxyAuthenticate);
+            
+            if (httpHeader.isSkipRemainder() ) {
+                if (!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxy_auth)) {
+                    clearResponse(ctx.getConnection());
+                    cleanup(ctx, provider);
+                    return false;
+                } else {
+                    super.onHttpPacketParsed(httpHeader, ctx);
+                    httpHeader.getProcessingState().setKeepAlive(true);
+                    return false;
+                }
             }
 
             result = super.onHttpPacketParsed(httpHeader, ctx);
@@ -1452,6 +1476,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return context;
 
         }
+
+
+        private static URI getURI(String url) {
+
+            return AsyncHttpProviderUtils.createUri(url);
+
+        }
+
 
         private static boolean redirectCountExceeded(final HttpTransactionContext context) {
 
@@ -1590,7 +1622,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 String principal = proxyServer.getPrincipal();
                 String password = proxyServer.getPassword();
                 Realm realm = new Realm.RealmBuilder().setPrincipal(principal)
-                				.setPassword(password)
+                                .setPassword(password)
                                 .setUri("/")
                                 .setMethodName("CONNECT")
                                 .setUsePreemptiveAuth(true)
@@ -1615,35 +1647,122 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     } catch (UnsupportedEncodingException e) {
                         throw new IllegalStateException("Unsupported encoding.", e);
                     }
-                } else {
+                }else if (proxy_auth.toLowerCase().startsWith("ntlm")) {
+
+                    req.getHeaders().remove(Header.ProxyAuthenticate.toString());
+                    req.getHeaders().remove(Header.ProxyAuthorization.toString());
+
+                    String msg = null;
+                    try {
+
+                        if(isNTLMFirstHandShake(proxy_auth))
+                        {
+                            msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), "");
+                        }else {
+                            String serverChallenge = proxy_auth.trim().substring("NTLM ".length());
+                            msg = ntlmEngine.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
+                        }
+
+                        req.getHeaders().add(Header.ProxyAuthorization.toString(), "NTLM " + msg);
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }   else if (proxy_auth.toLowerCase().startsWith("negotiate")){
+                    //this is for kerberos
+                    req.getHeaders().remove(Header.ProxyAuthenticate.toString());
+                    req.getHeaders().remove(Header.ProxyAuthorization.toString());
+
+                }else {
                     throw new IllegalStateException("Unsupported authorization method: " + proxy_auth);
                 }
 
                 final ConnectionManager m = httpTransactionContext.provider.connectionManager;
+                InvocationStatus tempInvocationStatus = InvocationStatus.STOP;
+
                 try {
-                    final Connection c = m.obtainConnection(req,
-                                                            httpTransactionContext.future);
-                    final HttpTransactionContext newContext =
-                            httpTransactionContext.copy();
-                    httpTransactionContext.future = null;
-                    httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
-                    newContext.invocationStatus = InvocationStatus.STOP;
-                    try {
-                        httpTransactionContext.provider.execute(c,
-                                                                req,
-                                                                httpTransactionContext.handler,
-                                                                httpTransactionContext.future);
-                        return false;
-                    } catch (IOException ioe) {
-                        newContext.abort(ioe);
-                        return false;
+
+                    if(isNTLMFirstHandShake(proxy_auth))
+                    {
+                        tempInvocationStatus = InvocationStatus.CONTINUE;
+
+                    }
+
+                    if(proxy_auth.toLowerCase().startsWith("negotiate"))
+                    {
+                        final Connection c = m.obtainConnection(req, httpTransactionContext.future);
+                        final HttpTransactionContext newContext = httpTransactionContext.copy();
+                        httpTransactionContext.future = null;
+                        httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
+
+                        newContext.invocationStatus = tempInvocationStatus;
+
+                        String challengeHeader = null;
+                        String server = proxyServer.getHost();
+
+                        challengeHeader = GSSSPNEGOWrapper.generateToken(server);
+
+                        req.getHeaders().add(Header.ProxyAuthorization.toString(), "Negotiate " + challengeHeader);
+
+
+                        return exceuteRequest(httpTransactionContext, req, c,
+                                newContext);
+                    }else if(isNTLMSecondHandShake(proxy_auth))
+                    {
+                        final Connection c = ctx.getConnection();
+                        final HttpTransactionContext newContext = httpTransactionContext.copy();
+
+                        httpTransactionContext.future = null;
+                        httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
+
+                        newContext.invocationStatus = tempInvocationStatus;
+                        httpTransactionContext.establishingTunnel = true;
+
+                        return exceuteRequest(httpTransactionContext, req, c,
+                                newContext);
+
+                    }
+                    else{
+                        final Connection c = m.obtainConnection(req, httpTransactionContext.future);
+                        final HttpTransactionContext newContext = httpTransactionContext.copy();
+                        httpTransactionContext.future = null;
+                        httpTransactionContext.provider.setHttpTransactionContext(c, newContext);
+
+                        newContext.invocationStatus = tempInvocationStatus;
+
+                        //NTLM needs the same connection to be used for exchange of tokens
+                        return exceuteRequest(httpTransactionContext, req, c,
+                                newContext);
                     }
                 } catch (Exception e) {
                     httpTransactionContext.abort(e);
                 }
-                httpTransactionContext.invocationStatus = InvocationStatus.STOP;
+                httpTransactionContext.invocationStatus = tempInvocationStatus;
                 return false;
             }
+
+            private boolean exceuteRequest(
+                    final HttpTransactionContext httpTransactionContext,
+                    final Request req, final Connection c,
+                    final HttpTransactionContext newContext) {
+                try {
+                    httpTransactionContext.provider.execute(c,
+                                                            req,
+                                                            httpTransactionContext.handler,
+                                                            httpTransactionContext.future);
+                    return false;
+                } catch (IOException ioe) {
+                    newContext.abort(ioe);
+                    return false;
+                }
+            }
+
+            public static boolean isNTLMSecondHandShake(final String proxy_auth) {
+                return (proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
+            }
+            public static boolean isNTLMFirstHandShake(final String proxy_auth) {
+                return (proxy_auth.equalsIgnoreCase("ntlm"));
+            }
+
 
         } // END AuthorizationHandler
 
@@ -2418,6 +2537,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final Connection c = obtainConnection0(request, requestFuture, requestFuture.getProxyServer());
             markConnectionAsDoNotCache(c);
             return c;
+
         }
 
         void doAsyncConnect(final Request request,
@@ -2472,6 +2592,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             return result;
+
         }
 
 
@@ -2949,3 +3070,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END AHCWebSocketListenerAdapter
     
 }
+
+
+
