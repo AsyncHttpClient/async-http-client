@@ -371,6 +371,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setUrl(String url) {
         request.originalUri = buildURI(url);
+        request.uri = null;
+        request.rawUri = null;
         return derived.cast(this);
     }
 
