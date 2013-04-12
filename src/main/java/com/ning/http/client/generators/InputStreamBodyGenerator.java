@@ -43,7 +43,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         if (inputStream.markSupported()) {
             inputStream.mark(0);
         } else {
-            logger.warn("inputStream.markSupported() not supported. Some features will not works");
+            logger.info("inputStream.markSupported() not supported. Some features will not works");
         }
     }
 
