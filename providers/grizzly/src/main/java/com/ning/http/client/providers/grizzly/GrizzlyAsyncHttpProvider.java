@@ -105,13 +105,13 @@ import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.DataFrame;
-import org.glassfish.grizzly.websockets.DefaultWebSocket;
 import org.glassfish.grizzly.websockets.HandShake;
 import org.glassfish.grizzly.websockets.HandshakeException;
 import org.glassfish.grizzly.websockets.ProtocolHandler;
+import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.Version;
-import org.glassfish.grizzly.websockets.WebSocketEngine;
-import org.glassfish.grizzly.websockets.WebSocketFilter;
+import org.glassfish.grizzly.websockets.WebSocketClientFilter;
+import org.glassfish.grizzly.websockets.WebSocketHolder;
 import org.glassfish.grizzly.websockets.draft06.ClosingFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -413,7 +413,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             doDefaultTransportConfig();
         }
-        fcb.add(new WebSocketFilter());
+        fcb.add(new WebSocketClientFilter());
         clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
         clientTransport.setProcessor(fcb.build());
 
@@ -1337,13 +1337,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                     final GrizzlyWebSocketAdapter webSocketAdapter = createWebSocketAdapter(context);
                     context.webSocket = webSocketAdapter;
-                    DefaultWebSocket ws = webSocketAdapter.gWebSocket;
+                    SimpleWebSocket ws = webSocketAdapter.gWebSocket;
                     if (context.currentState == AsyncHandler.STATE.UPGRADE) {
                         httpHeader.setChunked(false);
                         ws.onConnect();
-                        WebSocketEngine.getEngine().setWebSocketHolder(ctx.getConnection(),
-                                context.protocolHandler,
-                                ws);
+                        WebSocketHolder.set(ctx.getConnection(),
+                                            context.protocolHandler,
+                                            ws);
                         ((WebSocketUpgradeHandler) context.handler).onSuccess(context.webSocket);
                         final int wsTimeout = context.provider.clientConfig.getWebSocketIdleTimeoutInMs();
                         IdleTimeoutFilter.setCustomTimeout(ctx.getConnection(),
@@ -1437,7 +1437,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // ----------------------------------------------------- Private Methods
 
         private static GrizzlyWebSocketAdapter createWebSocketAdapter(final HttpTransactionContext context) {
-            DefaultWebSocket ws = new DefaultWebSocket(context.protocolHandler);
+            SimpleWebSocket ws = new SimpleWebSocket(context.protocolHandler);
             AsyncHttpProviderConfig config = context.provider.clientConfig.getAsyncHttpProviderConfig();
             boolean bufferFragments = true;
             if (config instanceof GrizzlyAsyncHttpProviderConfig) {
@@ -1652,7 +1652,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     req.getHeaders().remove(Header.ProxyAuthenticate.toString());
                     req.getHeaders().remove(Header.ProxyAuthorization.toString());
 
-                    String msg = null;
+                    String msg;
                     try {
 
                         if(isNTLMFirstHandShake(proxy_auth))
@@ -1696,7 +1696,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
                         newContext.invocationStatus = tempInvocationStatus;
 
-                        String challengeHeader = null;
+                        String challengeHeader;
                         String server = proxyServer.getHost();
 
                         challengeHeader = GSSSPNEGOWrapper.generateToken(server);
@@ -2816,13 +2816,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     
     private static final class GrizzlyWebSocketAdapter implements WebSocket {
         
-        private final DefaultWebSocket gWebSocket;
+        private final SimpleWebSocket gWebSocket;
         private final boolean bufferFragments;
 
         // -------------------------------------------------------- Constructors
         
         
-        GrizzlyWebSocketAdapter(final DefaultWebSocket gWebSocket,
+        GrizzlyWebSocketAdapter(final SimpleWebSocket gWebSocket,
                                 final boolean bufferFragements) {
             this.gWebSocket = gWebSocket;
             this.bufferFragments = bufferFragements;
