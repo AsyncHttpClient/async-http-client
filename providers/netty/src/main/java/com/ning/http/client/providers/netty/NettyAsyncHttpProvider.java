@@ -2419,21 +2419,25 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     h.onBodyPartReceived(rp);
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-                   
-                    if(pendingOpcode == OPCODE_BINARY) {
-                        webSocket.onBinaryFragment(rp.getBodyPartBytes(),frame.isFinalFragment());
-                    }
-                    else {
-                        webSocket.onTextFragment(frame.getBinaryData().toString(UTF8),frame.isFinalFragment());
-                    }
 
-                    if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
-                        try {
-                            webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
-                        } catch (Throwable t) {
-                            // Swallow any exception that may comes from a Netty version released before 3.4.0
-                            log.trace("", t);
+                    if (webSocket != null) {
+                        if(pendingOpcode == OPCODE_BINARY) {
+                            webSocket.onBinaryFragment(rp.getBodyPartBytes(),frame.isFinalFragment());
                         }
+                        else {
+                            webSocket.onTextFragment(frame.getBinaryData().toString(UTF8),frame.isFinalFragment());
+                        }
+
+                        if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
+                            try {
+                                webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
+                            } catch (Throwable t) {
+                                // Swallow any exception that may comes from a Netty version released before 3.4.0
+                                log.trace("", t);
+                            }
+                        }
+                    } else {
+                        log.debug("UpgradeHandler returned a null NettyWebSocket ");
                     }
                 }
             } else {
@@ -2453,8 +2457,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
 
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-                webSocket.onError(e.getCause());
-                webSocket.close();
+                if (webSocket != null) {
+                    webSocket.onError(e.getCause());
+                    webSocket.close();
+                }
             } catch (Throwable t) {
                 log.error("onError", t);
             }
