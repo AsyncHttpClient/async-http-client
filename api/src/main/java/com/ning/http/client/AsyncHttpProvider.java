@@ -15,6 +15,7 @@
  */
 package com.ning.http.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
@@ -22,7 +23,7 @@ import java.util.List;
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
  * By default, the {@link com.ning.http.client.providers.netty.NettyAsyncHttpProvider} is used.
  */
-public interface AsyncHttpProvider {
+public interface AsyncHttpProvider extends Closeable {
 
     /**
      * Execute the request and invoke the {@link AsyncHandler} when the response arrive.
