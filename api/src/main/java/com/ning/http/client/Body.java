@@ -13,13 +13,14 @@
 
 package com.ning.http.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
  * A request body.
  */
-public interface Body {
+public interface Body extends Closeable {
 
     /**
      * Gets the length of the body.
