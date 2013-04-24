@@ -15,13 +15,13 @@ package com.ning.http.client.providers.grizzly;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -1667,8 +1667,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 builder.setQueryParameters(null);
             }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
-                Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                builder.addOrReplaceCookie(c);
+                for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                    builder.addOrReplaceCookie(c);
+                }
             }
             return builder.build();
 
