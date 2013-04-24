@@ -14,6 +14,7 @@ package com.ning.http.client.providers.apache;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 
 public class ApacheResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
@@ -161,8 +162,8 @@ public class ApacheResponse implements Response {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
-                        Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                        localCookies.add(cookie);
+                        Set<Cookie> cookies = CookieDecoder.decode(value);
+                        localCookies.addAll(cookies);
                     }
                 }
             }

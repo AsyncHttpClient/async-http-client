@@ -17,6 +17,7 @@ package com.ning.http.client.providers.netty;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -585,7 +586,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             int delay = Math.min(config.getIdleConnectionTimeoutInMs(), requestTimeout(config, future.getRequest().getPerRequestConfig()));
             if (delay != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
+                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -2083,13 +2084,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     log.debug("Redirecting to {}", newUrl);
                     for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)) {
-                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                        nBuilder.addOrReplaceCookie(c);
+                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                            nBuilder.addOrReplaceCookie(c);
+                        }
                     }
 
                     for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)) {
-                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                        nBuilder.addOrReplaceCookie(c);
+                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                            nBuilder.addOrReplaceCookie(c);
+                        }
                     }
 
                     AsyncCallable ac = new AsyncCallable(future) {
