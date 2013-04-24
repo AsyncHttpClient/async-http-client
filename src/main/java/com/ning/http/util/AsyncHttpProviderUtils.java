@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
@@ -459,61 +460,12 @@ public class AsyncHttpProviderUtils {
         return null;
     }
 
+    @Deprecated
     public static Cookie parseCookie(String value) {
-        String[] fields = value.split(";\\s*");
-        String[] cookie = fields[0].split("=", 2);
-        String cookieName = cookie[0];
-        String cookieValue = (cookie.length == 1) ? null : cookie[1];
-
-        int maxAge = -1;
-        String path = null;
-        String domain = null;
-        boolean secure = false;
-
-        boolean maxAgeSet = false;
-        boolean expiresSet = false;
-
-        for (int j = 1; j < fields.length; j++) {
-            if ("secure".equalsIgnoreCase(fields[j])) {
-                secure = true;
-            } else if (fields[j].indexOf('=') > 0) {
-                String[] f = fields[j].split("=");
-                if (f.length == 1) continue; // Add protection against null field values
-
-                // favor 'max-age' field over 'expires'
-                if (!maxAgeSet && "max-age".equalsIgnoreCase(f[0])) {
-                    try {
-                        maxAge = Math.max(Integer.valueOf(removeQuote(f[1])), 0);
-                    } catch (NumberFormatException e1) {
-                        // ignore failure to parse -> treat as session cookie
-                        // invalidate a previously parsed expires-field
-                        maxAge = -1;
-                    }
-                    maxAgeSet = true;
-                } else if (!maxAgeSet && !expiresSet && "expires".equalsIgnoreCase(f[0])) {
-                    try {
-                        maxAge = Math.max(convertExpireField(f[1]), 0);
-                    } catch (Exception e) {
-                        // original behavior, is this correct at all (expires field with max-age semantics)?
-                        try {
-                            maxAge = Math.max(Integer.valueOf(f[1]), 0);
-                        } catch (NumberFormatException e1) {
-                            // ignore failure to parse -> treat as session cookie
-                        }
-                    }
-                    expiresSet = true;
-                } else if ("domain".equalsIgnoreCase(f[0])) {
-                    domain = f[1];
-                } else if ("path".equalsIgnoreCase(f[0])) {
-                    path = f[1];
-                }
-            }
-        }
-
-        return new Cookie(domain, cookieName, cookieValue, path, maxAge, secure);
+        return CookieDecoder.decode(value).iterator().next();
     }
 
-    public static int convertExpireField(String timestring) throws Exception {
+    public static int convertExpireField(String timestring) {
         String trimmedTimeString = removeQuote(timestring.trim());
         long now = System.currentTimeMillis();
         Date date = null;
@@ -525,8 +477,8 @@ public class AsyncHttpProviderUtils {
         }
 
         if (date != null) {
-            long expire = date.getTime();
-            return (int) ((expire - now) / 1000);
+            long maxAgeMillis = date.getTime() - now;
+            return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0? 1 : 0);
         } else
             throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
     }
