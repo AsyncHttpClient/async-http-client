@@ -19,15 +19,15 @@ import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
@@ -116,7 +116,12 @@ public class NettyWebSocket implements WebSocket {
     public void close() {
         onClose();
         listeners.clear();
-        channel.close();
+        try {
+            channel.write(new CloseWebSocketFrame());
+            channel.getCloseFuture().awaitUninterruptibly();
+        } finally {
+            channel.close();
+        }
     }
 
     protected void onBinaryFragment(byte[] message, boolean last) {
