@@ -67,9 +67,19 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
         }
 
         ChannelBuffer b = getChannelBuffer();
-        byte[] rb = b.toByteBuffer().array();
-        bytes.set(rb);
-        return rb;
+        int readable = b.readableBytes();
+        int readerIndex = b.readerIndex();
+        if (b.hasArray()) {
+            byte[] array = b.array();
+            if (b.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
+                bytes.set(array);
+                return array;
+            }
+        }
+        byte[] array = new byte[readable];
+        b.getBytes(readerIndex, array);
+        bytes.set(array);
+        return array;
     }
 
     @Override
