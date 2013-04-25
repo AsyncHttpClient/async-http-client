@@ -64,6 +64,7 @@ import org.glassfish.grizzly.WriteResult;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
 import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
@@ -2506,6 +2507,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             return ctx.getInvokeAction();
 
+        }
+
+        @Override
+        public void onFilterChainChanged(FilterChain filterChain) {
+            // no-op
         }
 
 
