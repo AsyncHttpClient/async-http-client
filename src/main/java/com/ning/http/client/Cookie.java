@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class Cookie implements Comparable<Cookie>{
+public class Cookie implements Comparable<Cookie> {
     private final String domain;
     private final String name;
     private final String value;
@@ -160,7 +160,32 @@ public class Cookie implements Comparable<Cookie>{
         return unmodifiablePorts;
     }
 
-    private void setPorts(Iterable<Integer> ports) {
+    @Deprecated
+    // to be removed
+    public void setPorts(int... ports) {
+        if (ports == null) {
+            throw new NullPointerException("ports");
+        }
+
+        int[] portsCopy = ports.clone();
+        if (portsCopy.length == 0) {
+            unmodifiablePorts = this.ports = Collections.emptySet();
+        } else {
+            Set<Integer> newPorts = new TreeSet<Integer>();
+            for (int p : portsCopy) {
+                if (p <= 0 || p > 65535) {
+                    throw new IllegalArgumentException("port out of range: " + p);
+                }
+                newPorts.add(Integer.valueOf(p));
+            }
+            this.ports = newPorts;
+            unmodifiablePorts = null;
+        }
+    }
+
+    @Deprecated
+    // to become private
+    public void setPorts(Iterable<Integer> ports) {
         Set<Integer> newPorts = new TreeSet<Integer>();
         for (int p : ports) {
             if (p <= 0 || p > 65535) {
@@ -178,34 +203,8 @@ public class Cookie implements Comparable<Cookie>{
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder();
-        buf.append(getName());
-        buf.append('=');
-        buf.append(getValue());
-        if (getDomain() != null) {
-            buf.append("; domain=");
-            buf.append(getDomain());
-        }
-        if (getPath() != null) {
-            buf.append("; path=");
-            buf.append(getPath());
-        }
-        if (getComment() != null) {
-            buf.append("; comment=");
-            buf.append(getComment());
-        }
-        if (getMaxAge() >= 0) {
-            buf.append("; maxAge=");
-            buf.append(getMaxAge());
-            buf.append('s');
-        }
-        if (isSecure()) {
-            buf.append("; secure");
-        }
-        if (isHttpOnly()) {
-            buf.append("; HTTPOnly");
-        }
-        return buf.toString();
+        return String.format("Cookie: domain=%s, name=%s, value=%s, path=%s, maxAge=%d, secure=%s",
+                domain, name, value, path, maxAge, secure);
     }
 
     private String validateValue(String name, String value) {
