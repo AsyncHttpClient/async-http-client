@@ -13,7 +13,6 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.util.Base64;
-import org.jboss.netty.util.CharsetUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

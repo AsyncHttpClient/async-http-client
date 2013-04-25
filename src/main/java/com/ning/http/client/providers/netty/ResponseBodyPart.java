@@ -34,7 +34,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpChunk chunk;
     private final HttpResponse response;
-    private final AtomicReference<byte[]> bytes = new AtomicReference(null);
+    private final AtomicReference<byte[]> bytes = new AtomicReference<byte[]>(null);
     private final boolean isLast;
     private boolean closeConnection = false;
 
@@ -63,8 +63,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bytes.get();
         }
 
-        ChannelBuffer b = getChannelBuffer();
-        byte[] rb = b.toByteBuffer().array();
+        byte[] rb = ChannelBufferUtil.channelBuffer2bytes(getChannelBuffer());
         bytes.set(rb);
         return rb;
     }

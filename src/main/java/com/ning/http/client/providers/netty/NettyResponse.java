@@ -76,7 +76,7 @@ public class NettyResponse implements Response {
 
     /* @Override */
     public byte[] getResponseBodyAsBytes() throws IOException {
-        return getResponseBodyAsByteBuffer().array();
+        return ChannelBufferUtil.channelBuffer2bytes(getResponseBodyAsChannelBuffer());
     }
 
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
