@@ -42,10 +42,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final long maxIdleTime;
 
     public NettyConnectionsPool(NettyAsyncHttpProvider provider) {
-        this.maxTotalConnections = provider.getConfig().getMaxTotalConnections();
-        this.maxConnectionPerHost = provider.getConfig().getMaxConnectionPerHost();
-        this.sslConnectionPoolEnabled = provider.getConfig().isSslConnectionPoolEnabled();
-        this.maxIdleTime = provider.getConfig().getIdleConnectionInPoolTimeoutInMs();
+        this(provider.getConfig().getMaxTotalConnections(), provider.getConfig().getMaxConnectionPerHost(), provider.getConfig().getIdleConnectionInPoolTimeoutInMs(), provider.getConfig().isSslConnectionPoolEnabled());
+    }
+
+    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled) {
+        this.maxTotalConnections = maxTotalConnections;
+        this.maxConnectionPerHost = maxConnectionPerHost;
+        this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
+        this.maxIdleTime = maxIdleTime;
         this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
     }
 
