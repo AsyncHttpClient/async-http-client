@@ -30,7 +30,6 @@ import java.net.URL;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -481,7 +480,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             h.add("Test4", "Test4");
             h.add("Test5", "Test5");
 
-            final Cookie coo = new Cookie("/", "foo", "value", "/", -1, false, 1, false, false, null, null, Collections.<Integer> emptySet());
+            final Cookie coo = new Cookie("/", "foo", "value", "/", -1, false);
             c.prepareGet(getTargetUrl()).setHeaders(h).addCookie(coo).execute(new AsyncCompletionHandlerAdapter() {
 
                 @Override

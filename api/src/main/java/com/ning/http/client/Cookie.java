@@ -36,6 +36,14 @@ public class Cookie implements Comparable<Cookie>{
     private Set<Integer> ports = Collections.emptySet();
     private Set<Integer> unmodifiablePorts = ports;
 
+    public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure) {
+        this(domain, name, value, path, maxAge, secure, 1);
+    }
+
+    public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version) {
+        this(domain, name, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
+    }
+
     public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard, String comment, String commentUrl, Iterable<Integer> ports) {
 
         if (name == null) {
