@@ -29,7 +29,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
@@ -2288,8 +2287,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         public boolean handlesBodyType(final Request request) {
-            final List<Part> parts = request.getParts();
-            return isNonEmpty(parts);
+            return isNonEmpty(request.getParts());
         }
 
         @SuppressWarnings({"unchecked"})
