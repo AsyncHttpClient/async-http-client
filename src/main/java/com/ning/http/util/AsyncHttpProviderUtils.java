@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -27,7 +28,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
@@ -41,6 +41,7 @@ import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -231,22 +232,51 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static URI getRedirectUri(URI uri, String location) {
-        if(location == null)
-            throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
-        URI newUri = uri.resolve(location);
+            if(location == null)
+                throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
+            
+            URI locationURI = null;
+            try {
+                locationURI = new URI(location);
+            } catch (URISyntaxException e) {
+                // rich, we have a badly encoded location, let's try to encode the query params
+                String[] parts = location.split("\\?");
+                if (parts.length != 2) {
+                    throw new IllegalArgumentException("Don't know how to turn this location into a proper URI:" + location, e);
+                } else {
+                    StringBuilder properUrl = new StringBuilder(location.length()).append(parts[0]).append("?");
+                    
+                    String[] queryParams = parts[1].split("&");
+                    for (int i = 0; i < queryParams.length; i++) {
+                        String queryParam = queryParams[i];
+                        if (i != 0)
+                            properUrl.append("&");
+                        String[] nameValue = queryParam.split("=", 2);
+                        UTF8UrlEncoder.appendEncoded(properUrl, nameValue[0]);
+                        if (nameValue.length == 2) {
+                            properUrl.append("=");
+                            UTF8UrlEncoder.appendEncoded(properUrl, nameValue[1]);
+                        }
+                    }
+                    
+                    locationURI = URI.create(properUrl.toString());
+                }
+            }
+            
+            URI redirectUri = uri.resolve(locationURI);
 
-        String scheme = newUri.getScheme();
+            String scheme = redirectUri.getScheme();
 
-        if (scheme == null || !scheme.equalsIgnoreCase("http")
-                && !scheme.equalsIgnoreCase("https")
-                && !scheme.equals("ws")
-                && !scheme.equals("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
-                    + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
+            if (scheme == null || !scheme.equalsIgnoreCase("http")
+                    && !scheme.equalsIgnoreCase("https")
+                    && !scheme.equals("ws")
+                    && !scheme.equals("wss")) {
+                throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri
+                        + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
+            }
+
+            return redirectUri;
         }
-
-        return newUri;
-    }
 
     public final static int getPort(URI uri) {
         int port = uri.getPort();
