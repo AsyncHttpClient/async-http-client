@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -1591,7 +1592,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             h.add("Content-Type", "application/x-www-form-urlencoded");
             h.add("LockThread", "true");
 
-            long t1 = System.currentTimeMillis();
+            long t1 = millisTime();
             try {
                 client.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -1603,7 +1604,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }).get();
                 Assert.fail();
             } catch (Throwable ex) {
-                final long elapsedTime = System.currentTimeMillis() - t1;
+                final long elapsedTime = millisTime() - t1;
                 System.out.println("EXPIRED: " + (elapsedTime));
                 Assert.assertNotNull(ex.getCause());
                 Assert.assertTrue(elapsedTime >= 10000 && elapsedTime <= 25000);

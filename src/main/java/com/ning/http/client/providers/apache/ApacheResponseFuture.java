@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
+import static com.ning.http.util.DateUtil.millisTime;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
@@ -41,7 +43,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean timedOut = new AtomicBoolean(false);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-    private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    private final AtomicLong touch = new AtomicLong(millisTime());
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     private final Request request;
     private final HttpMethodBase method;
@@ -174,7 +176,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
                 content = innerFuture.get(timeout, unit);
             }
         } catch (TimeoutException t) {
-            if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+            if (!contentProcessed.get() && timeout != -1 && ((millisTime() - touch.get()) <= responseTimeoutInMs)) {
                 return get(timeout, unit);
             }
 
@@ -197,11 +199,11 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) >= responseTimeoutInMs);
+        return responseTimeoutInMs != -1 && ((millisTime() - touch.get()) >= responseTimeoutInMs);
     }
 
     public void touch() {
-        touch.set(System.currentTimeMillis());
+        touch.set(millisTime());
     }
 
     public Request getRequest() {

@@ -231,4 +231,7 @@ public class DateUtil {
 
     }
 
+    public static long millisTime() {
+        return System.nanoTime() / 1000000;
+    }
 }

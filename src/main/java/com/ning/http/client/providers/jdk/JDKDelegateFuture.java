@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.jdk;
 
+import static com.ning.http.util.DateUtil.millisTime;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.ListenableFuture;
 
@@ -66,7 +68,7 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
                 content = innerFuture.get(timeout, unit);
             }
         } catch (Throwable t) {
-            if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+            if (!contentProcessed.get() && timeout != -1 && ((millisTime() - touch.get()) <= responseTimeoutInMs)) {
                 return get(timeout, unit);
             }
             timedOut.set(true);

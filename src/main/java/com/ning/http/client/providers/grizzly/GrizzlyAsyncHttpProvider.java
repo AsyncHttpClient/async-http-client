@@ -13,6 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
@@ -427,7 +428,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         if (config != null) {
             final long timeout = config.getRequestTimeoutInMs();
             if (timeout > 0) {
-                final long newTimeout = System.currentTimeMillis() + timeout;
+                final long newTimeout = millisTime() + timeout;
                 if (resolver != null) {
                     resolver.setTimeoutMillis(c, newTimeout);
                 }
@@ -436,7 +437,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final long timeout = clientConfig.getRequestTimeoutInMs();
             if (timeout > 0) {
                 if (resolver != null) {
-                    resolver.setTimeoutMillis(c, System.currentTimeMillis() + timeout);
+                    resolver.setTimeoutMillis(c, millisTime() + timeout);
                 }
             }
         }

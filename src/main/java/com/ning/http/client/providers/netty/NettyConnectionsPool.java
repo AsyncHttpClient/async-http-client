@@ -12,6 +12,8 @@
  */
 package com.ning.http.client.providers.netty;
 
+import static com.ning.http.util.DateUtil.millisTime;
+
 import com.ning.http.client.ConnectionsPool;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
@@ -61,7 +63,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         IdleChannel(String uri, Channel channel) {
             this.uri = uri;
             this.channel = channel;
-            this.start = System.currentTimeMillis();
+            this.start = millisTime();
         }
 
         @Override
@@ -97,7 +99,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 }
 
                 List<IdleChannel> channelsInTimeout = new ArrayList<IdleChannel>();
-                long currentTime = System.currentTimeMillis();
+                long currentTime = millisTime();
 
                 for (IdleChannel idleChannel : channel2IdleChannel.values()) {
                     long age = currentTime - idleChannel.start;
@@ -109,7 +111,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                         channelsInTimeout.add(idleChannel);
                     }
                 }
-                long endConcurrentLoop = System.currentTimeMillis();
+                long endConcurrentLoop = millisTime();
 
                 for (IdleChannel idleChannel : channelsInTimeout) {
                     Object attachment = idleChannel.channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
@@ -136,7 +138,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                         openChannels += hostChannels.size();
                     }
                     log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
-                            openChannels, channelsInTimeout.size(), endConcurrentLoop - currentTime, System.currentTimeMillis() - endConcurrentLoop));
+                            openChannels, channelsInTimeout.size(), endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
                 }
 
             } catch (Throwable t) {

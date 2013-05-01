@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.async;
 
+import static com.ning.http.util.DateUtil.millisTime;
+
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -171,13 +173,13 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
 
                 @Override
                 public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    times[0] = System.currentTimeMillis();
+                    times[0] = millisTime();
                     return super.onBodyPartReceived(content);
                 }
 
                 @Override
                 public void onThrowable(Throwable t) {
-                    times[1] = System.currentTimeMillis();
+                    times[1] = millisTime();
                     super.onThrowable(t);
                 }
             });

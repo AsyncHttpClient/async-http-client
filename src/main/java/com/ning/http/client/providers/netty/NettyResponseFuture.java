@@ -15,6 +15,8 @@
  */
 package com.ning.http.client.providers.netty;
 
+import static com.ning.http.util.DateUtil.millisTime;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
@@ -74,8 +76,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private volatile Future<?> reaperFuture;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
-    private final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
-    private final long start = System.currentTimeMillis();
+    private final AtomicLong touch = new AtomicLong(millisTime());
+    private final long start = millisTime();
     private final NettyAsyncHttpProvider asyncHttpProvider;
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
@@ -189,7 +191,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        long now = System.currentTimeMillis();
+        long now = millisTime();
         return idleConnectionTimeoutInMs != -1 && ((now - touch.get()) >= idleConnectionTimeoutInMs)
                 || responseTimeoutInMs != -1 && ((now - start) >= responseTimeoutInMs);
     }
@@ -408,7 +410,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public void touch() {
-        touch.set(System.currentTimeMillis());
+        touch.set(millisTime());
     }
 
     /**
