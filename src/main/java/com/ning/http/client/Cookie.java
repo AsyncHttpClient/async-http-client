@@ -36,12 +36,10 @@ public class Cookie implements Comparable<Cookie> {
     private Set<Integer> ports = Collections.emptySet();
     private Set<Integer> unmodifiablePorts = ports;
 
-    @Deprecated
     public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure) {
         this(domain, name, value, path, maxAge, secure, 1);
     }
 
-    @Deprecated
     public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version) {
         this(domain, name, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
     }
