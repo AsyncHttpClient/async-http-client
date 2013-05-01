@@ -12,8 +12,6 @@
  */
 package com.ning.http.util;
 
-import static com.ning.http.util.DateUtil.millisTime;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -499,7 +497,7 @@ public class AsyncHttpProviderUtils {
 
     public static int convertExpireField(String timestring) {
         String trimmedTimeString = removeQuote(timestring.trim());
-        long now = millisTime();
+        long now = System.currentTimeMillis();
         Date date = null;
 
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {

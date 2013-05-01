@@ -13,8 +13,6 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import static com.ning.http.util.DateUtil.millisTime;
-
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
 
@@ -312,7 +310,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             @Override
             public void run() {
                 while (isStarted) {
-                    final long currentTimeMs = millisTime();
+                    final long currentTimeMs = System.currentTimeMillis();
 
                     for (final IdleConnectionQueue delayQueue : queues) {
                         if (delayQueue.queue.isEmpty()) continue;
@@ -383,7 +381,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
             void offer(final Connection c) {
                 if (timeout >= 0) {
-                    resolver.setTimeoutMs(c, millisTime() + timeout);
+                    resolver.setTimeoutMs(c, System.currentTimeMillis() + timeout);
                 }
                 queue.offer(c);
                 count.incrementAndGet();
