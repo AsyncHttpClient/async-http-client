@@ -13,6 +13,7 @@
 package com.ning.http.util;
 
 import static com.ning.http.util.DateUtil.millisTime;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,6 +51,7 @@ import com.ning.http.multipart.PartSource;
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
+    
     private final static byte[] NO_BYTES = new byte[0];
 
     public final static String DEFAULT_CHARSET = "ISO-8859-1";
@@ -280,19 +283,48 @@ public class AsyncHttpProviderUtils {
     public final static URI getRedirectUri(URI uri, String location) {
         if(location == null)
             throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
-        URI newUri = uri.resolve(location);
+        
+        URI locationURI = null;
+        try {
+            locationURI = new URI(location);
+        } catch (URISyntaxException e) {
+            // rich, we have a badly encoded location, let's try to encode the query params
+            String[] parts = location.split("\\?");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Don't know how to turn this location into a proper URI:" + location, e);
+            } else {
+                StringBuilder properUrl = new StringBuilder(location.length()).append(parts[0]).append("?");
+                
+                String[] queryParams = parts[1].split("&");
+                for (int i = 0; i < queryParams.length; i++) {
+                    String queryParam = queryParams[i];
+                    if (i != 0)
+                        properUrl.append("&");
+                    String[] nameValue = queryParam.split("=", 2);
+                    UTF8UrlEncoder.appendEncoded(properUrl, nameValue[0]);
+                    if (nameValue.length == 2) {
+                        properUrl.append("=");
+                        UTF8UrlEncoder.appendEncoded(properUrl, nameValue[1]);
+                    }
+                }
+                
+                locationURI = URI.create(properUrl.toString());
+            }
+        }
+        
+        URI redirectUri = uri.resolve(locationURI);
 
-        String scheme = newUri.getScheme();
+        String scheme = redirectUri.getScheme();
 
         if (scheme == null || !scheme.equalsIgnoreCase("http")
                 && !scheme.equalsIgnoreCase("https")
                 && !scheme.equals("ws")
                 && !scheme.equals("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + newUri
+            throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri
                     + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
         }
 
-        return newUri;
+        return redirectUri;
     }
 
     public final static int getPort(URI uri) {
