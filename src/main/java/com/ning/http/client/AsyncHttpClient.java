@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -370,11 +372,16 @@ public class AsyncHttpClient implements Closeable {
      * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
      */
     public void closeAsynchronously() {
-        config.applicationThreadPool.submit(new Runnable() {
-
+        final ExecutorService e = Executors.newSingleThreadExecutor();
+        e.submit(new Runnable() {
             public void run() {
-                httpProvider.close();
-                isClosed.set(true);
+                try {
+                    close();
+                } catch (Throwable t) {
+                    logger.warn("", t);
+                } finally {
+                    e.shutdown();
+                }
             }
         });
     }
