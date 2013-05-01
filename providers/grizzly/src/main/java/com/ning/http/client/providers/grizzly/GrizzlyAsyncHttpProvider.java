@@ -13,6 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
@@ -1894,8 +1895,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 builder.setQueryParameters(null);
             }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
-                Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                builder.addOrReplaceCookie(c);
+                for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                    builder.addOrReplaceCookie(c);
+                }
             }
             return builder.build();
 

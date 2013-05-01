@@ -182,7 +182,12 @@ public class GrizzlyResponse extends ResponseBase {
                                    gCookie.getPath(),
                                    gCookie.getMaxAge(),
                                    gCookie.isSecure(),
-                                   gCookie.getVersion()));
+                                   gCookie.getVersion(),
+                                   gCookie.isHttpOnly(),
+                                   false,
+                                   gCookie.getComment(),
+                                   null,
+                                   Collections.<Integer> emptySet()));
         }
         return Collections.unmodifiableList(convertedCookies);
 

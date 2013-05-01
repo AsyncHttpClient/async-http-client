@@ -12,6 +12,7 @@
  */
 package com.ning.http.client.providers.jdk;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -53,8 +54,7 @@ public class JDKResponse extends ResponseBase {
                 // TODO: ask for parsed header
                 List<String> v = header.getValue();
                 for (String value : v) {
-                    Cookie cookie = AsyncHttpProviderUtils.parseCookie(value);
-                    cookies.add(cookie);
+                    cookies.addAll(CookieDecoder.decode(value));
                 }
             }
         }

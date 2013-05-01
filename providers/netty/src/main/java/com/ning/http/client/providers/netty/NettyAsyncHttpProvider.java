@@ -15,6 +15,7 @@
  */
 package com.ning.http.client.providers.netty;
 
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -2027,13 +2028,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     log.debug("Redirecting to {}", newUrl);
                     for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE)) {
-                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                        nBuilder.addOrReplaceCookie(c);
+                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                            nBuilder.addOrReplaceCookie(c);
+                        }
                     }
 
                     for (String cookieStr : future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2)) {
-                        Cookie c = AsyncHttpProviderUtils.parseCookie(cookieStr);
-                        nBuilder.addOrReplaceCookie(c);
+                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                            nBuilder.addOrReplaceCookie(c);
+                        }
                     }
 
                     AsyncCallable ac = new AsyncCallable(future) {
