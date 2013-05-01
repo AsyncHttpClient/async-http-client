@@ -38,6 +38,7 @@
 
 package com.ning.http.client.ntlm;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import com.ning.http.util.Base64;
 
 import javax.crypto.Cipher;
@@ -513,7 +514,7 @@ public class NTLMEngine {
         byte[] blobSignature = new byte[]{(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
         byte[] reserved = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
         byte[] unknown1 = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        long time = System.currentTimeMillis();
+        long time = millisTime();
         time += 11644473600000l; // milliseconds from January 1, 1601 -> epoch.
         time *= 10000; // tenths of a microsecond.
         // convert to little-endian byte array.

@@ -12,6 +12,7 @@
  */
 package com.ning.http.client.providers.jdk;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
     protected final AtomicBoolean timedOut = new AtomicBoolean(false);
     protected final AtomicBoolean isDone = new AtomicBoolean(false);
     protected final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-    protected final AtomicLong touch = new AtomicLong(System.currentTimeMillis());
+    protected final AtomicLong touch = new AtomicLong(millisTime());
     protected final AtomicBoolean contentProcessed = new AtomicBoolean(false);
     protected final HttpURLConnection urlConnection;
     private boolean writeHeaders;
@@ -126,7 +127,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
                 content = innerFuture.get(timeout, unit);
             }
         } catch (TimeoutException t) {
-            if (!contentProcessed.get() && timeout != -1 && ((System.currentTimeMillis() - touch.get()) <= responseTimeoutInMs)) {
+            if (!contentProcessed.get() && timeout != -1 && ((millisTime() - touch.get()) <= responseTimeoutInMs)) {
                 return get(timeout, unit);
             }
 
@@ -149,7 +150,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        return responseTimeoutInMs != -1 && ((System.currentTimeMillis() - touch.get()) > responseTimeoutInMs);
+        return responseTimeoutInMs != -1 && ((millisTime() - touch.get()) > responseTimeoutInMs);
     }
 
     /**
@@ -157,7 +158,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override  */
     public void touch() {
-        touch.set(System.currentTimeMillis());
+        touch.set(millisTime());
     }
 
     /**

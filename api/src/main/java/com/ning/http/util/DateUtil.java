@@ -226,7 +226,9 @@ public class DateUtil {
         public DateParseException(String message) {
             super(message);
         }
-
     }
 
+    public static long millisTime() {
+        return System.nanoTime() / 1000000;
+    }
 }

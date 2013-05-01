@@ -13,6 +13,7 @@
 
 package com.ning.http.client.providers.netty;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
@@ -38,7 +39,7 @@ public class NettyAsyncResponseTest {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        Date date = new Date(System.currentTimeMillis() + 60000); // sdf.parse( dateString );
+        Date date = new Date(millisTime() + 60000); // sdf.parse( dateString );
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
         NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders(null, null, false) {

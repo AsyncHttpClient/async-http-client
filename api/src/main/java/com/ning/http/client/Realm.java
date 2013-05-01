@@ -16,6 +16,7 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import java.io.UnsupportedEncodingException;
@@ -482,7 +483,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes("ISO-8859-1"));
+                byte[] b = md.digest(String.valueOf(millisTime()).getBytes("ISO-8859-1"));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                 throw new SecurityException(e);

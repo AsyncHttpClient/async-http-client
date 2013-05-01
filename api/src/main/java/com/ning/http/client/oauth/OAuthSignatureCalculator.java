@@ -16,7 +16,7 @@
  */
 package com.ning.http.client.oauth;
 
-
+import static com.ning.http.util.DateUtil.millisTime;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilderBase;
@@ -78,7 +78,7 @@ public class OAuthSignatureCalculator
         mac = new ThreadSafeHMAC(consumerAuth, userAuth);
         this.consumerAuth = consumerAuth;
         this.userAuth = userAuth;
-        random = new Random(System.identityHashCode(this) + System.currentTimeMillis());
+        random = new Random(System.identityHashCode(this) + millisTime());
     }
 
     //@Override // silly 1.5; doesn't allow this for interfaces
@@ -86,7 +86,7 @@ public class OAuthSignatureCalculator
     public void calculateAndAddSignature(String baseURL, Request request, RequestBuilderBase<?> requestBuilder) {
         String method = request.getMethod(); // POST etc
         String nonce = generateNonce();
-        long timestamp = System.currentTimeMillis() / 1000L;
+        long timestamp = millisTime() / 1000L;
         String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);

@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.DateUtil.millisTime;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -514,7 +515,7 @@ public class AsyncHttpProviderUtils {
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             Date date = sdf.parse(trimmedTimeString, new ParsePosition(0));
             if (date != null) {
-                long now = System.currentTimeMillis();
+                long now = millisTime();
                 long maxAgeMillis = date.getTime() - now;
                 return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0 ? 1 : 0);
             }
