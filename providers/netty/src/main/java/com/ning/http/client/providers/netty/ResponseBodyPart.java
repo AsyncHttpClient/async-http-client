@@ -15,12 +15,6 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseBodyPart;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +22,14 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
 
 /**
  * A callback class used when an HTTP response body is received.
@@ -66,20 +68,9 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bp;
         }
 
-        ChannelBuffer b = getChannelBuffer();
-        int readable = b.readableBytes();
-        int readerIndex = b.readerIndex();
-        if (b.hasArray()) {
-            byte[] array = b.array();
-            if (b.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
-                bytes.set(array);
-                return array;
-            }
-        }
-        byte[] array = new byte[readable];
-        b.getBytes(readerIndex, array);
-        bytes.set(array);
-        return array;
+        byte[] rb = ChannelBufferUtil.channelBuffer2bytes(getChannelBuffer());
+        bytes.set(rb);
+        return rb;
     }
 
     @Override

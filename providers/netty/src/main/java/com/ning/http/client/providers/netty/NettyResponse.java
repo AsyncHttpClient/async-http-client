@@ -15,14 +15,6 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.providers.ResponseBase;
-import com.ning.http.util.AsyncHttpProviderUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -35,6 +27,15 @@ import java.util.Map;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
+
+import com.ning.http.client.Cookie;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.providers.ResponseBase;
+import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 /**
  * Wrapper around the {@link com.ning.http.client.Response} API.
@@ -75,7 +76,7 @@ public class NettyResponse extends ResponseBase {
 
     /* @Override */
     public byte[] getResponseBodyAsBytes() throws IOException {
-        return getResponseBodyAsByteBuffer().array();
+        return ChannelBufferUtil.channelBuffer2bytes(getResponseBodyAsChannelBuffer());
     }
 
     /* @Override */
