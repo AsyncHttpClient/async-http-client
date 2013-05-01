@@ -485,7 +485,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                 final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
                                 writeFuture = channel.write(region);
                             }
-                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future));
+                            writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
+                                public void operationComplete(ChannelFuture cf) {
+                                    try {
+                                        raf.close();
+                                    } catch (IOException e) {
+                                        log.warn("Failed to close request body: {}", e.getMessage(), e);
+                                    }
+                                    super.operationComplete(cf);
+                                }
+                            });
                         } catch (IOException ex) {
                             if (raf != null) {
                                 try {
