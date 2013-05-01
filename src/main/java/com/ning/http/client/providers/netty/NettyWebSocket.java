@@ -18,6 +18,7 @@ import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.websocket.WebSocketListener;
 import com.ning.http.client.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -114,13 +115,10 @@ public class NettyWebSocket implements WebSocket {
 
     // @Override
     public void close() {
-        onClose();
-        listeners.clear();
-        try {
-            channel.write(new CloseWebSocketFrame());
-            channel.getCloseFuture().awaitUninterruptibly();
-        } finally {
-            channel.close();
+        if (channel.isOpen()) {
+            onClose();
+            listeners.clear();
+            channel.write(new CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE);
         }
     }
 
