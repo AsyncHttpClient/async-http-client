@@ -303,8 +303,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
-                pipeline.addLast("ws-decoder", new HttpResponseDecoder());
-                pipeline.addLast("ws-encoder", new HttpRequestEncoder());
+                pipeline.addLast("http-decoder", new HttpResponseDecoder());
+                pipeline.addLast("http-encoder", new HttpRequestEncoder());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
                 return pipeline;
             }
@@ -384,8 +384,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     abort(cl.future(), ex);
                 }
 
-                pipeline.addLast("ws-decoder", new HttpResponseDecoder());
-                pipeline.addLast("ws-encoder", new HttpRequestEncoder());
+                pipeline.addLast("http-decoder", new HttpResponseDecoder());
+                pipeline.addLast("http-encoder", new HttpRequestEncoder());
                 pipeline.addLast("httpProcessor", NettyAsyncHttpProvider.this);
 
                 return pipeline;
@@ -2451,8 +2451,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
 
-                ctx.getPipeline().replace("ws-decoder", "ws-decoder", new WebSocket08FrameDecoder(false, false));
-                ctx.getPipeline().replace("ws-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
+                ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
+                ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 if (h.onHeadersReceived(responseHeaders) == STATE.CONTINUE) {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 }
