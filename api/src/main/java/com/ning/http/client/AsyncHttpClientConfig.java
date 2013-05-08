@@ -110,6 +110,7 @@ public class AsyncHttpClientConfig {
     protected boolean strict302Handling;
     protected int maxConnectionLifeTimeInMs;
     protected boolean useRelativeURIsWithSSLProxies;
+    protected boolean spdyEnabled;
 
     protected AsyncHttpClientConfig() {
     }
@@ -145,7 +146,8 @@ public class AsyncHttpClientConfig {
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
-                                  boolean useRelativeURIsWithSSLProxies) {
+                                  boolean useRelativeURIsWithSSLProxies,
+                                  boolean spdyEnabled) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -185,6 +187,7 @@ public class AsyncHttpClientConfig {
         }
         this.proxyServer = proxyServer;
         this.useRawUrl = useRawUrl;
+        this.spdyEnabled = spdyEnabled;
     }
 
     /**
@@ -456,6 +459,13 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return whether or not SPDY is enabled.
+     */
+    public boolean isSpdyEnabled() {
+        return spdyEnabled;
+    }
+
+    /**
      * Return true if the query parameters will be stripped from the request when a redirect is requested.
      *
      * @return true if the query parameters will be stripped from the request when a redirect is requested.
@@ -575,6 +585,7 @@ public class AsyncHttpClientConfig {
         private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
         private int ioThreadMultiplier = 2;
         private boolean strict302Handling;
+        private boolean spdyEnabled;
 
         public Builder() {
         }
@@ -1032,6 +1043,21 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Enables SPDY support.  Note that doing so, will currently disable WebSocket support
+         * for this client instance.  If not explicitly enabled, spdy will not be used.
+         *
+         * @param spdyEnabled configures spdy support.
+         *
+         * @return this
+         *
+         * @since 2.0
+         */
+        public Builder setSpdyEnabled(boolean spdyEnabled) {
+            this.spdyEnabled = spdyEnabled;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1124,7 +1150,8 @@ public class AsyncHttpClientConfig {
                     hostnameVerifier,
                     ioThreadMultiplier,
                     strict302Handling,
-                    useRelativeURIsWithSSLProxies);
+                    useRelativeURIsWithSSLProxies,
+                    spdyEnabled);
         }
     }
 }

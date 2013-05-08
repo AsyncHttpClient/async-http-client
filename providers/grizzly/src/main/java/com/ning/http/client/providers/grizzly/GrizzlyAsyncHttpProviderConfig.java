@@ -65,7 +65,14 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          * invoked with the complete message.  If this functionality is not desired, set
          * this property to false.
          */
-        BUFFER_WEBSOCKET_FRAGMENTS(Boolean.class, true);
+        BUFFER_WEBSOCKET_FRAGMENTS(Boolean.class, true),
+
+        /**
+         * By disabling NPN support, SPDY will be used over secure or non-secure channels,
+         * but no negotiation of the protocol via NPN will occur.  In short, this means
+         * that this instance of AHC will only 'speak' SPDY - HTTP is effectively disabled.
+         */
+        NPN_ENABLED(Boolean.class, true);
         
         
         final Object defaultValue;

@@ -13,18 +13,26 @@
         The Async Http Client Grizzly Provider.
     </description>
 
+    <properties>
+        <grizzly.version>2.3.3-SNAPSHOT</grizzly.version>
+        <grizzly.npn.version>1.0</grizzly.npn.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-websockets</artifactId>
-            <version>2.3.2</version>
+            <version>${grizzly.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.ning</groupId>
-            <artifactId>async-http-client-api</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-spdy</artifactId>
+            <version>${grizzly.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-npn-api</artifactId>
+            <version>${grizzly.npn.version}</version>
         </dependency>
     </dependencies>
 
