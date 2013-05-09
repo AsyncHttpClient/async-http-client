@@ -75,5 +75,8 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
     }
 
 
-
+    @Override
+    public String toString() {
+        return getHeaders().toString();
+    }
 }
