@@ -17,6 +17,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ConnectionsPool;
 
 import org.glassfish.grizzly.CloseListener;
+import org.glassfish.grizzly.CloseType;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -73,10 +74,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         unlimitedConnections = (maxConnections == -1);
         delayedExecutor = new DelayedExecutor(Executors.newSingleThreadExecutor());
         delayedExecutor.start();
-        listener = new Connection.CloseListener() {
+        listener = new CloseListener<Connection,CloseType>() {
             @Override
-            public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
-                if (closeType == Connection.CloseType.REMOTELY) {
+            public void onClosed(Connection connection, CloseType closeType) throws IOException {
+                if (closeType == CloseType.REMOTELY) {
                     if (LOG.isInfoEnabled()) {
                         LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
                     }
