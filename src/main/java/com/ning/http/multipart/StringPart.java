@@ -20,7 +20,7 @@ import java.io.OutputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
- *
+ * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class StringPart extends PartBase {
@@ -48,24 +48,18 @@ public class StringPart extends PartBase {
     /**
      * The String value of this part.
      */
-    private String value;
+    private final String value;
 
     /**
      * Constructor.
-     *
-     * @param name    The name of the part
-     * @param value   the string to post
-     * @param charset the charset to be used to encode the string, if <code>null</code>
-     *                the {@link #DEFAULT_CHARSET default} is used
+     * 
+     * @param name The name of the part
+     * @param value the string to post
+     * @param charset the charset to be used to encode the string, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
      */
-    public StringPart(String name, String value, String charset) {
+    public StringPart(String name, String value, String charset, String contentId) {
 
-        super(
-                name,
-                DEFAULT_CONTENT_TYPE,
-                charset == null ? DEFAULT_CHARSET : charset,
-                DEFAULT_TRANSFER_ENCODING
-        );
+        super(name, DEFAULT_CONTENT_TYPE, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
         if (value == null) {
             throw new IllegalArgumentException("Value may not be null");
         }
@@ -76,10 +70,14 @@ public class StringPart extends PartBase {
         this.value = value;
     }
 
+    public StringPart(String name, String value, String charset) {
+        this(name, value, charset, null);
+    }
+
     /**
      * Constructor.
-     *
-     * @param name  The name of the part
+     * 
+     * @param name The name of the part
      * @param value the string to post
      */
     public StringPart(String name, String value) {
@@ -87,9 +85,8 @@ public class StringPart extends PartBase {
     }
 
     /**
-     * Gets the content in bytes.  Bytes are lazily created to allow the charset to be changed
-     * after the part is created.
-     *
+     * Gets the content in bytes. Bytes are lazily created to allow the charset to be changed after the part is created.
+     * 
      * @return the content in bytes
      */
     private byte[] getContent() {
@@ -101,7 +98,7 @@ public class StringPart extends PartBase {
 
     /**
      * Writes the data to the given OutputStream.
-     *
+     * 
      * @param out the OutputStream to write to
      * @throws java.io.IOException if there is a write error
      */
@@ -111,7 +108,7 @@ public class StringPart extends PartBase {
 
     /**
      * Return the length of the data.
-     *
+     * 
      * @return The length of the data.
      * @throws IOException If an IO problem occurs
      */
@@ -119,7 +116,9 @@ public class StringPart extends PartBase {
         return getContent().length;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.apache.commons.httpclient.methods.multipart.BasePart#setCharSet(java.lang.String)
      */
     public void setCharSet(String charSet) {

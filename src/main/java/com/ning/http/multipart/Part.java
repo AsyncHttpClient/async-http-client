@@ -21,7 +21,7 @@ import java.io.OutputStream;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
- *
+ * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class Part implements com.ning.http.client.Part {
@@ -32,8 +32,7 @@ public abstract class Part implements com.ning.http.client.Part {
     protected static final String BOUNDARY = "----------------314159265358979323846";
 
     /**
-     * The default boundary to be used if etBoundaryBytes(byte[]) has not
-     * been called.
+     * The default boundary to be used if etBoundaryBytes(byte[]) has not been called.
      */
     private static final byte[] DEFAULT_BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
 
@@ -105,12 +104,21 @@ public abstract class Part implements com.ning.http.client.Part {
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES =
-            MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
+    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
+
+    /**
+     * Content type header
+     */
+    protected static final String CONTENT_ID = "Content-ID: ";
+
+    /**
+     * Content type header as a byte array
+     */
+    static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
      * Return the boundary string.
-     *
+     * 
      * @return the boundary string
      * @deprecated uses a constant string. Rather use {@link #getPartBoundary}
      */
@@ -125,36 +133,42 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Return the name of this part.
-     *
+     * 
      * @return The name.
      */
     public abstract String getName();
 
     /**
      * Returns the content type of this part.
-     *
+     * 
      * @return the content type, or <code>null</code> to exclude the content type header
      */
     public abstract String getContentType();
 
     /**
      * Return the character encoding of this part.
-     *
-     * @return the character encoding, or <code>null</code> to exclude the character
-     *         encoding header
+     * 
+     * @return the character encoding, or <code>null</code> to exclude the character encoding header
      */
     public abstract String getCharSet();
 
     /**
      * Return the transfer encoding of this part.
-     *
+     * 
      * @return the transfer encoding, or <code>null</code> to exclude the transfer encoding header
      */
     public abstract String getTransferEncoding();
 
     /**
+     * Return the content ID of this part.
+     * 
+     * @return the content ID, or <code>null</code> to exclude the content ID header
+     */
+    public abstract String getContentId();
+
+    /**
      * Gets the part boundary to be used.
-     *
+     * 
      * @return the part boundary as an array of bytes.
      * @since 3.0
      */
@@ -168,10 +182,8 @@ public abstract class Part implements com.ning.http.client.Part {
     }
 
     /**
-     * Sets the part boundary.  Only meant to be used by
-     * {@link Part#sendParts(java.io.OutputStream, Part[], byte[])}
-     * and {@link Part#getLengthOfParts(Part[], byte[])}
-     *
+     * Sets the part boundary. Only meant to be used by {@link Part#sendParts(java.io.OutputStream, Part[], byte[])} and {@link Part#getLengthOfParts(Part[], byte[])}
+     * 
      * @param boundaryBytes An array of ASCII bytes.
      * @since 3.0
      */
@@ -181,9 +193,8 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Tests if this part can be sent more than once.
-     *
-     * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called
-     *         more than once.
+     * 
+     * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
      * @since 3.0
      */
     public boolean isRepeatable() {
@@ -192,7 +203,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write the start to the specified output stream
-     *
+     * 
      * @param out The output stream
      * @throws java.io.IOException If an IO problem occurs.
      */
@@ -204,7 +215,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write the content disposition header to the specified output stream
-     *
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -217,7 +228,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write the content type header to the specified output stream
-     *
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -236,9 +247,8 @@ public abstract class Part implements com.ning.http.client.Part {
     }
 
     /**
-     * Write the content transfer encoding header to the specified
-     * output stream
-     *
+     * Write the content transfer encoding header to the specified output stream
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -252,8 +262,23 @@ public abstract class Part implements com.ning.http.client.Part {
     }
 
     /**
+     * Write the content ID header to the specified output stream
+     * 
+     * @param out The output stream
+     * @throws IOException If an IO problem occurs.
+     */
+    protected void sendContentIDHeader(OutputStream out) throws IOException {
+        String contentId = getContentId();
+        if (contentId != null) {
+            out.write(CRLF_BYTES);
+            out.write(CONTENT_ID_BYTES);
+            out.write(MultipartEncodingUtil.getAsciiBytes(contentId));
+        }
+    }
+
+    /**
      * Write the end of the header to the output stream
-     *
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -264,7 +289,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write the data to the specified output stream
-     *
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -272,7 +297,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Return the length of the main content
-     *
+     * 
      * @return long The length.
      * @throws IOException If an IO problem occurs
      */
@@ -280,7 +305,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write the end data to the output stream.
-     *
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -289,10 +314,8 @@ public abstract class Part implements com.ning.http.client.Part {
     }
 
     /**
-     * Write all the data to the output stream.
-     * If you override this method make sure to override
-     * #length() as well
-     *
+     * Write all the data to the output stream. If you override this method make sure to override #length() as well
+     * 
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
@@ -301,17 +324,15 @@ public abstract class Part implements com.ning.http.client.Part {
         sendDispositionHeader(out);
         sendContentTypeHeader(out);
         sendTransferEncodingHeader(out);
+        sendContentIDHeader(out);
         sendEndOfHeader(out);
         sendData(out);
         sendEnd(out);
     }
 
-
     /**
-     * Return the full length of all the data.
-     * If you override this method make sure to override
-     * #send(OutputStream) as well
-     *
+     * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
+     * 
      * @return long The length.
      * @throws IOException If an IO problem occurs
      */
@@ -324,6 +345,7 @@ public abstract class Part implements com.ning.http.client.Part {
         sendDispositionHeader(overhead);
         sendContentTypeHeader(overhead);
         sendTransferEncodingHeader(overhead);
+        sendContentIDHeader(overhead);
         sendEndOfHeader(overhead);
         sendEnd(overhead);
         return overhead.size() + lengthOfData();
@@ -331,7 +353,7 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Return a string representation of this object.
-     *
+     * 
      * @return A string representation of this object.
      * @see java.lang.Object#toString()
      */
@@ -341,27 +363,25 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write all parts and the last boundary to the specified output stream.
-     *
-     * @param out   The stream to write to.
+     * 
+     * @param out The stream to write to.
      * @param parts The parts to write.
      * @throws IOException If an I/O error occurs while writing the parts.
      */
-    public static void sendParts(OutputStream out, final Part[] parts)
-            throws IOException {
+    public static void sendParts(OutputStream out, final Part[] parts) throws IOException {
         sendParts(out, parts, DEFAULT_BOUNDARY_BYTES);
     }
 
     /**
      * Write all parts and the last boundary to the specified output stream.
-     *
-     * @param out          The stream to write to.
-     * @param parts        The parts to write.
+     * 
+     * @param out The stream to write to.
+     * @param parts The parts to write.
      * @param partBoundary The ASCII bytes to use as the part boundary.
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since 3.0
      */
-    public static void sendParts(OutputStream out, Part[] parts, byte[] partBoundary)
-            throws IOException {
+    public static void sendParts(OutputStream out, Part[] parts, byte[] partBoundary) throws IOException {
 
         if (parts == null) {
             throw new IllegalArgumentException("Parts may not be null");
@@ -380,8 +400,7 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
-    public static void sendMessageEnd(OutputStream out, byte[] partBoundary)
-            throws IOException {
+    public static void sendMessageEnd(OutputStream out, byte[] partBoundary) throws IOException {
 
         if (partBoundary == null || partBoundary.length == 0) {
             throw new IllegalArgumentException("partBoundary may not be empty");
@@ -395,14 +414,13 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Write all parts and the last boundary to the specified output stream.
-     *
-     * @param out  The stream to write to.
+     * 
+     * @param out The stream to write to.
      * @param part The part to write.
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since N/A
      */
-    public static void sendPart(OutputStream out, Part part, byte[] partBoundary)
-            throws IOException {
+    public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
 
         if (part == null) {
             throw new IllegalArgumentException("Parts may not be null");
@@ -414,20 +432,19 @@ public abstract class Part implements com.ning.http.client.Part {
 
     /**
      * Return the total sum of all parts and that of the last boundary
-     *
+     * 
      * @param parts The parts.
      * @return The total length
      * @throws IOException If an I/O error occurs while writing the parts.
      */
-    public static long getLengthOfParts(Part[] parts)
-            throws IOException {
+    public static long getLengthOfParts(Part[] parts) throws IOException {
         return getLengthOfParts(parts, DEFAULT_BOUNDARY_BYTES);
     }
 
     /**
      * Gets the length of the multipart message including the given parts.
-     *
-     * @param parts        The parts.
+     * 
+     * @param parts The parts.
      * @param partBoundary The ASCII bytes to use as the part boundary.
      * @return The total length
      * @throws IOException If an I/O error occurs while writing the parts.

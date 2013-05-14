@@ -466,6 +466,8 @@
                         <exclude>**/NettyResponse</exclude>
                         <exclude>**/AsyncHttpProviderUtils</exclude>
                         <exclude>**/Cookie</exclude>
+                        <exclude>**/Part</exclude>
+                        <exclude>**/PartBase</exclude>
                     </excludes>
                 </configuration>
                 <executions>
