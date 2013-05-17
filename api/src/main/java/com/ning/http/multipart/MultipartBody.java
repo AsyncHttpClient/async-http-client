@@ -48,8 +48,8 @@ public class MultipartBody implements RandomAccessBody {
 
     enum FileLocation {NONE, START, MIDDLE, END}
 
-    public MultipartBody(List<com.ning.http.client.Part> parts, String boundary, String contentLength) {
-        this.boundary = MultipartEncodingUtil.getAsciiBytes(boundary.substring("multipart/form-data; boundary=".length()));
+    public MultipartBody(List<com.ning.http.client.Part> parts, String contentType, String contentLength) {
+        this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
         this.contentLength = Long.parseLong(contentLength);
         this.parts = parts;
 
@@ -430,6 +430,7 @@ public class MultipartBody implements RandomAccessBody {
         filePart.sendDispositionHeader(overhead);
         filePart.sendContentTypeHeader(overhead);
         filePart.sendTransferEncodingHeader(overhead);
+        filePart.sendContentIdHeader(overhead);
         filePart.sendEndOfHeader(overhead);
         return overhead;
     }

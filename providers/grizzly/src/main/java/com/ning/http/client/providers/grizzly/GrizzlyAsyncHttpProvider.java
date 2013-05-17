@@ -2473,7 +2473,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             MultipartRequestEntity mre =
                     AsyncHttpProviderUtils.createMultipartRequestEntity(
                             request.getParts(),
-                            request.getParams());
+                            request.getHeaders());
             requestPacket.setContentLengthLong(mre.getContentLength());
             requestPacket.setContentType(mre.getContentType());
             final MemoryManager mm = ctx.getMemoryManager();

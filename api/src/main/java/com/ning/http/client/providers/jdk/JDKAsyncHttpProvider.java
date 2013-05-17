@@ -608,7 +608,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                         lenght = MAX_BUFFERED_BYTES;
                     }
 
-                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getParams());
+                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
                     urlConnection.setRequestProperty("Content-Type", mre.getContentType());
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(mre.getContentLength()));
