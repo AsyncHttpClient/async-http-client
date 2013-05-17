@@ -15,7 +15,10 @@
  */
 package com.ning.http.multipart;
 
-import com.ning.http.client.FluentStringsMap;
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +28,7 @@ import java.util.Random;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
- *
+ * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public class MultipartRequestEntity implements RequestEntity {
@@ -38,15 +41,14 @@ public class MultipartRequestEntity implements RequestEntity {
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
-    private static byte[] MULTIPART_CHARS = MultipartEncodingUtil.getAsciiBytes(
-            "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    private static byte[] MULTIPART_CHARS = MultipartEncodingUtil.getAsciiBytes("-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
     /**
      * Generates a random multipart boundary string.
-     *
+     * 
      * @return
      */
-    private static byte[] generateMultipartBoundary() {
+    public static byte[] generateMultipartBoundary() {
         Random rand = new Random();
         byte[] bytes = new byte[rand.nextInt(11) + 30]; // a random size from 30 to 40
         for (int i = 0; i < bytes.length; i++) {
@@ -64,42 +66,35 @@ public class MultipartRequestEntity implements RequestEntity {
 
     private byte[] multipartBoundary;
 
-    private FluentStringsMap methodParams;
+    private final String contentType;
 
     /**
      * Creates a new multipart entity containing the given parts.
-     *
-     * @param parts        The parts to include.
-     * @param methodParams The params of the HttpMethod using this entity.
+     * 
+     * @param parts The parts to include.
      */
-    public MultipartRequestEntity(Part[] parts, FluentStringsMap methodParams) {
+    public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
-        if (methodParams == null) {
-            methodParams = new FluentStringsMap();
-        }
         this.parts = parts;
-        this.methodParams = methodParams;
+        String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
+        if (isNonEmpty(contentTypeHeader))
+            this.contentType = contentTypeHeader;
+        else
+            this.contentType = MULTIPART_FORM_CONTENT_TYPE;
+
     }
 
     /**
-     * Returns the MIME boundary string that is used to demarcate boundaries of
-     * this part. The first call to this method will implicitly create a new
-     * boundary string. To create a boundary string first the
-     * HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise
-     * a random one is generated.
-     *
+     * Returns the MIME boundary string that is used to demarcate boundaries of this part. The first call to this method will implicitly create a new boundary string. To create a boundary string first the HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise a
+     * random one is generated.
+     * 
      * @return The boundary string of this entity in ASCII encoding.
      */
     protected byte[] getMultipartBoundary() {
         if (multipartBoundary == null) {
-            String temp = methodParams.get("") == null ? null : methodParams.get("").iterator().next();
-            if (temp != null) {
-                multipartBoundary = MultipartEncodingUtil.getAsciiBytes(temp);
-            } else {
-                multipartBoundary = generateMultipartBoundary();
-            }
+            multipartBoundary = generateMultipartBoundary();
         }
         return multipartBoundary;
     }
@@ -116,14 +111,18 @@ public class MultipartRequestEntity implements RequestEntity {
         return true;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.apache.commons.httpclient.methods.RequestEntity#writeRequest(java.io.OutputStream)
      */
     public void writeRequest(OutputStream out) throws IOException {
         Part.sendParts(out, parts, getMultipartBoundary());
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.apache.commons.httpclient.methods.RequestEntity#getContentLength()
      */
     public long getContentLength() {
@@ -135,14 +134,22 @@ public class MultipartRequestEntity implements RequestEntity {
         }
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.apache.commons.httpclient.methods.RequestEntity#getContentType()
      */
     public String getContentType() {
-        StringBuffer buffer = new StringBuffer(MULTIPART_FORM_CONTENT_TYPE);
-        buffer.append("; boundary=");
-        buffer.append(MultipartEncodingUtil.getAsciiString(getMultipartBoundary()));
-        return buffer.toString();
+        if (contentType.contains("boundary="))
+            return contentType;
+        else {
+            StringBuffer buffer = new StringBuffer(contentType);
+            if (!contentType.endsWith(";"))
+                buffer.append(";");
+            buffer.append(" boundary=");
+            buffer.append(MultipartEncodingUtil.getAsciiString(getMultipartBoundary()));
+            return buffer.toString();
+        }
     }
 
 }

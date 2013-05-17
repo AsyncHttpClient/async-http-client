@@ -554,9 +554,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                          * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                          */
                         if (future.getRequest().getParts() != null) {
-                            String boundary = future.getNettyRequest().getHeader("Content-Type");
+                            String contentType = future.getNettyRequest().getHeader("Content-Type");
                             String length = future.getNettyRequest().getHeader("Content-Length");
-                            body = new MultipartBody(future.getRequest().getParts(), boundary, length);
+                            body = new MultipartBody(future.getRequest().getParts(), contentType, length);
                         }
 
                         ChannelFuture writeFuture;
@@ -858,8 +858,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         lenght = MAX_BUFFERED_BYTES;
                     }
 
-                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getParams());
-
+                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
+                    
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
 

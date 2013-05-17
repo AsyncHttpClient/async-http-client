@@ -468,6 +468,7 @@
                         <exclude>**/Cookie</exclude>
                         <exclude>**/Part</exclude>
                         <exclude>**/PartBase</exclude>
+                        <exclude>**/MultipartRequestEntity</exclude>
                     </excludes>
                 </configuration>
                 <executions>

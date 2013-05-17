@@ -31,6 +31,7 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
 import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
@@ -287,11 +288,11 @@ public class AsyncHttpProviderUtils {
      * This is quite ugly as our internal names are duplicated, but we build on top of HTTP Client implementation.
      *
      * @param params
-     * @param methodParams
+     * @param requestHeaders
      * @return a MultipartRequestEntity.
      * @throws java.io.FileNotFoundException
      */
-    public final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentStringsMap methodParams) throws FileNotFoundException {
+    public final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentCaseInsensitiveStringsMap requestHeaders) throws FileNotFoundException {
         com.ning.http.multipart.Part[] parts = new com.ning.http.multipart.Part[params.size()];
         int i = 0;
 
@@ -323,7 +324,7 @@ public class AsyncHttpProviderUtils {
             }
             ++i;
         }
-        return new MultipartRequestEntity(parts, methodParams);
+        return new MultipartRequestEntity(parts, requestHeaders);
     }
 
     public final static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {

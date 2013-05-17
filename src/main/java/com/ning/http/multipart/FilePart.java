@@ -69,7 +69,6 @@ public class FilePart extends PartBase {
     public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
 
         super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? "ISO-8859-1" : charset, DEFAULT_TRANSFER_ENCODING, contentId);
-
         if (partSource == null) {
             throw new IllegalArgumentException("Source may not be null");
         }
@@ -147,9 +146,9 @@ public class FilePart extends PartBase {
      * @throws java.io.IOException If an IO problem occurs
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
-        super.sendDispositionHeader(out);
         String filename = this.source.getFileName();
         if (filename != null) {
+            super.sendDispositionHeader(out);
             out.write(FILE_NAME_BYTES);
             out.write(QUOTE_BYTES);
             out.write(MultipartEncodingUtil.getAsciiBytes(filename));

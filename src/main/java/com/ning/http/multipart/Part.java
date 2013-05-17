@@ -267,7 +267,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @param out The output stream
      * @throws IOException If an IO problem occurs.
      */
-    protected void sendContentIDHeader(OutputStream out) throws IOException {
+    protected void sendContentIdHeader(OutputStream out) throws IOException {
         String contentId = getContentId();
         if (contentId != null) {
             out.write(CRLF_BYTES);
@@ -324,7 +324,7 @@ public abstract class Part implements com.ning.http.client.Part {
         sendDispositionHeader(out);
         sendContentTypeHeader(out);
         sendTransferEncodingHeader(out);
-        sendContentIDHeader(out);
+        sendContentIdHeader(out);
         sendEndOfHeader(out);
         sendData(out);
         sendEnd(out);
@@ -345,7 +345,7 @@ public abstract class Part implements com.ning.http.client.Part {
         sendDispositionHeader(overhead);
         sendContentTypeHeader(overhead);
         sendTransferEncodingHeader(overhead);
-        sendContentIDHeader(overhead);
+        sendContentIdHeader(overhead);
         sendEndOfHeader(overhead);
         sendEnd(overhead);
         return overhead.size() + lengthOfData();

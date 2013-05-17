@@ -70,9 +70,7 @@ public class FilePartSource implements PartSource {
     public FilePartSource(String fileName, File file)
             throws FileNotFoundException {
         this(file);
-        if (fileName != null) {
-            this.fileName = fileName;
-        }
+        this.fileName = fileName;
     }
 
     /**
@@ -96,7 +94,7 @@ public class FilePartSource implements PartSource {
      * @see PartSource#getFileName()
      */
     public String getFileName() {
-        return (fileName == null) ? "noname" : fileName;
+        return fileName;
     }
 
     /**
