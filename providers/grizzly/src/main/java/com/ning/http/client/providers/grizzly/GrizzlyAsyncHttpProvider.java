@@ -15,7 +15,6 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
@@ -226,14 +225,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     execute(c, request, handler, future);
                 } catch (Exception e) {
-                    if (e instanceof RuntimeException) {
-                        failed(e);
-                    } else if (e instanceof IOException) {
-                        failed(e);
-                    }
-                    if (LOGGER.isWarnEnabled()) {
-                        LOGGER.warn(e.toString(), e);
-                    }
+                    failed(e);
                 }
             }
 

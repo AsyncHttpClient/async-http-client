@@ -44,6 +44,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         return new EmptyBody();
     }
     
+    @SuppressWarnings("UnusedDeclaration")
     public void feed(final Buffer buffer, final boolean isLast)
             throws IOException {
         queue.offer(new BodyPart(buffer, isLast));
@@ -61,6 +62,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         flushQueue();
     }
 
+    @SuppressWarnings("unchecked")
     private void flushQueue() throws IOException {
         if (queueSize.get() > 0) {
             synchronized(this) {
