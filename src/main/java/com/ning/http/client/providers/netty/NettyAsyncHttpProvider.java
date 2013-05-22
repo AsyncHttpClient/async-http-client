@@ -563,10 +563,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             future.touch();
-            int delay = Math.min(config.getIdleConnectionTimeoutInMs(), requestTimeoutInMs(config, future.getRequest().getPerRequestConfig()));
-            if (delay != -1 && !future.isDone() && !future.isCancelled()) {
+            int requestTimeout = requestTimeoutInMs(config, future.getRequest().getPerRequestConfig());
+            int schedulePeriod = requestTimeout != -1 ? (config.getIdleConnectionTimeoutInMs() != -1 ? Math.min(requestTimeout, config.getIdleConnectionTimeoutInMs()) : requestTimeout) : config.getIdleConnectionTimeoutInMs();
+            if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, delay, TimeUnit.MILLISECONDS);
+                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
