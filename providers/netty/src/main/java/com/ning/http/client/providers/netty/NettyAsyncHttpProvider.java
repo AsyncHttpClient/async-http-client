@@ -550,9 +550,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             future.touch();
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
-            if (requestTimeout != -1 && !future.isDone() && !future.isCancelled()) {
+            int schedulePeriod = requestTimeout != -1 ? (config.getIdleConnectionTimeoutInMs() != -1 ? Math.min(requestTimeout, config.getIdleConnectionTimeoutInMs()) : requestTimeout) : config.getIdleConnectionTimeoutInMs();
+
+            if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
                 ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, requestTimeout, TimeUnit.MILLISECONDS);
+                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
             }
@@ -1606,7 +1608,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public static <T> NettyResponseFuture<T> newFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, HttpRequest nettyRequest, AsyncHttpClientConfig config, NettyAsyncHttpProvider provider, ProxyServer proxyServer) {
 
         int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
-        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri, request, asyncHandler, nettyRequest, requestTimeout, config.getIdleConnectionTimeoutInMs(), provider, request.getConnectionPoolKeyStrategy(), proxyServer);
+        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//
+                request,//
+                asyncHandler,//
+                nettyRequest,//
+                requestTimeout,//
+                config.getIdleConnectionTimeoutInMs(),//
+                provider,//
+                request.getConnectionPoolKeyStrategy(),//
+                proxyServer);
 
         if (request.getHeaders().getFirstValue("Expect") != null && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
             f.getAndSetWriteBody(false);
