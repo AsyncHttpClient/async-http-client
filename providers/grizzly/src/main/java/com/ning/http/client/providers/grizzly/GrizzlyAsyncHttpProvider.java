@@ -383,6 +383,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         false,
                         false);
         final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
+        ProtocolHandshakeListener handshakeListener =
+                                                new ProtocolHandshakeListener();
+        filter.addHandshakeListener(handshakeListener);
         fcb.add(filter);
         GrizzlyAsyncHttpProviderConfig providerConfig =
                         (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
@@ -494,13 +497,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         int idx = spdyFcb.indexOfType(SSLFilter.class);
         Filter f = spdyFcb.get(idx);
 
+
         // Adjust the SSLFilter to support NPN
         if (npnEnabled) {
             SSLBaseFilter sslBaseFilter = (SSLBaseFilter) f;
             NextProtoNegSupport.getInstance().configure(sslBaseFilter);
-            ProtocolHandshakeListener handshakeListener =
-                    new ProtocolHandshakeListener();
-            sslBaseFilter.addHandshakeListener(handshakeListener);
         }
 
         // Remove the HTTP Client filter - this will be replaced by the
@@ -970,6 +971,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return super.handleRead(ctx);
         }
 
+        @Override
+        public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
+            final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
+            if (context != null) {
+                context.abort(error.getCause());
+            }
+        }
     } // END AsyncHttpClientTransportFilter
 
 
@@ -1113,15 +1121,17 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     // us a different FilterChain to use.
                     SSLConnectionContext sslCtx =
                             SSLUtils.getSslConnectionContext(ctx.getConnection());
-                    FilterChain fc = sslCtx.getNewConnectionFilterChain();
+                    if (sslCtx != null) {
+                        FilterChain fc = sslCtx.getNewConnectionFilterChain();
 
-                    if (fc != null) {
-                        // Create a new FilterChain context using the new
-                        // FilterChain.
-                        // TODO:  We need to mark this connection somehow
-                        //        as being only suitable for this type of
-                        //        request.
-                        sendingCtx = obtainProtocolChainContext(ctx, fc);
+                        if (fc != null) {
+                            // Create a new FilterChain context using the new
+                            // FilterChain.
+                            // TODO:  We need to mark this connection somehow
+                            //        as being only suitable for this type of
+                            //        request.
+                            sendingCtx = obtainProtocolChainContext(ctx, fc);
+                        }
                     }
                     return sendRequest(sendingCtx, request, requestPacketLocal);
                 }
@@ -1776,7 +1786,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             boolean result;
             final String proxy_auth = httpHeader.getHeader(Header.ProxyAuthenticate);
 
-            if (httpHeader.isSkipRemainder() ) {
+            if (httpHeader.isSkipRemainder()) {
                 if (!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxy_auth)) {
                     cleanup.cleanup(ctx);
                     cleanup(ctx, provider);
@@ -2146,7 +2156,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
             public static boolean isNTLMSecondHandShake(final String proxy_auth) {
-                return (proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
+                return (proxy_auth != null && proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
             }
             public static boolean isNTLMFirstHandShake(final String proxy_auth) {
                 return (proxy_auth.equalsIgnoreCase("ntlm"));
@@ -2208,13 +2218,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     final Connection c = m.obtainConnection(requestToSend,
                                                             httpTransactionContext.future);
-                    if (switchingSchemes(orig, uri)) {
-                        try {
-                            notifySchemeSwitch(ctx, c, uri);
-                        } catch (IOException ioe) {
-                            httpTransactionContext.abort(ioe);
-                        }
-                    }
+//                    if (switchingSchemes(orig, uri)) {
+//                        try {
+//                            notifySchemeSwitch(ctx, c, uri);
+//                        } catch (IOException ioe) {
+//                            httpTransactionContext.abort(ioe);
+//                        }
+//                    }
                     final HttpTransactionContext newContext =
                             httpTransactionContext.copy();
                     httpTransactionContext.future = null;
@@ -3102,15 +3112,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
-        public NextAction handleConnect(FilterChainContext ctx)
-        throws IOException {
-            if (isSecure(ctx.getConnection())) {
-                // initiate the handshake during the connection event
-                // so that we can properly install the SPDY FilterChain
-                // based on NPN results.
-                handshake(ctx.getConnection(), null);
-            }
-            return ctx.getInvokeAction();
+        protected void notifyHandshakeFailed(Connection connection, Throwable t) {
+            throw new RuntimeException(t);
         }
 
         @Override
@@ -3118,22 +3121,26 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             if (event.type() == SSLSwitchingEvent.class) {
                 final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-                setSecureStatus(se.connection, se.secure);
+
                 if (se.secure) {
-                    ProtocolHandshakeListener.addListener(ctx.getConnection(),
-                                                          new HandshakeCompleteListener() {
-                                                              @Override
-                                                              public void complete() {
-                                                                  try {
-                                                                      se.action.call();
-                                                                  } catch (Exception e) {
-                                                                      throw new RuntimeException(e);
-                                                                  }
-                                                              }
-                                                          }
-                    );
+                    if (se.action != null) {
+                        ProtocolHandshakeListener.addListener(
+                                ctx.getConnection(),
+                                new HandshakeCompleteListener() {
+                                    @Override
+                                    public void complete() {
+                                        try {
+                                            se.action.call();
+                                        } catch (Exception e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                }
+                        );
+                    }
                     handshake(ctx.getConnection(), null);
                 }
+                setSecureStatus(se.connection, se.secure);
                 return ctx.getStopAction();
             }
             return ctx.getInvokeAction();
