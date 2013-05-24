@@ -13,6 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
+import com.ning.http.client.AsyncHttpClient;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -67,6 +68,7 @@ import org.glassfish.grizzly.WriteResult;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
 import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.Filter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -84,10 +86,15 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.npn.ClientSideNegotiator;
 import org.glassfish.grizzly.spdy.NextProtoNegSupport;
 import org.glassfish.grizzly.spdy.SpdyFramingFilter;
 import org.glassfish.grizzly.spdy.SpdyHandlerFilter;
 import org.glassfish.grizzly.spdy.SpdyMode;
+import org.glassfish.grizzly.spdy.SpdySession;
+import org.glassfish.grizzly.ssl.SSLBaseFilter;
+import org.glassfish.grizzly.ssl.SSLConnectionContext;
+import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.DataChunk;
@@ -121,6 +128,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -135,9 +143,11 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -146,6 +156,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.SwitchingSSLFilter.SSLSwitchingEvent;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
@@ -386,7 +397,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             // HTTP/1.1 support.
             if (!npnEnabled && providerConfig != null) {
                 if ((Boolean) providerConfig.getProperty(Property.NPN_ENABLED)) {
-                    // NPN hasn't been disabled, so it's most likely a configuration proble.
+                    // NPN hasn't been disabled, so it's most likely a configuration problem.
                     // Log a warning and disable spdy support.
                     LOGGER.warn("Next Protocol Negotiation support is not available.  SPDY support has been disabled.");
                     spdyEnabled = false;
@@ -394,50 +405,36 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        if (!spdyEnabled) {
-            final AsyncHttpClientEventFilter eventFilter;
-            final EventHandler handler = new EventHandler(this);
-            if (providerConfig != null) {
-                eventFilter =
-                        new AsyncHttpClientEventFilter(handler,
-                                                       (Integer) providerConfig
-                                                               .getProperty(
-                                                                       MAX_HTTP_PACKET_HEADER_SIZE));
-            } else {
-                eventFilter = new AsyncHttpClientEventFilter(handler);
-            }
-            handler.cleanup = eventFilter;
-            ContentEncoding[] encodings = eventFilter.getContentEncodings();
-            if (encodings.length > 0) {
-                for (ContentEncoding encoding : encodings) {
-                    eventFilter.removeContentEncoding(encoding);
-                }
-            }
-            if (clientConfig.isCompressionEnabled()) {
-                eventFilter.addContentEncoding(
-                        new GZipContentEncoding(512,
-                                                512,
-                                                new ClientEncodingFilter()));
-            }
-            fcb.add(eventFilter);
-            final AsyncHttpClientFilter clientFilter =
-                    new AsyncHttpClientFilter(clientConfig);
-            fcb.add(clientFilter);
-            fcb.add(new WebSocketClientFilter());
+        final AsyncHttpClientEventFilter eventFilter;
+        final EventHandler handler = new EventHandler(this);
+        if (providerConfig != null) {
+            eventFilter =
+                    new AsyncHttpClientEventFilter(handler,
+                                                   (Integer) providerConfig
+                                                           .getProperty(
+                                                                   MAX_HTTP_PACKET_HEADER_SIZE));
         } else {
-            fcb.add(new SpdyFramingFilter());
-            fcb.add(new AsyncSpdyClientEventFilter(new EventHandler(this),
-                                                   ((npnEnabled) ? SpdyMode.NPN : SpdyMode.PLAIN),
-                                                   clientConfig.executorService()));
-            final AsyncHttpClientFilter clientFilter =
-                                new AsyncHttpClientFilter(clientConfig);
-                        fcb.add(clientFilter);
-            if (npnEnabled) {
-                int idx = fcb.indexOfType(SSLFilter.class);
-                SSLFilter f = (SSLFilter) fcb.get(idx);
-                NextProtoNegSupport.getInstance().configure(f);
+            eventFilter = new AsyncHttpClientEventFilter(handler);
+        }
+        handler.cleanup = eventFilter;
+        ContentEncoding[] encodings = eventFilter.getContentEncodings();
+        if (encodings.length > 0) {
+            for (ContentEncoding encoding : encodings) {
+                eventFilter.removeContentEncoding(encoding);
             }
         }
+        if (clientConfig.isCompressionEnabled()) {
+            eventFilter.addContentEncoding(
+                    new GZipContentEncoding(512,
+                                            512,
+                                            new ClientEncodingFilter()));
+        }
+        fcb.add(eventFilter);
+        final AsyncHttpClientFilter clientFilter =
+                new AsyncHttpClientFilter(clientConfig);
+        fcb.add(clientFilter);
+        fcb.add(new WebSocketClientFilter());
+
 
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
@@ -451,7 +448,21 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             doDefaultTransportConfig();
         }
 
+        // FilterChain for the standard HTTP case has been configured, we now
+        // copy it and modify for SPDY purposes.
+        if (spdyEnabled) {
+            FilterChainBuilder spdyFilterChain =
+                    createSpdyFilterChain(fcb, npnEnabled);
+            ProtocolNegotiator pn =
+                    new ProtocolNegotiator(spdyFilterChain.build());
+            NextProtoNegSupport.getInstance()
+                    .setClientSideNegotiator(clientTransport, pn);
+        }
+
+        // Don't limit the number of bytes the client can have queued to write.
         clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
+
+        // Install the HTTP filter chain.
         clientTransport.setProcessor(fcb.build());
 
     }
@@ -473,6 +484,44 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     // --------------------------------------------------------- Private Methods
+
+
+    private FilterChainBuilder createSpdyFilterChain(final FilterChainBuilder fcb,
+                                                     final boolean npnEnabled) {
+
+        FilterChainBuilder spdyFcb = FilterChainBuilder.stateless();
+        spdyFcb.addAll(fcb);
+        int idx = spdyFcb.indexOfType(SSLFilter.class);
+        Filter f = spdyFcb.get(idx);
+
+        // Adjust the SSLFilter to support NPN
+        if (npnEnabled) {
+            SSLBaseFilter sslBaseFilter = (SSLBaseFilter) f;
+            NextProtoNegSupport.getInstance().configure(sslBaseFilter);
+            ProtocolHandshakeListener handshakeListener =
+                    new ProtocolHandshakeListener();
+            sslBaseFilter.addHandshakeListener(handshakeListener);
+        }
+
+        // Remove the HTTP Client filter - this will be replaced by the
+        // SPDY framing and handler filters.
+        idx = spdyFcb.indexOfType(HttpClientFilter.class);
+        spdyFcb.set(idx, new SpdyFramingFilter());
+        final SpdyMode spdyMode = ((npnEnabled) ? SpdyMode.NPN : SpdyMode.PLAIN);
+        AsyncSpdyClientEventFilter spdyFilter =
+                new AsyncSpdyClientEventFilter(new EventHandler(this),
+                                               spdyMode,
+                                               clientConfig.executorService());
+        spdyFilter.setInitialWindowSize(clientConfig.getSpdyInitialWindowSize());
+        spdyFilter.setMaxConcurrentStreams(clientConfig.getSpdyMaxConcurrentStreams());
+        spdyFcb.add(idx + 1, spdyFilter);
+
+        // Remove the WebSocket filter - not currently supported.
+        idx = spdyFcb.indexOfType(WebSocketClientFilter.class);
+        spdyFcb.remove(idx);
+
+        return spdyFcb;
+    }
 
 
     private static boolean configSendFileSupport() {
@@ -530,7 +579,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     void setHttpTransactionContext(final AttributeStorage storage,
-                                           final HttpTransactionContext httpTransactionState) {
+                                   final HttpTransactionContext httpTransactionState) {
 
         if (httpTransactionState == null) {
             REQUEST_STATE_ATTR.remove(storage);
@@ -599,6 +648,19 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             HttpContent content = HttpContent.builder(requestPacket).last(true).build();
             ctx.write(content, ctx.getTransportContext().getCompletionHandler());
+//            FilterChainContext newContext = new FilterChainContext();
+//            FilterChain fc = (FilterChain) ctx.getConnection().getProcessor();
+//            final FilterChainContext newFilterChainContext =
+//                            fc.obtainFilterChainContext(
+//                                    ctx.getConnection(),
+//                                    ctx.getStartIdx(),
+//                                    fc.size(),
+//                                    ctx.getFilterIdx());
+//
+//                    newFilterChainContext.setAddressHolder(ctx.getAddressHolder());
+//                    newFilterChainContext.getInternalContext().setProcessor(fc);
+//                    //newFilterChainContext.setMessage(ctx.getMessage());
+//            newContext.write(content, ctx.getTransportContext().getCompletionHandler());
         }
         LOGGER.debug("REQUEST: {}", requestPacket);
 
@@ -738,6 +800,118 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     // ---------------------------------------------------------- Nested Classes
 
 
+    static final class ProtocolHandshakeListener implements
+            SSLBaseFilter.HandshakeListener {
+
+
+        static ConcurrentHashMap<Connection,HandshakeCompleteListener> listeners =
+                new ConcurrentHashMap<Connection,HandshakeCompleteListener>();
+
+
+        // --------------------------------------- Method from HandshakeListener
+
+
+        @Override
+        public void onStart(Connection connection) {
+            // no-op
+        }
+
+        @Override
+        public void onComplete(Connection connection) {
+            final HandshakeCompleteListener listener = listeners.get(connection);
+            if (listener != null) {
+                removeListener(connection);
+                listener.complete();
+            }
+        }
+
+
+        // --------------------------------------------- Package Private Methods
+
+
+        public static void addListener(final Connection c,
+                                       final HandshakeCompleteListener listener) {
+            listeners.putIfAbsent(c, listener);
+        }
+
+        static void removeListener(final Connection c) {
+            listeners.remove(c);
+        }
+    }
+
+    private static interface HandshakeCompleteListener {
+        void complete();
+    }
+
+
+    private static final class ProtocolNegotiator implements ClientSideNegotiator {
+
+
+        private static final String SPDY = "spdy/3";
+        private static final String HTTP = "HTTP/1.1";
+
+        private final FilterChain spdyFilterChain;
+        private final SpdyHandlerFilter spdyHandlerFilter;
+
+
+        // -------------------------------------------------------- Constructors
+
+        private ProtocolNegotiator(final FilterChain spdyFilterChain) {
+            this.spdyFilterChain = spdyFilterChain;
+            int idx = spdyFilterChain.indexOfType(SpdyHandlerFilter.class);
+            spdyHandlerFilter = (SpdyHandlerFilter) spdyFilterChain.get(idx);
+        }
+
+
+        // ----------------------------------- Methods from ClientSideNegotiator
+
+
+        @Override
+        public boolean wantNegotiate(SSLEngine engine) {
+            GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::wantNegotiate");
+            return true;
+        }
+
+        @Override
+        public String selectProtocol(SSLEngine engine, LinkedHashSet<String> strings) {
+            GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selectProtocol: " + strings);
+            final Connection connection = NextProtoNegSupport.getConnection(engine);
+
+            // Give preference to SPDY/3.  If not available, check for HTTP as a
+            // fallback
+            if (strings.contains(SPDY)) {
+                GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting: " + SPDY);
+                SSLConnectionContext sslCtx =
+                                        SSLUtils.getSslConnectionContext(connection);
+                                sslCtx.setNewConnectionFilterChain(spdyFilterChain);
+                final SpdySession spdySession =
+                        new SpdySession(connection, false, spdyHandlerFilter);
+                spdySession.setLocalInitialWindowSize(spdyHandlerFilter.getInitialWindowSize());
+                spdySession.setLocalMaxConcurrentStreams(spdyHandlerFilter.getMaxConcurrentStreams());
+
+                SpdySession.bind(connection, spdySession);
+                return SPDY;
+            } else if (strings.contains(HTTP)) {
+                GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting: " + HTTP);
+                // Use the default HTTP FilterChain.
+                return HTTP;
+            } else {
+                GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting NONE");
+                // no protocol support.  Will close the connection when
+                // onNoDeal is invoked
+                return "";
+            }
+        }
+
+        @Override
+        public void onNoDeal(SSLEngine engine) {
+            GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::onNoDeal");
+            final Connection connection = NextProtoNegSupport.getConnection(engine);
+            connection.closeSilently();
+        }
+    }
+
+
     private static final class ContinueEvent implements FilterChainEvent {
 
         private final HttpTransactionContext context;
@@ -855,7 +1029,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         private boolean sendAsGrizzlyRequest(final Request request,
-                                          final FilterChainContext ctx)
+                                             final FilterChainContext ctx)
         throws IOException {
 
             final HttpTransactionContext httpCtx = getHttpTransactionContext(ctx.getConnection());
@@ -874,7 +1048,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final boolean useProxy = proxy != null;
             if (useProxy) {
                 if ((secure || httpCtx.isWSRequest) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
-                    ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(false, ctx.getConnection()));
+                    ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection(), null));
                     secure = false;
                     httpCtx.establishingTunnel = true;
                     builder.method(Method.CONNECT);
@@ -912,9 +1086,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 requestPacket = builder.build();
             }
             requestPacket.setSecure(secure);
-            if (secure) {
-                ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(true, ctx.getConnection()));
-            }
             if (!useProxy && !httpCtx.isWSRequest) {
                 addQueryString(request, requestPacket);
             }
@@ -923,14 +1094,68 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final AsyncHandler h = httpCtx.handler;
             if (h != null) {
-                if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
+                if (TransferCompletionHandler.class.isAssignableFrom(
+                        h.getClass())) {
                     final FluentCaseInsensitiveStringsMap map =
-                            new FluentCaseInsensitiveStringsMap(request.getHeaders());
-                    TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+                            new FluentCaseInsensitiveStringsMap(
+                                    request.getHeaders());
+                    TransferCompletionHandler.class.cast(h)
+                            .transferAdapter(new GrizzlyTransferAdapter(map));
                 }
             }
-            return sendRequest(ctx, request, requestPacket);
+            final HttpRequestPacket requestPacketLocal = requestPacket;
+            final Callable<Boolean> action = new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    FilterChainContext sendingCtx = ctx;
 
+                    // Check to see if the ProtocolNegotiator has given
+                    // us a different FilterChain to use.
+                    SSLConnectionContext sslCtx =
+                            SSLUtils.getSslConnectionContext(ctx.getConnection());
+                    FilterChain fc = sslCtx.getNewConnectionFilterChain();
+
+                    if (fc != null) {
+                        // Create a new FilterChain context using the new
+                        // FilterChain.
+                        // TODO:  We need to mark this connection somehow
+                        //        as being only suitable for this type of
+                        //        request.
+                        sendingCtx = obtainProtocolChainContext(ctx, fc);
+                    }
+                    return sendRequest(sendingCtx, request, requestPacketLocal);
+                }
+            };
+            if (secure) {
+                ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), action));
+                return false;
+            }
+            try {
+                return action.call();
+            } catch (Exception e) {
+                httpCtx.abort(e);
+                return true;
+            }
+
+        }
+
+        private FilterChainContext obtainProtocolChainContext(
+                final FilterChainContext ctx,
+                final FilterChain completeProtocolFilterChain) {
+
+            final FilterChainContext newFilterChainContext =
+                    completeProtocolFilterChain.obtainFilterChainContext(
+                            ctx.getConnection(),
+                            ctx.getStartIdx() + 1,
+                            completeProtocolFilterChain.size(),
+                            ctx.getFilterIdx() + 1);
+
+            newFilterChainContext.setAddressHolder(ctx.getAddressHolder());
+            newFilterChainContext.setMessage(ctx.getMessage());
+            newFilterChainContext.getInternalContext().setIoEvent(
+                    ctx.getInternalContext().getIoEvent());
+            ctx.getConnection().setProcessor(completeProtocolFilterChain);
+            return newFilterChainContext;
         }
 
         private boolean isSecure(String scheme) {
@@ -2034,8 +2259,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                             final Connection c,
                                             final URI uri) throws IOException {
 
-                ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(
-                                               "https".equals(uri.getScheme()), c));
+                ctx.notifyDownstream(
+                        new SSLSwitchingEvent("https".equals(uri.getScheme()), c, null));
             }
 
         } // END RedirectHandler
@@ -2497,8 +2722,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @SuppressWarnings({"unchecked"})
         public boolean doHandle(final FilterChainContext ctx,
-                             final Request request,
-                             final HttpRequestPacket requestPacket)
+                                final Request request,
+                                final HttpRequestPacket requestPacket)
         throws IOException {
 
             final File f = request.getFile();
@@ -2877,11 +3102,38 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
-        public NextAction handleEvent(FilterChainContext ctx, FilterChainEvent event) throws IOException {
+        public NextAction handleConnect(FilterChainContext ctx)
+        throws IOException {
+            if (isSecure(ctx.getConnection())) {
+                // initiate the handshake during the connection event
+                // so that we can properly install the SPDY FilterChain
+                // based on NPN results.
+                handshake(ctx.getConnection(), null);
+            }
+            return ctx.getInvokeAction();
+        }
+
+        @Override
+        public NextAction handleEvent(final FilterChainContext ctx, FilterChainEvent event) throws IOException {
 
             if (event.type() == SSLSwitchingEvent.class) {
                 final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-                CONNECTION_IS_SECURE.set(se.connection, se.secure);
+                setSecureStatus(se.connection, se.secure);
+                if (se.secure) {
+                    ProtocolHandshakeListener.addListener(ctx.getConnection(),
+                                                          new HandshakeCompleteListener() {
+                                                              @Override
+                                                              public void complete() {
+                                                                  try {
+                                                                      se.action.call();
+                                                                  } catch (Exception e) {
+                                                                      throw new RuntimeException(e);
+                                                                  }
+                                                              }
+                                                          }
+                    );
+                    handshake(ctx.getConnection(), null);
+                }
                 return ctx.getStopAction();
             }
             return ctx.getInvokeAction();
@@ -2926,6 +3178,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        private void setSecureStatus(final Connection c, final boolean secure) {
+            CONNECTION_IS_SECURE.set(c, secure);
+        }
+
 
         // ------------------------------------------------------ Nested Classes
 
@@ -2933,14 +3189,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             final boolean secure;
             final Connection connection;
+            final Callable<Boolean> action;
 
             // ---------------------------------------------------- Constructors
 
 
-            SSLSwitchingEvent(final boolean secure, final Connection c) {
+            SSLSwitchingEvent(final boolean secure,
+                              final Connection c,
+                              final Callable<Boolean> action) {
 
                 this.secure = secure;
                 connection = c;
+                this.action = action;
 
             }
 
@@ -3233,7 +3493,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
     } // END AHCWebSocketListenerAdapter
 
-    /*
+
 
     public static void main(String[] args) {
         AsyncHttpClientConfig config =
@@ -3281,6 +3541,47 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             return null;
                         }
                     }).get();
+            client.prepareGet("https://forum-en.guildwars2.com/forum")
+                                .execute(new AsyncHandler<Object>() {
+                                    @Override
+                                    public void onThrowable(Throwable t) {
+                                        t.printStackTrace();
+                                    }
+
+                                    @Override
+                                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
+                                    throws Exception {
+                                        System.out.println(
+                                                new String(
+                                                        bodyPart.getBodyPartBytes(),
+                                                        "UTF-8"));
+                                        return STATE.CONTINUE;
+                                    }
+
+                                    @Override
+                                    public STATE onStatusReceived(HttpResponseStatus responseStatus)
+                                    throws Exception {
+                                        System.out
+                                                .println(
+                                                        responseStatus.getStatusCode());
+                                        return STATE.CONTINUE;
+                                    }
+
+                                    @Override
+                                    public STATE onHeadersReceived(HttpResponseHeaders headers)
+                                    throws Exception {
+                                        System.out.println(headers.toString());
+                                        return STATE.CONTINUE;
+                                    }
+
+                                    @Override
+                                    public Object onCompleted()
+                                    throws Exception {
+                                        System.out.println("REQUEST COMPLETE");
+                                        return null;
+                                    }
+                                }).get();
+            System.exit(0);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         } catch (InterruptedException e) {
@@ -3290,7 +3591,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    */
+
 }
 
 

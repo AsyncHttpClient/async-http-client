@@ -111,6 +111,8 @@ public class AsyncHttpClientConfig {
     protected int maxConnectionLifeTimeInMs;
     protected boolean useRelativeURIsWithSSLProxies;
     protected boolean spdyEnabled;
+    protected int spdyInitialWindowSize;
+    protected int spdyMaxConcurrentStreams;
 
     protected AsyncHttpClientConfig() {
     }
@@ -147,7 +149,9 @@ public class AsyncHttpClientConfig {
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
                                   boolean useRelativeURIsWithSSLProxies,
-                                  boolean spdyEnabled) {
+                                  boolean spdyEnabled,
+                                  int spdyInitialWindowSize,
+                                  int spdyMaxConcurrentStreams) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -188,6 +192,8 @@ public class AsyncHttpClientConfig {
         this.proxyServer = proxyServer;
         this.useRawUrl = useRawUrl;
         this.spdyEnabled = spdyEnabled;
+        this.spdyInitialWindowSize = spdyInitialWindowSize;
+        this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
     }
 
     /**
@@ -466,6 +472,20 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return the windows size new SPDY sessions should be initialized to.
+     */
+    public int getSpdyInitialWindowSize() {
+        return spdyInitialWindowSize;
+    }
+
+    /**
+     * @return the maximum number of concurrent streams over one SPDY session.
+     */
+    public int getSpdyMaxConcurrentStreams() {
+        return spdyMaxConcurrentStreams;
+    }
+
+    /**
      * Return true if the query parameters will be stripped from the request when a redirect is requested.
      *
      * @return true if the query parameters will be stripped from the request when a redirect is requested.
@@ -586,6 +606,8 @@ public class AsyncHttpClientConfig {
         private int ioThreadMultiplier = 2;
         private boolean strict302Handling;
         private boolean spdyEnabled;
+        private int spdyInitialWindowSize = 10 * 1024 * 1024;
+        private int spdyMaxConcurrentStreams = 100;
 
         public Builder() {
         }
@@ -1058,6 +1080,36 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures the initial window size for the SPDY session.
+         *
+         * @param spdyInitialWindowSize the initial window size.
+         *
+         * @return this
+         *
+         * @since 2.0
+         */
+        public Builder setSpdyInitialWindowSize(int spdyInitialWindowSize) {
+            this.spdyInitialWindowSize = spdyInitialWindowSize;
+            return this;
+        }
+
+        /**
+         * Configures the maximum number of concurrent streams over a single
+         * SPDY session.
+         *
+         * @param spdyMaxConcurrentStreams the maximum number of concurrent
+         *                                 streams over a single SPDY session.
+         *
+         * @return this
+         *
+         * @since 2.0
+         */
+        public Builder setSpdyMaxConcurrentStreams(int spdyMaxConcurrentStreams) {
+            this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1151,7 +1203,9 @@ public class AsyncHttpClientConfig {
                     ioThreadMultiplier,
                     strict302Handling,
                     useRelativeURIsWithSSLProxies,
-                    spdyEnabled);
+                    spdyEnabled,
+                    spdyInitialWindowSize,
+                    spdyMaxConcurrentStreams);
         }
     }
 }
