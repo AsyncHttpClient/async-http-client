@@ -122,6 +122,12 @@ public class NettyWebSocket implements WebSocket {
         }
     }
 
+    // @Override
+    public void close(int statusCode, String reason) {
+        onClose(statusCode, reason);
+        listeners.clear();
+    }
+
     protected void onBinaryFragment(byte[] message, boolean last) {
         for (WebSocketListener l : listeners) {
             if (WebSocketByteListener.class.isAssignableFrom(l.getClass())) {
