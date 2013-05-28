@@ -13,23 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ning.http.client.extra;
+package org.asynchttpclient.extra;
 
-import org.asynchttpclient.HttpResponseBodyPart;
+public interface HttpProgress {
 
-public class HttpResponseBodyPartProgress implements HttpProgress {
-	private final HttpResponseBodyPart part;
-
-	public HttpResponseBodyPartProgress(HttpResponseBodyPart part) {
-		this.part = part;
-	}
-
-	public HttpResponseBodyPart getPart() {
-		return part;
-	}
-	
-	@Override
-	public String toString() {
-		return "HttpResponseBodyPartProgress [part=" + part + "]";
-	}
 }

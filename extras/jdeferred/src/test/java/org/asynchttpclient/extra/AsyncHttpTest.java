@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ning.http.client.extra;
+package org.asynchttpclient.extra;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.asynchttpclient.extra.AsyncHttpDeferredObject;
+import org.asynchttpclient.extra.HttpProgress;
 import org.jdeferred.DoneCallback;
 import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;

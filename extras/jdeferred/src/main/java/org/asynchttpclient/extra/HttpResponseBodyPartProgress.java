@@ -13,35 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ning.http.client.extra;
+package org.asynchttpclient.extra;
 
-public class ContentWriteProgress implements HttpProgress {
-	private final long amount;
-	private final long current;
-	private final long total;
+import org.asynchttpclient.HttpResponseBodyPart;
 
-	public ContentWriteProgress(long amount, long current, long total) {
-		this.amount = amount;
-		this.current = current;
-		this.total = total;
+public class HttpResponseBodyPartProgress implements HttpProgress {
+	private final HttpResponseBodyPart part;
+
+	public HttpResponseBodyPartProgress(HttpResponseBodyPart part) {
+		this.part = part;
 	}
 
-	public long getAmount() {
-		return amount;
-	}
-
-	public long getCurrent() {
-		return current;
-	}
-
-	public long getTotal() {
-		return total;
-	}
-
-	@Override
-	public String toString() {
-		return "ContentWriteProgress [amount=" + amount + ", current="
-				+ current + ", total=" + total + "]";
+	public HttpResponseBodyPart getPart() {
+		return part;
 	}
 	
+	@Override
+	public String toString() {
+		return "HttpResponseBodyPartProgress [part=" + part + "]";
+	}
 }

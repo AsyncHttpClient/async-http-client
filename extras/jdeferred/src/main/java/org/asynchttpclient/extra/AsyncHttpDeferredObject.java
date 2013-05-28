@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ning.http.client.extra;
+package org.asynchttpclient.extra;
 
 import java.io.IOException;
 
