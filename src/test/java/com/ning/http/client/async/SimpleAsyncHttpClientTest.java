@@ -56,7 +56,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void StringBufferBodyConsumerTest() throws Throwable {
+    public void StringBuilderBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {

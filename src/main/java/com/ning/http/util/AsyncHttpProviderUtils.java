@@ -456,7 +456,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider) {
-        StringBuffer b = new StringBuffer("AsyncHttpClient/1.0")
+        StringBuilder b = new StringBuilder("AsyncHttpClient/1.0")
                 .append(" ")
                 .append("(")
                 .append(httpProvider.getSimpleName())

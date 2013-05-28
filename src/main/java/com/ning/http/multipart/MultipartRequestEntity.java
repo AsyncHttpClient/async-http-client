@@ -143,7 +143,7 @@ public class MultipartRequestEntity implements RequestEntity {
         if (contentType.contains("boundary="))
             return contentType;
         else {
-            StringBuffer buffer = new StringBuffer(contentType);
+            StringBuilder buffer = new StringBuilder(contentType);
             if (!contentType.endsWith(";"))
                 buffer.append(";");
             buffer.append(" boundary=");
