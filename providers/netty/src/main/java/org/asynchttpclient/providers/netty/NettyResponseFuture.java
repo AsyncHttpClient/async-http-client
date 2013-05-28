@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     private final static Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
-    public final static String MAX_RETRY = "com.ning.http.client.providers.netty.maxRetry";
+    public final static String MAX_RETRY = "org.asynchttpclient.providers.netty.maxRetry";
 
     enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
