@@ -505,7 +505,7 @@ public class AsyncHttpProviderUtils {
 
     public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider,
                                             AsyncHttpClientConfig config) {
-        return new StringBuffer(config.getUserAgent())
+        return new StringBuilder(config.getUserAgent())
                 .append(' ')
                 .append('(')
                 .append(httpProvider.getSimpleName())
