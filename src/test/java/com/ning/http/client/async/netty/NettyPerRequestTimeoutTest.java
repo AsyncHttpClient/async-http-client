@@ -12,12 +12,19 @@
  */
 package com.ning.http.client.async.netty;
 
+import static org.testng.Assert.assertTrue;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.PerRequestTimeoutTest;
 import com.ning.http.client.async.ProviderUtil;
 
 public class NettyPerRequestTimeoutTest extends PerRequestTimeoutTest {
+
+    protected void checkTimeoutMessage(String message) {
+        assertTrue(message.startsWith("Request reached time out of 100 ms after "));
+    }
+
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);

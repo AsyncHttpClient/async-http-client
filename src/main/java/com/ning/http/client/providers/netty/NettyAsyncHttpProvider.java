@@ -1796,11 +1796,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 long now = millisTime();
                 if (nettyResponseFuture.hasRequestTimedOut(now)) {
-                    long age = (now - nettyResponseFuture.getStart()) / 1000000;
+                    long age = now - nettyResponseFuture.getStart();
                     expire("Request reached time out of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms after " + age + " ms");
 
                 } else if (nettyResponseFuture.hasConnectionIdleTimedOut(now)) {
-                    long age = (now - nettyResponseFuture.getStart()) / 1000000;
+                    long age = now - nettyResponseFuture.getStart();
                     expire("Request reached idle time out of " + nettyResponseFuture.getIdleConnectionTimeoutInMs() + " ms after " + age + " ms");
                 }
 

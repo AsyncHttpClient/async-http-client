@@ -13,6 +13,8 @@
 
 package com.ning.http.client.async.grizzly;
 
+import static org.testng.Assert.assertEquals;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.PerRequestTimeoutTest;
@@ -21,8 +23,8 @@ import com.ning.http.client.async.ProviderUtil;
 public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {
 
     @Override
-    protected String getExpectedTimeoutMessage() {
-        return "Timeout exceeded";
+    protected void checkTimeoutMessage(String message) {
+        assertEquals("Timeout exceeded", message);
     }
 
     @Override
