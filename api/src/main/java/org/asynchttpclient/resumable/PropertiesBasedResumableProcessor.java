@@ -30,9 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.ResumableProcessor {
     private final static Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
     private final static File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
-    static {
-        TMP.deleteOnExit();
-    }
     private final static String storeName = "ResumableAsyncHandler.properties";
     private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<String, Long>();
 
@@ -67,7 +64,6 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
                 throw new IllegalStateException("Unable to create directory: " + TMP.getAbsolutePath());
             }
             File f = new File(TMP, storeName);
-            f.deleteOnExit();
             if (!f.createNewFile()) {
                 throw new IllegalStateException("Unable to create temp file: " + f.getAbsolutePath());
             }
@@ -103,9 +99,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     /* @Override */
     public Map<String, Long> load() {
         try {
-            File f = new File(TMP, storeName);
-            f.deleteOnExit();
-            Scanner scan = new Scanner(f, "UTF-8");
+            Scanner scan = new Scanner(new File(TMP, storeName), "UTF-8");
             scan.useDelimiter("[=\n]");
 
             String key;
