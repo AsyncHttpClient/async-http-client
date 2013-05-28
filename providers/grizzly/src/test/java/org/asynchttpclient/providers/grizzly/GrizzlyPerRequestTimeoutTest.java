@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static org.testng.Assert.assertEquals;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.PerRequestTimeoutTest;
@@ -20,8 +22,8 @@ import org.asynchttpclient.async.PerRequestTimeoutTest;
 public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {
 
     @Override
-    protected String getExpectedTimeoutMessage() {
-        return "Timeout exceeded";
+    protected void checkTimeoutMessage(String message) {
+        assertEquals("Timeout exceeded", message);
     }
 
     @Override
