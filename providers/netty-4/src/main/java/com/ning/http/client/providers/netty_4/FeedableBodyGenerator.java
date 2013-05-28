@@ -18,8 +18,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
+import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time

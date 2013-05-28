@@ -17,7 +17,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>async-http-client-extras-parent</artifactId>
-    <groupId>com.ning</groupId>
+    <groupId>org.asynchttpclient</groupId>
     <version>2.0.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>

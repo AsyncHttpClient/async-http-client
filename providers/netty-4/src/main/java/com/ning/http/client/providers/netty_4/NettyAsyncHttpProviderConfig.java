@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -77,7 +77,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
 
     /**
-     * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
+     * Allow nested request from any {@link org.asynchttpclient.AsyncHandler}
      */
     public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
 
@@ -93,7 +93,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     }
 
     /**
-     * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
+     * Add a property that will be used when the AsyncHttpClient initialize its {@link org.asynchttpclient.AsyncHttpProvider}
      * 
      * @param name
      *            the name of the property

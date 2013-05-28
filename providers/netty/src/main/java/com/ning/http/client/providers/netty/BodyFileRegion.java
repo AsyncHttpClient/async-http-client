@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.RandomAccessBody;
+import org.asynchttpclient.RandomAccessBody;
 import org.jboss.netty.channel.FileRegion;
 
 import java.io.IOException;

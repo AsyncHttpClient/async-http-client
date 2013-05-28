@@ -20,10 +20,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.netty.channel.Channel;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.async.ConnectionPoolTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ConnectionsPool;
+import org.asynchttpclient.async.ConnectionPoolTest;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 

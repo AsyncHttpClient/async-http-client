@@ -15,9 +15,9 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.providers.netty_4.ResponseStatus;
 import com.ning.http.client.providers.netty_4.NettyResponse;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseHeaders;
+import org.asynchttpclient.Cookie;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
 import org.testng.annotations.Test;
 
 import java.text.SimpleDateFormat;

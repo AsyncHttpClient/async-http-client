@@ -16,8 +16,8 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseStatus;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.net.URI;

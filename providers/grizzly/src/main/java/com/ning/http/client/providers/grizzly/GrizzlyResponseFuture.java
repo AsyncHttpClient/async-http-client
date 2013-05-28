@@ -13,10 +13,10 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
-import com.ning.http.client.listenable.AbstractListenableFuture;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
 
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.impl.FutureImpl;

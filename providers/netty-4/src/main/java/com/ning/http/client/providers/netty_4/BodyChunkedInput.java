@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.Body;
+import org.asynchttpclient.Body;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.stream.ChunkedInput;

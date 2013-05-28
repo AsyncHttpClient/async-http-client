@@ -13,8 +13,8 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseBodyPart;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseBodyPart;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;

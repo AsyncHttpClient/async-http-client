@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.Body;
+import org.asynchttpclient.Body;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.stream.ChunkedInput;
 

@@ -12,8 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseBodyPart;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseBodyPart;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

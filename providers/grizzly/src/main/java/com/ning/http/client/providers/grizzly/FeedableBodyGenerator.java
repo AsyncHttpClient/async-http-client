@@ -12,8 +12,8 @@
  */
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
+import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;

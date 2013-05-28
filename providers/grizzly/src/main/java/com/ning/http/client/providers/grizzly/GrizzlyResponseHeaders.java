@@ -13,9 +13,9 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseHeaders;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;

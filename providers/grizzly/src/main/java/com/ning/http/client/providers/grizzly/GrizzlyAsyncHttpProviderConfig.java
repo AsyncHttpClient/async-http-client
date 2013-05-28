@@ -13,7 +13,7 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * {@link AsyncHttpProviderConfig} implementation that allows customization
  * of the Grizzly runtime outside of the scope of what the
- * {@link com.ning.http.client.AsyncHttpClientConfig} offers.
+ * {@link org.asynchttpclient.AsyncHttpClientConfig} offers.
  *
  * @see Property
  * 

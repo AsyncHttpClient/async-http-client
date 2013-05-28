@@ -6,7 +6,7 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 
-import com.ning.http.util.Base64;
+import org.asynchttpclient.util.Base64;
 import org.slf4j.LoggerFactory;
 
 public class GSSSPNEGOWrapper {

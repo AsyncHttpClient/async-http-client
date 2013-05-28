@@ -12,9 +12,9 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.FilePartLargeFileTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.FilePartLargeFileTest;
 
 public class NettyFilePartLargeFileTest extends FilePartLargeFileTest {
     @Override

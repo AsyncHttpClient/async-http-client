@@ -13,10 +13,10 @@
 package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.providers.netty_4.NettyAsyncHttpProviderConfig;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.async.RedirectConnectionUsageTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.async.RedirectConnectionUsageTest;
 
 public class NettyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
     @Override

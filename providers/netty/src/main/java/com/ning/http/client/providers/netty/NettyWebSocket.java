@@ -12,11 +12,11 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.websocket.WebSocket;
-import com.ning.http.client.websocket.WebSocketByteListener;
-import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
-import com.ning.http.client.websocket.WebSocketListener;
-import com.ning.http.client.websocket.WebSocketTextListener;
+import org.asynchttpclient.websocket.WebSocket;
+import org.asynchttpclient.websocket.WebSocketByteListener;
+import org.asynchttpclient.websocket.WebSocketCloseCodeReasonListener;
+import org.asynchttpclient.websocket.WebSocketListener;
+import org.asynchttpclient.websocket.WebSocketTextListener;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;

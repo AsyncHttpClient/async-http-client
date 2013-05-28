@@ -8,7 +8,7 @@
         <version>5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ning</groupId>
+    <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
     <name>Asynchronous Http Client Project</name>
     <version>2.0.0-SNAPSHOT</version>

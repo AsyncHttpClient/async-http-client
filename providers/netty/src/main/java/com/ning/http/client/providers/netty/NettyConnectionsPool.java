@@ -12,8 +12,8 @@
  */
 package com.ning.http.client.providers.netty;
 
-import static com.ning.http.util.DateUtil.millisTime;
-import com.ning.http.client.ConnectionsPool;
+import static org.asynchttpclient.util.DateUtil.millisTime;
+import org.asynchttpclient.ConnectionsPool;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A simple implementation of {@link com.ning.http.client.ConnectionsPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * A simple implementation of {@link org.asynchttpclient.ConnectionsPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 

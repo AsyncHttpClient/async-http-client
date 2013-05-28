@@ -15,8 +15,8 @@
  */
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class GrizzlyProviderUtil {
 

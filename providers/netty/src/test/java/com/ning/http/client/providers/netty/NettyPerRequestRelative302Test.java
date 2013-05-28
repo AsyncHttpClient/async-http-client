@@ -12,9 +12,9 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.PerRequestRelative302Test;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.PerRequestRelative302Test;
 
 public class NettyPerRequestRelative302Test extends PerRequestRelative302Test {
     @Override

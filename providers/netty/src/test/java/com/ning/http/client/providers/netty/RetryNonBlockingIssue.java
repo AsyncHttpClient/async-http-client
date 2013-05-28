@@ -12,12 +12,13 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.Request;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -112,7 +113,7 @@ public class RetryNonBlockingIssue {
         builder.addQueryParameter("maxRequests", "" + requests);
         builder.addQueryParameter("id", id);
         builder.setUrl(servletEndpointUri.toString());
-        com.ning.http.client.Request r = builder.build();
+        Request r = builder.build();
         return fetcher.executeRequest(r);
 
     }

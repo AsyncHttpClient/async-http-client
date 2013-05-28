@@ -15,11 +15,11 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
-import com.ning.http.client.listenable.AbstractListenableFuture;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpRequest;

@@ -12,14 +12,14 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.SimpleAsyncHttpClientTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.SimpleAsyncHttpClientTest;
 
 public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
 
     /**
-     * Not Used with {@link com.ning.http.client.SimpleAsyncHttpClient}
+     * Not Used with {@link org.asynchttpclient.SimpleAsyncHttpClient}
      * @param config
      * @return
      */

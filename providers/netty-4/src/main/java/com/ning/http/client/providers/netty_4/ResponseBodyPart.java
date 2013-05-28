@@ -15,8 +15,8 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseBodyPart;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseBodyPart;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;

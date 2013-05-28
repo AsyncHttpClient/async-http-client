@@ -15,9 +15,9 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseHeaders;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 
@@ -68,7 +68,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
     /**
      * Return the HTTP header
      *
-     * @return an {@link com.ning.http.client.FluentCaseInsensitiveStringsMap}
+     * @return an {@link org.asynchttpclient.FluentCaseInsensitiveStringsMap}
      */
     @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {

@@ -13,9 +13,9 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.Expect100ContinueTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.Expect100ContinueTest;
 
 public class GrizzlyExpectContinue100Test extends Expect100ContinueTest{
 

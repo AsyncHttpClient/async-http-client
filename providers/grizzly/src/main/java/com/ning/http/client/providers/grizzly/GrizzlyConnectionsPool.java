@@ -13,8 +13,8 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionsPool;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ConnectionsPool;
 
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;

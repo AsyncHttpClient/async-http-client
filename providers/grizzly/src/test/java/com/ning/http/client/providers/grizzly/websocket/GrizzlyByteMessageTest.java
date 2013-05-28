@@ -12,11 +12,11 @@
  */
 package com.ning.http.client.providers.grizzly.websocket;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.providers.grizzly.GrizzlyProviderUtil;
-import com.ning.http.client.websocket.ByteMessageTest;
+import org.asynchttpclient.websocket.ByteMessageTest;
 import org.testng.annotations.Test;
 
 public class GrizzlyByteMessageTest extends ByteMessageTest {

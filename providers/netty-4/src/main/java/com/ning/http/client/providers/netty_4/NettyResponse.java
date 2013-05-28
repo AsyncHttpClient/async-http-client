@@ -15,12 +15,12 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.Cookie;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.providers.ResponseBase;
-import com.ning.http.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.Cookie;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.providers.ResponseBase;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +36,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 
 /**
- * Wrapper around the {@link com.ning.http.client.Response} API.
+ * Wrapper around the {@link org.asynchttpclient.Response} API.
  */
 public class NettyResponse extends ResponseBase {
 

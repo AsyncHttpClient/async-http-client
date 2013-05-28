@@ -13,10 +13,10 @@
 
 package com.ning.http.client.providers.netty.websocket;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import com.ning.http.client.providers.netty.NettyProviderUtil;
-import com.ning.http.client.websocket.CloseCodeReasonMessageTest;
+import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
 
 public class NettyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
 

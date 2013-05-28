@@ -25,7 +25,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
@@ -75,7 +75,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public final static String USE_DIRECT_BYTEBUFFER = "bufferFactory";
 
     /**
-     * Allow nested request from any {@link com.ning.http.client.AsyncHandler}
+     * Allow nested request from any {@link org.asynchttpclient.AsyncHandler}
      */
     public final static String DISABLE_NESTED_REQUEST = "disableNestedRequest";
 
@@ -91,7 +91,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     }
 
     /**
-     * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
+     * Add a property that will be used when the AsyncHttpClient initialize its {@link org.asynchttpclient.AsyncHttpProvider}
      * 
      * @param name
      *            the name of the property

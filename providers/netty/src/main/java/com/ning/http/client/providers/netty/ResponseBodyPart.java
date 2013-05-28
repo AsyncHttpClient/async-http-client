@@ -27,8 +27,8 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseBodyPart;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseBodyPart;
 import com.ning.http.client.providers.netty.util.ChannelBufferUtil;
 
 /**

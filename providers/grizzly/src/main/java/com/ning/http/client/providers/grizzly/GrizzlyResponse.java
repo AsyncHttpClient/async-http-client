@@ -13,14 +13,14 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import com.ning.http.client.Cookie;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.providers.ResponseBase;
-import com.ning.http.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.Cookie;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.providers.ResponseBase;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.Cookies;
@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * {@link com.ning.http.client.HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
+ * {@link org.asynchttpclient.HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
  * codec.
  *
  * @author The Grizzly Team

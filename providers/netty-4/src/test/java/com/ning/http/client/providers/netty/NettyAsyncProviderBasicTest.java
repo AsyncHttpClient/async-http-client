@@ -15,10 +15,10 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.providers.netty_4.NettyAsyncHttpProviderConfig;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.async.AsyncProvidersBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.async.AsyncProvidersBasicTest;
 
 @Test
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {

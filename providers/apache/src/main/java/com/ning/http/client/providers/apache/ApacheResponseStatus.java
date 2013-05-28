@@ -12,8 +12,8 @@
  */
 package com.ning.http.client.providers.apache;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseStatus;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseStatus;
 import org.apache.commons.httpclient.HttpMethodBase;
 
 import java.net.URI;

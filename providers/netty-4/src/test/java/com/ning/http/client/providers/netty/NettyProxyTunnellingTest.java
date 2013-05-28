@@ -12,9 +12,9 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.ProxyTunnellingTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.ProxyTunnellingTest;
 
 public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     @Override

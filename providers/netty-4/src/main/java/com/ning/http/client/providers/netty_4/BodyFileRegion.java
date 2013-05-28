@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty_4;
 
-import com.ning.http.client.RandomAccessBody;
+import org.asynchttpclient.RandomAccessBody;
 import io.netty.buffer.AbstractReferenceCounted;
 import io.netty.buffer.ReferenceCounted;
 import io.netty.channel.FileRegion;

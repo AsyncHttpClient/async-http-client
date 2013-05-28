@@ -37,7 +37,7 @@
 
 package com.ning.http.client.providers.netty.spnego;
 
-import com.ning.http.util.Base64;
+import org.asynchttpclient.util.Base64;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;

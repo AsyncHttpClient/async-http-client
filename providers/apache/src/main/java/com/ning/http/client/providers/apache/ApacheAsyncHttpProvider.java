@@ -12,38 +12,38 @@
  */
 package com.ning.http.client.providers.apache;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FilePart;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.Part;
-import com.ning.http.client.ProgressAsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.StringPart;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.resumable.ResumableAsyncHandler;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.UTF8UrlEncoder;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.Body;
+import org.asynchttpclient.ByteArrayPart;
+import org.asynchttpclient.Cookie;
+import org.asynchttpclient.FilePart;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.MaxRedirectException;
+import org.asynchttpclient.Part;
+import org.asynchttpclient.ProgressAsyncHandler;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Realm;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.StringPart;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.resumable.ResumableAsyncHandler;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.ProxyUtils;
+import org.asynchttpclient.util.UTF8UrlEncoder;
 import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
@@ -114,11 +114,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 
 
 /**
- * An {@link com.ning.http.client.AsyncHttpProvider} for Apache Http Client 3.1
+ * An {@link org.asynchttpclient.AsyncHttpProvider} for Apache Http Client 3.1
  */
 public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(ApacheAsyncHttpProvider.class);

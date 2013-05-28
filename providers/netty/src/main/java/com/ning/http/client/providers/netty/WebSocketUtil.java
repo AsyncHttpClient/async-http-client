@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.util.Base64;
+import org.asynchttpclient.util.Base64;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

@@ -12,10 +12,10 @@
  */
 package com.ning.http.client.providers.apache;
 
-import static com.ning.http.util.DateUtil.millisTime;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.Request;
-import com.ning.http.client.listenable.AbstractListenableFuture;
+import static org.asynchttpclient.util.DateUtil.millisTime;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

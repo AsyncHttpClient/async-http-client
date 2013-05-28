@@ -13,11 +13,11 @@
 
 package com.ning.http.client.providers.grizzly.websocket;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 import com.ning.http.client.providers.grizzly.GrizzlyProviderUtil;
-import com.ning.http.client.websocket.RedirectTest;
+import org.asynchttpclient.websocket.RedirectTest;
 
 public class GrizzlyRedirectTest extends RedirectTest {
 

@@ -13,8 +13,8 @@
 
 package com.ning.http.client.providers.grizzly;
 
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.HttpResponseStatus;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseStatus;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 

@@ -17,7 +17,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.ning.http.client.ListenableFuture;
+import org.asynchttpclient.ListenableFuture;
 
 public final class ListenableFutureAdapter {
 

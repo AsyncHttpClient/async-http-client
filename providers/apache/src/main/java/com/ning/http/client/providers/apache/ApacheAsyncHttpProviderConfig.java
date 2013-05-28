@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.apache;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 
 import java.util.Map;
 import java.util.Set;

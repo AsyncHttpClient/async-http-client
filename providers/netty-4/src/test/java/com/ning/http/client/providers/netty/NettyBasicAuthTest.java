@@ -17,9 +17,9 @@ import java.util.concurrent.TimeoutException;
 
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.async.BasicAuthTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.async.BasicAuthTest;
 
 @Test
 public class NettyBasicAuthTest extends BasicAuthTest {

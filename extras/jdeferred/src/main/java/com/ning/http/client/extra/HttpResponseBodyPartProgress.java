@@ -15,7 +15,7 @@
  */
 package com.ning.http.client.extra;
 
-import com.ning.http.client.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseBodyPart;
 
 public class HttpResponseBodyPartProgress implements HttpProgress {
 	private final HttpResponseBodyPart part;

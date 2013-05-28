@@ -28,12 +28,12 @@ import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.async.AbstractBasicTest;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.async.AbstractBasicTest;
 
 public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
 

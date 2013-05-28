@@ -15,12 +15,12 @@
  */
 package com.ning.http.client.providers.netty;
 
-import static com.ning.http.util.DateUtil.millisTime;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Request;
-import com.ning.http.client.listenable.AbstractListenableFuture;
+import static org.asynchttpclient.util.DateUtil.millisTime;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
