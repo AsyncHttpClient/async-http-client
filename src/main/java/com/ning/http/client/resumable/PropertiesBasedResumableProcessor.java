@@ -60,11 +60,11 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         FileOutputStream os = null;
         try {
 
-            if (!TMP.mkdirs()) {
+            if (!TMP.exists() && !TMP.mkdirs()) {
                 throw new IllegalStateException("Unable to create directory: " + TMP.getAbsolutePath());
             }
             File f = new File(TMP, storeName);
-            if (!f.createNewFile()) {
+            if (!f.exists() && !f.createNewFile()) {
                 throw new IllegalStateException("Unable to create temp file: " + f.getAbsolutePath());
             }
             if (!f.canWrite()) {
