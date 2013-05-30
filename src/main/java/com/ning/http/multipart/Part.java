@@ -210,7 +210,6 @@ public abstract class Part implements com.ning.http.client.Part {
     protected void sendStart(OutputStream out) throws IOException {
         out.write(EXTRA_BYTES);
         out.write(getPartBoundary());
-        out.write(CRLF_BYTES);
     }
 
     /**
@@ -220,10 +219,13 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs.
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
-        out.write(CONTENT_DISPOSITION_BYTES);
-        out.write(QUOTE_BYTES);
-        out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
-        out.write(QUOTE_BYTES);
+        if (getName() != null) {
+            out.write(CRLF_BYTES);
+            out.write(CONTENT_DISPOSITION_BYTES);
+            out.write(QUOTE_BYTES);
+            out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
+            out.write(QUOTE_BYTES);
+        }
     }
 
     /**
