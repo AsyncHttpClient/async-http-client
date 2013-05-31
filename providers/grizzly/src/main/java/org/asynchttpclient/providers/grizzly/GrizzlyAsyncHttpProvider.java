@@ -2219,13 +2219,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     final Connection c = m.obtainConnection(requestToSend,
                                                             httpTransactionContext.future);
-//                    if (switchingSchemes(orig, uri)) {
-//                        try {
-//                            notifySchemeSwitch(ctx, c, uri);
-//                        } catch (IOException ioe) {
-//                            httpTransactionContext.abort(ioe);
-//                        }
-//                    }
                     final HttpTransactionContext newContext =
                             httpTransactionContext.copy();
                     httpTransactionContext.future = null;
@@ -2256,22 +2249,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 return !(statusCode < 302 || statusCode > 303)
                           && !(statusCode == 302
                              && ctx.provider.clientConfig.isStrict302Handling());
-            }
-
-
-            private boolean switchingSchemes(final URI oldUri,
-                                             final URI newUri) {
-
-                return !oldUri.getScheme().equals(newUri.getScheme());
-
-            }
-
-            private void notifySchemeSwitch(final FilterChainContext ctx,
-                                            final Connection c,
-                                            final URI uri) throws IOException {
-
-                ctx.notifyDownstream(
-                        new SSLSwitchingEvent("https".equals(uri.getScheme()), c, null));
             }
 
         } // END RedirectHandler
