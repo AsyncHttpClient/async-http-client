@@ -559,7 +559,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -602,7 +602,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
             ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
 
             c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute(new AsyncCompletionHandlerAdapter() {
@@ -645,7 +645,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
             ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
 
             c.preparePut(getTargetUrl()).setHeaders(h).setBody(is).execute(new AsyncCompletionHandlerAdapter() {
@@ -689,7 +689,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
             byte[] bytes = sb.toString().getBytes();
             h.add("Content-Length", String.valueOf(bytes.length));
 
@@ -771,7 +771,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -809,7 +809,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             Response response = c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandler<Response>() {
                 @Override
@@ -869,7 +869,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             Response response = c.preparePut(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter()).get();
 
@@ -894,7 +894,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -993,7 +993,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             Future<Response> future = c.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter());
 
@@ -1019,7 +1019,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 sb.append(i);
                 sb.append("&");
             }
-            sb.deleteCharAt(sb.length() - 1);
+            sb.setLength(sb.length() - 1);
 
             final CountDownLatch l = new CountDownLatch(1);
 

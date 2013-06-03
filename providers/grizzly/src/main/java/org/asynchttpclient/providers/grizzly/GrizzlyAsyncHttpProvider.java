@@ -1328,7 +1328,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         }
                     }
                 }
-                String queryString = sb.deleteCharAt((sb.length() - 1)).toString();
+                sb.setLength(sb.length() - 1);
+                String queryString = sb.toString();
 
                 requestPacket.setQueryString(queryString);
             }
