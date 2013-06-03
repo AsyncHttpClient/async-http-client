@@ -162,8 +162,8 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
         Long createTime = channel2CreationDate.get(channel);
         if (createTime == null) {
-           channel2CreationDate.putIfAbsent(channel, System.currentTimeMillis());
-        } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < System.currentTimeMillis()) {
+           channel2CreationDate.putIfAbsent(channel, millisTime());
+        } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime()) {
            log.debug("Channel {} expired", channel);
            return false;
         }
