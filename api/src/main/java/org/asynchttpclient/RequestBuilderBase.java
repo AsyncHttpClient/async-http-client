@@ -190,7 +190,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         } else {
                             builder.append(name);
                         }
-                        if (value != null) {
+                        if (isNonEmpty(value)) {
                             builder.append('=');
                             if (encode) {
                                 UTF8UrlEncoder.appendEncoded(builder, value);
