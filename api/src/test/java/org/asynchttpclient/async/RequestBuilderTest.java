@@ -90,11 +90,12 @@ public class RequestBuilderTest {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
                 .addQueryParameter("param2", "value2")
+                .addQueryParameter("param3", "")
                 .build();
 
-        assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
+        assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2&param3");
         FluentStringsMap params = request.getQueryParams();
-        assertEquals(params.size(), 2);
+        assertEquals(params.size(), 3);
         assertEquals(params.get("param1").get(0), "value1");
         assertEquals(params.get("param2").get(0), "value2");
     }
