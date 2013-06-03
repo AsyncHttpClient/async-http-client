@@ -36,22 +36,25 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final static Logger log = LoggerFactory.getLogger(NettyConnectionsPool.class);
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
+    private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer idleConnectionDetector = new Timer(true);
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
+    private final int maxConnectionLifeTimeInMs;
     private final long maxIdleTime;
 
     public NettyConnectionsPool(NettyAsyncHttpProvider provider) {
-        this(provider.getConfig().getMaxTotalConnections(), provider.getConfig().getMaxConnectionPerHost(), provider.getConfig().getIdleConnectionInPoolTimeoutInMs(), provider.getConfig().isSslConnectionPoolEnabled());
+        this(provider.getConfig().getMaxTotalConnections(), provider.getConfig().getMaxConnectionPerHost(), provider.getConfig().getIdleConnectionInPoolTimeoutInMs(), provider.getConfig().getMaxConnectionLifeTimeInMs(), provider.getConfig().isSslConnectionPoolEnabled());
     }
 
-    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled) {
+    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, int maxConnectionLifeTimeInMs, boolean sslConnectionPoolEnabled) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
+        this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
         this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
     }
 
@@ -157,6 +160,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             return false;
         }
 
+        Long createTime = channel2CreationDate.get(channel);
+        if (createTime == null) {
+           channel2CreationDate.putIfAbsent(channel, millisTime());
+        } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime()) {
+           log.debug("Channel {} expired", channel);
+           return false;
+        }
+
         log.debug("Adding uri: {} for channel {}", uri, channel);
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
@@ -234,6 +245,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean removeAll(Channel channel) {
+        channel2CreationDate.remove(channel);
         return !isClosed.get() && remove(channel2IdleChannel.get(channel));
     }
 
@@ -263,11 +275,13 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
         connectionsPool.clear();
         channel2IdleChannel.clear();
+        channel2CreationDate.clear();
     }
 
     private void close(Channel channel) {
         try {
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
+            channel2CreationDate.remove(channel);
             channel.close();
         } catch (Throwable t) {
             // noop
