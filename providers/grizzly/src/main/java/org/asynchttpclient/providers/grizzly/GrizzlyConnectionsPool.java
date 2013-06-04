@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.asynchttpclient.util.DateUtil.millisTime;
+
 /**
  * {@link ConnectionsPool} implementation.
  * 
@@ -58,6 +60,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
     private final int maxConnections;
     private final boolean unlimitedConnections;
     private final long timeout;
+    private final long maxConnectionLifeTimeInMs;
     private final DelayedExecutor delayedExecutor;
     private final CloseListener listener;
 
@@ -69,6 +72,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
         cacheSSLConnections = config.isSslConnectionPoolEnabled();
         timeout = config.getIdleConnectionInPoolTimeoutInMs();
+        maxConnectionLifeTimeInMs = config.getMaxConnectionLifeTimeInMs();
         maxConnectionsPerHost = config.getMaxConnectionPerHost();
         maxConnections = config.getMaxTotalConnections();
         unlimitedConnections = (maxConnections == -1);
@@ -106,7 +110,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             LOG.debug("Creating new Connection queue for uri [{}] and connection [{}]",
                         uri, connection);
             DelayedExecutor.IdleConnectionQueue newPool =
-                    delayedExecutor.createIdleConnectionQueue(timeout);
+                    delayedExecutor.createIdleConnectionQueue(timeout, maxConnectionLifeTimeInMs);
             conQueue = connectionsPool.putIfAbsent(uri, newPool);
             if (conQueue == null) {
                 conQueue = newPool;
@@ -290,8 +294,8 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             return threadPool;
         }
 
-        private IdleConnectionQueue createIdleConnectionQueue(final long timeout) {
-            final IdleConnectionQueue queue = new IdleConnectionQueue(timeout);
+        private IdleConnectionQueue createIdleConnectionQueue(final long timeout, final long maxConnectionLifeTimeInMs) {
+            final IdleConnectionQueue queue = new IdleConnectionQueue(timeout, maxConnectionLifeTimeInMs);
             queues.add(queue);
             return queue;
         }
@@ -310,7 +314,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             @Override
             public void run() {
                 while (isStarted) {
-                    final long currentTimeMs = System.currentTimeMillis();
+                    final long currentTimeMs = millisTime();
 
                     for (final IdleConnectionQueue delayQueue : queues) {
                         if (delayQueue.queue.isEmpty()) continue;
@@ -367,12 +371,14 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             final TimeoutResolver resolver = new TimeoutResolver();
             final long timeout;
             final AtomicInteger count = new AtomicInteger(0);
+            final long maxConnectionLifeTimeInMs;
 
             // ---------------------------------------------------- Constructors
 
 
-            public IdleConnectionQueue(final long timeout) {
+            public IdleConnectionQueue(final long timeout, final long maxConnectionLifeTimeInMs) {
                 this.timeout = timeout;
+                this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
             }
 
 
@@ -380,9 +386,25 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
 
             void offer(final Connection c) {
-                if (timeout >= 0) {
-                    resolver.setTimeoutMs(c, System.currentTimeMillis() + timeout);
+                long timeoutMs = UNSET_TIMEOUT;
+                long currentTime = millisTime();
+                if (maxConnectionLifeTimeInMs < 0 && timeout >= 0) {
+                    timeoutMs = currentTime + timeout;
+                } else if (maxConnectionLifeTimeInMs >= 0) {
+                    long t = resolver.getTimeoutMs(c);
+                    if (t == UNSET_TIMEOUT) {
+                        if (timeout >= 0) {
+                            timeoutMs = currentTime + Math.min(maxConnectionLifeTimeInMs, timeout);
+                        } else {
+                            timeoutMs = currentTime + maxConnectionLifeTimeInMs;
+                        }
+                    } else {
+                        if (timeout >= 0) {
+                            timeoutMs = Math.min(t, currentTime + timeout);
+                        }
+                    }
                 }
+                resolver.setTimeoutMs(c, timeoutMs);
                 queue.offer(c);
                 count.incrementAndGet();
             }
@@ -458,7 +480,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
             static final class IdleRecord {
 
-                volatile long timeoutMs;
+                volatile long timeoutMs = UNSET_TIMEOUT;
 
             } // END IdleRecord
 
