@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,24 +69,6 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         return this;
     }
 
-    private List<String> fetchValues(Collection<String> values) {
-        List<String> result = null;
-
-        if (values != null) {
-            for (String value : values) {
-                if (value == null) {
-                    value = "";
-                }
-                if (result == null) {
-                    // lazy initialization
-                    result = new ArrayList<String>();
-                }
-                result.add(value);
-            }
-        }
-        return result;
-    }
-
     /**
      * Adds the specified values and returns this object.
      *
@@ -95,16 +79,14 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      */
     public FluentStringsMap add(String key, Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues(values);
-
-            if (nonNullValues != null) {
+            if (isNonEmpty(values)) {
                 List<String> curValues = this.values.get(key);
 
                 if (curValues == null) {
                     curValues = new ArrayList<String>();
                     this.values.put(key, curValues);
                 }
-                curValues.addAll(nonNullValues);
+                curValues.addAll(values);
             }
         }
         return this;
@@ -160,12 +142,10 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      */
     public FluentStringsMap replace(final String key, final Collection<String> values) {
         if (key != null) {
-            List<String> nonNullValues = fetchValues(values);
-
-            if (nonNullValues == null) {
+            if (values == null) {
                 this.values.remove(key);
             } else {
-                this.values.put(key, nonNullValues);
+                this.values.put(key, new ArrayList<String>(values));
             }
         }
         return this;
