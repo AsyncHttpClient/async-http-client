@@ -21,8 +21,6 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
-import org.asynchttpclient.ConnectionsPool;
 import org.asynchttpclient.Cookie;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.FluentStringsMap;
@@ -56,9 +54,6 @@ import org.asynchttpclient.util.ProxyUtils;
 import org.asynchttpclient.util.SslUtils;
 
 import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.CloseListener;
-import org.glassfish.grizzly.CloseType;
-import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
@@ -85,7 +80,6 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.Protocol;
-import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.npn.ClientSideNegotiator;
 import org.glassfish.grizzly.spdy.NextProtoNegSupport;
 import org.glassfish.grizzly.spdy.SpdyFramingFilter;
@@ -104,7 +98,6 @@ import org.glassfish.grizzly.http.util.MimeHeaders;
 import org.glassfish.grizzly.impl.SafeFutureImpl;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
-import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
@@ -113,7 +106,6 @@ import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 import org.glassfish.grizzly.utils.DelayedExecutor;
-import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.HandShake;
@@ -136,7 +128,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -150,7 +141,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -180,8 +170,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
 
-    private final TCPNIOTransport clientTransport;
-    private final AsyncHttpClientConfig clientConfig;
+    final TCPNIOTransport clientTransport;
+    final AsyncHttpClientConfig clientConfig;
     private final ConnectionManager connectionManager;
 
     DelayedExecutor.Resolver<Connection> resolver;
@@ -2310,35 +2300,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END ClientContentEncoding
 
 
-    private static final class NonCachingPool implements ConnectionsPool<String,Connection> {
-
-
-        // ---------------------------------------- Methods from ConnectionsPool
-
-
-        public boolean offer(String uri, Connection connection) {
-            return false;
-        }
-
-        public Connection poll(String uri) {
-            return null;
-        }
-
-        public boolean removeAll(Connection connection) {
-            return false;
-        }
-
-        public boolean canCacheConnection() {
-            return true;
-        }
-
-        public void destroy() {
-            // no-op
-        }
-
-    } // END NonCachingPool
-
-
     private static interface BodyHandler {
 
         static int MAX_CHUNK_SIZE = 8192;
@@ -2841,232 +2802,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     } // END BodyGeneratorBodyHandler
 
-
-    static class ConnectionManager {
-
-        private static final Attribute<Boolean> DO_NOT_CACHE =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
-        private final ConnectionsPool<String,Connection> pool;
-        private final TCPNIOConnectorHandler connectionHandler;
-        private final ConnectionMonitor connectionMonitor;
-        private final GrizzlyAsyncHttpProvider provider;
-
-        // -------------------------------------------------------- Constructors
-
-        @SuppressWarnings("unchecked")
-        ConnectionManager(final GrizzlyAsyncHttpProvider provider,
-                          final TCPNIOTransport transport) {
-
-            ConnectionsPool<String,Connection> connectionPool;
-            this.provider = provider;
-            final AsyncHttpClientConfig config = provider.clientConfig;
-            if (config.getAllowPoolingConnection()) {
-                ConnectionsPool pool = config.getConnectionsPool();
-                if (pool != null) {
-                    //noinspection unchecked
-                    connectionPool = (ConnectionsPool<String, Connection>) pool;
-                } else {
-                    connectionPool = new GrizzlyConnectionsPool((config));
-                }
-            } else {
-                connectionPool = new NonCachingPool();
-            }
-            pool = connectionPool;
-            connectionHandler = TCPNIOConnectorHandler.builder(transport).build();
-            final int maxConns = provider.clientConfig.getMaxTotalConnections();
-            connectionMonitor = new ConnectionMonitor(maxConns);
-
-
-        }
-
-        // ----------------------------------------------------- Private Methods
-
-        static void markConnectionAsDoNotCache(final Connection c) {
-            DO_NOT_CACHE.set(c, Boolean.TRUE);
-        }
-
-        static boolean isConnectionCacheable(final Connection c) {
-            final Boolean canCache =  DO_NOT_CACHE.get(c);
-            return ((canCache != null) ? canCache : false);
-        }
-
-        void doAsyncTrackedConnection(final Request request,
-                                      final GrizzlyResponseFuture requestFuture,
-                                      final CompletionHandler<Connection> connectHandler)
-        throws IOException, ExecutionException, InterruptedException {
-            Connection c = pool.poll(getPoolKey(request, requestFuture.getProxyServer()));
-            if (c == null) {
-                if (!connectionMonitor.acquire()) {
-                    throw new IOException("Max connections exceeded");
-                }
-                doAsyncConnect(request, requestFuture, connectHandler);
-            } else {
-                provider.touchConnection(c, request);
-                connectHandler.completed(c);
-            }
-
-        }
-
-        Connection obtainConnection(final Request request,
-                                    final GrizzlyResponseFuture requestFuture)
-        throws IOException, ExecutionException, InterruptedException, TimeoutException {
-
-            final Connection c = obtainConnection0(request, requestFuture, requestFuture.getProxyServer());
-            markConnectionAsDoNotCache(c);
-            return c;
-
-        }
-
-        void doAsyncConnect(final Request request,
-                            final GrizzlyResponseFuture requestFuture,
-                            final CompletionHandler<Connection> connectHandler)
-        throws IOException, ExecutionException, InterruptedException {
-
-            ProxyServer proxy = requestFuture.getProxyServer();
-            final URI uri = request.getURI();
-            String host = proxy != null ? proxy.getHost() : uri.getHost();
-            int port = proxy != null ? proxy.getPort() : uri.getPort();
-            if (request.getLocalAddress() != null) {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)), new InetSocketAddress(request.getLocalAddress(), 0),
-                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
-            } else {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        createConnectionCompletionHandler(request, requestFuture, connectHandler));
-            }
-
-        }
-
-        private Connection obtainConnection0(final Request request,
-                                             final GrizzlyResponseFuture requestFuture,
-                                             final ProxyServer proxy)
-        throws IOException, ExecutionException, InterruptedException, TimeoutException {
-
-            final URI uri = request.getURI();
-            String host = proxy != null ? proxy.getHost() : uri.getHost();
-            int port = proxy != null ? proxy.getPort() : uri.getPort();
-            int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
-            FutureImpl<Connection> future = Futures.createSafeFuture();
-            CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
-                    createConnectionCompletionHandler(request, requestFuture, null));
-            if (cTimeout > 0) {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        ch);
-                return future.get(cTimeout, TimeUnit.MILLISECONDS);
-            } else {
-                connectionHandler.connect(new InetSocketAddress(host, getPort(uri, port)),
-                        ch);
-                return future.get();
-            }
-        }
-
-        boolean returnConnection(final Request request, final Connection c) {
-            ProxyServer proxyServer = ProxyUtils.getProxyServer(provider.clientConfig, request);
-            final boolean result = (DO_NOT_CACHE.get(c) == null
-                                       && pool.offer(getPoolKey(request, proxyServer), c));
-            if (result) {
-                if (provider.resolver != null) {
-                    provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
-                }
-            }
-            return result;
-
-        }
-
-
-        boolean canReturnConnection(final Connection c) {
-
-            return (DO_NOT_CACHE.get(c) != null || pool.canCacheConnection());
-
-        }
-
-
-        void destroy() {
-
-            pool.destroy();
-
-        }
-
-        CompletionHandler<Connection> createConnectionCompletionHandler(final Request request,
-                                                                        final GrizzlyResponseFuture future,
-                                                                        final CompletionHandler<Connection> wrappedHandler) {
-            return new CompletionHandler<Connection>() {
-                public void cancelled() {
-                    if (wrappedHandler != null) {
-                        wrappedHandler.cancelled();
-                    } else {
-                        future.cancel(true);
-                    }
-                }
-
-                public void failed(Throwable throwable) {
-                    if (wrappedHandler != null) {
-                        wrappedHandler.failed(throwable);
-                    } else {
-                        future.abort(throwable);
-                    }
-                }
-
-                public void completed(Connection connection) {
-                    future.setConnection(connection);
-                    provider.touchConnection(connection, request);
-                    if (wrappedHandler != null) {
-                        connection.addCloseListener(connectionMonitor);
-                        wrappedHandler.completed(connection);
-                    }
-                }
-
-                public void updated(Connection result) {
-                    if (wrappedHandler != null) {
-                        wrappedHandler.updated(result);
-                    }
-                }
-            };
-        }
-
-        private static String getPoolKey(final Request request, ProxyServer proxyServer) {
-            final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-            URI uri = proxyServer != null? proxyServer.getURI(): request.getURI();
-            return keyStrategy.getKey(uri);
-        }
-
-        // ------------------------------------------------------ Nested Classes
-
-        private static class ConnectionMonitor implements CloseListener<Closeable,CloseType> {
-
-        private final Semaphore connections;
-
-            // ------------------------------------------------------------ Constructors
-
-
-            ConnectionMonitor(final int maxConnections) {
-                if (maxConnections != -1) {
-                    connections = new Semaphore(maxConnections);
-                } else {
-                    connections = null;
-                }
-            }
-
-            // ----------------------------------- Methods from Connection.CloseListener
-
-
-            public boolean acquire() {
-
-                return (connections == null || connections.tryAcquire());
-
-            }
-
-            @Override
-            public void onClosed(Closeable closeable, CloseType closeType) throws IOException {
-
-                if (connections != null) {
-                    connections.release();
-                }
-
-            }
-
-        } // END ConnectionMonitor
-
-    } // END ConnectionManager
 
     static final class SwitchingSSLFilter extends SSLFilter {
 

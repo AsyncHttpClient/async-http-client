@@ -28,8 +28,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.ConnectionManager.*;
-
 /**
  * {@link HttpResponseBodyPart} implementation using the Grizzly 2.0 HTTP client
  * codec.
@@ -127,8 +125,7 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
      */
     @Override
     public void markUnderlyingConnectionAsClosed() {
-        GrizzlyAsyncHttpProvider.ConnectionManager
-                .markConnectionAsDoNotCache(connection);
+        ConnectionManager.markConnectionAsDoNotCache(connection);
     }
 
     /**
@@ -136,8 +133,7 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
      */
     @Override
     public boolean closeUnderlyingConnection() {
-        return !GrizzlyAsyncHttpProvider.ConnectionManager
-                .isConnectionCacheable(connection);
+        return !ConnectionManager.isConnectionCacheable(connection);
     }
 
 
