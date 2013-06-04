@@ -115,6 +115,29 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
                 /* @Override */
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
+                    if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                        throw new IOException("failed to parse the query properly");
+                    }
+                    return super.onStatusReceived(status);
+                }
+
+            });
+            Response resp = f.get(3, TimeUnit.SECONDS);
+            assertNotNull(resp);
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            client.close();
+        }
+    }
+    
+    @Test(groups = { "standalone", "default_provider" })
+    public void postWithEmptyParamsQS() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
+
+                /* @Override */
+                public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
                     if (!status.getUrl().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
                         throw new IOException("failed to parse the query properly");
                     }
