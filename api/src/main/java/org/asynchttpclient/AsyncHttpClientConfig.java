@@ -1155,7 +1155,7 @@ public class AsyncHttpClientConfig {
                         t.setDaemon(true);
                         return t;
                     }
-                })
+                });
             }
         	
         	if (applicationThreadPool == null) {
@@ -1165,7 +1165,7 @@ public class AsyncHttpClientConfig {
         	                t.setDaemon(true);
         	                return t;
         	            }
-        	        })
+        	        });
         	}
 
             if (applicationThreadPool.isShutdown()) {
