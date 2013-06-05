@@ -519,20 +519,8 @@ public class AsyncHttpClientConfig {
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean allowPoolingConnection = true;
         private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
-        private ScheduledExecutorService reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "AsyncHttpClient-Reaper");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        private ExecutorService applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "AsyncHttpClient-Callback");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        private ScheduledExecutorService reaper;
+        private ExecutorService applicationThreadPool;
         private ProxyServer proxyServer = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
@@ -710,7 +698,6 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            if (this.reaper != null) this.reaper.shutdown();
             this.reaper = reaper;
             return this;
         }
@@ -724,7 +711,6 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setExecutorService(ExecutorService applicationThreadPool) {
-            if (this.applicationThreadPool != null) this.applicationThreadPool.shutdown();
             this.applicationThreadPool = applicationThreadPool;
             return this;
         }
@@ -1057,6 +1043,29 @@ public class AsyncHttpClientConfig {
          * @return an {@link AsyncHttpClientConfig}
          */
         public AsyncHttpClientConfig build() {
+
+            if (reaper == null) {
+                reaper = Executors.newScheduledThreadPool(Runtime.getRuntime()
+                        .availableProcessors(), new ThreadFactory() {
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r, "AsyncHttpClient-Reaper");
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
+            }
+
+            if (applicationThreadPool == null) {
+                applicationThreadPool = Executors
+                        .newCachedThreadPool(new ThreadFactory() {
+                            public Thread newThread(Runnable r) {
+                                Thread t = new Thread(r,
+                                        "AsyncHttpClient-Callback");
+                                t.setDaemon(true);
+                                return t;
+                            }
+                        });
+            }
 
             if (applicationThreadPool.isShutdown()) {
                 throw new IllegalStateException("ExecutorServices closed");
