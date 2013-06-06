@@ -55,7 +55,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
     }
     
-    void initializeAsynchronousTransfer(final FilterChainContext context, 
+    public void initializeAsynchronousTransfer(final FilterChainContext context,
             final HttpRequestPacket requestPacket) throws IOException {
         this.context = context;
         this.requestPacket = requestPacket;

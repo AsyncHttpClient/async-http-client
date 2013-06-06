@@ -40,7 +40,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class ConnectionManager {
+public class ConnectionManager {
 
     private static final Attribute<Boolean> DO_NOT_CACHE =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
@@ -57,7 +57,7 @@ class ConnectionManager {
 
         ConnectionsPool<String,Connection> connectionPool;
         this.provider = provider;
-        final AsyncHttpClientConfig config = provider.clientConfig;
+        final AsyncHttpClientConfig config = provider.getClientConfig();
         if (config.getAllowPoolingConnection()) {
             ConnectionsPool pool = config.getConnectionsPool();
             if (pool != null) {
@@ -71,7 +71,7 @@ class ConnectionManager {
         }
         pool = connectionPool;
         connectionHandler = TCPNIOConnectorHandler.builder(transport).build();
-        final int maxConns = provider.clientConfig.getMaxTotalConnections();
+        final int maxConns = provider.getClientConfig().getMaxTotalConnections();
         connectionMonitor = new ConnectionMonitor(maxConns);
 
 
@@ -88,9 +88,9 @@ class ConnectionManager {
         return ((canCache != null) ? canCache : false);
     }
 
-    void doAsyncTrackedConnection(final Request request,
-                                  final GrizzlyResponseFuture requestFuture,
-                                  final CompletionHandler<Connection> connectHandler)
+    public void doAsyncTrackedConnection(final Request request,
+                                         final GrizzlyResponseFuture requestFuture,
+                                         final CompletionHandler<Connection> connectHandler)
     throws IOException, ExecutionException, InterruptedException {
         Connection c = pool.poll(getPoolKey(request, requestFuture.getProxyServer()));
         if (c == null) {
@@ -105,8 +105,8 @@ class ConnectionManager {
 
     }
 
-    Connection obtainConnection(final Request request,
-                                final GrizzlyResponseFuture requestFuture)
+    public Connection obtainConnection(final Request request,
+                                       final GrizzlyResponseFuture requestFuture)
     throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
         final Connection c = obtainConnection0(request, requestFuture, requestFuture.getProxyServer());
@@ -115,9 +115,9 @@ class ConnectionManager {
 
     }
 
-    void doAsyncConnect(final Request request,
-                        final GrizzlyResponseFuture requestFuture,
-                        final CompletionHandler<Connection> connectHandler)
+    public void doAsyncConnect(final Request request,
+                               final GrizzlyResponseFuture requestFuture,
+                               final CompletionHandler<Connection> connectHandler)
     throws IOException, ExecutionException, InterruptedException {
 
         ProxyServer proxy = requestFuture.getProxyServer();
@@ -144,7 +144,7 @@ class ConnectionManager {
         final URI uri = request.getURI();
         String host = proxy != null ? proxy.getHost() : uri.getHost();
         int port = proxy != null ? proxy.getPort() : uri.getPort();
-        int cTimeout = provider.clientConfig.getConnectionTimeoutInMs();
+        int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
         FutureImpl<Connection> future = Futures.createSafeFuture();
         CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                 createConnectionCompletionHandler(request, requestFuture, null));
@@ -163,12 +163,12 @@ class ConnectionManager {
 
     boolean returnConnection(final Request request, final Connection c) {
         ProxyServer proxyServer = ProxyUtils.getProxyServer(
-                provider.clientConfig, request);
+                provider.getClientConfig(), request);
         final boolean result = (DO_NOT_CACHE.get(c) == null
                                    && pool.offer(getPoolKey(request, proxyServer), c));
         if (result) {
-            if (provider.resolver != null) {
-                provider.resolver.setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
+            if (provider.getResolver() != null) {
+                provider.getResolver().setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
             }
         }
         return result;
