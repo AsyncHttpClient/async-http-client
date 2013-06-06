@@ -147,7 +147,6 @@ public class AsyncHttpClient implements Closeable {
     private static final String[] DEFAULT_PROVIDERS = {
         "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",
         "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider",
-        "org.asynchttpclient.providers.apache.ApacheAsyncHttpProvider",
         "org.asynchttpclient.providers.jdk.JDKAsyncHttpProvider"
     };
 
@@ -171,7 +170,7 @@ public class AsyncHttpClient implements Closeable {
      * <ul>
      *     <li>netty</li>
      *     <li>grizzly</li>
-     *     <li>apache</li>
+     *     <li>JDK</li>
      * </ul>
      *
      * If none of those providers are found, then the runtime will default to
@@ -200,7 +199,7 @@ public class AsyncHttpClient implements Closeable {
      * <ul>
      *     <li>netty</li>
      *     <li>grizzly</li>
-     *     <li>apache</li>
+     *     <li>JDK</li>
      * </ul>
      *
      * If none of those providers are found, then the runtime will default to

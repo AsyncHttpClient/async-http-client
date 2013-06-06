@@ -44,7 +44,6 @@
     </build>
 
     <modules>
-        <module>apache</module>
         <module>grizzly</module>
         <module>netty</module>
         <!--

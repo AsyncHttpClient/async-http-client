@@ -302,7 +302,6 @@
                                     <exclude>commons-logging:commons-logging</exclude>
                                     <exclude>junit:junit</exclude>
                                     <exclude>log4j:log4j</exclude>
-                                    <exclude>commons-httpclient:commons-httpclient</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
