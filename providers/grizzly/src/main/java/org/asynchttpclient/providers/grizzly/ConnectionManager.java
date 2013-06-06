@@ -27,8 +27,6 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.impl.FutureImpl;
-import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.utils.DataStructures;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -60,7 +58,7 @@ public class ConnectionManager {
     private static final Attribute<Boolean> DO_NOT_CACHE =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
     private final ConnectionsPool<String,Connection> pool;
-    private final TCPNIOConnectorHandler connectionHandler;
+    private final ProxyAwareConnectorHandler connectionHandler;
     private final ConnectionMonitor connectionMonitor;
     private final GrizzlyAsyncHttpProvider provider;
 
@@ -70,7 +68,7 @@ public class ConnectionManager {
 
     @SuppressWarnings("unchecked")
     ConnectionManager(final GrizzlyAsyncHttpProvider provider,
-                      final TCPNIOTransport transport) {
+                      final ProxyAwareConnectorHandler connectionHandler) {
 
         ConnectionsPool<String,Connection> connectionPool;
         this.provider = provider;
@@ -87,8 +85,8 @@ public class ConnectionManager {
             connectionPool = new NonCachingPool();
         }
         pool = connectionPool;
-        connectionHandler = TCPNIOConnectorHandler.builder(transport).build();
-        connectionMonitor = new ConnectionMonitor(provider.getClientConfig().getMaxTotalConnections());
+        this.connectionHandler = connectionHandler;
+        connectionMonitor = new ConnectionMonitor(config.getMaxTotalConnections());
 
 
     }
@@ -119,8 +117,7 @@ public class ConnectionManager {
                                        final GrizzlyResponseFuture requestFuture)
     throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-        final Connection c = obtainConnection0(request, requestFuture,
-                                               requestFuture.getProxyServer());
+        final Connection c = obtainConnection0(request, requestFuture);
         markConnectionAsDoNotCache(c);
         return c;
 
@@ -131,23 +128,17 @@ public class ConnectionManager {
                                final CompletionHandler<Connection> connectHandler)
     throws IOException, ExecutionException, InterruptedException {
 
-        ProxyServer proxy = requestFuture.getProxyServer();
-        final URI uri = request.getURI();
-        String host = proxy != null ? proxy.getHost() : uri.getHost();
-        int port = proxy != null ? proxy.getPort() : uri.getPort();
+        CompletionHandler<Connection> ch =
+                createConnectionCompletionHandler(request,
+                                                  requestFuture,
+                                                  connectHandler);
+
         if (request.getLocalAddress() != null) {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, GrizzlyAsyncHttpProvider
-                            .getPort(uri, port)),
-                    new InetSocketAddress(request.getLocalAddress(), 0),
-                    createConnectionCompletionHandler(request, requestFuture,
-                                                      connectHandler));
+            connectionHandler.connect(request,
+                                      new InetSocketAddress(request.getLocalAddress(), 0),
+                                      ch);
         } else {
-            connectionHandler.connect(
-                    new InetSocketAddress(host, GrizzlyAsyncHttpProvider
-                            .getPort(uri, port)),
-                    createConnectionCompletionHandler(request, requestFuture,
-                                                      connectHandler));
+            connectionHandler.connect(request, null, ch);
         }
 
     }
@@ -168,26 +159,18 @@ public class ConnectionManager {
 
 
     private Connection obtainConnection0(final Request request,
-                                         final GrizzlyResponseFuture requestFuture,
-                                         final ProxyServer proxy)
+                                         final GrizzlyResponseFuture requestFuture)
     throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-        final URI uri = request.getURI();
-        String host = proxy != null ? proxy.getHost() : uri.getHost();
-        int port = proxy != null ? proxy.getPort() : uri.getPort();
         int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
         FutureImpl<Connection> future = Futures.createSafeFuture();
         CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                 createConnectionCompletionHandler(request, requestFuture, null));
         if (cTimeout > 0) {
-            connectionHandler.connect(new InetSocketAddress(host, GrizzlyAsyncHttpProvider
-                    .getPort(uri, port)),
-                    ch);
+            connectionHandler.connect(request, null, ch);
             return future.get(cTimeout, TimeUnit.MILLISECONDS);
         } else {
-            connectionHandler.connect(new InetSocketAddress(host, GrizzlyAsyncHttpProvider
-                    .getPort(uri, port)),
-                    ch);
+            connectionHandler.connect(request, null, ch);
             return future.get();
         }
     }
@@ -403,7 +386,7 @@ public class ConnectionManager {
          */
         public boolean offer(String uri, Connection connection) {
 
-            if (cacheSSLConnections && isSecure(uri)) {
+            if (cacheSSLConnections && Utils.isSecure(uri)) {
                 return false;
             }
 
@@ -444,7 +427,7 @@ public class ConnectionManager {
          */
         public Connection poll(String uri) {
 
-            if (!cacheSSLConnections && isSecure(uri)) {
+            if (!cacheSSLConnections && Utils.isSecure(uri)) {
                 return null;
             }
 
@@ -528,16 +511,6 @@ public class ConnectionManager {
             connectionsPool.clear();
             delayedExecutor.stop();
             delayedExecutor.getThreadPool().shutdownNow();
-
-        }
-
-
-        // ----------------------------------------------------- Private Methods
-
-
-        private boolean isSecure(String uri) {
-
-            return (uri.charAt(0) == 'h' && uri.charAt(4) == 's');
 
         }
 

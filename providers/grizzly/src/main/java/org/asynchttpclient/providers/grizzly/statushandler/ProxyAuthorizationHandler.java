@@ -16,8 +16,8 @@ package org.asynchttpclient.providers.grizzly.statushandler;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
+import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.Base64;
@@ -41,8 +41,6 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
     public static final ProxyAuthorizationHandler INSTANCE =
             new ProxyAuthorizationHandler();
-
-    private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
 
     // ---------------------------------------------- Methods from StatusHandler
@@ -103,10 +101,10 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
                 if(isNTLMFirstHandShake(proxy_auth))
                 {
-                    msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), "");
+                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType1Msg(proxyServer.getNtlmDomain(), "");
                 }else {
                     String serverChallenge = proxy_auth.trim().substring("NTLM ".length());
-                    msg = ntlmEngine.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
+                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
                 }
 
                 req.getHeaders().add(Header.ProxyAuthorization.toString(), "NTLM " + msg);

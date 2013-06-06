@@ -13,6 +13,7 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Cookie;
@@ -20,16 +21,18 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.UpgradeHandler;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
+import org.asynchttpclient.providers.grizzly.GrizzlyResponseFuture;
 import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.AuthenticatorUtils;
-import org.asynchttpclient.util.ProxyUtils;
+import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChain;
@@ -42,6 +45,7 @@ import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.MimeHeaders;
+import org.glassfish.grizzly.impl.SafeFutureImpl;
 import org.glassfish.grizzly.ssl.SSLConnectionContext;
 import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.websockets.Version;
@@ -56,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class AsyncHttpClientFilter extends BaseFilter {
@@ -96,6 +101,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return ctx.getStopAction();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public NextAction handleEvent(final FilterChainContext ctx,
                                   final FilterChainEvent event)
@@ -106,6 +112,35 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final ContinueEvent
                     continueEvent = (ContinueEvent) event;
             ((ExpectHandler) continueEvent.getContext().getBodyHandler()).finish(ctx);
+        } else if (type == TunnelRequestEvent.class) {
+            // Disable SSL for the time being...
+            ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection(), null));
+            ctx.suspend();
+            final ProxyServer proxyServer = ((TunnelRequestEvent) event).getProxyServer();
+            final URI requestUri = ((TunnelRequestEvent) event).getUri();
+            RequestBuilder builder = new RequestBuilder();
+            builder.setMethod(Method.CONNECT.getMethodString());
+            builder.setUrl("http://" + getAuthority(requestUri));
+            AsyncHandler handler = new AsyncCompletionHandler() {
+                @Override
+                public Object onCompleted(Response response) throws Exception {
+                    ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), null));
+                    ctx.notifyDownstream(event);
+                    return response;
+                }
+            };
+            Request request = builder.build();
+            final GrizzlyResponseFuture future =
+                    new GrizzlyResponseFuture(grizzlyAsyncHttpProvider,
+                                              request,
+                                              handler,
+                                              proxyServer);
+            future.setDelegate(SafeFutureImpl.create());
+            grizzlyAsyncHttpProvider.execute(ctx.getConnection(),
+                                             request,
+                                             handler,
+                                             future);
+            return ctx.getSuspendAction();
         }
 
         return ctx.getStopAction();
@@ -121,34 +156,27 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     throws IOException {
 
         final HttpTransactionContext httpCtx = HttpTransactionContext.get(ctx.getConnection());
+        Throwable t = SwitchingSSLFilter.getHandshakeError(ctx.getConnection());
+        if (t != null) {
+            httpCtx.abort(t);
+            return true;
+        }
         if (isUpgradeRequest(httpCtx.getHandler()) && isWSRequest(httpCtx.getRequestUrl())) {
             httpCtx.setWSRequest(true);
             convertToUpgradeRequest(httpCtx);
         }
         final URI uri = httpCtx.getRequest().getURI();
         final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-        final String scheme = uri.getScheme();
-        boolean secure = isSecure(scheme);
+        boolean secure = Utils.isSecure(uri);
         builder.method(request.getMethod());
         builder.protocol(Protocol.HTTP_1_1);
         addHostHeader(request, uri, builder);
-        final ProxyServer proxy = ProxyUtils.getProxyServer(config, request);
-        final boolean useProxy = proxy != null;
-        if (useProxy) {
-            if ((secure || httpCtx.isWSRequest()) && !httpCtx.isTunnelEstablished(ctx.getConnection())) {
-                ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection(), null));
-                secure = false;
-                httpCtx.setEstablishingTunnel(true);
-                builder.method(Method.CONNECT);
-                builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
-            } else if (secure && config.isUseRelativeURIsWithSSLProxies()){
-                builder.uri(uri.getPath());
-            } else {
-                builder.uri(uri.toString());
-            }
+        if (Method.CONNECT.matchesMethod(request.getMethod())) {
+            builder.uri(uri.getHost() + ':' + (uri.getPort() == -1 ? 443 : uri.getPort()));
         } else {
             builder.uri(uri.getPath());
         }
+
         if (GrizzlyAsyncHttpProvider.requestHasEntityBody(request)) {
             final long contentLength = request.getContentLength();
             if (contentLength > 0) {
@@ -175,10 +203,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             requestPacket = builder.build();
         }
         requestPacket.setSecure(secure);
-        if (!useProxy && !httpCtx.isWSRequest()) {
-            addQueryString(request, requestPacket);
-        }
-        addHeaders(request, requestPacket, proxy);
+        addQueryString(request, requestPacket);
+        addHeaders(request, requestPacket);
         addCookies(request, requestPacket);
 
         final AsyncHandler h = httpCtx.getHandler();
@@ -218,10 +244,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                                                             requestPacketLocal);
             }
         };
-        if (secure) {
-            ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), action));
-            return false;
-        }
+
         try {
             return action.call();
         } catch (Exception e) {
@@ -248,10 +271,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 ctx.getInternalContext().getIoEvent());
         ctx.getConnection().setProcessor(completeProtocolFilterChain);
         return newFilterChainContext;
-    }
-
-    private boolean isSecure(String scheme) {
-        return "https".equals(scheme) || "wss".equals(scheme);
     }
 
     private void addHostHeader(final Request request,
@@ -292,21 +311,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         ctx.setRequestUrl(sb.toString());
     }
 
-
-   /* private ProxyServer getProxyServer(Request request) {
-
-        ProxyServer proxyServer = request.getProxyServer();
-        if (proxyServer == null) {
-            proxyServer = config.getProxyServer();
-        }
-        return proxyServer;
-
-    }*/
-
-
     private void addHeaders(final Request request,
-                            final HttpRequestPacket requestPacket,
-                            final ProxyServer proxy) throws IOException {
+                            final HttpRequestPacket requestPacket) throws IOException {
 
         final FluentCaseInsensitiveStringsMap map = request.getHeaders();
         if (isNonEmpty(map)) {
@@ -334,21 +340,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (!headers.contains(Header.UserAgent)) {
             requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
         }
-
-        boolean avoidProxy = ProxyUtils.avoidProxy(proxy, request);
-        if (!avoidProxy) {
-            if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
-                requestPacket.setHeader(Header.ProxyConnection, "keep-alive");
-            }
-
-            if(null == requestPacket.getHeader(Header.ProxyAuthorization) )
-            {
-             requestPacket.setHeader(Header.ProxyAuthorization, AuthenticatorUtils
-                     .computeBasicAuthentication(proxy));
-            }
-
-        }
-
 
     }
 

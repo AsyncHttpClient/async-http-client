@@ -24,6 +24,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandlerFactory;
 import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
@@ -77,7 +78,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -98,13 +98,14 @@ import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConf
 public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
+    public final static NTLMEngine NTLM_ENGINE = new NTLMEngine();
 
     private final BodyHandlerFactory bodyHandlerFactory;
 
     private final TCPNIOTransport clientTransport;
     private final AsyncHttpClientConfig clientConfig;
-    private final ConnectionManager connectionManager;
 
+    private ConnectionManager connectionManager;
     private DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
 
@@ -119,7 +120,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final TCPNIOTransportBuilder builder = TCPNIOTransportBuilder.newInstance();
         clientTransport = builder.build();
         initializeTransport(clientConfig);
-        connectionManager = new ConnectionManager(this, clientTransport);
         try {
             clientTransport.start();
         } catch (IOException ioe) {
@@ -261,8 +261,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     protected void initializeTransport(final AsyncHttpClientConfig clientConfig) {
 
-        final FilterChainBuilder fcb = FilterChainBuilder.stateless();
-        fcb.add(new AsyncHttpClientTransportFilter(this));
+        final FilterChainBuilder secure = FilterChainBuilder.stateless();
+        secure.add(new AsyncHttpClientTransportFilter(this));
 
         final int timeout = clientConfig.getRequestTimeoutInMs();
         if (timeout > 0) {
@@ -300,12 +300,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             timeout(connection);
                         }
                     });
-            fcb.add(timeoutFilter);
+            secure.add(timeoutFilter);
             resolver = timeoutFilter.getResolver();
         }
 
         SSLContext context = clientConfig.getSSLContext();
-        boolean defaultSecState = (context != null);
         if (context == null) {
             try {
                 context = SslUtils.getSSLContext();
@@ -318,8 +317,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         true,
                         false,
                         false);
-        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, defaultSecState);
-        fcb.add(filter);
+        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, true);
+        secure.add(filter);
         GrizzlyAsyncHttpProviderConfig providerConfig =
                         (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();
 
@@ -365,18 +364,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                             512,
                                             new ClientEncodingFilter()));
         }
-        fcb.add(eventFilter);
+        secure.add(eventFilter);
         final AsyncHttpClientFilter clientFilter =
                 new AsyncHttpClientFilter(this, clientConfig);
-        fcb.add(clientFilter);
-        fcb.add(new WebSocketClientFilter());
+        secure.add(clientFilter);
+        secure.add(new WebSocketClientFilter());
 
 
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(Property.TRANSPORT_CUSTOMIZER);
             if (customizer != null) {
-                customizer.customize(clientTransport, fcb);
+                customizer.customize(clientTransport, secure);
             } else {
                 doDefaultTransportConfig();
             }
@@ -388,7 +387,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // copy it and modify for SPDY purposes.
         if (spdyEnabled) {
             FilterChainBuilder spdyFilterChain =
-                    createSpdyFilterChain(fcb, npnEnabled);
+                    createSpdyFilterChain(secure, npnEnabled);
             ProtocolNegotiator pn =
                     new ProtocolNegotiator(spdyFilterChain.build());
             NextProtoNegSupport.getInstance()
@@ -399,7 +398,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
 
         // Install the HTTP filter chain.
-        clientTransport.setProcessor(fcb.build());
+        //clientTransport.setProcessor(fcb.build());
+        FilterChainBuilder nonSecure = FilterChainBuilder.stateless();
+        nonSecure.addAll(secure);
+        int idx = nonSecure.indexOfType(SSLFilter.class);
+        nonSecure.remove(idx);
+        ProxyAwareConnectorHandler.Builder chBuilder =
+                ProxyAwareConnectorHandler.builder(clientTransport);
+        ProxyAwareConnectorHandler connectorHandler =
+                chBuilder.setAsyncHttpClientConfig(clientConfig)
+                    .setNonSecureFilterChainTemplate(nonSecure)
+                    .setSecureFilterChainTemplate(secure).build();
+        connectionManager = new ConnectionManager(this, connectorHandler);
 
     }
 
@@ -500,21 +510,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-    static int getPort(final URI uri, final int p) {
-        int port = p;
-        if (port == -1) {
-            final String protocol = uri.getScheme().toLowerCase();
-            if ("http".equals(protocol) || "ws".equals(protocol)) {
-                port = 80;
-            } else if ("https".equals(protocol) || "wss".equals(protocol)) {
-                port = 443;
-            } else {
-                throw new IllegalArgumentException("Unknown protocol: " + protocol);
-            }
-        }
-        return port;
-    }
-
 
     @SuppressWarnings({"unchecked"})
     public boolean sendRequest(final FilterChainContext ctx,
@@ -544,19 +539,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             HttpContent content = HttpContent.builder(requestPacket).last(true).build();
             ctx.write(content, ctx.getTransportContext().getCompletionHandler());
-//            FilterChainContext newContext = new FilterChainContext();
-//            FilterChain fc = (FilterChain) ctx.getConnection().getProcessor();
-//            final FilterChainContext newFilterChainContext =
-//                            fc.obtainFilterChainContext(
-//                                    ctx.getConnection(),
-//                                    ctx.getStartIdx(),
-//                                    fc.size(),
-//                                    ctx.getFilterIdx());
-//
-//                    newFilterChainContext.setAddressHolder(ctx.getAddressHolder());
-//                    newFilterChainContext.getInternalContext().setProcessor(fc);
-//                    //newFilterChainContext.setMessage(ctx.getMessage());
-//            newContext.write(content, ctx.getTransportContext().getCompletionHandler());
         }
         LOGGER.debug("REQUEST: {}", requestPacket);
 
@@ -657,9 +639,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     public static void main(String[] args) {
+        ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTP,
+                                             "localhost",
+                                             9999);
         AsyncHttpClientConfig config =
-                new AsyncHttpClientConfig.Builder().setSpdyEnabled(
-                        true).build();
+                new AsyncHttpClientConfig.Builder().setSpdyEnabled(false)
+                        .setProxyServer(server).build();
         AsyncHttpClient client =
                 new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config),
                                     config);
@@ -702,46 +687,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                             return null;
                         }
                     }).get();
-            client.prepareGet("https://forum-en.guildwars2.com/forum")
-                                .execute(new AsyncHandler<Object>() {
-                                    @Override
-                                    public void onThrowable(Throwable t) {
-                                        t.printStackTrace();
-                                    }
 
-                                    @Override
-                                    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
-                                    throws Exception {
-                                        System.out.println(
-                                                new String(
-                                                        bodyPart.getBodyPartBytes(),
-                                                        "UTF-8"));
-                                        return STATE.CONTINUE;
-                                    }
-
-                                    @Override
-                                    public STATE onStatusReceived(HttpResponseStatus responseStatus)
-                                    throws Exception {
-                                        System.out
-                                                .println(
-                                                        responseStatus.getStatusCode());
-                                        return STATE.CONTINUE;
-                                    }
-
-                                    @Override
-                                    public STATE onHeadersReceived(HttpResponseHeaders headers)
-                                    throws Exception {
-                                        System.out.println(headers.toString());
-                                        return STATE.CONTINUE;
-                                    }
-
-                                    @Override
-                                    public Object onCompleted()
-                                    throws Exception {
-                                        System.out.println("REQUEST COMPLETE");
-                                        return null;
-                                    }
-                                }).get();
             System.exit(0);
         } catch (IOException ioe) {
             ioe.printStackTrace();

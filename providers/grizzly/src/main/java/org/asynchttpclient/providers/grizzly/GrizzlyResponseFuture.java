@@ -51,7 +51,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
     // ------------------------------------------------------------ Constructors
 
 
-    GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider,
+    public GrizzlyResponseFuture(final GrizzlyAsyncHttpProvider provider,
                           final Request request,
                           final AsyncHandler handler,
                           final ProxyServer proxyServer) {
@@ -188,7 +188,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
 
-    void setDelegate(final FutureImpl<V> delegate) {
+    public void setDelegate(final FutureImpl<V> delegate) {
 
         this.delegate = delegate;
 

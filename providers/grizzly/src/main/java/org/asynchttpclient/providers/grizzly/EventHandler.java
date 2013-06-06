@@ -456,12 +456,16 @@ public final class EventHandler {
         final HttpTransactionContext context =
                 HttpTransactionContext.get(c);
         HttpTransactionContext.set(c, null);
-        final ConnectionManager manager = context.getProvider().getConnectionManager();
-        if (!manager.canReturnConnection(c)) {
-            context.abort(new IOException("Maximum pooled connections exceeded"));
-        } else {
-            if (!manager.returnConnection(context.getRequest(), c)) {
-                ctx.getConnection().close();
+        if (!Utils.isIgnored(ctx.getConnection())) {
+            final ConnectionManager manager =
+                    context.getProvider().getConnectionManager();
+            if (!manager.canReturnConnection(c)) {
+                context.abort(
+                        new IOException("Maximum pooled connections exceeded"));
+            } else {
+                if (!manager.returnConnection(context.getRequest(), c)) {
+                    ctx.getConnection().close();
+                }
             }
         }
 

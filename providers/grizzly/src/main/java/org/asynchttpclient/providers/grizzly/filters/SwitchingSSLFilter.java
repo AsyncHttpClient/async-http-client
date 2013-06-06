@@ -13,8 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.FilterChain;
@@ -24,14 +26,22 @@ import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
 
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
 
 public final class SwitchingSSLFilter extends SSLFilter {
 
     private final boolean secureByDefault;
-    final Attribute<Boolean> CONNECTION_IS_SECURE =
+    static final Attribute<Boolean> CONNECTION_IS_SECURE =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
+    static final Attribute<Boolean> HANDSHAKING =
+        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKING");
+    static final Attribute<Throwable> HANDSHAKE_ERROR =
+        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKE-ERROR");
+
 
     // ------------------------------------------------------------ Constructors
 
@@ -50,7 +60,41 @@ public final class SwitchingSSLFilter extends SSLFilter {
 
     @Override
     protected void notifyHandshakeFailed(Connection connection, Throwable t) {
-        throw new RuntimeException(t);
+        if (GrizzlyAsyncHttpProvider.LOGGER.isErrorEnabled()) {
+            GrizzlyAsyncHttpProvider.LOGGER.error("Unable to complete handshake with peer.", t);
+        }
+        HANDSHAKE_ERROR.set(connection, t);
+    }
+
+    @Override
+    public NextAction handleConnect(final FilterChainContext ctx) throws IOException {
+        ctx.suspend();
+        final Connection c = ctx.getConnection();
+        if (HANDSHAKING.get(c) == null) {
+            HANDSHAKING.set(c, Boolean.TRUE);
+            handshake(ctx.getConnection(),
+                      new EmptyCompletionHandler<SSLEngine>() {
+                          @Override
+                          public void completed(SSLEngine result) {
+                              ctx.resume();
+                          }
+
+                          @Override
+                          public void cancelled() {
+                              ctx.resume();
+                          }
+
+                          @Override
+                          public void failed(Throwable throwable) {
+                              ctx.resume();
+                          }
+                      });
+            return ctx.getSuspendAction();
+        } else {
+            HANDSHAKING.remove(c);
+            return ctx.getInvokeAction();
+        }
+
     }
 
     @Override
@@ -59,23 +103,23 @@ public final class SwitchingSSLFilter extends SSLFilter {
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
 
-            if (se.isSecure()) {
-                if (se.getAction() != null) {
-                    ProtocolHandshakeListener
-                            .addListener(ctx.getConnection(),
-                                         new HandshakeCompleteListener() {
-                                            @Override
-                                            public void complete() {
-                                                try {
-                                                    se.getAction().call();
-                                                } catch (Exception e) {
-                                                    throw new RuntimeException(e);
-                                                }
-                                            }
-                                        });
-                }
-                handshake(ctx.getConnection(), null);
-            }
+//            if (se.isSecure()) {
+//                if (se.getAction() != null) {
+//                    ProtocolHandshakeListener
+//                            .addListener(ctx.getConnection(),
+//                                         new HandshakeCompleteListener() {
+//                                            @Override
+//                                            public void complete() {
+//                                                try {
+//                                                    se.getAction().call();
+//                                                } catch (Exception e) {
+//                                                    throw new RuntimeException(e);
+//                                                }
+//                                            }
+//                                        });
+//                }
+//                handshake(ctx.getConnection(), null);
+//            }
             setSecureStatus(se.getConnection(), se.isSecure());
             return ctx.getStopAction();
         }
@@ -106,6 +150,11 @@ public final class SwitchingSSLFilter extends SSLFilter {
     @Override
     public void onFilterChainChanged(FilterChain filterChain) {
         // no-op
+    }
+
+
+    public static Throwable getHandshakeError(final Connection c) {
+        return HANDSHAKE_ERROR.remove(c);
     }
 
     // --------------------------------------------------------- Private Methods
