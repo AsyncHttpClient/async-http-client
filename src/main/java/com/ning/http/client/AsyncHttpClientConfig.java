@@ -86,6 +86,7 @@ public class AsyncHttpClientConfig {
     protected boolean strict302Handling;
     protected boolean useRelativeURIsWithSSLProxies;
     protected int maxConnectionLifeTimeInMs;
+    protected boolean rfc6265CookieEncoding;
 
     protected AsyncHttpClientConfig() {
     }
@@ -121,7 +122,8 @@ public class AsyncHttpClientConfig {
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
-                                  boolean useRelativeURIsWithSSLProxies) {
+                                  boolean useRelativeURIsWithSSLProxies,
+                                  boolean rfc6265CookieEncoding) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -152,6 +154,7 @@ public class AsyncHttpClientConfig {
         this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
+        this.rfc6265CookieEncoding = rfc6265CookieEncoding;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -501,6 +504,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return<code>true</code> if AHC should use rfc6265 for encoding client side cookies,
+     *  otherwise <code>false</code>.
+     *  
+     *  @since 1.7.18
+     */
+    public boolean isRfc6265CookieEncoding() {
+        return rfc6265CookieEncoding;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -538,6 +551,7 @@ public class AsyncHttpClientConfig {
         private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
         private int ioThreadMultiplier = 2;
         private boolean strict302Handling;
+        private boolean rfc6265CookieEncoding;
 
         public Builder() {
         }
@@ -993,6 +1007,19 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures this AHC instance to use RFC 6265 cookie encoding style
+         *
+         * @param rfc6265CookieEncoding
+         * @return this
+         *
+         * @since 1.7.18
+         */
+        public Builder setRfc6265CookieEncoding(boolean rfc6265CookieEncoding) {
+            this.rfc6265CookieEncoding = rfc6265CookieEncoding;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1035,6 +1062,7 @@ public class AsyncHttpClientConfig {
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
+            rfc6265CookieEncoding = prototype.isRfc6265CookieEncoding();
         }
 
         /**
@@ -1107,7 +1135,8 @@ public class AsyncHttpClientConfig {
                     hostnameVerifier,
                     ioThreadMultiplier,
                     strict302Handling,
-                    useRelativeURIsWithSSLProxies);
+                    useRelativeURIsWithSSLProxies,
+                    rfc6265CookieEncoding);
         }
     }
 }
