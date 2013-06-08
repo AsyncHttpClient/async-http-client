@@ -388,27 +388,27 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private URI buildURI(String url) {
         URI uri = URI.create(url);
-        StringBuilder buildedUrl = new StringBuilder();
 
-        if (uri.getScheme() != null) {
-            buildedUrl.append(uri.getScheme());
-            buildedUrl.append("://");
-        }
-
-        if (uri.getAuthority() != null) {
-            buildedUrl.append(uri.getAuthority());
-        }
-        if (uri.getRawPath() != null) {
-            buildedUrl.append(uri.getRawPath());
-        } else {
+        if (uri.getRawPath() == null) {
             // AHC-96
             // Let's try to derive it
+            StringBuilder buildedUrl = new StringBuilder();
+
+            if (uri.getScheme() != null) {
+                buildedUrl.append(uri.getScheme());
+                buildedUrl.append("://");
+            }
+
+            if (uri.getAuthority() != null) {
+                buildedUrl.append(uri.getAuthority());
+            }
             if (url.indexOf("://") == -1) {
                 String s = buildedUrl.toString();
                 url = s + url.substring(uri.getScheme().length() + 1);
                 return buildURI(url);
             } else {
-                throw new IllegalArgumentException("Invalid url " + uri.toString());
+                throw new IllegalArgumentException("Invalid url "
+                        + uri.toString());
             }
         }
 
