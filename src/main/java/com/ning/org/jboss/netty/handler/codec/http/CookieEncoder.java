@@ -29,10 +29,6 @@ package com.ning.org.jboss.netty.handler.codec.http;
 
 import java.util.Collection;
 
-import org.jboss.netty.handler.codec.http.HttpConstants;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-
 import com.ning.http.client.Cookie;
 
 /**
