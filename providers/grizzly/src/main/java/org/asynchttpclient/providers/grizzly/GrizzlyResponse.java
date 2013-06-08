@@ -179,6 +179,7 @@ public class GrizzlyResponse extends ResponseBase {
             convertedCookies.add(new Cookie(gCookie.getDomain(),
                                    gCookie.getName(),
                                    gCookie.getValue(),
+                                   gCookie.getValue(),
                                    gCookie.getPath(),
                                    gCookie.getMaxAge(),
                                    gCookie.isSecure(),

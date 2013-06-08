@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.HashSet;
 
 import org.asynchttpclient.org.jboss.netty.util.internal.StringUtil;
 import org.asynchttpclient.Cookie;
@@ -69,7 +69,8 @@ public class CookieDecoder {
     public static Set<Cookie> decode(String header) {
         List<String> names = new ArrayList<String>(8);
         List<String> values = new ArrayList<String>(8);
-        extractKeyValuePairs(header, names, values);
+        List<String> rawValues = new ArrayList<String>(8);
+        extractKeyValuePairs(header, names, values, rawValues);
 
         if (names.isEmpty()) {
             return Collections.emptySet();
@@ -96,16 +97,21 @@ public class CookieDecoder {
             return Collections.emptySet();
         }
 
-        Set<Cookie> cookies = new TreeSet<Cookie>();
+        Set<Cookie> cookies = new HashSet<Cookie>();
         for (; i < names.size(); i++) {
             String name = names.get(i);
             String value = values.get(i);
+            String rawValue = rawValues.get(i);
             if (value == null) {
                 value = "";
+            }
+            if (rawValue == null) {
+                rawValue = "";
             }
 
             String cookieName = name;
             String cookieValue = value;
+            String cookieRawValue = rawValue;
             boolean discard = false;
             boolean secure = false;
             boolean httpOnly = false;
@@ -164,14 +170,14 @@ public class CookieDecoder {
                 }
             }
 
-            Cookie c = new Cookie(domain, cookieName, cookieValue, path, maxAge, secure, version, httpOnly, discard, comment, commentURL, ports);
+            Cookie c = new Cookie(domain, cookieName, cookieValue, cookieRawValue, path, maxAge, secure, version, httpOnly, discard, comment, commentURL, ports);
             cookies.add(c);
         }
 
         return cookies;
     }
 
-    private static void extractKeyValuePairs(final String header, final List<String> names, final List<String> values) {
+    private static void extractKeyValuePairs(final String header, final List<String> names, final List<String> values, final List<String> rawValues) {
 
         final int headerLen = header.length();
         loop: for (int i = 0;;) {
@@ -210,10 +216,12 @@ public class CookieDecoder {
 
             String name;
             String value;
+            String rawValue;
 
             if (i == headerLen) {
                 name = null;
                 value = null;
+                rawValue = null;
             } else {
                 int newNameStart = i;
                 keyValLoop: for (;;) {
@@ -222,6 +230,7 @@ public class CookieDecoder {
                         // NAME; (no value till ';')
                         name = header.substring(newNameStart, i);
                         value = null;
+                        rawValue = null;
                         break keyValLoop;
                     case '=':
                         // NAME=VALUE
@@ -230,6 +239,7 @@ public class CookieDecoder {
                         if (i == headerLen) {
                             // NAME= (empty value, i.e. nothing after '=')
                             value = "";
+                            rawValue = "";
                             break keyValLoop;
                         }
 
@@ -238,17 +248,21 @@ public class CookieDecoder {
                         if (c == '"' || c == '\'') {
                             // NAME="VALUE" or NAME='VALUE'
                             StringBuilder newValueBuf = new StringBuilder(header.length() - i);
+                            StringBuilder newRawValueBuf = new StringBuilder(header.length() - i);
+                            newRawValueBuf.append(c);
                             final char q = c;
                             boolean hadBackslash = false;
                             i++;
                             for (;;) {
                                 if (i == headerLen) {
                                     value = newValueBuf.toString();
+                                    rawValue = newRawValueBuf.toString();
                                     break keyValLoop;
                                 }
                                 if (hadBackslash) {
                                     hadBackslash = false;
                                     c = header.charAt(i++);
+                                    newRawValueBuf.append(c);
                                     switch (c) {
                                     case '\\':
                                     case '"':
@@ -262,8 +276,10 @@ public class CookieDecoder {
                                     }
                                 } else {
                                     c = header.charAt(i++);
+                                    newRawValueBuf.append(c);
                                     if (c == q) {
                                         value = newValueBuf.toString();
+                                        rawValue = newRawValueBuf.toString();
                                         break keyValLoop;
                                     }
                                     newValueBuf.append(c);
@@ -276,10 +292,10 @@ public class CookieDecoder {
                             // NAME=VALUE;
                             int semiPos = header.indexOf(';', i);
                             if (semiPos > 0) {
-                                value = header.substring(newValueStart, semiPos);
+                                value = rawValue = header.substring(newValueStart, semiPos);
                                 i = semiPos;
                             } else {
-                                value = header.substring(newValueStart);
+                                value = rawValue = header.substring(newValueStart);
                                 i = headerLen;
                             }
                         }
@@ -291,7 +307,7 @@ public class CookieDecoder {
                     if (i == headerLen) {
                         // NAME (no value till the end of string)
                         name = header.substring(newNameStart);
-                        value = null;
+                        value = rawValue = null;
                         break;
                     }
                 }
@@ -299,6 +315,7 @@ public class CookieDecoder {
 
             names.add(name);
             values.add(value);
+            rawValues.add(rawValue);
         }
     }
 }

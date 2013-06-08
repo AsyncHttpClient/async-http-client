@@ -35,7 +35,6 @@ import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -71,8 +70,6 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -140,6 +137,7 @@ import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.ProxyUtils;
 import org.asynchttpclient.util.SslUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
+import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
@@ -744,19 +742,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (!m.equals(HttpMethod.CONNECT)) {
             if (isNonEmpty(request.getCookies())) {
-                CookieEncoder httpCookieEncoder = new CookieEncoder(false);
-                Iterator<Cookie> ic = request.getCookies().iterator();
-                Cookie c;
-                org.jboss.netty.handler.codec.http.Cookie cookie;
-                while (ic.hasNext()) {
-                    c = ic.next();
-                    cookie = new DefaultCookie(c.getName(), c.getValue());
-                    cookie.setPath(c.getPath());
-                    cookie.setMaxAge(c.getMaxAge());
-                    cookie.setDomain(c.getDomain());
-                    httpCookieEncoder.addCookie(cookie);
-                }
-                nettyRequest.setHeader(HttpHeaders.Names.COOKIE, httpCookieEncoder.encode());
+                nettyRequest.setHeader(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
             String reqType = request.getMethod();

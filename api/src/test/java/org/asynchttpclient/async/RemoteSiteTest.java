@@ -248,7 +248,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             builder2.setFollowRedirects(true);
             builder2.setUrl("http://www.google.com/");
             builder2.addHeader("Content-Type", "text/plain");
-            builder2.addCookie(new Cookie(".google.com", "evilcookie", "test", "/", 10, false, 1, false, false, null, null, Collections.<Integer> emptySet()));
+            builder2.addCookie(new Cookie(".google.com", "evilcookie", "evilcookie", "test", "/", 10, false, 1, false, false, null, null, Collections.<Integer> emptySet()));
             Request request2 = builder2.build();
             Response response = c.executeRequest(request2).get();
 

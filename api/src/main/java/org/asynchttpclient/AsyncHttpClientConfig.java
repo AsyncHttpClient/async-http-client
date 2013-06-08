@@ -113,6 +113,7 @@ public class AsyncHttpClientConfig {
     protected boolean spdyEnabled;
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
+    protected boolean rfc6265CookieEncoding;
 
     protected AsyncHttpClientConfig() {
     }
@@ -151,7 +152,8 @@ public class AsyncHttpClientConfig {
                                   boolean useRelativeURIsWithSSLProxies,
                                   boolean spdyEnabled,
                                   int spdyInitialWindowSize,
-                                  int spdyMaxConcurrentStreams) {
+                                  int spdyMaxConcurrentStreams,
+                                  boolean rfc6265CookieEncoding) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -194,6 +196,7 @@ public class AsyncHttpClientConfig {
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
+        this.rfc6265CookieEncoding = rfc6265CookieEncoding;
     }
 
     /**
@@ -556,6 +559,15 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return<code>true</code> if AHC should use rfc6265 for encoding client side cookies, otherwise <code>false</code>.
+     * 
+     * @since 1.7.18
+     */
+    public boolean isRfc6265CookieEncoding() {
+        return rfc6265CookieEncoding;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -596,6 +608,7 @@ public class AsyncHttpClientConfig {
         private boolean spdyEnabled;
         private int spdyInitialWindowSize = 10 * 1024 * 1024;
         private int spdyMaxConcurrentStreams = 100;
+        private boolean rfc6265CookieEncoding;
 
         public Builder() {
         }
@@ -1096,6 +1109,19 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures this AHC instance to use RFC 6265 cookie encoding style
+         * 
+         * @param rfc6265CookieEncoding
+         * @return this
+         * 
+         * @since 1.7.18
+         */
+        public Builder setRfc6265CookieEncoding(boolean rfc6265CookieEncoding) {
+            this.rfc6265CookieEncoding = rfc6265CookieEncoding;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1139,6 +1165,7 @@ public class AsyncHttpClientConfig {
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
             useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
+            rfc6265CookieEncoding = prototype.isRfc6265CookieEncoding();
         }
 
         /**
@@ -1211,7 +1238,8 @@ public class AsyncHttpClientConfig {
                     useRelativeURIsWithSSLProxies,
                     spdyEnabled,
                     spdyInitialWindowSize,
-                    spdyMaxConcurrentStreams);
+                    spdyMaxConcurrentStreams,
+                    rfc6265CookieEncoding);
         }
     }
 }

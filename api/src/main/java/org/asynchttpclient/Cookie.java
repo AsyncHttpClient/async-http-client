@@ -24,6 +24,7 @@ public class Cookie implements Comparable<Cookie>{
     private final String domain;
     private final String name;
     private final String value;
+    private final String rawValue;
     private final String path;
     private final int maxAge;
     private final boolean secure;
@@ -41,10 +42,10 @@ public class Cookie implements Comparable<Cookie>{
     }
 
     public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version) {
-        this(domain, name, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
+        this(domain, name, value, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
     }
 
-    public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard, String comment, String commentUrl, Iterable<Integer> ports) {
+    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard, String comment, String commentUrl, Iterable<Integer> ports) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -85,6 +86,7 @@ public class Cookie implements Comparable<Cookie>{
 
         this.name = name;
         this.value = value;
+        this.rawValue = rawValue;
         this.domain = validateValue("domain", domain);
         this.path = validateValue("path", path);
         this.maxAge = maxAge;
@@ -117,6 +119,10 @@ public class Cookie implements Comparable<Cookie>{
 
     public String getValue() {
         return value == null ? "" : value;
+    }
+    
+    public String getRawValue() {
+        return rawValue;
     }
 
     public String getPath() {
