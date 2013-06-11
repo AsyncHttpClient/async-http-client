@@ -133,6 +133,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.*;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.DateUtil.millisTime;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
@@ -194,12 +195,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
         }
 
-        if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.USE_BLOCKING_IO) != null) {
+        if (asyncHttpProviderConfig.getProperty(USE_BLOCKING_IO) != null) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
             this.allowReleaseSocketChannelFactory = true;
         } else {
             // check if external NioClientSocketChannelFactory is defined
-            Object oo = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY);
+            Object oo = asyncHttpProviderConfig.getProperty(SOCKET_CHANNEL_FACTORY);
             if (oo != null && NioClientSocketChannelFactory.class.isAssignableFrom(oo.getClass())) {
                 this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
 
@@ -207,7 +208,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 this.allowReleaseSocketChannelFactory = false;
             } else {
                 ExecutorService e;
-                Object o = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE);
+                Object o = asyncHttpProviderConfig.getProperty(BOSS_EXECUTOR_SERVICE);
                 if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
                     e = ExecutorService.class.cast(o);
                 } else {
@@ -286,10 +287,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         DefaultChannelFuture.setUseDeadLockChecker(false);
 
         if (asyncHttpProviderConfig != null) {
-            Object value = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT);
+            Object value = asyncHttpProviderConfig.getProperty(EXECUTE_ASYNC_CONNECT);
             if (value != null && Boolean.class.isAssignableFrom(value.getClass())) {
                 executeConnectAsync = Boolean.class.cast(value);
-            } else if (asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST) != null) {
+            } else if (asyncHttpProviderConfig.getProperty(DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
             }
         }
@@ -308,15 +309,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     protected void configureHttpClientCodec() {
-        httpClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpClientCodecMaxInitialLineLength);
-        httpClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpClientCodecMaxHeaderSize);
-        httpClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpClientCodecMaxChunkSize);
+        httpClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpClientCodecMaxInitialLineLength);
+        httpClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpClientCodecMaxHeaderSize);
+        httpClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpClientCodecMaxChunkSize);
     }
 
     protected void configureHttpsClientCodec() {
-        httpsClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpsClientCodecMaxInitialLineLength);
-        httpsClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpsClientCodecMaxHeaderSize);
-        httpsClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
+        httpsClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpsClientCodecMaxInitialLineLength);
+        httpsClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpsClientCodecMaxHeaderSize);
+        httpsClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
     }
 
     void constructSSLPipeline(final NettyConnectListener<?> cl) {
@@ -997,7 +998,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do no enable this with win.
         if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
-            bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(NettyAsyncHttpProviderConfig.REUSE_ADDRESS));
+            bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(REUSE_ADDRESS));
         }
 
         try {
