@@ -102,24 +102,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
 
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
-
-//            if (se.isSecure()) {
-//                if (se.getAction() != null) {
-//                    ProtocolHandshakeListener
-//                            .addListener(ctx.getConnection(),
-//                                         new HandshakeCompleteListener() {
-//                                            @Override
-//                                            public void complete() {
-//                                                try {
-//                                                    se.getAction().call();
-//                                                } catch (Exception e) {
-//                                                    throw new RuntimeException(e);
-//                                                }
-//                                            }
-//                                        });
-//                }
-//                handshake(ctx.getConnection(), null);
-//            }
             setSecureStatus(se.getConnection(), se.isSecure());
             return ctx.getStopAction();
         }

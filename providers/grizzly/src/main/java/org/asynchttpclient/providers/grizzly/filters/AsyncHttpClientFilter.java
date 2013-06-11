@@ -58,8 +58,8 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
+import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
@@ -116,26 +116,30 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             // Disable SSL for the time being...
             ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection(), null));
             ctx.suspend();
-            final ProxyServer proxyServer = ((TunnelRequestEvent) event).getProxyServer();
-            final URI requestUri = ((TunnelRequestEvent) event).getUri();
+            TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
+            final ProxyServer proxyServer = tunnelRequestEvent.getProxyServer();
+            final URI requestUri = tunnelRequestEvent.getUri();
+
             RequestBuilder builder = new RequestBuilder();
             builder.setMethod(Method.CONNECT.getMethodString());
             builder.setUrl("http://" + getAuthority(requestUri));
-            AsyncHandler handler = new AsyncCompletionHandler() {
-                @Override
-                public Object onCompleted(Response response) throws Exception {
-                    ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), null));
-                    ctx.notifyDownstream(event);
-                    return response;
-                }
-            };
             Request request = builder.build();
+
+            AsyncHandler handler = new AsyncCompletionHandler() {
+                            @Override
+                            public Object onCompleted(Response response) throws Exception {
+                                ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), null));
+                                ctx.notifyDownstream(event);
+                                return response;
+                            }
+                        };
             final GrizzlyResponseFuture future =
                     new GrizzlyResponseFuture(grizzlyAsyncHttpProvider,
                                               request,
                                               handler,
                                               proxyServer);
             future.setDelegate(SafeFutureImpl.create());
+
             grizzlyAsyncHttpProvider.execute(ctx.getConnection(),
                                              request,
                                              handler,
@@ -156,23 +160,30 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     throws IOException {
 
         final HttpTransactionContext httpCtx = HttpTransactionContext.get(ctx.getConnection());
-        Throwable t = SwitchingSSLFilter.getHandshakeError(ctx.getConnection());
-        if (t != null) {
-            httpCtx.abort(t);
+        final URI uri = httpCtx.getRequest().getURI();
+        boolean secure = Utils.isSecure(uri);
+
+        // If the request is secure, check to see if an error occurred during
+        // the handshake.  We have to do this here, as the error would occur
+        // out of the scope of a HttpTransactionContext so there would be
+        // no good way to communicate the problem to the caller.
+        if (secure && checkHandshakeError(ctx, httpCtx)) {
             return true;
         }
+
         if (isUpgradeRequest(httpCtx.getHandler()) && isWSRequest(httpCtx.getRequestUrl())) {
             httpCtx.setWSRequest(true);
             convertToUpgradeRequest(httpCtx);
         }
-        final URI uri = httpCtx.getRequest().getURI();
+
         final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-        boolean secure = Utils.isSecure(uri);
         builder.method(request.getMethod());
         builder.protocol(Protocol.HTTP_1_1);
-        addHostHeader(request, uri, builder);
+
+        // Special handling for CONNECT.
         if (Method.CONNECT.matchesMethod(request.getMethod())) {
-            builder.uri(uri.getHost() + ':' + (uri.getPort() == -1 ? 443 : uri.getPort()));
+            final int port = uri.getPort();
+            builder.uri(uri.getHost() + ':' + (port == -1 ? 443 : port));
         } else {
             builder.uri(uri.getPath());
         }
@@ -202,15 +213,56 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         } else {
             requestPacket = builder.build();
         }
+
         requestPacket.setSecure(secure);
         addQueryString(request, requestPacket);
-        addHeaders(request, requestPacket);
+        addHostHeader(request, uri, builder);
+        addGeneralHeaders(request, requestPacket);
         addCookies(request, requestPacket);
 
-        final AsyncHandler h = httpCtx.getHandler();
+        initTransferCompletionHandler(request, httpCtx.getHandler());
+
+        final HttpRequestPacket requestPacketLocal = requestPacket;
+        FilterChainContext sendingCtx = ctx;
+
+        if (secure) {
+            // Check to see if the ProtocolNegotiator has given
+            // us a different FilterChain to use.  If so, we need
+            // use a different FilterChainContext when invoking sendRequest().
+            sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
+        }
+
+        return grizzlyAsyncHttpProvider.sendRequest(sendingCtx,
+                                                    request,
+                                                    requestPacketLocal);
+
+    }
+
+    private static FilterChainContext checkAndHandleFilterChainUpdate(final FilterChainContext ctx,
+                                                                      final FilterChainContext sendingCtx) {
+        FilterChainContext ctxLocal = sendingCtx;
+        SSLConnectionContext sslCtx =
+                SSLUtils.getSslConnectionContext(ctx.getConnection());
+        if (sslCtx != null) {
+            FilterChain fc = sslCtx.getNewConnectionFilterChain();
+
+            if (fc != null) {
+                // Create a new FilterChain context using the new
+                // FilterChain.
+                // TODO:  We need to mark this connection somehow
+                //        as being only suitable for this type of
+                //        request.
+                ctxLocal = obtainProtocolChainContext(ctx, fc);
+            }
+        }
+        return ctxLocal;
+    }
+
+    private static void initTransferCompletionHandler(final Request request,
+                                                      final AsyncHandler h)
+    throws IOException {
         if (h != null) {
-            if (TransferCompletionHandler.class.isAssignableFrom(
-                    h.getClass())) {
+            if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
                 final FluentCaseInsensitiveStringsMap map =
                         new FluentCaseInsensitiveStringsMap(
                                 request.getHeaders());
@@ -218,43 +270,19 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                         .transferAdapter(new GrizzlyTransferAdapter(map));
             }
         }
-        final HttpRequestPacket requestPacketLocal = requestPacket;
-        final Callable<Boolean> action = new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                FilterChainContext sendingCtx = ctx;
-
-                // Check to see if the ProtocolNegotiator has given
-                // us a different FilterChain to use.
-                SSLConnectionContext sslCtx =
-                        SSLUtils.getSslConnectionContext(ctx.getConnection());
-                if (sslCtx != null) {
-                    FilterChain fc = sslCtx.getNewConnectionFilterChain();
-
-                    if (fc != null) {
-                        // Create a new FilterChain context using the new
-                        // FilterChain.
-                        // TODO:  We need to mark this connection somehow
-                        //        as being only suitable for this type of
-                        //        request.
-                        sendingCtx = obtainProtocolChainContext(ctx, fc);
-                    }
-                }
-                return grizzlyAsyncHttpProvider.sendRequest(sendingCtx, request,
-                                                            requestPacketLocal);
-            }
-        };
-
-        try {
-            return action.call();
-        } catch (Exception e) {
-            httpCtx.abort(e);
-            return true;
-        }
-
     }
 
-    private FilterChainContext obtainProtocolChainContext(
+    private static boolean checkHandshakeError(final FilterChainContext ctx,
+                                               final HttpTransactionContext httpCtx) {
+            Throwable t = getHandshakeError(ctx.getConnection());
+            if (t != null) {
+                httpCtx.abort(t);
+                return true;
+            }
+        return false;
+    }
+
+    private static FilterChainContext obtainProtocolChainContext(
             final FilterChainContext ctx,
             final FilterChain completeProtocolFilterChain) {
 
@@ -273,9 +301,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return newFilterChainContext;
     }
 
-    private void addHostHeader(final Request request,
-                               final URI uri,
-                               final HttpRequestPacket.Builder builder) {
+    private static void addHostHeader(final Request request,
+                                      final URI uri,
+                                      final HttpRequestPacket.Builder builder) {
         String host = request.getVirtualHost();
         if (host != null) {
             builder.header(Header.Host, host);
@@ -288,17 +316,15 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
     }
 
-    private boolean isUpgradeRequest(final AsyncHandler handler) {
+    private static boolean isUpgradeRequest(final AsyncHandler handler) {
         return (handler instanceof UpgradeHandler);
     }
 
-
-    private boolean isWSRequest(final String requestUri) {
+    private static boolean isWSRequest(final String requestUri) {
         return (requestUri.charAt(0) == 'w' && requestUri.charAt(1) == 's');
     }
 
-
-    private void convertToUpgradeRequest(final HttpTransactionContext ctx) {
+    private static void convertToUpgradeRequest(final HttpTransactionContext ctx) {
         final int colonIdx = ctx.getRequestUrl().indexOf(':');
 
         if (colonIdx < 2 || colonIdx > 3) {
@@ -311,8 +337,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         ctx.setRequestUrl(sb.toString());
     }
 
-    private void addHeaders(final Request request,
-                            final HttpRequestPacket requestPacket) throws IOException {
+    private void addGeneralHeaders(final Request request,
+                                   final HttpRequestPacket requestPacket) throws IOException {
 
         final FluentCaseInsensitiveStringsMap map = request.getHeaders();
         if (isNonEmpty(map)) {
@@ -344,8 +370,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
 
-    private void addCookies(final Request request,
-                            final HttpRequestPacket requestPacket) {
+    private static void addCookies(final Request request,
+                                   final HttpRequestPacket requestPacket) {
 
         final Collection<Cookie> cookies = request.getCookies();
         if (isNonEmpty(cookies)) {
@@ -360,8 +386,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
 
-    private void convertCookies(final Collection<Cookie> cookies,
-                                final org.glassfish.grizzly.http.Cookie[] gCookies) {
+    private static void convertCookies(final Collection<Cookie> cookies,
+                                       final org.glassfish.grizzly.http.Cookie[] gCookies) {
         int idx = 0;
         for (final Cookie cookie : cookies) {
             final org.glassfish.grizzly.http.Cookie gCookie =
@@ -378,8 +404,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
 
-    private void addQueryString(final Request request,
-                                final HttpRequestPacket requestPacket) {
+    private static void addQueryString(final Request request,
+                                       final HttpRequestPacket requestPacket) {
 
         final FluentStringsMap map = request.getQueryParams();
         if (isNonEmpty(map)) {

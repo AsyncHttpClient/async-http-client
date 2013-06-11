@@ -164,7 +164,7 @@ public class GrizzlyResponse extends ResponseBase {
             return convertCookies(builder.build());
 
         } else {
-        	return Collections.unmodifiableList(Collections.<Cookie>emptyList());
+            return Collections.unmodifiableList(Collections.<Cookie>emptyList());
         }
     }
 
