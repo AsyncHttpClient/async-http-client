@@ -259,10 +259,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    protected void initializeTransport(final AsyncHttpClientConfig clientConfig) {
+    void initializeTransport(final AsyncHttpClientConfig clientConfig) {
 
         final FilterChainBuilder secure = FilterChainBuilder.stateless();
-        secure.add(new AsyncHttpClientTransportFilter(this));
+        secure.add(new AsyncHttpClientTransportFilter());
 
         final int timeout = clientConfig.getRequestTimeoutInMs();
         if (timeout > 0) {
@@ -317,7 +317,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         true,
                         false,
                         false);
-        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator, true);
+        final SwitchingSSLFilter filter = new SwitchingSSLFilter(configurator);
         secure.add(filter);
         GrizzlyAsyncHttpProviderConfig providerConfig =
                         (GrizzlyAsyncHttpProviderConfig) clientConfig.getAsyncHttpProviderConfig();

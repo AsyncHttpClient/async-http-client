@@ -98,7 +98,7 @@ public class ConnectionManager {
     public void doAsyncTrackedConnection(final Request request,
                                          final GrizzlyResponseFuture requestFuture,
                                          final CompletionHandler<Connection> connectHandler)
-    throws IOException, ExecutionException, InterruptedException {
+    throws IOException {
         Connection c =
                 pool.poll(getPoolKey(request, requestFuture.getProxyServer()));
         if (c == null) {
@@ -115,7 +115,7 @@ public class ConnectionManager {
 
     public Connection obtainConnection(final Request request,
                                        final GrizzlyResponseFuture requestFuture)
-    throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    throws ExecutionException, InterruptedException, TimeoutException {
 
         final Connection c = obtainConnection0(request, requestFuture);
         markConnectionAsDoNotCache(c);
@@ -123,10 +123,9 @@ public class ConnectionManager {
 
     }
 
-    public void doAsyncConnect(final Request request,
-                               final GrizzlyResponseFuture requestFuture,
-                               final CompletionHandler<Connection> connectHandler)
-    throws IOException, ExecutionException, InterruptedException {
+    void doAsyncConnect(final Request request,
+                        final GrizzlyResponseFuture requestFuture,
+                        final CompletionHandler<Connection> connectHandler) {
 
         CompletionHandler<Connection> ch =
                 createConnectionCompletionHandler(request,
@@ -160,7 +159,7 @@ public class ConnectionManager {
 
     private Connection obtainConnection0(final Request request,
                                          final GrizzlyResponseFuture requestFuture)
-    throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    throws ExecutionException, InterruptedException, TimeoutException {
 
         int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
         FutureImpl<Connection> future = Futures.createSafeFuture();
@@ -520,6 +519,8 @@ public class ConnectionManager {
 
         private static final class DelayedExecutor {
 
+            private static final long DEFAULT_CHECK_INTERVAL = 1000;
+
             public final static long UNSET_TIMEOUT = -1;
             private final ExecutorService threadPool;
             private final DelayedRunnable runnable = new DelayedRunnable();
@@ -534,7 +535,7 @@ public class ConnectionManager {
 
 
             private DelayedExecutor(final ExecutorService threadPool) {
-                this(threadPool, 1000, TimeUnit.MILLISECONDS);
+                this(threadPool, DEFAULT_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
             }
 
 
@@ -544,7 +545,8 @@ public class ConnectionManager {
                                    final long checkInterval,
                                    final TimeUnit timeunit) {
                 this.threadPool = threadPool;
-                this.checkIntervalMs = TimeUnit.MILLISECONDS.convert(checkInterval, timeunit);
+                this.checkIntervalMs = TimeUnit.MILLISECONDS.convert(
+                        checkInterval, timeunit);
             }
 
             private void start() {

@@ -67,7 +67,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
 
     private final AsyncHttpClientConfig config;
-    private GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
+    private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
 
 
     // -------------------------------------------------------- Constructors
@@ -114,7 +114,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             ((ExpectHandler) continueEvent.getContext().getBodyHandler()).finish(ctx);
         } else if (type == TunnelRequestEvent.class) {
             // Disable SSL for the time being...
-            ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection(), null));
+            ctx.notifyDownstream(new SSLSwitchingEvent(false, ctx.getConnection()));
             ctx.suspend();
             TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
             final ProxyServer proxyServer = tunnelRequestEvent.getProxyServer();
@@ -128,7 +128,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             AsyncHandler handler = new AsyncCompletionHandler() {
                             @Override
                             public Object onCompleted(Response response) throws Exception {
-                                ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection(), null));
+                                ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection()));
                                 ctx.notifyDownstream(event);
                                 return response;
                             }
@@ -338,7 +338,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     private void addGeneralHeaders(final Request request,
-                                   final HttpRequestPacket requestPacket) throws IOException {
+                                   final HttpRequestPacket requestPacket) {
 
         final FluentCaseInsensitiveStringsMap map = request.getHeaders();
         if (isNonEmpty(map)) {

@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -25,11 +24,9 @@ import java.io.IOException;
 
 public final class AsyncHttpClientTransportFilter extends TransportFilter {
 
-    private GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
 
-    public AsyncHttpClientTransportFilter(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        this.grizzlyAsyncHttpProvider = grizzlyAsyncHttpProvider;
-    }
+    // ----------------------------------------------------- Methods from Filter
+
 
     @Override
     public NextAction handleRead(FilterChainContext ctx) throws IOException {

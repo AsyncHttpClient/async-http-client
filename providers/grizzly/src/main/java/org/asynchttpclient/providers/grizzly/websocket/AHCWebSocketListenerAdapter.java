@@ -24,7 +24,7 @@ import org.glassfish.grizzly.websockets.draft06.ClosingFrame;
 
 import java.io.ByteArrayOutputStream;
 
-public final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websockets.WebSocketListener {
+final class AHCWebSocketListenerAdapter implements org.glassfish.grizzly.websockets.WebSocketListener {
 
     private final WebSocketListener ahcListener;
     private final GrizzlyWebSocketAdapter webSocket;

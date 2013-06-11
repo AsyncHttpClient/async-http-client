@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
+class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     private final HttpContent content;
     private final Connection<?> connection;

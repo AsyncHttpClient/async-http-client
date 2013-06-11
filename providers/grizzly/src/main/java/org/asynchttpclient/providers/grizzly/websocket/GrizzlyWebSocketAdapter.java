@@ -28,9 +28,9 @@ public final class GrizzlyWebSocketAdapter implements WebSocket {
 
 
     public GrizzlyWebSocketAdapter(final SimpleWebSocket gWebSocket,
-                                   final boolean bufferFragements) {
+                                   final boolean bufferFragments) {
         this.gWebSocket = gWebSocket;
-        this.bufferFragments = bufferFragements;
+        this.bufferFragments = bufferFragments;
     }
 
 

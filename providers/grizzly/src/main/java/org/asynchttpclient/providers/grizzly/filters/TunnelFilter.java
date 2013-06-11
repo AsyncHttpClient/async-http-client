@@ -90,7 +90,7 @@ public final class TunnelFilter extends BaseFilter {
     // ---------------------------------------------------------- Public Methods
 
 
-    public static boolean tunnelInProgress(final Connection connection) {
+    private static boolean tunnelInProgress(final Connection connection) {
         return (TUNNEL_IN_PROGRESS.get(connection) != null);
     }
 

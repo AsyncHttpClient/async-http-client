@@ -44,14 +44,14 @@ public final class HttpTransactionContext {
 
     private Request request;
     private String requestUrl;
-    private AsyncHandler handler;
+    private final AsyncHandler handler;
     private BodyHandler bodyHandler;
     private StatusHandler statusHandler;
     private InvocationStatus invocationStatus = InvocationStatus.CONTINUE;
     private GrizzlyResponseStatus responseStatus;
     private GrizzlyResponseFuture future;
     private String lastRedirectURI;
-    private AtomicLong totalBodyWritten = new AtomicLong();
+    private final AtomicLong totalBodyWritten = new AtomicLong();
     private AsyncHandler.STATE currentState;
 
     private String wsRequestURI;

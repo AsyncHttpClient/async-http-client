@@ -37,9 +37,9 @@ import java.net.URI;
 
 final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
-    protected FilterChainBuilder nonSecureTemplate;
-    protected FilterChainBuilder secureTemplate;
-    protected AsyncHttpClientConfig clientConfig;
+    private FilterChainBuilder nonSecureTemplate;
+    private FilterChainBuilder secureTemplate;
+    private AsyncHttpClientConfig clientConfig;
 
     // ------------------------------------------------------------ Constructors
 
@@ -86,7 +86,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
         return new InetSocketAddress(host, getPort(request.getURI(), port));
     }
 
-    static int getPort(final URI uri, final int p) {
+    private static int getPort(final URI uri, final int p) {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase();
@@ -108,14 +108,14 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     private class FilterChainInstallationHandler implements CompletionHandler<Connection> {
 
-        protected final Request request;
-        protected final CompletionHandler<Connection> delegate;
+        final Request request;
+        final CompletionHandler<Connection> delegate;
 
         // -------------------------------------------------------- Constructors
 
 
-        protected FilterChainInstallationHandler(final Request request,
-                                                 final CompletionHandler<Connection> delegate) {
+        FilterChainInstallationHandler(final Request request,
+                                       final CompletionHandler<Connection> delegate) {
             this.request = request;
             this.delegate = delegate;
         }
@@ -151,7 +151,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
         // --------------------------------------------------- Protected Methods
 
 
-        protected boolean isRequestSecure() {
+        boolean isRequestSecure() {
             final String p = request.getURI().getScheme();
             return p.equals("https") || p.equals("wss");
         }
@@ -162,7 +162,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
          * FilterChain on the connection.  Not doing so will break idle
          * timeout detection.
          */
-        protected void fireConnectEvent(Connection result) {
+        void fireConnectEvent(Connection result) {
             result.getTransport().fireIOEvent(IOEvent.CONNECTED,
                                               result,
                                               new EnableReadHandler(delegate));
@@ -297,7 +297,7 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     public static final class Builder extends TCPNIOConnectorHandler.Builder {
 
-        ProxyAwareConnectorHandler connectorHandler;
+        final ProxyAwareConnectorHandler connectorHandler;
 
         // -------------------------------------------------------- Constructors
 

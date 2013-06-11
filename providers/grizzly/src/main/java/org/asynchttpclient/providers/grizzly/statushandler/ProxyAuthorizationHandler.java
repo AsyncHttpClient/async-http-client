@@ -219,7 +219,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 .startsWith("ntlm") && !proxyAuth.equalsIgnoreCase("ntlm"));
     }
 
-    public static boolean isNTLMFirstHandShake(final String proxy_auth) {
+    private static boolean isNTLMFirstHandShake(final String proxy_auth) {
         return (proxy_auth.equalsIgnoreCase("ntlm"));
     }
 

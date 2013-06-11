@@ -104,7 +104,7 @@ public final class EventHandler {
             try {
                 context.setCurrentState(handler.onBodyPartReceived(
                         new GrizzlyResponseBodyPart(content,
-                                                    null,
+                                                    context.getRequest().getURI(),
                                                     ctx.getConnection(),
                                                     provider)));
             } catch (Exception e) {
@@ -223,7 +223,7 @@ public final class EventHandler {
 
     public void onHttpHeaderError(final HttpHeader httpHeader,
                                      final FilterChainContext ctx,
-                                     final Throwable t) throws IOException {
+                                     final Throwable t) {
 
         t.printStackTrace();
         httpHeader.setSkipRemainder(true);
@@ -256,7 +256,7 @@ public final class EventHandler {
                 .getClientConfig().getResponseFilters();
         final GrizzlyResponseHeaders responseHeaders =
                 new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                                           null,
+                                           context.getRequest().getURI(),
                                            provider);
         if (!filters.isEmpty()) {
             FilterContext fc = new FilterContext.FilterContextBuilder()

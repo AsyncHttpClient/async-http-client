@@ -22,18 +22,14 @@ public final class SSLSwitchingEvent implements FilterChainEvent {
 
     private final boolean secure;
     private final Connection connection;
-    private final Callable<Boolean> action;
 
     // ------------------------------------------------------------ Constructors
 
 
-    public SSLSwitchingEvent(final boolean secure,
-                             final Connection c,
-                             final Callable<Boolean> action) {
+    public SSLSwitchingEvent(final boolean secure, final Connection c) {
 
         this.secure = secure;
         connection = c;
-        this.action = action;
 
     }
 
@@ -55,10 +51,6 @@ public final class SSLSwitchingEvent implements FilterChainEvent {
 
     public Connection getConnection() {
         return connection;
-    }
-
-    public Callable<Boolean> getAction() {
-        return action;
     }
 
 }

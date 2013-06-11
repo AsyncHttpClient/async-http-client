@@ -30,27 +30,23 @@ import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
 
 public final class SwitchingSSLFilter extends SSLFilter {
 
-    private final boolean secureByDefault;
-    static final Attribute<Boolean> CONNECTION_IS_SECURE =
+    private static final Attribute<Boolean> CONNECTION_IS_SECURE =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
-    static final Attribute<Boolean> HANDSHAKING =
+    private static final Attribute<Boolean> HANDSHAKING =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKING");
-    static final Attribute<Throwable> HANDSHAKE_ERROR =
+    private static final Attribute<Throwable> HANDSHAKE_ERROR =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKE-ERROR");
 
 
     // ------------------------------------------------------------ Constructors
 
 
-    public SwitchingSSLFilter(final SSLEngineConfigurator clientConfig,
-                              final boolean secureByDefault) {
+    public SwitchingSSLFilter(final SSLEngineConfigurator clientConfig) {
 
         super(null, clientConfig);
-        this.secureByDefault = secureByDefault;
         addHandshakeListener(new ProtocolHandshakeListener());
     }
 
@@ -145,10 +141,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     private boolean isSecure(final Connection c) {
 
         Boolean secStatus = CONNECTION_IS_SECURE.get(c);
-        if (secStatus == null) {
-            secStatus = secureByDefault;
-        }
-        return secStatus;
+        return (secStatus == null ? true : secStatus);
 
     }
 
@@ -167,7 +160,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     private static final class ProtocolHandshakeListener implements HandshakeListener {
 
 
-        static ConcurrentHashMap<Connection,HandshakeCompleteListener> listeners =
+        static final ConcurrentHashMap<Connection,HandshakeCompleteListener> listeners =
                 new ConcurrentHashMap<Connection,HandshakeCompleteListener>();
 
 

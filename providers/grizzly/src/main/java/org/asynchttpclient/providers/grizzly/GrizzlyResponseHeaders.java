@@ -30,7 +30,7 @@ import java.net.URI;
  * @author The Grizzly Team
  * @since 1.7.0
  */
-public class GrizzlyResponseHeaders extends HttpResponseHeaders {
+class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
     private final FluentCaseInsensitiveStringsMap headers =
             new FluentCaseInsensitiveStringsMap();

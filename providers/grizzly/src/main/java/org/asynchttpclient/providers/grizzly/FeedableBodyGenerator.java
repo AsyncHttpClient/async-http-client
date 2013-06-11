@@ -56,14 +56,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
     }
     
     public void initializeAsynchronousTransfer(final FilterChainContext context,
-            final HttpRequestPacket requestPacket) throws IOException {
+            final HttpRequestPacket requestPacket) {
         this.context = context;
         this.requestPacket = requestPacket;
         flushQueue();
     }
 
     @SuppressWarnings("unchecked")
-    private void flushQueue() throws IOException {
+    private void flushQueue() {
         if (queueSize.get() > 0) {
             synchronized(this) {
                 while(queueSize.get() > 0) {

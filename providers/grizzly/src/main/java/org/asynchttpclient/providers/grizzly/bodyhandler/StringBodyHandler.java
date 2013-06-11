@@ -26,7 +26,7 @@ import org.glassfish.grizzly.utils.Charsets;
 import java.io.IOException;
 
 public final class StringBodyHandler implements BodyHandler {
-    private GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
+    private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
 
     public StringBodyHandler(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
         this.grizzlyAsyncHttpProvider = grizzlyAsyncHttpProvider;
