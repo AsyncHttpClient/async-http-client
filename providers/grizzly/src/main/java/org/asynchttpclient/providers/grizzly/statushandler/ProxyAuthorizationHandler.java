@@ -47,31 +47,36 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
 
     public boolean handlesStatus(int statusCode) {
-        return (HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.statusMatches(statusCode));
+        return (HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407
+                .statusMatches(statusCode));
     }
 
     @SuppressWarnings({"unchecked"})
     public boolean handleStatus(final HttpResponsePacket responsePacket,
-                             final HttpTransactionContext httpTransactionContext,
-                             final FilterChainContext ctx) {
+                                final HttpTransactionContext httpTransactionContext,
+                                final FilterChainContext ctx) {
 
-        final String proxy_auth = responsePacket.getHeader(Header.ProxyAuthenticate);
-        if (proxy_auth == null) {
-            throw new IllegalStateException("407 response received, but no Proxy Authenticate header was present");
+        final String proxyAuth =
+                responsePacket.getHeader(Header.ProxyAuthenticate);
+        if (proxyAuth == null) {
+            throw new IllegalStateException(
+                    "407 response received, but no Proxy Authenticate header was present");
         }
 
         final Request req = httpTransactionContext.getRequest();
-        ProxyServer proxyServer = httpTransactionContext.getProvider().getClientConfig().getProxyServer();
+        ProxyServer proxyServer = httpTransactionContext.getProvider()
+                .getClientConfig()
+                .getProxyServer();
         String principal = proxyServer.getPrincipal();
         String password = proxyServer.getPassword();
         Realm realm = new Realm.RealmBuilder().setPrincipal(principal)
-                        .setPassword(password)
-                        .setUri("/")
-                        .setMethodName("CONNECT")
-                        .setUsePreemptiveAuth(true)
-                        .parseProxyAuthenticateHeader(proxy_auth)
-                        .build();
-        if (proxy_auth.toLowerCase().startsWith("basic")) {
+                .setPassword(password)
+                .setUri("/")
+                .setMethodName("CONNECT")
+                .setUsePreemptiveAuth(true)
+                .parseProxyAuthenticateHeader(proxyAuth)
+                .build();
+        if (proxyAuth.toLowerCase().startsWith("basic")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
             try {
@@ -80,61 +85,67 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                                              realm));
             } catch (UnsupportedEncodingException ignored) {
             }
-        } else if (proxy_auth.toLowerCase().startsWith("digest")) {
+        } else if (proxyAuth.toLowerCase().startsWith("digest")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
             try {
                 req.getHeaders().add(Header.ProxyAuthorization.toString(),
-                                     AuthenticatorUtils.computeDigestAuthentication(realm));
+                                     AuthenticatorUtils.computeDigestAuthentication(
+                                             realm));
             } catch (NoSuchAlgorithmException e) {
-                throw new IllegalStateException("Digest authentication not supported", e);
+                throw new IllegalStateException(
+                        "Digest authentication not supported", e);
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException("Unsupported encoding.", e);
             }
-        }else if (proxy_auth.toLowerCase().startsWith("ntlm")) {
+        } else if (proxyAuth.toLowerCase().startsWith("ntlm")) {
 
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
 
             String msg;
             try {
-
-                if(isNTLMFirstHandShake(proxy_auth))
-                {
-                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType1Msg(proxyServer.getNtlmDomain(), "");
-                }else {
-                    String serverChallenge = proxy_auth.trim().substring("NTLM ".length());
-                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE.generateType3Msg(principal, password, proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
+                if (isNTLMFirstHandShake(proxyAuth)) {
+                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE
+                            .generateType1Msg(proxyServer.getNtlmDomain(), "");
+                } else {
+                    String serverChallenge =
+                            proxyAuth.trim().substring("NTLM ".length());
+                    msg = GrizzlyAsyncHttpProvider.NTLM_ENGINE
+                            .generateType3Msg(principal, password,
+                                              proxyServer.getNtlmDomain(),
+                                              proxyServer.getHost(),
+                                              serverChallenge);
                 }
 
-                req.getHeaders().add(Header.ProxyAuthorization.toString(), "NTLM " + msg);
+                req.getHeaders()
+                        .add(Header.ProxyAuthorization.toString(),
+                             "NTLM " + msg);
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
-        }   else if (proxy_auth.toLowerCase().startsWith("negotiate")){
+        } else if (proxyAuth.toLowerCase().startsWith("negotiate")) {
             //this is for kerberos
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
-
-        }else {
-            throw new IllegalStateException("Unsupported authorization method: " + proxy_auth);
+        } else {
+            throw new IllegalStateException(
+                    "Unsupported authorization method: " + proxyAuth);
         }
 
-        final ConnectionManager m = httpTransactionContext.getProvider().getConnectionManager();
+        final ConnectionManager m =
+                httpTransactionContext.getProvider().getConnectionManager();
         InvocationStatus tempInvocationStatus = InvocationStatus.STOP;
 
         try {
-
-            if(isNTLMFirstHandShake(proxy_auth))
-            {
+            if (isNTLMFirstHandShake(proxyAuth)) {
                 tempInvocationStatus = InvocationStatus.CONTINUE;
-
             }
-
-            if(proxy_auth.toLowerCase().startsWith("negotiate"))
-            {
-                final Connection c = m.obtainConnection(req, httpTransactionContext.getFuture());
-                final HttpTransactionContext newContext = httpTransactionContext.copy();
+            if (proxyAuth.toLowerCase().startsWith("negotiate")) {
+                final Connection c = m.obtainConnection(req,
+                                                        httpTransactionContext.getFuture());
+                final HttpTransactionContext newContext =
+                        httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
                 HttpTransactionContext.set(c, newContext);
 
@@ -145,15 +156,17 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
                 challengeHeader = GSSSPNEGOWrapper.generateToken(server);
 
-                req.getHeaders().add(Header.ProxyAuthorization.toString(), "Negotiate " + challengeHeader);
+                req.getHeaders()
+                        .add(Header.ProxyAuthorization.toString(),
+                             "Negotiate " + challengeHeader);
 
 
-                return exceuteRequest(httpTransactionContext, req, c,
-                        newContext);
-            }else if(isNTLMSecondHandShake(proxy_auth))
-            {
+                return executeRequest(httpTransactionContext, req, c,
+                                      newContext);
+            } else if (isNTLMSecondHandShake(proxyAuth)) {
                 final Connection c = ctx.getConnection();
-                final HttpTransactionContext newContext = httpTransactionContext.copy();
+                final HttpTransactionContext newContext =
+                        httpTransactionContext.copy();
 
                 httpTransactionContext.setFuture(null);
                 HttpTransactionContext.set(c, newContext);
@@ -161,21 +174,22 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 newContext.setInvocationStatus(tempInvocationStatus);
                 httpTransactionContext.setEstablishingTunnel(true);
 
-                return exceuteRequest(httpTransactionContext, req, c,
-                        newContext);
+                return executeRequest(httpTransactionContext, req, c,
+                                      newContext);
 
-            }
-            else{
-                final Connection c = m.obtainConnection(req, httpTransactionContext.getFuture());
-                final HttpTransactionContext newContext = httpTransactionContext.copy();
+            } else {
+                final Connection c = m.obtainConnection(req,
+                                                        httpTransactionContext.getFuture());
+                final HttpTransactionContext newContext =
+                        httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
                 HttpTransactionContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
                 //NTLM needs the same connection to be used for exchange of tokens
-                return exceuteRequest(httpTransactionContext, req, c,
-                        newContext);
+                return executeRequest(httpTransactionContext, req, c,
+                                      newContext);
             }
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -184,7 +198,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         return false;
     }
 
-    private boolean exceuteRequest(
+    private boolean executeRequest(
             final HttpTransactionContext httpTransactionContext,
             final Request req, final Connection c,
             final HttpTransactionContext newContext) {
@@ -200,9 +214,11 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         }
     }
 
-    public static boolean isNTLMSecondHandShake(final String proxy_auth) {
-        return (proxy_auth != null && proxy_auth.toLowerCase().startsWith("ntlm") && !proxy_auth.equalsIgnoreCase("ntlm"));
+    public static boolean isNTLMSecondHandShake(final String proxyAuth) {
+        return (proxyAuth != null && proxyAuth.toLowerCase()
+                .startsWith("ntlm") && !proxyAuth.equalsIgnoreCase("ntlm"));
     }
+
     public static boolean isNTLMFirstHandShake(final String proxy_auth) {
         return (proxy_auth.equalsIgnoreCase("ntlm"));
     }
@@ -218,15 +234,18 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         }
 
         static byte[] generateGSSToken(
-                final byte[] input, final Oid oid, final String authServer) throws GSSException {
+                final byte[] input, final Oid oid, final String authServer)
+        throws GSSException {
             byte[] token = input;
             if (token == null) {
                 token = new byte[0];
             }
             GSSManager manager = getManager();
-            GSSName serverName = manager.createName("HTTP@" + authServer, GSSName.NT_HOSTBASED_SERVICE);
+            GSSName serverName = manager.createName("HTTP@" + authServer,
+                                                    GSSName.NT_HOSTBASED_SERVICE);
             GSSContext gssContext = manager.createContext(
-                    serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
+                    serverName.canonicalize(oid), oid, null,
+                    GSSContext.DEFAULT_LIFETIME);
             gssContext.requestMutualAuth(true);
             gssContext.requestCredDeleg(true);
             return gssContext.initSecContext(token, 0, token.length);
