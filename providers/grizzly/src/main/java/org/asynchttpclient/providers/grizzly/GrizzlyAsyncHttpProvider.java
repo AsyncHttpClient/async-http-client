@@ -620,9 +620,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public static void main(String[] args) {
         ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTPS,
                                              "192.168.1.5",
-                                             3128,
-                                             "rlubke",
-                                             "gulvhg11");
+                                             3128
+                                             );
 
         AsyncHttpClientConfig config =
                 new AsyncHttpClientConfig.Builder().setSpdyEnabled(false)
