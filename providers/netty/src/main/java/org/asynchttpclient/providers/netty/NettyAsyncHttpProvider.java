@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -2209,10 +2210,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_UNKNOWN = -1;
 
         protected byte pendingOpcode = OPCODE_UNKNOWN;
+        private final CountDownLatch onSuccessLatch = new CountDownLatch(1);
 
         // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(ctx.getAttachment());
+            NettyResponseFuture future = NettyResponseFuture.class.cast(ctx.getAttachment());
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
             Request request = future.getRequest();
 
@@ -2221,7 +2223,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
-                FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
+                FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
                         fc = asyncFilter.filter(fc);
@@ -2261,14 +2263,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                if (!statusReceived) {
-                    h.onClose(new NettyWebSocket(ctx.getChannel()), 1002, "Bad response status " + response.getStatus().getCode());
-                    future.done(null);
+                if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
+                    abort(future, new IOException("Invalid handshake response"));
                     return;
-                }
-
-                if (!validStatus || !validUpgrade || !validConnection) {
-                    throw new IOException("Invalid handshake response");
                 }
 
                 String accept = response.getHeader("Sec-WebSocket-Accept");
@@ -2277,13 +2274,28 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
 
+                ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
                 if (h.onHeadersReceived(responseHeaders) == STATE.CONTINUE) {
-                    h.onSuccess(new NettyWebSocket(ctx.getChannel()));
+                    try {
+                        h.onSuccess(new NettyWebSocket(ctx.getChannel()));
+                    } catch (Exception ex) {
+                        NettyAsyncHttpProvider.this.log.warn("onSuccess unexexpected exception", ex);
+                    } finally {
+                        /**
+                         * A websocket message may always be included with the handshake response. As soon as we replace
+                         * the ws-decoder, this class can be called and we are still inside the onSuccess processing
+                         * causing invalid state.
+                         */
+                        onSuccessLatch.countDown();
+                    }
                 }
-                ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 future.done(null);
             } else if (e.getMessage() instanceof WebSocketFrame) {
+
+                // Give a chance to the onSuccess to complete before processing message.
+                onSuccessLatch.await();
+
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
                 if (frame instanceof TextWebSocketFrame) {
