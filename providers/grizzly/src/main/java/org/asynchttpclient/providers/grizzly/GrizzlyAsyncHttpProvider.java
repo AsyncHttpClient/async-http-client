@@ -168,18 +168,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         };
 
-        try {
-            connectionManager.doAsyncTrackedConnection(request, future, connectHandler);
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else if (e instanceof IOException) {
-                throw (IOException) e;
-            }
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn(e.toString(), e);
-            }
-        }
+        connectionManager.doAsyncTrackedConnection(request, future, connectHandler);
 
         return future;
     }
@@ -238,22 +227,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public <T> ListenableFuture<T> execute(final Connection c,
                                            final Request request,
                                            final AsyncHandler<T> handler,
-                                           final GrizzlyResponseFuture<T> future)
-    throws IOException {
+                                           final GrizzlyResponseFuture<T> future) {
 
-        try {
             if (HttpTransactionContext.get(c) == null) {
                 HttpTransactionContext.create(this, future, request, handler, c);
             }
             c.write(request, createWriteCompletionHandler(future));
-        } catch (Exception e) {
-            if (e instanceof IOException) {
-                throw (IOException) e;
-            }
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn(e.toString(), e);
-            }
-        }
 
         return future;
     }
@@ -639,9 +618,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     public static void main(String[] args) {
-        ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTP,
-                                             "localhost",
-                                             9999);
+        ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTPS,
+                                             "192.168.1.5",
+                                             3128,
+                                             "rlubke",
+                                             "gulvhg11");
+
         AsyncHttpClientConfig config =
                 new AsyncHttpClientConfig.Builder().setSpdyEnabled(false)
                         .setProxyServer(server).build();

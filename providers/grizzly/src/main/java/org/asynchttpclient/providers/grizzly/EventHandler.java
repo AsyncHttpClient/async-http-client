@@ -284,14 +284,10 @@ public final class EventHandler {
                             context.copy();
                     context.setFuture(null);
                     HttpTransactionContext.set(c, newContext);
-                    try {
-                        context.getProvider().execute(c,
-                                                      newRequest,
-                                                      newHandler,
-                                                      context.getFuture());
-                    } catch (IOException ioe) {
-                        newContext.abort(ioe);
-                    }
+                    context.getProvider().execute(c,
+                                                  newRequest,
+                                                  newHandler,
+                                                  context.getFuture());
                 } catch (Exception e) {
                     context.abort(e);
                 }
@@ -397,16 +393,11 @@ public final class EventHandler {
             context.setEstablishingTunnel(false);
             final Connection c = ctx.getConnection();
             context.tunnelEstablished(c);
-            try {
-                context.getProvider().execute(c,
-                                              context.getRequest(),
-                                              context.getHandler(),
-                                              context.getFuture());
-                return result;
-            } catch (IOException e) {
-                context.abort(e);
-                return result;
-            }
+            context.getProvider().execute(c,
+                                          context.getRequest(),
+                                          context.getHandler(),
+                                          context.getFuture());
+            return result;
         } else {
             cleanup(ctx);
             final AsyncHandler handler = context.getHandler();

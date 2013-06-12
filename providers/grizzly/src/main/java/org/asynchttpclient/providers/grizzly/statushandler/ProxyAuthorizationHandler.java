@@ -33,7 +33,6 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
@@ -161,8 +160,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                              "Negotiate " + challengeHeader);
 
 
-                return executeRequest(httpTransactionContext, req, c,
-                                      newContext);
+                return executeRequest(httpTransactionContext, req, c);
             } else if (isNTLMSecondHandShake(proxyAuth)) {
                 final Connection c = ctx.getConnection();
                 final HttpTransactionContext newContext =
@@ -174,22 +172,20 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 newContext.setInvocationStatus(tempInvocationStatus);
                 httpTransactionContext.setEstablishingTunnel(true);
 
-                return executeRequest(httpTransactionContext, req, c,
-                                      newContext);
+                return executeRequest(httpTransactionContext, req, c);
 
             } else {
-                final Connection c = m.obtainConnection(req,
-                                                        httpTransactionContext.getFuture());
+                //final Connection c = m.obtainConnection(req,
+                //                                        httpTransactionContext.getFuture());
                 final HttpTransactionContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTransactionContext.set(c, newContext);
+                HttpTransactionContext.set(ctx.getConnection(), newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
                 //NTLM needs the same connection to be used for exchange of tokens
-                return executeRequest(httpTransactionContext, req, c,
-                                      newContext);
+                return executeRequest(httpTransactionContext, req, ctx.getConnection());
             }
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -200,18 +196,12 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
     private boolean executeRequest(
             final HttpTransactionContext httpTransactionContext,
-            final Request req, final Connection c,
-            final HttpTransactionContext newContext) {
-        try {
-            httpTransactionContext.getProvider().execute(c,
+            final Request req, final Connection c) {
+        httpTransactionContext.getProvider().execute(c,
                                                          req,
                                                          httpTransactionContext.getHandler(),
                                                          httpTransactionContext.getFuture());
             return false;
-        } catch (IOException ioe) {
-            newContext.abort(ioe);
-            return false;
-        }
     }
 
     public static boolean isNTLMSecondHandShake(final String proxyAuth) {

@@ -24,7 +24,6 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
@@ -102,16 +101,11 @@ public final class AuthorizationHandler implements StatusHandler {
             httpTransactionContext.setFuture(null);
             HttpTransactionContext.set(c, newContext);
             newContext.setInvocationStatus(STOP);
-            try {
-                httpTransactionContext.getProvider().execute(c,
-                                                        req,
-                                                        httpTransactionContext.getHandler(),
-                                                        httpTransactionContext.getFuture());
-                return false;
-            } catch (IOException ioe) {
-                newContext.abort(ioe);
-                return false;
-            }
+            httpTransactionContext.getProvider().execute(c,
+                                                         req,
+                                                         httpTransactionContext.getHandler(),
+                                                         httpTransactionContext.getFuture());
+            return false;
         } catch (Exception e) {
             httpTransactionContext.abort(e);
         }
