@@ -2277,11 +2277,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
 
-                ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
-                ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 if (h.onHeadersReceived(responseHeaders) == STATE.CONTINUE) {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 }
+                ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
+                ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 future.done(null);
             } else if (e.getMessage() instanceof WebSocketFrame) {
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
