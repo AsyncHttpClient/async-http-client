@@ -622,9 +622,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     public static void main(String[] args) {
         ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTPS,
-                                             "192.168.1.5",
-                                             3128
-                                             );
+                                             "localhost",
+                                             9999,
+                                             "rlubke",
+                                             "password");
 
         AsyncHttpClientConfig config =
                 new AsyncHttpClientConfig.Builder().setSpdyEnabled(false)

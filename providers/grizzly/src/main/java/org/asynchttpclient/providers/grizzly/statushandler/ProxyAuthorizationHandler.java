@@ -175,17 +175,19 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 return executeRequest(httpTransactionContext, req, c);
 
             } else {
-                //final Connection c = m.obtainConnection(req,
-                //                                        httpTransactionContext.getFuture());
+                final Connection c = getConnectionForNextRequest(ctx,
+                                                                 req,
+                                                                 responsePacket,
+                                                                 httpTransactionContext);
                 final HttpTransactionContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTransactionContext.set(ctx.getConnection(), newContext);
+                HttpTransactionContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
                 //NTLM needs the same connection to be used for exchange of tokens
-                return executeRequest(httpTransactionContext, req, ctx.getConnection());
+                return executeRequest(httpTransactionContext, req, c);
             }
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -211,6 +213,20 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
     private static boolean isNTLMFirstHandShake(final String proxy_auth) {
         return (proxy_auth.equalsIgnoreCase("ntlm"));
+    }
+
+    private Connection getConnectionForNextRequest(final FilterChainContext ctx,
+                                                   final Request request,
+                                                   final HttpResponsePacket response,
+                                                   final HttpTransactionContext httpCtx)
+    throws Exception {
+        if (response.getProcessingState().isKeepAlive()) {
+            return ctx.getConnection();
+        } else {
+            final ConnectionManager m =
+                    httpCtx.getProvider().getConnectionManager();
+            return m.obtainConnection(request, httpCtx.getFuture());
+        }
     }
 
 
