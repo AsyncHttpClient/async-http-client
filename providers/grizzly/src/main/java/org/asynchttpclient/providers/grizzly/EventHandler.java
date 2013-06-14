@@ -364,12 +364,14 @@ public final class EventHandler {
 
         boolean result;
 
+        Utils.removeRequestInFlight(ctx.getConnection());
+
         if (cleanup != null) {
             cleanup.cleanup(ctx);
         }
 
         if (httpHeader.isSkipRemainder()) {
-            if (Utils.getRequestInFlightCount(ctx.getConnection()) <= 1) {
+            if (Utils.getRequestInFlightCount(ctx.getConnection()) == 0) {
                 cleanup(ctx);
             }
             return false;
