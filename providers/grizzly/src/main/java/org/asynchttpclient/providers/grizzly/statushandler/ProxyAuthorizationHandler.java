@@ -132,8 +132,6 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                     "Unsupported authorization method: " + proxyAuth);
         }
 
-        final ConnectionManager m =
-                httpTransactionContext.getProvider().getConnectionManager();
         InvocationStatus tempInvocationStatus = InvocationStatus.STOP;
 
         try {
@@ -141,8 +139,10 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 tempInvocationStatus = InvocationStatus.CONTINUE;
             }
             if (proxyAuth.toLowerCase().startsWith("negotiate")) {
-                final Connection c = m.obtainConnection(req,
-                                                        httpTransactionContext.getFuture());
+                final Connection c = getConnectionForNextRequest(ctx,
+                                                                 req,
+                                                                 responsePacket,
+                                                                 httpTransactionContext);
                 final HttpTransactionContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
