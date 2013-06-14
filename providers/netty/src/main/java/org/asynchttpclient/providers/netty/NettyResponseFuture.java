@@ -215,7 +215,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     void cancelReaper() {
         if (reaperFuture != null) {
-            reaperFuture.cancel(true);
+            reaperFuture.cancel(false);
         }
     }
 
