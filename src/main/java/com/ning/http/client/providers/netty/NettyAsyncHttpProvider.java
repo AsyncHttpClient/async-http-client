@@ -123,7 +123,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -134,7 +133,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.*;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.REUSE_ADDRESS;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.DateUtil.millisTime;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
@@ -2245,7 +2255,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_BINARY = 0x2;
         private static final byte OPCODE_UNKNOWN = -1;
         protected byte pendingOpcode = OPCODE_UNKNOWN;
-        private final CountDownLatch onSuccessLatch = new CountDownLatch(1);
+        private final AtomicBoolean onSuccesInvoked = new AtomicBoolean();
+
+        // We don't need to synchronize as replacing the "ws-decoder" will process using the same thread.
+        private void invokeOnSucces(ChannelHandlerContext ctx, WebSocketUpgradeHandler h) {
+            if (!onSuccesInvoked.getAndSet(true)) {
+                try {
+                    h.onSuccess(new NettyWebSocket(ctx.getChannel()));
+                } catch (Exception ex) {
+                    NettyAsyncHttpProvider.this.log.warn("onSuccess unexexpected exception", ex);
+                }
+            }
+        }
 
         // @Override
         public void handle(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
@@ -2298,7 +2319,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                if (!validStatus || !validUpgrade || !validConnection || !statusReceived) {
+                final boolean headeOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
+                if (!headeOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
                     abort(future, new IOException("Invalid handshake response"));
                     return;
                 }
@@ -2311,25 +2333,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 ctx.getPipeline().replace("http-encoder", "ws-encoder", new WebSocket08FrameEncoder(true));
                 ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
-                if (h.onHeadersReceived(responseHeaders) == STATE.CONTINUE) {
-                    try {
-                        h.onSuccess(new NettyWebSocket(ctx.getChannel()));
-                    } catch (Exception ex) {
-                        NettyAsyncHttpProvider.this.log.warn("onSuccess unexexpected exception", ex);
-                    } finally {
-                        /**
-                         * A websocket message may always be included with the handshake response. As soon as we replace
-                         * the ws-decoder, this class can be called and we are still inside the onSuccess processing
-                         * causing invalid state.
-                         */
-                        onSuccessLatch.countDown();
-                    }
-                }
+
+                invokeOnSucces(ctx, h);
                 future.done(null);
             } else if (e.getMessage() instanceof WebSocketFrame) {
 
-                // Give a chance to the onSuccess to complete before processing message.
-                onSuccessLatch.await();
+                invokeOnSucces(ctx, h);
 
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
