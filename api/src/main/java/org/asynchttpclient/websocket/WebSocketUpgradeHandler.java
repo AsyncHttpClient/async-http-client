@@ -35,6 +35,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @SuppressWarnings("unused")
     private final long maxTextSize;
     private final AtomicBoolean ok = new AtomicBoolean(false);
+    private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
 
     private WebSocketUpgradeHandler(Builder b) {
         l = b.l;
@@ -49,6 +50,10 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     @Override
     public final void onThrowable(Throwable t) {
         onFailure(t);
+    }
+
+    public boolean touchSuccess(){
+        return onSuccessCalled.getAndSet(true);
     }
 
     /**

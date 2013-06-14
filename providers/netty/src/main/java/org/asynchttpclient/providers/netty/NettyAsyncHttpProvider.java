@@ -2207,11 +2207,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_BINARY = 0x2;
         private static final byte OPCODE_UNKNOWN = -1;
         protected byte pendingOpcode = OPCODE_UNKNOWN;
-        private final AtomicBoolean onSuccesInvoked = new AtomicBoolean();
 
         // We don't need to synchronize as replacing the "ws-decoder" will process using the same thread.
         private void invokeOnSucces(ChannelHandlerContext ctx, WebSocketUpgradeHandler h) {
-            if (!onSuccesInvoked.getAndSet(true)) {
+            if (!h.touchSuccess()) {
                 try {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 } catch (Exception ex) {
