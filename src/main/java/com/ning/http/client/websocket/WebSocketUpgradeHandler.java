@@ -53,6 +53,10 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         return onSuccessCalled.getAndSet(true);
     }
 
+    public void resetSuccess() {
+        onSuccessCalled.set(false);
+    }
+
     /**
      * {@inheritDoc}
      */

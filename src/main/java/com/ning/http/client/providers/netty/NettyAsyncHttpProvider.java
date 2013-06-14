@@ -2387,6 +2387,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             } catch (Throwable t) {
                                 // Swallow any exception that may comes from a Netty version released before 3.4.0
                                 log.trace("", t);
+                            } finally {
+                                h.resetSuccess();
                             }
                         }
                     } else {
@@ -2430,6 +2432,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 NettyResponseFuture<?> nettyResponse = NettyResponseFuture.class.cast(ctx.getAttachment());
                 WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
+                h.resetSuccess();
 
                 if (ctx.getAttachment() == null || !DiscardEvent.class.isAssignableFrom(ctx.getAttachment().getClass()))
                     webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
