@@ -35,6 +35,8 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+import org.glassfish.grizzly.http.ProcessingState;
+import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -238,11 +240,7 @@ public final class EventHandler {
 
         //super.onHttpHeadersParsed(httpHeader, ctx);
         GrizzlyAsyncHttpProvider.LOGGER.debug("RESPONSE: {}", httpHeader);
-        if (httpHeader.containsHeader(Header.Connection)) {
-            if ("close".equals(httpHeader.getHeader(Header.Connection))) {
-                ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
-            }
-        }
+        processKeepAlive(ctx.getConnection(), httpHeader);
         final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
 
         if (httpHeader.isSkipRemainder()
@@ -365,10 +363,10 @@ public final class EventHandler {
     public boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
         boolean result;
-        final String proxy_auth = httpHeader.getHeader(Header.ProxyAuthenticate);
+        final String proxyAuth = httpHeader.getHeader(Header.ProxyAuthenticate);
 
         if (httpHeader.isSkipRemainder()) {
-            if (!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxy_auth)) {
+            if (!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxyAuth)) {
                 cleanup.cleanup(ctx);
                 cleanup(ctx);
                 return false;
@@ -417,6 +415,23 @@ public final class EventHandler {
 
 
     // ----------------------------------------------------- Private Methods
+
+    private static void processKeepAlive(final Connection c,
+                                         final HttpHeader header) {
+        final ProcessingState state = header.getProcessingState();
+        final String connectionHeader = header.getHeader(Header.Connection);
+        if (connectionHeader == null) {
+            state.setKeepAlive(header.getProtocol() == Protocol.HTTP_1_1);
+        } else {
+            if ("close".equals(connectionHeader.toLowerCase())) {
+                ConnectionManager.markConnectionAsDoNotCache(c);
+                state.setKeepAlive(false);
+            } else {
+                state.setKeepAlive(true);
+            }
+        }
+    }
+
 
     private static GrizzlyWebSocketAdapter createWebSocketAdapter(final HttpTransactionContext context) {
         SimpleWebSocket ws = new SimpleWebSocket(context.getProtocolHandler());
