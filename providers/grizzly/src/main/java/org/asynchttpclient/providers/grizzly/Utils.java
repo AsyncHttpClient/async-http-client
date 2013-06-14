@@ -42,13 +42,17 @@ package org.asynchttpclient.providers.grizzly;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
+import org.glassfish.grizzly.attributes.AttributeStorage;
 
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Utils {
 
     private static final Attribute<Boolean> IGNORE =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IGNORE");
+    private static final Attribute<AtomicInteger> REQUEST_IN_FLIGHT =
+                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IN-FLIGHT");
 
 
     // ------------------------------------------------------------ Constructors
@@ -80,5 +84,27 @@ public final class Utils {
     public static boolean isIgnored(final Connection c) {
         Boolean result = IGNORE.get(c);
         return (result != null && result);
+    }
+
+    public static void addRequestInFlight(final AttributeStorage storage) {
+        AtomicInteger counter = REQUEST_IN_FLIGHT.get(storage);
+        if (counter == null) {
+            counter = new AtomicInteger(1);
+            REQUEST_IN_FLIGHT.set(storage, counter);
+        } else {
+            counter.incrementAndGet();
+        }
+    }
+
+    public static void removeRequestInFlight(final AttributeStorage storage) {
+        AtomicInteger counter = REQUEST_IN_FLIGHT.get(storage);
+        if (counter != null) {
+            counter.decrementAndGet();
+        }
+    }
+
+    public static int getRequestInFlightCount(final AttributeStorage storage) {
+        AtomicInteger counter = REQUEST_IN_FLIGHT.get(storage);
+        return ((counter != null) ? counter.get() : 0);
     }
 }

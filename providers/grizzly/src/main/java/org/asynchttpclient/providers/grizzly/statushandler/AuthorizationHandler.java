@@ -92,10 +92,12 @@ public final class AuthorizationHandler implements StatusHandler {
             throw new IllegalStateException("Unsupported authorization method: " + auth);
         }
 
-        final ConnectionManager m = httpTransactionContext.getProvider().getConnectionManager();
+
         try {
-            final Connection c = m.obtainConnection(req,
-                                                    httpTransactionContext.getFuture());
+            final Connection c = getConnectionForNextRequest(ctx,
+                                                             req,
+                                                             responsePacket,
+                                                             httpTransactionContext);
             final HttpTransactionContext newContext =
                     httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
@@ -111,6 +113,23 @@ public final class AuthorizationHandler implements StatusHandler {
         }
         httpTransactionContext.setInvocationStatus(STOP);
         return false;
+    }
+
+
+    // --------------------------------------------------------- Private Methods
+
+
+    private Connection getConnectionForNextRequest(final FilterChainContext ctx,
+                                                   final Request request,
+                                                   final HttpResponsePacket response,
+                                                   final HttpTransactionContext httpCtx)
+    throws Exception {
+        if (response.getProcessingState().isKeepAlive()) {
+            return ctx.getConnection();
+        } else {
+            final ConnectionManager m = httpCtx.getProvider().getConnectionManager();
+            return m.obtainConnection(request, httpCtx.getFuture());
+        }
     }
 
 } // END AuthorizationHandler

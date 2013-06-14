@@ -363,25 +363,18 @@ public final class EventHandler {
     public boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
         boolean result;
-        final String proxyAuth = httpHeader.getHeader(Header.ProxyAuthenticate);
 
-        if (httpHeader.isSkipRemainder()) {
-            if (!ProxyAuthorizationHandler.isNTLMSecondHandShake(proxyAuth)) {
-                cleanup.cleanup(ctx);
-                cleanup(ctx);
-                return false;
-            } else {
-                //super.onHttpPacketParsed(httpHeader, ctx);
-                cleanup.cleanup(ctx);
-                httpHeader.getProcessingState().setKeepAlive(true);
-                return false;
-            }
-        }
-
-        //result = super.onHttpPacketParsed(httpHeader, ctx);
         if (cleanup != null) {
             cleanup.cleanup(ctx);
         }
+
+        if (httpHeader.isSkipRemainder()) {
+            if (Utils.getRequestInFlightCount(ctx.getConnection()) <= 1) {
+                cleanup(ctx);
+            }
+            return false;
+        }
+
         result = false;
 
         final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());

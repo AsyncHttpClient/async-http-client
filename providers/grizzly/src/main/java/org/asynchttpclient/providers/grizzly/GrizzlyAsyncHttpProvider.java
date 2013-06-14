@@ -40,7 +40,9 @@ import org.asynchttpclient.util.SslUtils;
 
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.WriteResult;
+import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.Filter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
@@ -80,10 +82,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
@@ -108,7 +112,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     private ConnectionManager connectionManager;
     private DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
-
 
 
     // ------------------------------------------------------------ Constructors
@@ -228,7 +231,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                            final Request request,
                                            final AsyncHandler<T> handler,
                                            final GrizzlyResponseFuture<T> future) {
-
+            Utils.addRequestInFlight(c);
             if (HttpTransactionContext.get(c) == null) {
                 HttpTransactionContext.create(this, future, request, handler, c);
             }
