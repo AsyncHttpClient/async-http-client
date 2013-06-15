@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
@@ -40,9 +39,7 @@ import org.asynchttpclient.util.SslUtils;
 
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.WriteResult;
-import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.Filter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
@@ -82,12 +79,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
@@ -618,71 +612,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         void cleanup(final FilterChainContext ctx);
 
     }
-
-
-    public static void main(String[] args) {
-        ProxyServer server = new ProxyServer(ProxyServer.Protocol.HTTPS,
-                                             "localhost",
-                                             9999,
-                                             "rlubke",
-                                             "password");
-
-        AsyncHttpClientConfig config =
-                new AsyncHttpClientConfig.Builder().setSpdyEnabled(false)
-                        .setProxyServer(server).build();
-        AsyncHttpClient client =
-                new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config),
-                                    config);
-        try {
-            client.prepareGet("https://www.google.com")
-                    .execute(new AsyncHandler<Object>() {
-                        @Override
-                        public void onThrowable(Throwable t) {
-                            t.printStackTrace();
-                        }
-
-                        @Override
-                        public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
-                        throws Exception {
-                            System.out.println(
-                                    new String(bodyPart.getBodyPartBytes(),
-                                               "UTF-8"));
-                            return STATE.CONTINUE;
-                        }
-
-                        @Override
-                        public STATE onStatusReceived(HttpResponseStatus responseStatus)
-                        throws Exception {
-                            System.out
-                                    .println(
-                                            responseStatus.getStatusCode());
-                            return STATE.CONTINUE;
-                        }
-
-                        @Override
-                        public STATE onHeadersReceived(HttpResponseHeaders headers)
-                        throws Exception {
-                            System.out.println(headers.toString());
-                            return STATE.CONTINUE;
-                        }
-
-                        @Override
-                        public Object onCompleted() throws Exception {
-                            System.out.println("REQUEST COMPLETE");
-                            return null;
-                        }
-                    }).get();
-
-            System.exit(0);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-    }
-
 
 }
 

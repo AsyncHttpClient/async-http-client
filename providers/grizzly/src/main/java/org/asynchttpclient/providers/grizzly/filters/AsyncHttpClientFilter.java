@@ -34,6 +34,8 @@ import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -69,6 +71,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private final AsyncHttpClientConfig config;
     private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
 
+    private static final Attribute<Boolean> PROXY_AUTH_FAILURE =
+           Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
 
     // -------------------------------------------------------- Constructors
 
@@ -128,6 +132,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             AsyncHandler handler = new AsyncCompletionHandler() {
                             @Override
                             public Object onCompleted(Response response) throws Exception {
+                                if (response.getStatusCode() != 200) {
+                                    PROXY_AUTH_FAILURE.set(ctx.getConnection(), Boolean.TRUE);
+                                }
                                 ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection()));
                                 ctx.notifyDownstream(event);
                                 return response;
@@ -160,6 +167,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     throws IOException {
 
         final HttpTransactionContext httpCtx = HttpTransactionContext.get(ctx.getConnection());
+
+        if (checkProxyAuthFailure(ctx, httpCtx)) {
+            return true;
+        }
+
         final URI uri = httpCtx.getRequest().getURI();
         boolean secure = Utils.isSecure(uri);
 
@@ -279,6 +291,16 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 httpCtx.abort(t);
                 return true;
             }
+        return false;
+    }
+
+    private static boolean checkProxyAuthFailure(final FilterChainContext ctx,
+                                                 final HttpTransactionContext httpCtx) {
+        final Boolean failed = PROXY_AUTH_FAILURE.get(ctx.getConnection());
+        if (failed != null && failed) {
+            httpCtx.abort(new IllegalStateException("Unable to authenticate with proxy"));
+            return true;
+        }
         return false;
     }
 
