@@ -78,14 +78,12 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * @return This object
      */
     public FluentStringsMap add(String key, Collection<String> values) {
-        if (key != null) {
-            if (isNonEmpty(values)) {
-                List<String> curValues = this.values.get(key);
+        if (key != null && isNonEmpty(values)) {
+            List<String> curValues = this.values.get(key);
 
-                if (curValues == null) {
-                    curValues = new ArrayList<String>();
-                    this.values.put(key, curValues);
-                }
+            if (curValues == null) {
+                this.values.put(key, new ArrayList<String>(values));
+            } else {
                 curValues.addAll(values);
             }
         }
