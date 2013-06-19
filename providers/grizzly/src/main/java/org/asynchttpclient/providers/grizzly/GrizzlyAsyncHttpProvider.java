@@ -197,7 +197,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     HttpResponseHeaders headers,
                                     List<HttpResponseBodyPart> bodyParts) {
 
-        return new GrizzlyResponse(status, headers, bodyParts);
+        return new GrizzlyResponse(status,
+                                   headers,
+                                   bodyParts,
+                                   clientConfig.isRfc6265CookieEncoding());
 
     }
 

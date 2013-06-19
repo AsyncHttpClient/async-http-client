@@ -14,6 +14,7 @@
 package org.asynchttpclient.providers.grizzly;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.glassfish.grizzly.http.CookiesBuilder.ServerCookiesBuilder;
 
 import org.asynchttpclient.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -24,7 +25,6 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.Cookies;
-import org.glassfish.grizzly.http.CookiesBuilder;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
@@ -46,15 +46,17 @@ import java.util.List;
  */
 public class GrizzlyResponse extends ResponseBase {
     private final Buffer responseBody;
+    private final Boolean rfc6265Enabled;
 
     // ------------------------------------------------------------ Constructors
 
 
     public GrizzlyResponse(final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
-                           final List<HttpResponseBodyPart> bodyParts) {
+                           final List<HttpResponseBodyPart> bodyParts,
+                           final boolean rfc6265Enabled) {
         super(status, headers, bodyParts);
-
+        this.rfc6265Enabled = rfc6265Enabled;
         if (isNonEmpty(bodyParts)) {
             if (bodyParts.size() == 1) {
                 responseBody = ((GrizzlyResponseBodyPart) bodyParts.get(0)).getBodyBuffer();
@@ -157,7 +159,7 @@ public class GrizzlyResponse extends ResponseBase {
 
         List<String> values = headers.getHeaders().get("set-cookie");
         if (isNonEmpty(values)) {
-            CookiesBuilder.ServerCookiesBuilder builder = new CookiesBuilder.ServerCookiesBuilder(false);
+            ServerCookiesBuilder builder = new ServerCookiesBuilder(false, rfc6265Enabled);
             for (String header : values) {
                 builder.parse(header);
             }

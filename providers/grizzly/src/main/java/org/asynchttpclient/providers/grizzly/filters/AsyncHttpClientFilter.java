@@ -392,7 +392,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
 
-    private static void addCookies(final Request request,
+    private void addCookies(final Request request,
                                    final HttpRequestPacket requestPacket) {
 
         final Collection<Cookie> cookies = request.getCookies();
@@ -401,7 +401,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             org.glassfish.grizzly.http.Cookie[] gCookies =
                     new org.glassfish.grizzly.http.Cookie[cookies.size()];
             convertCookies(cookies, gCookies);
-            CookieSerializerUtils.serializeClientCookies(sb, gCookies);
+            CookieSerializerUtils.serializeClientCookies(sb, false, config.isRfc6265CookieEncoding(), gCookies);
             requestPacket.addHeader(Header.Cookie, sb.toString());
         }
 
