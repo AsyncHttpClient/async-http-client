@@ -22,6 +22,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * A class that represent the HTTP headers.
@@ -48,17 +49,13 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     private FluentCaseInsensitiveStringsMap computerHeaders() {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (String s : response.getHeaderNames()) {
-            for (String header : response.getHeaders(s)) {
-                h.add(s, header);
-            }
+        for (Map.Entry<String, String> header: response.getHeaders()) {
+           h.add(header.getKey(), header.getValue());
         }
 
-        if (trailingHeaders != null && trailingHeaders.getHeaderNames().size() > 0) {
-            for (final String s : trailingHeaders.getHeaderNames()) {
-                for (String header : response.getHeaders(s)) {
-                    h.add(s, header);
-                }
+        if (trailingHeaders != null) {
+            for (Map.Entry<String, String> header:  trailingHeaders.getHeaders()) {
+                h.add(header.getKey(), header.getValue());
             }
         }
 
