@@ -322,7 +322,7 @@ public class AsyncHttpProviderUtils {
                     + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
         }
 
-        return redirectUri;
+        return redirectUri.normalize();
     }
 
     public final static int getPort(URI uri) {
