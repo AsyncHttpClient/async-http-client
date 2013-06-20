@@ -154,6 +154,7 @@ public class AsyncHttpClientConfig {
         this.hostnameVerifier = hostnameVerifier;
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
+        this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
         this.rfc6265CookieEncoding = rfc6265CookieEncoding;
 
         if (applicationThreadPool == null) {
