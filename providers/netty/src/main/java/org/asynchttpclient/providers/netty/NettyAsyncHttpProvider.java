@@ -2268,8 +2268,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
-                final boolean headeOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
-                if (!headeOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
+                final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
+                if (!headerOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
                     abort(future, new IOException("Invalid handshake response"));
                     return;
                 }
