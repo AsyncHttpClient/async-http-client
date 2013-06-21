@@ -577,12 +577,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, URI uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
 
-        String host = AsyncHttpProviderUtils.getHost(uri);
+        String host = null;
         boolean webSocket = isWebSocket(uri);
 
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
-        }
+        } else {
+            AsyncHttpProviderUtils.getHost(uri);
+    	}
 
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
@@ -607,9 +609,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (host != null) {
-            if (uri.getPort() == -1) {
-                nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
-            } else if (request.getVirtualHost() != null) {
+            if (request.getVirtualHost() != null || uri.getPort() == -1) {
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
             } else {
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
