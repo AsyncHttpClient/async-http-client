@@ -220,6 +220,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         return resolver;
     }
 
+
     // ------------------------------------------------------- Protected Methods
 
 
@@ -269,7 +270,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                     return requestTimeout;
                                 }
                             }
-                            return timeout;
+                            return IdleTimeoutFilter.FOREVER;
                         }
                     };
             final IdleTimeoutFilter timeoutFilter = new IdleTimeoutFilter(timeoutExecutor,
@@ -484,8 +485,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     void timeout(final Connection c) {
 
         final HttpTransactionContext context = HttpTransactionContext.get(c);
-        HttpTransactionContext.set(c, null);
-        context.abort(new TimeoutException("Timeout exceeded"));
+        if (context != null) {
+            HttpTransactionContext.set(c, null);
+            context.abort(new TimeoutException("Timeout exceeded"));
+        }
 
     }
 
