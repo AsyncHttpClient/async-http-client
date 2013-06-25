@@ -183,12 +183,8 @@ public class RetryNonBlockingIssue {
             bc.setMaximumConnectionsTotal(100);
             bc.setConnectionTimeoutInMs(60000);
             bc.setRequestTimeoutInMs(30000);
+            bc.setAsyncConnectMode(true);
 
-            NettyAsyncHttpProviderConfig config = new
-                    NettyAsyncHttpProviderConfig();
-            config.setAsyncConnect(true);
-
-            bc.setAsyncHttpClientProviderConfig(config);
             c = new AsyncHttpClient(bc.build());
 
             for (int i = 0; i < 32; i++) {
