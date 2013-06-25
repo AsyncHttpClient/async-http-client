@@ -50,11 +50,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private ExecutorService bossExecutorService;
 
     /**
-     * Execute the connect operation asynchronously.
-     */
-    private boolean asyncConnect;
-
-    /**
      * HttpClientCodec's maxInitialLineLength
      */
     private int maxInitialLineLength = 4096;
@@ -161,14 +156,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setBossExecutorService(ExecutorService bossExecutorService) {
         this.bossExecutorService = bossExecutorService;
-    }
-
-    public boolean isAsyncConnect() {
-        return asyncConnect;
-    }
-
-    public void setAsyncConnect(boolean asyncConnect) {
-        this.asyncConnect = asyncConnect;
     }
 
     public int getMaxInitialLineLength() {

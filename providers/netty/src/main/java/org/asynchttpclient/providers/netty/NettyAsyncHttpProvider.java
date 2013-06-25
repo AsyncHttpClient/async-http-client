@@ -260,7 +260,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         DefaultChannelFuture.setUseDeadLockChecker(false);
 
         if (asyncHttpProviderConfig != null) {
-            executeConnectAsync = asyncHttpProviderConfig.isAsyncConnect();
+            executeConnectAsync = config.isAsyncConnectMode();
             if (!executeConnectAsync) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
             }

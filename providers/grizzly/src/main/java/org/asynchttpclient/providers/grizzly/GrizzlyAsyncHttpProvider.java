@@ -165,7 +165,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         };
 
-        connectionManager.doAsyncTrackedConnection(request, future, connectHandler);
+        connectionManager.doTrackedConnection(request, future, connectHandler);
 
         return future;
     }

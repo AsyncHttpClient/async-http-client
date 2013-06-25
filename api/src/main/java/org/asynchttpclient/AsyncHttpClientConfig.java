@@ -114,6 +114,7 @@ public class AsyncHttpClientConfig {
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
     protected boolean rfc6265CookieEncoding;
+    protected boolean asyncConnectMode;
 
     protected AsyncHttpClientConfig() {
     }
@@ -153,7 +154,8 @@ public class AsyncHttpClientConfig {
                                   boolean spdyEnabled,
                                   int spdyInitialWindowSize,
                                   int spdyMaxConcurrentStreams,
-                                  boolean rfc6265CookieEncoding) {
+                                  boolean rfc6265CookieEncoding,
+                                  boolean asyncConnectMode) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -197,6 +199,7 @@ public class AsyncHttpClientConfig {
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
         this.rfc6265CookieEncoding = rfc6265CookieEncoding;
+        this.asyncConnectMode = asyncConnectMode;
     }
 
     /**
@@ -568,6 +571,16 @@ public class AsyncHttpClientConfig {
     }
 
     /**
+     * @return <code>true</code> if the underlying provider should make new connections asynchronously or not.  By default
+     *  new connections are made synchronously.
+     *
+     * @since 2.0.0
+     */
+    public boolean isAsyncConnectMode() {
+        return asyncConnectMode;
+    }
+
+    /**
      * Builder for an {@link AsyncHttpClient}
      */
     public static class Builder {
@@ -609,6 +622,7 @@ public class AsyncHttpClientConfig {
         private int spdyInitialWindowSize = 10 * 1024 * 1024;
         private int spdyMaxConcurrentStreams = 100;
         private boolean rfc6265CookieEncoding;
+        private boolean asyncConnectMode;
 
         public Builder() {
         }
@@ -1122,6 +1136,21 @@ public class AsyncHttpClientConfig {
         }
 
         /**
+         * Configures how the underlying providers make new connections.  By default,
+         * connections will be made synchronously.
+         *
+         * @param asyncConnectMode pass <code>true</code> to enable async connect mode.
+         *
+         * @return this
+         *
+         * @since 2.0.0
+         */
+        public Builder setAsyncConnectMode(boolean asyncConnectMode) {
+            this.asyncConnectMode = asyncConnectMode;
+            return this;
+        }
+
+        /**
          * Create a config builder with values taken from the given prototype configuration.
          *
          * @param prototype the configuration to use as a prototype.
@@ -1166,6 +1195,7 @@ public class AsyncHttpClientConfig {
             strict302Handling = prototype.isStrict302Handling();
             useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
             rfc6265CookieEncoding = prototype.isRfc6265CookieEncoding();
+            asyncConnectMode = prototype.isAsyncConnectMode();
         }
 
         /**
@@ -1184,16 +1214,18 @@ public class AsyncHttpClientConfig {
                     }
                 });
             }
-        	
-        	if (applicationThreadPool == null) {
-        		applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory() {
-        	            public Thread newThread(Runnable r) {
-        	                Thread t = new Thread(r, "AsyncHttpClient-Callback");
-        	                t.setDaemon(true);
-        	                return t;
-        	            }
-        	        });
-        	}
+
+            if (applicationThreadPool == null) {
+                applicationThreadPool =
+                        Executors.newCachedThreadPool(new ThreadFactory() {
+                            public Thread newThread(Runnable r) {
+                                Thread t = new Thread(r,
+                                                      "AsyncHttpClient-Callback");
+                                t.setDaemon(true);
+                                return t;
+                            }
+                        });
+            }
 
             if (applicationThreadPool.isShutdown()) {
                 throw new IllegalStateException("ExecutorServices closed");
@@ -1239,7 +1271,8 @@ public class AsyncHttpClientConfig {
                     spdyEnabled,
                     spdyInitialWindowSize,
                     spdyMaxConcurrentStreams,
-                    rfc6265CookieEncoding);
+                    rfc6265CookieEncoding,
+                    asyncConnectMode);
         }
     }
 }

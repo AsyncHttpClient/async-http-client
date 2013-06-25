@@ -61,6 +61,7 @@ public class ConnectionManager {
     private final ProxyAwareConnectorHandler connectionHandler;
     private final ConnectionMonitor connectionMonitor;
     private final GrizzlyAsyncHttpProvider provider;
+    private final boolean connectAsync;
 
 
     // ------------------------------------------------------------ Constructors
@@ -87,7 +88,7 @@ public class ConnectionManager {
         pool = connectionPool;
         this.connectionHandler = connectionHandler;
         connectionMonitor = new ConnectionMonitor(config.getMaxTotalConnections());
-
+        connectAsync = provider.getClientConfig().isAsyncConnectMode();
 
     }
 
@@ -95,9 +96,9 @@ public class ConnectionManager {
     // ---------------------------------------------------------- Public Methods
 
 
-    public void doAsyncTrackedConnection(final Request request,
-                                         final GrizzlyResponseFuture requestFuture,
-                                         final CompletionHandler<Connection> connectHandler)
+    public void doTrackedConnection(final Request request,
+                                    final GrizzlyResponseFuture requestFuture,
+                                    final CompletionHandler<Connection> connectHandler)
     throws IOException {
         Connection c =
                 pool.poll(getPoolKey(request, requestFuture.getProxyServer()));
@@ -105,7 +106,16 @@ public class ConnectionManager {
             if (!connectionMonitor.acquire()) {
                 throw new IOException("Max connections exceeded");
             }
-            doAsyncConnect(request, requestFuture, connectHandler);
+            if (connectAsync) {
+                doAsyncConnect(request, requestFuture, connectHandler);
+            } else {
+                try {
+                    c = obtainConnection0(request, requestFuture);
+                    connectHandler.completed(c);
+                } catch (Exception e) {
+                    connectHandler.failed(e);
+                }
+            }
         } else {
             provider.touchConnection(c, request);
             connectHandler.completed(c);
