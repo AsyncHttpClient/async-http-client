@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
@@ -1218,9 +1219,10 @@ public class AsyncHttpClientConfig {
             if (applicationThreadPool == null) {
                 applicationThreadPool =
                         Executors.newCachedThreadPool(new ThreadFactory() {
+                            final AtomicInteger counter = new AtomicInteger();
                             public Thread newThread(Runnable r) {
                                 Thread t = new Thread(r,
-                                                      "AsyncHttpClient-Callback");
+                                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
                                 t.setDaemon(true);
                                 return t;
                             }
