@@ -83,9 +83,9 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter
     @Override
     protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
         boolean result = eventHandler.onHttpPacketParsed(httpHeader, ctx);
-//        HttpResponsePacket response = (HttpResponsePacket) httpHeader;
-//        response.getRequest().setExpectContent(false);
-//        response.recycle();
+        HttpResponsePacket response = (HttpResponsePacket) httpHeader;
+        response.getRequest().setExpectContent(false);
+        response.recycle();
         return result;
     }
 
