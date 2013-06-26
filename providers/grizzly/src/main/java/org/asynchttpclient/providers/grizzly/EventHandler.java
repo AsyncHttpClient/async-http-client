@@ -378,38 +378,47 @@ public final class EventHandler {
         }
 
         result = false;
-
+        final HttpResponsePacket response =
+                (HttpResponsePacket) httpHeader;
         final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
-        if (context.isEstablishingTunnel()
-                && HttpStatus.OK_200.statusMatches(
-                    ((HttpResponsePacket) httpHeader).getStatus())) {
-            context.setEstablishingTunnel(false);
-            final Connection c = ctx.getConnection();
-            context.tunnelEstablished(c);
-            context.getProvider().execute(c,
-                                          context.getRequest(),
-                                          context.getHandler(),
-                                          context.getFuture());
-            return result;
-        } else {
-            cleanup(ctx);
-            final AsyncHandler handler = context.getHandler();
-            if (handler != null) {
-                try {
-                    context.result(handler.onCompleted());
-                } catch (Exception e) {
-                    context.abort(e);
-                }
+        try {
+            if (context.isEstablishingTunnel()
+                    && HttpStatus.OK_200.statusMatches(response.getStatus())) {
+                context.setEstablishingTunnel(false);
+                final Connection c = ctx.getConnection();
+                context.tunnelEstablished(c);
+                context.getProvider().execute(c,
+                                              context.getRequest(),
+                                              context.getHandler(),
+                                              context.getFuture());
+                return result;
             } else {
-                context.done(null);
+                cleanup(ctx);
+                final AsyncHandler handler = context.getHandler();
+                if (handler != null) {
+                    try {
+                        context.result(handler.onCompleted());
+                    } catch (Exception e) {
+                        context.abort(e);
+                    }
+                } else {
+                    context.done(null);
+                }
+                return result;
             }
-
-            return result;
+        } finally {
+            recycleResponsePacket(response);
         }
+
     }
 
 
     // ----------------------------------------------------- Private Methods
+
+    private static void recycleResponsePacket(final HttpResponsePacket response) {
+        response.getRequest().setExpectContent(false);
+        response.recycle();
+    }
 
     private static void processKeepAlive(final Connection c,
                                          final HttpHeader header) {
