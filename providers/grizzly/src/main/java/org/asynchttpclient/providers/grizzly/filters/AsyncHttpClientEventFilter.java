@@ -19,6 +19,7 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpClientFilter;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 import java.io.IOException;
 
@@ -81,7 +82,11 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter
 
     @Override
     protected boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
-        return eventHandler.onHttpPacketParsed(httpHeader, ctx);
+        boolean result = eventHandler.onHttpPacketParsed(httpHeader, ctx);
+//        HttpResponsePacket response = (HttpResponsePacket) httpHeader;
+//        response.getRequest().setExpectContent(false);
+//        response.recycle();
+        return result;
     }
 
     @Override
