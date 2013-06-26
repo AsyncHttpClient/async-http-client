@@ -34,6 +34,7 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
+import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.ProcessingState;
 import org.glassfish.grizzly.http.Protocol;
@@ -407,7 +408,7 @@ public final class EventHandler {
                 return result;
             }
         } finally {
-            recycleResponsePacket(response);
+            recycleRequestResponsePackets(response);
         }
 
     }
@@ -415,9 +416,11 @@ public final class EventHandler {
 
     // ----------------------------------------------------- Private Methods
 
-    private static void recycleResponsePacket(final HttpResponsePacket response) {
-        response.getRequest().setExpectContent(false);
+    private static void recycleRequestResponsePackets(final HttpResponsePacket response) {
+        HttpRequestPacket request = response.getRequest();
+        request.setExpectContent(false);
         response.recycle();
+        request.recycle();
     }
 
     private static void processKeepAlive(final Connection c,

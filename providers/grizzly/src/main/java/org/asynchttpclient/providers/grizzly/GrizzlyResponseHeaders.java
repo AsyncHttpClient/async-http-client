@@ -34,8 +34,6 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
     private final FluentCaseInsensitiveStringsMap headers =
             new FluentCaseInsensitiveStringsMap();
-    private final HttpResponsePacket response;
-    private volatile boolean initialized;
 
     // ------------------------------------------------------------ Constructors
 
@@ -45,7 +43,12 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
                                   final AsyncHttpProvider provider) {
 
         super(uri, provider);
-        this.response = response;
+        final MimeHeaders headersLocal = response.getHeaders();
+        for (String name : headersLocal.names()) {
+            for (String header : headersLocal.values(name)) {
+                headers.add(name, header);
+            }
+        }
 
     }
 
@@ -58,19 +61,6 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
      */
     @Override
     public FluentCaseInsensitiveStringsMap getHeaders() {
-        if (!initialized) {
-            synchronized (headers) {
-                if (!initialized) {
-                    initialized = true;
-                    final MimeHeaders headersLocal = response.getHeaders();
-                    for (String name : headersLocal.names()) {
-                        for (String header : headersLocal.values(name)) {
-                            headers.add(name, header);
-                        }
-                    }
-                }
-            }
-        }
         return headers;
     }
 

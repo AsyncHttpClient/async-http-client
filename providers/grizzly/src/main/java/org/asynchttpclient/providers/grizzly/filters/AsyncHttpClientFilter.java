@@ -43,6 +43,7 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.Method;
+import org.glassfish.grizzly.http.ProcessingState;
 import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.Header;
@@ -60,6 +61,7 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
@@ -67,6 +69,8 @@ import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class AsyncHttpClientFilter extends BaseFilter {
 
+    private ConcurrentLinkedQueue<HttpRequestPacketImpl> requestCache
+                    = new ConcurrentLinkedQueue<HttpRequestPacketImpl>();
 
     private final AsyncHttpClientConfig config;
     private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
@@ -188,29 +192,31 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             convertToUpgradeRequest(httpCtx);
         }
 
-        final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
-        builder.method(request.getMethod());
-        builder.protocol(Protocol.HTTP_1_1);
+        HttpRequestPacket requestPacket = requestCache.poll();
+        if (requestPacket == null) {
+            requestPacket = new HttpRequestPacketImpl();
+        }
+        requestPacket.setMethod(request.getMethod());
+        requestPacket.setProtocol(Protocol.HTTP_1_1);
 
         // Special handling for CONNECT.
         if (Method.CONNECT.matchesMethod(request.getMethod())) {
             final int port = uri.getPort();
-            builder.uri(uri.getHost() + ':' + (port == -1 ? 443 : port));
+            requestPacket.setRequestURI(uri.getHost() + ':' + (port == -1 ? 443 : port));
         } else {
-            builder.uri(uri.getPath());
+            requestPacket.setRequestURI(uri.getPath());
         }
 
         if (GrizzlyAsyncHttpProvider.requestHasEntityBody(request)) {
             final long contentLength = request.getContentLength();
             if (contentLength > 0) {
-                builder.contentLength(contentLength);
-                builder.chunked(false);
+                requestPacket.setContentLengthLong(contentLength);
+                requestPacket.setChunked(false);
             } else {
-                builder.chunked(true);
+                requestPacket.setChunked(true);
             }
         }
 
-        HttpRequestPacket requestPacket;
         if (httpCtx.isWSRequest() && !httpCtx.isEstablishingTunnel()) {
             try {
                 final URI wsURI = new URI(httpCtx.getWsRequestURI());
@@ -222,13 +228,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.getWsRequestURI());
             }
-        } else {
-            requestPacket = builder.build();
         }
 
         requestPacket.setSecure(secure);
         addQueryString(request, requestPacket);
-        addHostHeader(request, uri, builder);
+        addHostHeader(request, uri, requestPacket);
         addGeneralHeaders(request, requestPacket);
         addCookies(request, requestPacket);
 
@@ -325,15 +329,15 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private static void addHostHeader(final Request request,
                                       final URI uri,
-                                      final HttpRequestPacket.Builder builder) {
+                                      final HttpRequestPacket requestPacket) {
         String host = request.getVirtualHost();
         if (host != null) {
-            builder.header(Header.Host, host);
+            requestPacket.addHeader(Header.Host, host);
         } else {
             if (uri.getPort() == -1) {
-                builder.header(Header.Host, uri.getHost());
+                requestPacket.addHeader(Header.Host, uri.getHost());
             } else {
-                builder.header(Header.Host, uri.getHost() + ':' + uri.getPort());
+                requestPacket.addHeader(Header.Host, uri.getHost() + ':' + uri.getPort());
             }
         }
     }
@@ -479,4 +483,25 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
 
     } // END GrizzlyTransferAdapter
+
+
+    class HttpRequestPacketImpl extends HttpRequestPacket {
+
+        private ProcessingState processingState = new ProcessingState();
+
+        // -------------------------------------- Methods from HttpRequestPacketImpl
+
+
+        @Override
+        public ProcessingState getProcessingState() {
+            return processingState;
+        }
+
+        @Override
+        public void recycle() {
+            super.recycle();
+            processingState.recycle();
+            requestCache.add(this);
+        }
+    }
 }

@@ -14,6 +14,7 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -77,9 +78,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -618,6 +621,51 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         void cleanup(final FilterChainContext ctx);
 
     }
+
+
+     // ========================================================================
+
+                public static void main(String[] args) {
+                    AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+                            .setMaximumConnectionsTotal(-1)
+                            .setMaximumConnectionsPerHost(4500)
+                            .setCompressionEnabled(false)
+                            .setAllowPoolingConnection(true /* keep-alive connection */)
+                                    // .setAllowPoolingConnection(false /* no keep-alive connection */)
+                            .setConnectionTimeoutInMs(9000).setRequestTimeoutInMs(9000)
+                            .setIdleConnectionInPoolTimeoutInMs(3000).build();
+
+                    AsyncHttpClient client =
+                            new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+
+                    final int warmupRequests = 100000;
+                    final String testUrl = "http://localhost:8080";
+                    List<Future<Response>> futures =
+                            new ArrayList<Future<Response>>(warmupRequests);
+                    for (int i = 0; i < warmupRequests; i++) {
+                        try {
+                            futures.add(client.prepareGet(testUrl).addHeader("Req", Integer.toString(i)).execute());
+                        } catch (IOException e) {
+                            System.err.println("Failed to execute get at iteration #" + i);
+                        }
+                    }
+                    int counter = 0;
+                    for (Future<Response> future : futures) {
+                        counter++;
+                        try {
+                            future.get();
+                            System.out.println(counter + " complete");
+                        } catch (Exception e) {
+                            System.err.println("Failed to execute get at iteration #" + counter);
+                            e.printStackTrace();
+                            client.close();
+                            System.exit(1);
+                        }
+                    }
+
+                    System.out.println("Test complete...");
+                    client.close();
+                }
 
 }
 

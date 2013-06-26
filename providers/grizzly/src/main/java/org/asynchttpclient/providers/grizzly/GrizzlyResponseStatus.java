@@ -29,7 +29,13 @@ import java.net.URI;
  */
 public class GrizzlyResponseStatus extends HttpResponseStatus {
 
-    private final HttpResponsePacket response;
+    private static final String PROTOCOL_NAME = "HTTP";
+    private final int statusCode;
+    private final String statusText;
+    private final int majorVersion;
+    private final int minorVersion;
+    private final String protocolText;
+
 
 
     // ------------------------------------------------------------ Constructors
@@ -40,7 +46,11 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
                                  final AsyncHttpProvider provider) {
 
         super(uri, provider);
-        this.response = response;
+        statusCode = response.getStatus();
+        statusText = response.getReasonPhrase();
+        majorVersion = response.getProtocol().getMajorVersion();
+        minorVersion = response.getProtocol().getMinorVersion();
+        protocolText = response.getProtocolString();
 
     }
 
@@ -54,7 +64,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     @Override
     public int getStatusCode() {
 
-        return response.getStatus();
+        return statusCode;
 
     }
 
@@ -65,7 +75,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     @Override
     public String getStatusText() {
 
-        return response.getReasonPhrase();
+        return statusText;
 
     }
 
@@ -76,7 +86,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     @Override
     public String getProtocolName() {
 
-        return "http";
+        return PROTOCOL_NAME;
 
     }
 
@@ -87,7 +97,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     @Override
     public int getProtocolMajorVersion() {
 
-        return response.getProtocol().getMajorVersion();
+        return majorVersion;
 
     }
 
@@ -98,7 +108,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     @Override
     public int getProtocolMinorVersion() {
 
-        return response.getProtocol().getMinorVersion();
+        return minorVersion;
 
     }
 
@@ -108,7 +118,9 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
      */
     @Override
     public String getProtocolText() {
-        return response.getProtocolString();
+
+        return protocolText;
+
     }
 
 }
