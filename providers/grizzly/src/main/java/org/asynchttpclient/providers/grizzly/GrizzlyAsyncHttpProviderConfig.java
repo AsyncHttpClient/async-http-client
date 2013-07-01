@@ -72,7 +72,13 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
          * but no negotiation of the protocol via NPN will occur.  In short, this means
          * that this instance of AHC will only 'speak' SPDY - HTTP is effectively disabled.
          */
-        NPN_ENABLED(Boolean.class, true);
+        NPN_ENABLED(Boolean.class, true),
+
+
+        /**
+         * Grizzly specific connection pool.
+         */
+        CONNECTION_POOL(ConnectionPool.class, null);
         
         
         final Object defaultValue;

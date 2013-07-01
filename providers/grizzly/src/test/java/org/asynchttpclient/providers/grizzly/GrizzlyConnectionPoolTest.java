@@ -33,7 +33,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     }
 
     @Override
-    @Test
+    @Test(enabled=false)
     public void testMaxTotalConnectionsException() {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
         try {
@@ -101,7 +101,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = { "standalone", "default_provider" }, enabled=false)
     public void testInvalidConnectionsPool() {
 
         ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {

@@ -43,7 +43,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     private static URI servletEndpointUri;
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = { "online", "default_provider" }, enabled=false)
     public void testMaxConnectionsWithinThreads() {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
