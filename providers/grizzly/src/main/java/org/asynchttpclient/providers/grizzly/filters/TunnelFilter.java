@@ -18,6 +18,7 @@ import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.IOEvent;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -64,6 +65,7 @@ public final class TunnelFilter extends BaseFilter {
             final TunnelRequestEvent tunnelRequestEvent =
                     new TunnelRequestEvent(ctx, proxyServer, uri);
             ctx.notifyUpstream(tunnelRequestEvent);
+            ctx.getConnection().enableIOEvent(IOEvent.READ);
             return ctx.getSuspendAction();
         } else {
             TUNNEL_IN_PROGRESS.remove(ctx.getConnection());

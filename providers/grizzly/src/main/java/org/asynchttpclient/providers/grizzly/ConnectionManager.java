@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.Map;
@@ -141,13 +142,16 @@ public class ConnectionManager {
                 createConnectionCompletionHandler(request,
                                                   requestFuture,
                                                   connectHandler);
-
+        final ProxyServer proxyServer = requestFuture.getProxyServer();
+        ProxyAwareConnectorHandler.setRequest(request);
+        ProxyAwareConnectorHandler.setProxy(proxyServer);
+        SocketAddress address = getRemoteAddress(request, proxyServer);
         if (request.getLocalAddress() != null) {
-            connectionHandler.connect(request,
-                                      new InetSocketAddress(request.getLocalAddress(), 0),
+            connectionHandler.connect(new InetSocketAddress(request.getLocalAddress(), 0),
+                                      address,
                                       ch);
         } else {
-            connectionHandler.connect(request, null, ch);
+            connectionHandler.connect(address, ch);
         }
 
     }
@@ -165,21 +169,51 @@ public class ConnectionManager {
         return ((canCache != null) ? canCache : false);
     }
 
+    private SocketAddress getRemoteAddress(final Request request,
+                                           final ProxyServer proxyServer) {
+        final URI requestUri = request.getURI();
+        final String host = ((proxyServer != null)
+                ? proxyServer.getHost()
+                : requestUri.getHost());
+        final int port = ((proxyServer != null)
+                ? proxyServer.getPort()
+                : requestUri.getPort());
+        return new InetSocketAddress(host, getPort(request.getURI(), port));
+    }
 
+    private static int getPort(final URI uri, final int p) {
+        int port = p;
+        if (port == -1) {
+            final String protocol = uri.getScheme().toLowerCase();
+            if ("http".equals(protocol) || "ws".equals(protocol)) {
+                port = 80;
+            } else if ("https".equals(protocol) || "wss".equals(protocol)) {
+                port = 443;
+            } else {
+                throw new IllegalArgumentException(
+                        "Unknown protocol: " + protocol);
+            }
+        }
+        return port;
+    }
 
     private Connection obtainConnection0(final Request request,
                                          final GrizzlyResponseFuture requestFuture)
     throws ExecutionException, InterruptedException, TimeoutException {
 
-        int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
-        FutureImpl<Connection> future = Futures.createSafeFuture();
-        CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
+        final int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
+        final FutureImpl<Connection> future = Futures.createSafeFuture();
+        final CompletionHandler<Connection> ch = Futures.toCompletionHandler(future,
                 createConnectionCompletionHandler(request, requestFuture, null));
+        final ProxyServer proxyServer = requestFuture.getProxyServer();
+        final SocketAddress address = getRemoteAddress(request, proxyServer);
+        ProxyAwareConnectorHandler.setRequest(request);
+        ProxyAwareConnectorHandler.setProxy(proxyServer);
         if (cTimeout > 0) {
-            connectionHandler.connect(request, null, ch);
+            connectionHandler.connect(address, ch);
             return future.get(cTimeout, TimeUnit.MILLISECONDS);
         } else {
-            connectionHandler.connect(request, null, ch);
+            connectionHandler.connect(address, ch);
             return future.get();
         }
     }

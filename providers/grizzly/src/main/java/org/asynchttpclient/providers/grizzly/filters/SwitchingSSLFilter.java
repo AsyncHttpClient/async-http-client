@@ -18,6 +18,7 @@ import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.IOEvent;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -85,16 +86,17 @@ public final class SwitchingSSLFilter extends SSLFilter {
                               ctx.resume();
                           }
                       });
+            ctx.getConnection().enableIOEvent(IOEvent.READ);
             return ctx.getSuspendAction();
         } else {
             HANDSHAKING.remove(c);
             return ctx.getInvokeAction();
         }
-
     }
 
     @Override
-    public NextAction handleEvent(final FilterChainContext ctx, FilterChainEvent event) throws IOException {
+    public NextAction handleEvent(final FilterChainContext ctx,
+                                  final FilterChainEvent event) throws IOException {
 
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
@@ -106,7 +108,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     }
 
     @Override
-    public NextAction handleRead(FilterChainContext ctx) throws IOException {
+    public NextAction handleRead(final FilterChainContext ctx) throws IOException {
 
         if (isSecure(ctx.getConnection())) {
             return super.handleRead(ctx);
@@ -116,7 +118,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     }
 
     @Override
-    public NextAction handleWrite(FilterChainContext ctx) throws IOException {
+    public NextAction handleWrite(final FilterChainContext ctx) throws IOException {
 
         if (isSecure(ctx.getConnection())) {
             return super.handleWrite(ctx);
@@ -126,7 +128,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     }
 
     @Override
-    public void onFilterChainChanged(FilterChain filterChain) {
+    public void onFilterChainChanged(final FilterChain filterChain) {
         // no-op
     }
 
@@ -135,14 +137,13 @@ public final class SwitchingSSLFilter extends SSLFilter {
         return HANDSHAKE_ERROR.remove(c);
     }
 
+
     // --------------------------------------------------------- Private Methods
 
 
     private boolean isSecure(final Connection c) {
-
         Boolean secStatus = CONNECTION_IS_SECURE.get(c);
         return (secStatus == null ? true : secStatus);
-
     }
 
     private void setSecureStatus(final Connection c, final boolean secure) {
