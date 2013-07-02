@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
 
-    @Test(groups = { "standalone", "default_provider" }, enabled=false)
+    @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnectionsExceedingException() {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 

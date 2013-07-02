@@ -28,7 +28,6 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,13 +78,11 @@ public final class SwitchingSSLFilter extends SSLFilter {
 
                           @Override
                           public void cancelled() {
-                              HANDSHAKE_ERROR.set(c, new SSLHandshakeException("Handshake canceled."));
                               ctx.resume();
                           }
 
                           @Override
                           public void failed(Throwable throwable) {
-                              HANDSHAKE_ERROR.set(c, throwable);
                               ctx.resume();
                           }
                       });

@@ -472,14 +472,14 @@ public final class EventHandler {
         if (!Utils.isIgnored(ctx.getConnection())) {
             final ConnectionManager manager =
                     context.getProvider().getConnectionManager();
-            //if (!manager.canReturnConnection(c)) {
-            //    context.abort(
-            //            new IOException("Maximum pooled connections exceeded"));
-            //} else {
-                if (!manager.returnConnection(c)) {
+            if (!manager.canReturnConnection(c)) {
+                context.abort(
+                        new IOException("Maximum pooled connections exceeded"));
+            } else {
+                if (!manager.returnConnection(context.getRequest(), c)) {
                     ctx.getConnection().close();
                 }
-            //}
+            }
         }
 
         return context;

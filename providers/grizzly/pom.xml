@@ -31,11 +31,6 @@
         </dependency>
         <dependency>
             <groupId>org.glassfish.grizzly</groupId>
-            <artifactId>connection-pool</artifactId>
-            <version>${grizzly.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-npn-api</artifactId>
             <version>${grizzly.npn.version}</version>
         </dependency>

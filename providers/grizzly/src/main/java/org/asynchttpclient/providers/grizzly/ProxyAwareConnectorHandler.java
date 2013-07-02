@@ -31,8 +31,11 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
     private FilterChainBuilder nonSecureTemplate;
     private FilterChainBuilder secureTemplate;
     private AsyncHttpClientConfig clientConfig;
-    private Request request;
-    private ProxyServer proxyServer;
+    private static final ThreadLocal<Request> requestLocal =
+            new ThreadLocal<Request>();
+    private static final ThreadLocal<ProxyServer> proxyLocal =
+            new ThreadLocal<ProxyServer>();
+
 
     // ------------------------------------------------------------ Constructors
 
@@ -45,13 +48,15 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
     // ---------------------------------------------------------- Public Methods
 
 
-    public void setRequest(final Request request) {
+    public static void setRequest(final Request request) {
         assert(request != null);
-        this.request = request;
+        requestLocal.set(request);
     }
 
-    public void setProxy(final ProxyServer proxyServer) {
-        this.proxyServer = proxyServer;
+    public static void setProxy(final ProxyServer proxyServer) {
+        if (proxyServer != null) {
+            proxyLocal.set(proxyServer);
+        }
     }
 
     public static Builder builder(final TCPNIOTransport transport) {
@@ -64,6 +69,8 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     @Override
     public Processor getProcessor() {
+        final Request request = getRequestLocal();
+        final ProxyServer proxyServer = getProxyLocal();
         return ((proxyServer != null)
                     ? createProxyFilterChain(request, proxyServer)
                     : createFilterChain(request));
@@ -71,6 +78,20 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
 
     // --------------------------------------------------------- Private Methods
+
+
+    private Request getRequestLocal() {
+        final Request request = requestLocal.get();
+        requestLocal.remove();
+        assert(request != null);
+        return request;
+    }
+
+    private ProxyServer getProxyLocal() {
+        final ProxyServer proxyServer = proxyLocal.get();
+        proxyLocal.remove();
+        return proxyServer;
+    }
 
 
     private FilterChain createFilterChain(final Request request) {
