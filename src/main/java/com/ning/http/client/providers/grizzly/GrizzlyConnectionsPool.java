@@ -98,7 +98,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
      */
     public boolean offer(String uri, Connection connection) {
 
-        if (!cacheSSLConnections && isSecure(uri)) {
+        if (isSecure(uri) && !cacheSSLConnections) {
             return false;
         }
 
