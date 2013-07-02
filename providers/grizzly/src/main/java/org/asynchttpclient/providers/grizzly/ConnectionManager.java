@@ -429,7 +429,7 @@ public class ConnectionManager {
          */
         public boolean offer(String uri, Connection connection) {
 
-            if (cacheSSLConnections && Utils.isSecure(uri)) {
+            if (Utils.isSecure(uri) && !cacheSSLConnections) {
                 return false;
             }
 
