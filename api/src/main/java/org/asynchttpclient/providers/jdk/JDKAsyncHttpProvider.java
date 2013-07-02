@@ -173,12 +173,8 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        HttpURLConnection urlConnection = null;
-        if (proxy == null) {
-            urlConnection = (HttpURLConnection) request.getURI().toURL().openConnection(Proxy.NO_PROXY);
-        } else {
-            urlConnection = (HttpURLConnection) proxyServer.getURI().toURL().openConnection(proxy);
-        }
+        HttpURLConnection urlConnection = (HttpURLConnection)
+            request.getURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
 
         if (request.getUrl().startsWith("https")) {
             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
