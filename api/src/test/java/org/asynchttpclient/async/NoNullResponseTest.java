@@ -31,13 +31,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public abstract class NoNullResponseTest extends AbstractBasicTest {
-    private static final String VERISIGN_HTTPS_URL = "https://www.verisign.com";
+    private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
 
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Throwable {
         final AsyncHttpClient client = create();
         try {
-            final BoundRequestBuilder builder = client.prepareGet(VERISIGN_HTTPS_URL);
+            final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
             Thread.sleep(5000);
             final Response response2 = builder.execute().get();

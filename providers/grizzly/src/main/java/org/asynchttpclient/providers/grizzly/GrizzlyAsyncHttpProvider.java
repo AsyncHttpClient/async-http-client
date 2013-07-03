@@ -87,6 +87,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.CONNECTION_POOL;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 
 /**
@@ -102,13 +103,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public final static NTLMEngine NTLM_ENGINE = new NTLMEngine();
 
     private final BodyHandlerFactory bodyHandlerFactory;
-
-    private final TCPNIOTransport clientTransport;
     private final AsyncHttpClientConfig clientConfig;
 
     private ConnectionManager connectionManager;
     private DelayedExecutor.Resolver<Connection> resolver;
     private DelayedExecutor timeoutExecutor;
+
+    final TCPNIOTransport clientTransport;
 
 
     // ------------------------------------------------------------ Constructors
@@ -156,6 +157,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             @Override
             public void completed(final Connection c) {
                 try {
+                    touchConnection(c, request);
                     execute(c, request, handler, future);
                 } catch (Exception e) {
                     failed(e);
@@ -388,11 +390,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         nonSecure.remove(idx);
         ProxyAwareConnectorHandler.Builder chBuilder =
                 ProxyAwareConnectorHandler.builder(clientTransport);
-        ProxyAwareConnectorHandler connectorHandler =
-                chBuilder.setAsyncHttpClientConfig(clientConfig)
-                    .setNonSecureFilterChainTemplate(nonSecure)
-                    .setSecureFilterChainTemplate(secure).build();
-        connectionManager = new ConnectionManager(this, connectorHandler);
+        final ConnectionPool pool;
+        if (providerConfig != null) {
+            pool = (ConnectionPool) providerConfig.getProperty(CONNECTION_POOL);
+        } else {
+            pool = null;
+        }
+        connectionManager = new ConnectionManager(this,
+                                                  pool,
+                                                  secure,
+                                                  nonSecure);
 
     }
 

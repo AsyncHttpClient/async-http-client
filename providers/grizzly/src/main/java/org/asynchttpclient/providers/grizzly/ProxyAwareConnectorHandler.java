@@ -15,7 +15,6 @@ package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.filters.ProxyFilter;
 import org.asynchttpclient.providers.grizzly.filters.TunnelFilter;
 import org.glassfish.grizzly.Processor;
@@ -25,17 +24,16 @@ import org.glassfish.grizzly.http.HttpClientFilter;
 import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
+import java.net.URI;
+
 
 final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     private FilterChainBuilder nonSecureTemplate;
     private FilterChainBuilder secureTemplate;
     private AsyncHttpClientConfig clientConfig;
-    private static final ThreadLocal<Request> requestLocal =
-            new ThreadLocal<Request>();
-    private static final ThreadLocal<ProxyServer> proxyLocal =
-            new ThreadLocal<ProxyServer>();
-
+    private URI uri;
+    private ProxyServer proxyServer;
 
     // ------------------------------------------------------------ Constructors
 
@@ -48,17 +46,6 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
     // ---------------------------------------------------------- Public Methods
 
 
-    public static void setRequest(final Request request) {
-        assert(request != null);
-        requestLocal.set(request);
-    }
-
-    public static void setProxy(final ProxyServer proxyServer) {
-        if (proxyServer != null) {
-            proxyLocal.set(proxyServer);
-        }
-    }
-
     public static Builder builder(final TCPNIOTransport transport) {
         return new ProxyAwareConnectorHandler.Builder(transport);
     }
@@ -69,67 +56,41 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     @Override
     public Processor getProcessor() {
-        final Request request = getRequestLocal();
-        final ProxyServer proxyServer = getProxyLocal();
         return ((proxyServer != null)
-                    ? createProxyFilterChain(request, proxyServer)
-                    : createFilterChain(request));
+                    ? createProxyFilterChain()
+                    : createFilterChain());
     }
 
 
     // --------------------------------------------------------- Private Methods
 
 
-    private Request getRequestLocal() {
-        final Request request = requestLocal.get();
-        requestLocal.remove();
-        assert(request != null);
-        return request;
-    }
-
-    private ProxyServer getProxyLocal() {
-        final ProxyServer proxyServer = proxyLocal.get();
-        proxyLocal.remove();
-        return proxyServer;
-    }
-
-
-    private FilterChain createFilterChain(final Request request) {
-        return isRequestSecure(request)
+    private FilterChain createFilterChain() {
+        return Utils.isSecure(uri)
                    ? secureTemplate.build()
                    : nonSecureTemplate.build();
     }
 
-    private FilterChain createProxyFilterChain(final Request request,
-                                               final ProxyServer proxyServer) {
+    private FilterChain createProxyFilterChain() {
         final FilterChainBuilder builder = FilterChainBuilder.stateless();
-        if (isRequestSecure(request)) {
+        if (Utils.isSecure(uri)) {
             builder.addAll(secureTemplate);
-            updateSecureFilterChain(builder, request, proxyServer);
+            updateSecureFilterChain(builder);
         } else {
             builder.addAll(nonSecureTemplate);
-            updateNonSecureFilterChain(builder, proxyServer);
+            updateNonSecureFilterChain(builder);
         }
         return builder.build();
     }
 
-    private static boolean isRequestSecure(final Request request) {
-        final String p = request.getURI().getScheme();
-        return p.equals("https") || p.equals("wss");
-    }
-
-    private void updateSecureFilterChain(final FilterChainBuilder builder,
-                                         final Request request,
-                                         final ProxyServer proxyServer) {
-        builder.add(1, new TunnelFilter(proxyServer,
-                                        request.getURI())); // Insert after the the transport filter
+    private void updateSecureFilterChain(final FilterChainBuilder builder) {
+        builder.add(1, new TunnelFilter(proxyServer, uri));
         final int idx = builder.indexOfType(HttpClientFilter.class);
         assert (idx != -1);
         builder.add(idx + 1, new ProxyFilter(proxyServer, clientConfig, true));
     }
 
-    private void updateNonSecureFilterChain(final FilterChainBuilder builder,
-                                            final ProxyServer proxyServer) {
+    private void updateNonSecureFilterChain(final FilterChainBuilder builder) {
         final int idx = builder.indexOfType(HttpClientFilter.class);
         assert (idx != -1);
         builder.add(idx + 1, new ProxyFilter(proxyServer, clientConfig, false));
@@ -171,11 +132,22 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
             return this;
         }
 
+        public Builder setURI(final URI uri) {
+            connectorHandler.uri = uri;
+            return this;
+        }
+
+        public Builder setProxyServer(final ProxyServer proxyServer) {
+            connectorHandler.proxyServer = proxyServer;
+            return this;
+        }
+
         @Override
         public ProxyAwareConnectorHandler build() {
             assert(connectorHandler.secureTemplate != null);
             assert(connectorHandler.nonSecureTemplate != null);
             assert(connectorHandler.clientConfig != null);
+            assert(connectorHandler.uri != null);
             return connectorHandler;
         }
 

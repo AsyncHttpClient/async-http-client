@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.grizzly;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.MaxConnectionsInThreads;
+import org.testng.annotations.Test;
 
 public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads {
 
@@ -24,4 +25,9 @@ public class GrizzlyMaxConnectionsInThreadsTest extends MaxConnectionsInThreads 
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
+    @Override
+    @Test(enabled=false)
+    public void testMaxConnectionsWithinThreads() {
+        super.testMaxConnectionsWithinThreads();
+    }
 }

@@ -16,10 +16,7 @@ package org.asynchttpclient.providers.grizzly.filters;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.IOEvent;
-import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
@@ -30,19 +27,17 @@ import java.net.URI;
 
 /**
  * This <code>Filter</code> is responsible for HTTP CONNECT
- * tunnelling when a connection should be secure and done via
- * proxy.
+ * tunnelling when a connection should be secure and required to
+ * go through a proxy.
  *
  * @since 2.0
  * @author The Grizzly Team
  */
 public final class TunnelFilter extends BaseFilter {
 
-    private static final Attribute<Boolean> TUNNEL_IN_PROGRESS =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(TunnelFilter.class.getName());
-
     private final ProxyServer proxyServer;
     private final URI uri;
+
 
     // ------------------------------------------------------------ Constructors
 
@@ -55,22 +50,38 @@ public final class TunnelFilter extends BaseFilter {
 
     // ----------------------------------------------------- Methods from Filter
 
+
     @Override
     public NextAction handleConnect(FilterChainContext ctx)
     throws IOException {
-        if (TUNNEL_IN_PROGRESS.get(ctx.getConnection()) == null) {
-            TUNNEL_IN_PROGRESS.set(ctx.getConnection(), Boolean.TRUE);
-            ctx.suspend();
-            Utils.connectionIgnored(ctx.getConnection(), true);
-            final TunnelRequestEvent tunnelRequestEvent =
-                    new TunnelRequestEvent(ctx, proxyServer, uri);
-            ctx.notifyUpstream(tunnelRequestEvent);
-            ctx.getConnection().enableIOEvent(IOEvent.READ);
-            return ctx.getSuspendAction();
-        } else {
-            TUNNEL_IN_PROGRESS.remove(ctx.getConnection());
-            return ctx.getInvokeAction();
-        }
+        // We suspend the FilterChainContext here to prevent
+        // notification of other filters of the connection event.
+        // This allows us to control when the connection is returned
+        // to the user - we ensure that the tunnel is properly established
+        // before the user request is sent.
+        ctx.suspend();
+
+        // This connection is special and shouldn't be tracked.
+        Utils.connectionIgnored(ctx.getConnection(), true);
+
+        // This event will be handled by the AsyncHttpClientFilter.
+        // It will send the CONNECT request and process the response.
+        // When tunnel is complete, the AsyncHttpClientFilter will
+        // send this event back to this filter in order to notify
+        // it that the request processing is complete.
+        final TunnelRequestEvent tunnelRequestEvent =
+                new TunnelRequestEvent(ctx, proxyServer, uri);
+        ctx.notifyUpstream(tunnelRequestEvent);
+
+        // This typically isn't advised, however, we need to be able to
+        // read the response from the proxy and OP_READ isn't typically
+        // enabled on the connection until all of the handleConnect()
+        // processing is complete.
+        ctx.getConnection().enableIOEvent(IOEvent.READ);
+
+        // Tell the FilterChain that we're suspending further handleConnect
+        // processing.
+        return ctx.getSuspendAction();
     }
 
     @Override
@@ -78,22 +89,22 @@ public final class TunnelFilter extends BaseFilter {
     throws IOException {
         if (event.type() == TunnelRequestEvent.class) {
             TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
-            if (tunnelInProgress(ctx.getConnection())) {
-                Utils.connectionIgnored(ctx.getConnection(), false);
-                FilterChainContext suspendedContext = tunnelRequestEvent.getSuspendedContext();
-                suspendedContext.resume();
-            }
+
+            // Clear ignore status.  Any further use of the connection will
+            // be bound by normal AHC connection processing.
+            Utils.connectionIgnored(ctx.getConnection(), false);
+
+            // Obtain the context that was previously suspended and resume.
+            // We pass in Invoke Action so the filter chain will call
+            // handleConnect on the next filter.
+            FilterChainContext suspendedContext =
+                    tunnelRequestEvent.getSuspendedContext();
+            suspendedContext.resume(ctx.getInvokeAction());
+
+            // Stop further event processing.
             ctx.getStopAction();
         }
         return ctx.getInvokeAction();
     }
 
-
-    // ---------------------------------------------------------- Public Methods
-
-
-    private static boolean tunnelInProgress(final Connection connection) {
-        return (TUNNEL_IN_PROGRESS.get(connection) != null);
-    }
-
-} // END TunnelFilter
+}

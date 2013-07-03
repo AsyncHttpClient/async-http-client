@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.EmptyCompletionHandler;
@@ -28,16 +27,22 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+/**
+ * SSL Filter that may be present within the FilterChain and may be
+ * enabled/disabled by sending the appropriate {@link SSLSwitchingEvent}.
+ *
+ * @since 2.0
+ * @author The Grizzly Team
+ */
 public final class SwitchingSSLFilter extends SSLFilter {
 
     private static final Attribute<Boolean> CONNECTION_IS_SECURE =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
-    private static final Attribute<Boolean> HANDSHAKING =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKING");
     private static final Attribute<Throwable> HANDSHAKE_ERROR =
         Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKE-ERROR");
 
@@ -57,41 +62,56 @@ public final class SwitchingSSLFilter extends SSLFilter {
 
     @Override
     protected void notifyHandshakeFailed(Connection connection, Throwable t) {
-        if (GrizzlyAsyncHttpProvider.LOGGER.isErrorEnabled()) {
-            GrizzlyAsyncHttpProvider.LOGGER.error("Unable to complete handshake with peer.", t);
-        }
-        HANDSHAKE_ERROR.set(connection, t);
+        setError(connection, t);
     }
 
     @Override
     public NextAction handleConnect(final FilterChainContext ctx) throws IOException {
+        // Suspend further handleConnect processing.  We do this to ensure that
+        // the SSL handshake has been completed before returning the connection
+        // for use in processing user requests.  Additionally, this allows us
+        // to determine if a connection is SPDY or HTTP as early as possible.
         ctx.suspend();
         final Connection c = ctx.getConnection();
-        if (HANDSHAKING.get(c) == null) {
-            HANDSHAKING.set(c, Boolean.TRUE);
-            handshake(ctx.getConnection(),
-                      new EmptyCompletionHandler<SSLEngine>() {
-                          @Override
-                          public void completed(SSLEngine result) {
-                              ctx.resume();
-                          }
+        handshake(ctx.getConnection(),
+                  new EmptyCompletionHandler<SSLEngine>() {
+                      @Override
+                      public void completed(SSLEngine result) {
+                          // Handshake was successful.  Resume the handleConnect
+                          // processing.  We pass in Invoke Action so the filter
+                          // chain will call handleConnect on the next filter.
+                          ctx.resume(ctx.getInvokeAction());
+                      }
 
-                          @Override
-                          public void cancelled() {
-                              ctx.resume();
-                          }
+                      @Override
+                      public void cancelled() {
+                          // Handshake was cancelled.  Stop the handleConnect
+                          // processing.  The exception will be checked and
+                          // passed to the user later.
+                          setError(c, new SSLHandshakeException(
+                                  "Handshake canceled."));
+                          ctx.resume(ctx.getStopAction());
+                      }
 
-                          @Override
-                          public void failed(Throwable throwable) {
-                              ctx.resume();
-                          }
-                      });
-            ctx.getConnection().enableIOEvent(IOEvent.READ);
-            return ctx.getSuspendAction();
-        } else {
-            HANDSHAKING.remove(c);
-            return ctx.getInvokeAction();
-        }
+                      @Override
+                      public void failed(Throwable throwable) {
+                          // Handshake failed.  Stop the handleConnect
+                          // processing.  The exception will be checked and
+                          // passed to the user later.
+                          setError(c, throwable);
+                          ctx.resume(ctx.getStopAction());
+                      }
+                  });
+
+        // This typically isn't advised, however, we need to be able to
+        // read the response from the proxy and OP_READ isn't typically
+        // enabled on the connection until all of the handleConnect()
+        // processing is complete.
+        enableRead(c);
+
+        // Tell the FilterChain that we're suspending further handleConnect
+        // processing.
+        return ctx.getSuspendAction();
     }
 
     @Override
@@ -141,13 +161,21 @@ public final class SwitchingSSLFilter extends SSLFilter {
     // --------------------------------------------------------- Private Methods
 
 
-    private boolean isSecure(final Connection c) {
+    private static boolean isSecure(final Connection c) {
         Boolean secStatus = CONNECTION_IS_SECURE.get(c);
         return (secStatus == null ? true : secStatus);
     }
 
-    private void setSecureStatus(final Connection c, final boolean secure) {
+    private static void setSecureStatus(final Connection c, final boolean secure) {
         CONNECTION_IS_SECURE.set(c, secure);
+    }
+
+    private static void setError(final Connection c, Throwable t) {
+        HANDSHAKE_ERROR.set(c, t);
+    }
+
+    private static void enableRead(final Connection c) throws IOException {
+        c.enableIOEvent(IOEvent.READ);
     }
 
 
