@@ -101,9 +101,10 @@ public class ConnectionManager {
             IOException ioe = null;
             GrizzlyFuture<Connection> future = connectionPool.take(key);
             try {
-                final int connTimeout =
-                        provider.getClientConfig().getConnectionTimeoutInMs();
-                connectHandler.completed(future.get(connTimeout, MILLISECONDS));
+                // No explicit timeout when calling get() here as the Grizzly
+                // endpoint pool will time it out based on the connect timeout
+                // setting.
+                connectHandler.completed(future.get());
             } catch (CancellationException e) {
                 connectHandler.cancelled();
             } catch (ExecutionException ee) {
