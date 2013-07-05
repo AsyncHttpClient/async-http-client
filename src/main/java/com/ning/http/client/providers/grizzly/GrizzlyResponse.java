@@ -172,9 +172,11 @@ public class GrizzlyResponse implements Response {
      * {@inheritDoc}
      */
     public byte[] getResponseBodyAsBytes() throws IOException {
-
-        return getResponseBody().getBytes();
-
+        final byte[] responseBodyBytes = new byte[responseBody.remaining()];
+        final int origPos = responseBody.position();
+        responseBody.get(responseBodyBytes);
+        responseBody.position(origPos);
+        return responseBodyBytes;
     }
 
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
