@@ -261,7 +261,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
 
     private boolean isSecure(String uri) {
 
-        return (uri.charAt(0) == 'h' && uri.charAt(4) == 's');
+        return (uri.startsWith("https") || uri.startsWith("wss"));
 
     }
 
