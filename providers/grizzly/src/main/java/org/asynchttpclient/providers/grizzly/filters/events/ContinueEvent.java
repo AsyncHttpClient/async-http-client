@@ -13,10 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly.filters.events;
 
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
+/**
+ * {@link FilterChainEvent} to trigger HTTP 100-Continue processing.
+ *
+ * @since 2.0
+ * @author The Grizzly Team
+ */
 public final class ContinueEvent implements FilterChainEvent {
 
     private final HttpTransactionContext context;

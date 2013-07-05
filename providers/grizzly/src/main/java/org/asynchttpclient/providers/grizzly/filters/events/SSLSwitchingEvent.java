@@ -18,6 +18,13 @@ import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
 import java.util.concurrent.Callable;
 
+/**
+ * {@link FilterChainEvent} to dynamically enable/disable the SSLFilter on
+ * a per-connection basis.
+ *
+ * @since 2.0
+ * @author The Grizzly Team
+ */
 public final class SSLSwitchingEvent implements FilterChainEvent {
 
     private final boolean secure;
