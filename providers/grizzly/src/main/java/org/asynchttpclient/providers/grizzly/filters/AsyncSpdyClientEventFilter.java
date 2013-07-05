@@ -24,6 +24,13 @@ import org.glassfish.grizzly.spdy.SpdyMode;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Extension of the {@link SpdyHandlerFilter} that is responsible for handling
+ * events triggered by the parsing and serialization of HTTP packets.
+ *
+ * @since 2.0
+ * @author The Grizzly Team
+ */
 public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
         implements GrizzlyAsyncHttpProvider.Cleanup {
 

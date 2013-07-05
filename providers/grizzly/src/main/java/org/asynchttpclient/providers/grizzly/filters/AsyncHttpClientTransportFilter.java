@@ -22,6 +22,13 @@ import org.glassfish.grizzly.filterchain.TransportFilter;
 import java.io.EOFException;
 import java.io.IOException;
 
+/**
+ * Custom {@link TransportFilter} implementation to capture and handle low-level
+ * exceptions.
+ *
+ * @since 1.7
+ * @author The Grizzly Team
+ */
 public final class AsyncHttpClientTransportFilter extends TransportFilter {
 
 

@@ -19,6 +19,12 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.DataChunk;
 import org.glassfish.grizzly.http.util.Header;
 
+/**
+ * {@link EncodingFilter} to enable gzip encoding.
+ *
+ * @since 1.7
+ * @author The Grizzly Team
+ */
 public final class ClientEncodingFilter implements EncodingFilter {
 
 

@@ -23,6 +23,13 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 
 import java.io.IOException;
 
+/**
+ * Extension of the {@link HttpClientFilter} that is responsible for handling
+ * events triggered by the parsing and serialization of HTTP packets.
+ *
+ * @since 2.0
+ * @author The Grizzly Team
+ */
 public final class AsyncHttpClientEventFilter extends HttpClientFilter
         implements GrizzlyAsyncHttpProvider.Cleanup {
 

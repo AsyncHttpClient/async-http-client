@@ -67,6 +67,14 @@ import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.g
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
+/**
+ * This {@link org.glassfish.grizzly.filterchain.Filter} is typically the last
+ * in the {@FilterChain}.  Its primary responsibility is converting the
+ * async-http-client {@link Request} into a Grizzly {@link HttpRequestPacket}.
+ *
+ * @since 1.7
+ * @author The Grizzly Team
+ */
 public final class AsyncHttpClientFilter extends BaseFilter {
 
     private ConcurrentLinkedQueue<HttpRequestPacketImpl> requestCache
