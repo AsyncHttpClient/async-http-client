@@ -59,10 +59,46 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
     private final long timeout;
     private final long maxConnectionLifeTimeInMs;
     private final DelayedExecutor delayedExecutor;
-    private final Connection.CloseListener listener;
+
+    private final boolean ownsDelayedExecutor;
+
+    private final Connection.CloseListener listener =  new Connection.CloseListener() {
+                @Override
+                public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
+                    if (closeType == Connection.CloseType.REMOTELY) {
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
+                        }
+                    }
+                    GrizzlyConnectionsPool.this.removeAll(connection);
+                }
+            };
 
 
     // ------------------------------------------------------------ Constructors
+
+
+    public GrizzlyConnectionsPool(final boolean cacheSSLConnections,
+                                  final int timeout,
+                                  final int maxConnectionLifeTimeInMs,
+                                  final int maxConnectionsPerHost,
+                                  final int maxConnections,
+                                  final DelayedExecutor delayedExecutor) {
+        this.cacheSSLConnections = cacheSSLConnections;
+        this.timeout = timeout;
+        this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
+        this.maxConnectionsPerHost = maxConnectionsPerHost;
+        this.maxConnections = maxConnections;
+        unlimitedConnections = (maxConnections == -1);
+        if (delayedExecutor != null) {
+            this.delayedExecutor = delayedExecutor;
+            ownsDelayedExecutor = false;
+        } else {
+            this.delayedExecutor = new DelayedExecutor(Executors.newSingleThreadExecutor());
+            delayedExecutor.start();
+            ownsDelayedExecutor = true;
+        }
+    }
 
 
     public GrizzlyConnectionsPool(final AsyncHttpClientConfig config) {
@@ -75,18 +111,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         unlimitedConnections = (maxConnections == -1);
         delayedExecutor = new DelayedExecutor(Executors.newSingleThreadExecutor());
         delayedExecutor.start();
-        listener = new Connection.CloseListener() {
-            @Override
-            public void onClosed(Connection connection, Connection.CloseType closeType) throws IOException {
-                if (closeType == Connection.CloseType.REMOTELY) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info("Remote closed connection ({}).  Removing from cache", connection.toString());
-                    }
-                }
-                GrizzlyConnectionsPool.this.removeAll(connection);
-            }
-        };
-
+        ownsDelayedExecutor = true;
     }
 
 
@@ -223,8 +248,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
             entry.getValue().destroy();
         }
         connectionsPool.clear();
-        delayedExecutor.stop();
-        delayedExecutor.getThreadPool().shutdownNow();
+        if (ownsDelayedExecutor) {
+            delayedExecutor.stop();
+            delayedExecutor.getThreadPool().shutdownNow();
+        }
 
     }
 
