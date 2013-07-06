@@ -269,7 +269,7 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
     // ---------------------------------------------------------- Nested Classes
 
 
-    private static final class DelayedExecutor {
+    public static final class DelayedExecutor {
 
         public final static long UNSET_TIMEOUT = -1;
         private final ExecutorService threadPool;
@@ -284,14 +284,14 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         // -------------------------------------------------------- Constructors
 
 
-        private DelayedExecutor(final ExecutorService threadPool) {
+        public DelayedExecutor(final ExecutorService threadPool) {
             this(threadPool, 1000, TimeUnit.MILLISECONDS);
         }
 
 
         // ----------------------------------------------------- Private Methods
 
-        private DelayedExecutor(final ExecutorService threadPool,
+        public DelayedExecutor(final ExecutorService threadPool,
                                final long checkInterval,
                                final TimeUnit timeunit) {
             this.threadPool = threadPool;
