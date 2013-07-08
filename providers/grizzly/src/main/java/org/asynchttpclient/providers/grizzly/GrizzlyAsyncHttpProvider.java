@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -78,11 +77,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -388,8 +385,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         nonSecure.addAll(secure);
         int idx = nonSecure.indexOfType(SSLFilter.class);
         nonSecure.remove(idx);
-        ProxyAwareConnectorHandler.Builder chBuilder =
-                ProxyAwareConnectorHandler.builder(clientTransport);
         final ConnectionPool pool;
         if (providerConfig != null) {
             pool = (ConnectionPool) providerConfig.getProperty(CONNECTION_POOL);
