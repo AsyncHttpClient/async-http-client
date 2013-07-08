@@ -29,6 +29,7 @@ import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
@@ -158,6 +159,11 @@ public class ConnectionManager {
                 if (key == null) {
                     SocketAddress address =
                             getRemoteAddress(request, proxyServer);
+                    InetAddress localAddress = request.getLocalAddress();
+                    InetSocketAddress localSocketAddress = null;
+                    if (localAddress != null) {
+                        localSocketAddress = new InetSocketAddress(localAddress.getHostName(), 0);
+                    }
                     ProxyAwareConnectorHandler handler =
                             ProxyAwareConnectorHandler
                                     .builder(provider.clientTransport)
@@ -169,8 +175,9 @@ public class ConnectionManager {
                                     .build();
                     EndpointKey<SocketAddress> localKey =
                             new EndpointKey<SocketAddress>(stringKey,
-                                                           address,
-                                                           handler);
+                                               address,
+                                               localSocketAddress,
+                                               handler);
                     endpointKeyMap.put(stringKey, localKey);
                     key = localKey;
                 }
