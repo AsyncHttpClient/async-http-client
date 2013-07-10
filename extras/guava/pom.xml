@@ -17,7 +17,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>11.0.2</version>
+            <version>14.0.1</version>
         </dependency>
     </dependencies>
 </project>
