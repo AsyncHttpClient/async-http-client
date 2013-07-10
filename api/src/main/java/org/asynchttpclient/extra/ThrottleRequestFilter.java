@@ -12,126 +12,54 @@
  */
 package org.asynchttpclient.extra;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.RequestFilter;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 /**
  * A {@link org.asynchttpclient.filter.RequestFilter} throttles requests and block when the number of permits is reached, waiting for
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
-    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
-    @SuppressWarnings("unused")
-    private final int maxConnections;
-    private final Semaphore available;
-    private final int maxWait;
+	private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
+	private final Semaphore available;
+	private final int maxWait;
 
-    public ThrottleRequestFilter(int maxConnections) {
-        this.maxConnections = maxConnections;
-        this.maxWait = Integer.MAX_VALUE;
-        available = new Semaphore(maxConnections, true);
-    }
+	public ThrottleRequestFilter(int maxConnections) {
+		this(maxConnections, Integer.MAX_VALUE);
+	}
 
-    public ThrottleRequestFilter(int maxConnections, int maxWait) {
-        this.maxConnections = maxConnections;
-        this.maxWait = maxWait;
-        available = new Semaphore(maxConnections, true);
-    }
+	public ThrottleRequestFilter(int maxConnections, int maxWait) {
+		this.maxWait = maxWait;
+		available = new Semaphore(maxConnections, true);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    /* @Override */
-    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+	/**
+	 * {@inheritDoc}
+	 */
+	/* @Override */
+	public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
-        try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status {}", available.availablePermits());
-            }
-            if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
-                throw new FilterException(
-                        String.format("No slot available for processing Request %s with AsyncHandler %s",
-                                ctx.getRequest(), ctx.getAsyncHandler()));
-            }
-            ;
-        } catch (InterruptedException e) {
-            throw new FilterException(
-                    String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
-        }
+		try {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Current Throttling Status {}", available.availablePermits());
+			}
+			if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
+				throw new FilterException(String.format(
+						"No slot available for processing Request %s with AsyncHandler %s", ctx.getRequest(),
+						ctx.getAsyncHandler()));
+			}
+		} catch (InterruptedException e) {
+			throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(),
+					ctx.getAsyncHandler()));
+		}
 
-        return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(new AsyncHandlerWrapper<T>(ctx.getAsyncHandler())).build();
-    }
-
-    private class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
-
-        private final AsyncHandler<T> asyncHandler;
-
-        public AsyncHandlerWrapper(AsyncHandler<T> asyncHandler) {
-            this.asyncHandler = asyncHandler;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        /* @Override */
-        public void onThrowable(Throwable t) {
-            try {
-                asyncHandler.onThrowable(t);
-            } finally {
-                available.release();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Current Throttling Status after onThrowable {}", available.availablePermits());
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        /* @Override */
-        public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-            return asyncHandler.onBodyPartReceived(bodyPart);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        /* @Override */
-        public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-            return asyncHandler.onStatusReceived(responseStatus);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        /* @Override */
-        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-            return asyncHandler.onHeadersReceived(headers);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        /* @Override */
-        public T onCompleted() throws Exception {
-            available.release();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Current Throttling Status {}", available.availablePermits());
-            }
-            return asyncHandler.onCompleted();
-        }
-    }
+		return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(
+				new AsyncHandlerWrapper<T>(ctx.getAsyncHandler(), available)).build();
+	}
 }
