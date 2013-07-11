@@ -29,7 +29,7 @@ Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(
 Response r = f.get();
 ```
 
-Note that in this case all the content must be read fully in memory, even if you used `getResponseBodyAsStream()' method on returned `Response` object.
+Note that in this case all the content must be read fully in memory, even if you used `getResponseBodyAsStream()` method on returned `Response` object.
 
 You can also accomplish asynchronous (non-blocking) operation without using a Future if you want to receive and process the response in your handler:
 
