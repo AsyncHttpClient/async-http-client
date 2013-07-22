@@ -74,7 +74,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             }
 
             HostnameVerifier v = config.getHostnameVerifier();
-            if (sslHandler != null && !AllowAllHostnameVerifier.class.isAssignableFrom(v.getClass())) {
+            if (sslHandler != null && !(v instanceof AllowAllHostnameVerifier)) {
                 // TODO: channel.getRemoteAddress()).getHostName() is very expensive. Should cache the result.
                 if (!v.verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
                         sslHandler.getEngine().getSession())) {
@@ -88,7 +88,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
             logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), future.canRetry());
             if (future.canRetry() && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
-                    || ClosedChannelException.class.isAssignableFrom(cause.getClass())
+                    || cause instanceof ClosedChannelException
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
                 logger.debug("Retrying {} ", nettyRequest);

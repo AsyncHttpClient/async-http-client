@@ -554,7 +554,7 @@ public class AsyncHttpClient implements Closeable {
         }
 
         Request request = fc.getRequest();
-        if (ResumableAsyncHandler.class.isAssignableFrom(fc.getAsyncHandler().getClass())) {
+        if (fc.getAsyncHandler() instanceof ResumableAsyncHandler) {
             request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
         }
 

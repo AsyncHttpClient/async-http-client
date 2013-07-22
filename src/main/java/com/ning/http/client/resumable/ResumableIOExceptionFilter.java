@@ -23,7 +23,7 @@ import com.ning.http.client.filter.IOExceptionFilter;
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
     public FilterContext filter(FilterContext ctx) throws FilterException {
-        if (ctx.getIOException() != null && ResumableAsyncHandler.class.isAssignableFrom(ctx.getAsyncHandler().getClass())) {
+        if (ctx.getIOException() != null && ctx.getAsyncHandler() instanceof ResumableAsyncHandler) {
 
             Request request = ResumableAsyncHandler.class.cast(ctx.getAsyncHandler()).adjustRequestRange(ctx.getRequest());
 

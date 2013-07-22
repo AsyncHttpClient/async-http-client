@@ -158,7 +158,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler());
 
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig != null && ApacheAsyncHttpProvider.class.isAssignableFrom(providerConfig.getClass())) {
+        if (providerConfig instanceof ApacheAsyncHttpProvider) {
             configure(ApacheAsyncHttpProviderConfig.class.cast(providerConfig));
         }
     }
@@ -171,7 +171,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             throw new IOException("Closed");
         }
 
-        if (ResumableAsyncHandler.class.isAssignableFrom(handler.getClass())) {
+        if (handler instanceof ResumableAsyncHandler) {
             request = ResumableAsyncHandler.class.cast(handler).adjustRequestRange(request);
         }
 
@@ -460,7 +460,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     future.setReaperFuture(reaperFuture);
                 }
 
-                if (TransferCompletionHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                if (asyncHandler instanceof TransferCompletionHandler) {
                     throw new IllegalStateException(TransferCompletionHandler.class.getName() + "not supported by this provider");
                 }
 
@@ -578,9 +578,10 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
 
-                if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
-                    ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
-                    ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
+                if (asyncHandler instanceof ProgressAsyncHandler) {
+                	ProgressAsyncHandler progressAsyncHandler = (ProgressAsyncHandler) asyncHandler;
+                	progressAsyncHandler.onHeaderWriteCompleted();
+                	progressAsyncHandler.onContentWriteCompleted();
                 }
 
                 try {
@@ -592,7 +593,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
             } catch (Throwable t) {
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
+                if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
 
@@ -643,20 +644,18 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         private Throwable filterException(Throwable t) {
-            if (UnknownHostException.class.isAssignableFrom(t.getClass())) {
+            if (t instanceof UnknownHostException) {
                 t = new ConnectException(t.getMessage());
-            }
 
-            if (NoHttpResponseException.class.isAssignableFrom(t.getClass())) {
+            } else if (t instanceof NoHttpResponseException) {
                 int responseTimeoutInMs = config.getRequestTimeoutInMs();
 
                 if (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
                     responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
                 }
                 t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
-            }
 
-            if (SSLHandshakeException.class.isAssignableFrom(t.getClass())) {
+            } else if (t instanceof SSLHandshakeException) {
                 Throwable t2 = new ConnectException();
                 t2.initCause(t);
                 t = t2;

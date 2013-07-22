@@ -967,7 +967,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
                 future.get(10, TimeUnit.SECONDS);
             } catch (ExecutionException ex) {
-                if (ex.getCause() != null && TimeoutException.class.isAssignableFrom(ex.getCause().getClass())) {
+                if (ex.getCause() instanceof TimeoutException) {
                     Assert.assertTrue(true);
                 }
             } catch (TimeoutException te) {

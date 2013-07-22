@@ -131,7 +131,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
                 webSocket.addWebSocketListener(w);
             }
             w.onClose(webSocket);
-            if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(w.getClass())) {
+            if (w instanceof WebSocketCloseCodeReasonListener) {
                 WebSocketCloseCodeReasonListener.class.cast(w).onClose(webSocket, status, reasonPhrase);
             }
         }

@@ -78,6 +78,7 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.PrematureChannelClosureException;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
@@ -204,7 +205,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
-        if (config.getAsyncHttpProviderConfig() != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
+        if (config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig) {
             asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
         } else {
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
@@ -216,7 +217,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             // check if external NioClientSocketChannelFactory is defined
             Object oo = asyncHttpProviderConfig.getProperty(SOCKET_CHANNEL_FACTORY);
-            if (oo != null && NioClientSocketChannelFactory.class.isAssignableFrom(oo.getClass())) {
+            if (oo instanceof NioClientSocketChannelFactory) {
                 this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
 
                 // cannot allow releasing shared channel factory
@@ -224,7 +225,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 ExecutorService e;
                 Object o = asyncHttpProviderConfig.getProperty(BOSS_EXECUTOR_SERVICE);
-                if (o != null && ExecutorService.class.isAssignableFrom(o.getClass())) {
+                if (o instanceof ExecutorService) {
                     e = ExecutorService.class.cast(o);
                 } else {
                     e = Executors.newCachedThreadPool();
@@ -303,7 +304,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         if (asyncHttpProviderConfig != null) {
             Object value = asyncHttpProviderConfig.getProperty(EXECUTE_ASYNC_CONNECT);
-            if (value != null && Boolean.class.isAssignableFrom(value.getClass())) {
+            if (value instanceof Boolean) {
                 executeConnectAsync = Boolean.class.cast(value);
             } else if (asyncHttpProviderConfig.getProperty(DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
@@ -448,7 +449,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 BodyGenerator bg = future.getRequest().getBodyGenerator();
                 if (bg != null) {
                     // Netty issue with chunking.
-                    if (InputStreamBodyGenerator.class.isAssignableFrom(bg.getClass())) {
+                    if (bg instanceof InputStreamBodyGenerator) {
                         InputStreamBodyGenerator.class.cast(bg).patchNettyChunkingIssue(true);
                     }
 
@@ -468,7 +469,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
 
-            if (TransferCompletionHandler.class.isAssignableFrom(future.getAsyncHandler().getClass())) {
+            if (future.getAsyncHandler() instanceof TransferCompletionHandler) {
 
                 FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
                 for (String s : future.getNettyRequest().getHeaderNames()) {
@@ -1412,7 +1413,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         connectionsPool.removeAll(channel);
 
-        if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() != null && NettyResponseFuture.class.isAssignableFrom(channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment().getClass())) {
+        if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() instanceof NettyResponseFuture) {
             future = (NettyResponseFuture<?>) channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
         }
 
@@ -1493,10 +1494,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         Throwable cause = e.getCause();
         NettyResponseFuture<?> future = null;
 
-        /**
-         * Issue 81 if (e.getCause() != null && e.getCause().getClass().isAssignableFrom(PrematureChannelClosureException.class)) { return; }
-         */
-        if (e.getCause() != null && e.getCause().getClass().getSimpleName().equals("PrematureChannelClosureException")) {
+        if (e.getCause() instanceof PrematureChannelClosureException) {
             return;
         }
 
@@ -1506,7 +1504,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
 
-            if (cause != null && ClosedChannelException.class.isAssignableFrom(cause.getClass())) {
+            if (cause instanceof ClosedChannelException) {
                 return;
             }
 
@@ -1515,7 +1513,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.attachChannel(null, false);
                 future.touch();
 
-                if (IOException.class.isAssignableFrom(cause.getClass())) {
+                if (cause instanceof IOException) {
 
                     if (!config.getIOExceptionFilters().isEmpty()) {
                         FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
@@ -1676,7 +1674,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Throwable cause = cf.getCause();
             if (cause != null && future.getState() != NettyResponseFuture.STATE.NEW) {
 
-                if (IllegalStateException.class.isAssignableFrom(cause.getClass())) {
+                if (cause instanceof IllegalStateException) {
                     log.debug(cause.getMessage(), cause);
                     try {
                         cf.getChannel().close();
@@ -1686,7 +1684,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 }
 
-                if (ClosedChannelException.class.isAssignableFrom(cause.getClass()) || abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
+                if (cause instanceof ClosedChannelException || abortOnReadCloseException(cause) || abortOnWriteCloseException(cause)) {
 
                     if (log.isDebugEnabled()) {
                         log.debug(cf.getCause() == null ? "" : cf.getCause().getMessage(), cf.getCause());
@@ -1711,7 +1709,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : NettyAsyncHttpProvider.this.getConfig().getRealm();
             boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth() == true;
 
-            if (startPublishing && ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+            if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
                 if (notifyHeaders) {
                     ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
                 } else {
@@ -1722,7 +1720,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         public void operationProgressed(ChannelFuture cf, long amount, long current, long total) {
             future.touch();
-            if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+            if (asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
             }
         }
@@ -1962,7 +1960,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private static final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
-        if (request.getMethod() != "GET" || !WebSocketUpgradeHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+        if (request.getMethod() != "GET" || !(asyncHandler instanceof WebSocketUpgradeHandler)) {
             return false;
         }
         return true;
@@ -2231,7 +2229,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
             } catch (Exception t) {
-                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
+                if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(IOException.class.cast(t)).build();
                     fc = handleIoException(fc, future);
 
@@ -2390,7 +2388,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             webSocket.onTextFragment(frame.getBinaryData().toString(UTF8), frame.isFinalFragment());
                         }
 
-                        if (CloseWebSocketFrame.class.isAssignableFrom(frame.getClass())) {
+                        if (frame instanceof CloseWebSocketFrame) {
                             try {
                                 ctx.setAttachment(DiscardEvent.class);
                                 webSocket.onClose(CloseWebSocketFrame.class.cast(frame).getStatusCode(), CloseWebSocketFrame.class.cast(frame).getReasonText());
@@ -2414,7 +2412,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         public void onError(ChannelHandlerContext ctx, ExceptionEvent e) {
             try {
                 log.warn("onError {}", e);
-                if (ctx.getAttachment() == null || !NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
+                if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
                     return;
                 }
 
@@ -2434,7 +2432,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // @Override
         public void onClose(ChannelHandlerContext ctx, ChannelStateEvent e) {
             log.trace("onClose {}", e);
-            if (ctx.getAttachment() == null || !NettyResponseFuture.class.isAssignableFrom(ctx.getAttachment().getClass())) {
+            if (!(ctx.getAttachment() instanceof NettyResponseFuture)) {
                 return;
             }
 
@@ -2444,7 +2442,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 h.resetSuccess();
 
-                if (ctx.getAttachment() == null || !DiscardEvent.class.isAssignableFrom(ctx.getAttachment().getClass()))
+                if (!(ctx.getAttachment() instanceof DiscardEvent))
                     webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
             } catch (Throwable t) {
                 log.error("onError", t);

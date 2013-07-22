@@ -130,7 +130,7 @@ public class NettyWebSocket implements WebSocket {
 
     protected void onBinaryFragment(byte[] message, boolean last) {
         for (WebSocketListener l : listeners) {
-            if (WebSocketByteListener.class.isAssignableFrom(l.getClass())) {
+            if (l instanceof WebSocketByteListener) {
                 try {
                 	WebSocketByteListener.class.cast(l).onFragment(message,last);
                 	
@@ -162,7 +162,7 @@ public class NettyWebSocket implements WebSocket {
 
     protected void onTextFragment(String message, boolean last) {
         for (WebSocketListener l : listeners) {
-            if (WebSocketTextListener.class.isAssignableFrom(l.getClass())) {
+            if (l instanceof WebSocketTextListener) {
                 try {
                     WebSocketTextListener.class.cast(l).onFragment(message,last);
                     
@@ -209,7 +209,7 @@ public class NettyWebSocket implements WebSocket {
     protected void onClose(int code, String reason) {
         for (WebSocketListener l : listeners) {
             try {
-                if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(l.getClass())) {
+                if (l instanceof WebSocketCloseCodeReasonListener) {
                     WebSocketCloseCodeReasonListener.class.cast(l).onClose(this, code, reason);
                 }
                 l.onClose(this);

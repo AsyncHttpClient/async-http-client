@@ -904,12 +904,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             final AsyncHandler h = httpCtx.handler;
-            if (h != null) {
-                if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
-                    final FluentCaseInsensitiveStringsMap map =
-                            new FluentCaseInsensitiveStringsMap(request.getHeaders());
-                    TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
-                }
+            if (h instanceof TransferCompletionHandler) {
+                final FluentCaseInsensitiveStringsMap map =
+                        new FluentCaseInsensitiveStringsMap(request.getHeaders());
+                TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
             }
             return sendRequest(ctx, request, requestPacket);
 
@@ -1102,10 +1100,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
-            if (handler != null) {
-                if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                    ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
-                }
+            if (handler instanceof TransferCompletionHandler) {
+                ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
             }
         }
 
@@ -1113,15 +1109,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         protected void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
             final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
-            if (handler != null) {
-                if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                    final int written = content.getContent().remaining();
-                    final long total = context.totalBodyWritten.addAndGet(written);
-                    ((TransferCompletionHandler) handler).onContentWriteProgress(
-                            written,
-                            total,
-                            content.getHttpHeader().getContentLength());
-                }
+            if (handler instanceof TransferCompletionHandler) {
+                final int written = content.getContent().remaining();
+                final long total = context.totalBodyWritten.addAndGet(written);
+                ((TransferCompletionHandler) handler).onContentWriteProgress(
+                        written,
+                        total,
+                        content.getHttpHeader().getContentLength());
             }
         }
 
@@ -2148,15 +2142,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     @Override
                     public void updated(WriteResult result) {
                         final AsyncHandler handler = context.handler;
-                        if (handler != null) {
-                            if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
-                                final long written = result.getWrittenSize();
-                                final long total = context.totalBodyWritten.addAndGet(written);
-                                ((TransferCompletionHandler) handler).onContentWriteProgress(
-                                        written,
-                                        total,
-                                        requestPacket.getContentLength());
-                            }
+                        if (handler instanceof TransferCompletionHandler) {
+                            final long written = result.getWrittenSize();
+                            final long total = context.totalBodyWritten.addAndGet(written);
+                            ((TransferCompletionHandler) handler).onContentWriteProgress(
+                                    written,
+                                    total,
+                                    requestPacket.getContentLength());
                         }
                     }
                 });
@@ -2700,7 +2692,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void onClose(org.glassfish.grizzly.websockets.WebSocket gWebSocket, DataFrame dataFrame) {
             try {
-                if (WebSocketCloseCodeReasonListener.class.isAssignableFrom(ahcListener.getClass())) {
+                if (ahcListener instanceof WebSocketCloseCodeReasonListener) {
                     ClosingFrame cf = ClosingFrame.class.cast(dataFrame);
                     WebSocketCloseCodeReasonListener.class.cast(ahcListener).onClose(webSocket, cf.getCode(), cf.getReason());
                 } else {
@@ -2723,7 +2715,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, String s) {
             try {
-                if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                if (ahcListener instanceof WebSocketTextListener) {
                     WebSocketTextListener.class.cast(ahcListener).onMessage(s);
                 }
             } catch (Throwable e) {
@@ -2734,7 +2726,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void onMessage(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
             try {
-                if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                if (ahcListener instanceof WebSocketByteListener) {
                     WebSocketByteListener.class.cast(ahcListener).onMessage(bytes);
                 }
             } catch (Throwable e) {
@@ -2745,7 +2737,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void onPing(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
             try {
-                if (WebSocketPingListener.class.isAssignableFrom(ahcListener.getClass())) {
+                if (ahcListener instanceof WebSocketPingListener) {
                     WebSocketPingListener.class.cast(ahcListener).onPing(bytes);
                 }
             } catch (Throwable e) {
@@ -2756,7 +2748,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void onPong(org.glassfish.grizzly.websockets.WebSocket webSocket, byte[] bytes) {
             try {
-                if (WebSocketPongListener.class.isAssignableFrom(ahcListener.getClass())) {
+                if (ahcListener instanceof WebSocketPongListener) {
                     WebSocketPongListener.class.cast(ahcListener).onPong(bytes);
                 }
             } catch (Throwable e) {
@@ -2771,7 +2763,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     synchronized (this.webSocket) {
                         stringBuffer.append(s);
                         if (last) {
-                            if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                            if (ahcListener instanceof WebSocketTextListener) {
                                 final String message = stringBuffer.toString();
                                 stringBuffer.setLength(0);
                                 WebSocketTextListener.class.cast(ahcListener).onMessage(message);
@@ -2779,7 +2771,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         }
                     }
                 } else {
-                    if (WebSocketTextListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    if (ahcListener instanceof WebSocketTextListener) {
                         WebSocketTextListener.class.cast(ahcListener).onFragment(s, last);
                     }
                 }
@@ -2795,7 +2787,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     synchronized (this.webSocket) {
                         byteArrayOutputStream.write(bytes);
                         if (last) {
-                            if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                            if (ahcListener instanceof WebSocketByteListener) {
                                 final byte[] bytesLocal = byteArrayOutputStream.toByteArray();
                                 byteArrayOutputStream.reset();
                                 WebSocketByteListener.class.cast(ahcListener).onMessage(bytesLocal);
@@ -2803,7 +2795,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         }
                     }
                 } else {
-                    if (WebSocketByteListener.class.isAssignableFrom(ahcListener.getClass())) {
+                    if (ahcListener instanceof WebSocketByteListener) {
                         WebSocketByteListener.class.cast(ahcListener).onFragment(bytes, last);
                     }
                 }
