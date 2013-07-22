@@ -170,7 +170,7 @@ public class JDKResponse implements Response {
         if (headers == null) {
             return Collections.emptyList();
         }
-        if (cookies.isEmpty()) {
+        if (cookies == null || cookies.isEmpty()) {
         	List<Cookie> localCookies = new ArrayList<Cookie>();
             for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
                 if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
