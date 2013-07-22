@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 /**
  * A {@link com.ning.http.client.AsyncHandler} that can be used to notify a set of {@link com.ning.http.client.listener.TransferListener}
  * <p/>
@@ -144,7 +146,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public STATE onHeaderWriteCompleted() {
         List<String> list = transferAdapter.getHeaders().get("Content-Length");
-        if (list != null && list.size() > 0 && list.get(0) != "") {
+        if (isNonEmpty(list) && list.get(0) != "") {
             totalBytesToTransfer.set(Long.valueOf(list.get(0)));
         }
 

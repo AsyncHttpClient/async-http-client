@@ -1019,7 +1019,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         try {
                             for (int i = 0, len = values.size(); i < len; i++) {
                                 final String value = values.get(i);
-                                if (value != null && value.length() > 0) {
+                                if (isNonEmpty(value)) {
                                     sb.append(URLEncoder.encode(name, "UTF-8")).append('=')
                                         .append(URLEncoder.encode(values.get(i), "UTF-8")).append('&');
                                 } else {
@@ -2606,7 +2606,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public WebSocket stream(byte[] fragment, boolean last) {
-            if (fragment != null && fragment.length > 0) {
+            if (isNonEmpty(fragment)) {
                 gWebSocket.stream(last, fragment, 0, fragment.length);
             }
             return this;
@@ -2614,7 +2614,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         public WebSocket stream(byte[] fragment, int offset, int len, boolean last) {
-            if (fragment != null && fragment.length > 0) {
+        	if (isNonEmpty(fragment)) {
                 gWebSocket.stream(last, fragment, offset, len);
             }
             return this;

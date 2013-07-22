@@ -209,7 +209,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         if (idleConnectionForHost != null) {
             boolean poolEmpty = false;
             while (!poolEmpty && idleChannel == null) {
-                if (idleConnectionForHost.size() > 0) {
+                if (!idleConnectionForHost.isEmpty()) {
                     synchronized (idleConnectionForHost) {
                         idleChannel = idleConnectionForHost.poll();
                         if (idleChannel != null) {

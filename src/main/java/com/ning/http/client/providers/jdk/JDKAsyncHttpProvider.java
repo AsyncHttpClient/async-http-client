@@ -370,7 +370,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             } catch (Throwable t) {
                 logger.debug(t.getMessage(), t);
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(request).ioException(IOException.class.cast(t)).build();
 

@@ -592,7 +592,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 }
             } catch (Throwable t) {
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(future.getRequest()).ioException(IOException.class.cast(t)).build();
 

@@ -28,6 +28,10 @@ public class MiscUtil {
         return array != null && array.length != 0;
     }
 
+    public static boolean isNonEmpty(byte[] array) {
+        return array != null && array.length != 0;
+    }
+
     public static boolean isNonEmpty(Collection<?> collection) {
         return collection != null && !collection.isEmpty();
     }
