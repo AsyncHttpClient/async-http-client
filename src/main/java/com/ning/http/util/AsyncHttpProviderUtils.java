@@ -41,6 +41,8 @@ import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
  * <p/>
@@ -158,7 +160,7 @@ public class AsyncHttpProviderUtils {
         if (path == null) {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ", must be non-null");
-        } else if (!path.isEmpty() && path.charAt(0) != '/') {
+        } else if (isNonEmpty(path) && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ". must start with a '/'");
         } else if (path.isEmpty()) {
