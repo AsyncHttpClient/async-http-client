@@ -603,7 +603,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                         if (config.getMaxTotalConnections() != -1) {
                             maxConnections.decrementAndGet();
                         }
-                        future.done(null);
+                        future.done();
                         method.releaseConnection();
                     }
 
@@ -629,7 +629,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     if (config.getMaxTotalConnections() != -1) {
                         maxConnections.decrementAndGet();
                     }
-                    future.done(null);
+                    future.done();
 
                     // Crappy Apache HttpClient who blocks forever here with large files.
                     config.executorService().submit(new Runnable() {

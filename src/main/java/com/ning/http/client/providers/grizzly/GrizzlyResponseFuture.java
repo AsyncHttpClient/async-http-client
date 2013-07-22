@@ -21,8 +21,6 @@ import com.ning.http.client.listenable.AbstractListenableFuture;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.impl.FutureImpl;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -67,14 +65,12 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
     // ----------------------------------- Methods from AbstractListenableFuture
 
 
-    public void done(Callable callable) {
+    public void done() {
 
         if (!done.compareAndSet(false, true) || cancelled.get()) {
             return;
         }
-        done();
-
-
+        runListeners();
     }
 
 
@@ -93,7 +89,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
         }
         closeConnection();
-        done();
+        runListeners();
 
     }
 
@@ -144,7 +140,7 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
             } catch (Throwable ignore) {
             }
         }
-        done();
+        runListeners();
         return delegate.cancel(mayInterruptIfRunning);
 
     }

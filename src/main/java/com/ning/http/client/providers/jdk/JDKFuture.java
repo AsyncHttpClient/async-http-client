@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -60,9 +59,9 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
         this.innerFuture = innerFuture;
     }
 
-    public void done(Callable callable) {
+    public void done() {
         isDone.set(true);
-        super.done();
+        runListeners();
     }
 
     public void abort(Throwable t) {
@@ -77,7 +76,7 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", te);
             }
         }
-        super.done();
+        runListeners();
     }
 
     public void content(V v) {
@@ -92,10 +91,10 @@ public class JDKFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", te);
             }
             cancelled.set(true);
-            super.done();
+            runListeners();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
-            super.done();
+            runListeners();
             return false;
         }
     }

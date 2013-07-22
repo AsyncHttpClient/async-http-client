@@ -18,7 +18,6 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.ListenableFuture;
 
 import java.net.HttpURLConnection;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -32,9 +31,9 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
         this.delegateFuture = delegateFuture;
     }
 
-    public void done(Callable callable) {
-        delegateFuture.done(callable);
-        super.done(callable);
+    public void done() {
+        delegateFuture.done();
+        super.done();
     }
 
     public void abort(Throwable t) {
@@ -79,7 +78,7 @@ public class JDKDelegateFuture<V> extends JDKFuture<V> {
             delegateFuture.abort(new ExecutionException(exception.get()));
         }
         delegateFuture.content(content);
-        delegateFuture.done(null);
+        delegateFuture.done();
         return content;
     }
 }

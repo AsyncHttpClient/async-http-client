@@ -30,7 +30,6 @@
  */
 package com.ning.http.client;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
@@ -42,11 +41,11 @@ import java.util.concurrent.Future;
 public interface ListenableFuture<V> extends Future<V> {
 
     /**
-     * Execute a {@link Callable}  and if there is no exception, mark this Future as done and release the internal lock.
+     * Terminate and if there is no exception, mark this Future as done and release the internal lock.
      *
      * @param callable
      */
-    void done(Callable callable);
+    void done();
 
     /**
      * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}

@@ -63,7 +63,7 @@ public abstract class AbstractListenableFuture<V> implements ListenableFuture<V>
     /*
     * Override the done method to execute the execution list.
     */
-    protected void done() {
+    protected void runListeners() {
         executionList.run();
     }
 }

@@ -21,7 +21,6 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -64,12 +63,12 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
         this.innerFuture = innerFuture;
     }
 
-    public void done(Callable callable) {
+    public void done() {
         isDone.set(true);
         if (reaperFuture != null) {
             reaperFuture.cancel(true);
         }
-        super.done();
+        runListeners();
     }
 
     /**
@@ -125,7 +124,7 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
                 logger.debug("asyncHandler.onThrowable", t2);
             }
         }
-        super.done();
+        runListeners();
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -140,10 +139,10 @@ public class ApacheResponseFuture<V> extends AbstractListenableFuture<V> {
             if (reaperFuture != null) {
                 reaperFuture.cancel(true);
             }
-            super.done();
+            runListeners();
             return innerFuture.cancel(mayInterruptIfRunning);
         } else {
-            super.done();
+            runListeners();
             return false;
         }
     }

@@ -674,9 +674,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        void done(final Callable c) {
+        void done() {
             if (future != null) {
-                future.done(c);
+                future.done();
             }
         }
 
@@ -684,7 +684,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         void result(Object result) {
             if (future != null) {
                 future.delegate.result(result);
-                future.done(null);
+                future.done();
             }
         }
 
@@ -1371,7 +1371,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         context.abort(e);
                     }
                 } else {
-                    context.done(null);
+                    context.done();
                 }
 
                 return result;
