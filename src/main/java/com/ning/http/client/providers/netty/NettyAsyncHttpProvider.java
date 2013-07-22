@@ -198,6 +198,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
 
+    private static boolean isNTLM(List<String> auth) {
+		return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
+	}
+
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         if (config.getAsyncHttpProviderConfig() != null && NettyAsyncHttpProviderConfig.class.isAssignableFrom(config.getAsyncHttpProviderConfig().getClass())) {
@@ -657,7 +661,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-            if (auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM")) {
+            if (isNTLM(auth)) {
                 nettyRequest.addHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
@@ -727,10 +731,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (proxyServer.getPrincipal() != null) {
-                if (proxyServer.getNtlmDomain() != null && proxyServer.getNtlmDomain().length() > 0) {
+                if (isNonEmpty(proxyServer.getNtlmDomain())) {
 
                     List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
-                    if (!(auth != null && auth.size() > 0 && auth.get(0).startsWith("NTLM"))) {
+                    if (!isNTLM(auth)) {
                         try {
                             String msg = ntlmEngine.generateType1Msg(proxyServer.getNtlmDomain(), proxyServer.getHost());
                             nettyRequest.setHeader(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
@@ -1173,11 +1177,28 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
             return realmBuilder.setUri(uri.getRawPath()).setMethodName(request.getMethod()).setScheme(Realm.AuthScheme.KERBEROS).build();
         } catch (Throwable throwable) {
-            if (proxyAuth.contains("NTLM")) {
+            if (isNTLM(proxyAuth)) {
                 return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future);
             }
             abort(future, throwable);
             return null;
+        }
+    }
+
+    private void addType3NTLMAuthorizationHeader(
+    		List<String> auth,
+    		FluentCaseInsensitiveStringsMap headers,
+    		String username,
+            String password,
+            String domain,
+            String workstation)  throws NTLMEngineException {
+        headers.remove(HttpHeaders.Names.AUTHORIZATION);
+
+        if (isNTLM(auth)) {
+            String serverChallenge = auth.get(0).trim().substring("NTLM ".length());
+            String challengeHeader = ntlmEngine.generateType3Msg(username, password, domain, workstation, serverChallenge);
+
+            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
         }
     }
 
@@ -1199,14 +1220,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(uri.getRawPath()).setMethodName(request.getMethod()).setNtlmMessageType2Received(true).build();
             future.getAndSetAuth(false);
         } else {
-            headers.remove(HttpHeaders.Names.AUTHORIZATION);
-
-            if (wwwAuth.get(0).startsWith("NTLM ")) {
-                String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-                String challengeHeader = ntlmEngine.generateType3Msg(principal, password, ntlmDomain, ntlmHost, serverChallenge);
-
-                headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-            }
+        	addType3NTLMAuthorizationHeader(wwwAuth, headers, principal, password, ntlmDomain, ntlmHost);
 
             Realm.RealmBuilder realmBuilder;
             Realm.AuthScheme authScheme;
@@ -1225,14 +1239,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private Realm ntlmProxyChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future) throws NTLMEngineException {
         future.getAndSetAuth(false);
-        headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
-
-        if (wwwAuth.get(0).startsWith("NTLM ")) {
-            String serverChallenge = wwwAuth.get(0).trim().substring("NTLM ".length());
-            String challengeHeader = ntlmEngine.generateType3Msg(proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getNtlmDomain(), proxyServer.getHost(), serverChallenge);
-            headers.add(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
-        }
+        
+        addType3NTLMAuthorizationHeader(wwwAuth, headers, proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getNtlmDomain(), proxyServer.getHost());
         Realm newRealm;
+        
         Realm.RealmBuilder realmBuilder;
         if (realm != null) {
             realmBuilder = new Realm.RealmBuilder().clone(realm);
@@ -2095,7 +2105,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         future.setState(NettyResponseFuture.STATE.NEW);
                         // NTLM
-                        if (!wwwAuth.contains("Kerberos") && (wwwAuth.contains("NTLM") || (wwwAuth.contains("Negotiate")))) {
+                        if (!wwwAuth.contains("Kerberos") && (isNTLM(wwwAuth) || (wwwAuth.contains("Negotiate")))) {
                             newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future);
                             // SPNEGO KERBEROS
                         } else if (wwwAuth.contains("Negotiate")) {
@@ -2146,7 +2156,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                         future.setState(NettyResponseFuture.STATE.NEW);
 
-                        if (!proxyAuth.contains("Kerberos") && (proxyAuth.get(0).contains("NTLM") || (proxyAuth.contains("Negotiate")))) {
+                        if (!proxyAuth.contains("Kerberos") && (isNTLM(proxyAuth) || (proxyAuth.contains("Negotiate")))) {
                             newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, headers, realm, future);
                             // SPNEGO KERBEROS
                         } else if (proxyAuth.contains("Negotiate")) {
