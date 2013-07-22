@@ -177,8 +177,9 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     /* @Override */
     public AsyncHandler.STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
-        if (headers.getHeaders().getFirstValue("Content-Length") != null) {
-            contentLength = Integer.valueOf(headers.getHeaders().getFirstValue("Content-Length"));
+        String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
+        if (contentLengthHeader != null) {
+            contentLength = Integer.valueOf(contentLengthHeader);
             if (contentLength == null || contentLength == -1) {
                 return AsyncHandler.STATE.ABORT;
             }

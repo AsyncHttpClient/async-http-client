@@ -747,12 +747,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         // Add default accept headers.
-        if (request.getHeaders().getFirstValue(HttpHeaders.Names.ACCEPT) == null) {
+        if (!request.getHeaders().containsKey(HttpHeaders.Names.ACCEPT)) {
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
         }
 
-        if (request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT) != null) {
-            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT));
+        String userAgentHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT);
+        if (userAgentHeader != null) {
+            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, userAgentHeader);
         } else if (config.getUserAgent() != null) {
             nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
         } else {
@@ -1640,7 +1641,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 request.getConnectionPoolKeyStrategy(),//
                 proxyServer);
 
-        if (request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT) != null && request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT).equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
+        String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
+        if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
             f.getAndSetWriteBody(false);
         }
         return f;
