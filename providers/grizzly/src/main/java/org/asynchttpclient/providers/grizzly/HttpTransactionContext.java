@@ -25,7 +25,6 @@ import org.glassfish.grizzly.attributes.AttributeStorage;
 import org.glassfish.grizzly.websockets.HandShake;
 import org.glassfish.grizzly.websockets.ProtocolHandler;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -284,9 +283,9 @@ public final class HttpTransactionContext {
 
     }
 
-    void done(final Callable c) {
+    void done() {
         if (future != null) {
-            future.done(c);
+            future.done();
         }
     }
 
@@ -294,7 +293,7 @@ public final class HttpTransactionContext {
     void result(Object result) {
         if (future != null) {
             future.delegate.result(result);
-            future.done(null);
+            future.done();
         }
     }
 

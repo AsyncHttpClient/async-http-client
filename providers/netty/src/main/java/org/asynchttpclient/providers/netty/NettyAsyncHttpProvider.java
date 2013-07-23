@@ -1397,7 +1397,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private void markAsDone(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
         // We need to make sure everything is OK before adding the connection back to the pool.
         try {
-            future.done(null);
+            future.done();
         } catch (Throwable t) {
             // Never propagate exception once we know we are done.
             log.debug(t.getMessage(), t);
@@ -2289,7 +2289,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ctx.getPipeline().get(HttpResponseDecoder.class).replace("ws-decoder", new WebSocket08FrameDecoder(false, false));
 
                 invokeOnSucces(ctx, h);
-                future.done(null);
+                future.done();
             } else if (e.getMessage() instanceof WebSocketFrame) {
 
                 invokeOnSucces(ctx, h);

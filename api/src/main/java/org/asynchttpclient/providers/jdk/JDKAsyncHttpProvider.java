@@ -356,7 +356,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 try {
                     T t = asyncHandler.onCompleted();
                     future.content(t);
-                    future.done(null);
+                    future.done();
                     return t;
                 } catch (Throwable t) {
                     RuntimeException ex = new RuntimeException();
@@ -376,7 +376,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                         if (config.getMaxTotalConnections() != -1) {
                             maxConnections.decrementAndGet();
                         }
-                        future.done(null);
+                        future.done();
                     }
 
                     if (fc.replayRequest()) {

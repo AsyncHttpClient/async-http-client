@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -178,7 +177,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         }
         latch.countDown();
         isCancelled.set(true);
-        super.done();
+        runListeners();
         return true;
     }
 
@@ -291,7 +290,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return update;
     }
 
-    public final void done(Callable callable) {
+    public final void done() {
 
         Throwable exception = null;
 
@@ -303,13 +302,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             }
             getContent();
             isDone.set(true);
-            if (callable != null) {
-                try {
-                    callable.call();
-                } catch (Exception ex) {
-                    exception = ex;
-                }
-            }
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
@@ -322,7 +314,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         if (exception != null)
             exEx.compareAndSet(null, new ExecutionException(exception));
 
-        super.done();
+        runListeners();
     }
 
     public final void abort(final Throwable t) {
@@ -342,7 +334,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             }
         }
         latch.countDown();
-        super.done();
+        runListeners();
     }
 
     public void content(V v) {

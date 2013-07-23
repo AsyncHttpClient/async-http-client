@@ -395,7 +395,7 @@ public final class EventHandler {
                         context.abort(e);
                     }
                 } else {
-                    context.done(null);
+                    context.done();
                 }
                 return result;
             }

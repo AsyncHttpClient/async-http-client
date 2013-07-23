@@ -18,7 +18,6 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.providers.ResponseBase;
-import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import java.io.IOException;
