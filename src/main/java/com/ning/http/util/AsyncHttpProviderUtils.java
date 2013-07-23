@@ -163,7 +163,7 @@ public class AsyncHttpProviderUtils {
         } else if (isNonEmpty(path) && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri
                     + ". must start with a '/'");
-        } else if (path.isEmpty()) {
+        } else if (!isNonEmpty(path)) {
             return URI.create(u + "/");
         }
 
