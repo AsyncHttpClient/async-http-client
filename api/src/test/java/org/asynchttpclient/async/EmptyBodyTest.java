@@ -132,7 +132,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 204);
             assertEquals(response.getResponseBody(), "");
-            assertTrue(InputStream.class.isAssignableFrom(response.getResponseBodyAsStream().getClass()));
+            assertTrue(response.getResponseBodyAsStream() instanceof InputStream);
             assertEquals(response.getResponseBodyAsStream().read(), -1);
         } finally {
             ahc.close();

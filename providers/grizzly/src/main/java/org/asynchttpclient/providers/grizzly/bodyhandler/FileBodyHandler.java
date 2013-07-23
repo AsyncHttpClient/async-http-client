@@ -94,7 +94,7 @@ public final class FileBodyHandler implements BodyHandler {
                 public void updated(WriteResult result) {
                     final AsyncHandler handler = context.getHandler();
                     if (handler != null) {
-                        if (TransferCompletionHandler.class.isAssignableFrom(handler.getClass())) {
+                        if (handler instanceof TransferCompletionHandler) {
                             // WriteResult keeps a track of the total amount written,
                             // so we need to calculate the delta ourselves.
                             final long resultTotal = result.getWrittenSize();

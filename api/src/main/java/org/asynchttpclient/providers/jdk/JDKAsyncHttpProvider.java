@@ -36,9 +36,6 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.multipart.MultipartRequestEntity;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.AuthenticatorUtils;
@@ -105,7 +102,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         this.config = config;
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig != null && JDKAsyncHttpProviderConfig.class.isAssignableFrom(providerConfig.getClass())) {
+        if (providerConfig instanceof JDKAsyncHttpProviderConfig) {
             configure(JDKAsyncHttpProviderConfig.class.cast(providerConfig));
         }
     }
@@ -236,7 +233,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 configure(uri, urlConnection, request);
                 urlConnection.connect();
 
-                if (TransferCompletionHandler.class.isAssignableFrom(asyncHandler.getClass())) {
+                if (asyncHandler instanceof TransferCompletionHandler) {
                     throw new IllegalStateException(TransferCompletionHandler.class.getName() + "not supported by this provider");
                 }
 
@@ -351,9 +348,10 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
 
-                if (ProgressAsyncHandler.class.isAssignableFrom(asyncHandler.getClass())) {
-                    ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
-                    ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteCompleted();
+                if (asyncHandler instanceof ProgressAsyncHandler) {
+                	ProgressAsyncHandler<?> progressAsyncHandler = ProgressAsyncHandler.class.cast(asyncHandler);
+                	progressAsyncHandler.onHeaderWriteCompleted();
+                	progressAsyncHandler.onContentWriteCompleted();
                 }
                 try {
                     T t = asyncHandler.onCompleted();
@@ -368,7 +366,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             } catch (Throwable t) {
                 logger.debug(t.getMessage(), t);
 
-                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
+                if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
                             .request(request).ioException(IOException.class.cast(t)).build();
 
@@ -419,16 +417,14 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         private Throwable filterException(Throwable t) {
-            if (UnknownHostException.class.isAssignableFrom(t.getClass())) {
+            if (t instanceof UnknownHostException) {
                 t = new ConnectException(t.getMessage());
-            }
 
-            if (SocketTimeoutException.class.isAssignableFrom(t.getClass())) {
+            } else if (t instanceof SocketTimeoutException) {
                 int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
                 t = new TimeoutException("No response received after " + requestTimeout);
-            }
 
-            if (SSLHandshakeException.class.isAssignableFrom(t.getClass())) {
+            } else if (t instanceof SSLHandshakeException) {
                 Throwable t2 = new ConnectException();
                 t2.initCause(t);
                 t = t2;

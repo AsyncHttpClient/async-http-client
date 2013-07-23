@@ -223,7 +223,7 @@ public class MultipartBody implements RandomAccessBody {
     private void initializeFileBody(FilePart currentPart)
             throws IOException {
 
-        if (FilePartSource.class.isAssignableFrom(currentPart.getSource().getClass())) {
+        if (currentPart.getSource() instanceof FilePartSource) {
 
             FilePartSource source = (FilePartSource) currentPart.getSource();
 
@@ -444,7 +444,7 @@ public class MultipartBody implements RandomAccessBody {
 
         handler.start();
 
-        if (FilePartSource.class.isAssignableFrom(filePart.getSource().getClass())) {
+        if (filePart.getSource() instanceof FilePartSource) {
             int length = 0;
 
             length += handleFileHeaders(target, filePart);

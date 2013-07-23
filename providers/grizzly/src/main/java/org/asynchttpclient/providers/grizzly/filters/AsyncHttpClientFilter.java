@@ -285,15 +285,10 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private static void initTransferCompletionHandler(final Request request,
                                                       final AsyncHandler h)
     throws IOException {
-        if (h != null) {
-            if (TransferCompletionHandler.class.isAssignableFrom(h.getClass())) {
-                final FluentCaseInsensitiveStringsMap map =
-                        new FluentCaseInsensitiveStringsMap(
-                                request.getHeaders());
-                TransferCompletionHandler.class.cast(h)
-                        .transferAdapter(new GrizzlyTransferAdapter(map));
-            }
-        }
+		if (h instanceof TransferCompletionHandler) {
+			final FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap(request.getHeaders());
+			TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
+		}
     }
 
     private static boolean checkHandshakeError(final FilterChainContext ctx,

@@ -16,7 +16,6 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.Request.EntityWriter;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -606,7 +605,7 @@ public class AsyncHttpClient implements Closeable {
         }
 
         Request request = fc.getRequest();
-        if (ResumableAsyncHandler.class.isAssignableFrom(fc.getAsyncHandler().getClass())) {
+        if (fc.getAsyncHandler() instanceof ResumableAsyncHandler) {
             request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
         }
 

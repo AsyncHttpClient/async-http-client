@@ -52,7 +52,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
      */
     /* @Override */
     public void close() throws IOException {
-        if (Closeable.class.isAssignableFrom(appendable.getClass())) {
+        if (appendable instanceof Closeable) {
             Closeable.class.cast(appendable).close();
         }
     }

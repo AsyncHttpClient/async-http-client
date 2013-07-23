@@ -118,7 +118,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 for (IdleChannel idleChannel : channelsInTimeout) {
                     Object attachment = idleChannel.channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
                     if (attachment != null) {
-                        if (NettyResponseFuture.class.isAssignableFrom(attachment.getClass())) {
+                        if (attachment instanceof NettyResponseFuture) {
                             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
 
                             if (!future.isDone() && !future.isCancelled()) {
