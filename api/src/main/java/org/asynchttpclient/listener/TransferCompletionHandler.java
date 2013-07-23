@@ -146,7 +146,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
      */
     public STATE onHeaderWriteCompleted() {
         List<String> list = transferAdapter.getHeaders().get("Content-Length");
-        if (isNonEmpty(list) && list.get(0).length() != 0) {
+        if (isNonEmpty(list) && !list.get(0).isEmpty()) {
             totalBytesToTransfer.set(Long.valueOf(list.get(0)));
         }
 

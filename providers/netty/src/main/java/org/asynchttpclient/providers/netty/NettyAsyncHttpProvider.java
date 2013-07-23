@@ -1337,7 +1337,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
             future.touch();
 
-            if (config.getIOExceptionFilters().size() > 0) {
+            if (!config.getIOExceptionFilters().isEmpty()) {
                 FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                 fc = handleIoException(fc, future);
 
@@ -1471,7 +1471,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (IOException.class.isAssignableFrom(cause.getClass())) {
 
-                    if (config.getIOExceptionFilters().size() > 0) {
+                    if (!config.getIOExceptionFilters().isEmpty()) {
                         FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(new IOException("Channel Closed")).build();
                         fc = handleIoException(fc, future);
 
@@ -2054,7 +2054,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     // builder.setUrl(future.getURI().toString());
                     // }
 
-                    if (statusCode == 401 && realm != null && wwwAuth.size() > 0 && !future.getAndSetAuth(true)) {
+                    if (statusCode == 401 && realm != null && !wwwAuth.isEmpty() && !future.getAndSetAuth(true)) {
 
                         future.setState(NettyResponseFuture.STATE.NEW);
                         // NTLM
@@ -2097,7 +2097,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
 
                     List<String> proxyAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.PROXY_AUTHENTICATE);
-                    if (statusCode == 407 && realm != null && proxyAuth.size() > 0 && !future.getAndSetAuth(true)) {
+                    if (statusCode == 407 && realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
 
                         log.debug("Sending proxy authentication to {}", request.getUrl());
 
@@ -2178,7 +2178,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
             } catch (Exception t) {
-                if (IOException.class.isAssignableFrom(t.getClass()) && config.getIOExceptionFilters().size() > 0) {
+                if (IOException.class.isAssignableFrom(t.getClass()) && !config.getIOExceptionFilters().isEmpty()) {
                     FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler()).request(future.getRequest()).ioException(IOException.class.cast(t)).build();
                     fc = handleIoException(fc, future);
 
