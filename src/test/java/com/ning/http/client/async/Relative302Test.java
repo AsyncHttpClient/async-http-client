@@ -97,10 +97,9 @@ public abstract class Relative302Test extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
 
-            String anyGoogleSubdomain = "http://www\\.google\\.[a-z]+(\\.[a-z]+)*:80";
             String baseUrl = getBaseUrl(response.getUri());
 
-            assertTrue(baseUrl.matches(anyGoogleSubdomain), "response does not show redirection to " + anyGoogleSubdomain);
+            assertTrue(baseUrl.startsWith("http://www.google."), "response does not show redirection to a google subdomain, got " + baseUrl);
         } finally {
             c.close();
         }
