@@ -60,8 +60,8 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
-        this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
         this.idleConnectionDetector = idleConnectionDetector;
+        this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
     }
 
     private static class IdleChannel {
