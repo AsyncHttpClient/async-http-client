@@ -37,7 +37,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final Timer idleConnectionDetector = new Timer(true);
+    private final Timer idleConnectionDetector;
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
@@ -45,16 +45,17 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final long maxIdleTime;
 
     public NettyConnectionsPool(NettyAsyncHttpProvider provider) {
-        this(provider.getConfig().getMaxTotalConnections(), provider.getConfig().getMaxConnectionPerHost(), provider.getConfig().getIdleConnectionInPoolTimeoutInMs(), provider.getConfig().isSslConnectionPoolEnabled(), provider.getConfig().getMaxConnectionLifeTimeInMs());
+        this(provider.getConfig().getMaxTotalConnections(), provider.getConfig().getMaxConnectionPerHost(), provider.getConfig().getIdleConnectionInPoolTimeoutInMs(), provider.getConfig().isSslConnectionPoolEnabled(), provider.getConfig().getMaxConnectionLifeTimeInMs(), new Timer(true));
     }
 
-    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs) {
+    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs, Timer idleConnectionDetector) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
         this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
+        this.idleConnectionDetector = idleConnectionDetector;
     }
 
     private static class IdleChannel {
