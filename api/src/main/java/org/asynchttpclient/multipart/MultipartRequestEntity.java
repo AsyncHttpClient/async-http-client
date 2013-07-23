@@ -63,7 +63,7 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     protected Part[] parts;
 
-    private byte[] multipartBoundary;
+    private final byte[] multipartBoundary;
 
     private final String contentType;
 
@@ -71,18 +71,35 @@ public class MultipartRequestEntity implements RequestEntity {
      * Creates a new multipart entity containing the given parts.
      * 
      * @param parts The parts to include.
-     * @param requestHeader
      */
     public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
-        String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
-        if (isNonEmpty(contentTypeHeader))
-            this.contentType = contentTypeHeader;
-        else
-            this.contentType = MULTIPART_FORM_CONTENT_TYPE;
         this.parts = parts;
+        String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
+        if (isNonEmpty(contentTypeHeader)) {
+        	int boundaryLocation = contentTypeHeader.indexOf("boundary=");
+        	if (boundaryLocation != -1) {
+        		// boundary defined in existing Content-Type
+        		contentType = contentTypeHeader;
+        		multipartBoundary = MultipartEncodingUtil.getAsciiBytes((contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()));
+        	} else {
+        		// generate boundary and append it to existing Content-Type
+        		multipartBoundary = generateMultipartBoundary();
+                contentType = computeContentType(contentTypeHeader);
+        	}
+        } else {
+        	multipartBoundary = generateMultipartBoundary();
+            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
+        }
+    }
+
+    private String computeContentType(String base) {
+    	StringBuilder buffer = new StringBuilder(base);
+		if (!base.endsWith(";"))
+			buffer.append(";");
+        return buffer.append(" boundary=").append(MultipartEncodingUtil.getAsciiString(multipartBoundary)).toString();
     }
 
     /**
@@ -92,9 +109,6 @@ public class MultipartRequestEntity implements RequestEntity {
      * @return The boundary string of this entity in ASCII encoding.
      */
     protected byte[] getMultipartBoundary() {
-        if (multipartBoundary == null) {
-            multipartBoundary = generateMultipartBoundary();
-        }
         return multipartBoundary;
     }
 
@@ -116,7 +130,7 @@ public class MultipartRequestEntity implements RequestEntity {
      * @see org.apache.commons.httpclient.methods.RequestEntity#writeRequest(java.io.OutputStream)
      */
     public void writeRequest(OutputStream out) throws IOException {
-        Part.sendParts(out, parts, getMultipartBoundary());
+        Part.sendParts(out, parts, multipartBoundary);
     }
 
     /*
@@ -126,7 +140,7 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     public long getContentLength() {
         try {
-            return Part.getLengthOfParts(parts, getMultipartBoundary());
+            return Part.getLengthOfParts(parts, multipartBoundary);
         } catch (Exception e) {
             log.error("An exception occurred while getting the length of the parts", e);
             return 0;
@@ -139,16 +153,7 @@ public class MultipartRequestEntity implements RequestEntity {
      * @see org.apache.commons.httpclient.methods.RequestEntity#getContentType()
      */
     public String getContentType() {
-        if (contentType.contains("boundary="))
-            return contentType;
-        else {
-            StringBuilder buffer = new StringBuilder(contentType);
-            if (!contentType.endsWith(";"))
-                buffer.append(";");
-            buffer.append(" boundary=");
-            buffer.append(MultipartEncodingUtil.getAsciiString(getMultipartBoundary()));
-            return buffer.toString();
-        }
+        return contentType;
     }
-
 }
+
