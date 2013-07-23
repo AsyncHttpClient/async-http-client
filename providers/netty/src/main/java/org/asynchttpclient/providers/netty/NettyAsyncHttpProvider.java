@@ -139,7 +139,6 @@ import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
-    private final static String WEBSOCKET_KEY = "Sec-WebSocket-Key";
     private final static String HTTP_HANDLER = "httpHandler";
     protected final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
@@ -498,8 +497,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                          * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                          */
                         if (future.getRequest().getParts() != null) {
-                            String contentType = future.getNettyRequest().getHeader("Content-Type");
-                            String length = future.getNettyRequest().getHeader("Content-Length");
+                            String contentType = future.getNettyRequest().getHeader(HttpHeaders.Names.CONTENT_TYPE);
+                            String length = future.getNettyRequest().getHeader(HttpHeaders.Names.CONTENT_LENGTH);
                             body = new MultipartBody(future.getRequest().getParts(), contentType, length);
                         }
 
@@ -603,9 +602,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (webSocket) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            nettyRequest.addHeader("Origin", "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
-            nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
-            nettyRequest.addHeader("Sec-WebSocket-Version", "13");
+            nettyRequest.addHeader(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
+            nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
+            nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
         }
 
         if (host != null) {
@@ -724,16 +723,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         // Add default accept headers.
-        if (request.getHeaders().getFirstValue("Accept") == null) {
+        if (request.getHeaders().getFirstValue(HttpHeaders.Names.ACCEPT) == null) {
             nettyRequest.setHeader(HttpHeaders.Names.ACCEPT, "*/*");
         }
 
-        if (request.getHeaders().getFirstValue("User-Agent") != null) {
-            nettyRequest.setHeader("User-Agent", request.getHeaders().getFirstValue("User-Agent"));
+        if (request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT) != null) {
+            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT));
         } else if (config.getUserAgent() != null) {
-            nettyRequest.setHeader("User-Agent", config.getUserAgent());
+            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
         } else {
-            nettyRequest.setHeader("User-Agent", AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
+            nettyRequest.setHeader(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
@@ -780,7 +779,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setContent(ChannelBuffers.wrappedBuffer(sb.toString().getBytes(bodyCharset)));
 
                     if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
-                        nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, "application/x-www-form-urlencoded");
+                        nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
                     }
 
                 } else if (request.getParts() != null) {
@@ -1600,7 +1599,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 request.getConnectionPoolKeyStrategy(),//
                 proxyServer);
 
-        if (request.getHeaders().getFirstValue("Expect") != null && request.getHeaders().getFirstValue("Expect").equalsIgnoreCase("100-Continue")) {
+        if (request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT) != null && request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT).equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
             f.getAndSetWriteBody(false);
         }
         return f;
@@ -2260,7 +2259,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
                 String c = response.getHeader(HttpHeaders.Names.CONNECTION);
                 if (c == null) {
-                    c = response.getHeader("connection");
+                    c = response.getHeader(HttpHeaders.Names.CONNECTION.toLowerCase());
                 }
 
                 final boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
@@ -2274,8 +2273,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     return;
                 }
 
-                String accept = response.getHeader("Sec-WebSocket-Accept");
-                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(WEBSOCKET_KEY));
+                String accept = response.getHeader(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
+                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
                 if (accept == null || !accept.equals(key)) {
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
