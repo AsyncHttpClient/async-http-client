@@ -435,7 +435,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return channel;
     }
 
-    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future, final HttpRequest nettyRequest) {
+    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
+
+        HttpRequest nettyRequest = future.getNettyRequest();
+
         try {
             /**
              * If the channel is dead because it was pooled and the remote server decided to close it, we just let it go and the closeChannel do it's work.
@@ -445,7 +448,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             Body body = null;
-            if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+            if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
                 BodyGenerator bg = future.getRequest().getBodyGenerator();
                 if (bg != null) {
                     // Netty issue with chunking.
@@ -472,8 +475,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (future.getAsyncHandler() instanceof TransferCompletionHandler) {
 
                 FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-                for (String s : future.getNettyRequest().getHeaderNames()) {
-                    for (String header : future.getNettyRequest().getHeaders(s)) {
+                for (String s : nettyRequest.getHeaderNames()) {
+                    for (String header : nettyRequest.getHeaders(s)) {
                         h.add(s, header);
                     }
                 }
@@ -497,7 +500,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (future.getAndSetWriteBody(true)) {
-                if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+                if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
 
                     if (future.getRequest().getFile() != null) {
                         final File file = future.getRequest().getFile();
@@ -538,8 +541,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                          * TODO: AHC-78: SSL + zero copy isn't supported by the MultiPart class and pretty complex to implements.
                          */
                         if (future.getRequest().getParts() != null) {
-                            String contentType = future.getNettyRequest().getHeader(HttpHeaders.Names.CONTENT_TYPE);
-                            String length = future.getNettyRequest().getHeader(HttpHeaders.Names.CONTENT_LENGTH);
+                            String contentType = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+                            String length = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_LENGTH);
                             body = new MultipartBody(future.getRequest().getParts(), contentType, length);
                         }
 
@@ -953,7 +956,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
 
             try {
-                writeRequest(channel, config, f, nettyRequest);
+                writeRequest(channel, config, f);
             } catch (Exception ex) {
                 log.debug("writeRequest failure", ex);
                 if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
@@ -2144,7 +2147,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (statusCode == 100) {
                         future.getAndSetWriteHeaders(false);
                         future.getAndSetWriteBody(true);
-                        writeRequest(ctx.getChannel(), config, future, nettyRequest);
+                        writeRequest(ctx.getChannel(), config, future);
                         return;
                     }
 

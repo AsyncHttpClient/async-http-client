@@ -52,11 +52,10 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
 
     private NettyConnectListener(AsyncHttpClientConfig config,
-                                 NettyResponseFuture<T> future,
-                                 HttpRequest nettyRequest) {
+                                 NettyResponseFuture<T> future) {
         this.config = config;
         this.future = future;
-        this.nettyRequest = nettyRequest;
+        this.nettyRequest = future.getNettyRequest();
     }
 
     public NettyResponseFuture<T> future() {
@@ -82,7 +81,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 }
             }
 
-            future.provider().writeRequest(f.getChannel(), config, future, nettyRequest);
+            future.provider().writeRequest(f.getChannel(), config, future);
         } else {
             Throwable cause = f.getCause();
 
@@ -148,7 +147,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 future.setNettyRequest(nettyRequest);
                 future.setRequest(request);
             }
-            return new NettyConnectListener<T>(config, future, nettyRequest);
+            return new NettyConnectListener<T>(config, future);
         }
     }
 }
