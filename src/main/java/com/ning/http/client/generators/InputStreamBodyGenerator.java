@@ -79,7 +79,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
 
             if (patchNettyChunkingIssue) {
                 if (read == -1) {
-                    // Since we are chuncked, we must output extra bytes before considering the input stream closed.
+                    // Since we are chunked, we must output extra bytes before considering the input stream closed.
                     // chunking requires to end the chunking:
                     // - A Terminating chunk of  "0\r\n".getBytes(),
                     // - Then a separate packet of "\r\n".getBytes()
