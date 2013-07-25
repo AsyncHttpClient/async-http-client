@@ -438,6 +438,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
 
         HttpRequest nettyRequest = future.getNettyRequest();
+        boolean ssl = channel.getPipeline().get(SslHandler.class) != null;
 
         try {
             /**
@@ -511,7 +512,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             fileLength = raf.length();
 
                             ChannelFuture writeFuture;
-                            if (channel.getPipeline().get(SslHandler.class) != null) {
+                            if (ssl) {
                                 writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, 8192));
                             } else {
                                 final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
@@ -547,7 +548,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         ChannelFuture writeFuture;
-                        if (channel.getPipeline().get(SslHandler.class) == null && (body instanceof RandomAccessBody)) {
+                        if (!ssl && body instanceof RandomAccessBody) {
                             BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
                             writeFuture = channel.write(bodyFileRegion);
                         } else {
