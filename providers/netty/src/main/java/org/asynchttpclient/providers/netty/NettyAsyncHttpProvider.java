@@ -220,9 +220,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
         webSocketBootstrap = new ClientBootstrap(socketChannelFactory);
         secureWebSocketBootstrap = new ClientBootstrap(socketChannelFactory);
-        configureNetty();
-
         this.config = config;
+
+        configureNetty();
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
