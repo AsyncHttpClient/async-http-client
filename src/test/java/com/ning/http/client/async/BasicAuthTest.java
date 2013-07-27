@@ -26,6 +26,7 @@ import com.ning.http.client.Response;
 import com.ning.http.client.SimpleAsyncHttpClient;
 import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
+
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -48,6 +49,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -72,6 +74,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     protected final static String admin = "admin";
 
     private Server server2;
+    
+    public abstract String getProviderClass();
 
     @BeforeClass(alwaysRun = true)
     @Override
@@ -475,7 +479,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void stringBuilderBodyConsumerTest() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setRealmPrincipal(user).setRealmPassword(admin).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setRealmPrincipal(user).setRealmPassword(admin).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
             StringBuilder s = new StringBuilder();
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));

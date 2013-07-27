@@ -15,6 +15,7 @@ package com.ning.http.client.async.netty;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.SimpleAsyncHttpClientTest;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 
 public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
 
@@ -28,4 +29,7 @@ public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
         return null;
     }
 
+    public String getProviderClass() {
+        return NettyAsyncHttpProvider.class.getName();
+    }
 }
