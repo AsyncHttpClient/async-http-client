@@ -68,8 +68,9 @@ public class SimpleAsyncHttpClient {
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
     private final SimpleAHCTransferListener listener;
     private final boolean derived;
+    private String providerClass;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener, String providerClass) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -77,6 +78,7 @@ public class SimpleAsyncHttpClient {
         this.errorDocumentBehaviour = errorDocumentBehaviour;
         this.asyncHttpClient = ahc;
         this.listener = listener;
+        this.providerClass = providerClass;
 
         this.derived = ahc != null;
     }
@@ -287,7 +289,10 @@ public class SimpleAsyncHttpClient {
     private AsyncHttpClient asyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
-                asyncHttpClient = new AsyncHttpClient(config);
+                if (providerClass == null)
+                    asyncHttpClient = new AsyncHttpClient(config);
+                else
+                    asyncHttpClient = new AsyncHttpClient(providerClass, config);
             }
         }
         return asyncHttpClient;
@@ -400,6 +405,7 @@ public class SimpleAsyncHttpClient {
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
         private AsyncHttpClient ahc = null;
         private SimpleAHCTransferListener listener = null;
+        private String providerClass = null;
 
         public Builder() {
             requestBuilder = new RequestBuilder("GET", false);
@@ -659,6 +665,11 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
+        public Builder setProviderClass(String providerClass) {
+            this.providerClass = providerClass;
+            return this;
+        }
+
         public SimpleAsyncHttpClient build() {
 
             if (realmBuilder != null) {
@@ -671,7 +682,7 @@ public class SimpleAsyncHttpClient {
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener, providerClass);
 
             return sc;
         }
