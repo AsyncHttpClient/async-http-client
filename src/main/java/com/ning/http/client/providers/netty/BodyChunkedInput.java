@@ -58,7 +58,7 @@ class BodyChunkedInput implements ChunkedInput {
                 endOfInput = true;
                 return null;
             } else {
-                endOfInput = r == contentLength || r < chunkSize;
+                endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
                 buffer.flip();
                 return ChannelBuffers.wrappedBuffer(buffer);
             }
