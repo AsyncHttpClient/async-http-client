@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -576,6 +577,16 @@ public class AsyncHttpClient implements Closeable {
                     new Class[]{AsyncHttpClientConfig.class}).newInstance(new Object[]{config});
         } catch (Throwable t) {
 
+            if (t instanceof InvocationTargetException) {
+                final InvocationTargetException ite = (InvocationTargetException) t;
+                if (logger.isErrorEnabled()) {
+                    logger.error(
+                            "Unable to instantiate provider {}.  Trying other providers.",
+                            className);
+                    logger.error(ite.getCause().toString(), ite.getCause());
+                }
+            }
+        	
             // Let's try with another classloader
             try {
                 Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>)
