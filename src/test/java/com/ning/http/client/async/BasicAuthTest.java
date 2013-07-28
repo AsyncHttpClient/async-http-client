@@ -23,8 +23,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Response;
-import com.ning.http.client.SimpleAsyncHttpClient;
-import com.ning.http.client.consumers.AppendableBodyConsumer;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 
 import org.apache.log4j.ConsoleAppender;
@@ -75,8 +73,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     private Server server2;
     
-    public abstract String getProviderClass();
-
     @BeforeClass(alwaysRun = true)
     @Override
     public void setUpGlobal() throws Exception {
@@ -479,15 +475,19 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void stringBuilderBodyConsumerTest() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setRealmPrincipal(user).setRealmPassword(admin).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        AsyncHttpClient client = getAsyncHttpClient(null);
+        
         try {
-            StringBuilder s = new StringBuilder();
-            Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
+            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl())
+                    .setHeader("Content-Type", "text/html")
+                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())))
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            Future<Response> f = r.execute();
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = f.get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(s.toString(), MY_MESSAGE);
+            assertEquals(response.getResponseBody(), MY_MESSAGE);
             assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(response.getHeader("X-Auth"));
         } finally {

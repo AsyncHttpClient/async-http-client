@@ -16,16 +16,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicAuthTest;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 
 public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.nettyProvider(config);
-    }
-    
-    public String getProviderClass() {
-        return NettyAsyncHttpProvider.class.getName();
     }
 }

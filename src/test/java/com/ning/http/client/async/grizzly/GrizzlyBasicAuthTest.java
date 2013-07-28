@@ -17,16 +17,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.BasicAuthTest;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider;
 
 public class GrizzlyBasicAuthTest extends BasicAuthTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return ProviderUtil.grizzlyProvider(config);
-    }
-
-    public String getProviderClass() {
-        return GrizzlyAsyncHttpProvider.class.getName();
     }
 }
