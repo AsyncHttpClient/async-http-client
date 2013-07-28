@@ -623,11 +623,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         if (!m.equals(HttpMethod.CONNECT)) {
-            for (Entry<String, List<String>> header : request.getHeaders()) {
-                String name = header.getKey();
-                if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
-                    for (String value : header.getValue()) {
-                        nettyRequest.addHeader(name, value);
+            FluentCaseInsensitiveStringsMap h = request.getHeaders();
+            if (h != null) {
+                for (Entry<String, List<String>> header : h) {
+                    String name = header.getKey();
+                    if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
+                        for (String value : header.getValue()) {
+                            nettyRequest.addHeader(name, value);
+                        }
                     }
                 }
             }
