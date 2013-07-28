@@ -198,7 +198,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             }
         };
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).setHeader("Custom", "custom").setListener(listener).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).setHeader("Custom", "custom").setListener(listener).build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
 
