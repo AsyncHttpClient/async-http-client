@@ -16,78 +16,61 @@ import org.asynchttpclient.Body;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.stream.ChunkedInput;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
  */
-class BodyChunkedInput
-        implements ChunkedInput {
+class BodyChunkedInput implements ChunkedInput {
+
+    private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 
     private final Body body;
+    private final int contentLength;
+    private final int chunkSize;
 
-    private final int chunkSize = 1024 * 8;
-
-    private ByteBuffer nextChunk;
-
-    private static final ByteBuffer EOF = ByteBuffer.allocate(0);
-
-    private boolean endOfInput = false;
+    private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
         if (body == null) {
             throw new IllegalArgumentException("no body specified");
         }
         this.body = body;
+        contentLength = (int) body.getContentLength();
+        if (contentLength <= 0)
+            chunkSize = DEFAULT_CHUNK_SIZE;
+        else
+            chunkSize = Math.min(contentLength, DEFAULT_CHUNK_SIZE);
     }
 
-    private ByteBuffer peekNextChunk()
-            throws IOException {
-
-        if (nextChunk == null) {
-            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
-            long length = body.read(buffer);
-            if (length < 0) {
-                // Negative means this is finished
-                buffer.flip();
-                nextChunk = buffer;
-                endOfInput = true;
-            } else if (length == 0) {
-                // Zero means we didn't get anything this time, but may get next time
-                buffer.flip();
-                nextChunk = null;
-            } else {
-                buffer.flip();
-                nextChunk = buffer;
-            }
-        }
-        return nextChunk;
-    }
-
-    /**
-     * Having no next chunk does not necessarily means end of input, other chunks may arrive later
-     */
     public boolean hasNextChunk() throws Exception {
-        return peekNextChunk() != null;
+        // unused
+        throw new UnsupportedOperationException();
     }
 
     public Object nextChunk() throws Exception {
-        ByteBuffer buffer = peekNextChunk();
-        if (buffer == null || buffer == EOF) {
+        if (endOfInput) {
             return null;
+        } else {
+            ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
+            long r = body.read(buffer);
+            if (r < 0L) {
+                endOfInput = true;
+                return null;
+            } else {
+                endOfInput = r == contentLength || r < chunkSize && contentLength > 0;
+                buffer.flip();
+                return ChannelBuffers.wrappedBuffer(buffer);
+            }
         }
-        nextChunk = null;
-
-        return ChannelBuffers.wrappedBuffer(buffer);
     }
 
     public boolean isEndOfInput() throws Exception {
+        // called by ChunkedWriteHandler AFTER nextChunk
         return endOfInput;
     }
 
     public void close() throws Exception {
         body.close();
     }
-
 }
