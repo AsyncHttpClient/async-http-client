@@ -473,7 +473,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
-    public void StringBuilderBodyConsumerTest() throws Throwable {
+    public void stringBuilderBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setRealmPrincipal(user).setRealmPassword(admin).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {

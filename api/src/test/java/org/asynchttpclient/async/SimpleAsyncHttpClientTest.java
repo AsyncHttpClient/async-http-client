@@ -57,7 +57,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void StringBuilderBodyConsumerTest() throws Throwable {
+    public void stringBuilderBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
@@ -74,7 +74,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void ByteArrayOutputStreamBodyConsumerTest() throws Throwable {
+    public void byteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
@@ -91,7 +91,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void RequestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
+    public void requestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         try {
