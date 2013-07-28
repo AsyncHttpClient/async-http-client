@@ -587,7 +587,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (request.getVirtualHost() != null) {
             host = request.getVirtualHost();
         } else {
-            AsyncHttpProviderUtils.getHost(uri);
+            host = AsyncHttpProviderUtils.getHost(uri);
     	}
 
         HttpRequest nettyRequest;
