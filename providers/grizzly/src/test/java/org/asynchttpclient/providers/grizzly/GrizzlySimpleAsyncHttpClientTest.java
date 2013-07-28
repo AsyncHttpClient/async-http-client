@@ -24,4 +24,7 @@ public class GrizzlySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest 
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
+    public String getProviderClass() {
+        return GrizzlyAsyncHttpProvider.class.getName();
+    }
 }

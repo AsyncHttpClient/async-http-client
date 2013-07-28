@@ -28,4 +28,7 @@ public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
         return null;
     }
 
+    public String getProviderClass() {
+        return NettyAsyncHttpProvider.class.getName();
+    }
 }

@@ -40,10 +40,12 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     private final static String MY_MESSAGE = "my message";
 
+    public abstract String getProviderClass();
+
     @Test(groups = { "standalone", "default_provider" })
     public void inpuStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
@@ -59,7 +61,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void stringBuilderBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
             StringBuilder s = new StringBuilder();
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
@@ -76,7 +78,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void byteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 60 * 1000).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
@@ -93,7 +95,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void requestByteArrayOutputStreamBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
@@ -112,7 +114,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
      */
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutZeroBytesFileTest() throws Throwable {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 1000).setUrl(getTargetUrl() + "/testPutZeroBytesFileTest.txt").setHeader("Content-Type", "text/plain")
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setIdleConnectionInPoolTimeoutInMs(100).setMaximumConnectionsTotal(50).setRequestTimeoutInMs(5 * 1000).setUrl(getTargetUrl() + "/testPutZeroBytesFileTest.txt").setHeader("Content-Type", "text/plain")
                 .build();
         try {
             File tmpfile = File.createTempFile("testPutZeroBytesFile", ".tmp");
@@ -133,7 +135,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testDerive() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
         try {
             assertNotSame(derived, client);
@@ -145,7 +147,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testDeriveOverrideURL() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl("http://invalid.url").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl("http://invalid.url").build();
         ByteArrayOutputStream o = new ByteArrayOutputStream(10);
 
         InputStreamBodyGenerator generator = new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes()));
@@ -197,7 +199,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             }
         };
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).setHeader("Custom", "custom").setListener(listener).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).setHeader("Custom", "custom").setListener(listener).build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
 
@@ -217,7 +219,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
         try {
-            new SimpleAsyncHttpClient.Builder().build().derive().build();
+            new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
             assertTrue(true);
         } catch (NullPointerException ex) {
             fail();
@@ -226,7 +228,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testCloseDerivedValidMaster() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
         try {
             derived.get().get();
@@ -243,7 +245,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testCloseMasterInvalidDerived() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
 
         client.close();
@@ -262,7 +264,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMultiPartPut() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
             Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
 
@@ -286,7 +288,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMultiPartPost() throws Exception {
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/multipart").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
             Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
 
