@@ -43,7 +43,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         if (inputStream.markSupported()) {
             inputStream.mark(0);
         } else {
-            logger.info("inputStream.markSupported() not supported. Some features will not works");
+            logger.info("inputStream.markSupported() not supported. Some features will not work.");
         }
     }
 
@@ -117,6 +117,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
             } else {
                 if (read > 0) {
                     buffer.put(chunk, 0, read);
+                } else {
+                    if (inputStream.markSupported()) {
+                        inputStream.reset();
+                    }
                 }
             }
             return read;
