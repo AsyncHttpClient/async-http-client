@@ -267,7 +267,7 @@ public class GrizzlyResponse implements Response {
             List<String> values = headers.getHeaders().get("set-cookie");
             if (isNonEmpty(values)) {
                 CookiesBuilder.ServerCookiesBuilder builder =
-                    new CookiesBuilder.ServerCookiesBuilder(false);
+                    new CookiesBuilder.ServerCookiesBuilder(false, true);
                 for (String header : values) {
                     builder.parse(header);
                 }
