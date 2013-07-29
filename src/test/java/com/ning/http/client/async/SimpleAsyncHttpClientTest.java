@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static junit.framework.Assert.assertTrue;
@@ -253,7 +254,14 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             derived.get().get();
             fail("Expected closed AHC");
         } catch (IOException e) {
-            // expected
+            // expected -- Seems to me that this behavior conflicts with the requirements of Future.get()
+        } catch (ExecutionException ee) {
+            if (!(ee.getCause() instanceof IOException)) {
+                fail("ExecutionException thrown, but the cause was not an instance of IOException.");
+            }
+        } catch (Throwable t) {
+            fail("Unexpected Exception thrown: " + t.toString());
+            t.printStackTrace();
         }
     }
 
