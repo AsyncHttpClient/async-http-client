@@ -369,7 +369,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
-                // only occurs when a HttpMethod.CONNECT is used agains a proxy that require upgrading from http to
+                // only occurs when a HttpMethod.CONNECT is used against a proxy that require upgrading from http to
                 // https.
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
@@ -792,10 +792,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
 
                 } else if (request.getParts() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
+                    int length = computeAndSetContentLength(request, nettyRequest);
 
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERED_BYTES;
+                    if (length == -1) {
+                        length = MAX_BUFFERED_BYTES;
                     }
 
                     MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
@@ -808,18 +808,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                      */
 
                     if (isSecure(uri)) {
-                        ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                        ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
                         mre.writeRequest(new ChannelBufferOutputStream(b));
                         nettyRequest.setContent(b);
                     }
                 } else if (request.getEntityWriter() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
+                    int length = computeAndSetContentLength(request, nettyRequest);
 
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERED_BYTES;
+                    if (length == -1) {
+                        length = MAX_BUFFERED_BYTES;
                     }
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
                     request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                     nettyRequest.setContent(b);
@@ -1015,10 +1015,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return c.future();
         }
 
-        boolean directInvokation = true;
-        if (IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker()) {
-            directInvokation = false;
-        }
+        boolean directInvokation = !(IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker());
 
         if (directInvokation && !asyncConnect && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
