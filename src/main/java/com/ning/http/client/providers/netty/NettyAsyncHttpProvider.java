@@ -152,7 +152,6 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
-    private final static String WEBSOCKET_KEY = "Sec-WebSocket-Key";
     private final static String HTTP_HANDLER = "httpHandler";
     protected final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
@@ -397,7 +396,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
-                // only occurs when a HttpMethod.CONNECT is used agains a proxy that require upgrading from http to
+                // only occurs when a HttpMethod.CONNECT is used against a proxy that require upgrading from http to
                 // https.
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
@@ -637,7 +636,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
             nettyRequest.addHeader(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + uri.getPort());
-            nettyRequest.addHeader(WEBSOCKET_KEY, WebSocketUtil.getKey());
+            nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
             nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
         }
 
@@ -817,10 +816,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
 
                 } else if (request.getParts() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
+                    int length = computeAndSetContentLength(request, nettyRequest);
 
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERED_BYTES;
+                    if (length == -1) {
+                        length = MAX_BUFFERED_BYTES;
                     }
 
                     MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
@@ -833,18 +832,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                      */
 
                     if (isSecure(uri)) {
-                        ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                        ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
                         mre.writeRequest(new ChannelBufferOutputStream(b));
                         nettyRequest.setContent(b);
                     }
                 } else if (request.getEntityWriter() != null) {
-                    int lenght = computeAndSetContentLength(request, nettyRequest);
+                    int length = computeAndSetContentLength(request, nettyRequest);
 
-                    if (lenght == -1) {
-                        lenght = MAX_BUFFERED_BYTES;
+                    if (length == -1) {
+                        length = MAX_BUFFERED_BYTES;
                     }
 
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(lenght);
+                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
                     request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
                     nettyRequest.setContent(b);
@@ -1017,7 +1016,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
-        if (System.getProperty("os.name").toLowerCase().indexOf("win") == -1) {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
             bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(REUSE_ADDRESS));
         }
 
@@ -1045,10 +1044,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return c.future();
         }
 
-        boolean directInvokation = true;
-        if (IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker()) {
-            directInvokation = false;
-        }
+        boolean directInvokation = !(IN_IO_THREAD.get() && DefaultChannelFuture.isUseDeadLockChecker());
 
         if (directInvokation && !asyncConnect && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
@@ -2338,7 +2334,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
 
                 String accept = response.getHeader(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(WEBSOCKET_KEY));
+                String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHeader(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
                 if (accept == null || !accept.equals(key)) {
                     throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
                 }
