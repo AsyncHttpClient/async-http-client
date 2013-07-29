@@ -1402,7 +1402,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (!remotelyClosed(ctx.getChannel(), future)) {
-                    abort(future, new IOException("Remotely Closed " + ctx.getChannel()));
+                    abort(future, new IOException("Remotely Closed"));
                 }
             } else {
                 closeChannel(ctx);
