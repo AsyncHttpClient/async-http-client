@@ -255,13 +255,6 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             fail("Expected closed AHC");
         } catch (IOException e) {
             // expected -- Seems to me that this behavior conflicts with the requirements of Future.get()
-        } catch (ExecutionException ee) {
-            if (!(ee.getCause() instanceof IOException)) {
-                fail("ExecutionException thrown, but the cause was not an instance of IOException.");
-            }
-        } catch (Throwable t) {
-            fail("Unexpected Exception thrown: " + t.toString());
-            t.printStackTrace();
         }
     }
 
