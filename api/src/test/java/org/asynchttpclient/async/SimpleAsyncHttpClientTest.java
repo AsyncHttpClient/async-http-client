@@ -253,10 +253,6 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         try {
             derived.get().get();
             fail("Expected closed AHC");
-        } catch (ExecutionException ee) {
-            if (!(ee.getCause() instanceof IOException)) {
-                fail("Unexpected failure: " + ee.getCause());
-            }
         } catch (IOException e) {
             // expected
         }
