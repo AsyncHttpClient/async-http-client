@@ -35,6 +35,8 @@ import java.security.Security;
  */
 public class SslUtils {
 
+    private static SSLContext context = null;
+
     public static SSLEngine getSSLEngine()
             throws GeneralSecurityException, IOException {
         SSLEngine engine = null;
@@ -50,12 +52,16 @@ public class SslUtils {
 
     public static SSLContext getSSLContext()
             throws GeneralSecurityException, IOException {
-        SSLConfig config = new SSLConfig();
-        if (config.keyStoreLocation == null || config.trustStoreLocation == null) {
-            return getLooseSSLContext();
-        } else {
-            return getStrictSSLContext(config);
+        if (context == null) {
+            SSLConfig config = new SSLConfig();
+            if (config.keyStoreLocation == null
+                    || config.trustStoreLocation == null) {
+                context = getLooseSSLContext();
+            } else {
+                context = getStrictSSLContext(config);
+            }
         }
+        return context;
     }
 
     static SSLContext getStrictSSLContext(SSLConfig config)
