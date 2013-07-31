@@ -119,21 +119,24 @@ public final class EventHandler {
 
     @SuppressWarnings("UnusedParameters")
     public void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTransactionContext context =
+                HttpTransactionContext.get(ctx.getConnection());
         final AsyncHandler handler = context.getHandler();
-		if (handler instanceof TransferCompletionHandler) {
-			((TransferCompletionHandler) handler).onHeaderWriteCompleted();
-		}
+        if (handler instanceof TransferCompletionHandler) {
+            ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
+        }
     }
 
     public void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTransactionContext context =
+                HttpTransactionContext.get(ctx.getConnection());
         final AsyncHandler handler = context.getHandler();
-		if (handler instanceof TransferCompletionHandler) {
-			final int written = content.getContent().remaining();
-			final long total = context.getTotalBodyWritten().addAndGet(written);
-			((TransferCompletionHandler) handler).onContentWriteProgress(written, total, content.getHttpHeader().getContentLength());
-		}
+        if (handler instanceof TransferCompletionHandler) {
+            final int written = content.getContent().remaining();
+            final long total = context.getTotalBodyWritten().addAndGet(written);
+            ((TransferCompletionHandler) handler).onContentWriteProgress(
+                    written, total, content.getHttpHeader().getContentLength());
+        }
     }
 
     public void onInitialLineParsed(HttpHeader httpHeader,
