@@ -1332,7 +1332,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             p.onClose(ctx, e);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
-                if (!remotelyClosed(ctx.getChannel(), future)) {
+                if (remotelyClosed(ctx.getChannel(), future)) {
                     abort(future, new IOException("Remotely Closed"));
                 }
             } else {
@@ -1344,18 +1344,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
 
         if (isClose.get()) {
-            return false;
+            return true;
         }
 
         connectionsPool.removeAll(channel);
 
-        if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() instanceof NettyResponseFuture) {
-            future = (NettyResponseFuture<?>) channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+        if (future == null) {
+            Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+            if (attachment instanceof NettyResponseFuture)
+                future = (NettyResponseFuture<?>) attachment;
         }
 
         if (future == null || future.cannotBeReplay()) {
             log.debug("Unable to recover future {}\n", future);
-            return false;
+            return true;
         }
 
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
@@ -1365,13 +1367,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             nextRequest(future.getRequest(), future);
-            return true;
+            return false;
         } catch (IOException iox) {
             future.setState(NettyResponseFuture.STATE.CLOSED);
             future.abort(iox);
             log.error("Remotely Closed, unable to recover", iox);
         }
-        return false;
+        return true;
     }
 
     private void markAsDone(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
