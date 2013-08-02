@@ -124,20 +124,10 @@ public class MultipartRequestEntity implements RequestEntity {
         return true;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.commons.httpclient.methods.RequestEntity#writeRequest(java.io.OutputStream)
-     */
     public void writeRequest(OutputStream out) throws IOException {
         Part.sendParts(out, parts, multipartBoundary);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.commons.httpclient.methods.RequestEntity#getContentLength()
-     */
     public long getContentLength() {
         try {
             return Part.getLengthOfParts(parts, multipartBoundary);
@@ -147,11 +137,6 @@ public class MultipartRequestEntity implements RequestEntity {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.commons.httpclient.methods.RequestEntity#getContentType()
-     */
     public String getContentType() {
         return contentType;
     }
