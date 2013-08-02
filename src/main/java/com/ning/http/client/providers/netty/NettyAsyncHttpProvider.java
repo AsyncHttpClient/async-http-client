@@ -199,8 +199,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final Protocol webSocketProtocol = new WebSocketProtocol();
 
     private static boolean isNTLM(List<String> auth) {
-		return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
-	}
+        return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
+    }
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
@@ -923,7 +923,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             HttpRequest nettyRequest = null;
 
             if (f == null) {
-            	nettyRequest = buildRequest(config, request, uri, false, bufferedBytes, proxyServer);
+                nettyRequest = buildRequest(config, request, uri, false, bufferedBytes, proxyServer);
                 f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
             } else {
                 nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes, proxyServer);
@@ -1168,9 +1168,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void addType3NTLMAuthorizationHeader(
-    		List<String> auth,
-    		FluentCaseInsensitiveStringsMap headers,
-    		String username,
+            List<String> auth,
+            FluentCaseInsensitiveStringsMap headers,
+            String username,
             String password,
             String domain,
             String workstation)  throws NTLMEngineException {
@@ -1202,7 +1202,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(uri.getRawPath()).setMethodName(request.getMethod()).setNtlmMessageType2Received(true).build();
             future.getAndSetAuth(false);
         } else {
-        	addType3NTLMAuthorizationHeader(wwwAuth, headers, principal, password, ntlmDomain, ntlmHost);
+            addType3NTLMAuthorizationHeader(wwwAuth, headers, principal, password, ntlmDomain, ntlmHost);
 
             Realm.RealmBuilder realmBuilder;
             Realm.AuthScheme authScheme;
@@ -1377,7 +1377,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             p.onClose(ctx, e);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
-                if (!remotelyClosed(ctx.getChannel(), future)) {
+                if (remotelyClosed(ctx.getChannel(), future)) {
                     abort(future, new IOException("Remotely Closed"));
                 }
             } else {
@@ -1389,18 +1389,20 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
 
         if (isClose.get()) {
-            return false;
+            return true;
         }
 
         connectionsPool.removeAll(channel);
 
-        if (future == null && channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment() instanceof NettyResponseFuture) {
-            future = (NettyResponseFuture<?>) channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+        if (future == null) {
+            Object attachment = channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
+            if (attachment instanceof NettyResponseFuture)
+                future = (NettyResponseFuture<?>) attachment;
         }
 
         if (future == null || future.cannotBeReplay()) {
             log.debug("Unable to recover future {}\n", future);
-            return false;
+            return true;
         }
 
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
@@ -1409,13 +1411,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             nextRequest(future.getRequest(), future);
-            return true;
+            return false;
         } catch (IOException iox) {
             future.setState(NettyResponseFuture.STATE.CLOSED);
             future.abort(iox);
             log.error("Remotely Closed, unable to recover", iox);
+            return true;
         }
-        return false;
     }
 
     private void markAsDone(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
