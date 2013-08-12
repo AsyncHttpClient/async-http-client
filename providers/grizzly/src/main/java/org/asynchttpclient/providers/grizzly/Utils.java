@@ -85,6 +85,7 @@ public final class Utils {
     }
 
     public static boolean isSpdyConnection(final Connection c) {
-        return SPDY.get(c);
+        Boolean result = SPDY.get(c);
+        return (result != null ? result : false);
     }
 }
