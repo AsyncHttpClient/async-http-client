@@ -106,6 +106,7 @@ public class AsyncHttpClientConfig {
     protected boolean allowSslConnectionPool;
     protected boolean useRawUrl;
     protected boolean removeQueryParamOnRedirect;
+    protected boolean managedApplicationThreadPool;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
     protected boolean strict302Handling;
@@ -190,6 +191,7 @@ public class AsyncHttpClientConfig {
         this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
 
         if (applicationThreadPool == null) {
+            managedApplicationThreadPool = true;
             this.applicationThreadPool = Executors.newCachedThreadPool();
         } else {
             this.applicationThreadPool = applicationThreadPool;
@@ -340,6 +342,19 @@ public class AsyncHttpClientConfig {
      */
     public ExecutorService executorService() {
         return applicationThreadPool;
+    }
+
+    /**
+     * @return <code>true</code> if this <code>AsyncHttpClientConfig</code> instance created the
+     *  {@link ExecutorService} returned by {@link #executorService()}, otherwise returns <code>false</code>.
+     *  The return from this method is typically used by the various provider implementations to determine
+     *  if it should shutdown the {@link ExecutorService} when the {@link AsyncHttpClient} is closed.  Developers
+     *  should take care and not share managed {@link ExecutorService} instances between client instances.
+     *
+     * @since 2.2.0
+     */
+    public boolean isManagedExecutorService() {
+        return managedApplicationThreadPool;
     }
 
     /**

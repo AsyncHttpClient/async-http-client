@@ -183,9 +183,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         try {
             connectionManager.destroy();
             clientTransport.stop();
-            final ExecutorService service = clientConfig.executorService();
-            if (service != null) {
-                service.shutdown();
+            if (clientConfig.isManagedExecutorService()) {
+                final ExecutorService service = clientConfig.executorService();
+                // service may be null due to a custom configuration that
+                // leverages Grizzly's SameThreadIOStrategy.
+                if (service != null) {
+                    service.shutdown();
+                }
             }
             if (timeoutExecutor != null) {
                 timeoutExecutor.stop();
