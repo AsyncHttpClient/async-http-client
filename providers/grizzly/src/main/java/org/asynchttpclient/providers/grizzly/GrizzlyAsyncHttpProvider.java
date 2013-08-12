@@ -601,7 +601,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         new SpdySession(connection, false, spdyHandlerFilter);
                 spdySession.setLocalInitialWindowSize(spdyHandlerFilter.getInitialWindowSize());
                 spdySession.setLocalMaxConcurrentStreams(spdyHandlerFilter.getMaxConcurrentStreams());
-
+                Utils.setSpdyConnection(connection);
                 SpdySession.bind(connection, spdySession);
                 return SPDY;
             } else if (strings.contains(HTTP)) {

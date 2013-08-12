@@ -27,6 +27,8 @@ public final class Utils {
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IGNORE");
     private static final Attribute<AtomicInteger> REQUEST_IN_FLIGHT =
                 Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IN-FLIGHT");
+    private static final Attribute<Boolean> SPDY =
+            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-SPDY-CONNECTION");
 
 
     // ------------------------------------------------------------ Constructors
@@ -37,10 +39,6 @@ public final class Utils {
 
     // ---------------------------------------------------------- Public Methods
 
-
-    public static boolean isSecure(final String uri) {
-        return (uri.startsWith("https:") || uri.startsWith("wss:"));
-    }
 
     public static boolean isSecure(final URI uri) {
         final String scheme = uri.getScheme();
@@ -80,5 +78,13 @@ public final class Utils {
     public static int getRequestInFlightCount(final AttributeStorage storage) {
         AtomicInteger counter = REQUEST_IN_FLIGHT.get(storage);
         return ((counter != null) ? counter.get() : 0);
+    }
+
+    public static void setSpdyConnection(final Connection c) {
+        SPDY.set(c, Boolean.TRUE);
+    }
+
+    public static boolean isSpdyConnection(final Connection c) {
+        return SPDY.get(c);
     }
 }

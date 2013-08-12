@@ -19,8 +19,8 @@ import org.asynchttpclient.websocket.WebSocketListener;
 import org.asynchttpclient.websocket.WebSocketPingListener;
 import org.asynchttpclient.websocket.WebSocketPongListener;
 import org.asynchttpclient.websocket.WebSocketTextListener;
+import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
-import org.glassfish.grizzly.websockets.draft06.ClosingFrame;
 
 import java.io.ByteArrayOutputStream;
 

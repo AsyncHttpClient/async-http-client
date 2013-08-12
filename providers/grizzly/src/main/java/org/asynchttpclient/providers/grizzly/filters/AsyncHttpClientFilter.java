@@ -228,7 +228,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (httpCtx.isWSRequest() && !httpCtx.isEstablishingTunnel()) {
             try {
                 final URI wsURI = new URI(httpCtx.getWsRequestURI());
-                httpCtx.setProtocolHandler(Version.DRAFT17.createHandler(true));
+                httpCtx.setProtocolHandler(Version.RFC6455.createHandler(true));
                 httpCtx.setHandshake(
                         httpCtx.getProtocolHandler().createHandShake(wsURI));
                 requestPacket = (HttpRequestPacket)

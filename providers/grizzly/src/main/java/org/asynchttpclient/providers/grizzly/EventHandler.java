@@ -45,7 +45,6 @@ import org.glassfish.grizzly.websockets.HandshakeException;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.WebSocketHolder;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -358,8 +357,6 @@ public final class EventHandler {
     @SuppressWarnings("unchecked")
     public boolean onHttpPacketParsed(HttpHeader httpHeader, FilterChainContext ctx) {
 
-        boolean result;
-
         Utils.removeRequestInFlight(ctx.getConnection());
 
         if (cleanup != null) {
@@ -373,7 +370,6 @@ public final class EventHandler {
             return false;
         }
 
-        result = false;
         final HttpResponsePacket response =
                 (HttpResponsePacket) httpHeader;
         final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
@@ -387,7 +383,6 @@ public final class EventHandler {
                                               context.getRequest(),
                                               context.getHandler(),
                                               context.getFuture());
-                return result;
             } else {
                 cleanup(ctx);
                 final AsyncHandler handler = context.getHandler();
@@ -400,10 +395,10 @@ public final class EventHandler {
                 } else {
                     context.done();
                 }
-                return result;
             }
+            return false;
         } finally {
-            recycleRequestResponsePackets(response);
+            recycleRequestResponsePackets(ctx.getConnection(), response);
         }
 
     }
@@ -411,11 +406,14 @@ public final class EventHandler {
 
     // ----------------------------------------------------- Private Methods
 
-    private static void recycleRequestResponsePackets(final HttpResponsePacket response) {
-        HttpRequestPacket request = response.getRequest();
-        request.setExpectContent(false);
-        response.recycle();
-        request.recycle();
+    private static void recycleRequestResponsePackets(final Connection c,
+                                                      final HttpResponsePacket response) {
+        if (!Utils.isSpdyConnection(c)) {
+            HttpRequestPacket request = response.getRequest();
+            request.setExpectContent(false);
+            response.recycle();
+            request.recycle();
+        }
     }
 
     private static void processKeepAlive(final Connection c,

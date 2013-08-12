@@ -13,9 +13,17 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.async.SimpleAsyncHttpClientTest;
+
+import java.io.IOException;
+import java.util.concurrent.Future;
 
 public class GrizzlySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
 
@@ -26,5 +34,17 @@ public class GrizzlySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest 
 
     public String getProviderClass() {
         return GrizzlyAsyncHttpProvider.class.getName();
+    }
+
+    public static void main(String[] args) {
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setSpdyEnabled(true).build();
+        AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        Request request = new RequestBuilder("GET").setUrl("https://www.google.com").build();
+        try {
+            Future<Response> future = client.executeRequest(request);
+            System.out.println(future.get().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
