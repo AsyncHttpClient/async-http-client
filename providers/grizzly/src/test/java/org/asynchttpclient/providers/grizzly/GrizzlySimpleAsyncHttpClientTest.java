@@ -36,15 +36,4 @@ public class GrizzlySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest 
         return GrizzlyAsyncHttpProvider.class.getName();
     }
 
-    public static void main(String[] args) {
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setSpdyEnabled(true).build();
-        AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-        Request request = new RequestBuilder("GET").setUrl("https://www.google.com").build();
-        try {
-            Future<Response> future = client.executeRequest(request);
-            System.out.println(future.get().toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
