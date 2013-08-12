@@ -19,16 +19,21 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.connectionpool.EndpointKey;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -95,9 +100,10 @@ public class ConnectionManager {
     throws IOException {
         final EndpointKey<SocketAddress> key =
                 getEndPointKey(request, requestFuture.getProxyServer());
-
+        CompletionHandler<Connection> handler =
+                wrapHandler(request, getVerifier(), connectHandler);
         if (asyncConnect) {
-            connectionPool.take(key, connectHandler);
+            connectionPool.take(key, handler);
         } else {
             IOException ioe = null;
             GrizzlyFuture<Connection> future = connectionPool.take(key);
@@ -105,18 +111,18 @@ public class ConnectionManager {
                 // No explicit timeout when calling get() here as the Grizzly
                 // endpoint pool will time it out based on the connect timeout
                 // setting.
-                connectHandler.completed(future.get());
+                handler.completed(future.get());
             } catch (CancellationException e) {
-                connectHandler.cancelled();
+                handler.cancelled();
             } catch (ExecutionException ee) {
                 final Throwable cause = ee.getCause();
                 if (cause instanceof ConnectionPool.MaxCapacityException) {
                     ioe = (IOException) cause;
                 } else {
-                    connectHandler.failed(ee.getCause());
+                    handler.failed(ee.getCause());
                 }
             } catch (Exception ie) {
-                connectHandler.failed(ie);
+                handler.failed(ie);
             }
             if (ioe != null) {
                 throw ioe;
@@ -136,6 +142,43 @@ public class ConnectionManager {
 
     // --------------------------------------------------Package Private Methods
 
+    static CompletionHandler<Connection> wrapHandler(final Request request,
+                                                     final HostnameVerifier verifier,
+                                                     final CompletionHandler<Connection> delegate) {
+        final URI uri = request.getURI();
+        if (Utils.isSecure(uri) && verifier != null) {
+            return new EmptyCompletionHandler<Connection>() {
+                @Override
+                public void completed(Connection result) {
+                    final String host = uri.getHost();
+                    final SSLSession session = SSLUtils.getSSLEngine(result).getSession();
+                    if (!verifier.verify(host, session)) {
+                        failed(new ConnectException("Host name verification failed for host " + host));
+                    } else {
+                        delegate.completed(result);
+                    }
+
+                }
+
+                @Override
+                public void cancelled() {
+                    delegate.cancelled();
+                }
+
+                @Override
+                public void failed(Throwable throwable) {
+                    delegate.failed(throwable);
+                }
+
+                @Override
+                public void updated(Connection result) {
+                    delegate.updated(result);
+                }
+            };
+        }
+        return delegate;
+    }
+
 
     static void markConnectionAsDoNotCache(final Connection c) {
         DO_NOT_CACHE.set(c, Boolean.TRUE);
@@ -148,6 +191,10 @@ public class ConnectionManager {
 
 
     // --------------------------------------------------------- Private Methods
+
+    private HostnameVerifier getVerifier() {
+        return provider.getClientConfig().getHostnameVerifier();
+    }
 
     private EndpointKey<SocketAddress> getEndPointKey(final Request request,
                                                       final ProxyServer proxyServer) {
