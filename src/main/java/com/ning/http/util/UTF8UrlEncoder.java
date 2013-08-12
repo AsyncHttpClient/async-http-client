@@ -24,7 +24,7 @@ public class UTF8UrlEncoder {
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
-     * (all non-Ascii characers need to be encoded anyway)
+     * (all non-Ascii characters need to be encoded anyway)
      */
     private final static int[] SAFE_ASCII = new int[128];
 
@@ -58,11 +58,11 @@ public class UTF8UrlEncoder {
     public static StringBuilder appendEncoded(StringBuilder sb, String input) {
         final int[] safe = SAFE_ASCII;
 
-        for (int i = 0, len = input.length(); i < len; ++i) {
-            char c = input.charAt(i);
+        for (int c, i = 0, len = input.length(); i < len; i+= Character.charCount(c)) {
+            c = input.codePointAt(i);
             if (c <= 127) {
                 if (safe[c] != 0) {
-                    sb.append(c);
+                    sb.append((char) c);
                 } else {
                     appendSingleByteEncoded(sb, c);
                 }
@@ -86,13 +86,17 @@ public class UTF8UrlEncoder {
     }
 
     private final static void appendMultiByteEncoded(StringBuilder sb, int value) {
-        // two or three bytes? (ignoring surrogate pairs for now, which would yield 4 bytes)
         if (value < 0x800) {
             appendSingleByteEncoded(sb, (0xc0 | (value >> 6)));
             appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
-        } else {
+        } else if (value < 0x10000) {
             appendSingleByteEncoded(sb, (0xe0 | (value >> 12)));
             appendSingleByteEncoded(sb, (0x80 | ((value >> 6) & 0x3f)));
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+        } else {
+            appendSingleByteEncoded(sb, (0xf0 | (value >> 18)));
+            appendSingleByteEncoded(sb, (0x80 | (value >> 12) & 0x3f));
+            appendSingleByteEncoded(sb, (0x80 | (value >> 6) & 0x3f));
             appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
         }
     }
