@@ -55,9 +55,12 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
 
+        boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
-        if (useProxyProperties) {
-            proxyServer = ProxyUtils.createProxy(System.getProperties());
+        if (useProxySelector) {
+            proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
+        } else if (useProxyProperties) {
+            proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
         }
 
         allowPoolingConnection = true;
@@ -163,7 +166,12 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     public AsyncHttpClientConfigBean setProxyServer(ProxyServer proxyServer) {
-        this.proxyServer = proxyServer;
+        this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setProxyServerSelector(ProxyServerSelector proxyServerSelector) {
+        this.proxyServerSelector = proxyServerSelector;
         return this;
     }
 
