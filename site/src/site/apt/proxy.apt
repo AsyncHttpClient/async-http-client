@@ -61,3 +61,26 @@ Response r = responseFuture.get();
 
   You can also set the <<<ProxyServer>>> at the <<<AsyncHttpClientConfig>>> level. In that case, all request will share
   the same proxy information.
+
+Using Java System Properties
+
+  The AsyncHttpClient library supports the standard
+  {{{http://docs.oracle.com/javase/7/docs/api/java/net/doc-files/net-properties.html#Proxies}Java Proxy System Properties}}.
+  You can configure this at a global level using the <<<setUseProxyProperties(true)>>> method on the
+  <<<AsyncHttpClientConfig.Builder>>>, or by setting the <<<org.asynchttpclient.AsyncHttpClientConfig.useProxyProperties>>>
+  system property to true.
+
+Using JDK ProxySelectors
+
+  The AsyncHttpClient library also supports using the default
+  {{{http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.html}JDK ProxySelector}}.  This allows for more
+  fine grained control over which proxies to use, for example, it can be used in combination with
+  {{{https://code.google.com/p/proxy-vole/}Proxy Vole}} to use OS configured proxies or to use a proxy.pac file.
+
+  You configure this at a global level using the <<<setUseProxySelector(true)>>> method on the
+  <<<AsyncHttpClientConfig.Builder>>>, or by setting the
+   <<<org.asynchttpclient.AsyncHttpClientConfig.useProxySelector>>> system property to true.
+
+  If you don't change the default JDK <<<ProxySelector>>>, this setting is very similar to the <<<useProxyProperties>>>
+  setting, though the <<<useProxyProperties>>> setting does allow more flexibility, such as the ability to use an
+  HTTPS proxy.
