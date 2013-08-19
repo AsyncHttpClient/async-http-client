@@ -65,7 +65,8 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         final Request req = httpTransactionContext.getRequest();
         ProxyServer proxyServer = httpTransactionContext.getProvider()
                 .getClientConfig()
-                .getProxyServer();
+                .getProxyServerSelector()
+                .select(req.getOriginalURI());
         String principal = proxyServer.getPrincipal();
         String password = proxyServer.getPassword();
         Realm realm = new Realm.RealmBuilder().setPrincipal(principal)

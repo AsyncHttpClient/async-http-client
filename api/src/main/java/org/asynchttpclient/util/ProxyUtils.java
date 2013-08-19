@@ -14,13 +14,21 @@ package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.ProxyServer.Protocol;
+import org.asynchttpclient.ProxyServerSelector;
 import org.asynchttpclient.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utilities for Proxy handling.
@@ -28,6 +36,8 @@ import org.asynchttpclient.Request;
  * @author cstamas
  */
 public class ProxyUtils {
+
+    private final static Logger log = LoggerFactory.getLogger(ProxyUtils.class);
 
     private static final String PROPERTY_PREFIX = "org.asynchttpclient.AsyncHttpClientConfig.proxy.";
 
@@ -69,7 +79,10 @@ public class ProxyUtils {
     public static ProxyServer getProxyServer(AsyncHttpClientConfig config, Request request) {
         ProxyServer proxyServer = request.getProxyServer();
         if (proxyServer == null) {
-            proxyServer = config.getProxyServer();
+            ProxyServerSelector selector = config.getProxyServerSelector();
+            if (selector != null) {
+                proxyServer = selector.select(request.getOriginalURI());
+            }
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
     }
@@ -107,7 +120,10 @@ public class ProxyUtils {
             if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
                     if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase())) {
+                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase(Locale.ENGLISH))) {
+                        return true;
+                    } else if (nonProxyHost.endsWith("*") && nonProxyHost.length() > 1
+                            && targetHost.startsWith(nonProxyHost.substring(0, nonProxyHost.length() - 1).toLowerCase(Locale.ENGLISH))) {
                         return true;
                     } else if (nonProxyHost.equalsIgnoreCase(targetHost)) {
                         return true;
@@ -134,31 +150,91 @@ public class ProxyUtils {
      * @see #PROXY_PROTOCOL
      * @see #PROXY_NONPROXYHOSTS
      */
-    public static ProxyServer createProxy(Properties properties) {
-        String host = System.getProperty(PROXY_HOST);
+    public static ProxyServerSelector createProxyServerSelector(Properties properties) {
+        String host = properties.getProperty(PROXY_HOST);
 
         if (host != null) {
-            int port = Integer.valueOf(System.getProperty(PROXY_PORT, "80"));
+            int port = Integer.valueOf(properties.getProperty(PROXY_PORT, "80"));
 
             Protocol protocol;
             try {
-                protocol = Protocol.valueOf(System.getProperty(PROXY_PROTOCOL, "HTTP"));
+                protocol = Protocol.valueOf(properties.getProperty(PROXY_PROTOCOL, "HTTP"));
             } catch (IllegalArgumentException e) {
                 protocol = Protocol.HTTP;
             }
 
-            ProxyServer proxyServer = new ProxyServer(protocol, host, port, System.getProperty(PROXY_USER), System.getProperty(PROXY_PASSWORD));
+            ProxyServer proxyServer = new ProxyServer(protocol, host, port, properties.getProperty(PROXY_USER),
+                    properties.getProperty(PROXY_PASSWORD));
 
-            String nonProxyHosts = System.getProperties().getProperty(PROXY_NONPROXYHOSTS);
+            String nonProxyHosts = properties.getProperty(PROXY_NONPROXYHOSTS);
             if (nonProxyHosts != null) {
                 for (String spec : nonProxyHosts.split("\\|")) {
                     proxyServer.addNonProxyHost(spec);
                 }
             }
 
-            return proxyServer;
+            return createProxyServerSelector(proxyServer);
         }
 
-        return null;
+        return ProxyServerSelector.NO_PROXY_SELECTOR;
+    }
+
+    /**
+     * Get a proxy server selector based on the JDK default proxy selector.
+     *
+     * @return The proxy server selector.
+     */
+    public static ProxyServerSelector getJdkDefaultProxyServerSelector() {
+        return createProxyServerSelector(ProxySelector.getDefault());
+    }
+
+    /**
+     * Create a proxy server selector based on the passed in JDK proxy selector.
+     *
+     * @param proxySelector The proxy selector to use.  Must not be null.
+     * @return The proxy server selector.
+     */
+    public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
+        return new ProxyServerSelector() {
+            @Override
+            public ProxyServer select(URI uri) {
+                List<Proxy> proxies = proxySelector.select(uri);
+                if (proxies != null) {
+                    // Loop through them until we find one that we know how to use
+                    for (Proxy proxy : proxies) {
+                        switch (proxy.type()) {
+                            case HTTP:
+                                if (!(proxy.address() instanceof InetSocketAddress)) {
+                                    log.warn("Don't know how to connect to address " + proxy.address());
+                                } else {
+                                    InetSocketAddress address = (InetSocketAddress) proxy.address();
+                                    return new ProxyServer(Protocol.HTTP, address.getHostString(), address.getPort());
+                                }
+                            case DIRECT:
+                                return null;
+                            default:
+                                log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
+                                break;
+                        }
+                    }
+                }
+                return null;
+            }
+        };
+    }
+
+    /**
+     * Create a proxy server selector that always selects a single proxy server.
+     *
+     * @param proxyServer The proxy server to select.
+     * @return The proxy server selector.
+     */
+    public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
+        return new ProxyServerSelector() {
+            @Override
+            public ProxyServer select(URI uri) {
+                return proxyServer;
+            }
+        };
     }
 }
