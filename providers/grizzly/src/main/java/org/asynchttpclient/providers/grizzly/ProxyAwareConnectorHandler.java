@@ -116,27 +116,27 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
         // ----------------------------------------------------- Builder Methods
 
 
-        public Builder setSecureFilterChainTemplate(final FilterChainBuilder secureTemplate) {
+        public Builder secureFilterChainTemplate(final FilterChainBuilder secureTemplate) {
             connectorHandler.secureTemplate = secureTemplate;
             return this;
         }
 
-        public Builder setNonSecureFilterChainTemplate(final FilterChainBuilder nonSecureTemplate) {
+        public Builder nonSecureFilterChainTemplate(final FilterChainBuilder nonSecureTemplate) {
             connectorHandler.nonSecureTemplate = nonSecureTemplate;
             return this;
         }
 
-        public Builder setAsyncHttpClientConfig(final AsyncHttpClientConfig clientConfig) {
+        public Builder asyncHttpClientConfig(final AsyncHttpClientConfig clientConfig) {
             connectorHandler.clientConfig = clientConfig;
             return this;
         }
 
-        public Builder setURI(final URI uri) {
+        public Builder uri(final URI uri) {
             connectorHandler.uri = uri;
             return this;
         }
 
-        public Builder setProxyServer(final ProxyServer proxyServer) {
+        public Builder proxyServer(final ProxyServer proxyServer) {
             connectorHandler.proxyServer = proxyServer;
             return this;
         }

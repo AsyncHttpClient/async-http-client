@@ -214,11 +214,13 @@ public class ConnectionManager {
                     ProxyAwareConnectorHandler handler =
                             ProxyAwareConnectorHandler
                                     .builder(provider.clientTransport)
-                                    .setNonSecureFilterChainTemplate(nonSecureBuilder)
-                                    .setSecureFilterChainTemplate(secureBuilder)
-                                    .setAsyncHttpClientConfig(provider.getClientConfig())
-                                    .setURI(request.getURI())
-                                    .setProxyServer(proxyServer)
+                                    .nonSecureFilterChainTemplate(
+                                            nonSecureBuilder)
+                                    .secureFilterChainTemplate(secureBuilder)
+                                    .asyncHttpClientConfig(
+                                            provider.getClientConfig())
+                                    .uri(request.getURI())
+                                    .proxyServer(proxyServer)
                                     .build();
                     EndpointKey<SocketAddress> localKey =
                             new EndpointKey<SocketAddress>(stringKey,
@@ -273,11 +275,11 @@ public class ConnectionManager {
         final SocketAddress address = getRemoteAddress(request, proxyServer);
         ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler
                             .builder(provider.clientTransport)
-                            .setNonSecureFilterChainTemplate(nonSecureBuilder)
-                            .setSecureFilterChainTemplate(secureBuilder)
-                            .setAsyncHttpClientConfig(provider.getClientConfig())
-                            .setURI(request.getURI())
-                            .setProxyServer(proxyServer)
+                            .nonSecureFilterChainTemplate(nonSecureBuilder)
+                            .secureFilterChainTemplate(secureBuilder)
+                            .asyncHttpClientConfig(provider.getClientConfig())
+                            .uri(request.getURI())
+                            .proxyServer(proxyServer)
                             .build();
         if (cTimeout > 0) {
             handler.connect(address, ch);
