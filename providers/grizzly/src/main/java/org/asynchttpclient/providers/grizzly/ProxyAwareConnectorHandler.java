@@ -109,7 +109,6 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
 
         private Builder(final TCPNIOTransport transport) {
-            super(transport);
             connectorHandler = new ProxyAwareConnectorHandler(transport);
         }
 
