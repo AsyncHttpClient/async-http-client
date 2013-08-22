@@ -32,8 +32,9 @@ import java.net.URI;
  */
 class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
-    private final FluentCaseInsensitiveStringsMap headers =
-            new FluentCaseInsensitiveStringsMap();
+    private FluentCaseInsensitiveStringsMap headers;
+    private MimeHeaders grizzlyHeaders;
+
 
     // ------------------------------------------------------------ Constructors
 
@@ -43,12 +44,8 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
                                   final AsyncHttpProvider provider) {
 
         super(uri, provider);
-        final MimeHeaders headersLocal = response.getHeaders();
-        for (String name : headersLocal.names()) {
-            for (String header : headersLocal.values(name)) {
-                headers.add(name, header);
-            }
-        }
+        grizzlyHeaders = new MimeHeaders();
+        grizzlyHeaders.copyFrom(response.getHeaders());
 
     }
 
@@ -60,7 +57,15 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
      * {@inheritDoc}
      */
     @Override
-    public FluentCaseInsensitiveStringsMap getHeaders() {
+    public synchronized FluentCaseInsensitiveStringsMap getHeaders() {
+        if (headers == null) {
+            headers = new FluentCaseInsensitiveStringsMap();
+            for (String name : grizzlyHeaders.names()) {
+                for (String header : grizzlyHeaders.values(name)) {
+                    headers.add(name, header);
+                }
+            }
+        }
         return headers;
     }
 
