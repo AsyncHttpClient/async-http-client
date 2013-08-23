@@ -157,7 +157,8 @@ public class AsyncHttpClientConfig {
                                   int spdyInitialWindowSize,
                                   int spdyMaxConcurrentStreams,
                                   boolean rfc6265CookieEncoding,
-                                  boolean asyncConnectMode) {
+                                  boolean asyncConnectMode,
+                                  boolean managedApplicationThreadPool) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -189,13 +190,8 @@ public class AsyncHttpClientConfig {
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
         this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
-
-        if (applicationThreadPool == null) {
-            managedApplicationThreadPool = true;
-            this.applicationThreadPool = Executors.newCachedThreadPool();
-        } else {
-            this.applicationThreadPool = applicationThreadPool;
-        }
+        this.managedApplicationThreadPool = managedApplicationThreadPool;
+        this.applicationThreadPool = applicationThreadPool;
         this.proxyServerSelector = proxyServerSelector;
         this.useRawUrl = useRawUrl;
         this.spdyEnabled = spdyEnabled;
@@ -635,6 +631,7 @@ public class AsyncHttpClientConfig {
         private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
+        private boolean managedApplicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
@@ -1276,8 +1273,10 @@ public class AsyncHttpClientConfig {
             }
 
             if (applicationThreadPool == null) {
+                managedApplicationThreadPool = true;
+                int count = Runtime.getRuntime().availableProcessors();
                 applicationThreadPool =
-                        Executors.newCachedThreadPool(new ThreadFactory() {
+                        Executors.newFixedThreadPool(count, new ThreadFactory() {
                             final AtomicInteger counter = new AtomicInteger();
                             public Thread newThread(Runnable r) {
                                 Thread t = new Thread(r,
@@ -1341,7 +1340,8 @@ public class AsyncHttpClientConfig {
                     spdyInitialWindowSize,
                     spdyMaxConcurrentStreams,
                     rfc6265CookieEncoding,
-                    asyncConnectMode);
+                    asyncConnectMode,
+                    managedApplicationThreadPool);
         }
     }
 }
