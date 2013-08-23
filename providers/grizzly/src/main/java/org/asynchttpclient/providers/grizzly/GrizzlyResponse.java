@@ -107,6 +107,7 @@ public class GrizzlyResponse extends ResponseBase {
      */
     @Override
     public byte[] getResponseBodyAsBytes() throws IOException {
+        final Buffer responseBody = getResponseBody0();
         final byte[] responseBodyBytes = new byte[responseBody.remaining()];
         final int origPos = responseBody.position();
         responseBody.get(responseBodyBytes);
