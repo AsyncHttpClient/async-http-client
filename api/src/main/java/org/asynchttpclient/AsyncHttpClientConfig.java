@@ -443,7 +443,7 @@ public class AsyncHttpClientConfig {
      * @since 2.0.0
      */
     public boolean hasResponseFilters() {
-        return !requestFilters.isEmpty();
+        return !responseFilters.isEmpty();
     }
 
     /**
