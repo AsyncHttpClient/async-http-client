@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -592,16 +593,20 @@ public class AsyncHttpClient implements Closeable {
      * @return {@link FilterContext}
      */
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
-        for (RequestFilter asyncFilter : config.getRequestFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
+        if (config.hasRequestFilters()) {
+            final List<RequestFilter> requestFilters = config.getRequestFilters();
+            for (int i = 0, len = requestFilters.size(); i < len; i++) {
+                final RequestFilter asyncFilter = requestFilters.get(i);
+                try {
+                    fc = asyncFilter.filter(fc);
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                } catch (FilterException e) {
+                    IOException ex = new IOException();
+                    ex.initCause(e);
+                    throw ex;
                 }
-            } catch (FilterException e) {
-                IOException ex = new IOException();
-                ex.initCause(e);
-                throw ex;
             }
         }
 

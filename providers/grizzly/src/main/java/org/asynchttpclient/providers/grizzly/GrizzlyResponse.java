@@ -25,6 +25,7 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.Cookies;
+import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
@@ -146,11 +147,11 @@ public class GrizzlyResponse extends ResponseBase {
      */
     public List<Cookie> buildCookies() {
 
-        List<String> values = headers.getHeaders().get("set-cookie");
+        List<String> values = headers.getHeaders().get(Header.SetCookie.toString());
         if (isNonEmpty(values)) {
             ServerCookiesBuilder builder = new ServerCookiesBuilder(false, rfc6265Enabled);
-            for (String header : values) {
-                builder.parse(header);
+            for (int i = 0, len = values.size(); i < len; i++) {
+                builder.parse(values.get(i));
             }
             return convertCookies(builder.build());
 
@@ -166,7 +167,8 @@ public class GrizzlyResponse extends ResponseBase {
 
         final org.glassfish.grizzly.http.Cookie[] grizzlyCookies = cookies.get();
         List<Cookie> convertedCookies = new ArrayList<Cookie>(grizzlyCookies.length);
-        for (org.glassfish.grizzly.http.Cookie gCookie : grizzlyCookies) {
+        for (int i = 0, len = grizzlyCookies.length; i < len; i++) {
+            org.glassfish.grizzly.http.Cookie gCookie = grizzlyCookies[i];
             convertedCookies.add(new Cookie(gCookie.getDomain(),
                                    gCookie.getName(),
                                    gCookie.getValue(),

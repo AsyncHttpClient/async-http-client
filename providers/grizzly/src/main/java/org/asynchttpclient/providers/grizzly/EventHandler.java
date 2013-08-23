@@ -245,19 +245,20 @@ public final class EventHandler {
         }
 
         final AsyncHandler handler = context.getHandler();
-        final List<ResponseFilter> filters = context.getProvider()
-                .getClientConfig().getResponseFilters();
         final GrizzlyResponseHeaders responseHeaders =
                 new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
                                            context.getRequest().getURI(),
                                            provider);
-        if (!filters.isEmpty()) {
+        if (context.getProvider().getClientConfig().hasResponseFilters()) {
+            final List<ResponseFilter> filters = context.getProvider()
+                    .getClientConfig().getResponseFilters();
             FilterContext fc = new FilterContext.FilterContextBuilder()
                     .asyncHandler(handler).request(context.getRequest())
                     .responseHeaders(responseHeaders)
                     .responseStatus(context.getResponseStatus()).build();
             try {
-                for (final ResponseFilter f : filters) {
+                for (int i = 0, len = filters.size(); i < len; i++) {
+                    final ResponseFilter f = filters.get(i);
                     fc = f.filter(fc);
                 }
             } catch (Exception e) {
@@ -514,9 +515,11 @@ public final class EventHandler {
         if (ctx.getProvider().getClientConfig().isRemoveQueryParamOnRedirect()) {
             builder.setQueryParameters(null);
         }
-        for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
-            for (Cookie c : CookieDecoder.decode(cookieStr)) {
-                builder.addOrReplaceCookie(c);
+        if (response.getHeader(Header.Cookie) != null) {
+            for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
+                for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                    builder.addOrReplaceCookie(c);
+                }
             }
         }
         return builder.build();

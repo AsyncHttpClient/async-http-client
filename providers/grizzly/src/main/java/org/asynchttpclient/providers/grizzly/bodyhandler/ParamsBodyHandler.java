@@ -71,7 +71,8 @@ public final class ParamsBodyHandler implements BodyHandler {
                     if (sb == null) {
                         sb = new StringBuilder(128);
                     }
-                    for (String value : values) {
+                    for (int i = 0, len = values.size(); i < len; i++) {
+                        final String value = values.get(i);
                         if (sb.length() > 0) {
                             sb.append('&');
                         }

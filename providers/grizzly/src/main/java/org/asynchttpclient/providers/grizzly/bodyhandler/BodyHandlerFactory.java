@@ -34,7 +34,8 @@ public final class BodyHandlerFactory {
     }
 
     public BodyHandler getBodyHandler(final Request request) {
-        for (final BodyHandler h : handlers) {
+        for (int i = 0, len = handlers.length; i < len; i++) {
+            final BodyHandler h = handlers[i];
             if (h.handlesBodyType(request)) {
                 return h;
             }

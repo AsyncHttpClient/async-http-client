@@ -375,8 +375,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 final String headerName = entry.getKey();
                 final List<String> headerValues = entry.getValue();
                 if (isNonEmpty(headerValues)) {
-                    for (final String headerValue : headerValues) {
-                        requestPacket.addHeader(headerName, headerValue);
+                    for (int i = 0, len = headerValues.size(); i < len; i++) {
+                        requestPacket.addHeader(headerName, headerValues.get(i));
                     }
                 }
             }
@@ -418,16 +418,19 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private static void convertCookies(final Collection<Cookie> cookies,
                                        final org.glassfish.grizzly.http.Cookie[] gCookies) {
         int idx = 0;
-        for (final Cookie cookie : cookies) {
-            final org.glassfish.grizzly.http.Cookie gCookie =
-                    new org.glassfish.grizzly.http.Cookie(cookie.getName(), cookie.getValue());
-            gCookie.setDomain(cookie.getDomain());
-            gCookie.setPath(cookie.getPath());
-            gCookie.setVersion(cookie.getVersion());
-            gCookie.setMaxAge(cookie.getMaxAge());
-            gCookie.setSecure(cookie.isSecure());
-            gCookies[idx] = gCookie;
-            idx++;
+        if (!cookies.isEmpty()) {
+            for (final Cookie cookie : cookies) {
+                final org.glassfish.grizzly.http.Cookie gCookie =
+                        new org.glassfish.grizzly.http.Cookie(cookie.getName(),
+                                                              cookie.getValue());
+                gCookie.setDomain(cookie.getDomain());
+                gCookie.setPath(cookie.getPath());
+                gCookie.setVersion(cookie.getVersion());
+                gCookie.setMaxAge(cookie.getMaxAge());
+                gCookie.setSecure(cookie.isSecure());
+                gCookies[idx] = gCookie;
+                idx++;
+            }
         }
 
     }
