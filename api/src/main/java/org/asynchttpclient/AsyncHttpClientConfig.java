@@ -1274,9 +1274,8 @@ public class AsyncHttpClientConfig {
 
             if (applicationThreadPool == null) {
                 managedApplicationThreadPool = true;
-                int count = Runtime.getRuntime().availableProcessors();
                 applicationThreadPool =
-                        Executors.newFixedThreadPool(count, new ThreadFactory() {
+                        Executors.newCachedThreadPool(new ThreadFactory() {
                             final AtomicInteger counter = new AtomicInteger();
                             public Thread newThread(Runnable r) {
                                 Thread t = new Thread(r,
