@@ -20,6 +20,7 @@ import com.ning.http.client.ProxyServer.Protocol;
 import com.ning.http.client.Request;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -100,14 +101,14 @@ public class ProxyUtils {
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
         if (proxyServer != null) {
-            final String targetHost = target.toLowerCase();
+            final String targetHost = target.toLowerCase(Locale.ENGLISH);
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
             if (nonProxyHosts != null) {
                 for (String nonProxyHost : nonProxyHosts) {
                     if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase())) {
+                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase(Locale.ENGLISH))) {
                         return true;
                     } else if (nonProxyHost.equalsIgnoreCase(targetHost)) {
                         return true;

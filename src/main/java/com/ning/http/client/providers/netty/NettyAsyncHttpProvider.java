@@ -122,6 +122,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -996,7 +997,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.
-        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+        if (!System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win")) {
             bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(REUSE_ADDRESS));
         }
 

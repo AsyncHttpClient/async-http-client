@@ -129,6 +129,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -534,7 +535,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     static int getPort(final URI uri, final int p) {
         int port = p;
         if (port == -1) {
-            final String protocol = uri.getScheme().toLowerCase();
+            final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
             if ("http".equals(protocol) || "ws".equals(protocol)) {
                 port = 80;
             } else if ("https".equals(protocol) || "wss".equals(protocol)) {
@@ -1486,14 +1487,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 .setUsePreemptiveAuth(true)
                                 .parseWWWAuthenticateHeader(auth)
                                 .build();
-                if (auth.toLowerCase().startsWith("basic")) {
+                String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
+                if (lowerCaseAuth.startsWith("basic")) {
                     req.getHeaders().remove(Header.Authorization.toString());
                     try {
                         req.getHeaders().add(Header.Authorization.toString(),
                                              AuthenticatorUtils.computeBasicAuthentication(realm));
                     } catch (UnsupportedEncodingException ignored) {
                     }
-                } else if (auth.toLowerCase().startsWith("digest")) {
+                } else if (lowerCaseAuth.startsWith("digest")) {
                     req.getHeaders().remove(Header.Authorization.toString());
                     try {
                         req.getHeaders().add(Header.Authorization.toString(),
