@@ -32,6 +32,7 @@ import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -39,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -250,7 +252,7 @@ public class ConnectionManager {
     private static int getPort(final URI uri, final int p) {
         int port = p;
         if (port == -1) {
-            final String protocol = uri.getScheme().toLowerCase();
+            final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
             if ("http".equals(protocol) || "ws".equals(protocol)) {
                 port = 80;
             } else if ("https".equals(protocol) || "wss".equals(protocol)) {

@@ -106,6 +106,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -122,6 +123,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -1995,7 +1997,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     int statusCode = response.getStatus().getCode();
 
                     String ka = response.getHeader(HttpHeaders.Names.CONNECTION);
-                    future.setKeepAlive(ka == null || !ka.toLowerCase().equals("close"));
+                    future.setKeepAlive(ka == null || !ka.toLowerCase(Locale.ENGLISH).equals("close"));
 
                     List<String> wwwAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.WWW_AUTHENTICATE);
                     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
@@ -2246,7 +2248,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 final boolean validUpgrade = response.getHeader(HttpHeaders.Names.UPGRADE) != null;
                 String c = response.getHeader(HttpHeaders.Names.CONNECTION);
                 if (c == null) {
-                    c = response.getHeader(HttpHeaders.Names.CONNECTION.toLowerCase());
+                    c = response.getHeader(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
                 }
 
                 final boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);

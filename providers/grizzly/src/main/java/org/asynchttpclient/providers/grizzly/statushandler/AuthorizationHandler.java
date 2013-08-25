@@ -26,6 +26,7 @@ import org.glassfish.grizzly.http.util.HttpStatus;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
 
@@ -70,7 +71,8 @@ public final class AuthorizationHandler implements StatusHandler {
                         .setUsePreemptiveAuth(true)
                         .parseWWWAuthenticateHeader(auth)
                         .build();
-        if (auth.toLowerCase().startsWith("basic")) {
+        String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
+        if (lowerCaseAuth.startsWith("basic")) {
             req.getHeaders().remove(Header.Authorization.toString());
             try {
                 req.getHeaders().add(Header.Authorization.toString(),
@@ -78,7 +80,7 @@ public final class AuthorizationHandler implements StatusHandler {
                                              realm));
             } catch (UnsupportedEncodingException ignored) {
             }
-        } else if (auth.toLowerCase().startsWith("digest")) {
+        } else if (lowerCaseAuth.startsWith("digest")) {
             req.getHeaders().remove(Header.Authorization.toString());
             try {
                 req.getHeaders().add(Header.Authorization.toString(),

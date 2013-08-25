@@ -48,6 +48,7 @@ import org.glassfish.grizzly.websockets.WebSocketHolder;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -424,7 +425,7 @@ public final class EventHandler {
         if (connectionHeader == null) {
             state.setKeepAlive(header.getProtocol() == Protocol.HTTP_1_1);
         } else {
-            if ("close".equals(connectionHeader.toLowerCase())) {
+            if ("close".equals(connectionHeader.toLowerCase(Locale.ENGLISH))) {
                 ConnectionManager.markConnectionAsDoNotCache(c);
                 state.setKeepAlive(false);
             } else {

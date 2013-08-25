@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -52,7 +53,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                     try {
                         FluentCaseInsensitiveStringsMap h = content.getHeaders();
                         Assert.assertNotNull(h);
-                        Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                        Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                         return STATE.ABORT;
                     } finally {
                         l.countDown();
@@ -94,7 +95,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                     return STATE.CONTINUE;
                 }
 
@@ -142,7 +143,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                     return STATE.ABORT;
                 }
 
@@ -183,7 +184,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                     return STATE.CONTINUE;
                 }
 
@@ -268,7 +269,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                     return STATE.CONTINUE;
                 }
 
@@ -303,7 +304,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), UTF8);
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
                     return STATE.CONTINUE;
                 }
 
@@ -345,7 +346,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
                     Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(), "text/html; charset=utf-8");
+                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), "text/html; charset=utf-8");
                     return STATE.CONTINUE;
                 }
 

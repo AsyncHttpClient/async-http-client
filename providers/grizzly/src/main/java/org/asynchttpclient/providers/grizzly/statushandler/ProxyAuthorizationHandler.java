@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 public final class ProxyAuthorizationHandler implements StatusHandler {
 
@@ -76,7 +77,8 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 .setUsePreemptiveAuth(true)
                 .parseProxyAuthenticateHeader(proxyAuth)
                 .build();
-        if (proxyAuth.toLowerCase().startsWith("basic")) {
+        String proxyAuthLowerCase = proxyAuth.toLowerCase(Locale.ENGLISH);
+        if (proxyAuthLowerCase.startsWith("basic")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
             try {
@@ -85,7 +87,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                                              realm));
             } catch (UnsupportedEncodingException ignored) {
             }
-        } else if (proxyAuth.toLowerCase().startsWith("digest")) {
+        } else if (proxyAuthLowerCase.startsWith("digest")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
             try {
@@ -98,7 +100,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException("Unsupported encoding.", e);
             }
-        } else if (proxyAuth.toLowerCase().startsWith("ntlm")) {
+        } else if (proxyAuthLowerCase.startsWith("ntlm")) {
 
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
@@ -124,7 +126,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
-        } else if (proxyAuth.toLowerCase().startsWith("negotiate")) {
+        } else if (proxyAuthLowerCase.startsWith("negotiate")) {
             //this is for kerberos
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
@@ -208,7 +210,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
     }
 
     public static boolean isNTLMSecondHandShake(final String proxyAuth) {
-        return (proxyAuth != null && proxyAuth.toLowerCase()
+        return (proxyAuth != null && proxyAuth.toLowerCase(Locale.ENGLISH)
                 .startsWith("ntlm") && !proxyAuth.equalsIgnoreCase("ntlm"));
     }
 

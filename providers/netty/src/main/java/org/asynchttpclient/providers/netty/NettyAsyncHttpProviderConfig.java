@@ -17,6 +17,7 @@
 package org.asynchttpclient.providers.netty;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.asynchttpclient.AsyncHttpProviderConfig;
 
 /**
@@ -96,7 +96,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
 
-        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase().contains("win")) {
+        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win")) {
             LOGGER.warn("Can't enable {} on Windows", REUSE_ADDRESS);
         } else {
             properties.put(name, value);
