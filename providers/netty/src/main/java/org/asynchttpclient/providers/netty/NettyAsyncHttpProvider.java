@@ -132,9 +132,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.DateUtil.millisTime;
@@ -183,6 +185,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
+    private final boolean managedExecutorService;
+    private ExecutorService service;
 
 	private static boolean isNTLM(List<String> auth) {
 		return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
@@ -195,9 +199,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
         }
+        service = config.executorService();
+        managedExecutorService = (service == null);
+        if (service == null) {
+            service = AsyncHttpProviderUtils.createDefaultExecutorService();
+        }
 
         if (asyncHttpProviderConfig.isUseBlockingIO()) {
-            socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
+            socketChannelFactory = new OioClientSocketChannelFactory(service);
             this.allowReleaseSocketChannelFactory = true;
         } else {
             // check if external NioClientSocketChannelFactory is defined
@@ -214,7 +223,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
                 int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
                 log.debug("Number of application's worker threads is {}", numWorkers);
-                socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
+                socketChannelFactory = new NioClientSocketChannelFactory(e, service, numWorkers);
                 this.allowReleaseSocketChannelFactory = true;
             }
         }
@@ -830,8 +839,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 }
             }
 
-            if (config.isManagedExecutorService()) {
-                config.executorService().shutdown();
+            if (managedExecutorService) {
+                service.shutdown();
             }
             config.reaper().shutdown();
             if (this.allowReleaseSocketChannelFactory) {

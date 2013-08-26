@@ -106,7 +106,6 @@ public class AsyncHttpClientConfig {
     protected boolean allowSslConnectionPool;
     protected boolean useRawUrl;
     protected boolean removeQueryParamOnRedirect;
-    protected boolean managedApplicationThreadPool;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
     protected boolean strict302Handling;
@@ -157,8 +156,7 @@ public class AsyncHttpClientConfig {
                                   int spdyInitialWindowSize,
                                   int spdyMaxConcurrentStreams,
                                   boolean rfc6265CookieEncoding,
-                                  boolean asyncConnectMode,
-                                  boolean managedApplicationThreadPool) {
+                                  boolean asyncConnectMode) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -190,7 +188,6 @@ public class AsyncHttpClientConfig {
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
         this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
-        this.managedApplicationThreadPool = managedApplicationThreadPool;
         this.applicationThreadPool = applicationThreadPool;
         this.proxyServerSelector = proxyServerSelector;
         this.useRawUrl = useRawUrl;
@@ -334,23 +331,11 @@ public class AsyncHttpClientConfig {
      * asynchronous response.
      *
      * @return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
-     *         asynchronous response.
+     *         asynchronous response.  If no {@link ExecutorService} has been explicitly provided,
+     *         this method will return <code>null</code>
      */
     public ExecutorService executorService() {
         return applicationThreadPool;
-    }
-
-    /**
-     * @return <code>true</code> if this <code>AsyncHttpClientConfig</code> instance created the
-     *  {@link ExecutorService} returned by {@link #executorService()}, otherwise returns <code>false</code>.
-     *  The return from this method is typically used by the various provider implementations to determine
-     *  if it should shutdown the {@link ExecutorService} when the {@link AsyncHttpClient} is closed.  Developers
-     *  should take care and not share managed {@link ExecutorService} instances between client instances.
-     *
-     * @since 2.2.0
-     */
-    public boolean isManagedExecutorService() {
-        return managedApplicationThreadPool;
     }
 
     /**
@@ -631,7 +616,6 @@ public class AsyncHttpClientConfig {
         private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
-        private boolean managedApplicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
@@ -1272,23 +1256,22 @@ public class AsyncHttpClientConfig {
                 });
             }
 
-            if (applicationThreadPool == null) {
-                managedApplicationThreadPool = true;
-                applicationThreadPool =
-                        Executors.newCachedThreadPool(new ThreadFactory() {
-                            final AtomicInteger counter = new AtomicInteger();
-                            public Thread newThread(Runnable r) {
-                                Thread t = new Thread(r,
-                                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
-                                t.setDaemon(true);
-                                return t;
-                            }
-                        });
-            }
-
-            if (applicationThreadPool.isShutdown()) {
-                throw new IllegalStateException("ExecutorServices closed");
-            }
+//            if (applicationThreadPool == null) {
+//                applicationThreadPool =
+//                        Executors.newCachedThreadPool(new ThreadFactory() {
+//                            final AtomicInteger counter = new AtomicInteger();
+//                            public Thread newThread(Runnable r) {
+//                                Thread t = new Thread(r,
+//                                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
+//                                t.setDaemon(true);
+//                                return t;
+//                            }
+//                        });
+//            }
+//
+//            if (applicationThreadPool.isShutdown()) {
+//                throw new IllegalStateException("ExecutorServices closed");
+//            }
 
             if (proxyServerSelector == null && useProxySelector) {
                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
@@ -1339,8 +1322,7 @@ public class AsyncHttpClientConfig {
                     spdyInitialWindowSize,
                     spdyMaxConcurrentStreams,
                     rfc6265CookieEncoding,
-                    asyncConnectMode,
-                    managedApplicationThreadPool);
+                    asyncConnectMode);
         }
     }
 }

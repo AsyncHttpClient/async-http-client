@@ -28,6 +28,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
@@ -581,5 +585,18 @@ public class AsyncHttpProviderUtils {
 
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
         return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+    }
+
+    public static ExecutorService createDefaultExecutorService() {
+        return Executors.newCachedThreadPool(new ThreadFactory() {
+            final AtomicInteger counter = new AtomicInteger();
+
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r,
+                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
+                t.setDaemon(true);
+                return t;
+            }
+        });
     }
 }

@@ -72,6 +72,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,9 +99,18 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
     private boolean bufferResponseInMemory = false;
 
+    private ExecutorService service;
+
+    private boolean managedExecutorService;
+
     public JDKAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         this.config = config;
+        service = config.executorService();
+        managedExecutorService = (service == null);
+        if (service == null) {
+            service = AsyncHttpProviderUtils.createDefaultExecutorService();
+        }
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
         if (providerConfig instanceof JDKAsyncHttpProviderConfig) {
             configure(JDKAsyncHttpProviderConfig.class.cast(providerConfig));
@@ -152,7 +162,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         JDKFuture<T> f = (delegate == null) ? new JDKFuture<T>(handler, requestTimeout, urlConnection) : delegate;
         f.touch();
 
-        f.setInnerFuture(config.executorService().submit(new AsyncHttpUrlConnection<T>(urlConnection, request, handler, f)));
+        f.setInnerFuture(service.submit(new AsyncHttpUrlConnection<T>(urlConnection, request, handler, f)));
         maxConnections.incrementAndGet();
 
         return f;
@@ -193,6 +203,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
     public void close() {
         isClose.set(true);
+        if (managedExecutorService) {
+            service.shutdownNow();
+        }
     }
 
     public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
