@@ -67,7 +67,7 @@ public class AsyncHttpClientConfig {
     protected boolean allowPoolingConnection;
     protected ScheduledExecutorService reaper;
     protected ExecutorService applicationThreadPool;
-    protected ProxyServer proxyServer;
+    protected ProxyServerSelector proxyServerSelector;
     protected SSLContext sslContext;
     protected SSLEngineFactory sslEngineFactory;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -106,7 +106,7 @@ public class AsyncHttpClientConfig {
                                   boolean keepAlive,
                                   ScheduledExecutorService reaper,
                                   ExecutorService applicationThreadPool,
-                                  ProxyServer proxyServer,
+                                  ProxyServerSelector proxyServerSelector,
                                   SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
@@ -162,7 +162,7 @@ public class AsyncHttpClientConfig {
         } else {
             this.applicationThreadPool = applicationThreadPool;
         }
-        this.proxyServer = proxyServer;
+        this.proxyServerSelector = proxyServerSelector;
         this.useRawUrl = useRawUrl;
     }
 
@@ -310,8 +310,8 @@ public class AsyncHttpClientConfig {
      *
      * @return instance of {@link com.ning.http.client.ProxyServer}
      */
-    public ProxyServer getProxyServer() {
-        return proxyServer;
+    public ProxyServerSelector getProxyServerSelector() {
+        return proxyServerSelector;
     }
 
     /**
@@ -531,11 +531,12 @@ public class AsyncHttpClientConfig {
         private boolean compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         private String userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
+        private boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         private boolean allowPoolingConnection = true;
         private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
-        private ProxyServer proxyServer = null;
+        private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
@@ -731,13 +732,24 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set an instance of {@link com.ning.http.client.ProxyServer} used by an {@link AsyncHttpClient}
+         * Set an instance of {@link ProxyServerSelector} used by an {@link AsyncHttpClient}
+         *
+         * @param proxyServerSelector instance of {@link ProxyServerSelector}
+         * @return a {@link Builder}
+         */
+        public Builder setProxyServerSelector(ProxyServerSelector proxyServerSelector) {
+            this.proxyServerSelector = proxyServerSelector;
+            return this;
+        }
+
+        /**
+         * Set an instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
          *
          * @param proxyServer instance of {@link com.ning.http.client.ProxyServer}
          * @return a {@link Builder}
          */
         public Builder setProxyServer(ProxyServer proxyServer) {
-            this.proxyServer = proxyServer;
+            this.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
             return this;
         }
 
@@ -939,11 +951,26 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Sets whether AHC should use the default http.proxy* system properties
-         * to obtain proxy information.
+         * Sets whether AHC should use the default JDK ProxySelector to select a proxy server.
          * <p/>
-         * If useProxyProperties is set to <code>true</code> but {@link #setProxyServer(ProxyServer)} was used
-         * to explicitly set a proxy server, the latter is preferred.
+         * If useProxySelector is set to <code>true</code> but {@link #setProxyServer(ProxyServer)}
+         * was used to explicitly set a proxy server, the latter is preferred.
+         * <p/>
+         * See http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.html
+         */
+        public Builder setUseProxySelector(boolean useProxySelector) {
+            this.useProxySelector = useProxySelector;
+            return this;
+        }
+
+        /**
+         * Sets whether AHC should use the default http.proxy* system properties
+         * to obtain proxy information.  This differs from {@link #setUseProxySelector(boolean)}
+         * in that AsyncHttpClient will use its own logic to handle the system properties,
+         * potentially supporting other protocols that the the JDK ProxySelector doesn't.
+         * <p/>
+         * If useProxyProperties is set to <code>true</code> but {@link #setUseProxySelector(boolean)}
+         * was also set to true, the latter is preferred.
          * <p/>
          * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
          */
@@ -1036,7 +1063,7 @@ public class AsyncHttpClientConfig {
             defaultMaxConnectionLifeTimeInMs = prototype.getMaxConnectionLifeTimeInMs();
             maxDefaultRedirects = prototype.getMaxRedirects();
             defaultMaxTotalConnections = prototype.getMaxTotalConnections();
-            proxyServer = prototype.getProxyServer();
+            proxyServerSelector = prototype.getProxyServerSelector();
             realm = prototype.getRealm();
             defaultRequestTimeoutInMs = prototype.getRequestTimeoutInMs();
             sslContext = prototype.getSSLContext();
@@ -1100,8 +1127,16 @@ public class AsyncHttpClientConfig {
                 throw new IllegalStateException("ExecutorServices closed");
             }
 
-            if (proxyServer == null && useProxyProperties) {
-                proxyServer = ProxyUtils.createProxy(System.getProperties());
+            if (proxyServerSelector == null && useProxySelector) {
+                proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
+            }
+
+            if (proxyServerSelector == null && useProxyProperties) {
+                proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
+            }
+
+            if (proxyServerSelector == null) {
+                proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
             }
 
             return new AsyncHttpClientConfig(defaultMaxTotalConnections,
@@ -1119,7 +1154,7 @@ public class AsyncHttpClientConfig {
                     allowPoolingConnection,
                     reaper,
                     applicationThreadPool,
-                    proxyServer,
+                    proxyServerSelector,
                     sslContext,
                     sslEngineFactory,
                     providerConfig,
