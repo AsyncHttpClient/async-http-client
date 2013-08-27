@@ -54,8 +54,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private URI rawUri;
         private InetAddress address;
         private InetAddress localAddress;
-        private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-        private Collection<Cookie> cookies = new ArrayList<Cookie>();
+        private FluentCaseInsensitiveStringsMap headers;
+        private Collection<Cookie> cookies;
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
@@ -213,12 +213,23 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         /* @Override */
         public FluentCaseInsensitiveStringsMap getHeaders() {
+            if (headers == null) {
+                headers = new FluentCaseInsensitiveStringsMap();
+            }
             return headers;
+        }
+
+        @Override
+        public boolean hasHeaders() {
+            return headers != null && !headers.isEmpty();
         }
 
         /* @Override */
         public Collection<Cookie> getCookies() {
-            return Collections.unmodifiableCollection(cookies);
+            if (cookies == null) {
+                cookies = Collections.unmodifiableCollection(Collections.<Cookie>emptyList());
+            }
+            return cookies;
         }
 
         /* @Override */
@@ -322,12 +333,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             sb.append("\t");
             sb.append(method);
             sb.append("\theaders:");
-            if (headers != null) {
-                for (String name : headers.keySet()) {
+            final FluentCaseInsensitiveStringsMap headersLocal = getHeaders();
+            if (headersLocal != null) {
+                for (String name : headersLocal.keySet()) {
                     sb.append("\t");
                     sb.append(name);
                     sb.append(":");
-                    sb.append(headers.getJoinedValue(name, ", "));
+                    sb.append(headersLocal.getJoinedValue(name, ", "));
                 }
             }
             sb.append("\tparams:");
@@ -436,7 +448,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setHeader(String name, String value) {
-        request.headers.replace(name, value);
+        request.getHeaders().replace(name, value);
         return derived.cast(this);
     }
 
@@ -446,17 +458,21 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             value = "";
         }
 
-        request.headers.add(name, value);
+        request.getHeaders().add(name, value);
         return derived.cast(this);
     }
 
     public T setHeaders(FluentCaseInsensitiveStringsMap headers) {
-        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
+        if (headers != null) {
+            request.headers = new FluentCaseInsensitiveStringsMap(headers);
+        }
         return derived.cast(this);
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        request.headers = (headers == null ? new FluentCaseInsensitiveStringsMap() : new FluentCaseInsensitiveStringsMap(headers));
+        if (headers != null) {
+            request.headers = new FluentCaseInsensitiveStringsMap(headers);
+        }
         return derived.cast(this);
     }
 
@@ -466,6 +482,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addCookie(Cookie cookie) {
+        if (request.cookies == null) {
+            request.cookies = new ArrayList<Cookie>();
+        }
         request.cookies.add(cookie);
         return derived.cast(this);
     }
@@ -639,7 +658,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public Request build() {
         if ((request.length < 0) && (request.streamData == null) && allowBody(request.getMethod())) {
             // can't concatenate content-length
-            String contentLength = request.headers.getFirstValue("Content-Length");
+            String contentLength = null;
+            if (request.headers != null && request.headers.isEmpty()) {
+                contentLength = request.headers.getFirstValue("Content-Length");
+            }
 
             if (contentLength != null) {
                 try {
@@ -648,6 +670,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     // NoOp -- we wdn't specify length so it will be chunked?
                 }
             }
+        }
+        if (request.cookies != null) {
+            request.cookies = Collections.unmodifiableCollection(request.cookies);
         }
         return request;
     }
@@ -660,6 +685,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         String cookieKey = cookie.getName();
         boolean replace = false;
         int index = 0;
+        if (request.cookies == null) {
+            request.cookies = new ArrayList<Cookie>();
+            request.cookies.add(cookie);
+            return derived.cast(this);
+        }
         for (Cookie c : request.cookies) {
             if (c.getName().equals(cookieKey)) {
                 replace = true;

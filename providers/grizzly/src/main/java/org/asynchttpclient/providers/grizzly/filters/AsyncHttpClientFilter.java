@@ -285,10 +285,12 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private static void initTransferCompletionHandler(final Request request,
                                                       final AsyncHandler h)
     throws IOException {
-		if (h instanceof TransferCompletionHandler) {
-			final FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap(request.getHeaders());
-			TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
-		}
+        if (h instanceof TransferCompletionHandler) {
+            final FluentCaseInsensitiveStringsMap map =
+                    new FluentCaseInsensitiveStringsMap(request.getHeaders());
+            TransferCompletionHandler.class.cast(h)
+                    .transferAdapter(new GrizzlyTransferAdapter(map));
+        }
     }
 
     private static boolean checkHandshakeError(final FilterChainContext ctx,
@@ -369,14 +371,15 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private void addGeneralHeaders(final Request request,
                                    final HttpRequestPacket requestPacket) {
 
-        final FluentCaseInsensitiveStringsMap map = request.getHeaders();
-        if (isNonEmpty(map)) {
+        if (request.hasHeaders()) {
+            final FluentCaseInsensitiveStringsMap map = request.getHeaders();
             for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
                 final String headerName = entry.getKey();
                 final List<String> headerValues = entry.getValue();
                 if (isNonEmpty(headerValues)) {
                     for (int i = 0, len = headerValues.size(); i < len; i++) {
-                        requestPacket.addHeader(headerName, headerValues.get(i));
+                        requestPacket.addHeader(headerName,
+                                                headerValues.get(i));
                     }
                 }
             }
