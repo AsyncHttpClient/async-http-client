@@ -79,26 +79,26 @@ public class MultipartRequestEntity implements RequestEntity {
         this.parts = parts;
         String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
         if (isNonEmpty(contentTypeHeader)) {
-        	int boundaryLocation = contentTypeHeader.indexOf("boundary=");
-        	if (boundaryLocation != -1) {
-        		// boundary defined in existing Content-Type
-        		contentType = contentTypeHeader;
-        		multipartBoundary = MultipartEncodingUtil.getAsciiBytes((contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()));
-        	} else {
-        		// generate boundary and append it to existing Content-Type
-        		multipartBoundary = generateMultipartBoundary();
+            int boundaryLocation = contentTypeHeader.indexOf("boundary=");
+            if (boundaryLocation != -1) {
+                // boundary defined in existing Content-Type
+                contentType = contentTypeHeader;
+                multipartBoundary = MultipartEncodingUtil.getAsciiBytes((contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()));
+            } else {
+                // generate boundary and append it to existing Content-Type
+                multipartBoundary = generateMultipartBoundary();
                 contentType = computeContentType(contentTypeHeader);
-        	}
+            }
         } else {
-        	multipartBoundary = generateMultipartBoundary();
+            multipartBoundary = generateMultipartBoundary();
             contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
         }
     }
 
     private String computeContentType(String base) {
-    	StringBuilder buffer = new StringBuilder(base);
-		if (!base.endsWith(";"))
-			buffer.append(";");
+        StringBuilder buffer = new StringBuilder(base);
+        if (!base.endsWith(";"))
+            buffer.append(";");
         return buffer.append(" boundary=").append(MultipartEncodingUtil.getAsciiString(multipartBoundary)).toString();
     }
 
