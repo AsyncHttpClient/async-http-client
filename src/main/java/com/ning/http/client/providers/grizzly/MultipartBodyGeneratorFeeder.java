@@ -36,6 +36,26 @@ import java.util.List;
  * {@link #create(RequestBuilder)} method which will prepare the request and body generator for you.
  * </p>
  *
+ * <p>Here you fill find a basic usage of this class:</p>
+ * <code>
+ * RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl("http://myUrl/multipartUploadEndpoint");
+ *
+ * MultipartBodyGeneratorFeeder bodyFeeder = MultipartBodyGeneratorFeeder.create(requestBuilder);
+ *
+ * Request request = requestBuilder.build();
+ *
+ * ListenableFuture<Response> asyncRes = asyncHttpClient
+ *           .prepareRequest(request)
+ *           .execute(new AsyncCompletionHandlerBase());
+ *
+ * bodyFeeder.addBodyPart(new StringPart("param1", "x"))
+ *           .addBodyPart(new StringPart("param2", "y"))
+ *           .addBodyPart(new StringPart("param3", "z"))
+ *           .addBodyPart(new FilePart("file", inputStream))
+ *           .feed();
+ *
+ * Response uploadResponse = asyncRes.get();
+ * </code>
  *
  * @author Lorber Sebastien <i>(lorber.sebastien@gmail.com)</i>
  */
@@ -207,8 +227,8 @@ public class MultipartBodyGeneratorFeeder {
 
         @Override
         public void write(int b) throws IOException {
-           byte[] arr = new byte[]{(byte)b};
-           write(arr);
+            byte[] arr = new byte[]{(byte)b};
+            write(arr);
         }
         @Override
         public void write(byte b[]) throws IOException {
@@ -228,9 +248,9 @@ public class MultipartBodyGeneratorFeeder {
 
         @Override
         public void close() throws IOException {
-          if ( sendIsLastOnClose ) {
-              sendIsLastSignal();
-          }
+            if ( sendIsLastOnClose ) {
+                sendIsLastSignal();
+            }
         }
 
         protected void sendIsLastSignal() throws IOException {
