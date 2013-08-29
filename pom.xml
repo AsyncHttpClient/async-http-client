@@ -585,8 +585,8 @@
         <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
         <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
         <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
-        <source.property>1.6</source.property>
-        <target.property>1.6</target.property>
+        <source.property>1.5</source.property>
+        <target.property>1.5</target.property>
         <surefire.version>2.12</surefire.version>
     </properties>
 </project>
