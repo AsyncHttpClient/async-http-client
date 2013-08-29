@@ -101,6 +101,7 @@ import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
+import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.HandShake;
 import org.glassfish.grizzly.websockets.HandshakeException;
@@ -109,7 +110,6 @@ import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.Version;
 import org.glassfish.grizzly.websockets.WebSocketFilter;
 import org.glassfish.grizzly.websockets.WebSocketHolder;
-import org.glassfish.grizzly.websockets.draft06.ClosingFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +131,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -157,7 +156,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     static {
         SEND_FILE_SUPPORT = /*configSendFileSupport()*/ false;
     }
-    private final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
+    private static final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
 
     private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
@@ -263,7 +262,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         try {
             connectionManager.destroy();
-            clientTransport.stop();
+            clientTransport.shutdownNow();
             final ExecutorService service = clientConfig.executorService();
             if (service != null) {
                 service.shutdown();
@@ -506,7 +505,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
 
 
-    void setHttpTransactionContext(final AttributeStorage storage,
+    static void setHttpTransactionContext(final AttributeStorage storage,
                                            final HttpTransactionContext httpTransactionState) {
 
         if (httpTransactionState == null) {
@@ -517,7 +516,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-    HttpTransactionContext getHttpTransactionContext(final AttributeStorage storage) {
+    static HttpTransactionContext getHttpTransactionContext(final AttributeStorage storage) {
 
         return REQUEST_STATE_ATTR.get(storage);
 
@@ -877,7 +876,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
                 try {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
-                    httpCtx.protocolHandler = Version.DRAFT17.createHandler(true);
+                    httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
                     httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
                     requestPacket = (HttpRequestPacket)
                             httpCtx.handshake.composeHeaders().getHttpHeader();
