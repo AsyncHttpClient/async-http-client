@@ -86,6 +86,7 @@ import java.util.concurrent.TimeoutException;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.CONNECTION_POOL;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
+import static org.glassfish.grizzly.asyncqueue.AsyncQueueWriter.AUTO_SIZE;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -182,7 +183,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         try {
             connectionManager.destroy();
-            clientTransport.stop();
+            clientTransport.shutdownNow();
             final ExecutorService service = clientConfig.executorService();
             // service may be null due to a custom configuration that
             // leverages Grizzly's SameThreadIOStrategy.
@@ -254,6 +255,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final int timeout = clientConfig.getRequestTimeoutInMs();
         if (timeout > 0) {
             int delay = 500;
+            //noinspection ConstantConditions
             if (timeout < delay) {
                 delay = timeout - 10;
                 if (delay <= 0) {
@@ -382,7 +384,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         // Don't limit the number of bytes the client can have queued to write.
-        clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
+        clientTransport.getAsyncQueueIO().getWriter()
+                .setMaxPendingBytesPerConnection(AUTO_SIZE);
 
         // Install the HTTP filter chain.
         //clientTransport.setProcessor(fcb.build());
