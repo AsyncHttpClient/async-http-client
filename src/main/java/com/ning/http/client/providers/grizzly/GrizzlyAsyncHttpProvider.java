@@ -61,6 +61,7 @@ import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.FileTransfer;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.WriteResult;
+import org.glassfish.grizzly.asyncqueue.AsyncQueueWriter;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
 import org.glassfish.grizzly.filterchain.BaseFilter;
@@ -415,7 +416,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             doDefaultTransportConfig();
         }
         fcb.add(new WebSocketFilter());
-        clientTransport.getAsyncQueueIO().getWriter().setMaxPendingBytesPerConnection(-1);
+        clientTransport.getAsyncQueueIO().getWriter()
+                .setMaxPendingBytesPerConnection(AsyncQueueWriter.AUTO_SIZE);
         clientTransport.setProcessor(fcb.build());
 
     }
