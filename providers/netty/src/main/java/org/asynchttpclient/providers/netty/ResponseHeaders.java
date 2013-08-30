@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
@@ -33,15 +32,15 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final HttpResponse response;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider) {
-        super(uri, provider, false);
+    public ResponseHeaders(URI uri, HttpResponse response) {
+        super(uri, false);
         this.trailingHeaders = null;
         this.response = response;
         headers = computerHeaders();
     }
 
-    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunkTrailer traillingHeaders) {
-        super(uri, provider, true);
+    public ResponseHeaders(URI uri, HttpResponse response, HttpChunkTrailer traillingHeaders) {
+        super(uri, true);
         this.trailingHeaders = traillingHeaders;
         this.response = response;
         headers = computerHeaders();

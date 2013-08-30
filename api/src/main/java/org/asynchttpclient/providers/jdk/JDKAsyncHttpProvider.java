@@ -20,9 +20,6 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.MaxRedirectException;
 import org.asynchttpclient.ProgressAsyncHandler;
@@ -30,7 +27,6 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -208,10 +204,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new JDKResponse(status, headers, bodyParts);
-    }
-
     private final class AsyncHttpUrlConnection<T> implements Callable<T> {
 
         private HttpURLConnection urlConnection;
@@ -254,7 +246,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
-                ResponseStatus status = new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this);
+                ResponseStatus status = new ResponseStatus(uri, urlConnection);
                 FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);
@@ -315,7 +307,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                 state = asyncHandler.onStatusReceived(status);
                 if (state == AsyncHandler.STATE.CONTINUE) {
-                    state = asyncHandler.onHeadersReceived(new ResponseHeaders(uri, urlConnection, JDKAsyncHttpProvider.this));
+                    state = asyncHandler.onHeadersReceived(new ResponseHeaders(uri, urlConnection));
                 }
 
                 if (state == AsyncHandler.STATE.CONTINUE) {
@@ -352,12 +344,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                             byte[] b = new byte[read];
                             System.arraycopy(bytes, 0, b, 0, read);
                             leftBytes -= read;
-                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, JDKAsyncHttpProvider.this, leftBytes > -1));
+                            asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, b, leftBytes > -1));
                         }
                     }
 
                     if (request.getMethod().equalsIgnoreCase("HEAD")) {
-                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, "".getBytes(), JDKAsyncHttpProvider.this, true));
+                        asyncHandler.onBodyPartReceived(new ResponseBodyPart(uri, "".getBytes(), true));
                     }
                 }
 

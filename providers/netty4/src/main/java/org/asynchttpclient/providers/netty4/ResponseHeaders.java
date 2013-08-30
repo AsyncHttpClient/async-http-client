@@ -32,14 +32,12 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final HttpHeaders trailingHeaders;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    // FIXME unused AsyncHttpProvider provider
     public ResponseHeaders(URI uri, HttpHeaders responseHeaders) {
         this(uri, responseHeaders, null);
     }
 
-    // FIXME unused AsyncHttpProvider provider
     public ResponseHeaders(URI uri,HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
-        super(uri, null, traillingHeaders != null);
+        super(uri, traillingHeaders != null);
         this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;
         headers = computerHeaders();

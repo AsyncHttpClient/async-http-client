@@ -24,13 +24,13 @@ public abstract class HttpResponseHeaders extends HttpContent {
 
     private final boolean traillingHeaders;
 
-    public HttpResponseHeaders(URI uri, AsyncHttpProvider provider) {
-        super(uri, provider);
+    public HttpResponseHeaders(URI uri) {
+        super(uri);
         this.traillingHeaders = false;
     }
 
-    public HttpResponseHeaders(URI uri, AsyncHttpProvider provider, boolean traillingHeaders) {
-        super(uri, provider);
+    public HttpResponseHeaders(URI uri, boolean traillingHeaders) {
+        super(uri);
         this.traillingHeaders = traillingHeaders;
     }
 

@@ -16,18 +16,13 @@
  */
 package org.asynchttpclient.providers.netty4;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 
 import io.netty.handler.codec.http.HttpResponse;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
@@ -36,44 +31,24 @@ import java.util.List;
  */
 public class ResponseStatus extends HttpResponseStatus {
     
-    private static final AsyncHttpProvider fakeProvider = new AsyncHttpProvider() {
-        public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
-            throw new UnsupportedOperationException("Mocked, should be refactored");
-        }
-
-        public void close() {
-            throw new UnsupportedOperationException("Mocked, should be refactored");
-        }
-
-        public Response prepareResponse(HttpResponseStatus status,
-                                        HttpResponseHeaders headers,
-                                        List<HttpResponseBodyPart> bodyParts) {
-            return new NettyResponse(status, headers, bodyParts);
-        }
-    };
-
     private final HttpResponse response;
 
-    // FIXME ResponseStatus should have an abstract prepareResponse(headers, bodyParts) method instead of being passed the provider!
     public ResponseStatus(URI uri, HttpResponse response) {
-        super(uri, fakeProvider);
+        super(uri);
         this.response = response;
     }
 
-    /**
-     * Return the response status code
-     *
-     * @return the response status code
-     */
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new NettyResponse(this, headers, bodyParts);
+    }
+
+    @Override
     public int getStatusCode() {
         return response.getStatus().code();
     }
 
-    /**
-     * Return the response status text
-     *
-     * @return the response status text
-     */
+    @Override
     public String getStatusText() {
         return response.getStatus().reasonPhrase();
     }

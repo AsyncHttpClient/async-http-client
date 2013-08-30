@@ -108,8 +108,7 @@ public final class EventHandler {
                 context.setCurrentState(handler.onBodyPartReceived(
                         new GrizzlyResponseBodyPart(content,
                                                     context.getRequest().getURI(),
-                                                    ctx.getConnection(),
-                                                    provider)));
+                                                    ctx.getConnection())));
             } catch (Exception e) {
                 handler.onThrowable(e);
             }
@@ -194,7 +193,7 @@ public final class EventHandler {
         final GrizzlyResponseStatus responseStatus =
                 new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
                         context.getRequest().getURI(),
-                        provider);
+                        provider.getClientConfig().isRfc6265CookieEncoding());
         context.setResponseStatus(responseStatus);
         if (context.getStatusHandler() != null) {
             return;
@@ -248,8 +247,7 @@ public final class EventHandler {
         final AsyncHandler handler = context.getHandler();
         final GrizzlyResponseHeaders responseHeaders =
                 new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                                           context.getRequest().getURI(),
-                                           provider);
+                                           context.getRequest().getURI());
         if (context.getProvider().getClientConfig().hasResponseFilters()) {
             final List<ResponseFilter> filters = context.getProvider()
                     .getClientConfig().getResponseFilters();
