@@ -36,7 +36,6 @@ import org.asynchttpclient.RandomAccessBody;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -132,11 +131,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.DateUtil.millisTime;
@@ -853,12 +850,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
-    }
-
-    /* @Override */
-
-    public Response prepareResponse(final HttpResponseStatus status, final HttpResponseHeaders headers, final List<HttpResponseBodyPart> bodyParts) {
-        return new NettyResponse(status, headers, bodyParts);
     }
 
     /* @Override */
@@ -2011,8 +2002,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     List<String> wwwAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.WWW_AUTHENTICATE);
                     Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
-                    HttpResponseStatus status = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                    HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
+                    HttpResponseStatus status = new ResponseStatus(future.getURI(), response);
+                    HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response);
                     FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(request).responseStatus(status).responseHeaders(responseHeaders).build();
 
                     for (ResponseFilter asyncFilter : config.getResponseFilters()) {
@@ -2143,14 +2134,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         return;
                     } else if (!response.isChunked()) {
                         if (response.getContent().readableBytes() != 0) {
-                            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+                            updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, true));
                         }
                         finishUpdate(future, ctx, false);
                         return;
                     }
 
                     if (nettyRequest.getMethod().equals(HttpMethod.HEAD)) {
-                        updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, NettyAsyncHttpProvider.this, true));
+                        updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), response, true));
                         markAsDone(future, ctx);
                         drainChannel(ctx, future);
                     }
@@ -2159,9 +2150,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     HttpChunk chunk = (HttpChunk) e.getMessage();
 
                     if (handler != null) {
-                        if (chunk.isLast() || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, chunk, chunk.isLast()))) {
+                        if (chunk.isLast() || updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), null, chunk, chunk.isLast()))) {
                             if (chunk instanceof DefaultHttpChunkTrailer) {
-                                updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), future.getHttpResponse(), NettyAsyncHttpProvider.this, (HttpChunkTrailer) chunk));
+                                updateHeadersAndInterrupt(handler, new ResponseHeaders(future.getURI(), future.getHttpResponse(), (HttpChunkTrailer) chunk));
                             }
                             finishUpdate(future, ctx, !chunk.isLast());
                         }
@@ -2223,8 +2214,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (e.getMessage() instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e.getMessage();
 
-                HttpResponseStatus s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
-                HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response, NettyAsyncHttpProvider.this);
+                HttpResponseStatus s = new ResponseStatus(future.getURI(), response);
+                HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response);
                 FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     try {
@@ -2262,7 +2253,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 final boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-                s = new ResponseStatus(future.getURI(), response, NettyAsyncHttpProvider.this);
+                s = new ResponseStatus(future.getURI(), response);
                 final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
                 final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
@@ -2315,7 +2306,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 if (frame.getBinaryData() != null) {
                     webSocketChunk.setContent(ChannelBuffers.wrappedBuffer(frame.getBinaryData()));
-                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, NettyAsyncHttpProvider.this, webSocketChunk, true);
+                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), null, webSocketChunk, true);
                     h.onBodyPartReceived(rp);
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());

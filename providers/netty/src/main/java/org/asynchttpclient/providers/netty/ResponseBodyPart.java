@@ -27,7 +27,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.providers.netty.util.ChannelBufferUtil;
 
@@ -45,12 +44,12 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     /**
      * Constructor used for non-chunked GET requests and HEAD requests.
      */
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
-        this(uri, response, provider, null, last);
+    public ResponseBodyPart(URI uri, HttpResponse response, boolean last) {
+        this(uri, response, null, last);
     }
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
-        super(uri, provider);
+    public ResponseBodyPart(URI uri, HttpResponse response, HttpChunk chunk, boolean last) {
+        super(uri);
         this.chunk = chunk;
         this.response = response;
         isLast = last;

@@ -26,8 +26,8 @@ import java.nio.ByteBuffer;
  */
 public abstract class HttpResponseBodyPart extends HttpContent {
 
-    public HttpResponseBodyPart(URI uri, AsyncHttpProvider provider) {
-        super(uri, provider);
+    public HttpResponseBodyPart(URI uri) {
+        super(uri);
     }
 
     /**

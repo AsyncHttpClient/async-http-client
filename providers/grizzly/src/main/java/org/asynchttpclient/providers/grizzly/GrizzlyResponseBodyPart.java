@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
 
 import org.glassfish.grizzly.Buffer;
@@ -48,9 +47,8 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     public GrizzlyResponseBodyPart(final HttpContent content,
                                    final URI uri,
-                                   final Connection<?> connection,
-                                   final AsyncHttpProvider provider) {
-        super(uri, provider);
+                                   final Connection<?> connection) {
+        super(uri);
         this.content = content;
         this.connection = connection;
 

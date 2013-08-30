@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 
@@ -40,10 +39,9 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
 
     public GrizzlyResponseHeaders(final HttpResponsePacket response,
-                                  final URI uri,
-                                  final AsyncHttpProvider provider) {
+                                  final URI uri) {
 
-        super(uri, provider);
+        super(uri);
         grizzlyHeaders = new MimeHeaders();
         grizzlyHeaders.copyFrom(response.getHeaders());
 

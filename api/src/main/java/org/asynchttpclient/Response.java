@@ -213,7 +213,7 @@ public interface Response {
          * @return a {@link Response} instance
          */
         public Response build() {
-            return status == null ? null : status.provider().prepareResponse(status, headers, bodies);
+            return status == null ? null : status.prepareResponse(headers, bodies);
         }
 
         /**

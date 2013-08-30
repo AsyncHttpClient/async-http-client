@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.providers.jdk;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 
@@ -29,8 +28,8 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final HttpURLConnection urlConnection;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ResponseHeaders(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
-        super(uri, provider, false);
+    public ResponseHeaders(URI uri, HttpURLConnection urlConnection) {
+        super(uri, false);
         this.urlConnection = urlConnection;
         headers = computerHeaders();
     }

@@ -16,13 +16,9 @@ package org.asynchttpclient.providers.grizzly;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandlerFactory;
@@ -78,7 +74,6 @@ import javax.net.ssl.SSLEngine;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -196,22 +191,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } catch (IOException ignored) { }
 
     }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public Response prepareResponse(HttpResponseStatus status,
-                                    HttpResponseHeaders headers,
-                                    List<HttpResponseBodyPart> bodyParts) {
-
-        return new GrizzlyResponse(status,
-                                   headers,
-                                   bodyParts,
-                                   clientConfig.isRfc6265CookieEncoding());
-
-    }
-
 
     // ---------------------------------------------------------- Public Methods
 

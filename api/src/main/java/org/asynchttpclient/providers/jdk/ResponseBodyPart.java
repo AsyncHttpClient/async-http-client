@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.providers.jdk;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
 
 import java.io.ByteArrayInputStream;
@@ -31,8 +30,8 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final boolean isLast;
     private boolean closeConnection;
 
-    public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
-        super(uri, provider);
+    public ResponseBodyPart(URI uri, byte[] chunk, boolean last) {
+        super(uri);
         this.chunk = chunk;
         isLast = last;
     }
