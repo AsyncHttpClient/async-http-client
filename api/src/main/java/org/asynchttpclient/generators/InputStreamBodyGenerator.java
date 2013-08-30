@@ -47,6 +47,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         }
     }
 
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
     /**
      * {@inheritDoc}
      */

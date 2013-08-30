@@ -47,7 +47,7 @@
         <module>grizzly</module>
         <module>netty</module>
         <!--
-        <module>netty-4</module>
+        <module>netty4</module>
         -->
     </modules>
 

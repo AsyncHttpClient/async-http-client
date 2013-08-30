@@ -111,8 +111,6 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
                     b = new byte[8192];
                     total += count;
                 }
-                System.err.println("consumed " + total + " bytes.");
-
                 resp.setStatus(200);
                 resp.addHeader("X-TRANFERED", String.valueOf(total));
                 resp.getOutputStream().flush();

@@ -340,7 +340,11 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
-                private StringBuilder builder = new StringBuilder();
+
+                public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+                    Assert.assertEquals(301, status.getStatusCode());
+                    return STATE.CONTINUE; 
+                }
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
@@ -352,16 +356,13 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
                 @Override
                 public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    builder.append(new String(content.getBodyPartBytes()));
                     return STATE.CONTINUE;
                 }
 
                 @Override
                 public String onCompleted() throws Exception {
-                    String r = builder.toString();
-                    Assert.assertTrue(r.contains("301 Moved"));
                     l.countDown();
-                    return r;
+                    return null;
                 }
             });
 
@@ -379,7 +380,11 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
-                private StringBuilder builder = new StringBuilder();
+
+                public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
+                    Assert.assertTrue(status.getStatusCode() != 301);
+                    return STATE.CONTINUE; 
+                }
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
@@ -398,18 +403,9 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 }
 
                 @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    builder.append(new String(content.getBodyPartBytes()));
-                    return STATE.CONTINUE;
-                }
-
-                @Override
                 public String onCompleted() throws Exception {
-                    String r = builder.toString();
-                    Assert.assertTrue(!r.contains("301 Moved"));
                     l.countDown();
-
-                    return r;
+                    return null;
                 }
             });
 

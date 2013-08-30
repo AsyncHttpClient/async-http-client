@@ -46,7 +46,7 @@ public abstract class ResponseBase implements Response
     }
 
     /* @Override */
-    public final URI getUri() /*throws MalformedURLException*/ {
+    public final URI getUri() {
         return status.getUrl();
     }
 

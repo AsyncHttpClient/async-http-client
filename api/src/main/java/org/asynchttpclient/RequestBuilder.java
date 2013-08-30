@@ -109,6 +109,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
      * @deprecated {@link #setBody(BodyGenerator)} setBody(new InputStreamBodyGenerator(inputStream))
      */
     @Override
+    // FIXME I'd do the exact opposite: deprecate InputStreamBodyGenerator
     @Deprecated
     public RequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
         return super.setBody(stream);

@@ -119,10 +119,6 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                     String s = new String(e.getBodyPartBytes());
                     log.info("got part: {}", s);
-                    if (s.equals("")) {
-                        // noinspection ThrowableInstanceNeverThrown
-                        log.warn("Sampling stacktrace.", new Throwable("trace that, we should not get called for empty body."));
-                    }
                     queue.put(s);
                     return STATE.CONTINUE;
                 }

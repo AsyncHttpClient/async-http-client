@@ -108,6 +108,8 @@ public class NTLMEngine {
         SIGNATURE[bytesWithoutNull.length] = (byte) 0x00;
     }
 
+    public static final NTLMEngine INSTANCE = new NTLMEngine();
+
     /**
      * Returns the response for the given message.
      *

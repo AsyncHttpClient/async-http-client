@@ -73,11 +73,6 @@ abstract public class ChunkingTest extends AbstractBasicTest {
      */
     @Test()
     public void testCustomChunking() throws Throwable {
-        doTest(true);
-    }
-
-
-    private void doTest(boolean customChunkedInputStream) throws Exception {
         AsyncHttpClient c = null;
         try {
             AsyncHttpClientConfig.Builder bc =
@@ -95,13 +90,9 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
-            if (customChunkedInputStream) {
-                // made buff in stream big enough to mark.
-                builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(getTestFile()), 400000)));
-            } else {
-                // made buff in stream big enough to mark.
-                builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(getTestFile()), 400000)));
-            }
+            // made buff in stream big enough to mark.
+            builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(getTestFile()), 400000)));
+
             Request r = builder.build();
             Response res = null;
 

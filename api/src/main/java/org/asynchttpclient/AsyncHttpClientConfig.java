@@ -855,13 +855,8 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setSSLContext(final SSLContext sslContext) {
-            this.sslEngineFactory = new SSLEngineFactory() {
-                public SSLEngine newSSLEngine() throws GeneralSecurityException {
-                    SSLEngine sslEngine = sslContext.createSSLEngine();
-                    sslEngine.setUseClientMode(true);
-                    return sslEngine;
-                }
-            };
+            // reset previously set value so it will be lazily recreated
+            this.sslEngineFactory = null;
             this.sslContext = sslContext;
             return this;
         }

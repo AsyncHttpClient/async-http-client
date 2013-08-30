@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -38,11 +39,18 @@ public abstract class InputStreamTest extends AbstractBasicTest {
     private class InputStreamHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
-                byte[] b = new byte[3];
-                request.getInputStream().read(b, 0, 3);
+                byte[] bytes = new byte[3];
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                int read = 0;
+                while (read > -1) {
+                    read = request.getInputStream().read(bytes);
+                    if (read > 0) {
+                        bos.write(bytes, 0, read);
+                    }
+                }
 
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.addHeader("X-Param", new String(b));
+                response.addHeader("X-Param", new String(bos.toByteArray()));
             } else { // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }
@@ -80,7 +88,6 @@ public abstract class InputStreamTest extends AbstractBasicTest {
                     } else {
                         return -1;
                     }
-
                 }
             };
 
