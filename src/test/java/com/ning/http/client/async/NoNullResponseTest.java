@@ -39,7 +39,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
         try {
             final BoundRequestBuilder builder = client.prepareGet(VERISIGN_HTTPS_URL);
             final Response response1 = builder.execute().get();
-            Thread.sleep(5000);
+            Thread.sleep(4000);
             final Response response2 = builder.execute().get();
             if (response2 != null) {
                 System.out.println("Success (2nd response was not null).");
