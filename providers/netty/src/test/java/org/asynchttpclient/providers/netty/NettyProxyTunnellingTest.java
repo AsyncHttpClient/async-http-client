@@ -21,4 +21,8 @@ public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
+
+    public String getProviderClass() {
+    	return NettyAsyncHttpProvider.class.getName();
+    }
 }

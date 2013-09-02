@@ -19,10 +19,13 @@ import org.asynchttpclient.async.BasicAuthTest;
 
 public class GrizzlyBasicAuthTest extends BasicAuthTest {
 
-
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
+    @Override
+    public String getProviderClass() {
+    	return GrizzlyAsyncHttpProvider.class.getName();
+    }
 }

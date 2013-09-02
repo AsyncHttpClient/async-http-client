@@ -45,6 +45,8 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
+    public abstract String getProviderClass();
+
     public AbstractHandler configureHandler() throws Exception {
         ProxyHandler proxy = new ProxyHandler();
         return proxy;
@@ -152,7 +154,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProxyProtocol(ProxyServer.Protocol.HTTPS).setProxyHost("127.0.0.1").setProxyPort(port1).setFollowRedirects(true).setUrl(getTargetUrl2()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setProxyProtocol(ProxyServer.Protocol.HTTPS).setProxyHost("127.0.0.1").setProxyPort(port1).setFollowRedirects(true).setUrl(getTargetUrl2()).setHeader("Content-Type", "text/html").build();
         try {
             Response r = client.get().get();
 

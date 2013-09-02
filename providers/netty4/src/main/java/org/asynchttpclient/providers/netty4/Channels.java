@@ -238,7 +238,6 @@ public class Channels {
 
     public void close() {
         connectionsPool.destroy();
-        openChannels.close();
         for (Channel channel : openChannels) {
             Object attribute = getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
@@ -246,6 +245,7 @@ public class Channels {
                 future.setReaperFuture(null);
             }
         }
+        openChannels.close();
         if (this.allowReleaseSocketChannelFactory) {
             eventLoop.shutdownGracefully();
         }

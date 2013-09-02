@@ -16,7 +16,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.RedirectConnectionUsageTest;
-import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
 
 public class NettyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
     @Override

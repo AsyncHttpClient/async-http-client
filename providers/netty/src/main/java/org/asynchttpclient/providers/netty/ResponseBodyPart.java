@@ -45,6 +45,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     /**
      * Constructor used for non-chunked GET requests and HEAD requests.
      */
+    // FIXME Why notify with a null chunk???
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
         this(uri, response, provider, null, last);
     }
