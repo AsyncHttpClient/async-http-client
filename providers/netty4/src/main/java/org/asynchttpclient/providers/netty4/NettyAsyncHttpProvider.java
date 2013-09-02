@@ -75,7 +75,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
         isClose.set(true);
         try {
             channels.close();
-            config.executorService().shutdown();
+//            config.executorService().shutdown();
             config.reaper().shutdown();
         } catch (Throwable t) {
             LOGGER.warn("Unexpected error on close", t);
