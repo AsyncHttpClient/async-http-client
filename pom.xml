@@ -584,7 +584,7 @@
         </surefire.redirectTestOutputToFile>
         <source.property>1.6</source.property>
         <target.property>1.6</target.property>
-        <surefire.version>2.12</surefire.version>
+        <surefire.version>2.16</surefire.version>
     </properties>
 </project>
 
