@@ -104,19 +104,18 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
     @Test
     public void testGetRedirectFinalUrl() {
 
-        AsyncHttpClient c = null;
+        AsyncHttpClientConfig.Builder bc =
+                new AsyncHttpClientConfig.Builder();
+        
+        bc.setAllowPoolingConnection(true);
+        bc.setMaximumConnectionsPerHost(1);
+        bc.setMaximumConnectionsTotal(1);
+        bc.setConnectionTimeoutInMs(1000);
+        bc.setRequestTimeoutInMs(1000);
+        bc.setFollowRedirects(true);
+        
+        AsyncHttpClient c = getAsyncHttpClient(bc.build());
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsPerHost(1);
-            bc.setMaximumConnectionsTotal(1);
-            bc.setConnectionTimeoutInMs(1000);
-            bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirects(true);
-
-            c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("GET");
             builder.setUrl(servletEndpointRedirectUrl);
@@ -138,14 +137,9 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
                 fail("Should not get here, The request threw an exception");
             }
 
-
+        } finally {
+            c.close();
         }
-        finally {
-            // can hang here
-            if (c != null) c.close();
-        }
-
-
     }
 
     protected abstract AsyncHttpProviderConfig getProviderConfig();
@@ -182,6 +176,4 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
             os.close();
         }
     }
-
-
 }

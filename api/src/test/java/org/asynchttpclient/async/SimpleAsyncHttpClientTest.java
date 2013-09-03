@@ -217,11 +217,14 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNullUrl() throws Exception {
+        SimpleAsyncHttpClient client = null;
         try {
-            new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
+            client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).build().derive().build();
             assertTrue(true);
         } catch (NullPointerException ex) {
             fail();
+        } finally {
+            if (client != null) client.close();
         }
     }
 

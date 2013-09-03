@@ -1704,12 +1704,16 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     @Test(groups = { "default_provider", "async" })
     public void bodyAsByteTest() throws Throwable {
         final AsyncHttpClient client = getAsyncHttpClient(null);
-        Response r = client.prepareGet(getTargetUrl()).execute().get();
-
-        assertEquals(r.getStatusCode(), 200);
-        assertEquals(r.getResponseBodyAsBytes(), new byte[] {});
-
-        client.close();
+        try {
+            Response r = client.prepareGet(getTargetUrl()).execute().get();
+    
+            assertEquals(r.getStatusCode(), 200);
+            assertEquals(r.getResponseBodyAsBytes(), new byte[] {});
+    
+            client.close();
+        } finally {
+            client.close();
+        }
     }
 
     @Test(groups = { "default_provider", "async" })

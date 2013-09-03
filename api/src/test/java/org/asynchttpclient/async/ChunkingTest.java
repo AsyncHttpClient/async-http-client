@@ -73,20 +73,19 @@ abstract public class ChunkingTest extends AbstractBasicTest {
      */
     @Test()
     public void testCustomChunking() throws Throwable {
-        AsyncHttpClient c = null;
+        AsyncHttpClientConfig.Builder bc =
+                new AsyncHttpClientConfig.Builder();
+        
+        bc.setAllowPoolingConnection(true);
+        bc.setMaximumConnectionsPerHost(1);
+        bc.setMaximumConnectionsTotal(1);
+        bc.setConnectionTimeoutInMs(1000);
+        bc.setRequestTimeoutInMs(1000);
+        bc.setFollowRedirects(true);
+        
+        
+        AsyncHttpClient c = getAsyncHttpClient(bc.build());
         try {
-            AsyncHttpClientConfig.Builder bc =
-                    new AsyncHttpClientConfig.Builder();
-
-            bc.setAllowPoolingConnection(true);
-            bc.setMaximumConnectionsPerHost(1);
-            bc.setMaximumConnectionsTotal(1);
-            bc.setConnectionTimeoutInMs(1000);
-            bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirects(true);
-
-
-            c = getAsyncHttpClient(bc.build());
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl(getTargetUrl());
@@ -119,7 +118,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             }
         }
         finally {
-            if (c != null) c.close();
+            c.close();
         }
     }
 
@@ -163,5 +162,4 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
         return testResource1File;
     }
-
 }

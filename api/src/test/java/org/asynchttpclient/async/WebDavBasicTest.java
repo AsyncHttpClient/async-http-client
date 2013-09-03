@@ -83,9 +83,12 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     @AfterMethod(alwaysRun = true)
     public void clean() throws InterruptedException, Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
-
-        Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
-        c.executeRequest(deleteRequest).get();
+        try {
+            Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
+            c.executeRequest(deleteRequest).get();
+        } finally {
+            c.close();
+        }
     }
 
     @AfterClass(alwaysRun = true)

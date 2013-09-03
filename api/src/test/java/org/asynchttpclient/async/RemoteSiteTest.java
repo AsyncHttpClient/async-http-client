@@ -90,10 +90,13 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testWwwMicrosoftCom() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
-
-        Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), 302);
+        try {
+            Response response = c.prepareGet("http://www.microsoft.com/").execute().get(10, TimeUnit.SECONDS);
+            assertNotNull(response);
+            assertEquals(response.getStatusCode(), 302);
+        } finally {
+            c.close();
+        }
     }
 
     @Test(groups = { "online", "default_provider" })
@@ -298,5 +301,4 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             c.close();
         }
     }
-
 }
