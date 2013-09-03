@@ -6,7 +6,6 @@ import static org.asynchttpclient.providers.netty4.util.HttpUtil.isWebSocket;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -47,16 +46,6 @@ public class NettyRequests {
             method = HttpMethod.CONNECT.toString();
         }
         return construct(config, request, new HttpMethod(method), uri, proxyServer);
-    }
-
-    private static int getPredefinedContentLength(Request request, Map<String, Object> headers) {
-        int length = (int) request.getContentLength();
-        Object contentLength = headers.get(HttpHeaders.Names.CONTENT_LENGTH);
-        if (length == -1 && contentLength != null) {
-            length = Integer.valueOf(contentLength.toString());
-        }
-
-        return length;
     }
 
     private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, URI uri, ProxyServer proxyServer) throws IOException {
@@ -278,19 +267,6 @@ public class NettyRequests {
 
                     hasDeferredContent = true;
 
-                } else if (request.getEntityWriter() != null) {
-                    int length = getPredefinedContentLength(request, headers);
-
-                    if (length == -1) {
-                        length = Constants.MAX_BUFFERED_BYTES;
-                    }
-
-                    ByteBuf b = Unpooled.buffer(length);
-                    // FIXME doesn't do what EntityWriter javadoc says
-                    request.getEntityWriter().writeEntity(new ByteBufOutputStream(b));
-                    // FIXME seems wrong when length was original -1, not sure the ByteBug increase, and feels like should be streaming
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
-                    content = b;
                 } else if (request.getFile() != null) {
                     File file = request.getFile();
                     if (!file.isFile()) {

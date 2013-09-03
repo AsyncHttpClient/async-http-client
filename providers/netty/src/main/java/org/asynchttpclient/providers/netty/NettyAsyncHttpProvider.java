@@ -60,7 +60,6 @@ import org.asynchttpclient.util.UTF8UrlEncoder;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -132,11 +131,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.DateUtil.millisTime;
@@ -802,17 +799,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
 
-                } else if (request.getEntityWriter() != null) {
-                    int length = getPredefinedContentLength(request, nettyRequest);
-
-                    if (length == -1) {
-                        length = MAX_BUFFERED_BYTES;
-                    }
-
-                    ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
-                    request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
-                    nettyRequest.setContent(b);
                 } else if (request.getFile() != null) {
                     File file = request.getFile();
                     if (!file.isFile()) {
@@ -2209,7 +2195,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 try {
                     h.onSuccess(new NettyWebSocket(ctx.getChannel()));
                 } catch (Exception ex) {
-                    NettyAsyncHttpProvider.this.log.warn("onSuccess unexexpected exception", ex);
+                    NettyAsyncHttpProvider.log.warn("onSuccess unexexpected exception", ex);
                 }
             }
         }

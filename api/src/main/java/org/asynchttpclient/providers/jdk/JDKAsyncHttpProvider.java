@@ -622,13 +622,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(mre.getContentLength()));
 
                     mre.writeRequest(urlConnection.getOutputStream());
-                } else if (request.getEntityWriter() != null) {
-                    int lenght = (int) request.getContentLength();
-                    if (lenght != -1) {
-                        urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));
-                        urlConnection.setFixedLengthStreamingMode(lenght);
-                    }
-                    request.getEntityWriter().writeEntity(urlConnection.getOutputStream());
                 } else if (request.getFile() != null) {
                     File file = request.getFile();
                     if (!file.isFile()) {

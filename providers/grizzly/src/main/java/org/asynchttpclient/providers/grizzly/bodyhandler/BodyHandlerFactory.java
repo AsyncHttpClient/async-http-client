@@ -25,7 +25,6 @@ public final class BodyHandlerFactory {
                 new StringBodyHandler(grizzlyAsyncHttpProvider),
                 new ByteArrayBodyHandler(grizzlyAsyncHttpProvider),
                 new ParamsBodyHandler(grizzlyAsyncHttpProvider),
-                new EntityWriterBodyHandler(),
                 new StreamDataBodyHandler(),
                 new PartsBodyHandler(),
                 new FileBodyHandler(),

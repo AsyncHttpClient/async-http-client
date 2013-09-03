@@ -317,16 +317,6 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setBody(Request.EntityWriter dataWriter, long length) throws IllegalArgumentException {
-            return super.setBody(dataWriter, length);
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(Request.EntityWriter dataWriter) {
-            return super.setBody(dataWriter);
-        }
-
-        @Override
         public BoundRequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
             return super.setBody(stream);
         }

@@ -17,9 +17,7 @@
 package org.asynchttpclient;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.Collection;
@@ -37,13 +35,6 @@ import java.util.List;
  * </pre></blockquote>
  */
 public interface Request {
-
-    /**
-     * An entity that can be used to manipulate the Request's body output before it get sent.
-     */
-    public static interface EntityWriter {
-        public void writeEntity(OutputStream out) throws IOException;
-    }
 
     /**
      * Return the request's method name (GET, POST, etc.)
@@ -121,13 +112,6 @@ public interface Request {
      * @return an InputStream representation of the current request's body.
      */
     public InputStream getStreamData();
-
-    /**
-     * Return the current request's body as an EntityWriter
-     *
-     * @return an EntityWriter representation of the current request's body.
-     */
-    public EntityWriter getEntityWriter();
 
     /**
      * Return the current request's body generator.

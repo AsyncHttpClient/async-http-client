@@ -15,8 +15,6 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.Request.EntityWriter;
-
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
@@ -86,16 +84,6 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     @Override
     public RequestBuilder setBody(byte[] data) throws IllegalArgumentException {
         return super.setBody(data);
-    }
-
-    @Override
-    public RequestBuilder setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
-        return super.setBody(dataWriter, length);
-    }
-
-    @Override
-    public RequestBuilder setBody(EntityWriter dataWriter) {
-        return super.setBody(dataWriter);
     }
 
     /**

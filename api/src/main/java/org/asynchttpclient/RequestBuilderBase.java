@@ -17,7 +17,6 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import org.asynchttpclient.Request.EntityWriter;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
@@ -59,7 +58,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
-        private EntityWriter entityWriter;
         private BodyGenerator bodyGenerator;
         private FluentStringsMap params;
         private List<Part> parts;
@@ -91,7 +89,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.byteData = prototype.getByteData();
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
-                this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
                 this.params = (prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams()));
                 this.queryParams = (prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams()));
@@ -245,11 +242,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         /* @Override */
         public InputStream getStreamData() {
             return streamData;
-        }
-
-        /* @Override */
-        public EntityWriter getEntityWriter() {
-            return entityWriter;
         }
 
         /* @Override */
@@ -497,7 +489,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
-        request.entityWriter = null;
         request.length = -1;
     }
 
@@ -541,20 +532,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         request.streamData = stream;
-        return derived.cast(this);
-    }
-
-    public T setBody(EntityWriter dataWriter) {
-        return setBody(dataWriter, -1);
-    }
-
-    public T setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
-        checkIfBodyAllowed();
-        resetParameters();
-        resetNonMultipartData();
-        resetMultipartData();
-        request.entityWriter = dataWriter;
-        request.length = length;
         return derived.cast(this);
     }
 
