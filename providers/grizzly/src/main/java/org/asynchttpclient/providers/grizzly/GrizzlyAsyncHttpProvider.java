@@ -359,7 +359,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         secure.add(clientFilter);
         secure.add(new WebSocketClientFilter());
 
-
+        clientTransport.getAsyncQueueIO().getWriter()
+                .setMaxPendingBytesPerConnection(AUTO_SIZE);
         if (providerConfig != null) {
             final TransportCustomizer customizer = (TransportCustomizer)
                     providerConfig.getProperty(Property.TRANSPORT_CUSTOMIZER);
@@ -382,10 +383,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             NextProtoNegSupport.getInstance()
                     .setClientSideNegotiator(clientTransport, pn);
         }
-
-        // Don't limit the number of bytes the client can have queued to write.
-        clientTransport.getAsyncQueueIO().getWriter()
-                .setMaxPendingBytesPerConnection(AUTO_SIZE);
 
         // Install the HTTP filter chain.
         //clientTransport.setProcessor(fcb.build());
