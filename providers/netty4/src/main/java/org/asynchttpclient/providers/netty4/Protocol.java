@@ -16,7 +16,7 @@ import io.netty.channel.ChannelHandlerContext;
 
 public interface Protocol{
 
-    void handle(ChannelHandlerContext ctx, NettyResponseFuture future, Object message) throws Exception;
+    void handle(ChannelHandlerContext ctx, NettyResponseFuture<?> future, Object message) throws Exception;
 
     void onError(ChannelHandlerContext ctx, Throwable error);
 

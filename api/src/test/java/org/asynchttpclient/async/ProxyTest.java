@@ -150,6 +150,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Properties props = new Properties();
             props.putAll(originalProps);
 
+            // FIXME most likely non threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -189,6 +190,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Properties props = new Properties();
             props.putAll(originalProps);
 
+            // FIXME most likely non threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -220,6 +222,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Properties props = new Properties();
             props.putAll(originalProps);
 
+            // FIXME most likely non threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -259,6 +262,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             Properties props = new Properties();
             props.putAll(originalProps);
 
+            // FIXME most likely non threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -323,8 +327,8 @@ public abstract class ProxyTest extends AbstractBasicTest {
                 client.close();
             }
         } finally {
+            // FIXME is this threadsafe???
             ProxySelector.setDefault(originalProxySelector);
         }
     }
-
 }

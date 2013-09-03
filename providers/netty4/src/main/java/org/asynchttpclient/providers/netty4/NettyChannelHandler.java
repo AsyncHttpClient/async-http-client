@@ -835,6 +835,8 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                         LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
                     }
                 }
+            } else if (e instanceof LastHttpContent) {
+                // FIXME what to do with this kind of messages?
             } else {
                 LOGGER.error("Invalid message {}", e);
             }

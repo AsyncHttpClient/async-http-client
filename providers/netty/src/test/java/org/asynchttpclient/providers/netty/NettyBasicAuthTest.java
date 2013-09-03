@@ -12,13 +12,10 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
-import org.testng.annotations.Test;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.BasicAuthTest;
+import org.testng.annotations.Test;
 
 @Test
 public class NettyBasicAuthTest extends BasicAuthTest {
@@ -31,11 +28,5 @@ public class NettyBasicAuthTest extends BasicAuthTest {
     @Override
     public String getProviderClass() {
     	return NettyAsyncHttpProvider.class.getName();
-    }
-
-    @Override
-    @Test
-    public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        super.redirectAndBasicAuthTest(); // To change body of overridden methods use File | Settings | File Templates.
     }
 }

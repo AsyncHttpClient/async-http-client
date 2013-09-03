@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class Channels {
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
 
-    private EventLoopGroup eventLoop;
+    private EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> socketChannelFactory;
     private final boolean allowReleaseSocketChannelFactory;
 
@@ -109,12 +110,12 @@ public class Channels {
                 this.allowReleaseSocketChannelFactory = false;
             } else {
                 socketChannelFactory = NioSocketChannel.class;
-                eventLoop = asyncHttpProviderConfig.getEventLoopGroup();
-                if (eventLoop == null) {
+                eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
+                if (eventLoopGroup == null) {
                     if (socketChannelFactory == OioSocketChannel.class) {
-                        eventLoop = new OioEventLoopGroup();
+                        eventLoopGroup = new OioEventLoopGroup();
                     } else if (socketChannelFactory == NioSocketChannel.class) {
-                        eventLoop = new NioEventLoopGroup();
+                        eventLoopGroup = new NioEventLoopGroup();
                     } else {
                         throw new IllegalArgumentException("No set event loop compatbile with socket channel " + scf);
                     }
@@ -125,10 +126,10 @@ public class Channels {
             }
         }
 
-        plainBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoop);
-        secureBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoop);
-        webSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoop);
-        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoop);
+        plainBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
+        secureBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
+        webSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
+        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
@@ -247,7 +248,7 @@ public class Channels {
         }
         openChannels.close();
         if (this.allowReleaseSocketChannelFactory) {
-            eventLoop.shutdownGracefully();
+            eventLoopGroup.shutdownGracefully();
         }
     }
 
@@ -494,7 +495,12 @@ public class Channels {
     }
 
     public static Object getDefaultAttribute(ChannelHandlerContext ctx) {
-        return ctx.attr(DEFAULT_ATTRIBUTE).get();
+        if (ctx == null) {
+            // ctx might be null if the channel never reached the handler
+            return null;
+        }
+        Attribute<Object> attr = ctx.attr(DEFAULT_ATTRIBUTE);
+        return attr != null ? attr.get() : null;
     }
 
     public static void setDefaultAttribute(Channel channel, Object o) {

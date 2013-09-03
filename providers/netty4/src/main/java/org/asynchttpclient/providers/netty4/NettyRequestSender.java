@@ -340,6 +340,7 @@ public class NettyRequestSender {
                             if (Channels.getSslHandler(channel) != null) {
                                 writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
                             } else {
+                                // FIXME why not use io.netty.channel.DefaultFileRegion?
                                 FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
                                 writeFuture = channel.write(region, channel.newProgressivePromise());
                             }

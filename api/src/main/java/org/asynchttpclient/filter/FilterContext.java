@@ -23,7 +23,7 @@ import java.io.IOException;
  * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
  * {@link RequestFilter} gets executed before the HTTP request is made to the remote server. Once the response bytes are
  * received, a {@link FilterContext} is then passed to the list of {@link ResponseFilter}. {@link ResponseFilter}
- * gets invoked before the response gets processed, e.g. before authorization, redirection and invokation of {@link AsyncHandler}
+ * gets invoked before the response gets processed, e.g. before authorization, redirection and invocation of {@link AsyncHandler}
  * gets processed.
  * <p/>
  * Invoking {@link FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
