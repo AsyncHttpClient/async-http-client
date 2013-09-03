@@ -33,8 +33,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An {@link AsyncHandler} which support resumable download, e.g when used with an {@link ResumableIOExceptionFilter},
- * this handler can resume the download operation at the point it was before the interruption occured. This prevent having to
- * download the entire file again. It's the responsibility of the {@link org.asynchttpclient.listener.TransferListener}
+ * this handler can resume the download operation at the point it was before the interruption occurred. This prevent having to
+ * download the entire file again. It's the responsibility of the {@link org.asynchttpclient.resumable.ResumableAsyncHandler}
  * to track how many bytes has been transferred and to properly adjust the file's write position.
  * <p/>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.

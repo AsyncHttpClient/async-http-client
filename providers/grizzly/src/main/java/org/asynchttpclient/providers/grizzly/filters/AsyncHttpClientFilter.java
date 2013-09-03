@@ -25,6 +25,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.UpgradeHandler;
 import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.GrizzlyResponseFuture;
 import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
@@ -289,7 +290,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final FluentCaseInsensitiveStringsMap map =
                     new FluentCaseInsensitiveStringsMap(request.getHeaders());
             TransferCompletionHandler.class.cast(h)
-                    .transferAdapter(new GrizzlyTransferAdapter(map));
+                    .transferAdapter(new TransferAdapter(map));
         }
     }
 
@@ -471,28 +472,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
 
     }
-
-    public static final class GrizzlyTransferAdapter extends TransferCompletionHandler.TransferAdapter {
-
-
-        // -------------------------------------------------------- Constructors
-
-
-        public GrizzlyTransferAdapter(FluentCaseInsensitiveStringsMap headers) throws IOException {
-            super(headers);
-        }
-
-
-        // ---------------------------------------- Methods from TransferAdapter
-
-
-        @Override
-        public void getBytes(byte[] bytes) {
-            // TODO implement
-        }
-
-    } // END GrizzlyTransferAdapter
-
 
     class HttpRequestPacketImpl extends HttpRequestPacket {
 

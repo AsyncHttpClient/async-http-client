@@ -3,14 +3,11 @@ package org.asynchttpclient.providers.netty4;
 import static org.asynchttpclient.providers.netty4.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty4.util.HttpUtil.isSecure;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.FileRegion;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -44,6 +41,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.providers.netty4.FeedableBodyGenerator.FeedListener;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
@@ -303,8 +301,7 @@ public class NettyRequestSender {
                     h.add(entries.getKey(), entries.getValue());
                 }
 
-                ByteBuf content = nettyRequest instanceof FullHttpRequest ? FullHttpRequest.class.cast(nettyRequest).content() : Unpooled.buffer(0);
-                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(new NettyTransferAdapter(h, content, future.getRequest().getFile()));
+                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(new TransferAdapter(h));
             }
 
             // Leave it to true.

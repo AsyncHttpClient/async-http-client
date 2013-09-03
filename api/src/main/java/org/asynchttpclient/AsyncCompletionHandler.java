@@ -105,7 +105,7 @@ public abstract class AsyncCompletionHandler<T> implements AsyncHandler<T>, Prog
     /**
      * Invoked when the I/O operation associated with the {@link Request} body as been progressed.
      *
-     * @param amount  The amount of bytes to transfer.
+     * @param amount  The amount of bytes to transfer
      * @param current The amount of bytes transferred
      * @param total   The total number of bytes transferred
      * @return a {@link org.asynchttpclient.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.

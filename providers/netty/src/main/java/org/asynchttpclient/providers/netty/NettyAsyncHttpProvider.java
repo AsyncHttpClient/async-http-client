@@ -43,6 +43,7 @@ import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.multipart.MultipartRequestEntity;
 import org.asynchttpclient.ntlm.NTLMEngine;
@@ -107,7 +108,6 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLEngine;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.ConnectException;
@@ -452,7 +452,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     }
                 }
 
-                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(new NettyTransferAdapter(h, nettyRequest.getContent(), future.getRequest().getFile()));
+                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(new TransferAdapter(h));
             }
 
             // Leave it to true.
@@ -1829,37 +1829,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 raf.close();
             } catch (IOException e) {
                 log.warn("Failed to close a file.", e);
-            }
-        }
-    }
-
-    private static class NettyTransferAdapter extends TransferCompletionHandler.TransferAdapter {
-
-        private final ChannelBuffer content;
-        private final FileInputStream file;
-        private int byteRead = 0;
-
-        public NettyTransferAdapter(FluentCaseInsensitiveStringsMap headers, ChannelBuffer content, File file) throws IOException {
-            super(headers);
-            this.content = content;
-            if (file != null) {
-                this.file = new FileInputStream(file);
-            } else {
-                this.file = null;
-            }
-        }
-
-        @Override
-        public void getBytes(byte[] bytes) {
-            if (content.writableBytes() != 0) {
-                content.getBytes(byteRead, bytes);
-                byteRead += bytes.length;
-            } else if (file != null) {
-                try {
-                    byteRead += file.read(bytes);
-                } catch (IOException e) {
-                    log.error(e.getMessage(), e);
-                }
             }
         }
     }

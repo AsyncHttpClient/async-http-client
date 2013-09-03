@@ -42,9 +42,11 @@ public interface TransferListener {
     /**
      * Invoked every time request's chunk are sent.
      *
-     * @param buffer a {@link ByteBuffer}
+     * @param amount  The amount of bytes to transfer
+     * @param current The amount of bytes transferred
+     * @param total   The total number of bytes transferred
      */
-    public void onBytesSent(ByteBuffer buffer);
+    public void onBytesSent(long amount, long current, long total);
 
     /**
      * Invoked when the response bytes are been fully received.

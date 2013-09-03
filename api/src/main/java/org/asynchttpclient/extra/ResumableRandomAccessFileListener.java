@@ -13,14 +13,13 @@
 package org.asynchttpclient.extra;
 
 import org.asynchttpclient.resumable.ResumableListener;
-import org.asynchttpclient.resumable.ResumableListener;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link org.asynchttpclient.listener.TransferListener} which use a {@link RandomAccessFile} for storing the received bytes.
+ * A {@link org.asynchttpclient.resumable.ResumableListener} which use a {@link RandomAccessFile} for storing the received bytes.
  */
 public class ResumableRandomAccessFileListener implements ResumableListener {
     private final RandomAccessFile file;
