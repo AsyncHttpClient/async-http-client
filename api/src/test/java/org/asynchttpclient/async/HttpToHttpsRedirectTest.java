@@ -134,7 +134,15 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void httpToHttpsRedirect() throws Throwable {
+    // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
+    public void httpToHttpsRunAllTestsSequentially() throws Exception {
+        httpToHttpsRedirect();
+        httpToHttpsProperConfig();
+        relativeLocationUrl();
+    }
+
+    // @Test(groups = { "standalone", "default_provider" })
+    public void httpToHttpsRedirect() throws Exception {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
@@ -153,8 +161,8 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         return String.format("https://127.0.0.1:%d/foo/test", port2);
     }
 
-    @Test(groups = { "standalone", "default_provider" })
-    public void httpToHttpsProperConfig() throws Throwable {
+    // @Test(groups = { "standalone", "default_provider" })
+    public void httpToHttpsProperConfig() throws Exception {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
@@ -175,8 +183,8 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
-    public void relativeLocationUrl() throws Throwable {
+    // @Test(groups = { "standalone", "default_provider" })
+    public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
