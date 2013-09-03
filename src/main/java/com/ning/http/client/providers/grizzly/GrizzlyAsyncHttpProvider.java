@@ -403,21 +403,17 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
         fcb.add(eventFilter);
         fcb.add(clientFilter);
-        
-        if (providerConfig != null) {
-            final TransportCustomizer customizer = (TransportCustomizer)
-                    providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
-            if (customizer != null) {
-                customizer.customize(clientTransport, fcb);
-            } else {
-                doDefaultTransportConfig();
-            }
+        clientTransport.getAsyncQueueIO().getWriter()
+                       .setMaxPendingBytesPerConnection(AsyncQueueWriter.AUTO_SIZE);
+        final TransportCustomizer customizer = (TransportCustomizer)
+                providerConfig.getProperty(TRANSPORT_CUSTOMIZER);
+        if (customizer != null) {
+            customizer.customize(clientTransport, fcb);
         } else {
             doDefaultTransportConfig();
         }
         fcb.add(new WebSocketFilter());
-        clientTransport.getAsyncQueueIO().getWriter()
-                .setMaxPendingBytesPerConnection(AsyncQueueWriter.AUTO_SIZE);
+
         clientTransport.setProcessor(fcb.build());
 
     }
