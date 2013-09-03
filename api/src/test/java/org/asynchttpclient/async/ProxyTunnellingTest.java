@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ProxyHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -86,6 +87,12 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         server2.setHandler(new EchoHandler());
         server2.start();
         log.info("Local HTTP server started successfully");
+    }
+    
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
+        server2.stop();
     }
 
     @Test(groups = { "online", "default_provider" })
