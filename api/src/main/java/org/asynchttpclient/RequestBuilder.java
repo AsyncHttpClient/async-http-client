@@ -87,18 +87,12 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     /**
-     * Deprecated - Use setBody(new InputStreamBodyGenerator(inputStream)).
-     *
+     * Set a Stream for chunking
      * @param stream - An {@link InputStream}
      * @return a {@link RequestBuilder}
      * @throws IllegalArgumentException
-     * @see #setBody(BodyGenerator) InputStreamBodyGenerator(inputStream)
-     * @see org.asynchttpclient.generators.InputStreamBodyGenerator
-     * @deprecated {@link #setBody(BodyGenerator)} setBody(new InputStreamBodyGenerator(inputStream))
      */
     @Override
-    // FIXME I'd do the exact opposite: deprecate InputStreamBodyGenerator
-    @Deprecated
     public RequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
         return super.setBody(stream);
     }
