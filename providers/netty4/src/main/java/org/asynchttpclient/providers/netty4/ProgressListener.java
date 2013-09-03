@@ -4,6 +4,7 @@ import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -16,6 +17,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     private final boolean notifyHeaders;
     private final AsyncHandler<?> asyncHandler;
     private final NettyResponseFuture<?> future;
+    private final AtomicLong lastProgress = new AtomicLong(0);
 
     public ProgressListener(AsyncHttpClientConfig config, boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
         this.config = config;
@@ -61,13 +63,13 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
         future.touch();
 
         /**
-         * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization, causing unpredictable behavior.
+         * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+         * causing unpredictable behavior.
          */
         Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : config.getRealm();
         boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
 
         if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
-            // FIXME WTF
             if (notifyHeaders) {
                 ProgressAsyncHandler.class.cast(asyncHandler).onHeaderWriteCompleted();
             } else {
@@ -80,7 +82,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     public void operationProgressed(ChannelProgressiveFuture f, long progress, long total) {
         future.touch();
         if (asyncHandler instanceof ProgressAsyncHandler) {
-            ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(total - progress, progress, total);
+            long lastProgressValue = lastProgress.getAndSet(progress);
+            ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(progress - lastProgressValue, progress, total);
         }
     }
 }

@@ -149,9 +149,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
         final AtomicBoolean completed = new AtomicBoolean(false);
 
-        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-        File file = createTempFile(bytes, (int) repeats);
+        long repeats = (1024 * 100 * 10 / PATTERN_BYTES.length) + 1;
+        File file = createTempFile(PATTERN_BYTES, (int) repeats);
         long expectedFileSize = PATTERN_BYTES.length * repeats;
         Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
 
