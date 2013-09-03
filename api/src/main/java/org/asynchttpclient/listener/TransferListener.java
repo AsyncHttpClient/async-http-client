@@ -15,7 +15,6 @@ package org.asynchttpclient.listener;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * A simple interface an application can implements in order to received byte transfer information.
@@ -35,9 +34,9 @@ public interface TransferListener {
     /**
      * Invoked every time response's chunk are received.
      *
-     * @param buffer a {@link ByteBuffer}
+     * @param bytes a {@link byte[]}
      */
-    public void onBytesReceived(ByteBuffer buffer) throws IOException;
+    public void onBytesReceived(byte[] bytes) throws IOException;
 
     /**
      * Invoked every time request's chunk are sent.

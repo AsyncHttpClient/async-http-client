@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -122,7 +121,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         if (accumulateResponseBytes) {
             s = super.onBodyPartReceived(content);
         }
-        fireOnBytesReceived(content.getBodyByteBuffer());
+        fireOnBytesReceived(content.getBodyPartBytes());
         return s;
     }
 
@@ -187,7 +186,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
         }
     }
 
-    private void fireOnBytesReceived(ByteBuffer b) {
+    private void fireOnBytesReceived(byte[] b) {
         for (TransferListener l : listeners) {
             try {
                 l.onBytesReceived(b);

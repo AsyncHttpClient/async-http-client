@@ -12,35 +12,46 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.generators.FileBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.listener.TransferListener;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Enumeration;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
-
 public abstract class TransferListenerTest extends AbstractBasicTest {
+
     private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
+    private static final byte[] PATTERN_BYTES = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes(Charset.forName("UTF-16"));
+
+    static {
+        TMP.mkdirs();
+        TMP.deleteOnExit();
+    }
 
     private class BasicHandler extends AbstractHandler {
 
@@ -81,7 +92,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-            final AtomicReference<ByteBuffer> bb = new AtomicReference<ByteBuffer>();
+            final AtomicReference<byte[]> bb = new AtomicReference<byte[]>();
             final AtomicBoolean completed = new AtomicBoolean(false);
 
             TransferCompletionHandler tl = new TransferCompletionHandler();
@@ -95,11 +106,11 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                     hRead.set(headers);
                 }
 
-                public void onBytesReceived(ByteBuffer buffer) {
-                    bb.set(buffer);
+                public void onBytesReceived(byte[] b) {
+                    bb.set(b);
                 }
 
-                public void onBytesSent(ByteBuffer buffer) {
+                public void onBytesSent(long amount, long current, long total) {
                 }
 
                 public void onRequestResponseCompleted() {
@@ -130,20 +141,24 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
+        final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
+        final AtomicLong bbSentLenght = new AtomicLong(0L);
+
+        final AtomicBoolean completed = new AtomicBoolean(false);
+
+        byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
+        long repeats = (1024 * 100 * 10 / bytes.length) + 1;
+        File file = createTempFile(bytes, (int) repeats);
+        long expectedFileSize = PATTERN_BYTES.length * repeats;
+        Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
+
+        int timeout = (int) (repeats / 1000);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
+
         try {
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-            final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
-            final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-            final AtomicInteger bbSentLenght = new AtomicInteger(0);
-
-            final AtomicBoolean completed = new AtomicBoolean(false);
-
-            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-            long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-            File largeFile = createTempFile(bytes, (int) repeats);
-
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 
@@ -155,12 +170,12 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                     hRead.set(headers);
                 }
 
-                public void onBytesReceived(ByteBuffer buffer) {
-                    bbReceivedLenght.addAndGet(buffer.capacity());
+                public void onBytesReceived(byte[] b) {
+                    bbReceivedLenght.addAndGet(b.length);
                 }
 
-                public void onBytesSent(ByteBuffer buffer) {
-                    bbSentLenght.addAndGet(buffer.capacity());
+                public void onBytesSent(long amount, long current, long total) {
+                    bbSentLenght.addAndGet(amount);
                 }
 
                 public void onRequestResponseCompleted() {
@@ -173,37 +188,38 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             });
 
             try {
-                Response response = c.preparePut(getTargetUrl()).setBody(largeFile).execute(tl).get();
+                Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);
                 assertNotNull(hRead.get());
                 assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), largeFile.length());
-                assertEquals(bbSentLenght.get(), largeFile.length());
+                assertEquals(bbReceivedLenght.get(), expectedFileSize, "Number of received bytes incorrect");
+                assertEquals(bbSentLenght.get(), expectedFileSize, "Number of sent bytes incorrect");
             } catch (IOException ex) {
                 fail("Should have timed out");
             }
         } finally {
-            c.close();
+            client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicPutBodyTest() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
             final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
             final AtomicInteger bbReceivedLenght = new AtomicInteger(0);
-            final AtomicInteger bbSentLenght = new AtomicInteger(0);
+            final AtomicLong bbSentLenght = new AtomicLong(0L);
 
             final AtomicBoolean completed = new AtomicBoolean(false);
 
-            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-            long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-            File largeFile = createTempFile(bytes, (int) repeats);
+            long repeats = (1024 * 100 * 10 / PATTERN_BYTES.length) + 1;
+            File file = createTempFile(PATTERN_BYTES, (int) repeats);
+            long expectedFileSize = PATTERN_BYTES.length * repeats;
+            Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
 
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
@@ -216,12 +232,12 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                     hRead.set(headers);
                 }
 
-                public void onBytesReceived(ByteBuffer buffer) {
-                    bbReceivedLenght.addAndGet(buffer.capacity());
+                public void onBytesReceived(byte[] b) {
+                    bbReceivedLenght.addAndGet(b.length);
                 }
 
-                public void onBytesSent(ByteBuffer buffer) {
-                    bbSentLenght.addAndGet(buffer.capacity());
+                public void onBytesSent(long amount, long current, long total) {
+                    bbSentLenght.addAndGet(amount);
                 }
 
                 public void onRequestResponseCompleted() {
@@ -234,19 +250,19 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             });
 
             try {
-                Response response = c.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(largeFile)).execute(tl).get();
+                Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);
                 assertNotNull(hRead.get());
                 assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), largeFile.length());
-                assertEquals(bbSentLenght.get(), largeFile.length());
+                assertEquals(bbReceivedLenght.get(), expectedFileSize, "Number of received bytes incorrect");
+                assertEquals(bbSentLenght.get(), expectedFileSize, "Number of sent bytes incorrect");
             } catch (IOException ex) {
                 fail("Should have timed out");
             }
         } finally {
-            c.close();
+            client.close();
         }
     }
 
@@ -255,20 +271,11 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     public static File createTempFile(byte[] pattern, int repeat) throws IOException {
-        TMP.mkdirs();
-        TMP.deleteOnExit();
         File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
-        write(pattern, repeat, tmpFile);
-
-        return tmpFile;
-    }
-
-    public static void write(byte[] pattern, int repeat, File file) throws IOException {
-        file.deleteOnExit();
-        file.getParentFile().mkdirs();
+        tmpFile.deleteOnExit();
         FileOutputStream out = null;
         try {
-            out = new FileOutputStream(file);
+            out = new FileOutputStream(tmpFile);
             for (int i = 0; i < repeat; i++) {
                 out.write(pattern);
             }
@@ -277,5 +284,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 out.close();
             }
         }
+
+        return tmpFile;
     }
 }
