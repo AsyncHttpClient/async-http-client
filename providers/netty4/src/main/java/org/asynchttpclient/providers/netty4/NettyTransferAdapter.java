@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.listener.TransferCompletionHandler;
@@ -13,7 +14,7 @@ class NettyTransferAdapter extends TransferCompletionHandler.TransferAdapter {
 
     private final ByteBuf content;
     private final FileInputStream file;
-    private int byteRead = 0;
+    private AtomicInteger byteRead = new AtomicInteger(0);
 
     public NettyTransferAdapter(FluentCaseInsensitiveStringsMap headers, ByteBuf content, File file) throws IOException {
         super(headers);
@@ -28,11 +29,10 @@ class NettyTransferAdapter extends TransferCompletionHandler.TransferAdapter {
     @Override
     public void getBytes(byte[] bytes) {
         if (content.writableBytes() != 0) {
-            content.getBytes(byteRead, bytes);
-            byteRead += bytes.length;
+            content.getBytes(byteRead.getAndAdd(bytes.length), bytes);
         } else if (file != null) {
             try {
-                byteRead += file.read(bytes);
+                byteRead.getAndAdd(file.read(bytes));
             } catch (IOException e) {
                 NettyAsyncHttpProvider.LOGGER.error(e.getMessage(), e);
             }
