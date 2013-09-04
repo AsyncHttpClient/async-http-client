@@ -69,7 +69,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
-    private volatile ReaperFuture reaperFuture;
+    private volatile FutureReaper reaperFuture;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
@@ -358,7 +358,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return redirectCount.incrementAndGet();
     }
 
-    public void setReaperFuture(ReaperFuture reaperFuture) {
+    public void setReaperFuture(FutureReaper reaperFuture) {
         cancelReaper();
         this.reaperFuture = reaperFuture;
     }

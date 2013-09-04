@@ -14,7 +14,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
  * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future this wrapper will release the references to the channel and the
  * nettyResponseFuture immediately. Otherwise, the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
  */
-public final class ReaperFuture implements Runnable {
+public final class FutureReaper implements Runnable {
 
     private final AtomicBoolean isClose;
     private final Channels channels;
@@ -22,7 +22,7 @@ public final class ReaperFuture implements Runnable {
     private NettyResponseFuture<?> nettyResponseFuture;
     private AsyncHttpClientConfig config;
 
-    public ReaperFuture(NettyResponseFuture<?> nettyResponseFuture, AsyncHttpClientConfig config, AtomicBoolean isClose, Channels channels) {
+    public FutureReaper(NettyResponseFuture<?> nettyResponseFuture, AsyncHttpClientConfig config, AtomicBoolean isClose, Channels channels) {
         this.nettyResponseFuture = nettyResponseFuture;
         this.channels = channels;
         this.config = config;

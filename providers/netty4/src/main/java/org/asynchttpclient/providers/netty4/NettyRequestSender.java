@@ -403,7 +403,7 @@ public class NettyRequestSender {
                     : requestTimeout) : config.getIdleConnectionTimeoutInMs();
 
             if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
-                ReaperFuture reaperFuture = new ReaperFuture(future, config, isClose, channels);
+                FutureReaper reaperFuture = new FutureReaper(future, config, isClose, channels);
                 Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);
