@@ -241,7 +241,7 @@ public class Channels {
             }
         }
         openChannels.close();
-        if (this.allowReleaseEventLoopGroup) {
+        if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
     }

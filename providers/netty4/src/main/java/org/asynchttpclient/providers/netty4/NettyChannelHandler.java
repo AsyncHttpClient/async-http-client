@@ -2,13 +2,11 @@ package org.asynchttpclient.providers.netty4;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.asynchttpclient.providers.netty4.util.HttpUtil.*;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
-import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -673,7 +671,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
                     if (!interrupt && chunk.content().readableBytes() > 0) {
                         // FIXME why
-                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), chunk));
+                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), chunk.content(), last));
                     }
 
                     if (interrupt || last) {
@@ -801,8 +799,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                 }
 
                 if (frame.content() != null && frame.content().readableBytes() > 0) {
-                    HttpContent webSocketChunk = new DefaultHttpContent(Unpooled.wrappedBuffer(frame.content()));
-                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), webSocketChunk);
+                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), frame.content(), frame.isFinalFragment());
                     h.onBodyPartReceived(rp);
 
                     NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());

@@ -15,8 +15,7 @@
  */
 package org.asynchttpclient.providers.netty4;
 
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.buffer.ByteBuf;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,14 +33,14 @@ import org.asynchttpclient.providers.netty4.util.ByteBufUtil;
 public class ResponseBodyPart extends HttpResponseBodyPart {
 
     private final byte[] bytes;
-    private final boolean isLast;
+    private final boolean last;
     private boolean closeConnection = false;
 
     // FIXME unused AsyncHttpProvider provider
-    public ResponseBodyPart(URI uri, HttpContent chunk) {
+    public ResponseBodyPart(URI uri, ByteBuf buf, boolean last) {
         super(uri, null);
-        bytes = ByteBufUtil.byteBuf2bytes(chunk.content());
-        isLast = chunk instanceof LastHttpContent;
+        bytes = ByteBufUtil.byteBuf2bytes(buf);
+        this.last = last;
     }
 
     /**
@@ -80,7 +79,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      */
     @Override
     public boolean isLast() {
-        return isLast;
+        return last;
     }
 
     /**
