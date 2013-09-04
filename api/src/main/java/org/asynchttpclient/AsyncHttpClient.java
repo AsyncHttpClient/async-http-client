@@ -214,6 +214,17 @@ public class AsyncHttpClient implements Closeable {
 
     /**
      * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
+     * and a AsyncHttpProvider class' name.
+     *
+     * @param config        a {@link AsyncHttpClientConfig}
+     * @param providerClass a {@link AsyncHttpProvider}
+     */
+    public AsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
+        this(loadProvider(providerClass, config), new AsyncHttpClientConfig.Builder().build());
+    }
+
+    /**
+     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
      * and a {@link AsyncHttpProvider}.
      *
      * @param config       a {@link AsyncHttpClientConfig}
@@ -222,18 +233,6 @@ public class AsyncHttpClient implements Closeable {
     public AsyncHttpClient(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
         this.config = config;
         this.httpProvider = httpProvider;
-    }
-
-    /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a AsyncHttpProvider class' name.
-     *
-     * @param config        a {@link AsyncHttpClientConfig}
-     * @param providerClass a {@link AsyncHttpProvider}
-     */
-    public AsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
-        this.config = new AsyncHttpClientConfig.Builder().build();
-        this.httpProvider = loadProvider(providerClass, config);
     }
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
@@ -405,7 +404,7 @@ public class AsyncHttpClient implements Closeable {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed.get()) {
-                logger.debug("AsyncHttpClient.close() hasn't been invoked, which may produce file descriptor leaks");
+                logger.error("AsyncHttpClient.close() hasn't been invoked, which may produce file descriptor leaks");
             }
         } finally {
             super.finalize();
