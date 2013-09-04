@@ -219,7 +219,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     public static class TransferAdapter {
         private final FluentCaseInsensitiveStringsMap headers;
 
-        public TransferAdapter(FluentCaseInsensitiveStringsMap headers) throws IOException {
+        public TransferAdapter(FluentCaseInsensitiveStringsMap headers) {
             this.headers = headers;
         }
 

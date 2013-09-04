@@ -182,7 +182,7 @@ public class NettyRequestSender {
         boolean acquiredConnection = !reclaimCache && channels.acquireConnection(asyncHandler);
 
         NettyConnectListener<T> cl = new NettyConnectListener.Builder<T>(config, this, request, asyncHandler, future).build(uri);
-        
+
         boolean avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
 
         if (useSSl) {
@@ -261,173 +261,141 @@ public class NettyRequestSender {
         }
         return cl.future();
     }
-    
-    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
+
+    private void sendFileBody(Channel channel, File file, NettyResponseFuture<?> future) throws IOException {
+        final RandomAccessFile raf = new RandomAccessFile(file, "r");
+
         try {
-            // If the channel is dead because it was pooled and the remote
-            // server decided to close it, we just let it go and the
-            // closeChannel do it's work.
-            if (!channel.isOpen() || !channel.isActive()) {
-                return;
-            }
+            long fileLength = raf.length();
 
-            HttpRequest nettyRequest = future.getNettyRequest();
-            Body body = null;
-            if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
-                BodyGenerator bg = future.getRequest().getBodyGenerator();
-                if (bg != null) {
+            ChannelFuture writeFuture;
+            if (Channels.getSslHandler(channel) != null) {
+                writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+            } else {
+                // FIXME why not use io.netty.channel.DefaultFileRegion?
+                FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
+                writeFuture = channel.write(region, channel.newProgressivePromise());
+            }
+            writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+                public void operationComplete(ChannelProgressiveFuture cf) {
                     try {
-                        body = bg.createBody();
-                    } catch (IOException ex) {
-                        throw new IllegalStateException(ex);
+                        raf.close();
+                    } catch (IOException e) {
+                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
                     }
-                    long length = body.getContentLength();
-                    if (length >= 0) {
-                        nettyRequest.headers().set(HttpHeaders.Names.CONTENT_LENGTH, length);
-                    } else {
-                        nettyRequest.headers().set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-                    }
-                } else if (future.getRequest().getParts() != null) {
-                    String contentType = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-                    String length = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_LENGTH);
-                    body = new MultipartBody(future.getRequest().getParts(), contentType, length);
+                    super.operationComplete(cf);
                 }
-            }
-
-            if (future.getAsyncHandler() instanceof TransferCompletionHandler) {
-
-                FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-                for (Map.Entry<String, String> entries : future.getNettyRequest().headers()) {
-                    h.add(entries.getKey(), entries.getValue());
-                }
-
-                TransferCompletionHandler.class.cast(future.getAsyncHandler()).transferAdapter(new TransferAdapter(h));
-            }
-
-            // Leave it to true.
-            // FIXME Yeah... explain why instead of saying the same thing as the
-            // code
-            if (future.getAndSetWriteHeaders(true)) {
+            });
+            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        } catch (IOException ex) {
+            if (raf != null) {
                 try {
-                    channel.writeAndFlush(nettyRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
-                } catch (Throwable cause) {
-                    // FIXME why not notify?
-                    LOGGER.debug(cause.getMessage(), cause);
-                    try {
-                        channel.close();
-                    } catch (RuntimeException ex) {
-                        LOGGER.debug(ex.getMessage(), ex);
-                    }
-                    return;
+                    raf.close();
+                } catch (IOException e) {
                 }
             }
+            throw ex;
+        }
+    }
 
-            if (future.getAndSetWriteBody(true)) {
-                if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+    private boolean sendStreamAndExit(Channel channel, final InputStream is, NettyResponseFuture<?> future) throws IOException {
 
-                    if (future.getRequest().getFile() != null) {
-                        final File file = future.getRequest().getFile();
-                        long fileLength = 0;
-                        final RandomAccessFile raf = new RandomAccessFile(file, "r");
-
-                        try {
-                            fileLength = raf.length();
-
-                            ChannelFuture writeFuture;
-                            if (Channels.getSslHandler(channel) != null) {
-                                writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
-                            } else {
-                                // FIXME why not use io.netty.channel.DefaultFileRegion?
-                                FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
-                                writeFuture = channel.write(region, channel.newProgressivePromise());
-                            }
-                            writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
-                                public void operationComplete(ChannelProgressiveFuture cf) {
-                                    try {
-                                        raf.close();
-                                    } catch (IOException e) {
-                                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                                    }
-                                    super.operationComplete(cf);
-                                }
-                            });
-                            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-                        } catch (IOException ex) {
-                            if (raf != null) {
-                                try {
-                                    raf.close();
-                                } catch (IOException e) {
-                                }
-                            }
-                            throw ex;
-                        }
-                    } else if (future.getRequest().getStreamData() != null || future.getRequest().getBodyGenerator() instanceof InputStreamBodyGenerator) {
-                        final InputStream is = future.getRequest().getStreamData() != null ? future.getRequest().getStreamData() : InputStreamBodyGenerator.class.cast(
-                                future.getRequest().getBodyGenerator()).getInputStream();
-
-                        if (future.getAndSetStreamWasAlreadyConsumed()) {
-                            if (is.markSupported())
-                                is.reset();
-                            else {
-                                LOGGER.warn("Stream has already been consumed and cannot be reset");
-                                return;
-                            }
-                        }
-
-                        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
-                            public void operationComplete(ChannelProgressiveFuture cf) {
-                                try {
-                                    is.close();
-                                } catch (IOException e) {
-                                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                                }
-                                super.operationComplete(cf);
-                            }
-                        });
-                        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-
-                    } else if (body != null) {
-
-                        Object msg;
-                        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
-                            msg = new BodyFileRegion((RandomAccessBody) body);
-                        } else {
-                            BodyGenerator bg = future.getRequest().getBodyGenerator();
-                            msg = new BodyChunkedInput(body);
-                            if (bg instanceof FeedableBodyGenerator) {
-                                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
-                                    @Override
-                                    public void onContentAdded() {
-                                        channel.pipeline().get(ChunkedWriteHandler.class).resumeTransfer();
-                                    }
-                                });
-                            }
-                        }
-                        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
-
-                        final Body b = body;
-                        writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
-                            public void operationComplete(ChannelProgressiveFuture cf) {
-                                try {
-                                    b.close();
-                                } catch (IOException e) {
-                                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                                }
-                                super.operationComplete(cf);
-                            }
-                        });
-                        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-                    }
-                }
-            }
-        } catch (Throwable ioe) {
-            try {
-                channel.close();
-            } catch (RuntimeException ex) {
-                LOGGER.debug(ex.getMessage(), ex);
+        if (future.getAndSetStreamWasAlreadyConsumed()) {
+            if (is.markSupported())
+                is.reset();
+            else {
+                LOGGER.warn("Stream has already been consumed and cannot be reset");
+                return true;
             }
         }
 
+        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+            public void operationComplete(ChannelProgressiveFuture cf) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                }
+                super.operationComplete(cf);
+            }
+        });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+
+        return false;
+    }
+
+    public void sendBody(final Channel channel, final Body body, NettyResponseFuture<?> future) {
+        Object msg;
+        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
+            msg = new BodyFileRegion((RandomAccessBody) body);
+        } else {
+            BodyGenerator bg = future.getRequest().getBodyGenerator();
+            msg = new BodyChunkedInput(body);
+            if (bg instanceof FeedableBodyGenerator) {
+                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+                    @Override
+                    public void onContentAdded() {
+                        channel.pipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                    }
+                });
+            }
+        }
+        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
+
+        final Body b = body;
+        writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+            public void operationComplete(ChannelProgressiveFuture cf) {
+                try {
+                    b.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                }
+                super.operationComplete(cf);
+            }
+        });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
+
+    private Body computeBody(HttpRequest nettyRequest, NettyResponseFuture<?> future) {
+
+        if (nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
+            return null;
+        }
+
+        HttpHeaders headers = nettyRequest.headers();
+        BodyGenerator bg = future.getRequest().getBodyGenerator();
+        Body body = null;
+        if (bg != null) {
+            try {
+                body = bg.createBody();
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+            long length = body.getContentLength();
+            if (length >= 0) {
+                headers.set(HttpHeaders.Names.CONTENT_LENGTH, length);
+            } else {
+                headers.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+            }
+        } else if (future.getRequest().getParts() != null) {
+            String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
+            String length = headers.get(HttpHeaders.Names.CONTENT_LENGTH);
+            body = new MultipartBody(future.getRequest().getParts(), contentType, length);
+        }
+
+        return body;
+    }
+
+    private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest nettyRequest) {
+        FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+        for (Map.Entry<String, String> entries : nettyRequest.headers()) {
+            h.add(entries.getKey(), entries.getValue());
+        }
+
+        TransferCompletionHandler.class.cast(handler).transferAdapter(new TransferAdapter(h));
+    }
+
+    private void scheduleReaper(NettyResponseFuture<?> future) {
         try {
             future.touch();
             int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
@@ -444,7 +412,71 @@ public class NettyRequestSender {
             channels.abort(future, ex);
         }
     }
-    
+
+    protected final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
+        try {
+            // If the channel is dead because it was pooled and the remote
+            // server decided to close it, we just let it go and the
+            // closeChannel do it's work.
+            if (!channel.isOpen() || !channel.isActive()) {
+                return;
+            }
+
+            HttpRequest nettyRequest = future.getNettyRequest();
+            AsyncHandler<T> handler = future.getAsyncHandler();
+            Body body = computeBody(nettyRequest, future);
+
+            if (handler instanceof TransferCompletionHandler) {
+                configureTransferAdapter(handler, nettyRequest);
+            }
+
+            // Leave it to true.
+            // FIXME That doesn't just leave to true, the set is always done? and what's the point of not having a is/get?
+            if (future.getAndSetWriteHeaders(true)) {
+                try {
+                    channel.writeAndFlush(nettyRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
+                } catch (Throwable cause) {
+                    // FIXME why not notify?
+                    LOGGER.debug(cause.getMessage(), cause);
+                    try {
+                        channel.close();
+                    } catch (RuntimeException ex) {
+                        LOGGER.debug(ex.getMessage(), ex);
+                    }
+                    return;
+                }
+            }
+
+            // FIXME OK, why? and what's the point of not having a is/get?
+            if (future.getAndSetWriteBody(true)) {
+                if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+                    if (future.getRequest().getFile() != null) {
+                        sendFileBody(channel, future.getRequest().getFile(), future);
+
+                    } else if (future.getRequest().getStreamData() != null) {
+                        if (sendStreamAndExit(channel, future.getRequest().getStreamData(), future))
+                            return;
+                    } else if (future.getRequest().getBodyGenerator() instanceof InputStreamBodyGenerator) {
+                        if (sendStreamAndExit(channel, InputStreamBodyGenerator.class.cast(future.getRequest().getBodyGenerator()).getInputStream(), future))
+                            return;
+
+                    } else if (body != null) {
+                        sendBody(channel, body, future);
+                    }
+                }
+            }
+
+        } catch (Throwable ioe) {
+            try {
+                channel.close();
+            } catch (RuntimeException ex) {
+                LOGGER.debug(ex.getMessage(), ex);
+            }
+        }
+
+        scheduleReaper(future);
+    }
+
     // FIXME Clean up Netty 3: replayRequest's response parameter is unused +
     // WTF return???
     public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, ChannelHandlerContext ctx) throws IOException {
