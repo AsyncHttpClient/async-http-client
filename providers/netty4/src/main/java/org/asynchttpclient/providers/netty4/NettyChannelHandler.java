@@ -243,9 +243,8 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     private boolean redirect(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
-        // int statusCode = response.getStatus().code();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-        boolean isRedirectStatus = status == MOVED_PERMANENTLY || status == FOUND || status == SEE_OTHER || status == TEMPORARY_REDIRECT;
+        boolean isRedirectStatus = status.equals(MOVED_PERMANENTLY) || status.equals(FOUND) || status.equals(SEE_OTHER) || status.equals(TEMPORARY_REDIRECT);
         if (redirectEnabled && isRedirectStatus) {
 
             if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
@@ -262,7 +261,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     // FIXME why not do that for 301 and 307 too?
-                    if ((status == FOUND || status == SEE_OTHER) && !(status == FOUND && config.isStrict302Handling())) {
+                    if ((status.equals(FOUND) || status.equals(SEE_OTHER)) && !(status.equals(FOUND) && config.isStrict302Handling())) {
                         nBuilder.setMethod(HttpMethod.GET.name());
                     }
 
@@ -757,7 +756,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                 if (redirect(request, future, response, ctx))
                     return;
 
-                boolean validStatus = response.getStatus() == SWITCHING_PROTOCOLS;
+                boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
                 boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
                 String c = response.headers().get(HttpHeaders.Names.CONNECTION);
                 if (c == null) {
