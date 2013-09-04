@@ -1,21 +1,12 @@
 package org.asynchttpclient.providers.netty4;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
-import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
-import static org.asynchttpclient.providers.netty4.util.HttpUtil.HTTP;
-import static org.asynchttpclient.providers.netty4.util.HttpUtil.WEBSOCKET;
-import static org.asynchttpclient.providers.netty4.util.HttpUtil.isNTLM;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.asynchttpclient.providers.netty4.util.HttpUtil.*;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.PrematureChannelClosureException;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -73,7 +64,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final Channels channels;
-    private final AtomicBoolean isClose;
+    private final AtomicBoolean closed;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
 
@@ -81,7 +72,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
         this.config = config;
         this.requestSender = requestSender;
         this.channels = channels;
-        this.isClose = isClose;
+        this.closed = isClose;
     }
 
     @Override
@@ -117,7 +108,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
-        if (isClose.get()) {
+        if (closed.get()) {
             return;
         }
 
@@ -137,7 +128,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             callback.call();
 
         } else if (attachment instanceof NettyResponseFuture<?>) {
-            NettyResponseFuture future = (NettyResponseFuture) attachment;
+            NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attachment);
             future.touch();
 
             if (!config.getIOExceptionFilters().isEmpty() && applyIoExceptionFiltersAndReplayRequest(ctx, future, new IOException("Channel Closed"))) {
@@ -219,8 +210,8 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             }
         }
 
-        Protocol p = (ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
-        p.onError(ctx, e);
+        Protocol protocol = ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol;
+        protocol.onError(ctx, e);
 
         channels.closeChannel(ctx);
         // FIXME not really sure
@@ -253,9 +244,11 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
     private boolean redirect(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
 
-        int statusCode = response.getStatus().code();
+        io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
+        // int statusCode = response.getStatus().code();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-        if (redirectEnabled && (statusCode == MOVED_PERMANENTLY.code() || statusCode == FOUND.code() || statusCode == SEE_OTHER.code() || statusCode == TEMPORARY_REDIRECT.code())) {
+        boolean isRedirectStatus = status == MOVED_PERMANENTLY || status == FOUND || status == SEE_OTHER || status == TEMPORARY_REDIRECT;
+        if (redirectEnabled && isRedirectStatus) {
 
             if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
                 // We must allow 401 handling again.
@@ -270,13 +263,12 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                         nBuilder.setQueryParameters(null);
                     }
 
-                    // FIXME what about 307?
-                    if (!(statusCode < FOUND.code() || statusCode > SEE_OTHER.code()) && !(statusCode == FOUND.code() && config.isStrict302Handling())) {
+                    // FIXME why not do that for 301 and 307 too?
+                    if ((status == FOUND || status == SEE_OTHER) && !(status == FOUND && config.isStrict302Handling())) {
                         nBuilder.setMethod(HttpMethod.GET.name());
                     }
 
-                    // in case of a redirect from HTTP to HTTPS, those values
-                    // might be different
+                    // in case of a redirect from HTTP to HTTPS, future attributes might change
                     final boolean initialConnectionKeepAlive = future.isKeepAlive();
                     final String initialPoolKey = channels.getPoolKey(future);
 
@@ -285,8 +277,8 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                     if (request.getUrl().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replace(HTTP, WEBSOCKET);
                     }
-
                     LOGGER.debug("Redirecting to {}", newUrl);
+
                     for (String cookieStr : future.getHttpResponse().headers().getAll(HttpHeaders.Names.SET_COOKIE)) {
                         for (Cookie c : CookieDecoder.decode(cookieStr)) {
                             nBuilder.addOrReplaceCookie(c);
@@ -310,8 +302,10 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                     if (HttpHeaders.isTransferEncodingChunked(response)) {
                         // We must make sure there is no bytes left before
                         // executing the next request.
+                        // FIXME investigate this
                         Channels.setDefaultAttribute(ctx, callback);
                     } else {
+                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the request has not been sent, right?
                         callback.call();
                     }
 
@@ -590,6 +584,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                     } else if (statusCode == CONTINUE.code()) {
                         future.getAndSetWriteHeaders(false);
                         future.getAndSetWriteBody(true);
+                        // FIXME is this necessary
                         future.setIgnoreNextContents(true);
                         requestSender.writeRequest(ctx.channel(), config, future);
                         return;
@@ -623,7 +618,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                             return;
                         }
 
-                    } else if (statusCode == OK.code() && nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
+                    } else if (statusCode == OK.code() && nettyRequest.getMethod() == HttpMethod.CONNECT) {
 
                         LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
 
@@ -764,9 +759,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                 if (redirect(request, future, response, ctx))
                     return;
 
-                io.netty.handler.codec.http.HttpResponseStatus status = io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
-
-                boolean validStatus = response.getStatus().equals(status);
+                boolean validStatus = response.getStatus() == SWITCHING_PROTOCOLS;
                 boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
                 String c = response.headers().get(HttpHeaders.Names.CONNECTION);
                 if (c == null) {

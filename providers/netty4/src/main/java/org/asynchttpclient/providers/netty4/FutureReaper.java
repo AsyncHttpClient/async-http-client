@@ -16,17 +16,17 @@ import org.asynchttpclient.AsyncHttpClientConfig;
  */
 public final class FutureReaper implements Runnable {
 
-    private final AtomicBoolean isClose;
+    private final AtomicBoolean closed;
     private final Channels channels;
     private Future<?> scheduledFuture;
     private NettyResponseFuture<?> nettyResponseFuture;
     private AsyncHttpClientConfig config;
 
-    public FutureReaper(NettyResponseFuture<?> nettyResponseFuture, AsyncHttpClientConfig config, AtomicBoolean isClose, Channels channels) {
+    public FutureReaper(NettyResponseFuture<?> nettyResponseFuture, AsyncHttpClientConfig config, AtomicBoolean closed, Channels channels) {
         this.nettyResponseFuture = nettyResponseFuture;
         this.channels = channels;
         this.config = config;
-        this.isClose = isClose;
+        this.closed = closed;
     }
 
     public void setScheduledFuture(Future<?> scheduledFuture) {
@@ -79,7 +79,7 @@ public final class FutureReaper implements Runnable {
      * @Override
      */
     public synchronized void run() {
-        if (isClose.get()) {
+        if (closed.get()) {
             cancel(true);
             return;
         }

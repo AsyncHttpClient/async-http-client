@@ -4,7 +4,7 @@ import java.nio.charset.Charset;
 
 public class Constants {
 
-    // FIXME move into a state class along with isClose
+    // FIXME move into a state class along with closed
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
     
     // FIXME what to do with this???

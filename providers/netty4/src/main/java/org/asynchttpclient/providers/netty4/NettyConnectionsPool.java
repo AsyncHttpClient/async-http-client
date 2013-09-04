@@ -38,7 +38,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Timer idleConnectionDetector;
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
@@ -93,7 +93,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         @Override
         public void run() {
             try {
-                if (isClosed.get()) return;
+                if (closed.get()) return;
 
                 if (log.isDebugEnabled()) {
                     Set<String> keys = connectionsPool.keySet();
@@ -155,7 +155,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel channel) {
-        if (isClosed.get()) return false;
+        if (closed.get()) return false;
 
         if (!sslConnectionPoolEnabled && uri.startsWith("https")) {
             return false;
@@ -232,7 +232,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     }
 
     private boolean remove(IdleChannel pooledChannel) {
-        if (pooledChannel == null || isClosed.get()) return false;
+        if (pooledChannel == null || closed.get()) return false;
 
         boolean isRemoved = false;
         ConcurrentLinkedQueue<IdleChannel> pooledConnectionForHost = connectionsPool.get(pooledChannel.uri);
@@ -248,14 +248,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      */
     public boolean removeAll(Channel channel) {
         channel2CreationDate.remove(channel);
-        return !isClosed.get() && remove(channel2IdleChannel.get(channel));
+        return !closed.get() && remove(channel2IdleChannel.get(channel));
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (!isClosed.get() && maxTotalConnections != -1 && channel2IdleChannel.size() >= maxTotalConnections) {
+        if (!closed.get() && maxTotalConnections != -1 && channel2IdleChannel.size() >= maxTotalConnections) {
             return false;
         } else {
             return true;
@@ -266,7 +266,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public void destroy() {
-        if (isClosed.getAndSet(true)) return;
+        if (closed.getAndSet(true)) return;
 
         // stop timer
         idleConnectionDetector.cancel();

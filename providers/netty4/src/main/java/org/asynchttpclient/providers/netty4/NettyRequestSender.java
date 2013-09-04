@@ -54,12 +54,12 @@ public class NettyRequestSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
 
-    private final AtomicBoolean isClose;
+    private final AtomicBoolean closed;
     private final AsyncHttpClientConfig config;
     private final Channels channels;
 
-    public NettyRequestSender(AtomicBoolean isClose, AsyncHttpClientConfig config, Channels channels) {
-        this.isClose = isClose;
+    public NettyRequestSender(AtomicBoolean closed, AsyncHttpClientConfig config, Channels channels) {
+        this.closed = closed;
         this.config = config;
         this.channels = channels;
     }
@@ -68,7 +68,7 @@ public class NettyRequestSender {
 
         boolean success = false;
 
-        if (!isClose.get()) {
+        if (!closed.get()) {
             channels.removeAll(channel);
 
             if (future == null) {
@@ -105,6 +105,7 @@ public class NettyRequestSender {
         doConnect(request, f.getAsyncHandler(), f, true, true, true);
     }
 
+    // FIXME is this useful? Can't we do that when building the request?
     private final boolean validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {
         return request.getMethod().equals(HttpMethod.GET.name()) && asyncHandler instanceof WebSocketUpgradeHandler;
     }
@@ -112,7 +113,7 @@ public class NettyRequestSender {
     public <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean useCache, boolean asyncConnect,
             boolean reclaimCache) throws IOException {
 
-        if (isClose.get()) {
+        if (closed.get()) {
             throw new IOException("Closed");
         }
 
@@ -122,6 +123,7 @@ public class NettyRequestSender {
 
         ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         boolean useProxy = proxyServer != null;
+
         URI uri;
         if (config.isUseRawUrl()) {
             uri = request.getRawURI();
@@ -403,7 +405,7 @@ public class NettyRequestSender {
                     : requestTimeout) : config.getIdleConnectionTimeoutInMs();
 
             if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
-                FutureReaper reaperFuture = new FutureReaper(future, config, isClose, channels);
+                FutureReaper reaperFuture = new FutureReaper(future, config, closed, channels);
                 Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
                 reaperFuture.setScheduledFuture(scheduledFuture);
                 future.setReaperFuture(reaperFuture);

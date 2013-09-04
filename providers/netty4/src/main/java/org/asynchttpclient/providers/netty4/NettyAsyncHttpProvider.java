@@ -37,7 +37,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
-    private final AtomicBoolean isClose = new AtomicBoolean(false);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Channels channels;
     private final NettyRequestSender requestSender;
     private final NettyChannelHandler channelHandler;
@@ -53,8 +53,8 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         channels = new Channels(config, asyncHttpProviderConfig);
-        requestSender = new NettyRequestSender(isClose, config, channels);
-        channelHandler = new NettyChannelHandler(config, requestSender, channels, isClose);
+        requestSender = new NettyRequestSender(closed, config, channels);
+        channelHandler = new NettyChannelHandler(config, requestSender, channels, closed);
         channels.configure(channelHandler);
 
         executeConnectAsync = asyncHttpProviderConfig.isAsyncConnect();
@@ -72,7 +72,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public void close() {
-        isClose.set(true);
+        closed.set(true);
         try {
             channels.close();
 //            config.executorService().shutdown();
