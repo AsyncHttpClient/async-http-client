@@ -1542,14 +1542,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             long t1 = millisTime();
             try {
-                c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute(new AsyncHandlerAdapter() {
-
-                    /* @Override */
-                    public void onThrowable(Throwable t) {
-                        // t.printStackTrace();
-                    }
-
-                }).get();
+                c.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
                 Assert.fail();
             } catch (Throwable ex) {
                 final long elapsedTime = millisTime() - t1;
@@ -1602,9 +1595,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void getShouldAllowBody() throws IllegalArgumentException, IOException {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
-            builder.setBody("Boo!");
-            builder.execute();
+            c.prepareGet(getTargetUrl()).setBody("Boo!").execute();
         } finally {
             c.close();
         }
@@ -1614,9 +1605,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void headShouldNotAllowBody() throws IllegalArgumentException, IOException {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder builder = c.prepareHead(getTargetUrl());
-            builder.setBody("Boo!");
-            builder.execute();
+            c.prepareHead(getTargetUrl()).setBody("Boo!").execute();
         } finally {
             c.close();
         }
@@ -1630,8 +1619,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void invalidUri() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getBrokenTargetUrl());
-            Response r = c.executeRequest(builder.build()).get();
+            Response r = c.executeRequest(c.prepareGet(getBrokenTargetUrl()).build()).get();
             assertEquals(200, r.getStatusCode());
         } finally {
             c.close();
@@ -1642,8 +1630,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncHttpClientConfigBeanTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfigBean().setUserAgent("test"));
         try {
-            AsyncHttpClient.BoundRequestBuilder builder = c.prepareGet(getTargetUrl());
-            Response r = c.executeRequest(builder.build()).get();
+            Response r = c.executeRequest(c.prepareGet(getTargetUrl()).build()).get();
             assertEquals(200, r.getStatusCode());
         } finally {
             c.close();
@@ -1655,10 +1642,8 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.prepareGet(getTargetUrl()).execute().get();
-    
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getResponseBodyAsBytes(), new byte[] {});
-    
         } finally {
             client.close();
         }
@@ -1669,7 +1654,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Response r = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
-
             assertEquals(r.getStatusCode(), 200);
             assertEquals(new String(r.getResponseBodyAsBytes(), "UTF-8"), "MIRROR");
         } finally {
