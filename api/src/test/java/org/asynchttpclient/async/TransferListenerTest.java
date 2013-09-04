@@ -70,8 +70,13 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             }
             byte[] bytes = new byte[size];
             if (bytes.length > 0) {
-                httpRequest.getInputStream().read(bytes);
-                httpResponse.getOutputStream().write(bytes);
+                int read = 0;
+                while (read != -1) {
+                    read = httpRequest.getInputStream().read(bytes);
+                    if (read > 0) {
+                        httpResponse.getOutputStream().write(bytes, 0, read);
+                    }
+                }
             }
 
             httpResponse.setStatus(200);
@@ -129,7 +134,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 assertEquals(response.getStatusCode(), 200);
                 assertNotNull(hRead.get());
                 assertNotNull(hSent.get());
-                assertNotNull(bb.get());
+                assertNull(bb.get());
                 assertNull(throwable.get());
             } catch (IOException ex) {
                 fail("Should have timed out");

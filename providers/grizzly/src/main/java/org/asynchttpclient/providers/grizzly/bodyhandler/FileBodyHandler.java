@@ -92,20 +92,12 @@ public final class FileBodyHandler implements BodyHandler {
 
                 @Override
                 public void updated(WriteResult result) {
-                    final AsyncHandler handler = context.getHandler();
-                    if (handler != null) {
-                        if (handler instanceof TransferCompletionHandler) {
-                            // WriteResult keeps a track of the total amount written,
-                            // so we need to calculate the delta ourselves.
-                            final long resultTotal = result.getWrittenSize();
-                            final long written = resultTotal - context.getTotalBodyWritten().get();
-                            final long total = context.getTotalBodyWritten().addAndGet(written);
-                            ((TransferCompletionHandler) handler).onContentWriteProgress(
-                                    written,
-                                    total,
-                                    requestPacket.getContentLength());
-                        }
-                    }
+                    notifyHandlerIfNeeded(context, requestPacket, result);
+                }
+
+                @Override
+                public void completed(WriteResult result) {
+                    notifyHandlerIfNeeded(context, requestPacket, result);
                 }
             });
         }
@@ -115,6 +107,27 @@ public final class FileBodyHandler implements BodyHandler {
 
 
     // --------------------------------------------------------- Private Methods
+
+
+    private static void notifyHandlerIfNeeded(final HttpTransactionContext context,
+                                              final HttpRequestPacket requestPacket,
+                                              final WriteResult writeResult) {
+        final AsyncHandler handler = context.getHandler();
+        if (handler != null) {
+            if (handler instanceof TransferCompletionHandler) {
+                // WriteResult keeps a track of the total amount written,
+                // so we need to calculate the delta ourselves.
+                final long resultTotal = writeResult.getWrittenSize();
+                final long written =
+                        (resultTotal - context.getTotalBodyWritten().get());
+                final long total = context.getTotalBodyWritten().addAndGet(written);
+                ((TransferCompletionHandler) handler).onContentWriteProgress(
+                        written,
+                        total,
+                        requestPacket.getContentLength());
+            }
+        }
+    }
 
 
     private static boolean configSendFileSupport() {
