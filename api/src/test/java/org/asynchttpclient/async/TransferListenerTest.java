@@ -140,7 +140,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicPutTest() throws Throwable {
+    public void basicPutFileTest() throws Throwable {
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -204,7 +204,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicPutBodyTest() throws Throwable {
+    public void basicPutFileBodyGeneratorTest() throws Throwable {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();

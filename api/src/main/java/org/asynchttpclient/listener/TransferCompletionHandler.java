@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient.listener;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -20,13 +23,12 @@ import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 /**
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}
  * <p/>
- * <blockquote><pre>
+ * <blockquote>
+ * 
+ * <pre>
  * AsyncHttpClient client = new AsyncHttpClient();
  * TransferCompletionHandler tl = new TransferCompletionHandler();
  * tl.addTransferListener(new TransferListener() {
@@ -51,28 +53,32 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * });
  * <p/>
  * Response response = httpClient.prepareGet("http://...").execute(tl).get();
- * </pre></blockquote>
+ * </pre>
+ * 
+ * </blockquote>
  */
 public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<TransferListener>();
     private final boolean accumulateResponseBytes;
     private TransferAdapter transferAdapter;
+    private AtomicLong bytesTransferred = new AtomicLong(0);
+    private AtomicLong totalBytesToTransfer = new AtomicLong(-1);
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
-     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will
-     * throw an IllegalStateException if called.
+     * {@link org.asynchttpclient.Response#getResponseBodyAsStream()} and {@link Response#getResponseBodyExcerpt(int)} will throw an IllegalStateException if called.
      */
     public TransferCompletionHandler() {
         this(false);
     }
 
     /**
-     * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when
-     * {@link org.asynchttpclient.Response#getResponseBody()} get called. The default is false.
-     *
-     * @param accumulateResponseBytes true to accumulates bytes in memory.
+     * Create a TransferCompletionHandler that can or cannot accumulate bytes and make it available when {@link org.asynchttpclient.Response#getResponseBody()} get called. The
+     * default is false.
+     * 
+     * @param accumulateResponseBytes
+     *            true to accumulates bytes in memory.
      */
     public TransferCompletionHandler(boolean accumulateResponseBytes) {
         this.accumulateResponseBytes = accumulateResponseBytes;
@@ -80,8 +86,9 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Add a {@link TransferListener}
-     *
-     * @param t a {@link TransferListener}
+     * 
+     * @param t
+     *            a {@link TransferListener}
      * @return this
      */
     public TransferCompletionHandler addTransferListener(TransferListener t) {
@@ -91,8 +98,9 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Remove a {@link TransferListener}
-     *
-     * @param t a {@link TransferListener}
+     * 
+     * @param t
+     *            a {@link TransferListener}
      * @return this
      */
     public TransferCompletionHandler removeTransferListener(TransferListener t) {
@@ -102,8 +110,9 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     /**
      * Associate a {@link TransferCompletionHandler.TransferAdapter} with this listener.
-     *
-     * @param transferAdapter {@link TransferAdapter}
+     * 
+     * @param transferAdapter
+     *            {@link TransferAdapter}
      */
     public void transferAdapter(TransferAdapter transferAdapter) {
         this.transferAdapter = transferAdapter;
@@ -127,6 +136,10 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public Response onCompleted(Response response) throws Exception {
+        if (bytesTransferred.get() > 0L) {
+            // onContentWriteCompleted hasn't been notified, it would have been set to -1L (async race)
+            onContentWriteCompleted();
+        }
         fireOnEnd();
         return response;
     }
@@ -141,15 +154,34 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public STATE onContentWriteCompleted() {
+        // onContentWriteProgress might not have been called on last write
+        long transferred = bytesTransferred.getAndSet(-1L);
+        long expected = totalBytesToTransfer.get();
+
+        if (expected <= 0L && transferAdapter != null) {
+            FluentCaseInsensitiveStringsMap headers = transferAdapter.getHeaders();
+            String contentLengthString = headers.getFirstValue("Content-Length");
+            if (contentLengthString != null)
+                expected = Long.valueOf(contentLengthString);
+        }
+
+        if (expected > 0L && transferred != expected) {
+            fireOnBytesSent(expected - transferred, expected, expected);
+        }
+
         return STATE.CONTINUE;
     }
 
     @Override
     public STATE onContentWriteProgress(long amount, long current, long total) {
+        bytesTransferred.addAndGet(amount);
+
+        if (total > 0L)
+            totalBytesToTransfer.set(total);
+
         fireOnBytesSent(amount, current, total);
         return STATE.CONTINUE;
     }
-
 
     @Override
     public void onThrowable(Throwable t) {
