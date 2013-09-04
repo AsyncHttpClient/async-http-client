@@ -17,10 +17,8 @@
 package org.asynchttpclient.providers.netty4;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,11 +44,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Allow configuring the Netty's event loop.
      */
     private EventLoopGroup eventLoopGroup;
-
-    /**
-     * Allow configuring the Netty's used socket channel.
-     */
-    private Class<? extends SocketChannel> socketChannel;
     
     private AdditionalChannelInitializer httpAdditionalChannelInitializer;
     private AdditionalChannelInitializer wsAdditionalChannelInitializer;
@@ -155,14 +148,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.useBlockingIO = useBlockingIO;
     }
 
-    public Class<? extends SocketChannel> getSocketChannel() {
-        return socketChannel;
-    }
-
-    public void setSocketChannel(Class<? extends SocketChannel> socketChannel) {
-        this.socketChannel = socketChannel;
-    }
-
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
     }
@@ -233,5 +218,10 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setWssAdditionalChannelInitializer(AdditionalChannelInitializer wssAdditionalChannelInitializer) {
         this.wssAdditionalChannelInitializer = wssAdditionalChannelInitializer;
+    }
+    
+    public static interface AdditionalChannelInitializer {
+
+        void initChannel(Channel ch) throws Exception;
     }
 }

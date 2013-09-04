@@ -28,6 +28,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
+import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig.AdditionalChannelInitializer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

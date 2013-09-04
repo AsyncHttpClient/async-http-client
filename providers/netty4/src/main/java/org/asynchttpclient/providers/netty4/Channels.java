@@ -68,8 +68,7 @@ public class Channels {
     private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
 
     private EventLoopGroup eventLoopGroup;
-    private final Class<? extends SocketChannel> socketChannelFactory;
-    private final boolean allowReleaseSocketChannelFactory;
+    private final boolean allowReleaseEventLoopGroup;
 
     private final Bootstrap plainBootstrap;
     private final Bootstrap secureBootstrap;
@@ -97,39 +96,34 @@ public class Channels {
         this.config = config;
         this.asyncHttpProviderConfig = asyncHttpProviderConfig;
 
+        Class<? extends SocketChannel> socketChannelClass = null;
         if (asyncHttpProviderConfig.isUseBlockingIO()) {
-            socketChannelFactory = OioSocketChannel.class;
-            this.allowReleaseSocketChannelFactory = true;
-        } else {
-            // check if external NioClientSocketChannelFactory is defined
-            Class<? extends SocketChannel> scf = asyncHttpProviderConfig.getSocketChannel();
-            if (scf != null) {
-                this.socketChannelFactory = scf;
+            socketChannelClass = OioSocketChannel.class;
+            eventLoopGroup = new OioEventLoopGroup();
+            allowReleaseEventLoopGroup = true;
 
-                // cannot allow releasing shared channel factory
-                this.allowReleaseSocketChannelFactory = false;
+        } else {
+            // check if external EventLoopGroup is defined
+            eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
+            if (eventLoopGroup instanceof OioEventLoopGroup) {
+                socketChannelClass = OioSocketChannel.class;
+                allowReleaseEventLoopGroup = false;
+
+            } else if (eventLoopGroup instanceof NioEventLoopGroup) {
+                socketChannelClass = NioSocketChannel.class;
+                allowReleaseEventLoopGroup = false;
+
             } else {
-                socketChannelFactory = NioSocketChannel.class;
-                eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
-                if (eventLoopGroup == null) {
-                    if (socketChannelFactory == OioSocketChannel.class) {
-                        eventLoopGroup = new OioEventLoopGroup();
-                    } else if (socketChannelFactory == NioSocketChannel.class) {
-                        eventLoopGroup = new NioEventLoopGroup();
-                    } else {
-                        throw new IllegalArgumentException("No set event loop compatbile with socket channel " + scf);
-                    }
-                }
-                int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
-                LOGGER.debug("Number of application's worker threads is {}", numWorkers);
-                this.allowReleaseSocketChannelFactory = true;
+                socketChannelClass = NioSocketChannel.class;
+                eventLoopGroup = new NioEventLoopGroup();
+                allowReleaseEventLoopGroup = true;
             }
         }
 
-        plainBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
-        secureBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
-        webSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
-        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelFactory).group(eventLoopGroup);
+        plainBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        secureBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        webSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
@@ -247,7 +241,7 @@ public class Channels {
             }
         }
         openChannels.close();
-        if (this.allowReleaseSocketChannelFactory) {
+        if (this.allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
     }
