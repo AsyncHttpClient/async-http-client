@@ -41,15 +41,12 @@ public class NettyRequests {
 
     public static HttpRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) throws IOException {
 
-        String method = request.getMethod();
-        if (allowConnect && proxyServer != null && isSecure(uri)) {
-            method = HttpMethod.CONNECT.toString();
-        }
-        return construct(config, request, new HttpMethod(method), uri, proxyServer);
-    }
-
-    private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, URI uri, ProxyServer proxyServer) throws IOException {
-
+        HttpMethod method = null;
+        if (allowConnect && proxyServer != null && isSecure(uri))
+            method = HttpMethod.CONNECT;
+        else
+            method = HttpMethod.valueOf(request.getMethod());
+        
         String host = null;
         HttpVersion httpVersion;
         String requestUri;
@@ -63,7 +60,7 @@ public class NettyRequests {
             host = AsyncHttpProviderUtils.getHost(uri);
         }
 
-        if (m.equals(HttpMethod.CONNECT)) {
+        if (method == HttpMethod.CONNECT) {
             httpVersion = HttpVersion.HTTP_1_0;
             requestUri = AsyncHttpProviderUtils.getAuthority(uri);
         } else {
@@ -94,7 +91,7 @@ public class NettyRequests {
             host = "127.0.0.1";
         }
 
-        if (!m.equals(HttpMethod.CONNECT)) {
+        if (method != HttpMethod.CONNECT) {
             FluentCaseInsensitiveStringsMap h = request.getHeaders();
             if (h != null) {
                 for (Entry<String, List<String>> header : h) {
@@ -217,12 +214,12 @@ public class NettyRequests {
         }
 
         boolean hasDeferredContent = false;
-        if (!m.equals(HttpMethod.CONNECT)) {
+        if (method != HttpMethod.CONNECT) {
             if (isNonEmpty(request.getCookies())) {
                 headers.put(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
-            if (!m.equals(HttpMethod.HEAD) && !m.equals(HttpMethod.OPTIONS) && !m.equals(HttpMethod.TRACE)) {
+            if (method != HttpMethod.HEAD && method != HttpMethod.OPTIONS && method != HttpMethod.TRACE) {
 
                 String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
@@ -283,11 +280,11 @@ public class NettyRequests {
 
         HttpRequest nettyRequest;
         if (hasDeferredContent) {
-            nettyRequest = new DefaultHttpRequest(httpVersion, m, requestUri);
+            nettyRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
         } else if (content != null) {
-            nettyRequest = new DefaultFullHttpRequest(httpVersion, m, requestUri, content);
+            nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, content);
         } else {
-            nettyRequest = new DefaultFullHttpRequest(httpVersion, m, requestUri);
+            nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
         }
         for (Entry<String, Object> header : headers.entrySet()) {
             nettyRequest.headers().set(header.getKey(), header.getValue());
