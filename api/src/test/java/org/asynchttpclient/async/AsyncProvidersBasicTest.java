@@ -1659,7 +1659,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getResponseBodyAsBytes(), new byte[] {});
     
-            client.close();
         } finally {
             client.close();
         }
