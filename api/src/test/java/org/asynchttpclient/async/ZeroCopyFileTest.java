@@ -12,6 +12,21 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
@@ -22,24 +37,6 @@ import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link BasicHttpsTest}
@@ -68,14 +65,10 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
     public void zeroCopyPostTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            ClassLoader cl = getClass().getClassLoader();
-            // override system properties
-            URL url = cl.getResource("SimpleTextFile.txt");
-            File file = new File(url.toURI());
             final AtomicBoolean headerSent = new AtomicBoolean(false);
             final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncCompletionHandler<Response>() {
+            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
 
                 public STATE onHeaderWriteCompleted() {
                     headerSent.set(true);
@@ -91,8 +84,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     return response;
                 }
-            });
-            Response resp = f.get();
+            }).get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
@@ -107,12 +99,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
     public void zeroCopyPutTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            ClassLoader cl = getClass().getClassLoader();
-            // override system properties
-            URL url = cl.getResource("SimpleTextFile.txt");
-            File file = new File(url.toURI());
-
-            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(file).execute();
+            Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -130,16 +117,11 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+        tmp.deleteOnExit();
+        final FileOutputStream stream = new FileOutputStream(tmp);
         try {
-            ClassLoader cl = getClass().getClassLoader();
-            // override system properties
-            URL url = cl.getResource("SimpleTextFile.txt");
-            File file = new File(url.toURI());
-
-            File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
-            tmp.deleteOnExit();
-            final FileOutputStream stream = new FileOutputStream(tmp);
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
+            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                 public void onThrowable(Throwable t) {
                 }
 
@@ -159,12 +141,11 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted() throws Exception {
                     return null;
                 }
-            });
-            Response resp = f.get();
-            stream.close();
+            }).get();
             assertNull(resp);
-            assertEquals(file.length(), tmp.length());
+            assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
         } finally {
+            stream.close();
             client.close();
         }
     }
@@ -172,16 +153,12 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, TimeoutException, InterruptedException, URISyntaxException {
         AsyncHttpClient client = getAsyncHttpClient(null);
+        File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
+        tmp.deleteOnExit();
+        final FileOutputStream stream = new FileOutputStream(tmp);
         try {
-            ClassLoader cl = getClass().getClassLoader();
-            // override system properties
-            URL url = cl.getResource("SimpleTextFile.txt");
-            File file = new File(url.toURI());
 
-            File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
-            tmp.deleteOnExit();
-            final FileOutputStream stream = new FileOutputStream(tmp);
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(file).execute(new AsyncHandler<Response>() {
+            Response resp = client.preparePost("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
                 public void onThrowable(Throwable t) {
                 }
 
@@ -206,12 +183,11 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted() throws Exception {
                     return null;
                 }
-            });
-            Response resp = f.get();
-            stream.close();
+            }).get();
             assertNull(resp);
-            assertEquals(file.length(), tmp.length());
+            assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
         } finally {
+            stream.close();
             client.close();
         }
     }

@@ -20,7 +20,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -41,14 +40,9 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         int timeout = (int) (repeats / 1000);
 
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build();
-        AsyncHttpClient client = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
         try {
-            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
-
-            rb.setBody(file);
-
-            Response response = rb.execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             Assert.assertEquals(200, response.getStatusCode());
         } finally {
             client.close();
@@ -63,11 +57,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
-
-            rb.setBody(file);
-
-            Response response = rb.execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             Assert.assertEquals(200, response.getStatusCode());
         } finally {
             client.close();

@@ -46,8 +46,6 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
         public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
-            // 512MB large download
-            // 512 * 1024 * 1024 = 536870912
             httpResponse.setStatus(200);
             httpResponse.setContentLength(HALF_GIG);
             httpResponse.setContentType("application/octet-stream");
