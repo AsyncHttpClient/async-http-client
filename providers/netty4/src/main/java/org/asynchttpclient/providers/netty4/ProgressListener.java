@@ -28,6 +28,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
 
     @Override
     public void operationComplete(ChannelProgressiveFuture cf) {
+        // FIXME remove this with next 4.0.9: https://github.com/netty/netty/issues/1809
         // The write operation failed. If the channel was cached, it means it got asynchronously closed.
         // Let's retry a second time.
         Throwable cause = cf.cause();
