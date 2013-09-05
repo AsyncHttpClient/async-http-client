@@ -17,11 +17,9 @@ package org.asynchttpclient.async;
 
 import static org.testng.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
-import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -38,6 +36,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -95,9 +94,9 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
             httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
 
-            javax.servlet.http.Cookie[] cs = httpRequest.getCookies();
+            Cookie[] cs = httpRequest.getCookies();
             if (cs != null) {
-                for (javax.servlet.http.Cookie c : cs) {
+                for (Cookie c : cs) {
                     httpResponse.addCookie(c);
                 }
             }
@@ -141,10 +140,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
-            URL url = getClass().getClassLoader().getResource("SimpleTextFile.txt");
-            File file = new File(url.toURI());
-
-            Response resp = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
+            Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
@@ -175,7 +171,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
+        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
         try {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
@@ -193,9 +189,9 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
         AtomicBoolean trusted = new AtomicBoolean(false);
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build());
+        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build());
         try {
-            final String body = "hello there";
+            String body = "hello there";
 
             // first request fails because server certificate is rejected
             try {
@@ -213,7 +209,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             trusted.set(true);
 
             // second request should succeed
-            final Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
         } finally {

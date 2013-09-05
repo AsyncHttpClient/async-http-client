@@ -21,7 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FilePart;
 import org.asynchttpclient.Response;
@@ -34,14 +33,9 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build();
-        AsyncHttpClient client = getAsyncHttpClient(config);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build());
         try {
-            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
-
-            rb.addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8"));
-
-            Response response = rb.execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get();
             Assert.assertEquals(200, response.getStatusCode());
         } finally {
             client.close();
@@ -51,15 +45,11 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutLargeTextFile() throws Exception {
         long repeats = (1024 * 1024 / PATTERN_BYTES.length) + 1;
-        File largeFile = createTempFile(PATTERN_BYTES, (int) repeats);
+        File file = createTempFile(PATTERN_BYTES, (int) repeats);
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            BoundRequestBuilder rb = client.preparePut(getTargetUrl());
-
-            rb.addBodyPart(new FilePart("test", largeFile, "application/octet-stream", "UTF-8"));
-
-            Response response = rb.execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get();
             Assert.assertEquals(200, response.getStatusCode());
         } finally {
             client.close();

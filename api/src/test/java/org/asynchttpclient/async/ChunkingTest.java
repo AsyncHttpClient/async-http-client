@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.assertNotNull;
 import static org.testng.AssertJUnit.*;
 import static org.testng.FileAssert.fail;
 
@@ -21,7 +20,6 @@ import java.io.FileInputStream;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -60,27 +58,19 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             builder.setBody(new InputStreamBodyGenerator(new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE), 400000)));
 
             Request r = builder.build();
-            Response res = null;
 
-            try {
-                ListenableFuture<Response> response = c.executeRequest(r);
-                res = response.get();
-                assertNotNull(res.getResponseBodyAsStream());
-                if (500 == res.getStatusCode()) {
-                    System.out.println("==============");
-                    System.out.println("500 response from call");
-                    System.out.println("Headers:" + res.getHeaders());
-                    System.out.println("==============");
-                    System.out.flush();
-                    assertEquals("Should have 500 status code", 500, res.getStatusCode());
-                    assertTrue("Should have failed due to chunking", res.getHeader("X-Exception").contains("invalid.chunk.length"));
-                    fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + res.getHeader("X-Exception"));
-                } else {
-                    assertEquals(LARGE_IMAGE_BYTES, res.getResponseBodyAsBytes());
-                }
-            } catch (Exception e) {
-
-                fail("Exception Thrown:" + e.getMessage());
+            Response response = c.executeRequest(r).get();
+            if (500 == response.getStatusCode()) {
+                System.out.println("==============");
+                System.out.println("500 response from call");
+                System.out.println("Headers:" + response.getHeaders());
+                System.out.println("==============");
+                System.out.flush();
+                assertEquals("Should have 500 status code", 500, response.getStatusCode());
+                assertTrue("Should have failed due to chunking", response.getHeader("X-Exception").contains("invalid.chunk.length"));
+                fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + response.getHeader("X-Exception"));
+            } else {
+                assertEquals(LARGE_IMAGE_BYTES, response.getResponseBodyAsBytes());
             }
         } finally {
             c.close();

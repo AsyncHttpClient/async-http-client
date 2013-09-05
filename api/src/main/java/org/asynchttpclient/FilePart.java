@@ -37,7 +37,7 @@ public class FilePart implements Part {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public String getName() {
         return name;
     }
