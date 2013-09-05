@@ -68,9 +68,9 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest() throws Throwable {
         AsyncHttpClient p = getAsyncHttpClient(null);
         try {
-            Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html?q=+%20x").build();
+            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
             String requestUrl = request.getUrl();
-            Assert.assertEquals(requestUrl, "http://foo.com/foo.html?q=%20%20x");
+            Assert.assertEquals(requestUrl, getTargetUrl() + "?q=%20%20x");
             Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
                 public String onCompleted(Response response) throws Exception {
@@ -85,7 +85,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             });
             String url = responseFuture.get();
-            Assert.assertEquals(url, "http://foo.com/foo.html?q=%20%20x");
+            Assert.assertEquals(url, getTargetUrl() + "?q=%20%20x");
         } finally {
             p.close();
         }
@@ -95,7 +95,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest2() throws Throwable {
         AsyncHttpClient p = getAsyncHttpClient(null);
         try {
-            Request request = new RequestBuilder("GET").setUrl("http://foo.com/foo.html").addQueryParameter("q", "a b").build();
+            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "").addQueryParameter("q", "a b").build();
 
             Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -111,7 +111,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             });
             String url = responseFuture.get();
-            Assert.assertEquals(url, "http://foo.com/foo.html?q=a%20b");
+            Assert.assertEquals(url, getTargetUrl() + "?q=a%20b");
         } finally {
             p.close();
         }
@@ -121,7 +121,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void emptyRequestURI() throws Throwable {
         AsyncHttpClient p = getAsyncHttpClient(null);
         try {
-            Request request = new RequestBuilder("GET").setUrl("http://foo.com").build();
+            Request request = new RequestBuilder("GET").setUrl(getTargetUrl()).build();
 
             Future<String> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -137,7 +137,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
             });
             String url = responseFuture.get();
-            Assert.assertEquals(url, "http://foo.com/");
+            Assert.assertEquals(url, getTargetUrl());
         } finally {
             p.close();
         }
