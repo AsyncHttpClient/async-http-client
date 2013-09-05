@@ -36,5 +36,4 @@ public class PropertiesBasedResumableProcesserTest {
         assertEquals(m.get("http://localhost/test.url"), Long.valueOf(15L));
         assertEquals(m.get("http://localhost/test2.url"), Long.valueOf(50L));
     }
-
 }

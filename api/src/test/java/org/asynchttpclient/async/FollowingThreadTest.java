@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class FollowingThreadTest extends AbstractBasicTest {
 
-    private final static int COUNT = 10;
+    private static final int COUNT = 10;
 
     @Test(timeOut = 30 * 1000, groups = { "online", "default_provider", "scalability" })
     public void testFollowRedirect() throws IOException, ExecutionException, TimeoutException, InterruptedException {
@@ -94,5 +94,4 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
             pool.shutdown();
         }
     }
-
 }

@@ -12,35 +12,8 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ByteArrayPart;
-import org.asynchttpclient.FilePart;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.StringPart;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,17 +32,41 @@ import java.util.List;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ByteArrayPart;
+import org.asynchttpclient.FilePart;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.StringPart;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * @author dominict
  */
 public abstract class MultipartUploadTest extends AbstractBasicTest {
-    private String servletEndpointRedirectUrl;
-    public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48, 58, 54, 6, 0, 0, 0 };
+    public static byte GZIPTEXT[] = new byte[] { 31, -117, 8, 8, 11, 43, 79, 75, 0, 3, 104, 101, 108, 108, 111, 46, 116, 120, 116, 0, -53, 72, -51, -55, -55, -25, 2, 0, 32, 48,
+            58, 54, 6, 0, 0, 0 };
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -89,23 +86,6 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         server.setHandler(context);
         server.start();
-
-        servletEndpointRedirectUrl = "http://localhost" + ":" + port1;
-    }
-
-    @AfterClass
-    public void stop() {
-        try {
-
-            if (server != null) {
-                server.stop();
-            }
-
-        } catch (Exception e) {
-            System.err.print("Error stopping servlet tester");
-            e.printStackTrace();
-        }
-
     }
 
     private File getClasspathFile(String file) throws FileNotFoundException {
@@ -215,7 +195,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
 
             RequestBuilder builder = new RequestBuilder("POST");
-            builder.setUrl(servletEndpointRedirectUrl + "/upload/bob");
+            builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
             builder.addBodyPart(new StringPart("Name", "Dominic"));
@@ -446,23 +426,27 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
                 }
                 Writer w = response.getWriter();
-                w.write(Integer.toString(getFilesProcessed()));
-                resetFilesProcessed();
-                resetStringsProcessed();
-                w.write("||");
-                w.write(files.toString());
-                w.close();
+                try {
+                    w.write(Integer.toString(getFilesProcessed()));
+                    resetFilesProcessed();
+                    resetStringsProcessed();
+                    w.write("||");
+                    w.write(files.toString());
+                } finally {
+                    // FIXME
+                    w.close();
+                }
             } else {
                 Writer w = response.getWriter();
-                w.write(Integer.toString(getFilesProcessed()));
-                resetFilesProcessed();
-                resetStringsProcessed();
-                w.write("||");
-                w.close();
+                try {
+                    w.write(Integer.toString(getFilesProcessed()));
+                    resetFilesProcessed();
+                    resetStringsProcessed();
+                    w.write("||");
+                } finally {
+                    w.close();
+                }
             }
-
         }
-
     }
-
 }

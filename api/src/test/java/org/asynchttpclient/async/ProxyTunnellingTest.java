@@ -91,7 +91,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
-        super.tearDownGlobal();
+        server.stop();
         server2.stop();
     }
 

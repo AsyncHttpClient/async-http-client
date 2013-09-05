@@ -40,7 +40,7 @@ import static org.testng.Assert.assertTrue;
 
 public abstract class WebDavBasicTest extends AbstractBasicTest {
 
-    public Embedded embedded;
+    protected Embedded embedded;
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
@@ -76,11 +76,17 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
         embedded.start();
     }
 
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws InterruptedException, Exception {
+        embedded.stop();
+    }
+
     protected String getTargetUrl() {
         return String.format("http://127.0.0.1:%s/folder1", port1);
     }
 
     @AfterMethod(alwaysRun = true)
+    // FIXME not sure that's threadsafe
     public void clean() throws InterruptedException, Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
@@ -89,11 +95,6 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
         } finally {
             c.close();
         }
-    }
-
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws InterruptedException, Exception {
-        embedded.stop();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -192,5 +193,4 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
             c.close();
         }
     }
-
 }

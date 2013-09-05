@@ -51,8 +51,8 @@ import static org.testng.Assert.assertNotNull;
 
 public abstract class DigestAuthTest extends AbstractBasicTest {
 
-    private final static String user = "user";
-    private final static String admin = "admin";
+    private static final String USER = "user";
+    private static final String ADMIN = "admin";
 
     @BeforeClass(alwaysRun = true)
     @Override
@@ -75,7 +75,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
 
         Constraint constraint = new Constraint();
         constraint.setName(Constraint.__BASIC_AUTH);
-        constraint.setRoles(new String[] { user, admin });
+        constraint.setRoles(new String[] { USER, ADMIN });
         constraint.setAuthenticate(true);
 
         ConstraintMapping mapping = new ConstraintMapping();
@@ -86,8 +86,8 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
         cm.add(mapping);
 
         Set<String> knownRoles = new HashSet<String>();
-        knownRoles.add(user);
-        knownRoles.add(admin);
+        knownRoles.add(USER);
+        knownRoles.add(ADMIN);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
         security.setConstraintMappings(cm, knownRoles);
@@ -115,7 +115,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").setScheme(Realm.AuthScheme.DIGEST).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setRealmName("MyRealm").setScheme(Realm.AuthScheme.DIGEST).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -131,7 +131,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthTestWithoutScheme() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setRealmName("MyRealm").build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setRealmName("MyRealm").build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(60, TimeUnit.SECONDS);
@@ -147,7 +147,7 @@ public abstract class DigestAuthTest extends AbstractBasicTest {
     public void digestAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).setScheme(Realm.AuthScheme.DIGEST).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/").setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(ADMIN).setScheme(Realm.AuthScheme.DIGEST).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(20, TimeUnit.SECONDS);

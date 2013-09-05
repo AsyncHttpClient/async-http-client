@@ -16,15 +16,14 @@
 package org.asynchttpclient.async;
 
 import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Response;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -37,6 +36,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -52,7 +55,8 @@ public abstract class ProxyTest extends AbstractBasicTest {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getUri().getPath());
                 response.setStatus(HttpServletResponse.SC_OK);
-            } else { // this handler is to handle POST request
+            } else {
+                // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }
             r.setHandled(true);
@@ -144,6 +148,15 @@ public abstract class ProxyTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
+    public void runSequentiallyBecauseNotThreadSafe() throws Exception {
+        testProxyProperties();
+        testIgnoreProxyPropertiesByDefault();
+        testProxyActivationProperty();
+        testWildcardNonProxyHosts();
+        testUseProxySelector();
+    }
+
+    // @Test(groups = { "standalone", "default_provider" })
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
         try {
@@ -183,14 +196,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = { "standalone", "default_provider" })
     public void testIgnoreProxyPropertiesByDefault() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
         try {
             Properties props = new Properties();
             props.putAll(originalProps);
 
-            // FIXME most likely non threadsafe!
+            // FIXME not threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -215,14 +228,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = { "standalone", "default_provider" })
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
         try {
             Properties props = new Properties();
             props.putAll(originalProps);
 
-            // FIXME most likely non threadsafe!
+            // FIXME not threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -255,14 +268,14 @@ public abstract class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = { "standalone", "default_provider" })
     public void testWildcardNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         Properties originalProps = System.getProperties();
         try {
             Properties props = new Properties();
             props.putAll(originalProps);
 
-            // FIXME most likely non threadsafe!
+            // FIXME not threadsafe!
             System.setProperties(props);
 
             System.setProperty("http.proxyHost", "127.0.0.1");
@@ -288,7 +301,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    // @Test(groups = { "standalone", "default_provider" })
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         ProxySelector originalProxySelector = ProxySelector.getDefault();
         try {
@@ -327,7 +340,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
                 client.close();
             }
         } finally {
-            // FIXME is this threadsafe???
+            // FIXME not threadsafe
             ProxySelector.setDefault(originalProxySelector);
         }
     }

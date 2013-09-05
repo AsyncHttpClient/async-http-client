@@ -51,9 +51,9 @@ import static org.testng.Assert.fail;
 
 public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
-    private final static String user = "user";
+    private static final String USER = "user";
 
-    private final static String admin = "admin";
+    private static final String ADMIN = "admin";
 
     protected AsyncHttpClient client;
 
@@ -76,7 +76,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
         Constraint constraint = new Constraint();
         constraint.setName(auth);
-        constraint.setRoles(new String[] { user, admin });
+        constraint.setRoles(new String[] { USER, ADMIN });
         constraint.setAuthenticate(true);
 
         ConstraintMapping mapping = new ConstraintMapping();
@@ -84,8 +84,8 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         mapping.setPathSpec("/*");
 
         Set<String> knownRoles = new HashSet<String>();
-        knownRoles.add(user);
-        knownRoles.add(admin);
+        knownRoles.add(USER);
+        knownRoles.add(ADMIN);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
 
@@ -258,7 +258,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     private Realm realm(boolean preemptive) {
-        return (new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(preemptive).build();
+        return (new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setUsePreemptiveAuth(preemptive).build();
     }
 
     @Override

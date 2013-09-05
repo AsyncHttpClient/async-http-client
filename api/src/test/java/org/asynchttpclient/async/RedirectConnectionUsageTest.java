@@ -15,6 +15,18 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.*;
+import static org.testng.FileAssert.fail;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Date;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
@@ -27,31 +39,16 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.FileAssert.fail;
-
 /**
- * Test for multithreaded url fetcher calls that use two separate
- * sets of ssl certificates.  This then tests that the certificate
- * settings do not clash (override each other), resulting in the
- * peer not authenticated exception
- *
+ * Test for multithreaded url fetcher calls that use two separate sets of ssl certificates. This then tests that the certificate settings do not clash (override each other),
+ * resulting in the peer not authenticated exception
+ * 
  * @author dominict
  */
-public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
+public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
     private String BASE_URL;
 
     private String servletEndpointRedirectUrl;
@@ -68,7 +65,6 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
 
         server.addConnector(listener);
 
-
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
         context.setContextPath("/");
@@ -81,39 +77,23 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
 
         BASE_URL = "http://localhost" + ":" + port1;
         servletEndpointRedirectUrl = BASE_URL + "/redirect";
-
-    }
-
-    @AfterClass
-    public void tearDown() {
-        try {
-            if (server != null) {
-                server.stop();
-            }
-
-        } catch (Exception e) {
-            System.err.print("Error stopping servlet tester");
-            e.printStackTrace();
-        }
     }
 
     /**
-     * Tests that after a redirect the final url in the response
-     * reflect the redirect
+     * Tests that after a redirect the final url in the response reflect the redirect
      */
     @Test
     public void testGetRedirectFinalUrl() {
 
-        AsyncHttpClientConfig.Builder bc =
-                new AsyncHttpClientConfig.Builder();
-        
+        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
+
         bc.setAllowPoolingConnection(true);
         bc.setMaximumConnectionsPerHost(1);
         bc.setMaximumConnectionsTotal(1);
         bc.setConnectionTimeoutInMs(1000);
         bc.setRequestTimeoutInMs(1000);
         bc.setFollowRedirects(true);
-        
+
         AsyncHttpClient c = getAsyncHttpClient(bc.build());
         try {
 
@@ -146,8 +126,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
 
     @SuppressWarnings("serial")
     class MockRedirectHttpServlet extends HttpServlet {
-        public void service(HttpServletRequest req, HttpServletResponse res)
-                throws ServletException, IOException {
+        public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
             res.sendRedirect("/overthere");
         }
     }
@@ -159,7 +138,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest{
         private static final String xml = "<?xml version=\"1.0\"?><hello date=\"%s\"></hello>";
 
         public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-            String xmlToReturn = String.format(xml, new Object[]{new Date().toString()});
+            String xmlToReturn = String.format(xml, new Object[] { new Date().toString() });
 
             res.setStatus(200, "Complete, XML Being Returned");
             res.addHeader("Content-Type", contentType);

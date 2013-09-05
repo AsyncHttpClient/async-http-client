@@ -12,17 +12,11 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Enumeration;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,14 +38,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
-
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
-    private static final byte[] PATTERN_BYTES = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes(Charset.forName("UTF-16"));
-
-    static {
-        TMP.mkdirs();
-        TMP.deleteOnExit();
-    }
 
     private class BasicHandler extends AbstractHandler {
 
@@ -268,27 +254,5 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
         } finally {
             client.close();
         }
-    }
-
-    public String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
-    }
-
-    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
-        File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
-        tmpFile.deleteOnExit();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(tmpFile);
-            for (int i = 0; i < repeat; i++) {
-                out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
-            }
-        }
-
-        return tmpFile;
     }
 }

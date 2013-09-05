@@ -62,6 +62,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.StringPart;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
+
     private static final String UTF_8 = "text/html;charset=UTF-8";
 
     @Test(groups = { "standalone", "default_provider", "async" })

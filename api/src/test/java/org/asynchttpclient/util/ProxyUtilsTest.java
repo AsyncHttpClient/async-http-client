@@ -22,16 +22,13 @@ import org.testng.annotations.Test;
 public class ProxyUtilsTest {
     @Test(groups = "fast")
     public void testBasics() {
-        ProxyServer proxyServer;
-        Request req;
-
         // should avoid, there is no proxy (is null)
-        req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
+        Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
         Assert.assertTrue(ProxyUtils.avoidProxy(null, req));
 
         // should avoid, it's in non-proxy hosts
         req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
-        proxyServer = new ProxyServer("foo", 1234);
+        ProxyServer proxyServer = new ProxyServer("foo", 1234);
         proxyServer.addNonProxyHost("somewhere.com");
         Assert.assertTrue(ProxyUtils.avoidProxy(proxyServer, req));
 

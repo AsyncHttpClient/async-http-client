@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
@@ -27,6 +28,7 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -35,7 +37,8 @@ import static org.testng.Assert.assertEquals;
 
 public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
 
-    public void setUpServer() throws Exception {
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
         server = new Server();
         port1 = findFreePort();
         Connector listener = new SelectChannelConnector();
@@ -75,7 +78,6 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNonAsciiContentLength() throws Exception {
-        setUpServer();
         execute("test");
         execute("\u4E00"); // Unicode CJK ideograph for one
     }
@@ -92,5 +94,4 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

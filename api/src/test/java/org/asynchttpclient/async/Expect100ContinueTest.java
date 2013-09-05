@@ -77,5 +77,4 @@ public abstract class Expect100ContinueTest extends AbstractBasicTest {
     public AbstractHandler configureHandler() throws Exception {
         return new ZeroCopyHandler();
     }
-
 }

@@ -268,5 +268,4 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

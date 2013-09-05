@@ -125,5 +125,4 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
             c.close();
         }
     }
-
 }

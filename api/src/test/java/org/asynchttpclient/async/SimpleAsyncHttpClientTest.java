@@ -307,5 +307,4 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

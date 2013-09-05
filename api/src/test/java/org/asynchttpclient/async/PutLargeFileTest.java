@@ -13,10 +13,7 @@
 package org.asynchttpclient.async;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -36,21 +33,11 @@ import org.testng.annotations.Test;
  */
 public abstract class PutLargeFileTest extends AbstractBasicTest {
 
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
-    private static final byte[] PATTERN_BYTES = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes(Charset.forName("UTF-16"));
-
-    static {
-        TMP.mkdirs();
-        TMP.deleteOnExit();
-    }
-
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutLargeFile() throws Exception {
 
         long repeats = (1024 * 1024 * 100 / PATTERN_BYTES.length) + 1;
         File file = createTempFile(PATTERN_BYTES, (int) repeats);
-        long expectedFileSize = PATTERN_BYTES.length * repeats;
-        Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
 
         int timeout = (int) (repeats / 1000);
 
@@ -73,8 +60,6 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         long repeats = (1024 / PATTERN_BYTES.length) + 1;
         File file = createTempFile(PATTERN_BYTES, (int) repeats);
-        long expectedFileSize = PATTERN_BYTES.length * repeats;
-        Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
@@ -102,23 +87,5 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
                 arg1.setHandled(true);
             }
         };
-    }
-
-    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
-        File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
-        tmpFile.deleteOnExit();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(tmpFile);
-            for (int i = 0; i < repeat; i++) {
-                out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
-            }
-        }
-
-        return tmpFile;
     }
 }

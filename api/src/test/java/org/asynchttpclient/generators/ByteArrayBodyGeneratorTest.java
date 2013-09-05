@@ -74,5 +74,4 @@ public class ByteArrayBodyGeneratorTest {
         assertEquals(reads, 4, "reads to drain generator");
         assertEquals(bytesRead, srcArraySize, "bytes read");
     }
-
 }

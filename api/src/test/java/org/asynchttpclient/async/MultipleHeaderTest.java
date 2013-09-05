@@ -48,6 +48,49 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
     private ServerSocket serverSocket;
     private Future<?> voidFuture;
 
+    @BeforeClass(alwaysRun = true)
+    public void setUpGlobal() throws Exception {
+        port1 = findFreePort();
+
+        serverSocket = new ServerSocket(port1);
+        executorService = Executors.newFixedThreadPool(1);
+        voidFuture = executorService.submit(new Callable<Void>() {
+            public Void call() throws Exception {
+                Socket socket;
+                while ((socket = serverSocket.accept()) != null) {
+                    InputStream inputStream = socket.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                    String req = reader.readLine().split(" ")[1];
+                    int i = inputStream.available();
+                    long l = inputStream.skip(i);
+                    Assert.assertEquals(l, i);
+                    socket.shutdownInput();
+                    if (req.endsWith("MultiEnt")) {
+                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
+                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 2\n"
+                                + "Content-Length: 1\n" + "\n0\n");
+                        outputStreamWriter.flush();
+                        socket.shutdownOutput();
+                    } else if (req.endsWith("MultiOther")) {
+                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
+                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 1\n"
+                                + "X-Forwarded-For: abc\n" + "X-Forwarded-For: def\n" + "\n0\n");
+                        outputStreamWriter.flush();
+                        socket.shutdownOutput();
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        voidFuture.cancel(true);
+        executorService.shutdownNow();
+        serverSocket.close();
+    }
+
     @Test(groups = { "standalone", "default_provider" })
     public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         final String[] xffHeaders = new String[] { null, null };
@@ -155,46 +198,5 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
         } finally {
             ahc.close();
         }
-    }
-
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
-        port1 = findFreePort();
-
-        serverSocket = new ServerSocket(port1);
-        executorService = Executors.newFixedThreadPool(1);
-        voidFuture = executorService.submit(new Callable<Void>() {
-            public Void call() throws Exception {
-                Socket socket;
-                while ((socket = serverSocket.accept()) != null) {
-                    InputStream inputStream = socket.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-                    String req = reader.readLine().split(" ")[1];
-                    int i = inputStream.available();
-                    long l = inputStream.skip(i);
-                    Assert.assertEquals(l, i);
-                    socket.shutdownInput();
-                    if (req.endsWith("MultiEnt")) {
-                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 2\n" + "Content-Length: 1\n" + "\n0\n");
-                        outputStreamWriter.flush();
-                        socket.shutdownOutput();
-                    } else if (req.endsWith("MultiOther")) {
-                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-                        outputStreamWriter.append("HTTP/1.0 200 OK\n" + "Connection: close\n" + "Content-Type: text/plain; charset=iso-8859-1\n" + "Content-Length: 1\n" + "X-Forwarded-For: abc\n" + "X-Forwarded-For: def\n" + "\n0\n");
-                        outputStreamWriter.flush();
-                        socket.shutdownOutput();
-                    }
-                }
-                return null;
-            }
-        });
-    }
-
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        voidFuture.cancel(true);
-        executorService.shutdownNow();
-        serverSocket.close();
     }
 }

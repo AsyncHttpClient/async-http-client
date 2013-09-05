@@ -42,6 +42,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.security.Constraint;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -68,12 +69,12 @@ import static org.testng.Assert.assertNotNull;
 
 public abstract class BasicAuthTest extends AbstractBasicTest {
 
-    protected final static String MY_MESSAGE = "my message";
-    protected final static String user = "user";
-    protected final static String admin = "admin";
+    protected static final String MY_MESSAGE = "my message";
+    protected static final String USER = "user";
+    protected static final String ADMIN = "admin";
 
     private Server server2;
-    
+
     public abstract String getProviderClass();
 
     @BeforeClass(alwaysRun = true)
@@ -97,7 +98,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
         Constraint constraint = new Constraint();
         constraint.setName(Constraint.__BASIC_AUTH);
-        constraint.setRoles(new String[] { user, admin });
+        constraint.setRoles(new String[] { USER, ADMIN });
         constraint.setAuthenticate(true);
 
         ConstraintMapping mapping = new ConstraintMapping();
@@ -108,8 +109,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         cm.add(mapping);
 
         Set<String> knownRoles = new HashSet<String>();
-        knownRoles.add(user);
-        knownRoles.add(admin);
+        knownRoles.add(USER);
+        knownRoles.add(ADMIN);
 
         ConstraintSecurityHandler security = new ConstraintSecurityHandler();
         security.setConstraintMappings(cm, knownRoles);
@@ -121,6 +122,63 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         server.setHandler(security);
         server.start();
         log.info("Local HTTP server started successfully");
+        setUpSecondServer();
+    }
+
+    private void setUpSecondServer() throws Exception {
+        server2 = new Server();
+        port2 = findFreePort();
+
+        SelectChannelConnector connector = new SelectChannelConnector();
+        connector.setHost("127.0.0.1");
+        connector.setPort(port2);
+
+        server2.addConnector(connector);
+
+        LoginService loginService = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
+        server2.addBean(loginService);
+
+        Constraint constraint = new Constraint();
+        constraint.setName(Constraint.__DIGEST_AUTH);
+        constraint.setRoles(new String[] { USER, ADMIN });
+        constraint.setAuthenticate(true);
+
+        ConstraintMapping mapping = new ConstraintMapping();
+        mapping.setConstraint(constraint);
+        mapping.setPathSpec("/*");
+
+        Set<String> knownRoles = new HashSet<String>();
+        knownRoles.add(USER);
+        knownRoles.add(ADMIN);
+
+        ConstraintSecurityHandler security = new ConstraintSecurityHandler() {
+
+            @Override
+            public void handle(String arg0, Request arg1, HttpServletRequest arg2, HttpServletResponse arg3) throws IOException, ServletException {
+                System.err.println("request in security handler");
+                System.err.println("Authorization: " + arg2.getHeader("Authorization"));
+                System.err.println("RequestUri: " + arg2.getRequestURI());
+                super.handle(arg0, arg1, arg2, arg3);
+            }
+        };
+
+        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
+        cm.add(mapping);
+
+        security.setConstraintMappings(cm, knownRoles);
+        security.setAuthenticator(new DigestAuthenticator());
+        security.setLoginService(loginService);
+        security.setStrict(true);
+        security.setHandler(new RedirectHandler());
+
+        server2.setHandler(security);
+        server2.start();
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
+        server2.stop();
     }
 
     private String getFileContent(final File file) {
@@ -148,60 +206,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             }
         }
 
-    }
-
-    private void setUpSecondServer() throws Exception {
-        server2 = new Server();
-        port2 = findFreePort();
-
-        SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setHost("127.0.0.1");
-        connector.setPort(port2);
-
-        server2.addConnector(connector);
-
-        LoginService loginService = new HashLoginService("MyRealm", "src/test/resources/realm.properties");
-        server2.addBean(loginService);
-
-        Constraint constraint = new Constraint();
-        constraint.setName(Constraint.__DIGEST_AUTH);
-        constraint.setRoles(new String[] { user, admin });
-        constraint.setAuthenticate(true);
-
-        ConstraintMapping mapping = new ConstraintMapping();
-        mapping.setConstraint(constraint);
-        mapping.setPathSpec("/*");
-
-        Set<String> knownRoles = new HashSet<String>();
-        knownRoles.add(user);
-        knownRoles.add(admin);
-
-        ConstraintSecurityHandler security = new ConstraintSecurityHandler() {
-
-            @Override
-            public void handle(String arg0, Request arg1, HttpServletRequest arg2, HttpServletResponse arg3) throws IOException, ServletException {
-                System.err.println("request in security handler");
-                System.err.println("Authorization: " + arg2.getHeader("Authorization"));
-                System.err.println("RequestUri: " + arg2.getRequestURI());
-                super.handle(arg0, arg1, arg2, arg3);
-            }
-        };
-
-        List<ConstraintMapping> cm = new ArrayList<ConstraintMapping>();
-        cm.add(mapping);
-
-        security.setConstraintMappings(cm, knownRoles);
-        security.setAuthenticator(new DigestAuthenticator());
-        security.setLoginService(loginService);
-        security.setStrict(true);
-        security.setHandler(new RedirectHandler());
-
-        server2.setHandler(security);
-        server2.start();
-    }
-
-    private void stopSecondServer() throws Exception {
-        server2.stop();
     }
 
     private class RedirectHandler extends AbstractHandler {
@@ -265,7 +269,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void basicAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -281,11 +285,10 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = null;
         try {
-            setUpSecondServer();
             client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumNumberOfRedirects(10).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
             // .setHeader( "X-302", "/bla" )
-                    .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -296,7 +299,6 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         } finally {
             if (client != null)
                 client.close();
-            stopSecondServer();
         }
     }
 
@@ -313,7 +315,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void basic401Test() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setHeader("X-401", "401").setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setHeader("X-401", "401")
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Integer> f = r.execute(new AsyncHandler<Integer>() {
 
@@ -356,7 +359,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(true).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(
+                    (new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setUsePreemptiveAuth(true).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -372,7 +376,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal("fake").setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -388,7 +392,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             ByteArrayInputStream is = new ByteArrayInputStream("test".getBytes());
-            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(is).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(is)
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(30, TimeUnit.SECONDS);
@@ -411,7 +416,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             File file = new File(url.toURI());
             final String fileContent = getFileContent(file);
 
-            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file)
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -426,7 +432,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void basicAuthAsyncConfigTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build()).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build()).build());
         try {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
@@ -457,7 +463,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             File file = new File(url.toURI());
             final String fileContent = getFileContent(file);
 
-            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(file)
+                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -478,7 +485,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void stringBuilderBodyConsumerTest() throws Throwable {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setRealmPrincipal(user).setRealmPassword(admin).setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setRealmPrincipal(USER).setRealmPassword(ADMIN)
+                .setUrl(getTargetUrl()).setHeader("Content-Type", "text/html").build();
         try {
             StringBuilder s = new StringBuilder();
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
@@ -498,7 +506,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);

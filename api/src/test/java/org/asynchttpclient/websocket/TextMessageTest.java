@@ -76,7 +76,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            /* WebSocket websocket = */c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -402,5 +402,4 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             c.close();
         }
     }
-
 }

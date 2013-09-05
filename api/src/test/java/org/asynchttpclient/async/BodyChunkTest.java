@@ -29,7 +29,7 @@ import static org.testng.Assert.assertEquals;
 
 public abstract class BodyChunkTest extends AbstractBasicTest {
 
-    private final static String MY_MESSAGE = "my message";
+    private static final String MY_MESSAGE = "my message";
 
     @Test(groups = { "standalone", "default_provider" })
     public void negativeContentTypeTest() throws Throwable {
@@ -57,5 +57,4 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
             client.close();
         }
     }
-
 }

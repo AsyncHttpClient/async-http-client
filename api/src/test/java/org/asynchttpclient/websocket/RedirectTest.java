@@ -13,48 +13,44 @@
 
 package org.asynchttpclient.websocket;
 
+import static org.testng.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.websocket.WebSocket;
-import org.asynchttpclient.websocket.WebSocketListener;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
-
 public abstract class RedirectTest extends AbstractBasicTest {
-
-    protected int port2;
-
-    // ------------------------------------------ Methods from AbstractBasicTest
 
     @BeforeClass
     @Override
     public void setUpGlobal() throws Exception {
         port1 = findFreePort();
-
-        _connector = new SelectChannelConnector();
-        _connector.setPort(port1);
-
-        addConnector(_connector);
-
         port2 = findFreePort();
-        final SelectChannelConnector connector2 = new SelectChannelConnector();
+
+        server = new Server();
+
+        SelectChannelConnector connector = new SelectChannelConnector();
+        connector.setPort(port1);
+        server.addConnector(connector);
+
+        SelectChannelConnector connector2 = new SelectChannelConnector();
         connector2.setPort(port2);
-        addConnector(connector2);
-        WebSocketHandler _wsHandler = getWebSocketHandler();
+        server.addConnector(connector2);
+
         HandlerList list = new HandlerList();
         list.addHandler(new AbstractHandler() {
             @Override
@@ -64,10 +60,10 @@ public abstract class RedirectTest extends AbstractBasicTest {
                 }
             }
         });
-        list.addHandler(_wsHandler);
-        setHandler(list);
+        list.addHandler(getWebSocketHandler());
+        server.setHandler(list);
 
-        start();
+        server.start();
         log.info("Local HTTP server started successfully");
     }
 
@@ -80,8 +76,6 @@ public abstract class RedirectTest extends AbstractBasicTest {
             }
         };
     }
-
-    // ------------------------------------------------------------ Test Methods
 
     @Test(timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {
@@ -116,8 +110,6 @@ public abstract class RedirectTest extends AbstractBasicTest {
             c.close();
         }
     }
-
-    // --------------------------------------------------------- Private Methods
 
     private String getRedirectURL() {
         return String.format("ws://127.0.0.1:%d/", port2);

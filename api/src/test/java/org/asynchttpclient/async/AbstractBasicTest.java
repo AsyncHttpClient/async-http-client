@@ -15,6 +15,20 @@
  */
 package org.asynchttpclient.async;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.FileUtils;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
@@ -34,13 +48,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.Enumeration;
-
 public abstract class AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected Server server;
@@ -48,14 +55,49 @@ public abstract class AbstractBasicTest {
     protected int port2;
 
     public final static int TIMEOUT = 30;
+    public static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
+    public static final byte[] PATTERN_BYTES = "FooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQixFooBarBazQix".getBytes(Charset.forName("UTF-16"));
+    public static final File LARGE_IMAGE_FILE;
+    public static byte[] LARGE_IMAGE_BYTES;
+    public static final File SIMPLE_TEXT_FILE;
+
+    static {
+        try {
+            TMP.mkdirs();
+            TMP.deleteOnExit();
+            LARGE_IMAGE_FILE = new File(AbstractBasicTest.class.getClassLoader().getResource("300k.png").toURI());
+            LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
+            SIMPLE_TEXT_FILE = new File(AbstractBasicTest.class.getClassLoader().getResource("SimpleTextFile.txt").toURI());
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
+        File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
+        tmpFile.deleteOnExit();
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(tmpFile);
+            for (int i = 0; i < repeat; i++) {
+                out.write(pattern);
+            }
+            
+            long expectedFileSize = PATTERN_BYTES.length * repeat;
+            Assert.assertEquals(expectedFileSize, tmpFile.length(), "Invalid file length");
+            
+            return tmpFile;
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
+    }
 
     public static class EchoHandler extends AbstractHandler {
 
-        /* @Override */
-        public void handle(String pathInContext,
-                           Request request,
-                           HttpServletRequest httpRequest,
-                           HttpServletResponse httpResponse) throws IOException, ServletException {
+        @Override
+        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             if (httpRequest.getHeader("X-HEAD") != null) {
                 httpResponse.setContentLength(1);
@@ -68,8 +110,9 @@ public abstract class AbstractBasicTest {
             }
 
             if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
-                httpResponse.addHeader("Allow","GET,HEAD,POST,OPTIONS,TRACE");
-            };
+                httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
+            }
+            ;
 
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
@@ -110,9 +153,9 @@ public abstract class AbstractBasicTest {
 
             httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
 
-            javax.servlet.http.Cookie[] cs = httpRequest.getCookies();
+            Cookie[] cs = httpRequest.getCookies();
             if (cs != null) {
-                for (javax.servlet.http.Cookie c : cs) {
+                for (Cookie c : cs) {
                     httpResponse.addCookie(c);
                 }
             }
@@ -142,38 +185,6 @@ public abstract class AbstractBasicTest {
         }
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        server.stop();
-    }
-
-    protected int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
-            return socket.getLocalPort();
-        }
-        finally {
-            if (socket != null) {
-                socket.close();
-            }
-        }
-    }
-
-    protected String getTargetUrl() {
-        return String.format("http://127.0.0.1:%d/foo/test", port1);
-    }
-
-    protected String getTargetUrl2() {
-        return String.format("https://127.0.0.1:%d/foo/test", port2);
-    }
-
-    public AbstractHandler configureHandler() throws Exception {
-        return new EchoHandler();
-    }
-
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
         server = new Server();
@@ -199,6 +210,38 @@ public abstract class AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
+    @AfterClass(alwaysRun = true)
+    public void tearDownGlobal() throws Exception {
+        if (server != null)
+            server.stop();
+    }
+
+    protected int findFreePort() throws IOException {
+        ServerSocket socket = null;
+
+        try {
+            socket = new ServerSocket(0);
+
+            return socket.getLocalPort();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
+
+    protected String getTargetUrl() {
+        return String.format("http://127.0.0.1:%d/foo/test", port1);
+    }
+
+    protected String getTargetUrl2() {
+        return String.format("https://127.0.0.1:%d/foo/test", port2);
+    }
+
+    public AbstractHandler configureHandler() throws Exception {
+        return new EchoHandler();
+    }
+
     public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
         public Runnable runnable;
 
@@ -207,7 +250,7 @@ public abstract class AbstractBasicTest {
             return response;
         }
 
-        /* @Override */
+        @Override
         public void onThrowable(Throwable t) {
             t.printStackTrace();
             Assert.fail("Unexpected exception: " + t.getMessage(), t);
@@ -217,35 +260,32 @@ public abstract class AbstractBasicTest {
 
     public static class AsyncHandlerAdapter implements AsyncHandler<String> {
 
-
-        /* @Override */
+        @Override
         public void onThrowable(Throwable t) {
             t.printStackTrace();
             Assert.fail("Unexpected exception", t);
         }
 
-        /* @Override */
+        @Override
         public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public STATE onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public STATE onHeadersReceived(final HttpResponseHeaders headers) throws Exception {
             return STATE.CONTINUE;
         }
 
-        /* @Override */
+        @Override
         public String onCompleted() throws Exception {
             return "";
         }
-
     }
 
     public abstract AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config);
-
 }

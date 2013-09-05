@@ -15,6 +15,18 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
@@ -27,21 +39,9 @@ import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
 public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
-    private final AtomicBoolean isSet = new AtomicBoolean(false);
+
+    private final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
 
@@ -53,7 +53,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
             while (e.hasMoreElements()) {
                 param = e.nextElement().toString();
 
-                if (param.startsWith("X-redirect") && !isSet.getAndSet(true)) {
+                if (param.startsWith("X-redirect") && !redirectDone.getAndSet(true)) {
                     httpResponse.addHeader("Location", httpRequest.getHeader(param));
                     httpResponse.setStatus(302);
                     httpResponse.getOutputStream().flush();
@@ -64,7 +64,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
             if (r.getScheme().equalsIgnoreCase("https")) {
                 httpResponse.addHeader("X-httpToHttps", "PASS");
-                isSet.getAndSet(false);
+                redirectDone.getAndSet(false);
             }
 
             httpResponse.setStatus(200);
@@ -116,23 +116,6 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         log.info("Local HTTP server started successfully");
     }
 
-    private String getBaseUrl(URI uri) {
-        String url = uri.toString();
-        int port = uri.getPort();
-        if (port == -1) {
-            port = getPort(uri);
-            url = url.substring(0, url.length() - 1) + ":" + port;
-        }
-        return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
-    }
-
-    private static int getPort(URI uri) {
-        int port = uri.getPort();
-        if (port == -1)
-            port = uri.getScheme().equals("http") ? 80 : 443;
-        return port;
-    }
-
     @Test(groups = { "standalone", "default_provider" })
     // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
     public void httpToHttpsRunAllTestsSequentially() throws Exception {
@@ -143,7 +126,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void httpToHttpsRedirect() throws Exception {
-        isSet.getAndSet(false);
+        redirectDone.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
@@ -157,13 +140,9 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    public String getTargetUrl2() {
-        return String.format("https://127.0.0.1:%d/foo/test", port2);
-    }
-
     // @Test(groups = { "standalone", "default_provider" })
     public void httpToHttpsProperConfig() throws Exception {
-        isSet.getAndSet(false);
+        redirectDone.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
@@ -185,7 +164,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     // @Test(groups = { "standalone", "default_provider" })
     public void relativeLocationUrl() throws Exception {
-        isSet.getAndSet(false);
+        redirectDone.getAndSet(false);
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);

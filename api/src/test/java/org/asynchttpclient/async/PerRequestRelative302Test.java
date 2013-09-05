@@ -41,6 +41,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 public abstract class PerRequestRelative302Test extends AbstractBasicTest {
+
     private final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private class Relative302Handler extends AbstractHandler {
@@ -86,7 +87,14 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void redirected302Test() throws Throwable {
+    public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
+        redirected302Test();
+        notRedirected302Test();
+        relativeLocationUrl();
+    }
+
+    // @Test(groups = { "online", "default_provider" })
+    public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
@@ -104,8 +112,8 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
-    public void notRedirected302Test() throws Throwable {
+    // @Test(groups = { "online", "default_provider" })
+    public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
@@ -153,8 +161,8 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" })
-    public void relativeLocationUrl() throws Throwable {
+    // @Test(groups = { "standalone", "default_provider" })
+    public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
         AsyncHttpClient c = getAsyncHttpClient(null);

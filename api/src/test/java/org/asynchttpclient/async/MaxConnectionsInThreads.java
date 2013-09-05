@@ -41,6 +41,7 @@ import static org.testng.AssertJUnit.assertTrue;
 
 abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
+    // FIXME weird
     private static URI servletEndpointUri;
 
     @Test(groups = { "online", "default_provider" })

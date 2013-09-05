@@ -15,19 +15,21 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig.Builder;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -38,33 +40,23 @@ import javax.net.ssl.X509TrustManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.ServerSocket;
-import java.net.URL;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Enumeration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig.Builder;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.Test;
 
-public abstract class BasicHttpsTest extends AbstractBasicTest {
+public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
 
-    protected final Logger log = LoggerFactory.getLogger(BasicHttpsTest.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpsTest.class);
 
     public static class EchoHandler extends AbstractHandler {
 
-        /* @Override */
+        @Override
         public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
 
             httpResponse.setContentType("text/html; charset=utf-8");
@@ -133,75 +125,15 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
             httpResponse.setStatus(200);
             httpResponse.getOutputStream().flush();
             httpResponse.getOutputStream().close();
-
         }
-    }
-
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        server.stop();
-    }
-
-    @AfterMethod(alwaysRun = true)
-    public void tearDownProps() throws Exception {
-        System.clearProperty("javax.net.ssl.keyStore");
-        System.clearProperty("javax.net.ssl.trustStore");
-    }
-
-    protected String getTargetUrl() {
-        return String.format("https://127.0.0.1:%d/foo/test", port1);
     }
 
     public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
     }
 
-    protected int findFreePort() throws IOException {
-        ServerSocket socket = null;
-
-        try {
-            socket = new ServerSocket(0);
-
-            return socket.getLocalPort();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
-        }
-    }
-
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
-        server = new Server();
-        port1 = findFreePort();
-        SslSocketConnector connector = new SslSocketConnector();
-        connector.setHost("127.0.0.1");
-        connector.setPort(port1);
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL cacertsUrl = cl.getResource("ssltest-cacerts.jks");
-        String trustStoreFile = new File(cacertsUrl.toURI()).getAbsolutePath();
-        connector.setTruststore(trustStoreFile);
-        connector.setTrustPassword("changeit");
-        connector.setTruststoreType("JKS");
-
-        log.info("SSL certs path: {}", trustStoreFile);
-
-        // override system properties
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
-        connector.setKeystore(keyStoreFile);
-        connector.setKeyPassword("changeit");
-        connector.setKeystoreType("JKS");
-
-        log.info("SSL keystore path: {}", keyStoreFile);
-
-        server.addConnector(connector);
-
-        server.setHandler(configureHandler());
-        server.start();
-        log.info("Local HTTP server started successfully");
+    protected String getTargetUrl() {
+        return String.format("https://127.0.0.1:%d/foo/test", port1);
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -209,13 +141,10 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
-            ClassLoader cl = getClass().getClassLoader();
-            // override system properties
-            URL url = cl.getResource("SimpleTextFile.txt");
+            URL url = getClass().getClassLoader().getResource("SimpleTextFile.txt");
             File file = new File(url.toURI());
 
-            Future<Response> f = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute();
-            Response resp = f.get();
+            Response resp = client.preparePost(getTargetUrl()).setBody(file).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "This is a simple test file");
@@ -263,7 +192,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void reconnectsAfterFailedCertificationPath() throws Throwable {
-    	AtomicBoolean trusted = new AtomicBoolean(false);
+        AtomicBoolean trusted = new AtomicBoolean(false);
         final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build());
         try {
             final String body = "hello there";
@@ -319,20 +248,20 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     }
 
     private static final TrustManager dummyTrustManager(final AtomicBoolean trusted) {
-    	return new X509TrustManager() {
-	        public X509Certificate[] getAcceptedIssuers() {
-	            return new X509Certificate[0];
-	        }
-	
-	        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-	        }
-	
-	        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-	            if (!trusted.get()) {
-	                throw new CertificateException("Server certificate not trusted.");
-	            }
-	        }
-	    };
-    }
+        return new X509TrustManager() {
 
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+
+            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            }
+
+            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                if (!trusted.get()) {
+                    throw new CertificateException("Server certificate not trusted.");
+                }
+            }
+        };
+    }
 }
