@@ -216,7 +216,7 @@ public abstract class AbstractBasicTest {
             server.stop();
     }
 
-    protected int findFreePort() throws IOException {
+    protected synchronized int findFreePort() throws IOException {
         ServerSocket socket = null;
 
         try {

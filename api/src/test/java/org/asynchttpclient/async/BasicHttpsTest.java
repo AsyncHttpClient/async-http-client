@@ -200,9 +200,9 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
                 Throwable cause = e.getCause();
                 if (cause instanceof ConnectException) {
                     assertNotNull(cause.getCause());
-                    assertTrue(cause.getCause() instanceof SSLHandshakeException);
+                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
                 } else {
-                    assertTrue(cause instanceof SSLHandshakeException);
+                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
                 }
             }
 
