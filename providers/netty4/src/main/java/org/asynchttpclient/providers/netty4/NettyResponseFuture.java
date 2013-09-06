@@ -54,7 +54,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
-    
+
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
@@ -86,7 +86,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean allowConnect = false;
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
     private final ProxyServer proxyServer;
-    private final AtomicBoolean ignoreNextContents = new AtomicBoolean(false);
+    private final AtomicReference<HttpResponse> pendingResponse = new AtomicReference<HttpResponse>();
     private final AtomicBoolean streamWasAlreadyConsumed = new AtomicBoolean(false);
 
     public NettyResponseFuture(URI uri,//
@@ -288,8 +288,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
-        	Throwable exception = t.getCause() != null ? t.getCause() : t;
-        	exEx.compareAndSet(null, new ExecutionException(exception));
+            Throwable exception = t.getCause() != null ? t.getCause() : t;
+            exEx.compareAndSet(null, new ExecutionException(exception));
 
         } finally {
             latch.countDown();
@@ -383,14 +383,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return statusReceived.getAndSet(sr);
     }
 
-    public void setIgnoreNextContents(boolean b) {
-        ignoreNextContents.set(b);
+    public AtomicReference<HttpResponse> getPendingResponse() {
+        return pendingResponse;
     }
 
-    public boolean isIgnoreNextContents() {
-        return ignoreNextContents.get();
-    }
-    
     public boolean getAndSetStreamWasAlreadyConsumed() {
         return streamWasAlreadyConsumed.getAndSet(true);
     }
@@ -455,7 +451,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
+     * recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */

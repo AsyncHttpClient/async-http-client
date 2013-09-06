@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.STATE;
@@ -91,9 +92,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             Protocol p = (ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
 
-            if (!(future.isIgnoreNextContents() && e instanceof HttpContent)) {
-                p.handle(ctx, future, e);
-            }
+            p.handle(ctx, future, e);
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             try {
@@ -490,10 +489,138 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             // The request has changed
             if (fc.replayRequest()) {
                 requestSender.replayRequest(future, fc, ctx);
-                future.setIgnoreNextContents(true);
                 replayed = true;
             }
             return replayed;
+        }
+
+        private boolean handleResponseAndExit(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest nettyRequest,
+                ProxyServer proxyServer, HttpResponse response) throws Exception {
+            Request request = future.getRequest();
+            int statusCode = response.getStatus().code();
+            HttpResponseStatus status = new ResponseStatus(future.getURI(), response);
+            HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
+            final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
+            final RequestBuilder builder = new RequestBuilder(future.getRequest());
+            Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+
+            // store the original headers so we can re-send all them to
+            // the handler in case of trailing headers
+            future.setHttpResponse(response);
+
+            future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
+
+            if (!config.getResponseFilters().isEmpty() && applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
+                return true;
+            }
+
+            // FIXME handle without returns
+            if (statusCode == UNAUTHORIZED.code() && realm != null) {
+                List<String> wwwAuth = getAuthorizationToken(response.headers(), HttpHeaders.Names.WWW_AUTHENTICATE);
+                if (!wwwAuth.isEmpty() && !future.getAndSetAuth(true)) {
+                    future.setState(NettyResponseFuture.STATE.NEW);
+                    Realm newRealm = null;
+                    // NTLM
+                    boolean negociate = wwwAuth.contains("Negotiate");
+                    if (!wwwAuth.contains("Kerberos") && (isNTLM(wwwAuth) || negociate)) {
+                        newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future);
+                        // SPNEGO KERBEROS
+                    } else if (negociate) {
+                        newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future);
+                        if (newRealm == null) {
+                            return true;
+                        }
+                    } else {
+                        newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(request.getURI().getPath()).setMethodName(request.getMethod())
+                                .setUsePreemptiveAuth(true).parseWWWAuthenticateHeader(wwwAuth.get(0)).build();
+                    }
+
+                    final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(URI.create(request.getUrl()).getPath()).build();
+
+                    LOGGER.debug("Sending authentication to {}", request.getUrl());
+                    Callback callback = new Callback(future) {
+                        public void call() throws Exception {
+                            channels.drainChannel(ctx, future);
+                            requestSender.execute(builder.setHeaders(headers).setRealm(nr).build(), future);
+                        }
+                    };
+
+                    if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response)) {
+                        // We must make sure there is no bytes left
+                        // before executing the next request.
+                        Channels.setDefaultAttribute(ctx, callback);
+                    } else {
+                        callback.call();
+                    }
+
+                    return true;
+                }
+
+            } else if (statusCode == CONTINUE.code()) {
+                future.getAndSetWriteHeaders(false);
+                future.getAndSetWriteBody(true);
+                // FIXME is this necessary
+                requestSender.writeRequest(ctx.channel(), config, future);
+                return true;
+
+            } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code()) {
+                List<String> proxyAuth = getAuthorizationToken(response.headers(), HttpHeaders.Names.PROXY_AUTHENTICATE);
+                if (realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
+                    LOGGER.debug("Sending proxy authentication to {}", request.getUrl());
+
+                    future.setState(NettyResponseFuture.STATE.NEW);
+                    Realm newRealm = null;
+
+                    boolean negociate = proxyAuth.contains("Negotiate");
+                    if (!proxyAuth.contains("Kerberos") && (isNTLM(proxyAuth) || negociate)) {
+                        newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, headers, realm, future);
+                        // SPNEGO KERBEROS
+                    } else if (negociate) {
+                        newRealm = kerberosChallenge(proxyAuth, request, proxyServer, headers, realm, future);
+                        if (newRealm == null) {
+                            return true;
+                        }
+                    } else {
+                        newRealm = future.getRequest().getRealm();
+                    }
+
+                    future.setReuseChannel(true);
+                    future.setConnectAllowed(true);
+                    requestSender.execute(builder.setHeaders(headers).setRealm(newRealm).build(), future);
+                    return true;
+                }
+
+            } else if (statusCode == OK.code() && nettyRequest.getMethod() == HttpMethod.CONNECT) {
+
+                LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
+
+                if (future.isKeepAlive()) {
+                    future.attachChannel(ctx.channel(), true);
+                }
+
+                try {
+                    LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
+                    channels.upgradeProtocol(ctx.channel().pipeline(), request.getURI().getScheme());
+                } catch (Throwable ex) {
+                    channels.abort(future, ex);
+                }
+                future.setReuseChannel(true);
+                future.setConnectAllowed(false);
+                requestSender.execute(builder.build(), future);
+                return true;
+
+            }
+
+            if (redirect(request, future, response, ctx)) {
+                return true;
+            }
+
+            if (!future.getAndSetStatusReceived(true) && (handler.onStatusReceived(status) != STATE.CONTINUE || handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE)) {
+                finishUpdate(future, ctx, HttpHeaders.isTransferEncodingChunked(response));
+                return true;
+            }
+
+            return false;
         }
 
         @Override
@@ -513,168 +640,45 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             try {
                 if (e instanceof HttpResponse) {
                     HttpResponse response = (HttpResponse) e;
-
                     LOGGER.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
-
-                    int statusCode = response.getStatus().code();
-                    HttpResponseStatus status = new ResponseStatus(future.getURI(), response);
-                    HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
-                    final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
-                    final RequestBuilder builder = new RequestBuilder(future.getRequest());
-                    Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-
-                    // store the original headers so we can re-send all them to
-                    // the handler in case of trailing headers
-                    future.setHttpResponse(response);
-                    future.setIgnoreNextContents(false);
-
-                    future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
-
-                    if (!config.getResponseFilters().isEmpty() && applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
-                        return;
-                    }
-
-                    // FIXME handle without returns
-                    if (statusCode == UNAUTHORIZED.code() && realm != null) {
-                        List<String> wwwAuth = getAuthorizationToken(response.headers(), HttpHeaders.Names.WWW_AUTHENTICATE);
-                        if (!wwwAuth.isEmpty() && !future.getAndSetAuth(true)) {
-                            future.setState(NettyResponseFuture.STATE.NEW);
-                            Realm newRealm = null;
-                            // NTLM
-                            boolean negociate = wwwAuth.contains("Negotiate");
-                            if (!wwwAuth.contains("Kerberos") && (isNTLM(wwwAuth) || negociate)) {
-                                newRealm = ntlmChallenge(wwwAuth, request, proxyServer, headers, realm, future);
-                                // SPNEGO KERBEROS
-                            } else if (negociate) {
-                                newRealm = kerberosChallenge(wwwAuth, request, proxyServer, headers, realm, future);
-                                if (newRealm == null) {
-                                    future.setIgnoreNextContents(true);
-                                    return;
-                                }
-                            } else {
-                                newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(request.getURI().getPath())
-                                        .setMethodName(request.getMethod()).setUsePreemptiveAuth(true).parseWWWAuthenticateHeader(wwwAuth.get(0)).build();
-                            }
-
-                            final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(URI.create(request.getUrl()).getPath()).build();
-
-                            LOGGER.debug("Sending authentication to {}", request.getUrl());
-                            Callback callback = new Callback(future) {
-                                public void call() throws Exception {
-                                    channels.drainChannel(ctx, future);
-                                    requestSender.execute(builder.setHeaders(headers).setRealm(nr).build(), future);
-                                }
-                            };
-
-                            if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response)) {
-                                // We must make sure there is no bytes left
-                                // before executing the next request.
-                                Channels.setDefaultAttribute(ctx, callback);
-                            } else {
-                                callback.call();
-                            }
-
-                            future.setIgnoreNextContents(true);
-                            return;
-                        }
-
-                    } else if (statusCode == CONTINUE.code()) {
-                        future.getAndSetWriteHeaders(false);
-                        future.getAndSetWriteBody(true);
-                        // FIXME is this necessary
-                        future.setIgnoreNextContents(true);
-                        requestSender.writeRequest(ctx.channel(), config, future);
-                        return;
-
-                    } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code()) {
-                        List<String> proxyAuth = getAuthorizationToken(response.headers(), HttpHeaders.Names.PROXY_AUTHENTICATE);
-                        if (realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
-                            LOGGER.debug("Sending proxy authentication to {}", request.getUrl());
-
-                            future.setState(NettyResponseFuture.STATE.NEW);
-                            Realm newRealm = null;
-
-                            boolean negociate = proxyAuth.contains("Negotiate");
-                            if (!proxyAuth.contains("Kerberos") && (isNTLM(proxyAuth) || negociate)) {
-                                newRealm = ntlmProxyChallenge(proxyAuth, request, proxyServer, headers, realm, future);
-                                // SPNEGO KERBEROS
-                            } else if (negociate) {
-                                newRealm = kerberosChallenge(proxyAuth, request, proxyServer, headers, realm, future);
-                                if (newRealm == null) {
-                                    future.setIgnoreNextContents(true);
-                                    return;
-                                }
-                            } else {
-                                newRealm = future.getRequest().getRealm();
-                            }
-
-                            future.setReuseChannel(true);
-                            future.setConnectAllowed(true);
-                            future.setIgnoreNextContents(true);
-                            requestSender.execute(builder.setHeaders(headers).setRealm(newRealm).build(), future);
-                            return;
-                        }
-
-                    } else if (statusCode == OK.code() && nettyRequest.getMethod() == HttpMethod.CONNECT) {
-
-                        LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
-
-                        if (future.isKeepAlive()) {
-                            future.attachChannel(ctx.channel(), true);
-                        }
-
-                        try {
-                            LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                            channels.upgradeProtocol(ctx.channel().pipeline(), request.getURI().getScheme());
-                        } catch (Throwable ex) {
-                            channels.abort(future, ex);
-                        }
-                        future.setReuseChannel(true);
-                        future.setConnectAllowed(false);
-                        future.setIgnoreNextContents(true);
-                        requestSender.execute(builder.build(), future);
-                        return;
-
-                    }
-
-                    if (redirect(request, future, response, ctx)) {
-                        future.setIgnoreNextContents(true);
-                        return;
-
-                    }
-
-                    if (!future.getAndSetStatusReceived(true)
-                            && (handler.onStatusReceived(status) != STATE.CONTINUE || handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE)) {
-                        finishUpdate(future, ctx, HttpHeaders.isTransferEncodingChunked(response));
-                        return;
-                    }
+                    future.getPendingResponse().set(response);
+                    return;
                 }
 
-                if (handler != null && e instanceof HttpContent) {
-                    HttpContent chunk = (HttpContent) e;
+                if (e instanceof HttpContent) {
 
-                    boolean interrupt = false;
-                    boolean last = chunk instanceof LastHttpContent;
-
-                    // FIXME
-                    // Netty 3 provider is broken: in case of trailing headers,
-                    // onHeadersReceived should be called before
-                    // updateBodyAndInterrupt
-                    if (last) {
-                        LastHttpContent lastChunk = (LastHttpContent) chunk;
-                        HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
-                        if (!trailingHeaders.isEmpty()) {
-                            interrupt = handler.onHeadersReceived(new ResponseHeaders(future.getURI(), future.getHttpResponse().headers(), trailingHeaders)) != STATE.CONTINUE;
+                    AtomicReference<HttpResponse> responseRef = future.getPendingResponse();
+                    HttpResponse response = responseRef.getAndSet(null);
+                    if (handler != null) {
+                        if (response != null && handleResponseAndExit(ctx, future, handler, nettyRequest, proxyServer, response)) {
+                            return;
                         }
-                    }
 
-                    if (!interrupt && chunk.content().readableBytes() > 0) {
-                        // FIXME why
-                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), chunk.content(), last));
-                    }
+                        HttpContent chunk = (HttpContent) e;
 
-                    if (interrupt || last) {
-                        finishUpdate(future, ctx, !last);
+                        boolean interrupt = false;
+                        boolean last = chunk instanceof LastHttpContent;
+
+                        // FIXME
+                        // Netty 3 provider is broken: in case of trailing headers,
+                        // onHeadersReceived should be called before
+                        // updateBodyAndInterrupt
+                        if (last) {
+                            LastHttpContent lastChunk = (LastHttpContent) chunk;
+                            HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
+                            if (!trailingHeaders.isEmpty()) {
+                                interrupt = handler.onHeadersReceived(new ResponseHeaders(future.getURI(), future.getHttpResponse().headers(), trailingHeaders)) != STATE.CONTINUE;
+                            }
+                        }
+
+                        if (!interrupt && chunk.content().readableBytes() > 0) {
+                            // FIXME why
+                            interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), chunk.content(), last));
+                        }
+
+                        if (interrupt || last) {
+                            finishUpdate(future, ctx, !last);
+                        }
                     }
                 }
             } catch (Exception t) {
