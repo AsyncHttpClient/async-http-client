@@ -44,7 +44,7 @@
     </build>
 
     <modules>
-<!--         <module>grizzly</module> -->
+        <module>grizzly</module>
         <module>netty</module>
 <!--         <module>netty4</module> -->
     </modules>

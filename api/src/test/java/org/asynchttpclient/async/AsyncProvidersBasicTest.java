@@ -1405,7 +1405,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             };
 
-            client.prepareGet("http://www.lemonde.fr").execute(handler);
+            client.prepareGet("http://www.google.com").execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail("Timed out");
@@ -1419,6 +1419,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoGetNestedTest() throws Throwable {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
+            // FIXME find a proper website that redirects the same number of times whatever the language
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(2);
 
