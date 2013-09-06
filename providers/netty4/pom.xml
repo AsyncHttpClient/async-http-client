@@ -13,6 +13,16 @@
     </description>
 
 	<repositories>
+            <repository>
+            <id>sonatype-releases</id>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
 		<repository>
 			<id>sonatype-snapshots</id>
 			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -29,7 +39,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.9.Final-SNAPSHOT</version>
+			<version>4.0.9.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>
