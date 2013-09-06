@@ -27,9 +27,6 @@ import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractBasicHttpsTest extends AbstractBasicTest {
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractBasicHttpsTest.class);
-    protected Server server;
-    protected int port1;
-    protected int port2;
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
