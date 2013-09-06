@@ -218,13 +218,8 @@ public class NettyRequestSender {
             return cl.future();
         }
 
-        // FIXME when can we have a direct invokation???
-        // boolean directInvokation = !(IN_IO_THREAD.get() &&
-        // DefaultChannelFuture.isUseDeadLockChecker());
-        boolean directInvokation = !Constants.IN_IO_THREAD.get();
-
         // FIXME what does it have to do with the presence of a file?
-        if (directInvokation && !asyncConnect && request.getFile() == null) {
+        if (!asyncConnect && request.getFile() == null) {
             int timeOut = config.getConnectionTimeoutInMs() > 0 ? config.getConnectionTimeoutInMs() : Integer.MAX_VALUE;
             if (!channelFuture.awaitUninterruptibly(timeOut, TimeUnit.MILLISECONDS)) {
                 if (acquiredConnection) {

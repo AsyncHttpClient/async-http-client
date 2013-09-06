@@ -4,9 +4,6 @@ import java.nio.charset.Charset;
 
 public class Constants {
 
-    // FIXME move into a state class along with closed
-    public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
-    
     // FIXME what to do with this???
     public final static int MAX_BUFFERED_BYTES = 8192;
     

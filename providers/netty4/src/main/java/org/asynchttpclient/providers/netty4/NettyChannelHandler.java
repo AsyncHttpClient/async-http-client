@@ -77,8 +77,6 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object e) throws Exception {
 
-        Constants.IN_IO_THREAD.set(Boolean.TRUE);
-
         Object attribute = Channels.getDefaultAttribute(ctx);
 
         if (attribute instanceof Callback) {
