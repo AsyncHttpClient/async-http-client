@@ -16,29 +16,26 @@
  */
 package org.asynchttpclient.providers.netty4;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.URI;
-import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.HostnameVerifier;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.URI;
+import java.nio.channels.ClosedChannelException;
+
+import javax.net.ssl.HostnameVerifier;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.util.ProxyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Non Blocking connect.
@@ -50,7 +47,6 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
-    private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
 
     private NettyConnectListener(AsyncHttpClientConfig config, NettyRequestSender requestSender, NettyResponseFuture<T> future) {
         this.requestSender = requestSender;
@@ -67,19 +63,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         SslHandler sslHandler = Channels.getSslHandler(channel);
 
         if (sslHandler != null) {
-            if (!handshakeDone.getAndSet(true)) {
-                sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
-                    public void operationComplete(Future<Channel> f) throws Exception {
-                        if (f.isSuccess()) {
-                            onFutureSuccess(channel);
-                        } else {
-                            onFutureFailure(channel, f.cause());
-                        }
-                    }
-                });
-                return;
-            }
-
+            // FIXME done on connect or on every request?
             HostnameVerifier v = config.getHostnameVerifier();
             if (!v.verify(future.getURI().getHost(), sslHandler.engine().getSession())) {
                 ConnectException exception = new ConnectException("HostnameVerifier exception.");
