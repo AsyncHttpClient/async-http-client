@@ -1405,7 +1405,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             };
 
-            client.prepareGet("http://google.com/").execute(handler);
+            client.prepareGet("http://www.lemonde.fr").execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail("Timed out");
@@ -1433,7 +1433,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                     try {
                         if (nestedCount.getAndIncrement() < MAX_NESTED) {
                             System.out.println("Executing a nested request: " + nestedCount);
-                            client.prepareGet("http://google.com/").execute(this);
+                            client.prepareGet("http://www.lemonde.fr").execute(this);
                         }
                     } finally {
                         l.countDown();
@@ -1447,7 +1447,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             };
 
-            client.prepareGet("http://www.google.com/").execute(handler);
+            client.prepareGet("http://www.lemonde.fr").execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail("Timed out");
@@ -1461,7 +1461,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncDoGetStreamAndBodyTest() throws Throwable {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.prepareGet("http://www.google.com/").execute().get();
+            Response response = client.prepareGet("http://www.lemonde.fr").execute().get();
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
@@ -1472,7 +1472,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncUrlWithoutPathTest() throws Throwable {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.prepareGet("http://www.google.com").execute().get();
+            Response response = client.prepareGet("http://www.lemonde.fr").execute().get();
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
