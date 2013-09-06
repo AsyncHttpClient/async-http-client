@@ -257,6 +257,7 @@ public class Channels {
                 try {
                     pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
                 } catch (Throwable ex) {
+                    LOGGER.error("Channel {} could not add SslHandler {}", ch, ex);
                     abort(future, ex);
                 }
 
@@ -283,6 +284,7 @@ public class Channels {
                 try {
                     pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
                 } catch (Throwable ex) {
+                    LOGGER.error("Channel {} could not add SslHandler {}", ch, ex);
                     abort(future, ex);
                 }
 
@@ -305,6 +307,7 @@ public class Channels {
         return sslEngine;
     }
 
+    // FIXME what for?
     public Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
 
         if (channel.pipeline().get(SSL_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
