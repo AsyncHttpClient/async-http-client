@@ -40,6 +40,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
@@ -218,8 +219,8 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
     }
 
     private static SSLContext createSSLContext(AtomicBoolean trusted) {
+        InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
         try {
-            InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
             char[] keyStorePassword = "changeit".toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(keyStoreStream, keyStorePassword);
@@ -240,6 +241,8 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             return sslContext;
         } catch (Exception e) {
             throw new Error("Failed to initialize the server-side SSLContext", e);
+        } finally {
+            IOUtils.closeQuietly(keyStoreStream);
         }
     }
 
