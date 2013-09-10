@@ -230,7 +230,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         final SSLFilter filter = (SSLFilter) filterChain.get(idx);
         filter.addHandshakeListener(new SSLBaseFilter.HandshakeListener() {
             public void onStart(Connection connection) {
-                System.out.println("HANDSHAKE STARTED");
             }
 
             public void onComplete(Connection connection) {
