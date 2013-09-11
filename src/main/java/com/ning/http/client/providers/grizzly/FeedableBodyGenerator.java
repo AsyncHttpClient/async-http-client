@@ -159,7 +159,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         assert (context != null);
         assert (requestPacket != null);
 
-        asyncTransferInitiated = true;
         this.requestPacket = requestPacket;
         this.contentBuilder = HttpContent.builder(requestPacket);
         final Connection c = context.getConnection();
@@ -168,6 +167,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             c.setMaxAsyncWriteQueueSize(configuredMaxPendingBytes);
         }
         this.context = context;
+        asyncTransferInitiated = true;
 
         if (requestPacket.isSecure()) {
             flushOnSSLHandshakeComplete();
