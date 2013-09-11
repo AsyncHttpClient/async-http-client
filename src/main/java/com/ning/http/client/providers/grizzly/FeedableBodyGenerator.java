@@ -39,9 +39,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.glassfish.grizzly.utils.Exceptions.*;
 
 /**
- * {@link BodyGenerator} which may return just part of the payload at the time
- * handler is requesting it. If it happens - PartialBodyGenerator becomes responsible
- * for finishing payload transferring asynchronously.
+ * A Grizzly-specific {@link BodyGenerator} that allows data to be fed to the
+ * connection in blocking or non-blocking fashion via the use of a {@link Feeder}.
+ *
+ * This class provides two {@link Feeder} implementations for rapid prototyping.
+ * First is the {@link SimpleFeeder} which is simply a listener that asynchronous
+ * data transferring has been initiated.  The second is the {@link NonBlockingFeeder}
+ * which allows reading and feeding data in a non-blocking fashion.
  *
  * @author The Grizzly Team
  * @since 1.7.0
@@ -71,7 +75,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
     private int origMaxPendingBytes;
     private int configuredMaxPendingBytes = DEFAULT;
     private boolean asyncTransferInitiated;
-    private FutureImpl<Boolean> prematureFeed = Futures.createSafeFuture();
 
 
     // ---------------------------------------------- Methods from BodyGenerator
@@ -105,6 +108,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
      * @throws IllegalArgumentException if maxPendingBytes is less than zero and is
      *  not {@link #UNBOUND} or {@link #DEFAULT}.
      */
+    @SuppressWarnings("UnusedDeclaration")
     public synchronized void setMaxPendingBytes(final int maxPendingBytes) {
         if (maxPendingBytes < DEFAULT) {
             throw new IllegalArgumentException("Invalid maxPendingBytes value: " + maxPendingBytes);
@@ -139,52 +143,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
     }
 
 
-    /**
-     * Feeds the specified buffer.  Note that this method will block until
-     * {@link #asyncTransferInitiated} has been invoked by the {@link GrizzlyAsyncHttpProvider}.
-     * Once the request has been dispatched, the method will become unblocked, but
-     * may block again if the amount of data fed exceeds the value as configured
-     * by {@link #setMaxPendingBytes(int)}.
-     *
-     * The maximum duration that this method may block is dependent on
-     * the current value of {@link org.glassfish.grizzly.Transport#getWriteTimeout(java.util.concurrent.TimeUnit)}.
-     * This value can be customized by using a {@link TransportCustomizer} to
-     * fine-tune the transport used by the client instance.
-     *
-     * Alternatively, it is <em>highly</em> recommended to only invoke this method
-     * with in the context of {@link FeedableBodyGenerator.Feeder#canFeed()}.  By providing
-     * an implementation of {@link Feeder} the runtime can eliminate blocking.
-     *
-     * @param buffer the {@link Buffer} to feed.
-     * @param last flag indicating if this is the final buffer of the message.
-     *
-     * @throws IOException if an I/O error occurs.
-     * @throws java.lang.IllegalArgumentException if <code>buffer</code> is <code>null</code>.
-     *
-     * @see TransportCustomizer
-     * @see Feeder
-     * @see GrizzlyAsyncHttpProviderConfig#addProperty(com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property, Object)
-     * @see GrizzlyAsyncHttpProviderConfig.Property#TRANSPORT_CUSTOMIZER
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public synchronized void feed(final Buffer buffer, final boolean last)
-    throws IOException {
-        if (buffer == null) {
-            throw new IllegalArgumentException("Buffer argument cannot be null.");
-        }
-        if (asyncTransferInitiated) {
-            write(buffer, last);
-        } else {
-            try {
-                prematureFeed.get();
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
-            write(buffer, last);
-        }
-    }
-
-
     // ------------------------------------------------- Package Private Methods
 
     
@@ -194,6 +152,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         if (asyncTransferInitiated) {
             throw new IllegalStateException("Async transfer has already been initiated.");
+        }
+        if (feeder == null) {
+            throw new IllegalStateException("No feeder available to perform the transfer.");
         }
         assert (context != null);
         assert (requestPacket != null);
@@ -208,15 +169,12 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
         this.context = context;
 
-        if (feeder != null) {
-            if (requestPacket.isSecure()) {
-                flushOnSSLHandshakeComplete();
-            } else {
-                flushViaFeeder();
-            }
+        if (requestPacket.isSecure()) {
+            flushOnSSLHandshakeComplete();
         } else {
-            prematureFeed.result(Boolean.TRUE);
+            feeder.flush();
         }
+
     }
 
 
@@ -233,103 +191,11 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
 
             public void onComplete(Connection connection) {
-                flushViaFeeder();
                 filter.removeHandshakeListener(this);
+                feeder.flush();
             }
         });
         filter.handshake(context.getConnection(),  null);
-    }
-
-
-    @SuppressWarnings("unchecked")
-    private void write(final Buffer buffer, final boolean last) {
-        blockUntilQueueFree(context.getConnection());
-        final HttpContent content =
-                            contentBuilder.content(buffer).last(last).build();
-        final CompletionHandler<WriteResult> handler =
-                ((last) ? new LastPacketCompletionHandler() : null);
-        context.write(content, handler);
-    }
-
-    private void flushViaFeeder() {
-        final Connection c = context.getConnection();
-
-        if (feeder.isReady()) {
-            writeUntilFullOrDone(c);
-            if (!feeder.isDone()) {
-                if (!feeder.isReady()) {
-                    feeder.notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                }
-                if (!c.canWrite()) {
-                    // write queue is full, leverage WriteListener to let us know
-                    // when it is safe to write again.
-                    c.notifyCanWrite(new WriteHandlerImpl());
-                }
-            }
-        } else {
-            feeder.notifyReadyToFeed(new ReadyToFeedListenerImpl());
-        }
-    }
-
-    private void writeUntilFullOrDone(final Connection c) {
-        while (c.canWrite()) {
-            if (feeder.isReady()) {
-                feeder.canFeed();
-            }
-            if (!feeder.isReady()) {
-                break;
-            }
-        }
-    }
-
-    /**
-     * This method will block if the async write queue is currently larger
-     * than the configured maximum.  The amount of time that this method
-     * will block is dependent on the write timeout of the transport
-     * associated with the specified connection.
-     */
-    private void blockUntilQueueFree(final Connection c) {
-        if (!c.canWrite()) {
-            final FutureImpl<Boolean> future =
-                    Futures.createSafeFuture();
-
-            // Connection may be obtained by calling FilterChainContext.getConnection().
-            c.notifyCanWrite(new WriteHandler() {
-
-                @Override
-                public void onWritePossible() throws Exception {
-                    future.result(TRUE);
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    future.failure(makeIOException(t));
-                }
-            });
-
-            block(c, future);
-        }
-    }
-
-    private void block(final Connection c,
-                       final FutureImpl<Boolean> future) {
-        try {
-            final long writeTimeout =
-                    c.getTransport().getWriteTimeout(MILLISECONDS);
-            if (writeTimeout != -1) {
-                future.get(writeTimeout, MILLISECONDS);
-            } else {
-                future.get();
-            }
-        } catch (ExecutionException e) {
-            GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
-                    getHttpTransactionContext(c);
-            httpCtx.abort(e.getCause());
-        } catch (Exception e) {
-            GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
-                    getHttpTransactionContext(c);
-            httpCtx.abort(e);
-        }
     }
 
 
@@ -359,71 +225,53 @@ public class FeedableBodyGenerator implements BodyGenerator {
     } // END EmptyBody
 
 
-    private final class LastPacketCompletionHandler implements CompletionHandler<WriteResult> {
-
-        private final CompletionHandler<WriteResult> delegate;
-        private final Connection c;
-
-        // -------------------------------------------------------- Constructors
-
-
-        @SuppressWarnings("unchecked")
-        private LastPacketCompletionHandler() {
-            delegate = ((!requestPacket.isCommitted())
-                    ? context.getTransportContext().getCompletionHandler()
-                    : null);
-            c = context.getConnection();
-        }
-
-
-        // -------------------------------------- Methods from CompletionHandler
-
-
-        @Override
-        public void cancelled() {
-            c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
-            if (delegate != null) {
-                delegate.cancelled();
-            }
-        }
-
-        @Override
-        public void failed(Throwable throwable) {
-            c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
-            if (delegate != null) {
-                delegate.failed(throwable);
-            }
-
-        }
-
-        @Override
-        public void completed(WriteResult result) {
-            c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
-            if (delegate != null) {
-                delegate.completed(result);
-            }
-
-        }
-
-        @Override
-        public void updated(WriteResult result) {
-            if (delegate != null) {
-                delegate.updated(result);
-            }
-        }
-
-    } // END LastPacketCompletionHandler
-
-
     // ---------------------------------------------------------- Nested Classes
 
 
     /**
-     * Developers may provide implementations of this class in order to
-     * feed data to the {@link FeedableBodyGenerator} without blocking.
+     * Specifies the functionality all Feeders must implement.  Typically,
+     * developers need not worry about implementing this interface directly.
+     * It should be sufficient, for most use-cases, to simply use the {@link NonBlockingFeeder}
+     * or {@link SimpleFeeder} implementations.
      */
-    public static abstract class Feeder {
+    public interface Feeder {
 
+        /**
+         * This method will be invoked when it's possible to begin feeding
+         * data downstream.  Implementations of this method must use {@link #feed(Buffer, boolean)}
+         * to perform the actual write.
+         */
+        void flush();
+
+        /**
+         * This method will write the specified {@link Buffer} to the connection.
+         * Be aware that this method may block depending if data is being fed
+         * faster than it can write.  How much data may be queued is dictated
+         * by {@link #setMaxPendingBytes(int)}.  Once this threshold is exceeded,
+         * the method will block until the write queue length drops below the
+         * aforementioned threshold.
+         *
+         * @param buffer the {@link Buffer} to write.
+         * @param last flag indicating if this is the last buffer to send.
+         *
+         * @throws IOException if an I/O error occurs.
+         * @throws java.lang.IllegalArgumentException if <code>buffer</code>
+         *  is <code>null</code>.
+         * @throws java.lang.IllegalStateException if this method is invoked
+         *  before asynchronous transferring has been initiated.
+         *
+         * @see #setMaxPendingBytes(int)
+         */
+        void feed(final Buffer buffer, final boolean last) throws IOException;
+
+    } // END Feeder
+
+
+    /**
+     * Base class for {@link Feeder} implementations.  This class provides
+     * an implementation for the contract defined by the {@link #feed} method.
+     */
+    public static abstract class BaseFeeder implements Feeder {
 
         protected final FeedableBodyGenerator feedableBodyGenerator;
 
@@ -431,8 +279,168 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // -------------------------------------------------------- Constructors
 
 
-        public Feeder(final FeedableBodyGenerator feedableBodyGenerator) {
+        protected BaseFeeder(FeedableBodyGenerator feedableBodyGenerator) {
             this.feedableBodyGenerator = feedableBodyGenerator;
+        }
+
+
+        // --------------------------------------------- Package Private Methods
+
+
+        /**
+         * {@inheritDoc}
+         */
+        @SuppressWarnings("UnusedDeclaration")
+        public final synchronized void feed(final Buffer buffer, final boolean last)
+        throws IOException {
+            if (buffer == null) {
+                throw new IllegalArgumentException(
+                        "Buffer argument cannot be null.");
+            }
+            if (!feedableBodyGenerator.asyncTransferInitiated) {
+                throw new IllegalStateException("Asynchronous transfer has not been initiated.");
+            }
+            blockUntilQueueFree(feedableBodyGenerator.context.getConnection());
+            final HttpContent content =
+                    feedableBodyGenerator.contentBuilder.content(buffer).last(last).build();
+            final CompletionHandler<WriteResult> handler =
+                    ((last) ? new LastPacketCompletionHandler() : null);
+            feedableBodyGenerator.context.write(content, handler);
+        }
+
+        /**
+         * This method will block if the async write queue is currently larger
+         * than the configured maximum.  The amount of time that this method
+         * will block is dependent on the write timeout of the transport
+         * associated with the specified connection.
+         */
+        private static void blockUntilQueueFree(final Connection c) {
+            if (!c.canWrite()) {
+                final FutureImpl<Boolean> future =
+                        Futures.createSafeFuture();
+
+                // Connection may be obtained by calling FilterChainContext.getConnection().
+                c.notifyCanWrite(new WriteHandler() {
+
+                    @Override
+                    public void onWritePossible() throws Exception {
+                        future.result(TRUE);
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        future.failure(makeIOException(t));
+                    }
+                });
+
+                block(c, future);
+            }
+        }
+
+        private static void block(final Connection c,
+                                  final FutureImpl<Boolean> future) {
+            try {
+                final long writeTimeout =
+                        c.getTransport().getWriteTimeout(MILLISECONDS);
+                if (writeTimeout != -1) {
+                    future.get(writeTimeout, MILLISECONDS);
+                } else {
+                    future.get();
+                }
+            } catch (ExecutionException e) {
+                GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
+                        getHttpTransactionContext(c);
+                httpCtx.abort(e.getCause());
+            } catch (Exception e) {
+                GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
+                        getHttpTransactionContext(c);
+                httpCtx.abort(e);
+            }
+        }
+
+
+        // ------------------------------------------------------- Inner Classes
+
+
+        private final class LastPacketCompletionHandler
+                implements CompletionHandler<WriteResult> {
+
+            private final CompletionHandler<WriteResult> delegate;
+            private final Connection c;
+            private final int origMaxPendingBytes;
+
+            // -------------------------------------------------------- Constructors
+
+
+            @SuppressWarnings("unchecked")
+            private LastPacketCompletionHandler() {
+                delegate = ((!feedableBodyGenerator.requestPacket.isCommitted())
+                        ? feedableBodyGenerator.context.getTransportContext().getCompletionHandler()
+                        : null);
+                c = feedableBodyGenerator.context.getConnection();
+                origMaxPendingBytes = feedableBodyGenerator.origMaxPendingBytes;
+            }
+
+
+            // -------------------------------------- Methods from CompletionHandler
+
+
+            @Override
+            public void cancelled() {
+                c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
+                if (delegate != null) {
+                    delegate.cancelled();
+                }
+            }
+
+            @Override
+            public void failed(Throwable throwable) {
+                c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
+                if (delegate != null) {
+                    delegate.failed(throwable);
+                }
+
+            }
+
+            @Override
+            public void completed(WriteResult result) {
+                c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
+                if (delegate != null) {
+                    delegate.completed(result);
+                }
+
+            }
+
+            @Override
+            public void updated(WriteResult result) {
+                if (delegate != null) {
+                    delegate.updated(result);
+                }
+            }
+
+        } // END LastPacketCompletionHandler
+
+    } // END Feeder
+
+
+    /**
+     * Implementations of this class provide the framework to read data from
+     * some source and feed data to the {@link FeedableBodyGenerator}
+     * without blocking.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public static abstract class NonBlockingFeeder extends BaseFeeder {
+
+
+        // -------------------------------------------------------- Constructors
+
+
+        /**
+         * Constructs the <code>NonBlockingFeeder</code> with the associated
+         * {@link com.ning.http.client.providers.grizzly.FeedableBodyGenerator}.
+         */
+        public NonBlockingFeeder(final FeedableBodyGenerator feedableBodyGenerator) {
+            super(feedableBodyGenerator);
         }
 
 
@@ -458,7 +466,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * @return <code>true</code> if data is available to be fed, otherwise
          *  returns <code>false</code>.  When this method returns <code>false</code>,
          *  the {@link FeedableBodyGenerator} will call {@link #notifyReadyToFeed(ReadyToFeedListener)}
-         *  by which this {@link Feeder} implementation may signal data is once
+         *  by which this {@link com.ning.http.client.providers.grizzly.FeedableBodyGenerator.NonBlockingFeeder} implementation may signal data is once
          *  again available to be fed.
          */
         public abstract boolean isReady();
@@ -466,10 +474,52 @@ public class FeedableBodyGenerator implements BodyGenerator {
         /**
          * Callback registration to signal the {@link FeedableBodyGenerator} that
          * data is available once again to continue feeding.  Once this listener
-         * has been invoked, the Feeder implementation should no longer maintain
+         * has been invoked, the NonBlockingFeeder implementation should no longer maintain
          * a reference to the listener.
          */
         public abstract void notifyReadyToFeed(final ReadyToFeedListener listener);
+
+
+        // ------------------------------------------------- Methods from Feeder
+
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public synchronized void flush() {
+            final Connection c = feedableBodyGenerator.context.getConnection();
+            if (isReady()) {
+                writeUntilFullOrDone(c);
+                if (!isDone()) {
+                    if (!isReady()) {
+                        notifyReadyToFeed(new ReadyToFeedListenerImpl());
+                    }
+                    if (!c.canWrite()) {
+                        // write queue is full, leverage WriteListener to let us know
+                        // when it is safe to write again.
+                        c.notifyCanWrite(new WriteHandlerImpl());
+                    }
+                }
+            } else {
+                notifyReadyToFeed(new ReadyToFeedListenerImpl());
+            }
+        }
+
+
+        // ----------------------------------------------------- Private Methods
+
+
+        private void writeUntilFullOrDone(final Connection c) {
+            while (c.canWrite()) {
+                if (isReady()) {
+                    canFeed();
+                }
+                if (!isReady()) {
+                    break;
+                }
+            }
+        }
 
 
         // ------------------------------------------------------- Inner Classes
@@ -488,62 +538,86 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         } // END ReadyToFeedListener
 
-    } // END Feeder
+
+        private final class WriteHandlerImpl implements WriteHandler {
 
 
-    private final class WriteHandlerImpl implements WriteHandler {
+            private final Connection c;
 
 
-        private final Connection c;
+            // -------------------------------------------------------- Constructors
+
+
+            private WriteHandlerImpl() {
+                this.c = feedableBodyGenerator.context.getConnection();
+            }
+
+
+            // ------------------------------------------ Methods from WriteListener
+
+            @Override
+            public void onWritePossible() throws Exception {
+                writeUntilFullOrDone(c);
+                if (!isDone()) {
+                    if (!isReady()) {
+                        notifyReadyToFeed(new ReadyToFeedListenerImpl());
+                    }
+                    if (!c.canWrite()) {
+                        // write queue is full, leverage WriteListener to let us know
+                        // when it is safe to write again.
+                        c.notifyCanWrite(this);
+                    }
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
+                GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                        GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
+                ctx.abort(t);
+            }
+
+        } // END WriteHandlerImpl
+
+
+        private final class ReadyToFeedListenerImpl
+                implements NonBlockingFeeder.ReadyToFeedListener {
+
+
+            // ------------------------------------ Methods from ReadyToFeedListener
+
+
+            @Override
+            public void ready() {
+                flush();
+            }
+
+        } // END ReadToFeedListenerImpl
+
+    } // END NonBlockingFeeder
+
+
+    /**
+     * This simple {@link Feeder} implementation allows the implementation to
+     * feed data in whatever fashion is deemed appropriate.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public abstract static class SimpleFeeder extends BaseFeeder {
 
 
         // -------------------------------------------------------- Constructors
 
 
-        private WriteHandlerImpl() {
-            this.c = context.getConnection();
+        /**
+         * Constructs the <code>SimpleFeeder</code> with the associated
+         * {@link com.ning.http.client.providers.grizzly.FeedableBodyGenerator}.
+         */
+        public SimpleFeeder(FeedableBodyGenerator feedableBodyGenerator) {
+            super(feedableBodyGenerator);
         }
 
 
-        // ------------------------------------------ Methods from WriteListener
-
-        @Override
-        public void onWritePossible() throws Exception {
-            writeUntilFullOrDone(c);
-            if (!feeder.isDone()) {
-                if (!feeder.isReady()) {
-                    feeder.notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                }
-                if (!c.canWrite()) {
-                    // write queue is full, leverage WriteListener to let us know
-                    // when it is safe to write again.
-                    c.notifyCanWrite(this);
-                }
-            }
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            c.setMaxAsyncWriteQueueSize(origMaxPendingBytes);
-            GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
-                    GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
-            ctx.abort(t);
-        }
-
-    } // END WriteHandlerImpl
-
-
-    private final class ReadyToFeedListenerImpl implements Feeder.ReadyToFeedListener {
-
-
-        // ------------------------------------ Methods from ReadyToFeedListener
-
-
-        @Override
-        public void ready() {
-            flushViaFeeder();
-        }
-
-    } // END ReadToFeedListenerImpl
+    } // END BlockingFeeder
 
 }
