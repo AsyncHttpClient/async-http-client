@@ -618,6 +618,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
 
 
-    } // END BlockingFeeder
+    } // END SimpleFeeder
 
 }
