@@ -31,7 +31,6 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLFilter;
-import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.utils.Futures;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.getHttpTransactionContext;
@@ -189,13 +188,22 @@ public class FeedableBodyGenerator implements BodyGenerator {
         final int idx = filterChain.indexOfType(SSLFilter.class);
         assert (idx != -1);
         final SSLFilter filter = (SSLFilter) filterChain.get(idx);
+        final Connection c = context.getConnection();
         filter.addHandshakeListener(new SSLBaseFilter.HandshakeListener() {
             public void onStart(Connection connection) {
             }
 
             public void onComplete(Connection connection) {
-                filter.removeHandshakeListener(this);
-                feeder.flush();
+                if (c.equals(connection)) {
+                    filter.removeHandshakeListener(this);
+                    try {
+                        feeder.flush();
+                    } catch (IOException ioe) {
+                        GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                                GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
+                        ctx.abort(ioe);
+                    }
+                }
             }
         });
         filter.handshake(context.getConnection(),  null);
@@ -243,8 +251,10 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * This method will be invoked when it's possible to begin feeding
          * data downstream.  Implementations of this method must use {@link #feed(Buffer, boolean)}
          * to perform the actual write.
+         *
+         * @throws IOException if an I/O error occurs.
          */
-        void flush();
+        void flush() throws IOException;
 
         /**
          * This method will write the specified {@link Buffer} to the connection.
@@ -469,7 +479,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * @return <code>true</code> if data is available to be fed, otherwise
          *  returns <code>false</code>.  When this method returns <code>false</code>,
          *  the {@link FeedableBodyGenerator} will call {@link #notifyReadyToFeed(ReadyToFeedListener)}
-         *  by which this {@link com.ning.http.client.providers.grizzly.FeedableBodyGenerator.NonBlockingFeeder} implementation may signal data is once
+         *  by which this {@link NonBlockingFeeder} implementation may signal data is once
          *  again available to be fed.
          */
         public abstract boolean isReady();
