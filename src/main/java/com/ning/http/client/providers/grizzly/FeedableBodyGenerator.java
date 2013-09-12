@@ -31,11 +31,13 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLFilter;
+import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.utils.Futures;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.getHttpTransactionContext;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
 import static org.glassfish.grizzly.utils.Exceptions.*;
 
 /**
@@ -169,7 +171,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
         this.context = context;
         asyncTransferInitiated = true;
 
-        if (requestPacket.isSecure()) {
+        if (requestPacket.isSecure() &&
+                (getSSLEngine(context.getConnection()) == null)) {
             flushOnSSLHandshakeComplete();
         } else {
             feeder.flush();
