@@ -68,8 +68,7 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 400);
-            String respStr = resp.getResponseBody();
-            assertEquals(BAD_REQUEST_STR, respStr);
+            assertEquals(resp.getResponseBody(), BAD_REQUEST_STR);
         } finally {
             client.close();
         }

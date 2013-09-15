@@ -15,24 +15,9 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.testng.Assert.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +26,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * Reverse C10K Problem test.
@@ -62,7 +61,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
         for (int i = 0; i < SRV_COUNT; i++) {
             ports[i] = createServer();
         }
-        log.info("Local HTTP servers started successfully");
+        logger.info("Local HTTP servers started successfully");
     }
 
     @AfterClass(alwaysRun = true)
@@ -73,12 +72,8 @@ public abstract class RC10KTest extends AbstractBasicTest {
     }
 
     private int createServer() throws Exception {
-        Server srv = new Server();
-        Connector listener = new SelectChannelConnector();
-        listener.setHost("127.0.0.1");
         int port = findFreePort();
-        listener.setPort(port);
-        srv.addConnector(listener);
+        Server srv = newJettyHttpServer(port);
         srv.setHandler(configureHandler());
         srv.start();
         servers.add(srv);
@@ -129,7 +124,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
         }
 
         public void onThrowable(Throwable t) {
-            log.warn("onThrowable called.", t);
+            logger.warn("onThrowable called.", t);
         }
 
         public STATE onBodyPartReceived(HttpResponseBodyPart event) throws Exception {

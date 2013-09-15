@@ -24,5 +24,4 @@ public class NettyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
-
 }

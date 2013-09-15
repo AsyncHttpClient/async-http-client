@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.async;
 
-import static org.testng.AssertJUnit.*;
+import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.testng.Assert.*;
 import static org.testng.FileAssert.fail;
 
 import java.io.BufferedInputStream;
@@ -39,7 +40,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
      * Tests that the custom chunked stream result in success and content returned that is unchunked
      */
     @Test()
-    public void testCustomChunking() throws Throwable {
+    public void testCustomChunking() throws Exception {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
         bc.setAllowPoolingConnection(true);
@@ -61,16 +62,17 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
             Response response = c.executeRequest(r).get();
             if (500 == response.getStatusCode()) {
-                System.out.println("==============");
-                System.out.println("500 response from call");
-                System.out.println("Headers:" + response.getHeaders());
-                System.out.println("==============");
-                System.out.flush();
-                assertEquals("Should have 500 status code", 500, response.getStatusCode());
-                assertTrue("Should have failed due to chunking", response.getHeader("X-Exception").contains("invalid.chunk.length"));
+                StringBuilder sb = new StringBuilder();
+                sb.append("==============\n");
+                sb.append("500 response from call\n");
+                sb.append("Headers:" + response.getHeaders() + "\n");
+                sb.append("==============\n");
+                logger.debug(sb.toString());
+                assertEquals(response.getStatusCode(), 500, "Should have 500 status code");
+                assertTrue(response.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
                 fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + response.getHeader("X-Exception"));
             } else {
-                assertEquals(LARGE_IMAGE_BYTES, response.getResponseBodyAsBytes());
+                assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
             }
         } finally {
             c.close();

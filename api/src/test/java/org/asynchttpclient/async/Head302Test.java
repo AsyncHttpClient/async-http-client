@@ -15,18 +15,8 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.testng.Assert.fail;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -34,16 +24,29 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
+
 /**
  * Tests HEAD request that gets 302 response.
  * 
  * @author Hubert Iwaniuk
  */
 public abstract class Head302Test extends AbstractBasicTest {
+
     /**
      * Handler that does Found (302) in response to HEAD method.
      */
-    private class Head302handler extends AbstractHandler {
+    private static class Head302handler extends AbstractHandler {
         public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("HEAD".equalsIgnoreCase(request.getMethod())) {
                 if (request.getPathInfo().endsWith("_moved")) {
@@ -52,10 +55,15 @@ public abstract class Head302Test extends AbstractBasicTest {
                     response.setStatus(HttpServletResponse.SC_FOUND); // 302
                     response.setHeader("Location", request.getPathInfo() + "_moved");
                 }
-            } else { // this handler is to handle HEAD reqeust
+            } else { // this handler is to handle HEAD request
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             }
         }
+    }
+
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new Head302handler();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -74,15 +82,10 @@ public abstract class Head302Test extends AbstractBasicTest {
             }).get(3, TimeUnit.SECONDS);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             client.close();
         }
-    }
-
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new Head302handler();
     }
 }

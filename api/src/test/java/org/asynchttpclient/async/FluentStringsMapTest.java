@@ -30,6 +30,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 public class FluentStringsMapTest {
+
     @Test
     public void emptyTest() {
         FluentStringsMap map = new FluentStringsMap();
@@ -364,7 +365,7 @@ public class FluentStringsMapTest {
 
         map.deleteAll(Arrays.asList("baz", "foo"));
 
-        assertEquals(map.keySet(), Collections.<String>emptyList());
+        assertEquals(map.keySet(), Collections.<String> emptyList());
         assertNull(map.getFirstValue("foo"));
         assertNull(map.getJoinedValue("foo", ", "));
         assertNull(map.get("foo"));

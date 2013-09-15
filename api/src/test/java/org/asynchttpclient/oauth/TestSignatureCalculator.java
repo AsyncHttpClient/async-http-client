@@ -15,16 +15,12 @@
  */
 package org.asynchttpclient.oauth;
 
-import org.asynchttpclient.oauth.ConsumerKey;
-import org.asynchttpclient.oauth.OAuthSignatureCalculator;
-import org.asynchttpclient.oauth.RequestToken;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.FluentStringsMap;
+import org.testng.annotations.Test;
 
-public class TestSignatureCalculator
-{
+public class TestSignatureCalculator {
     private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
 
     private static final String CONSUMER_SECRET = "kd94hf93k423kf44";
@@ -36,12 +32,11 @@ public class TestSignatureCalculator
     public static final String NONCE = "kllo9940pd9333jh";
 
     final static long TIMESTAMP = 1191242096;
-    
+
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
-    @Test(groups="fast")
-    public void test()
-    {
+    @Test(groups = "fast")
+    public void test() {
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
         OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
@@ -51,6 +46,6 @@ public class TestSignatureCalculator
         String url = "http://photos.example.net/photos";
         String sig = calc.calculateSignature("GET", url, TIMESTAMP, NONCE, null, queryParams);
 
-        Assert.assertEquals("tR3+Ty81lMeYAr/Fid0kMTYa/WM=", sig);
+        assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
     }
 }

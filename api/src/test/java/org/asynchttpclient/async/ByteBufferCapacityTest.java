@@ -12,32 +12,32 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.async.util.TestUtils.createTempFile;
+import static org.testng.Assert.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.*;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
-    private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc-tests-" + UUID.randomUUID().toString().substring(0, 8));
 
     private class BasicHandler extends AbstractHandler {
 
-        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
@@ -72,12 +72,10 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicByteBufferTest() throws Throwable {
+    public void basicByteBufferTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
-            byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
-            long repeats = (1024 * 100 * 10 / bytes.length) + 1;
-            File largeFile = createTempFile(bytes, (int) repeats);
+            File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
 
             try {
@@ -105,30 +103,5 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
 
     public String getTargetUrl() {
         return String.format("http://127.0.0.1:%d/foo/test", port1);
-    }
-
-    public static File createTempFile(byte[] pattern, int repeat) throws IOException {
-        TMP.mkdirs();
-        TMP.deleteOnExit();
-        File tmpFile = File.createTempFile("tmpfile-", ".data", TMP);
-        write(pattern, repeat, tmpFile);
-
-        return tmpFile;
-    }
-
-    public static void write(byte[] pattern, int repeat, File file) throws IOException {
-        file.deleteOnExit();
-        file.getParentFile().mkdirs();
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
-            for (int i = 0; i < repeat; i++) {
-                out.write(pattern);
-            }
-        } finally {
-            if (out != null) {
-                out.close();
-            }
-        }
     }
 }

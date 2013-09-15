@@ -23,5 +23,4 @@ public class NettyRedirectTest extends RedirectTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
-
 }

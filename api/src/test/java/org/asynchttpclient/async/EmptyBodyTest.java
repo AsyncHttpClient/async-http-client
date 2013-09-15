@@ -83,10 +83,10 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
                 public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                     String s = new String(e.getBodyPartBytes());
-                    log.info("got part: {}", s);
+                    logger.info("got part: {}", s);
                     if (s.equals("")) {
                         // noinspection ThrowableInstanceNeverThrown
-                        log.warn("Sampling stacktrace.", new Throwable("trace that, we should not get called for empty body."));
+                        logger.warn("Sampling stacktrace.", new Throwable("trace that, we should not get called for empty body."));
                     }
                     queue.put(s);
                     return STATE.CONTINUE;
@@ -124,7 +124,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testPutEmptyBody() throws Throwable {
+    public void testPutEmptyBody() throws Exception {
         AsyncHttpClient ahc = getAsyncHttpClient(null);
         try {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();

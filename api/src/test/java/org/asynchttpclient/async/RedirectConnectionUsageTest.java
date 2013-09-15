@@ -15,8 +15,8 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.*;
-import static org.testng.FileAssert.fail;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,14 +29,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
@@ -55,23 +51,13 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
 
     @BeforeClass
     public void setUp() throws Exception {
-        server = new Server();
-
         port1 = findFreePort();
-
-        Connector listener = new SelectChannelConnector();
-        listener.setHost("localhost");
-        listener.setPort(port1);
-
-        server.addConnector(listener);
+        server = newJettyHttpServer(port1);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-
-        context.setContextPath("/");
-        server.setHandler(context);
-
         context.addServlet(new ServletHolder(new MockRedirectHttpServlet()), "/redirect/*");
         context.addServlet(new ServletHolder(new MockFullResponseHttpServlet()), "/*");
+        server.setHandler(context);
 
         server.start();
 
@@ -83,46 +69,31 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
      * Tests that after a redirect the final url in the response reflect the redirect
      */
     @Test
-    public void testGetRedirectFinalUrl() {
+    public void testGetRedirectFinalUrl() throws Exception {
 
-        AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
+                .setAllowPoolingConnection(true)//
+                .setMaximumConnectionsPerHost(1)//
+                .setMaximumConnectionsTotal(1)//
+                .setConnectionTimeoutInMs(1000)//
+                .setRequestTimeoutInMs(1000)//
+                .setFollowRedirects(true)//
+                .build();
 
-        bc.setAllowPoolingConnection(true);
-        bc.setMaximumConnectionsPerHost(1);
-        bc.setMaximumConnectionsTotal(1);
-        bc.setConnectionTimeoutInMs(1000);
-        bc.setRequestTimeoutInMs(1000);
-        bc.setFollowRedirects(true);
-
-        AsyncHttpClient c = getAsyncHttpClient(bc.build());
+        AsyncHttpClient c = getAsyncHttpClient(config);
         try {
+            Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
 
-            RequestBuilder builder = new RequestBuilder("GET");
-            builder.setUrl(servletEndpointRedirectUrl);
-
-            Request r = builder.build();
-
-            try {
-                ListenableFuture<Response> response = c.executeRequest(r);
-                Response res = null;
-                res = response.get();
-                assertNotNull(res.getResponseBody());
-                assertEquals(BASE_URL + "/overthere", BASE_URL + "/overthere", res.getUri().toString());
-
-            } catch (Exception e) {
-                System.err.print("============");
-                e.printStackTrace();
-                System.err.print("============");
-                System.err.flush();
-                fail("Should not get here, The request threw an exception");
-            }
+            ListenableFuture<Response> response = c.executeRequest(r);
+            Response res = null;
+            res = response.get();
+            assertNotNull(res.getResponseBody());
+            assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
 
         } finally {
             c.close();
         }
     }
-
-    protected abstract AsyncHttpProviderConfig getProviderConfig();
 
     @SuppressWarnings("serial")
     class MockRedirectHttpServlet extends HttpServlet {
@@ -140,7 +111,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
         public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
             String xmlToReturn = String.format(xml, new Object[] { new Date().toString() });
 
-            res.setStatus(200, "Complete, XML Being Returned");
+            res.setStatus(200);
             res.addHeader("Content-Type", contentType);
             res.addHeader("X-Method", req.getMethod());
             res.addHeader("MultiValue", "1");

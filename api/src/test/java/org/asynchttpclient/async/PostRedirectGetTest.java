@@ -13,6 +13,16 @@
 
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.*;
+
+import java.io.IOException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -23,15 +33,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
@@ -95,12 +97,12 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 /* @Override */
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
-                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                    fail("Unexpected exception: " + t.getMessage(), t);
                 }
 
             });
             int statusCode = responseFuture.get();
-            Assert.assertEquals(statusCode, 200);
+            assertEquals(statusCode, 200);
         } finally {
             p.close();
         }
@@ -130,12 +132,12 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 /* @Override */
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
-                    Assert.fail("Unexpected exception: " + t.getMessage(), t);
+                    fail("Unexpected exception: " + t.getMessage(), t);
                 }
 
             });
             int statusCode = responseFuture.get();
-            Assert.assertEquals(statusCode, 200);
+            assertEquals(statusCode, 200);
         } finally {
             p.close();
         }

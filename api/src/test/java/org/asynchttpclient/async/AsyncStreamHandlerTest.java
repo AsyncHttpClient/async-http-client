@@ -15,16 +15,8 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.async.util.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
+import static org.testng.Assert.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,13 +29,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
+import org.testng.annotations.Test;
+
 public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
-    
+
     private static final String RESPONSE = "param_1_";
-    private static final String UTF8 = "text/html;charset=utf-8";
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamGETTest() throws Throwable {
+    public void asyncStreamGETTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
@@ -53,8 +54,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     try {
                         FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                        Assert.assertNotNull(h);
-                        Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                        assertNotNull(h);
+                        assertEquals(h.getJoinedValue("content-type", ", "), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                         return STATE.ABORT;
                     } finally {
                         l.countDown();
@@ -64,7 +65,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public void onThrowable(Throwable t) {
                     try {
-                        Assert.fail("", t);
+                        fail("", t);
                     } finally {
                         l.countDown();
                     }
@@ -72,7 +73,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(5, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -80,7 +81,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamPOSTTest() throws Throwable {
+    public void asyncStreamPOSTTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -95,8 +96,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", "), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return STATE.CONTINUE;
                 }
 
@@ -110,7 +111,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public String onCompleted() throws Exception {
                     try {
                         String r = builder.toString().trim();
-                        Assert.assertEquals(r, RESPONSE);
+                        assertEquals(r, RESPONSE);
                         return r;
                     } finally {
                         l.countDown();
@@ -119,7 +120,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(10, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -127,7 +128,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamInterruptTest() throws Throwable {
+    public void asyncStreamInterruptTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -143,22 +144,22 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return STATE.ABORT;
                 }
 
                 @Override
                 public STATE onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
                     a.set(false);
-                    Assert.fail("Interrupted not working");
+                    fail("Interrupted not working");
                     return STATE.ABORT;
                 }
 
                 @Override
                 public void onThrowable(Throwable t) {
                     try {
-                        Assert.fail("", t);
+                        fail("", t);
                     } finally {
                         l.countDown();
                     }
@@ -166,14 +167,14 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             l.await(5, TimeUnit.SECONDS);
-            Assert.assertTrue(a.get());
+            assertTrue(a.get());
         } finally {
             c.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamFutureTest() throws Throwable {
+    public void asyncStreamFutureTest() throws Exception {
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
         AsyncHttpClient c = getAsyncHttpClient(null);
@@ -184,8 +185,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", "), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return STATE.CONTINUE;
                 }
 
@@ -198,22 +199,22 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public String onCompleted() throws Exception {
                     String r = builder.toString().trim();
-                    Assert.assertEquals(r, RESPONSE);
+                    assertEquals(r, RESPONSE);
                     return r;
                 }
 
                 @Override
                 public void onThrowable(Throwable t) {
-                    Assert.fail("", t);
+                    fail("", t);
                 }
             });
 
             try {
                 String r = f.get(5, TimeUnit.SECONDS);
-                Assert.assertNotNull(r);
-                Assert.assertEquals(r.trim(), RESPONSE);
+                assertNotNull(r);
+                assertEquals(r.trim(), RESPONSE);
             } catch (TimeoutException ex) {
-                Assert.fail();
+                fail();
             }
         } finally {
             c.close();
@@ -221,7 +222,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamThrowableRefusedTest() throws Throwable {
+    public void asyncStreamThrowableRefusedTest() throws Exception {
 
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
@@ -237,7 +238,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public void onThrowable(Throwable t) {
                     try {
                         if (t.getMessage() != null) {
-                            Assert.assertEquals(t.getMessage(), "FOO");
+                            assertEquals(t.getMessage(), "FOO");
                         }
                     } finally {
                         l.countDown();
@@ -246,7 +247,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(10, TimeUnit.SECONDS)) {
-                Assert.fail("Timed out");
+                fail("Timed out");
             }
         } finally {
             c.close();
@@ -254,7 +255,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncStreamReusePOSTTest() throws Throwable {
+    public void asyncStreamReusePOSTTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
         h.add("Content-Type", "application/x-www-form-urlencoded");
@@ -269,8 +270,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", "), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return STATE.CONTINUE;
                 }
 
@@ -284,7 +285,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public String onCompleted() throws Exception {
                     try {
                         String r = builder.toString().trim();
-                        Assert.assertEquals(r, RESPONSE);
+                        assertEquals(r, RESPONSE);
                         return r;
                     } finally {
                         l.countDown();
@@ -294,7 +295,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(20, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
 
             // Let do the same again
@@ -304,8 +305,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), UTF8);
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", "), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                     return STATE.CONTINUE;
                 }
 
@@ -319,7 +320,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public String onCompleted() throws Exception {
                     try {
                         String r = builder.toString().trim();
-                        Assert.assertEquals(r, RESPONSE);
+                        assertEquals(r, RESPONSE);
                         return r;
                     } finally {
                         l.countDown();
@@ -328,7 +329,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(20, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -336,22 +337,22 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void asyncStream301WithBody() throws Throwable {
+    public void asyncStream301WithBody() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-                    Assert.assertEquals(301, status.getStatusCode());
-                    return STATE.CONTINUE; 
+                    assertEquals(301, status.getStatusCode());
+                    return STATE.CONTINUE;
                 }
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), "text/html; charset=utf-8");
+                    assertNotNull(h);
+                    assertEquals(h.getJoinedValue("content-type", ", ").toLowerCase(Locale.ENGLISH), TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET.toLowerCase(Locale.ENGLISH));
                     return STATE.CONTINUE;
                 }
 
@@ -368,7 +369,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(20, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -376,22 +377,22 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void asyncStream301RedirectWithBody() throws Throwable {
+    public void asyncStream301RedirectWithBody() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-                    Assert.assertTrue(status.getStatusCode() != 301);
-                    return STATE.CONTINUE; 
+                    assertTrue(status.getStatusCode() != 301);
+                    return STATE.CONTINUE;
                 }
 
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
-                    Assert.assertEquals(h.getFirstValue("server"), "gws");
+                    assertNotNull(h);
+                    assertEquals(h.getFirstValue("server"), "gws");
                     // This assertion below is not an invariant, since implicitly contains locale-dependant settings
                     // and fails when run in country having own localized Google site and it's locale relies on something
                     // other than ISO-8859-1.
@@ -399,7 +400,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                     // Google site, that uses ISO-8892-2 encoding (default for HU). Similar is true for other
                     // non-ISO-8859-1 using countries that have "localized" google, like google.hr, google.rs, google.cz, google.sk etc.
                     //
-                    // Assert.assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
+                    // assertEquals(h.getJoinedValue("content-type", ", "), "text/html; charset=ISO-8859-1");
                     return STATE.CONTINUE;
                 }
 
@@ -411,7 +412,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(20, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -419,7 +420,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" }, timeOut = 3000, description = "Test behavior of 'read only status line' scenario.")
-    public void asyncStreamJustStatusLine() throws Throwable {
+    public void asyncStreamJustStatusLine() throws Exception {
         final int STATUS = 0;
         final int COMPLETED = 1;
         final int OTHER = 2;
@@ -446,7 +447,6 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 /* @Override */
                 public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                     whatCalled[STATUS] = true;
-                    System.out.println(responseStatus);
                     status = responseStatus.getStatusCode();
                     latch.countDown();
                     return STATE.ABORT;
@@ -468,20 +468,20 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!latch.await(2, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout");
+                fail("Timeout");
                 return;
             }
             Integer status = statusCode.get(TIMEOUT, TimeUnit.SECONDS);
-            Assert.assertEquals((int) status, 200, "Expected status code failed.");
+            assertEquals((int) status, 200, "Expected status code failed.");
 
             if (!whatCalled[STATUS]) {
-                Assert.fail("onStatusReceived not called.");
+                fail("onStatusReceived not called.");
             }
             if (!whatCalled[COMPLETED]) {
-                Assert.fail("onCompleted not called.");
+                fail("onCompleted not called.");
             }
             if (whatCalled[OTHER]) {
-                Assert.fail("Other method of AsyncHandler got called.");
+                fail("Other method of AsyncHandler got called.");
             }
         } finally {
             client.close();
@@ -489,7 +489,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void asyncOptionsTest() throws Throwable {
+    public void asyncOptionsTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
@@ -499,18 +499,13 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 @Override
                 public STATE onHeadersReceived(HttpResponseHeaders content) throws Exception {
                     FluentCaseInsensitiveStringsMap h = content.getHeaders();
-                    Assert.assertNotNull(h);
+                    assertNotNull(h);
                     String[] values = h.get("Allow").get(0).split(",|, ");
-                    Assert.assertNotNull(values);
-                    Assert.assertEquals(values.length, expected.length);
+                    assertNotNull(values);
+                    assertEquals(values.length, expected.length);
                     Arrays.sort(values);
-                    Assert.assertEquals(values, expected);
+                    assertEquals(values, expected);
                     return STATE.ABORT;
-                }
-
-                @Override
-                public STATE onBodyPartReceived(HttpResponseBodyPart content) throws Exception {
-                    return STATE.CONTINUE;
                 }
 
                 @Override
@@ -524,7 +519,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             });
 
             if (!l.await(20, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             c.close();
@@ -532,7 +527,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void closeConnectionTest() throws Throwable {
+    public void closeConnectionTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Response r = c.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
@@ -567,8 +562,8 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 }
             }).get();
 
-            Assert.assertNotNull(r);
-            Assert.assertEquals(r.getStatusCode(), 200);
+            assertNotNull(r);
+            assertEquals(r.getStatusCode(), 200);
         } finally {
             c.close();
         }

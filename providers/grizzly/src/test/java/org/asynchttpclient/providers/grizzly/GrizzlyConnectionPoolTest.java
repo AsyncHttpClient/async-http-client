@@ -144,7 +144,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 
     @Override
     @Test
-    public void multipleMaxConnectionOpenTest() throws Throwable {
+    public void multipleMaxConnectionOpenTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {

@@ -188,7 +188,7 @@ public class Channels {
 
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ChannelPipeline pipeline = ch.pipeline()/**/
+                ChannelPipeline pipeline = ch.pipeline()//
                 .addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.getRequestCompressionLevel() > 0) {
@@ -198,7 +198,7 @@ public class Channels {
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
-                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())/**/
+                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                 .addLast(AHC_HANDLER, httpProcessor);
 
                 if (asyncHttpProviderConfig.getHttpAdditionalChannelInitializer() != null) {
@@ -210,9 +210,9 @@ public class Channels {
         ChannelInitializer<Channel> webSocketChannelInitializer = new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ch.pipeline()/**/
-                .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())/**/
-                .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())/**/
+                ch.pipeline()//
+                .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
+                .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
                 .addLast(AHC_HANDLER, httpProcessor);
 
                 if (asyncHttpProviderConfig.getWsAdditionalChannelInitializer() != null) {
@@ -266,7 +266,7 @@ public class Channels {
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
-                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())/**/
+                pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                 .addLast(AHC_HANDLER, httpProcessor);
 
                 if (asyncHttpProviderConfig.getHttpsAdditionalChannelInitializer() != null) {
@@ -288,8 +288,8 @@ public class Channels {
                     abort(future, ex);
                 }
 
-                pipeline.addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())/**/
-                .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())/**/
+                pipeline.addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
+                .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
                 .addLast(AHC_HANDLER, httpProcessor);
 
                 if (asyncHttpProviderConfig.getWssAdditionalChannelInitializer() != null) {

@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
@@ -26,11 +27,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -53,22 +51,15 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        server = new Server();
-
         port1 = findFreePort();
-        Connector listener = new SelectChannelConnector();
-
-        listener.setHost("127.0.0.1");
-        listener.setPort(port1);
-        server.addConnector(listener);
-
+        server = newJettyHttpServer(port1);
         server.setHandler(new IdleStateHandler());
         server.start();
-        log.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 
     @Test(groups = { "online", "default_provider" })
-    public void idleStateTest() throws Throwable {
+    public void idleStateTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 

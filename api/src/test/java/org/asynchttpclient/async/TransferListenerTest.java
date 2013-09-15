@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.createTempFile;
 import static org.testng.Assert.*;
 
 import java.io.File;
@@ -34,7 +35,6 @@ import org.asynchttpclient.generators.FileBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.listener.TransferListener;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public abstract class TransferListenerTest extends AbstractBasicTest {
@@ -77,7 +77,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicGetTest() throws Throwable {
+    public void basicGetTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
@@ -131,7 +131,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicPutFileTest() throws Throwable {
+    public void basicPutFileTest() throws Exception {
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hSent = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<FluentCaseInsensitiveStringsMap> hRead = new AtomicReference<FluentCaseInsensitiveStringsMap>();
@@ -140,12 +140,9 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
         final AtomicBoolean completed = new AtomicBoolean(false);
 
-        long repeats = (1024 * 100 * 10 / PATTERN_BYTES.length) + 1;
-        File file = createTempFile(PATTERN_BYTES, (int) repeats);
-        long expectedFileSize = PATTERN_BYTES.length * repeats;
-        Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
+        File file = createTempFile(1024 * 100 * 10);
 
-        int timeout = (int) (repeats / 1000);
+        int timeout = (int) (file.length() / 1000);
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
 
         try {
@@ -184,8 +181,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 assertEquals(response.getStatusCode(), 200);
                 assertNotNull(hRead.get());
                 assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), expectedFileSize, "Number of received bytes incorrect");
-                assertEquals(bbSentLenght.get(), expectedFileSize, "Number of sent bytes incorrect");
+                assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
+                assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
             } catch (IOException ex) {
                 fail("Should have timed out");
             }
@@ -195,7 +192,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicPutFileBodyGeneratorTest() throws Throwable {
+    public void basicPutFileBodyGeneratorTest() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
@@ -206,10 +203,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
 
             final AtomicBoolean completed = new AtomicBoolean(false);
 
-            long repeats = (1024 * 100 * 10 / PATTERN_BYTES.length) + 1;
-            File file = createTempFile(PATTERN_BYTES, (int) repeats);
-            long expectedFileSize = PATTERN_BYTES.length * repeats;
-            Assert.assertEquals(expectedFileSize, file.length(), "Invalid file length");
+            File file = createTempFile(1024 * 100 * 10);
 
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
@@ -246,8 +240,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 assertEquals(response.getStatusCode(), 200);
                 assertNotNull(hRead.get());
                 assertNotNull(hSent.get());
-                assertEquals(bbReceivedLenght.get(), expectedFileSize, "Number of received bytes incorrect");
-                assertEquals(bbSentLenght.get(), expectedFileSize, "Number of sent bytes incorrect");
+                assertEquals(bbReceivedLenght.get(), file.length(), "Number of received bytes incorrect");
+                assertEquals(bbSentLenght.get(), file.length(), "Number of sent bytes incorrect");
             } catch (IOException ex) {
                 fail("Should have timed out");
             }

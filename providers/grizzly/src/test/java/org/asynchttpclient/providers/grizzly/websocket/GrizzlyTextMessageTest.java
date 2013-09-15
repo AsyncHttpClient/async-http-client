@@ -14,21 +14,12 @@ package org.asynchttpclient.providers.grizzly.websocket;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
-import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
 import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
 import org.asynchttpclient.websocket.ByteMessageTest;
-import org.testng.annotations.Test;
 
 public class GrizzlyTextMessageTest extends ByteMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
-    }
-
-    @Test(timeOut = 60000)
-    @Override
-    public void echoFragments() throws Exception {
-        super.echoFragments();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }
