@@ -527,12 +527,18 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 handler = new ExpectHandler(handler);
             }
             context.setBodyHandler(handler);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("REQUEST: {}", requestPacket);
+            }
             isWriteComplete = handler.doHandle(ctx, request, requestPacket);
         } else {
             HttpContent content = HttpContent.builder(requestPacket).last(true).build();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("REQUEST: {}", requestPacket);
+            }
             ctx.write(content, ctx.getTransportContext().getCompletionHandler());
         }
-        LOGGER.debug("REQUEST: {}", requestPacket);
+
 
         return isWriteComplete;
     }
