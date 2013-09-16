@@ -29,6 +29,8 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.nio.NIOConnection;
+import org.glassfish.grizzly.nio.SelectorRunner;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.utils.Futures;
@@ -169,18 +171,44 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
         this.context = context;
         asyncTransferInitiated = true;
+        final Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (requestPacket.isSecure() &&
+                            (getSSLEngine(context.getConnection()) == null)) {
+                        flushOnSSLHandshakeComplete();
+                    } else {
+                        feeder.flush();
+                    }
+                } catch (IOException ioe) {
+                    GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                            GrizzlyAsyncHttpProvider.getHttpTransactionContext(
+                                    c);
+                    ctx.abort(ioe);
+                }
+            }
+        };
 
-        if (requestPacket.isSecure() &&
-                (getSSLEngine(context.getConnection()) == null)) {
-            flushOnSSLHandshakeComplete();
+        // If the current thread is a selector thread, we need to execute
+        // the remainder of the task on the worker thread to prevent
+        // it from being blocked.
+        if (isCurrentThreadSelectorRunner()) {
+            c.getTransport().getWorkerThreadPool().execute(r);
         } else {
-            feeder.flush();
+            r.run();
         }
-
     }
 
 
     // --------------------------------------------------------- Private Methods
+
+
+    private boolean isCurrentThreadSelectorRunner() {
+        final NIOConnection c = (NIOConnection) context.getConnection();
+        final SelectorRunner runner = c.getSelectorRunner();
+        return (Thread.currentThread() == runner.getRunnerThread());
+    }
 
 
     private void flushOnSSLHandshakeComplete() throws IOException {
@@ -331,7 +359,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
             if (!c.canWrite()) {
                 final FutureImpl<Boolean> future =
                         Futures.createSafeFuture();
-
                 // Connection may be obtained by calling FilterChainContext.getConnection().
                 c.notifyCanWrite(new WriteHandler() {
 
