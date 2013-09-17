@@ -192,6 +192,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             if (timeoutExecutor != null) {
                 timeoutExecutor.stop();
+                final ExecutorService threadPool = timeoutExecutor.getThreadPool();
+                if (threadPool != null) {
+                    threadPool.shutdownNow();
+                }
             }
         } catch (IOException ignored) { }
 
