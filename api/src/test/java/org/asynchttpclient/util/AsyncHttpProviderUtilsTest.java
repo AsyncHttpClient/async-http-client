@@ -12,10 +12,10 @@
  */
 package org.asynchttpclient.util;
 
+import static org.testng.Assert.assertEquals;
+
 import java.net.URI;
 
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class AsyncHttpProviderUtilsTest {
@@ -26,7 +26,7 @@ public class AsyncHttpProviderUtilsTest {
         String url = "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505";
         URI uri = AsyncHttpProviderUtils.getRedirectUri(
                 URI.create("http://www.ebay.de"), url);
-        Assert.assertEquals("http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505", uri.toString());
+        assertEquals( uri.toString(), "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505");
     }
 
     @Test(groups = "fast")
@@ -34,7 +34,7 @@ public class AsyncHttpProviderUtilsTest {
 
         String url = "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC Lifebook E8310 Core2Duo T8100 2 1GHz 4GB DVD RW&_itemId=150731406505";
         URI uri = AsyncHttpProviderUtils.getRedirectUri(URI.create("http://www.ebay.de"), url);
-        Assert.assertEquals("http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505", uri.toString());
+        assertEquals(uri.toString(), "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505");
     }
     
     @Test(groups = "fast")
@@ -42,6 +42,6 @@ public class AsyncHttpProviderUtilsTest {
 
         String url = "/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC Lifebook E8310 Core2Duo T8100 2 1GHz 4GB DVD RW&_itemId=150731406505";
         URI uri = AsyncHttpProviderUtils.getRedirectUri(URI.create("http://www.ebay.de"), url);
-        Assert.assertEquals("http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505", uri.toString());
+        assertEquals(uri.toString(), "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505");
     }
 }

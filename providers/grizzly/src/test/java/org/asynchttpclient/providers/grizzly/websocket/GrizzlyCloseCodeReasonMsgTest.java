@@ -17,18 +17,11 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
 import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
-import org.testng.annotations.Test;
 
 public class GrizzlyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
-    }
-
-    @Override
-    @Test
-    public void onCloseWithCode() throws Throwable {
-        super.onCloseWithCode();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }

@@ -36,7 +36,7 @@ import static org.testng.Assert.assertNotNull;
 
 public abstract class InputStreamTest extends AbstractBasicTest {
 
-    private class InputStreamHandler extends AbstractHandler {
+    private static class InputStreamHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 byte[] bytes = new byte[3];
@@ -57,6 +57,11 @@ public abstract class InputStreamTest extends AbstractBasicTest {
             response.getOutputStream().flush();
             response.getOutputStream().close();
         }
+    }
+
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
+        return new InputStreamHandler();
     }
 
     @Test(groups = { "standalone", "default_provider" })
@@ -98,10 +103,5 @@ public abstract class InputStreamTest extends AbstractBasicTest {
         } finally {
             c.close();
         }
-    }
-
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new InputStreamHandler();
     }
 }

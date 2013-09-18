@@ -39,7 +39,7 @@ import org.asynchttpclient.consumers.OutputStreamBodyConsumer;
 public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testAccumulateErrorBody() throws Throwable {
+    public void testAccumulateErrorBody() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.ACCUMULATE).build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);
@@ -56,7 +56,7 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testOmitErrorBody() throws Throwable {
+    public void testOmitErrorBody() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl() + "/nonexistent").setErrorDocumentBehaviour(ErrorDocumentBehaviour.OMIT).build();
         try {
             ByteArrayOutputStream o = new ByteArrayOutputStream(10);

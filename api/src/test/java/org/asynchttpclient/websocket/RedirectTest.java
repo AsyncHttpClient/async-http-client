@@ -13,6 +13,7 @@
 
 package org.asynchttpclient.websocket;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
@@ -26,10 +27,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -41,15 +42,8 @@ public abstract class RedirectTest extends AbstractBasicTest {
         port1 = findFreePort();
         port2 = findFreePort();
 
-        server = new Server();
-
-        SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(port1);
-        server.addConnector(connector);
-
-        SelectChannelConnector connector2 = new SelectChannelConnector();
-        connector2.setPort(port2);
-        server.addConnector(connector2);
+        server = newJettyHttpServer(port1);
+        addHttpConnector(server, port2);
 
         HandlerList list = new HandlerList();
         list.addHandler(new AbstractHandler() {
@@ -64,18 +58,19 @@ public abstract class RedirectTest extends AbstractBasicTest {
         server.setHandler(list);
 
         server.start();
-        log.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 
     @Override
     public WebSocketHandler getWebSocketHandler() {
         return new WebSocketHandler() {
             @Override
-            public org.eclipse.jetty.websocket.WebSocket doWebSocketConnect(HttpServletRequest httpServletRequest, String s) {
-                return new TextMessageTest.EchoTextWebSocket();
+            public void configure(WebSocketServletFactory factory) {
+                factory.register(EchoSocket.class);
             }
         };
     }
+
 
     @Test(timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {

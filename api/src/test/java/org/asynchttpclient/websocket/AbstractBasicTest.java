@@ -12,69 +12,28 @@
  */
 package org.asynchttpclient.websocket;
 
-import java.io.IOException;
+import static org.asynchttpclient.async.util.TestUtils.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerWrapper;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.websocket.WebSocketFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractBasicTest extends org.asynchttpclient.async.AbstractBasicTest {
 
-    protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
-
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
 
-        server = new Server();
         port1 = findFreePort();
-
-        SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(port1);
-        server.addConnector(connector);
-        WebSocketHandler _wsHandler = getWebSocketHandler();
-
-        server.setHandler(_wsHandler);
+        server = newJettyHttpServer(port1);
+        server.setHandler(getWebSocketHandler());
 
         server.start();
-        log.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
         server.stop();
-    }
-
-    public abstract class WebSocketHandler extends HandlerWrapper implements WebSocketFactory.Acceptor {
-        private final WebSocketFactory _webSocketFactory = new WebSocketFactory(this, 32 * 1024);
-
-        public WebSocketHandler() {
-            _webSocketFactory.setMaxIdleTime(10000);
-        }
-
-        public WebSocketFactory getWebSocketFactory() {
-            return _webSocketFactory;
-        }
-
-        @Override
-        public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-            if (_webSocketFactory.acceptWebSocket(request, response) || response.isCommitted())
-                return;
-            super.handle(target, baseRequest, request, response);
-        }
-
-        public boolean checkOrigin(HttpServletRequest request, String origin) {
-            return true;
-        }
     }
 
     protected String getTargetUrl() {

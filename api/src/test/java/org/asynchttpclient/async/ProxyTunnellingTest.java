@@ -12,6 +12,14 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.testng.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -19,29 +27,17 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SimpleAsyncHttpClient;
-import org.eclipse.jetty.server.Connector;
+import org.asynchttpclient.async.util.EchoHandler;
+import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.ProxyHandler;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-
-import static org.testng.Assert.assertEquals;
-
 /**
  * Proxy usage tests.
  */
-@SuppressWarnings("deprecation")
 public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
@@ -49,46 +45,25 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     public abstract String getProviderClass();
 
     public AbstractHandler configureHandler() throws Exception {
-        ProxyHandler proxy = new ProxyHandler();
-        return proxy;
+        return new ConnectHandler();
     }
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        server = new Server();
-        server2 = new Server();
-
         port1 = findFreePort();
-        port2 = findFreePort();
-
-        Connector listener = new SelectChannelConnector();
-
-        listener.setHost("127.0.0.1");
-        listener.setPort(port1);
-
-        server.addConnector(listener);
-
-        SslSocketConnector connector = new SslSocketConnector();
-        connector.setHost("127.0.0.1");
-        connector.setPort(port2);
-
-        ClassLoader cl = getClass().getClassLoader();
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
-        connector.setKeystore(keyStoreFile);
-        connector.setKeyPassword("changeit");
-        connector.setKeystoreType("JKS");
-
-        server2.addConnector(connector);
-
+        server = newJettyHttpServer(port1);
         server.setHandler(configureHandler());
         server.start();
 
+        port2 = findFreePort();
+
+        server2 = newJettyHttpsServer(port2);
         server2.setHandler(new EchoHandler());
         server2.start();
-        log.info("Local HTTP server started successfully");
+
+        logger.info("Local HTTP server started successfully");
     }
-    
+
     @AfterClass(alwaysRun = true)
     public void tearDownGlobal() throws Exception {
         server.stop();
@@ -110,7 +85,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
-                    log.debug(t.getMessage(), t);
+                    logger.debug(t.getMessage(), t);
                 }
 
                 @Override
@@ -128,21 +103,17 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
-        b.setFollowRedirects(true);
-
-        ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
-        b.setProxyServer(ps);
-
-        AsyncHttpClientConfig config = b.build();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
+                .setFollowRedirects(true)//
+                .setProxyServer(new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1))//
+                .build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
         try {
-            RequestBuilder rb = new RequestBuilder("GET").setUrl(getTargetUrl2());
-            Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
+            Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
 
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
-                    log.debug(t.getMessage(), t);
+                    logger.debug(t.getMessage(), t);
                 }
 
                 @Override
@@ -161,7 +132,11 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testSimpleAHCConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
 
-        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setProxyProtocol(ProxyServer.Protocol.HTTPS).setProxyHost("127.0.0.1").setProxyPort(port1).setFollowRedirects(true).setUrl(getTargetUrl2()).setHeader("Content-Type", "text/html").build();
+        SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()//
+                .setProviderClass(getProviderClass())//
+                .setProxyProtocol(ProxyServer.Protocol.HTTPS).setProxyHost("127.0.0.1").setProxyPort(port1).setFollowRedirects(true).setUrl(getTargetUrl2())//
+                .setHeader("Content-Type", "text/html")//
+                .build();
         try {
             Response r = client.get().get();
 

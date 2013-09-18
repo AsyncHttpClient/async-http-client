@@ -15,143 +15,44 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Enumeration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
-
-    protected static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpsTest.class);
-
-    public static class EchoHandler extends AbstractHandler {
-
-        @Override
-        public void handle(String pathInContext, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
-
-            httpResponse.setContentType("text/html; charset=utf-8");
-            Enumeration<?> e = httpRequest.getHeaderNames();
-            String param;
-            while (e.hasMoreElements()) {
-                param = e.nextElement().toString();
-
-                if (param.startsWith("LockThread")) {
-                    try {
-                        Thread.sleep(40 * 1000);
-                    } catch (InterruptedException ex) { // nothing to do here
-                    }
-                }
-
-                httpResponse.addHeader("X-" + param, httpRequest.getHeader(param));
-            }
-
-            Enumeration<?> i = httpRequest.getParameterNames();
-
-            StringBuilder requestBody = new StringBuilder();
-            while (i.hasMoreElements()) {
-                param = i.nextElement().toString();
-                httpResponse.addHeader("X-" + param, httpRequest.getParameter(param));
-                requestBody.append(param);
-                requestBody.append("_");
-            }
-
-            String pathInfo = httpRequest.getPathInfo();
-            if (pathInfo != null)
-                httpResponse.addHeader("X-pathInfo", pathInfo);
-
-            String queryString = httpRequest.getQueryString();
-            if (queryString != null)
-                httpResponse.addHeader("X-queryString", queryString);
-
-            httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
-
-            Cookie[] cs = httpRequest.getCookies();
-            if (cs != null) {
-                for (Cookie c : cs) {
-                    httpResponse.addCookie(c);
-                }
-            }
-
-            if (requestBody.length() > 0) {
-                httpResponse.getOutputStream().write(requestBody.toString().getBytes());
-            }
-
-            int size = 10 * 1024;
-            if (httpRequest.getContentLength() > 0) {
-                size = httpRequest.getContentLength();
-            }
-            byte[] bytes = new byte[size];
-            int pos = 0;
-            if (bytes.length > 0) {
-                int read = 0;
-                while (read != -1) {
-                    read = httpRequest.getInputStream().read(bytes, pos, bytes.length - pos);
-                    pos += read;
-                }
-
-                httpResponse.getOutputStream().write(bytes);
-            }
-
-            httpResponse.setStatus(200);
-            httpResponse.getOutputStream().flush();
-            httpResponse.getOutputStream().close();
-        }
-    }
-
-    public AbstractHandler configureHandler() throws Exception {
-        return new EchoHandler();
-    }
 
     protected String getTargetUrl() {
         return String.format("https://127.0.0.1:%d/foo/test", port1);
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void zeroCopyPostTest() throws Throwable {
+    public void zeroCopyPostTest() throws Exception {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getResponseBody(), "This is a simple test file");
+            assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
         } finally {
             client.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void multipleSSLRequestsTest() throws Throwable {
+    public void multipleSSLRequestsTest() throws Exception {
         final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             String body = "hello there";
@@ -171,7 +72,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void multipleSSLWithoutCacheTest() throws Throwable {
+    public void multipleSSLWithoutCacheTest() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
         try {
             String body = "hello there";
@@ -188,7 +89,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void reconnectsAfterFailedCertificationPath() throws Throwable {
+    public void reconnectsAfterFailedCertificationPath() throws Exception {
         AtomicBoolean trusted = new AtomicBoolean(false);
         AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trusted)).build());
         try {
@@ -203,7 +104,7 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
                     assertNotNull(cause.getCause());
                     assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
                 } else {
-                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
+                    assertTrue(cause instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
                 }
             }
 
@@ -216,51 +117,5 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
         } finally {
             c.close();
         }
-    }
-
-    private static SSLContext createSSLContext(AtomicBoolean trusted) {
-        InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
-        try {
-            char[] keyStorePassword = "changeit".toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(keyStoreStream, keyStorePassword);
-
-            // Set up key manager factory to use our key store
-            char[] certificatePassword = "changeit".toCharArray();
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, certificatePassword);
-
-            // Initialize the SSLContext to work with our key managers.
-            KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trusted) };
-            SecureRandom secureRandom = new SecureRandom();
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers, trustManagers, secureRandom);
-
-            return sslContext;
-        } catch (Exception e) {
-            throw new Error("Failed to initialize the server-side SSLContext", e);
-        } finally {
-            IOUtils.closeQuietly(keyStoreStream);
-        }
-    }
-
-    private static final TrustManager dummyTrustManager(final AtomicBoolean trusted) {
-        return new X509TrustManager() {
-
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
-
-            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            }
-
-            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                if (!trusted.get()) {
-                    throw new CertificateException("Server certificate not trusted.");
-                }
-            }
-        };
     }
 }

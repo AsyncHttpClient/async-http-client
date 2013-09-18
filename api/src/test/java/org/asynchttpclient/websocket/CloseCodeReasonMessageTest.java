@@ -12,23 +12,30 @@
  */
 package org.asynchttpclient.websocket;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.websocket.WebSocket;
-import org.asynchttpclient.websocket.WebSocketCloseCodeReasonListener;
-import org.asynchttpclient.websocket.WebSocketListener;
-import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.asynchttpclient.AsyncHttpClient;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.testng.annotations.Test;
 
-public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
+public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
+    @Override
+    public WebSocketHandler getWebSocketHandler() {
+        return new WebSocketHandler() {
+            @Override
+            public void configure(WebSocketServletFactory factory) {
+                factory.register(EchoSocket.class);
+            }
+        };
+    }
+    
     @Test(timeOut = 60000)
-    public void onCloseWithCode() throws Throwable {
+    public void onCloseWithCode() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -46,7 +53,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
     }
 
     @Test(timeOut = 60000)
-    public void onCloseWithCodeServerClose() throws Throwable {
+    public void onCloseWithCodeServerClose() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -55,13 +62,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
             c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
             latch.await();
-            final String[] parts = text.get().split(" ");
-            assertEquals(parts.length, 5);
-            assertEquals(parts[0], "1000-Idle");
-            assertEquals(parts[1], "for");
-            assertTrue(Integer.parseInt(parts[2].substring(0, parts[2].indexOf('m'))) > 10000);
-            assertEquals(parts[3], ">");
-            assertEquals(parts[4], "10000ms");
+            assertEquals(text.get(), "1001-Idle Timeout");
         } finally {
             c.close();
         }
@@ -84,6 +85,7 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
 
         @Override
         public void onClose(WebSocket websocket) {
+            latch.countDown();
         }
 
         public void onClose(WebSocket websocket, int code, String reason) {

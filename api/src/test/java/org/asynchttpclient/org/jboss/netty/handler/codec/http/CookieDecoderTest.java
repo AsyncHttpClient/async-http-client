@@ -12,43 +12,41 @@
  */
 package org.asynchttpclient.org.jboss.netty.handler.codec.http;
 
+import static org.testng.Assert.assertEquals;
+
 import java.util.Set;
 
-import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.testng.Assert;
+import org.asynchttpclient.Cookie;
 import org.testng.annotations.Test;
 
-import org.asynchttpclient.Cookie;
-
 public class CookieDecoderTest {
-    
+
     @Test(groups = "fast")
     public void testDecodeUnquoted() {
-        Set<Cookie> cookies = CookieDecoder.decode(
-                "foo=value; domain=/; path=/");
-        Assert.assertEquals(cookies.size(), 1);
+        Set<Cookie> cookies = CookieDecoder.decode("foo=value; domain=/; path=/");
+        assertEquals(cookies.size(), 1);
 
         Cookie first = cookies.iterator().next();
-        Assert.assertEquals(first.getValue(), "value");
-        Assert.assertEquals(first.getDomain(), "/");
-        Assert.assertEquals(first.getPath(), "/");
+        assertEquals(first.getValue(), "value");
+        assertEquals(first.getDomain(), "/");
+        assertEquals(first.getPath(), "/");
     }
 
     @Test(groups = "fast")
     public void testDecodeQuoted() {
         Set<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 13-Jan-2021 22:23:01 GMT; Secure; HttpOnly");
-        Assert.assertEquals(cookies.size(), 1);
+        assertEquals(cookies.size(), 1);
 
         Cookie first = cookies.iterator().next();
-        Assert.assertEquals(first.getValue(), "VALUE1");
+        assertEquals(first.getValue(), "VALUE1");
     }
 
     @Test(groups = "fast")
     public void testDecodeQuotedContainingEscapedQuote() {
         Set<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\\\"\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 13-Jan-2021 22:23:01 GMT; Secure; HttpOnly");
-        Assert.assertEquals(cookies.size(), 1);
+        assertEquals(cookies.size(), 1);
 
         Cookie first = cookies.iterator().next();
-        Assert.assertEquals(first.getValue(), "VALUE1\"");
+        assertEquals(first.getValue(), "VALUE1\"");
     }
 }

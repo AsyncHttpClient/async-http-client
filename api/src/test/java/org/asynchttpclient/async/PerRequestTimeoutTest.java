@@ -69,9 +69,9 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
                         response.getOutputStream().print(MSG);
                         response.getOutputStream().flush();
                     } catch (InterruptedException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     } catch (IOException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }).start();
@@ -83,9 +83,9 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
                         response.getOutputStream().flush();
                         continuation.complete();
                     } catch (InterruptedException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     } catch (IOException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }).start();
@@ -178,7 +178,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            log.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.", times[0], times[1], (times[1] - times[0])));
+            logger.info(String.format("\n@%dms Last body part received\n@%dms Connection killed\n %dms difference.", times[0], times[1], (times[1] - times[0])));
             fail("Timeouted on idle.", e);
         } finally {
             client.close();

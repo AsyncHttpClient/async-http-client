@@ -15,11 +15,10 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,12 +29,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -48,7 +43,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;
-            httpResponse.setContentType("text/html; charset=utf-8");
+            httpResponse.setContentType(TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
             Enumeration<?> e = httpRequest.getHeaderNames();
             while (e.hasMoreElements()) {
                 param = e.nextElement().toString();
@@ -75,50 +70,19 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        server = new Server();
-
         port1 = findFreePort();
         port2 = findFreePort();
 
-        Connector listener = new SelectChannelConnector();
-
-        listener.setHost("127.0.0.1");
-        listener.setPort(port1);
-        server.addConnector(listener);
-
-        SslSocketConnector connector = new SslSocketConnector();
-        connector.setHost("127.0.0.1");
-        connector.setPort(port2);
-
-        ClassLoader cl = getClass().getClassLoader();
-        // override system properties
-        URL cacertsUrl = cl.getResource("ssltest-cacerts.jks");
-        String trustStoreFile = new File(cacertsUrl.toURI()).getAbsolutePath();
-        connector.setTruststore(trustStoreFile);
-        connector.setTrustPassword("changeit");
-        connector.setTruststoreType("JKS");
-
-        log.info("SSL certs path: {}", trustStoreFile);
-
-        // override system properties
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
-        connector.setKeystore(keyStoreFile);
-        connector.setKeyPassword("changeit");
-        connector.setKeystoreType("JKS");
-
-        log.info("SSL keystore path: {}", keyStoreFile);
-
-        server.addConnector(connector);
-
+        server = newJettyHttpServer(port1);
+        addHttpsConnector(server, port2);
         server.setHandler(new Relative302Handler());
         server.start();
-        log.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 
     @Test(groups = { "standalone", "default_provider" })
     // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
-    public void httpToHttpsRunAllTestsSequentially() throws Exception {
+    public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         httpToHttpsRedirect();
         httpToHttpsProperConfig();
         relativeLocationUrl();

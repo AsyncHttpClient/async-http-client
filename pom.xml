@@ -214,7 +214,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>2.4.3</version>
                 <configuration>
@@ -222,12 +221,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.1</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.1</version>
                 <executions>
@@ -239,7 +235,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.2</version>
                 <executions>
@@ -253,12 +248,10 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.0</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.8.1</version>
                 <configuration>
@@ -280,34 +273,11 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-shade-plugin</artifactId> 
-                <version>1.2.1</version> <executions> <execution> <phase>package</phase> 
-                <goals> <goal>shade</goal> </goals> <configuration> <shadedArtifactAttached>true</shadedArtifactAttached> 
-                <shadedClassifierName>shaded</shadedClassifierName> <artifactSet> <excludes> 
-                <exclude>commons-codec:commons-codec</exclude> <exclude>commons-lang:commons-lang</exclude> 
-                <exclude>commons-logging:commons-logging</exclude> <exclude>junit:junit</exclude> 
-                <exclude>log4j:log4j</exclude> </excludes> </artifactSet> <transformers> 
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" 
-                /> <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" 
-                /> <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" 
-                /> </transformers> </configuration> </execution> </executions> </plugin> -->
-            <!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>clirr-maven-plugin</artifactId> 
-                <version>2.3</version> <configuration> <excludes> <exclude>**/NettyAsyncHttpProvider$*</exclude> 
-                <exclude>**/AsyncHandler$STATE</exclude> <exclude>**/ProxyServer$Protocol</exclude> 
-                <exclude>**/Realm$AuthScheme</exclude> <exclude>**/SimpleAsyncHttpClient$ErrorDocumentBehaviour</exclude> 
-                <exclude>**/SpnegoEngine</exclude> <exclude>**/Request</exclude> <exclude>**/Request$EntityWriter</exclude> 
-                <exclude>**/RequestBuilderBase</exclude> <exclude>**/Response</exclude> <exclude>**/Response$*</exclude> 
-                <exclude>**/FilterContext</exclude> <exclude>**/FilterContext$*</exclude> 
-                <exclude>**/NettyResponseFuture</exclude> <exclude>**/**ResponseBodyPart</exclude> 
-                <exclude>**/**WebSocket</exclude> </excludes> </configuration> <executions> 
-                <execution> <id>check-api-compat</id> <phase>verify</phase> <goals> <goal>check-no-fork</goal> 
-                </goals> </execution> </executions> </plugin> -->
         </plugins>
     </build>
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.8.1</version>
                 <configuration>
@@ -344,7 +314,6 @@
                 </reportSets>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>${surefire.version}</version>
             </plugin>
@@ -362,7 +331,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <executions>
                             <execution>
@@ -382,7 +350,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone</groups>
@@ -399,7 +366,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>standalone, online</groups>
@@ -466,22 +432,24 @@
             <artifactId>testng</artifactId>
             <version>${testng.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
-            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.beanshell</groupId>
+                    <artifactId>bsh</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>${jetty.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-websocket</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
@@ -494,6 +462,24 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-proxy</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-server</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-servlet</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
@@ -536,8 +522,8 @@
         <surefire.version>2.16</surefire.version>
         <logback.version>1.0.13</logback.version>
         <log4j.version>1.2.17</log4j.version>
-        <testng.version>6.8.5</testng.version>
-        <jetty.version>8.1.12.v20130726</jetty.version>
+        <testng.version>6.8.7</testng.version>
+        <jetty.version>9.0.5.v20130815</jetty.version>
         <tomcat.version>6.0.29</tomcat.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-fileupload.version>1.3</commons-fileupload.version>

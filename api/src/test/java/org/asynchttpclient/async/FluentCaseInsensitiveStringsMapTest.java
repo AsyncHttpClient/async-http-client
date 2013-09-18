@@ -30,6 +30,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 public class FluentCaseInsensitiveStringsMapTest {
+
     @Test
     public void emptyTest() {
         FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
@@ -315,7 +316,7 @@ public class FluentCaseInsensitiveStringsMapTest {
 
         map.deleteAll(Arrays.asList("bAz", "fOO"));
 
-        assertEquals(map.keySet(), Collections.<String>emptyList());
+        assertEquals(map.keySet(), Collections.<String> emptyList());
         assertNull(map.getFirstValue("foo"));
         assertNull(map.getJoinedValue("foo", ", "));
         assertNull(map.get("foo"));

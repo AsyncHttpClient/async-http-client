@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 public abstract class ListenableFutureTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testListenableFuture() throws Throwable {
+    public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
         AsyncHttpClient ahc = getAsyncHttpClient(null);
         try {

@@ -379,6 +379,8 @@ public class AsyncHttpProviderUtils {
         return new MultipartRequestEntity(parts, requestHeaders);
     }
 
+    // FIXME remove this: tests should use IOUtils and main shouldn't read Stream but... stream them!
+    @Deprecated
     public final static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {
         // just in case available() returns bogus (or -1), allocate non-trivial chunk
         byte[] b = new byte[Math.max(512, in.available())];

@@ -12,11 +12,11 @@
  */
 package org.asynchttpclient.util;
 
+import static org.testng.Assert.*;
+
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.util.ProxyUtils;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ProxyUtilsTest {
@@ -24,24 +24,24 @@ public class ProxyUtilsTest {
     public void testBasics() {
         // should avoid, there is no proxy (is null)
         Request req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
-        Assert.assertTrue(ProxyUtils.avoidProxy(null, req));
+        assertTrue(ProxyUtils.avoidProxy(null, req));
 
         // should avoid, it's in non-proxy hosts
         req = new RequestBuilder("GET").setUrl("http://somewhere.com/foo").build();
         ProxyServer proxyServer = new ProxyServer("foo", 1234);
         proxyServer.addNonProxyHost("somewhere.com");
-        Assert.assertTrue(ProxyUtils.avoidProxy(proxyServer, req));
+        assertTrue(ProxyUtils.avoidProxy(proxyServer, req));
 
         // should avoid, it's in non-proxy hosts (with "*")
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
         proxyServer = new ProxyServer("foo", 1234);
         proxyServer.addNonProxyHost("*.somewhere.com");
-        Assert.assertTrue(ProxyUtils.avoidProxy(proxyServer, req));
+        assertTrue(ProxyUtils.avoidProxy(proxyServer, req));
 
         // should use it
         req = new RequestBuilder("GET").setUrl("http://sub.somewhere.com/foo").build();
         proxyServer = new ProxyServer("foo", 1234);
         proxyServer.addNonProxyHost("*.somewhere.org");
-        Assert.assertFalse(ProxyUtils.avoidProxy(proxyServer, req));
+        assertFalse(ProxyUtils.avoidProxy(proxyServer, req));
     }
 }

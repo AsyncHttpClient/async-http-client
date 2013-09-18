@@ -101,7 +101,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_Netty() throws Throwable {
+    public void urlWithColonTest_Netty() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             String query = "test:colon:";
@@ -114,7 +114,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void urlWithColonTest_JDK() throws Throwable {
+    public void urlWithColonTest_JDK() throws Exception {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             String query = "test:colon:";

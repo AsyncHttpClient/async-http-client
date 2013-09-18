@@ -128,6 +128,12 @@ public class NettyWebSocket implements WebSocket {
     public void close(int statusCode, String reason) {
         onClose(statusCode, reason);
         listeners.clear();
+        try {
+            channel.write(new CloseWebSocketFrame(statusCode, reason));
+            channel.getCloseFuture().awaitUninterruptibly();
+        } finally {
+            channel.close();
+        }
     }
 
     protected void onBinaryFragment(byte[] message, boolean last) {

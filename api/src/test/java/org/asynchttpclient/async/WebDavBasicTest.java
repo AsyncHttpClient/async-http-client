@@ -12,12 +12,13 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.webdav.WebDavCompletionHandlerBase;
-import org.asynchttpclient.webdav.WebDavResponse;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.testng.Assert.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
@@ -25,18 +26,16 @@ import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Embedded;
 import org.apache.coyote.http11.Http11NioProtocol;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.webdav.WebDavCompletionHandlerBase;
+import org.asynchttpclient.webdav.WebDavResponse;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
 public abstract class WebDavBasicTest extends AbstractBasicTest {
 

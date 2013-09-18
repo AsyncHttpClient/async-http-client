@@ -65,9 +65,9 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                         response.getOutputStream().flush();
                         continuation.complete();
                     } catch (InterruptedException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     } catch (IOException e) {
-                        log.error(e.getMessage(), e);
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }).start();

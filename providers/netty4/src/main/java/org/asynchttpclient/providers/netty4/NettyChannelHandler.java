@@ -789,42 +789,35 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
             } else if (e instanceof WebSocketFrame) {
 
+                final WebSocketFrame frame = (WebSocketFrame) e;
+                NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 invokeOnSucces(ctx, h);
 
-                final WebSocketFrame frame = (WebSocketFrame) e;
-
-                if (frame instanceof TextWebSocketFrame) {
-                    pendingOpcode = OPCODE_TEXT;
-                } else if (frame instanceof BinaryWebSocketFrame) {
-                    pendingOpcode = OPCODE_BINARY;
-                }
-
-                if (frame.content() != null && frame.content().readableBytes() > 0) {
-                    ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), frame.content(), frame.isFinalFragment());
-                    h.onBodyPartReceived(rp);
-
-                    NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-
-                    if (webSocket != null) {
-                        if (pendingOpcode == OPCODE_BINARY) {
-                            webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
-                        } else {
-                            webSocket.onTextFragment(frame.content().toString(Constants.UTF8), frame.isFinalFragment());
+                if (webSocket != null) {
+                    if (frame instanceof CloseWebSocketFrame) {
+                        Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
+                        CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
+                        webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
+                    } else {
+                        if (frame instanceof TextWebSocketFrame) {
+                            pendingOpcode = OPCODE_TEXT;
+                        } else if (frame instanceof BinaryWebSocketFrame) {
+                            pendingOpcode = OPCODE_BINARY;
                         }
 
-                        if (frame instanceof CloseWebSocketFrame) {
-                            try {
-                                Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
-                                webSocket.onClose(CloseWebSocketFrame.class.cast(frame).statusCode(), CloseWebSocketFrame.class.cast(frame).reasonText());
-                            } catch (Throwable t) {
-                                // Swallow any exception that may comes from a
-                                // Netty version released before 3.4.0
-                                LOGGER.trace("", t);
+                        if (frame.content() != null && frame.content().readableBytes() > 0) {
+                            ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), frame.content(), frame.isFinalFragment());
+                            h.onBodyPartReceived(rp);
+
+                            if (pendingOpcode == OPCODE_BINARY) {
+                                webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
+                            } else {
+                                webSocket.onTextFragment(frame.content().toString(Constants.UTF8), frame.isFinalFragment());
                             }
                         }
-                    } else {
-                        LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
                     }
+                } else {
+                    LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
                 }
             } else if (e instanceof LastHttpContent) {
                 // FIXME what to do with this kind of messages?

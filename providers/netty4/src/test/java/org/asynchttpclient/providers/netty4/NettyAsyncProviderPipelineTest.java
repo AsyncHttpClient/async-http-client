@@ -13,7 +13,7 @@
 
 package org.asynchttpclient.providers.netty4;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -29,7 +29,6 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
 import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig.AdditionalChannelInitializer;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
@@ -40,7 +39,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "netty_provider" })
-    public void asyncPipelineTest() throws Throwable {
+    public void asyncPipelineTest() throws Exception {
 
         NettyAsyncHttpProviderConfig nettyConfig = new NettyAsyncHttpProviderConfig();
         nettyConfig.setHttpAdditionalChannelInitializer(new AdditionalChannelInitializer() {
@@ -67,7 +66,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
                 }
             }).get();
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             p.close();

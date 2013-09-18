@@ -26,8 +26,13 @@ import org.asynchttpclient.async.AbstractBasicTest;
 
 public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
 
+    @Override
+    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+        return NettyProviderUtil.nettyProvider(config);
+    }
+
     @Test
-    public void bossThreadPoolExecutor() throws Throwable {
+    public void bossThreadPoolExecutor() throws Exception {
         NettyAsyncHttpProviderConfig conf = new NettyAsyncHttpProviderConfig();
         conf.setBossExecutorService(Executors.newSingleThreadExecutor());
 
@@ -39,10 +44,5 @@ public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
         } finally {
             c.close();
         }
-    }
-
-    @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
-        return NettyProviderUtil.nettyProvider(config);
     }
 }
