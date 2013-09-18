@@ -230,10 +230,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         asyncHandler.onThrowable(te);
                     } catch (Throwable t) {
                         logger.debug("asyncHandler.onThrowable", t);
-                    } finally {
-                        cancelReaper();
-                        throw new ExecutionException(te);
                     }
+                    cancelReaper();
+                    throw new ExecutionException(te);
                 }
             }
             isDone.set(true);
@@ -264,10 +263,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         asyncHandler.onThrowable(ex);
                     } catch (Throwable t) {
                         logger.debug("asyncHandler.onThrowable", t);
-                    } finally {
-                        cancelReaper();
-                        throw new RuntimeException(ex);
                     }
+                    cancelReaper();
+                    throw new RuntimeException(ex);
                 }
             }
             content.compareAndSet(null, update);

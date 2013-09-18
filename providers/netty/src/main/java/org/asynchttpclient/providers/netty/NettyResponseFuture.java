@@ -245,10 +245,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         asyncHandler.onThrowable(te);
                     } catch (Throwable t) {
                         logger.debug("asyncHandler.onThrowable", t);
-                    } finally {
-                        cancelReaper();
-                        throw new ExecutionException(te);
                     }
+                    cancelReaper();
+                    throw new ExecutionException(te);
                 }
             }
             isDone.set(true);
@@ -279,10 +278,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         asyncHandler.onThrowable(ex);
                     } catch (Throwable t) {
                         logger.debug("asyncHandler.onThrowable", t);
-                    } finally {
-                        cancelReaper();
-                        throw new RuntimeException(ex);
                     }
+                    cancelReaper();
+                    throw new RuntimeException(ex);
                 }
             }
             content.compareAndSet(null, update);
@@ -303,8 +301,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } catch (ExecutionException t) {
             return;
         } catch (RuntimeException t) {
-        	Throwable exception = t.getCause() != null ? t.getCause() : t;
-        	exEx.compareAndSet(null, new ExecutionException(exception));
+            Throwable exception = t.getCause() != null ? t.getCause() : t;
+            exEx.compareAndSet(null, new ExecutionException(exception));
 
         } finally {
             latch.countDown();
@@ -471,7 +469,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can recover from that exception.
+     * Return true if the {@link Future} cannot be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
+     * recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
