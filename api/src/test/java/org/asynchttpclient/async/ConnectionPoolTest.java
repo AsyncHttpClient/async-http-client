@@ -15,15 +15,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.Map;
@@ -33,10 +25,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.Test;
 
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
@@ -93,7 +89,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = true, invocationCount = 10, alwaysRun = true)
-    public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Throwable {
+    public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             // Use a l in case the assert fail
@@ -122,7 +118,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             client.prepareGet(getTargetUrl()).execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timed out");
+                fail("Timed out");
             }
 
             assertEquals(remoteAddresses.size(), 2);
@@ -138,7 +134,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public abstract void testValidConnectionsPool();
 
     @Test(groups = { "standalone", "default_provider" })
-    public void multipleMaxConnectionOpenTest() throws Throwable {
+    public void multipleMaxConnectionOpenTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
@@ -166,7 +162,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void multipleMaxConnectionOpenTestWithQuery() throws Throwable {
+    public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
@@ -196,11 +192,11 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     /**
      * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception. The onComplete method must be only called once.
      * 
-     * @throws Throwable
+     * @throws Exception
      *             if something wrong happens.
      */
     @Test(groups = { "standalone", "default_provider" })
-    public void win7DisconnectTest() throws Throwable {
+    public void win7DisconnectTest() throws Exception {
         final AtomicInteger count = new AtomicInteger(0);
 
         AsyncHttpClient client = getAsyncHttpClient(null);
@@ -233,7 +229,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void asyncHandlerOnThrowableTest() throws Throwable {
+    public void asyncHandlerOnThrowableTest() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final AtomicInteger count = new AtomicInteger();

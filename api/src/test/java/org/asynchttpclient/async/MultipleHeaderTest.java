@@ -12,17 +12,8 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.testng.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +30,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * @author Hubert Iwaniuk
@@ -63,7 +65,7 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
                     String req = reader.readLine().split(" ")[1];
                     int i = inputStream.available();
                     long l = inputStream.skip(i);
-                    Assert.assertEquals(l, i);
+                    assertEquals(l, i);
                     socket.shutdownInput();
                     if (req.endsWith("MultiEnt")) {
                         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
@@ -127,16 +129,16 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
             }).get(3, TimeUnit.SECONDS);
 
             if (!latch.await(2, TimeUnit.SECONDS)) {
-                Assert.fail("Time out");
+                fail("Time out");
             }
-            Assert.assertNotNull(xffHeaders[0]);
-            Assert.assertNotNull(xffHeaders[1]);
+            assertNotNull(xffHeaders[0]);
+            assertNotNull(xffHeaders[1]);
             try {
-                Assert.assertEquals(xffHeaders[0], "abc");
-                Assert.assertEquals(xffHeaders[1], "def");
+                assertEquals(xffHeaders[0], "abc");
+                assertEquals(xffHeaders[1], "def");
             } catch (AssertionError ex) {
-                Assert.assertEquals(xffHeaders[1], "abc");
-                Assert.assertEquals(xffHeaders[0], "def");
+                assertEquals(xffHeaders[1], "abc");
+                assertEquals(xffHeaders[0], "def");
             }
         } finally {
             ahc.close();
@@ -182,18 +184,18 @@ public abstract class MultipleHeaderTest extends AbstractBasicTest {
             }).get(3, TimeUnit.SECONDS);
 
             if (!latch.await(2, TimeUnit.SECONDS)) {
-                Assert.fail("Time out");
+                fail("Time out");
             }
-            Assert.assertNotNull(clHeaders[0]);
-            Assert.assertNotNull(clHeaders[1]);
+            assertNotNull(clHeaders[0]);
+            assertNotNull(clHeaders[1]);
 
             // We can predict the order
             try {
-                Assert.assertEquals(clHeaders[0], "2");
-                Assert.assertEquals(clHeaders[1], "1");
+                assertEquals(clHeaders[0], "2");
+                assertEquals(clHeaders[1], "1");
             } catch (Throwable ex) {
-                Assert.assertEquals(clHeaders[0], "1");
-                Assert.assertEquals(clHeaders[1], "2");
+                assertEquals(clHeaders[0], "1");
+                assertEquals(clHeaders[1], "2");
             }
         } finally {
             ahc.close();

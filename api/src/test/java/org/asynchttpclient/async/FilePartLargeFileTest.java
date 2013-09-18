@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.testng.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -26,35 +29,9 @@ import org.asynchttpclient.FilePart;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public abstract class FilePartLargeFileTest extends AbstractBasicTest {
-
-    @Test(groups = { "standalone", "default_provider" }, enabled = true)
-    public void testPutImageFile() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build());
-        try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get();
-            Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" }, enabled = true)
-    public void testPutLargeTextFile() throws Exception {
-        long repeats = (1024 * 1024 / PATTERN_BYTES.length) + 1;
-        File file = createTempFile(PATTERN_BYTES, (int) repeats);
-
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get();
-            Assert.assertEquals(200, response.getStatusCode());
-        } finally {
-            client.close();
-        }
-    }
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -79,5 +56,29 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
                 arg1.setHandled(true);
             }
         };
+    }
+
+    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    public void testPutImageFile() throws Exception {
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build());
+        try {
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test(groups = { "standalone", "default_provider" }, enabled = true)
+    public void testPutLargeTextFile() throws Exception {
+        File file = createTempFile(1024 * 1024);
+
+        AsyncHttpClient client = getAsyncHttpClient(null);
+        try {
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get();
+            assertEquals(response.getStatusCode(), 200);
+        } finally {
+            client.close();
+        }
     }
 }

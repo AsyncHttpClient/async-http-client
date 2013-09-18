@@ -117,7 +117,7 @@ public class NettyWebSocket implements WebSocket {
         onClose();
         listeners.clear();
         try {
-            channel.write(new CloseWebSocketFrame());
+            channel.writeAndFlush(new CloseWebSocketFrame());
             channel.closeFuture().awaitUninterruptibly();
         } finally {
             channel.close();
@@ -128,6 +128,12 @@ public class NettyWebSocket implements WebSocket {
     public void close(int statusCode, String reason) {
         onClose(statusCode, reason);
         listeners.clear();
+        try {
+            channel.writeAndFlush(new CloseWebSocketFrame());
+            channel.closeFuture().awaitUninterruptibly();
+        } finally {
+            channel.close();
+        }
     }
 
     protected void onBinaryFragment(byte[] message, boolean last) {

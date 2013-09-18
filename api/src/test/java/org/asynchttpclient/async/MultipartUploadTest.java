@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.*;
 
 import java.io.ByteArrayOutputStream;
@@ -23,9 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,11 +51,10 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.StringPart;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -70,46 +67,21 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
     @BeforeClass
     public void setUp() throws Exception {
-        server = new Server();
-
         port1 = findFreePort();
 
-        Connector listener = new SelectChannelConnector();
-        listener.setHost("localhost");
-        listener.setPort(port1);
-
-        server.addConnector(listener);
+        server = newJettyHttpServer(port1);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
         context.addServlet(new ServletHolder(new MockMultipartUploadServlet()), "/upload/*");
 
         server.setHandler(context);
         server.start();
     }
 
-    private File getClasspathFile(String file) throws FileNotFoundException {
-        ClassLoader cl = null;
-        try {
-            cl = Thread.currentThread().getContextClassLoader();
-        } catch (Throwable ex) {
-        }
-        if (cl == null) {
-            cl = MultipartUploadTest.class.getClassLoader();
-        }
-        URL resourceUrl = cl.getResource(file);
-
-        try {
-            return new File(new URI(resourceUrl.toString()).getSchemeSpecificPart());
-        } catch (URISyntaxException e) {
-            throw new FileNotFoundException(file);
-        }
-    }
-
     /**
      * Tests that the streaming of a file works.
      */
-    @Test(enabled = true)
+    @Test
     public void testSendingSmallFilesAndByteArray() {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -211,7 +183,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             Response res = c.executeRequest(r).get();
 
-            assertEquals(200, res.getStatusCode());
+            assertEquals(res.getStatusCode(), 200);
 
             testSentFile(expected, testFiles, res, gzipped);
 
@@ -238,14 +210,14 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             content = r.getResponseBody();
             assertNotNull("===>" + content);
-            System.out.println(content);
+            logger.debug(content);
         } catch (IOException e) {
             fail("Unable to obtain content");
         }
 
         String[] contentArray = content.split("\\|\\|");
         // TODO: this fail on win32
-        assertEquals(2, contentArray.length);
+        assertEquals(contentArray.length, 2);
 
         String tmpFiles = contentArray[1];
         assertNotNull(tmpFiles);
@@ -254,10 +226,9 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         String[] responseFiles = tmpFiles.split(",");
         assertNotNull(responseFiles);
-        assertEquals(sourceFiles.size(), responseFiles.length);
+        assertEquals(responseFiles.length, sourceFiles.size());
 
-        System.out.println(Arrays.toString(responseFiles));
-        // assertTrue("File should exist: " + tmpFile.getAbsolutePath(),tmpFile.exists());
+        logger.debug(Arrays.toString(responseFiles));
 
         int i = 0;
         for (File sourceFile : sourceFiles) {
@@ -275,10 +246,10 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                     while ((len = instream.read(buf)) > 0) {
                         baos.write(buf, 0, len);
                     }
-                    System.out.println("================");
-                    System.out.println("Length of file: " + baos.toByteArray().length);
-                    System.out.println("Contents: " + Arrays.toString(baos.toByteArray()));
-                    System.out.println("================");
+                    logger.debug("================");
+                    logger.debug("Length of file: " + baos.toByteArray().length);
+                    logger.debug("Contents: " + Arrays.toString(baos.toByteArray()));
+                    logger.debug("================");
                     System.out.flush();
                     sourceBytes = baos.toByteArray();
                 } finally {
@@ -286,9 +257,9 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 }
 
                 tmp = new File(responseFiles[i].trim());
-                System.out.println("==============================");
-                System.out.println(tmp.getAbsolutePath());
-                System.out.println("==============================");
+                logger.debug("==============================");
+                logger.debug(tmp.getAbsolutePath());
+                logger.debug("==============================");
                 System.out.flush();
                 assertTrue(tmp.exists());
 
@@ -301,21 +272,25 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                 }
                 IOUtils.closeQuietly(instream);
 
-                assertEquals(sourceBytes, baos2.toByteArray());
+                assertEquals(baos2.toByteArray(), sourceBytes);
 
                 if (!deflate.get(i)) {
 
                     String helloString = new String(baos2.toByteArray());
-                    assertEquals(expectedContents.get(i), helloString);
+                    assertEquals(helloString, expectedContents.get(i));
                 } else {
                     instream = new FileInputStream(tmp);
 
-                    GZIPInputStream deflater = new GZIPInputStream(instream);
                     ByteArrayOutputStream baos3 = new ByteArrayOutputStream();
-                    byte[] buf3 = new byte[8092];
-                    int len3 = 0;
-                    while ((len3 = deflater.read(buf3)) > 0) {
-                        baos3.write(buf3, 0, len3);
+                    GZIPInputStream deflater = new GZIPInputStream(instream);
+                    try {
+                        byte[] buf3 = new byte[8092];
+                        int len3 = 0;
+                        while ((len3 = deflater.read(buf3)) > 0) {
+                            baos3.write(buf3, 0, len3);
+                        }
+                    } finally {
+                        deflater.close();
                     }
 
                     String helloString = new String(baos3.toByteArray());
@@ -341,9 +316,9 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
      * @author dominict
      */
     public static class MockMultipartUploadServlet extends HttpServlet {
-        /**
-         *
-         */
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(MockMultipartUploadServlet.class);
+
         private static final long serialVersionUID = 1L;
         private int filesProcessed = 0;
         private int stringsProcessed = 0;
@@ -397,10 +372,10 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
                             stream = item.openStream();
 
                             if (item.isFormField()) {
-                                System.out.println("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
+                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
                                 incrementStringsProcessed();
                             } else {
-                                System.out.println("File field " + name + " with file name " + item.getName() + " detected.");
+                                LOGGER.debug("File field " + name + " with file name " + item.getName() + " detected.");
                                 // Process the input stream
                                 OutputStream os = null;
                                 try {

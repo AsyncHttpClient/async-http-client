@@ -13,20 +13,10 @@
 
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.handler.codec.http.HttpMessage;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -34,6 +24,13 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.handler.codec.http.HttpMessage;
+import org.testng.annotations.Test;
 
 public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
 
@@ -43,7 +40,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "netty_provider" })
-    public void asyncPipelineTest() throws Throwable {
+    public void asyncPipelineTest() throws Exception {
         AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build());
         try {
             final CountDownLatch l = new CountDownLatch(1);
@@ -61,7 +58,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
                 }
             }).get();
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
+                fail("Timeout out");
             }
         } finally {
             p.close();

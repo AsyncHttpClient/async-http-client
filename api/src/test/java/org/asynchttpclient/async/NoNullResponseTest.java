@@ -20,7 +20,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
-import org.testng.Assert;
+import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
@@ -34,7 +34,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
 
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
-    public void multipleSslRequestsWithDelayAndKeepAlive() throws Throwable {
+    public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
         final AsyncHttpClient client = create();
         try {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
@@ -46,8 +46,8 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
             } else {
                 System.out.println("Failed (2nd response was null).");
             }
-            Assert.assertNotNull(response1);
-            Assert.assertNotNull(response2);
+            assertNotNull(response1);
+            assertNotNull(response2);
         } finally {
             client.close();
         }

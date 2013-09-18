@@ -20,7 +20,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
+import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -44,11 +44,11 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                     client.prepareGet(urls[i]).execute();
                 } catch (IOException e) {
                     // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(1, i);
+                    assertEquals(i, 1);
                     caughtError = true;
                 }
             }
-            Assert.assertTrue(caughtError);
+            assertTrue(caughtError);
         } finally {
             client.close();
         }
@@ -64,7 +64,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                 try {
                     client.prepareGet(url).execute();
                 } catch (IOException e) {
-                    Assert.fail("Smth wrong with connections handling!");
+                    fail("Smth wrong with connections handling!");
                 }
             }
         } finally {
@@ -91,11 +91,11 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                     }
                 } catch (IOException e) {
                     // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(i, 1);
+                    assertEquals(i, 1);
                     caughtError = true;
                 }
             }
-            Assert.assertTrue(caughtError);
+            assertTrue(caughtError);
 
             // get results of executed requests
             for (Future<Response> future : futures) {
@@ -115,11 +115,11 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
                     client.prepareGet(urls[i]).execute();
                 } catch (IOException e) {
                     // assert that 2nd request fails, because maxTotalConnections=1
-                    Assert.assertEquals(i, 1);
+                    assertEquals(i, 1);
                     caughtError = true;
                 }
             }
-            Assert.assertTrue(caughtError);
+            assertTrue(caughtError);
         } finally {
             client.close();
         }

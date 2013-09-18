@@ -28,20 +28,13 @@ import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConf
 
 public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
-
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
     @Override
-    @Test
-    public void asyncHeaderPOSTTest() throws Throwable {
-        super.asyncHeaderPOSTTest();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected AsyncHttpProviderConfig getProviderConfig() {
+    protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
         config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {
             @Override
@@ -53,7 +46,7 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         return config;
     }
 
-    @Test(groups = {"standalone", "default_provider", "async"}, enabled = false)
-    public void asyncDoPostBasicGZIPTest() throws Throwable {
+    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
+    public void asyncDoPostBasicGZIPTest() throws Exception {
     }
 }

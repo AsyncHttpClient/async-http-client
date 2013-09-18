@@ -15,10 +15,12 @@ package org.asynchttpclient.providers.netty;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.MultipartUploadTest;
+import org.testng.annotations.Test;
 
 /**
  * @author dominict
  */
+@Test
 public class NettyMultipartUploadTest extends MultipartUploadTest {
 
     @Override

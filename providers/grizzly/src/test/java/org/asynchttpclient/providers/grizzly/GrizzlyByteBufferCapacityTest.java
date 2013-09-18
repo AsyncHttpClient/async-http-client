@@ -26,6 +26,6 @@ public class GrizzlyByteBufferCapacityTest extends ByteBufferCapacityTest {
     }
 
     @Test(groups = {"standalone", "default_provider"}, enabled=false)
-    public void basicByteBufferTest() throws Throwable {
+    public void basicByteBufferTest() throws Exception {
     }
 }

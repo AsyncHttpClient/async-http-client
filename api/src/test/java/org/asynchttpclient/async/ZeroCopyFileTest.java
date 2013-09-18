@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.async;
 
+import static org.asynchttpclient.async.util.TestUtils.*;
 import static org.testng.Assert.*;
 
 import java.io.File;
@@ -87,7 +88,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             }).get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getResponseBody(), "This is a simple test file");
+            assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
             assertTrue(operationCompleted.get());
             assertTrue(headerSent.get());
         } finally {
@@ -103,7 +104,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getResponseBody(), "This is a simple test file");
+            assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
         } finally {
             client.close();
         }

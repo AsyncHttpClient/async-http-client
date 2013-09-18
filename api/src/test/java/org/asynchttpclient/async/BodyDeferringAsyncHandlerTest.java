@@ -12,21 +12,11 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.BodyDeferringAsyncHandler;
-import org.asynchttpclient.BodyDeferringAsyncHandler.BodyDeferringInputStream;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.apache.commons.io.IOUtils.copy;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.testng.Assert.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -34,8 +24,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.BodyDeferringAsyncHandler;
+import org.asynchttpclient.BodyDeferringAsyncHandler.BodyDeferringInputStream;
+import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
@@ -98,18 +98,6 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    // simple stream copy just to "consume". It closes streams.
-    public static void copy(InputStream in, OutputStream out) throws IOException {
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-            out.write(buf, 0, len);
-        }
-        out.flush();
-        out.close();
-        in.close();
-    }
-
     public AbstractHandler configureHandler() throws Exception {
         return new SlowAndBigHandler();
     }
@@ -131,16 +119,16 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = bdah.getResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(true, resp.getHeader("content-length").equals(String.valueOf(HALF_GIG)));
+            assertEquals(resp.getHeader("content-length"), String.valueOf(HALF_GIG));
             // we got headers only, it's probably not all yet here (we have BIG file
             // downloading)
-            assertEquals(true, HALF_GIG >= cos.getByteCount());
+            assertTrue(cos.getByteCount() <= HALF_GIG);
 
             // now be polite and wait for body arrival too (otherwise we would be
             // dropping the "line" on server)
             f.get();
             // it all should be here now
-            assertEquals(true, HALF_GIG == cos.getByteCount());
+            assertEquals(cos.getByteCount(), HALF_GIG);
         } finally {
             client.close();
         }
@@ -150,7 +138,8 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     public void deferredSimpleWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredSimpleWithFailure").addHeader("X-FAIL-TRANSFER",
+                    Boolean.TRUE.toString());
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
@@ -158,21 +147,21 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = bdah.getResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(true, resp.getHeader("content-length").equals(String.valueOf(HALF_GIG)));
+            assertEquals(resp.getHeader("content-length"), String.valueOf(HALF_GIG));
             // we got headers only, it's probably not all yet here (we have BIG file
             // downloading)
-            assertEquals(true, HALF_GIG >= cos.getByteCount());
+            assertTrue(cos.getByteCount() <= HALF_GIG);
 
             // now be polite and wait for body arrival too (otherwise we would be
             // dropping the "line" on server)
             try {
                 f.get();
-                Assert.fail("get() should fail with IOException!");
+                fail("get() should fail with IOException!");
             } catch (Exception e) {
                 // good
             }
             // it's incomplete, there was an error
-            assertEquals(false, HALF_GIG == cos.getByteCount());
+            assertNotEquals(cos.getByteCount(), HALF_GIG);
         } finally {
             client.close();
         }
@@ -195,15 +184,20 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             Response resp = is.getAsapResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(true, resp.getHeader("content-length").equals(String.valueOf(HALF_GIG)));
+            assertEquals(resp.getHeader("content-length"), String.valueOf(HALF_GIG));
             // "consume" the body, but our code needs input stream
             CountingOutputStream cos = new CountingOutputStream();
-            copy(is, cos);
+            try {
+                copy(is, cos);
+            } finally {
+                is.close();
+                cos.close();
+            }
 
             // now we don't need to be polite, since consuming and closing
             // BodyDeferringInputStream does all.
             // it all should be here now
-            assertEquals(true, HALF_GIG == cos.getByteCount());
+            assertEquals(cos.getByteCount(), HALF_GIG);
         } finally {
             client.close();
         }
@@ -212,26 +206,32 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void deferredInputStreamTrickWithFailure() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(getAsyncHttpClientConfig());
-        
+
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet("http://127.0.0.1:" + port1 + "/deferredInputStreamTrickWithFailure").addHeader("X-FAIL-TRANSFER",
+                    Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(pos);
-    
+
             Future<Response> f = r.execute(bdah);
-    
+
             BodyDeferringInputStream is = new BodyDeferringInputStream(f, bdah, pis);
-    
+
             Response resp = is.getAsapResponse();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(true, resp.getHeader("content-length").equals(String.valueOf(HALF_GIG)));
+            assertEquals(resp.getHeader("content-length"), String.valueOf(HALF_GIG));
             // "consume" the body, but our code needs input stream
             CountingOutputStream cos = new CountingOutputStream();
             try {
-                copy(is, cos);
-                Assert.fail("InputStream consumption should fail with IOException!");
+                try {
+                    copy(is, cos);
+                } finally {
+                    is.close();
+                    cos.close();
+                }
+                fail("InputStream consumption should fail with IOException!");
             } catch (IOException e) {
                 // good!
             }
@@ -252,7 +252,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             r.execute(bdah);
             try {
                 bdah.getResponse();
-                Assert.fail("IOException should be thrown here!");
+                fail("IOException should be thrown here!");
             } catch (IOException e) {
                 // good
             }

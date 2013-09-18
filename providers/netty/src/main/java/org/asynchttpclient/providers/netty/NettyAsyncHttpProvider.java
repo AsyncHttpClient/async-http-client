@@ -769,6 +769,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
+                    // FIXME should be streaming instead!
                     byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
                     int length = lengthWrapper[0];
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));

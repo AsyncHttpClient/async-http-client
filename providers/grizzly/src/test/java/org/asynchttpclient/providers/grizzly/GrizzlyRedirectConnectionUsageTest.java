@@ -15,35 +15,12 @@ package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.RedirectConnectionUsageTest;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.grizzly.TransportCustomizer;
-import org.glassfish.grizzly.filterchain.FilterChainBuilder;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
 public class GrizzlyRedirectConnectionUsageTest extends RedirectConnectionUsageTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
-    }
-
-    @Override
-    protected AsyncHttpProviderConfig getProviderConfig() {
-        final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
-        config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {
-            @Override
-            public void customize(TCPNIOTransport transport, FilterChainBuilder builder) {
-                if (System.getProperty("blockingio") != null) {
-                    transport.configureBlocking(true);
-                }
-                transport.setIOStrategy(SameThreadIOStrategy.getInstance());
-            }
-        });
-        return config;
     }
 }

@@ -15,108 +15,90 @@
  */
 package org.asynchttpclient.extra;
 
+import static org.testng.Assert.*;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-import org.asynchttpclient.extra.AsyncHttpDeferredObject;
-import org.asynchttpclient.extra.HttpProgress;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
 import org.jdeferred.DoneCallback;
 import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DefaultDeferredManager;
 import org.jdeferred.multiple.MultipleResults;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Response;
+public class AsyncHttpTest {
+    protected DefaultDeferredManager deferredManager = new DefaultDeferredManager();
 
-public class AsyncHttpTest extends TestCase {
-	protected DefaultDeferredManager deferredManager;
+    public void testPromiseAdapter() throws IOException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger successCount = new AtomicInteger();
+        final AtomicInteger progressCount = new AtomicInteger();
 
-	protected void setUp() throws Exception {
-		super.setUp();
-		deferredManager = new DefaultDeferredManager();
-	}
+        AsyncHttpClient client = new AsyncHttpClient();
 
-	protected void tearDown() throws Exception {
-		super.tearDown();
-	}
+        try {
+            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));
+            p1.done(new DoneCallback<Response>() {
+                @Override
+                public void onDone(Response response) {
+                    try {
+                        assertEquals(response.getStatusCode(), 200);
+                        successCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            }).progress(new ProgressCallback<HttpProgress>() {
 
-	public void testPromiseAdapter() throws IOException {
-		final CountDownLatch latch = new CountDownLatch(1);
-		final AtomicInteger successCount = new AtomicInteger();
-		final AtomicInteger progressCount = new AtomicInteger();
+                @Override
+                public void onProgress(HttpProgress progress) {
+                    progressCount.incrementAndGet();
+                }
+            });
 
-		AsyncHttpClient client = new AsyncHttpClient();
+            latch.await();
+            assertTrue(progressCount.get() > 0);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            client.close();
+        }
+    }
 
-		Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject
-				.promise(client.prepareGet("http://www.ning.com"));
-		p1.done(new DoneCallback<Response>() {
-			@Override
-			public void onDone(Response response) {
-				try {
-					Assert.assertEquals(200, response.getStatusCode());
-					successCount.incrementAndGet();
-				} finally {
-					latch.countDown();
-				}
-			}
-		}).progress(new ProgressCallback<HttpProgress>() {
+    public void testMultiplePromiseAdapter() throws IOException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger successCount = new AtomicInteger();
 
-			@Override
-			public void onProgress(HttpProgress progress) {
-				progressCount.incrementAndGet();
-			}
-		});
+        AsyncHttpClient client = new AsyncHttpClient();
 
-		try {
-			latch.await();
-			Assert.assertTrue(progressCount.get() > 0);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
-	}
+        try {
+            Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));
+            Promise<Response, Throwable, HttpProgress> p2 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.google.com"));
+            AsyncHttpDeferredObject deferredRequest = new AsyncHttpDeferredObject(client.prepareGet("http://jdeferred.org"));
 
-	public void testMultiplePromiseAdapter() throws IOException {
-		final CountDownLatch latch = new CountDownLatch(1);
-		final AtomicInteger successCount = new AtomicInteger();
+            deferredManager.when(p1, p2, deferredRequest).then(new DoneCallback<MultipleResults>() {
+                @Override
+                public void onDone(MultipleResults result) {
+                    try {
+                        assertEquals(result.size(), 3);
+                        assertEquals(Response.class.cast(result.get(0).getResult()).getStatusCode(), 200);
+                        assertEquals(Response.class.cast(result.get(1).getResult()).getStatusCode(), 200);
+                        assertEquals(Response.class.cast(result.get(2).getResult()).getStatusCode(), 200);
+                        successCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+            latch.await();
 
-		AsyncHttpClient client = new AsyncHttpClient();
-
-		Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject
-				.promise(client.prepareGet("http://www.ning.com"));
-		Promise<Response, Throwable, HttpProgress> p2 = AsyncHttpDeferredObject
-				.promise(client.prepareGet("http://www.google.com"));
-		AsyncHttpDeferredObject deferredRequest = new AsyncHttpDeferredObject(
-				client.prepareGet("http://jdeferred.org"));
-
-		deferredManager.when(p1, p2, deferredRequest).then(
-				new DoneCallback<MultipleResults>() {
-					@Override
-					public void onDone(MultipleResults result) {
-						try {
-							Assert.assertEquals(3, result.size());
-							Assert.assertEquals(200, ((Response) result.get(0)
-									.getResult()).getStatusCode());
-							Assert.assertEquals(200, ((Response) result.get(1)
-									.getResult()).getStatusCode());
-							Assert.assertEquals(200, ((Response) result.get(2)
-									.getResult()).getStatusCode());
-							successCount.incrementAndGet();
-						} finally {
-							latch.countDown();
-						}
-					}
-				});
-
-		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
-	}
-
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            client.close();
+        }
+    }
 }

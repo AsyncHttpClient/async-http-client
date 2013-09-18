@@ -12,30 +12,11 @@
  */
 package org.asynchttpclient.providers.netty4;
 
-import static org.testng.Assert.assertEquals;
-
-import org.asynchttpclient.providers.netty4.NettyAsyncHttpProviderConfig;
-import org.testng.annotations.Test;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
 
 public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
-
-    @Test
-    public void bossThreadPoolExecutor() throws Throwable {
-        NettyAsyncHttpProviderConfig conf = new NettyAsyncHttpProviderConfig();
-
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(conf).build();
-        AsyncHttpClient c = getAsyncHttpClient(cf);
-        try {
-            Response r = c.prepareGet(getTargetUrl()).execute().get();
-            assertEquals(r.getStatusCode(), 200);
-        } finally {
-            c.close();
-        }
-    }
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

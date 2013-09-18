@@ -15,44 +15,18 @@
  */
 package org.asynchttpclient.async;
 
-import java.io.File;
-import java.net.URL;
+import static org.asynchttpclient.async.util.TestUtils.*;
 
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractBasicHttpsTest extends AbstractBasicTest {
-    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractBasicHttpsTest.class);
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
-        server = new Server();
         port1 = findFreePort();
-
-        ClassLoader cl = getClass().getClassLoader();
-
-        URL keystoreUrl = cl.getResource("ssltest-keystore.jks");
-        String keyStoreFile = new File(keystoreUrl.toURI()).getAbsolutePath();
-        LOGGER.info("SSL keystore path: {}", keyStoreFile);
-        SslContextFactory sslContextFactory = new SslContextFactory(keyStoreFile);
-        sslContextFactory.setKeyStorePassword("changeit");
-
-        String trustStoreFile = new File(cl.getResource("ssltest-cacerts.jks").toURI()).getAbsolutePath();
-        LOGGER.info("SSL certs path: {}", trustStoreFile);
-        sslContextFactory.setTrustStore(trustStoreFile);
-        sslContextFactory.setTrustStorePassword("changeit");
-
-        SslSocketConnector connector = new SslSocketConnector(sslContextFactory);
-        connector.setHost("127.0.0.1");
-        connector.setPort(port1);
-        server.addConnector(connector);
-
+        server = newJettyHttpsServer(port1);
         server.setHandler(configureHandler());
         server.start();
-        LOGGER.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 }

@@ -15,12 +15,13 @@ package org.asynchttpclient.providers.netty4;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.AuthTimeoutTest;
+import org.testng.annotations.Test;
 
+@Test
 public class NettyAuthTimeoutTest extends AuthTimeoutTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
-
 }

@@ -15,15 +15,15 @@
  */
 package org.asynchttpclient.util;
 
-import org.asynchttpclient.util.UTF8UrlEncoder;
-import org.testng.Assert;
+import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.Test;
 
 public class TestUTF8UrlCodec {
     @Test(groups = "fast")
     public void testBasics() {
-        Assert.assertEquals(UTF8UrlEncoder.encode("foobar"), "foobar");
-        Assert.assertEquals(UTF8UrlEncoder.encode("a&b"), "a%26b");
-        Assert.assertEquals(UTF8UrlEncoder.encode("a+b"), "a%2Bb");
+        assertEquals(UTF8UrlEncoder.encode("foobar"), "foobar");
+        assertEquals(UTF8UrlEncoder.encode("a&b"), "a%26b");
+        assertEquals(UTF8UrlEncoder.encode("a+b"), "a%2Bb");
     }
 }

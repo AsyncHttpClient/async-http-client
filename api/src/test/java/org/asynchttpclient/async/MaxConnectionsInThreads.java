@@ -16,20 +16,9 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.testng.Assert.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -37,7 +26,19 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.AssertJUnit.assertTrue;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
@@ -49,7 +50,8 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
         String[] urls = new String[] { servletEndpointUri.toString(), servletEndpointUri.toString() };
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).setMaximumConnectionsPerHost(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000)
+                .setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).setMaximumConnectionsPerHost(1).build());
 
         try {
             final Boolean[] caughtError = new Boolean[] { Boolean.FALSE };
@@ -62,7 +64,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                             client.prepareGet(url).execute();
                         } catch (IOException e) {
                             // assert that 2nd request fails, because maxTotalConnections=1
-                            // System.out.println(i);
+                            // logger.debug(i);
                             caughtError[0] = true;
                             System.err.println("============");
                             e.printStackTrace();
@@ -92,7 +94,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 e1.printStackTrace();
             }
 
-            assertTrue("Max Connections should have been reached", caughtError[0]);
+            assertTrue(caughtError[0], "Max Connections should have been reached");
 
             boolean errorInNotThread = false;
             for (int i = 0; i < urls.length; i++) {
@@ -102,7 +104,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                     // client.prepareGet(url).execute();
                 } catch (IOException e) {
                     // assert that 2nd request fails, because maxTotalConnections=1
-                    // System.out.println(i);
+                    // logger.debug(i);
                     errorInNotThread = true;
                     System.err.println("============");
                     e.printStackTrace();
@@ -116,7 +118,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
-            assertTrue("Max Connections should have been reached", errorInNotThread);
+            assertTrue(errorInNotThread, "Max Connections should have been reached");
         } finally {
             client.close();
         }
@@ -126,28 +128,18 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
     @BeforeClass
     public void setUpGlobal() throws Exception {
 
-        server = new Server();
-
         port1 = findFreePort();
-
-        Connector listener = new SelectChannelConnector();
-        listener.setHost("127.0.0.1");
-        listener.setPort(port1);
-
-        server.addConnector(listener);
+        server = newJettyHttpServer(port1);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-
         context.setContextPath("/");
         server.setHandler(context);
-
         context.addServlet(new ServletHolder(new MockTimeoutHttpServlet()), "/timeout/*");
 
         server.start();
 
         String endpoint = "http://127.0.0.1:" + port1 + "/timeout/";
         servletEndpointUri = new URI(endpoint);
-
     }
 
     public String getTargetUrl() {
@@ -162,6 +154,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
 
     @SuppressWarnings("serial")
     public static class MockTimeoutHttpServlet extends HttpServlet {
+        private static final Logger LOGGER = LoggerFactory.getLogger(MockTimeoutHttpServlet.class);
         private static final String contentType = "text/plain";
         public static long DEFAULT_TIMEOUT = 2000;
 
@@ -177,15 +170,13 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
             }
 
             try {
-                System.out.println("=======================================");
-                System.out.println("Servlet is sleeping for: " + sleepTime);
-                System.out.println("=======================================");
-                System.out.flush();
+                LOGGER.debug("=======================================");
+                LOGGER.debug("Servlet is sleeping for: " + sleepTime);
+                LOGGER.debug("=======================================");
                 Thread.sleep(sleepTime);
-                System.out.println("=======================================");
-                System.out.println("Servlet is awake for");
-                System.out.println("=======================================");
-                System.out.flush();
+                LOGGER.debug("=======================================");
+                LOGGER.debug("Servlet is awake for");
+                LOGGER.debug("=======================================");
             } catch (Exception e) {
 
             }
