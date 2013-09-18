@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.Response.ResponseBuilder;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
