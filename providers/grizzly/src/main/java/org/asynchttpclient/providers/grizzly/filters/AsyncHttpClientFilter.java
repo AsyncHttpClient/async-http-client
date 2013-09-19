@@ -63,6 +63,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.http.HttpContent;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
@@ -100,6 +103,22 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     // --------------------------------------------- Methods from BaseFilter
 
+
+    @Override
+    public NextAction handleRead(final FilterChainContext ctx)
+    throws IOException {
+        final HttpContent httpContent = ctx.getMessage();
+        if (httpContent.isLast()) {
+            // Perform the cleanup logic if it's the last chunk of the payload
+            final HttpResponsePacket response =
+                    (HttpResponsePacket) httpContent.getHttpHeader();
+            
+            recycleRequestResponsePackets(ctx.getConnection(), response);
+            return ctx.getStopAction();
+        }
+
+        return ctx.getInvokeAction();
+    }
 
     @Override
     public NextAction handleWrite(final FilterChainContext ctx)
@@ -174,7 +193,16 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     // ----------------------------------------------------- Private Methods
 
-
+    private static void recycleRequestResponsePackets(final Connection c,
+                                                      final HttpResponsePacket response) {
+        if (!Utils.isSpdyConnection(c)) {
+            HttpRequestPacket request = response.getRequest();
+            request.setExpectContent(false);
+            response.recycle();
+            request.recycle();
+        }
+    }
+    
     private boolean sendAsGrizzlyRequest(final Request request,
                                          final FilterChainContext ctx)
     throws IOException {
