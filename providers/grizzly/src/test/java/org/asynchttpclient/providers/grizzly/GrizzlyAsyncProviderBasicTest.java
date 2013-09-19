@@ -36,17 +36,7 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final GrizzlyAsyncHttpProviderConfig config = new GrizzlyAsyncHttpProviderConfig();
-        config.addProperty(TRANSPORT_CUSTOMIZER, new TransportCustomizer() {
-            @Override
-            public void customize(TCPNIOTransport transport, FilterChainBuilder builder) {
-                transport.setTcpNoDelay(true);
-                transport.setIOStrategy(SameThreadIOStrategy.getInstance());
-            }
-        });
         return config;
     }
 
-    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
-    public void asyncDoPostBasicGZIPTest() throws Exception {
-    }
 }

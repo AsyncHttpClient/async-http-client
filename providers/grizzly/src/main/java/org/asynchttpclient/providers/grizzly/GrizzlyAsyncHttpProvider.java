@@ -65,7 +65,6 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
-import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -466,11 +465,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private void doDefaultTransportConfig() {
         final ExecutorService service = clientConfig.executorService();
+        clientTransport.setIOStrategy(WorkerThreadIOStrategy.getInstance());
         if (service != null) {
-            clientTransport.setIOStrategy(WorkerThreadIOStrategy.getInstance());
             clientTransport.setWorkerThreadPool(service);
-        } else {
-            clientTransport.setIOStrategy(SameThreadIOStrategy.getInstance());
         }
     }
 

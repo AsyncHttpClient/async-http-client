@@ -1358,7 +1358,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 }
             };
 
-            client.prepareGet("http://www.google.com").execute(handler);
+            client.prepareGet("http://google.com").execute(handler);
 
             if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
                 fail("Timed out");
