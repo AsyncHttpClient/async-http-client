@@ -227,10 +227,10 @@ public class GrizzlyConnectionsPool implements ConnectionsPool<String,Connection
         boolean isRemoved = false;
         for (Map.Entry<String, DelayedExecutor.IdleConnectionQueue> entry : connectionsPool.entrySet()) {
             boolean removed = entry.getValue().remove(connection);
-            if (removed) {
-                totalCachedConnections.decrementAndGet();
-            }
             isRemoved |= removed;
+        }
+        if (isRemoved) {
+            totalCachedConnections.decrementAndGet();
         }
         return isRemoved;
 
