@@ -14,7 +14,7 @@
     </description>
 
     <properties>
-        <grizzly.version>2.3.6-SNAPSHOT</grizzly.version>
+        <grizzly.version>2.3.6</grizzly.version>
         <grizzly.npn.version>1.0</grizzly.npn.version>
     </properties>
 
