@@ -54,7 +54,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "AsyncHttpClient/" + AHC_VERSION);
-        ioThreadMultiplier = Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 8);
+        ioThreadMultiplier = Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
         
         boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
