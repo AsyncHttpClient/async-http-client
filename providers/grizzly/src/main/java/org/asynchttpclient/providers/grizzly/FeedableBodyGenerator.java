@@ -23,20 +23,16 @@ import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.WriteHandler;
 import org.glassfish.grizzly.WriteResult;
-import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.nio.NIOConnection;
 import org.glassfish.grizzly.nio.SelectorRunner;
-import org.glassfish.grizzly.ssl.SSLBaseFilter;
-import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.utils.Futures;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
 import static org.glassfish.grizzly.utils.Exceptions.*;
 
 /**
@@ -176,12 +172,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void run() {
                 try {
-                    if (requestPacket.isSecure() &&
-                            (getSSLEngine(context.getConnection()) == null)) {
-                        flushOnSSLHandshakeComplete();
-                    } else {
-                        feeder.flush();
-                    }
+                    feeder.flush();
                 } catch (IOException ioe) {
                     HttpTransactionContext ctx = HttpTransactionContext.get(c);
                     ctx.abort(ioe);
@@ -207,32 +198,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         final NIOConnection c = (NIOConnection) context.getConnection();
         final SelectorRunner runner = c.getSelectorRunner();
         return (Thread.currentThread() == runner.getRunnerThread());
-    }
-
-
-    private void flushOnSSLHandshakeComplete() throws IOException {
-        final FilterChain filterChain = context.getFilterChain();
-        final int idx = filterChain.indexOfType(SSLFilter.class);
-        assert (idx != -1);
-        final SSLFilter filter = (SSLFilter) filterChain.get(idx);
-        final Connection c = context.getConnection();
-        filter.addHandshakeListener(new SSLBaseFilter.HandshakeListener() {
-            public void onStart(Connection connection) {
-            }
-
-            public void onComplete(Connection connection) {
-                if (c.equals(connection)) {
-                    filter.removeHandshakeListener(this);
-                    try {
-                        feeder.flush();
-                    } catch (IOException ioe) {
-                        HttpTransactionContext ctx = HttpTransactionContext.get(c);
-                        ctx.abort(ioe);
-                    }
-                }
-            }
-        });
-        filter.handshake(context.getConnection(), null);
     }
 
 
