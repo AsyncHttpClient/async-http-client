@@ -1688,7 +1688,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         public boolean applyEncoding(HttpHeader httpPacket) {
 
            httpPacket.addHeader(Header.AcceptEncoding, "gzip");
-           return true;
+           return false;
 
         }
 
