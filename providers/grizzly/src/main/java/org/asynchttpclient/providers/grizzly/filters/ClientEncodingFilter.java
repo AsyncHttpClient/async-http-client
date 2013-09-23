@@ -34,7 +34,7 @@ public final class ClientEncodingFilter implements EncodingFilter {
     public boolean applyEncoding(HttpHeader httpPacket) {
 
        httpPacket.addHeader(Header.AcceptEncoding, "gzip");
-       return true;
+       return false;
 
     }
 
