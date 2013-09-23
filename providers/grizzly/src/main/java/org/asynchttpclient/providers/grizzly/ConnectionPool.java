@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import org.glassfish.grizzly.CompletionHandler;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.EmptyCompletionHandler;
+import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.connectionpool.EndpointKey;
 import org.glassfish.grizzly.connectionpool.MultiEndpointPool;
 import org.glassfish.grizzly.connectionpool.SingleEndpointPool;
@@ -29,6 +33,7 @@ import java.net.SocketAddress;
  */
 public class ConnectionPool extends MultiEndpointPool<SocketAddress>{
 
+    private final Object lock = new Object();
 
     // ------------------------------------------------------------ Constructors
 
@@ -69,6 +74,62 @@ public class ConnectionPool extends MultiEndpointPool<SocketAddress>{
         return sePool;
     }
 
+    @Override
+    public GrizzlyFuture<Connection> take(final EndpointKey<SocketAddress> endpointKey) {
+        synchronized (lock) {
+            final GrizzlyFuture<Connection> f = super.take(endpointKey);
+            f.addCompletionHandler(new EmptyCompletionHandler<Connection>() {
+                @Override
+                public void completed(Connection result) {
+                    if (Utils.isSpdyConnection(result)) {
+                        release(result);
+                    }
+                    super.completed(result);
+                }
+            });
+            return f;
+        }
+    }
+
+    @Override
+    public void take(final EndpointKey<SocketAddress> endpointKey,
+                     final CompletionHandler<Connection> completionHandler) {
+        synchronized (lock) {
+            if (completionHandler == null) {
+                throw new IllegalStateException("CompletionHandler argument cannot be null.");
+            }
+
+            super.take(endpointKey, new CompletionHandler<Connection>() {
+                @Override
+                public void cancelled() {
+                    completionHandler.cancelled();
+                }
+
+                @Override
+                public void failed(Throwable throwable) {
+                    completionHandler.failed(throwable);
+                }
+
+                @Override
+                public void completed(Connection result) {
+                    release(result);
+                    completionHandler.completed(result);
+                }
+
+                @Override
+                public void updated(Connection result) {
+                    completionHandler.updated(result);
+                }
+            });
+        }
+    }
+
+    @Override
+    public boolean release(Connection connection) {
+        synchronized (lock) {
+            return super.release(connection);
+        }
+    }
 
     // ---------------------------------------------------------- Nested Classes
 
