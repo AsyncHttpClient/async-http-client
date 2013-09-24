@@ -120,7 +120,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
 
 
     private void doSimpleFeeder(final boolean secure) {
-        final int threadCount = 20;
+        final int threadCount = 10;
         final CountDownLatch latch = new CountDownLatch(threadCount);
         final int port = (secure ? SECURE_PORT : NON_SECURE_PORT);
         final String scheme = (secure ? "https" : "http");
