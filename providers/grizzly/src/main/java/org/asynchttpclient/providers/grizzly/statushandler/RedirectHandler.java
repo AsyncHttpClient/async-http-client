@@ -16,7 +16,7 @@ package org.asynchttpclient.providers.grizzly.statushandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
 import org.asynchttpclient.providers.grizzly.EventHandler;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -41,7 +41,7 @@ public final class RedirectHandler implements StatusHandler {
 
     @SuppressWarnings({"unchecked"})
     public boolean handleStatus(final HttpResponsePacket responsePacket,
-                                final HttpTransactionContext httpTransactionContext,
+                                final HttpTxContext httpTransactionContext,
                                 final FilterChainContext ctx) {
 
         final String redirectURL = responsePacket.getHeader(Header.Location);
@@ -83,13 +83,13 @@ public final class RedirectHandler implements StatusHandler {
         try {
             final Connection c = m.obtainConnection(requestToSend,
                                                     httpTransactionContext.getFuture());
-            final HttpTransactionContext newContext =
+            final HttpTxContext newContext =
                     httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
             newContext.setInvocationStatus(CONTINUE);
             newContext.setRequest(requestToSend);
             newContext.setRequestUrl(requestToSend.getUrl());
-            HttpTransactionContext.set(c, newContext);
+            HttpTxContext.set(c, newContext);
             httpTransactionContext.getProvider().execute(c,
                                                          requestToSend,
                                                          newContext.getHandler(),
@@ -108,7 +108,7 @@ public final class RedirectHandler implements StatusHandler {
     // ------------------------------------------------- Private Methods
 
     private boolean sendAsGet(final HttpResponsePacket response,
-                              final HttpTransactionContext ctx) {
+                              final HttpTxContext ctx) {
         final int statusCode = response.getStatus();
         return !(statusCode < 302 || statusCode > 303)
                   && !(statusCode == 302

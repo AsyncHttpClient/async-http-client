@@ -17,7 +17,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
@@ -65,7 +65,7 @@ public final class ProxyFilter extends BaseFilter {
     throws IOException {
         org.glassfish.grizzly.http.HttpContent content = ctx.getMessage();
         HttpRequestPacket request = (HttpRequestPacket) content.getHttpHeader();
-        HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        HttpTxContext context = HttpTxContext.get(ctx.getConnection());
         assert(context != null);
         Request req = context.getRequest();
         if (!secure) {

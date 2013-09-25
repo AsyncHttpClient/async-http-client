@@ -13,7 +13,7 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
@@ -37,8 +37,8 @@ public final class AsyncHttpClientTransportFilter extends TransportFilter {
 
     @Override
     public NextAction handleRead(FilterChainContext ctx) throws IOException {
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context =
+                HttpTxContext.get(ctx.getConnection());
         if (context == null) {
             return super.handleRead(ctx);
         }
@@ -68,7 +68,7 @@ public final class AsyncHttpClientTransportFilter extends TransportFilter {
 
     @Override
     public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
         if (context != null) {
             context.abort(error.getCause());
         }

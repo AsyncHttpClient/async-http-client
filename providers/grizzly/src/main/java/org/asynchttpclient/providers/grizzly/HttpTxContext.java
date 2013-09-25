@@ -29,10 +29,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
 
-public final class HttpTransactionContext {
+public final class HttpTxContext {
 
-    private static final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
-                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
+    private static final Attribute<HttpTxContext> REQUEST_STATE_ATTR =
+                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTxContext.class.getName());
 
     private final AtomicInteger redirectCount = new AtomicInteger(0);
 
@@ -62,10 +62,10 @@ public final class HttpTransactionContext {
     // -------------------------------------------------------- Constructors
 
 
-    private HttpTransactionContext(GrizzlyAsyncHttpProvider provider,
-                           final GrizzlyResponseFuture future,
-                           final Request request,
-                           final AsyncHandler handler) {
+    private HttpTxContext(final GrizzlyAsyncHttpProvider provider,
+                          final GrizzlyResponseFuture future,
+                          final Request request,
+                          final AsyncHandler handler) {
         this.provider = provider;
 
         this.future = future;
@@ -82,7 +82,7 @@ public final class HttpTransactionContext {
 
 
     public static void set(final AttributeStorage storage,
-                           final HttpTransactionContext httpTransactionState) {
+                           final HttpTxContext httpTransactionState) {
 
         if (httpTransactionState == null) {
             REQUEST_STATE_ATTR.remove(storage);
@@ -92,20 +92,20 @@ public final class HttpTransactionContext {
 
     }
 
-    public static HttpTransactionContext get(final AttributeStorage storage) {
+    public static HttpTxContext get(final AttributeStorage storage) {
 
         return REQUEST_STATE_ATTR.get(storage);
 
     }
 
 
-    public static HttpTransactionContext create(final GrizzlyAsyncHttpProvider provider,
+    public static HttpTxContext create(final GrizzlyAsyncHttpProvider provider,
                                                 final GrizzlyResponseFuture future,
                                                 final Request request,
                                                 final AsyncHandler handler,
                                                 final AttributeStorage storage) {
-        final HttpTransactionContext context =
-                new HttpTransactionContext(provider, future, request, handler);
+        final HttpTxContext context =
+                new HttpTxContext(provider, future, request, handler);
         set(storage, context);
         return context;
     }
@@ -256,9 +256,9 @@ public final class HttpTransactionContext {
     // ------------------------------------------------- Package Private Methods
 
 
-    public HttpTransactionContext copy() {
-        final HttpTransactionContext newContext =
-                new HttpTransactionContext(provider,
+    public HttpTxContext copy() {
+        final HttpTxContext newContext =
+                new HttpTxContext(provider,
                                            future,
                                            request,
                                            handler);

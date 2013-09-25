@@ -28,7 +28,7 @@ import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.GrizzlyResponseFuture;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
@@ -207,7 +207,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                                          final FilterChainContext ctx)
     throws IOException {
 
-        final HttpTransactionContext httpCtx = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext httpCtx = HttpTxContext.get(ctx.getConnection());
 
         if (checkProxyAuthFailure(ctx, httpCtx)) {
             return true;
@@ -218,7 +218,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         // If the request is secure, check to see if an error occurred during
         // the handshake.  We have to do this here, as the error would occur
-        // out of the scope of a HttpTransactionContext so there would be
+        // out of the scope of a HttpTxContext so there would be
         // no good way to communicate the problem to the caller.
         if (secure && checkHandshakeError(ctx, httpCtx)) {
             return true;
@@ -323,7 +323,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     private static boolean checkHandshakeError(final FilterChainContext ctx,
-                                               final HttpTransactionContext httpCtx) {
+                                               final HttpTxContext httpCtx) {
             Throwable t = getHandshakeError(ctx.getConnection());
             if (t != null) {
                 httpCtx.abort(t);
@@ -333,7 +333,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     private static boolean checkProxyAuthFailure(final FilterChainContext ctx,
-                                                 final HttpTransactionContext httpCtx) {
+                                                 final HttpTxContext httpCtx) {
         final Boolean failed = PROXY_AUTH_FAILURE.get(ctx.getConnection());
         if (failed != null && failed) {
             httpCtx.abort(new IllegalStateException("Unable to authenticate with proxy"));
@@ -384,7 +384,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return (requestUri.charAt(0) == 'w' && requestUri.charAt(1) == 's');
     }
 
-    private static void convertToUpgradeRequest(final HttpTransactionContext ctx) {
+    private static void convertToUpgradeRequest(final HttpTxContext ctx) {
         final int colonIdx = ctx.getRequestUrl().indexOf(':');
 
         if (colonIdx < 2 || colonIdx > 3) {

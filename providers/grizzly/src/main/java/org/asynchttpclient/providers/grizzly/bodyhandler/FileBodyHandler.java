@@ -16,7 +16,7 @@ package org.asynchttpclient.providers.grizzly.bodyhandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.FileTransfer;
@@ -55,7 +55,7 @@ public final class FileBodyHandler implements BodyHandler {
 
         final File f = request.getFile();
         requestPacket.setContentLengthLong(f.length());
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
         if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
             final FileInputStream fis = new FileInputStream(request.getFile());
             final MemoryManager mm = ctx.getMemoryManager();
@@ -109,7 +109,7 @@ public final class FileBodyHandler implements BodyHandler {
     // --------------------------------------------------------- Private Methods
 
 
-    private static void notifyHandlerIfNeeded(final HttpTransactionContext context,
+    private static void notifyHandlerIfNeeded(final HttpTxContext context,
                                               final HttpRequestPacket requestPacket,
                                               final WriteResult writeResult) {
         final AsyncHandler handler = context.getHandler();

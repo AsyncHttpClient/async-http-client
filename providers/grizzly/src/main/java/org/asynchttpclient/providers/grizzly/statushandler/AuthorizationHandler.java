@@ -16,7 +16,7 @@ package org.asynchttpclient.providers.grizzly.statushandler;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -44,7 +44,7 @@ public final class AuthorizationHandler implements StatusHandler {
 
     @SuppressWarnings({"unchecked"})
     public boolean handleStatus(final HttpResponsePacket responsePacket,
-                                final HttpTransactionContext httpTransactionContext,
+                                final HttpTxContext httpTransactionContext,
                                 final FilterChainContext ctx) {
 
         final String auth = responsePacket.getHeader(Header.WWWAuthenticate);
@@ -100,10 +100,10 @@ public final class AuthorizationHandler implements StatusHandler {
                                                              req,
                                                              responsePacket,
                                                              httpTransactionContext);
-            final HttpTransactionContext newContext =
+            final HttpTxContext newContext =
                     httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
-            HttpTransactionContext.set(c, newContext);
+            HttpTxContext.set(c, newContext);
             newContext.setInvocationStatus(STOP);
             httpTransactionContext.getProvider().execute(c,
                                                          req,
@@ -124,7 +124,7 @@ public final class AuthorizationHandler implements StatusHandler {
     private Connection getConnectionForNextRequest(final FilterChainContext ctx,
                                                    final Request request,
                                                    final HttpResponsePacket response,
-                                                   final HttpTransactionContext httpCtx)
+                                                   final HttpTxContext httpCtx)
     throws Exception {
         if (response.getProcessingState().isKeepAlive()) {
             return ctx.getConnection();

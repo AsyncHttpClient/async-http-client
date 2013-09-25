@@ -34,7 +34,6 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
-import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.ProcessingState;
 import org.glassfish.grizzly.http.Protocol;
@@ -92,7 +91,7 @@ public final class EventHandler {
 
     public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
-        HttpTransactionContext.get(ctx.getConnection()).abort(error);
+        HttpTxContext.get(ctx.getConnection()).abort(error);
 
     }
 
@@ -100,8 +99,8 @@ public final class EventHandler {
     public void onHttpContentParsed(HttpContent content,
                                     FilterChainContext ctx) {
 
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context =
+                HttpTxContext.get(ctx.getConnection());
         final AsyncHandler handler = context.getHandler();
         if (handler != null && context.getCurrentState() != ABORT) {
             try {
@@ -119,8 +118,8 @@ public final class EventHandler {
 
     @SuppressWarnings("UnusedParameters")
     public void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context =
+                HttpTxContext.get(ctx.getConnection());
         final AsyncHandler handler = context.getHandler();
         if (handler instanceof TransferCompletionHandler) {
             ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
@@ -128,8 +127,8 @@ public final class EventHandler {
     }
 
     public void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context =
+                HttpTxContext.get(ctx.getConnection());
         final AsyncHandler handler = context.getHandler();
         if (handler instanceof TransferCompletionHandler) {
             final int written = content.getContent().remaining();
@@ -147,8 +146,8 @@ public final class EventHandler {
             return;
         }
         final Connection connection = ctx.getConnection();
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(connection);
+        final HttpTxContext context =
+                HttpTxContext.get(connection);
         final int status = ((HttpResponsePacket) httpHeader).getStatus();
         if (HttpStatus.CONINTUE_100.statusMatches(status)) {
             ctx.notifyUpstream(new ContinueEvent(context));
@@ -222,8 +221,8 @@ public final class EventHandler {
 
         t.printStackTrace();
         httpHeader.setSkipRemainder(true);
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context =
+                HttpTxContext.get(ctx.getConnection());
         context.abort(t);
     }
 
@@ -234,7 +233,7 @@ public final class EventHandler {
         //super.onHttpHeadersParsed(httpHeader, ctx);
         GrizzlyAsyncHttpProvider.LOGGER.debug("RESPONSE: {}", httpHeader);
         processKeepAlive(ctx.getConnection(), httpHeader);
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
 
         if (httpHeader.isSkipRemainder()) {
             return;
@@ -270,10 +269,10 @@ public final class EventHandler {
                     final Connection c =
                             m.obtainConnection(newRequest,
                                                context.getFuture());
-                    final HttpTransactionContext newContext =
+                    final HttpTxContext newContext =
                             context.copy();
                     context.setFuture(null);
-                    HttpTransactionContext.set(c, newContext);
+                    HttpTxContext.set(c, newContext);
                     context.getProvider().execute(c,
                                                   newRequest,
                                                   newHandler,
@@ -369,7 +368,7 @@ public final class EventHandler {
 
         final HttpResponsePacket response =
                 (HttpResponsePacket) httpHeader;
-        final HttpTransactionContext context = HttpTransactionContext.get(
+        final HttpTxContext context = HttpTxContext.get(
                 ctx.getConnection());
         cleanup(ctx);
         final AsyncHandler handler = context.getHandler();
@@ -405,7 +404,7 @@ public final class EventHandler {
     }
 
 
-    private static GrizzlyWebSocketAdapter createWebSocketAdapter(final HttpTransactionContext context) {
+    private static GrizzlyWebSocketAdapter createWebSocketAdapter(final HttpTxContext context) {
         SimpleWebSocket ws = new SimpleWebSocket(context.getProtocolHandler());
         AsyncHttpProviderConfig config = context.getProvider().getClientConfig().getAsyncHttpProviderConfig();
         boolean bufferFragments = true;
@@ -417,7 +416,7 @@ public final class EventHandler {
         return new GrizzlyWebSocketAdapter(ws, bufferFragments);
     }
 
-    private static boolean isRedirectAllowed(final HttpTransactionContext ctx) {
+    private static boolean isRedirectAllowed(final HttpTxContext ctx) {
         boolean allowed = ctx.getRequest().isRedirectEnabled();
         if (ctx.getRequest().isRedirectOverrideSet()) {
             return allowed;
@@ -428,12 +427,12 @@ public final class EventHandler {
         return allowed;
     }
 
-    private static HttpTransactionContext cleanup(final FilterChainContext ctx) {
+    private static HttpTxContext cleanup(final FilterChainContext ctx) {
 
         final Connection c = ctx.getConnection();
-        final HttpTransactionContext context =
-                HttpTransactionContext.get(c);
-        HttpTransactionContext.set(c, null);
+        final HttpTxContext context =
+                HttpTxContext.get(c);
+        HttpTxContext.set(c, null);
         if (!Utils.isIgnored(ctx.getConnection())) {
             final ConnectionManager manager =
                     context.getProvider().getConnectionManager();
@@ -452,7 +451,7 @@ public final class EventHandler {
     }
 
 
-    private static boolean redirectCountExceeded(final HttpTransactionContext context) {
+    private static boolean redirectCountExceeded(final HttpTxContext context) {
 
         return (context.getRedirectCount().get() > context.getMaxRedirectCount());
 
@@ -474,7 +473,7 @@ public final class EventHandler {
 
     public static Request newRequest(final URI uri,
                                       final HttpResponsePacket response,
-                                      final HttpTransactionContext ctx,
+                                      final HttpTxContext ctx,
                                       boolean asGet) {
 
         final RequestBuilder builder = new RequestBuilder(ctx.getRequest());

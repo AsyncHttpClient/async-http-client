@@ -241,8 +241,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                            final AsyncHandler<T> handler,
                                            final GrizzlyResponseFuture<T> future) {
         Utils.addRequestInFlight(c);
-        if (HttpTransactionContext.get(c) == null) {
-            HttpTransactionContext.create(this, future, request, handler, c);
+        if (HttpTxContext.get(c) == null) {
+            HttpTxContext.create(this, future, request, handler, c);
         }
         c.write(request, createWriteCompletionHandler(future));
 
@@ -271,8 +271,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     new IdleTimeoutFilter.TimeoutResolver() {
                         @Override
                         public long getTimeout(FilterChainContext ctx) {
-                            final HttpTransactionContext context =
-                                    HttpTransactionContext.get(ctx.getConnection());
+                            final HttpTxContext context =
+                                    HttpTxContext.get(ctx.getConnection());
                             if (context != null) {
                                 if (context.isWSRequest()) {
                                     return clientConfig.getWebSocketIdleTimeoutInMs();
@@ -495,9 +495,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     void timeout(final Connection c) {
 
-        final HttpTransactionContext context = HttpTransactionContext.get(c);
+        final HttpTxContext context = HttpTxContext.get(c);
         if (context != null) {
-            HttpTransactionContext.set(c, null);
+            HttpTxContext.set(c, null);
             context.abort(new TimeoutException("Timeout exceeded"));
         }
 
@@ -513,7 +513,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         boolean isWriteComplete = true;
 
         if (requestHasEntityBody(request)) {
-            final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
+            final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
             if (requestPacket.getHeaders().contains(Header.Expect)
                     && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {

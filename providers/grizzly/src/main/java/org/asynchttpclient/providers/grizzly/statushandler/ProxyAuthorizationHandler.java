@@ -18,7 +18,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
-import org.asynchttpclient.providers.grizzly.HttpTransactionContext;
+import org.asynchttpclient.providers.grizzly.HttpTxContext;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.Base64;
 import org.glassfish.grizzly.Connection;
@@ -53,7 +53,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
     @SuppressWarnings({"unchecked"})
     public boolean handleStatus(final HttpResponsePacket responsePacket,
-                                final HttpTransactionContext httpTransactionContext,
+                                final HttpTxContext httpTransactionContext,
                                 final FilterChainContext ctx) {
 
         final String proxyAuth =
@@ -146,10 +146,10 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                                                                  req,
                                                                  responsePacket,
                                                                  httpTransactionContext);
-                final HttpTransactionContext newContext =
+                final HttpTxContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTransactionContext.set(c, newContext);
+                HttpTxContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
@@ -166,11 +166,11 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 return executeRequest(httpTransactionContext, req, c);
             } else if (isNTLMSecondHandShake(proxyAuth)) {
                 final Connection c = ctx.getConnection();
-                final HttpTransactionContext newContext =
+                final HttpTxContext newContext =
                         httpTransactionContext.copy();
 
                 httpTransactionContext.setFuture(null);
-                HttpTransactionContext.set(c, newContext);
+                HttpTxContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
@@ -181,10 +181,10 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                                                                  req,
                                                                  responsePacket,
                                                                  httpTransactionContext);
-                final HttpTransactionContext newContext =
+                final HttpTxContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTransactionContext.set(c, newContext);
+                HttpTxContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
@@ -199,7 +199,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
     }
 
     private boolean executeRequest(
-            final HttpTransactionContext httpTransactionContext,
+            final HttpTxContext httpTransactionContext,
             final Request req, final Connection c) {
         httpTransactionContext.getProvider().execute(c,
                                                          req,
@@ -220,7 +220,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
     private Connection getConnectionForNextRequest(final FilterChainContext ctx,
                                                    final Request request,
                                                    final HttpResponsePacket response,
-                                                   final HttpTransactionContext httpCtx)
+                                                   final HttpTxContext httpCtx)
     throws Exception {
         if (response.getProcessingState().isKeepAlive()) {
             return ctx.getConnection();

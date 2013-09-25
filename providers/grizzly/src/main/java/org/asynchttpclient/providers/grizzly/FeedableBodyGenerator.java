@@ -174,7 +174,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 try {
                     feeder.flush();
                 } catch (IOException ioe) {
-                    HttpTransactionContext ctx = HttpTransactionContext.get(c);
+                    HttpTxContext ctx = HttpTxContext.get(c);
                     ctx.abort(ioe);
                 }
             }
@@ -353,10 +353,10 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     future.get();
                 }
             } catch (ExecutionException e) {
-                HttpTransactionContext ctx = HttpTransactionContext.get(c);
+                HttpTxContext ctx = HttpTxContext.get(c);
                 ctx.abort(e.getCause());
             } catch (Exception e) {
-                HttpTransactionContext ctx = HttpTransactionContext.get(c);
+                HttpTxContext ctx = HttpTxContext.get(c);
                 ctx.abort(e);
             }
         }
@@ -579,7 +579,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             public void onError(Throwable t) {
                 c.setMaxAsyncWriteQueueSize(
                         feedableBodyGenerator.origMaxPendingBytes);
-                HttpTransactionContext ctx = HttpTransactionContext.get(c);
+                HttpTxContext ctx = HttpTxContext.get(c);
                 ctx.abort(t);
             }
 
