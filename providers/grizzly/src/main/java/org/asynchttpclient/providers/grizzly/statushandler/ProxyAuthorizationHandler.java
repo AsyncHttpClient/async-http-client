@@ -173,7 +173,6 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 HttpTransactionContext.set(c, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
-                httpTransactionContext.setEstablishingTunnel(true);
 
                 return executeRequest(httpTransactionContext, req, c);
 

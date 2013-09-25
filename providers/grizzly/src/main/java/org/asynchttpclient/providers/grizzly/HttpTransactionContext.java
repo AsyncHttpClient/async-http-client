@@ -18,7 +18,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.websocket.WebSocket;
-import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
@@ -58,7 +57,6 @@ public final class HttpTransactionContext {
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
     private WebSocket webSocket;
-    private boolean establishingTunnel;
 
 
     // -------------------------------------------------------- Constructors
@@ -255,15 +253,6 @@ public final class HttpTransactionContext {
         this.webSocket = webSocket;
     }
 
-    public boolean isEstablishingTunnel() {
-        return establishingTunnel;
-    }
-
-    public void setEstablishingTunnel(boolean establishingTunnel) {
-        this.establishingTunnel = establishingTunnel;
-    }
-
-
     // ------------------------------------------------- Package Private Methods
 
 
@@ -295,15 +284,6 @@ public final class HttpTransactionContext {
             future.delegate.result(result);
             future.done();
         }
-    }
-
-    public boolean isTunnelEstablished(final Connection c) {
-        return c.getAttributes().getAttribute("tunnel-established") != null;
-    }
-
-
-    public void tunnelEstablished(final Connection c) {
-        c.getAttributes().setAttribute("tunnel-established", Boolean.TRUE);
     }
 
 }

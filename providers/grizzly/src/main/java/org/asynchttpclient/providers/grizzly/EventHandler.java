@@ -150,9 +150,6 @@ public final class EventHandler {
         final HttpTransactionContext context =
                 HttpTransactionContext.get(connection);
         final int status = ((HttpResponsePacket) httpHeader).getStatus();
-        if (context.isEstablishingTunnel() && HttpStatus.OK_200.statusMatches(status)) {
-            return;
-        }
         if (HttpStatus.CONINTUE_100.statusMatches(status)) {
             ctx.notifyUpstream(new ContinueEvent(context));
             return;
@@ -239,9 +236,7 @@ public final class EventHandler {
         processKeepAlive(ctx.getConnection(), httpHeader);
         final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
 
-        if (httpHeader.isSkipRemainder()
-                || (context.isEstablishingTunnel()
-                    && context.getStatusHandler() == null)) {
+        if (httpHeader.isSkipRemainder()) {
             return;
         }
 
@@ -374,28 +369,18 @@ public final class EventHandler {
 
         final HttpResponsePacket response =
                 (HttpResponsePacket) httpHeader;
-        final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
-        if (context.isEstablishingTunnel()
-                && HttpStatus.OK_200.statusMatches(response.getStatus())) {
-            context.setEstablishingTunnel(false);
-            final Connection c = ctx.getConnection();
-            context.tunnelEstablished(c);
-            context.getProvider().execute(c,
-                                          context.getRequest(),
-                                          context.getHandler(),
-                                          context.getFuture());
-        } else {
-            cleanup(ctx);
-            final AsyncHandler handler = context.getHandler();
-            if (handler != null) {
-                try {
-                    context.result(handler.onCompleted());
-                } catch (Exception e) {
-                    context.abort(e);
-                }
-            } else {
-                context.done();
+        final HttpTransactionContext context = HttpTransactionContext.get(
+                ctx.getConnection());
+        cleanup(ctx);
+        final AsyncHandler handler = context.getHandler();
+        if (handler != null) {
+            try {
+                context.result(handler.onCompleted());
+            } catch (Exception e) {
+                context.abort(e);
             }
+        } else {
+            context.done();
         }
         return false;
     }

@@ -254,7 +254,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             }
         }
 
-        if (httpCtx.isWSRequest() && !httpCtx.isEstablishingTunnel()) {
+        if (httpCtx.isWSRequest()) {
             try {
                 final URI wsURI = new URI(httpCtx.getWsRequestURI());
                 httpCtx.setProtocolHandler(Version.RFC6455.createHandler(true));
