@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.*;
 
@@ -71,7 +72,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
     public void testMaxRetry() throws Exception {
         AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
         try {
-            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
+            ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get(5, TimeUnit.SECONDS);
             fail();
         } catch (Exception t) {
             assertNotNull(t.getCause());

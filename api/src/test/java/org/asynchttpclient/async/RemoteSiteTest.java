@@ -136,7 +136,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
                         l.countDown();
                     }
                 }
-            }).get();
+            }).get(5, TimeUnit.SECONDS);
 
             if (!l.await(5, TimeUnit.SECONDS)) {
                 fail("Timeout out");
@@ -153,7 +153,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
 
         AsyncHttpClient c = getAsyncHttpClient(config);
         try {
-            Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get();
+            Response response = c.prepareGet("http://bit.ly/aUjTtG").execute().get(5, TimeUnit.SECONDS);
             if (response != null) {
                 System.out.println(response);
             }
@@ -170,7 +170,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     public void asyncFullBodyProperlyRead() throws Exception {
         final AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
+            Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get(5, TimeUnit.SECONDS);
 
             InputStream stream = r.getResponseBodyAsStream();
             // FIXME available is an ESTIMATE!!!
@@ -191,7 +191,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         try {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
             logger.info(String.format("Executing request [%s] ...", requestUrl2));
-            Response response = client.prepareGet(requestUrl2).execute().get();
+            Response response = client.prepareGet(requestUrl2).execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 301);
         } finally {
             client.close();
@@ -207,7 +207,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     public void testAHC60() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get();
+            Response response = client.prepareGet("http://www.meetup.com/stackoverflow/Mountain-View-CA/").execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
@@ -220,7 +220,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get();
+            Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get(5, TimeUnit.SECONDS);
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -235,7 +235,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setRemoveQueryParamsOnRedirect(false).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get();
+            Response response = c.prepareGet("http://www.freakonomics.com/?p=55846").execute().get(5, TimeUnit.SECONDS);
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 301);
@@ -254,7 +254,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             builder2.addHeader("Content-Type", "text/plain");
             builder2.addCookie(new Cookie(".google.com", "evilcookie", "evilcookie", "test", "/", 10, false, 1, false, false, null, null, Collections.<Integer> emptySet()));
             Request request2 = builder2.build();
-            Response response = c.executeRequest(request2).get();
+            Response response = c.executeRequest(request2).get(5, TimeUnit.SECONDS);
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

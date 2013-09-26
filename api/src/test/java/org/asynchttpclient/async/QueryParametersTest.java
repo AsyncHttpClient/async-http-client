@@ -84,7 +84,8 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testUrlRequestParametersEncoding() throws IOException, ExecutionException, InterruptedException {
+    public void testUrlRequestParametersEncoding()
+    throws IOException, ExecutionException, InterruptedException, TimeoutException {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
@@ -92,7 +93,7 @@ public abstract class QueryParametersTest extends AbstractBasicTest {
         try {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
             LoggerFactory.getLogger(QueryParametersTest.class).info("Executing request [{}] ...", requestUrl2);
-            Response response = client.prepareGet(requestUrl2).execute().get();
+            Response response = client.prepareGet(requestUrl2).execute().get(5, TimeUnit.SECONDS);
             String s = URLDecoder.decode(response.getHeader("q"), "UTF-8");
             assertEquals(s, REQUEST_PARAM);
         } finally {

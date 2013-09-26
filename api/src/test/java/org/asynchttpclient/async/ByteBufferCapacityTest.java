@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletException;
@@ -86,7 +87,7 @@ public abstract class ByteBufferCapacityTest extends AbstractBasicTest {
                         return super.onBodyPartReceived(content);
                     }
 
-                }).get();
+                }).get(5, TimeUnit.SECONDS);
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);

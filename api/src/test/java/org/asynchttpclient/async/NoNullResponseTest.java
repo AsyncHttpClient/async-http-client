@@ -29,6 +29,7 @@ import javax.net.ssl.X509TrustManager;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 public abstract class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
@@ -38,9 +39,9 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
         final AsyncHttpClient client = create();
         try {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
-            final Response response1 = builder.execute().get();
+            final Response response1 = builder.execute().get(5, TimeUnit.SECONDS);
             Thread.sleep(4000);
-            final Response response2 = builder.execute().get();
+            final Response response2 = builder.execute().get(5, TimeUnit.SECONDS);
             if (response2 != null) {
                 System.out.println("Success (2nd response was not null).");
             } else {

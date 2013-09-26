@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -106,7 +107,7 @@ public abstract class RC10KTest extends AbstractBasicTest {
             }
             i = 0;
             for (Future<Integer> fResp : resps) {
-                Integer resp = fResp.get();
+                Integer resp = fResp.get(5, TimeUnit.SECONDS);
                 assertNotNull(resp);
                 assertEquals(resp.intValue(), i++);
             }

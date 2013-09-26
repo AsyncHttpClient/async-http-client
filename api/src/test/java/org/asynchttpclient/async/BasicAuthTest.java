@@ -351,7 +351,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             StringBuilder s = new StringBuilder();
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
 
-            Response response = future.get();
+            Response response = future.get(3, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(s.toString(), MY_MESSAGE);
             assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);

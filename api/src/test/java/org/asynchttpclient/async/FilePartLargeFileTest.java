@@ -17,6 +17,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -62,7 +63,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutImageFile() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build());
         try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
@@ -75,7 +76,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();

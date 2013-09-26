@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
@@ -76,7 +78,8 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
      * JFA: Disable this test for 1.2.0 release as it can easily fail because a request may complete before the second one is made, hence failing. The issue occurs frequently on Linux.
      */
     @Test(enabled = false)
-    public void testMaxTotalConnectionsCorrectExceptionHandling() {
+    public void testMaxTotalConnectionsCorrectExceptionHandling()
+            throws TimeoutException {
         String[] urls = new String[] { "http://google.com", "http://github.com/" };
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(1000).setRequestTimeoutInMs(5000).setAllowPoolingConnection(false).setMaximumConnectionsTotal(1).setMaximumConnectionsPerHost(1).build());
@@ -100,7 +103,7 @@ public abstract class MaxTotalConnectionTest extends AbstractBasicTest {
             // get results of executed requests
             for (Future<Response> future : futures) {
                 try {
-                    /* Response res = */future.get();
+                    /* Response res = */future.get(5, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     log.error("Error!", e);
                 } catch (ExecutionException e) {

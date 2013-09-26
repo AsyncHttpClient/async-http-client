@@ -18,6 +18,8 @@ import static org.testng.Assert.assertEquals;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -75,12 +77,13 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
         execute("\u4E00"); // Unicode CJK ideograph for one
     }
 
-    protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
+    protected void execute(String body)
+    throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
             Future<Response> f = r.execute();
-            Response resp = f.get();
+            Response resp = f.get(5, TimeUnit.SECONDS);
             assertEquals(resp.getStatusCode(), 200);
             assertEquals(body, resp.getResponseBody("UTF-8"));
         } finally {

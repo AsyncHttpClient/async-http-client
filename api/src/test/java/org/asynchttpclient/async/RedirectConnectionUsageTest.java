@@ -21,6 +21,7 @@ import static org.testng.Assert.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -86,7 +87,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
 
             ListenableFuture<Response> response = c.executeRequest(r);
             Response res = null;
-            res = response.get();
+            res = response.get(3, TimeUnit.SECONDS);
             assertNotNull(res.getResponseBody());
             assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
 

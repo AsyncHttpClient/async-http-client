@@ -15,6 +15,7 @@ package org.asynchttpclient.websocket;
 import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
@@ -41,7 +42,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get(5, TimeUnit.SECONDS);
 
             websocket.close();
 
@@ -59,7 +60,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get(5, TimeUnit.SECONDS);
 
             latch.await();
             assertEquals(text.get(), "1001-Idle Timeout");

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import javax.servlet.ServletException;
@@ -181,7 +182,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             Request r = builder.build();
 
-            Response res = c.executeRequest(r).get();
+            Response res = c.executeRequest(r).get(5, TimeUnit.SECONDS);
 
             assertEquals(res.getStatusCode(), 200);
 

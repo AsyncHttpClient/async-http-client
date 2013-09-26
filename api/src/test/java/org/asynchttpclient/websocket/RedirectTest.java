@@ -18,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.ServletException;
@@ -79,26 +80,28 @@ public abstract class RedirectTest extends AbstractBasicTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
 
-            WebSocket websocket = c.prepareGet(getRedirectURL()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            WebSocket websocket = c.prepareGet(getRedirectURL()).execute(
+                    new WebSocketUpgradeHandler.Builder().addWebSocketListener(
+                            new WebSocketListener() {
 
-                @Override
-                public void onOpen(WebSocket websocket) {
-                    text.set("OnOpen");
-                    latch.countDown();
-                }
+                                @Override
+                                public void onOpen(WebSocket websocket) {
+                                    text.set("OnOpen");
+                                    latch.countDown();
+                                }
 
-                @Override
-                public void onClose(WebSocket websocket) {
-                }
+                                @Override
+                                public void onClose(WebSocket websocket) {
+                                }
 
-                @Override
-                public void onError(Throwable t) {
-                    t.printStackTrace();
-                    latch.countDown();
-                }
-            }).build()).get();
+                                @Override
+                                public void onError(Throwable t) {
+                                    t.printStackTrace();
+                                    latch.countDown();
+                                }
+                            }).build()).get(5, TimeUnit.SECONDS);
 
-            latch.await();
+            latch.await(5, TimeUnit.SECONDS);
             assertEquals(text.get(), "OnOpen");
             websocket.close();
         } finally {

@@ -23,6 +23,7 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.ServletException;
@@ -89,7 +90,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get(5, TimeUnit.SECONDS);
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -110,7 +111,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://127.0.0.1:%d/", port2)).execute().get(5, TimeUnit.SECONDS);
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 404);
@@ -131,7 +132,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get(5, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getUri().toString(), destinationUrl);
@@ -152,7 +153,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
 
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get();
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get(5, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getUri().toString(), destinationUrl);

@@ -17,6 +17,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +44,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionTimeoutInMs(timeout).build());
         try {
-            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
@@ -57,7 +58,7 @@ public abstract class PutLargeFileTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();

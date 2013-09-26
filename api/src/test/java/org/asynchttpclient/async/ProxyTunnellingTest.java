@@ -18,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
@@ -93,7 +94,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                     return response;
                 }
             });
-            Response r = responseFuture.get();
+            Response r = responseFuture.get(5, TimeUnit.SECONDS);
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
         } finally {
@@ -121,7 +122,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                     return response;
                 }
             });
-            Response r = responseFuture.get();
+            Response r = responseFuture.get(5, TimeUnit.SECONDS);
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");
         } finally {
@@ -138,7 +139,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setHeader("Content-Type", "text/html")//
                 .build();
         try {
-            Response r = client.get().get();
+            Response r = client.get().get(5, TimeUnit.SECONDS);
 
             assertEquals(r.getStatusCode(), 200);
             assertEquals(r.getHeader("X-Proxy-Connection"), "keep-alive");

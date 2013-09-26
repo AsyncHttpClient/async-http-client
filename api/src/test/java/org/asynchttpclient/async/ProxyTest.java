@@ -122,7 +122,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
         try {
 
             String target = "http://127.0.0.1:1234/";
-            client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1).addNonProxyHost("127.0.0.1")).execute().get();
+            client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1).addNonProxyHost("127.0.0.1")).execute().get(5, TimeUnit.SECONDS);
             assertFalse(true);
         } catch (Throwable e) {
             assertNotNull(e.getCause());

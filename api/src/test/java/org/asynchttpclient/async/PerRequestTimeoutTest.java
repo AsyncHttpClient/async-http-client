@@ -113,11 +113,12 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
+    public void testGlobalDefaultPerRequestInfiniteTimeout()
+    throws IOException, TimeoutException {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100).build());
         try {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(-1).execute();
-            Response response = responseFuture.get();
+            Response response = responseFuture.get(5, TimeUnit.SECONDS);
             assertNotNull(response);
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
@@ -149,7 +150,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void testGlobalIdleTimeout() throws IOException {
+    public void testGlobalIdleTimeout() throws IOException, TimeoutException {
         final long times[] = new long[] { -1, -1 };
 
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).build());
@@ -172,7 +173,7 @@ public abstract class PerRequestTimeoutTest extends AbstractBasicTest {
                     super.onThrowable(t);
                 }
             });
-            Response response = responseFuture.get();
+            Response response = responseFuture.get(5, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getResponseBody(), MSG + MSG);
         } catch (InterruptedException e) {

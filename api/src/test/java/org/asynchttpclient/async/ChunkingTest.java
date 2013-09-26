@@ -18,6 +18,7 @@ import static org.testng.FileAssert.fail;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -60,7 +61,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
 
             Request r = builder.build();
 
-            Response response = c.executeRequest(r).get();
+            Response response = c.executeRequest(r).get(5, TimeUnit.SECONDS);
             if (500 == response.getStatusCode()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("==============\n");

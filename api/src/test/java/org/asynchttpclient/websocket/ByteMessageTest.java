@@ -15,6 +15,7 @@ package org.asynchttpclient.websocket;
 import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
@@ -67,7 +68,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                 @Override
                 public void onFragment(byte[] fragment, boolean last) {
                 }
-            }).build()).get();
+            }).build()).get(5, TimeUnit.SECONDS);
 
             websocket.sendMessage("ECHO".getBytes());
 
@@ -118,7 +119,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                 @Override
                 public void onFragment(byte[] fragment, boolean last) {
                 }
-            }).build()).get();
+            }).build()).get(5, TimeUnit.SECONDS);
 
             websocket.sendMessage("ECHO".getBytes()).sendMessage("ECHO".getBytes());
 
@@ -170,7 +171,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                 @Override
                 public void onFragment(byte[] fragment, boolean last) {
                 }
-            }).build()).get();
+            }).build()).get(5, TimeUnit.SECONDS);
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO".getBytes());
@@ -218,7 +219,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
                 @Override
                 public void onFragment(byte[] fragment, boolean last) {
                 }
-            }).build()).get();
+            }).build()).get(5, TimeUnit.SECONDS);
             websocket.stream("ECHO".getBytes(), false);
             websocket.stream("ECHO".getBytes(), true);
             latch.await();

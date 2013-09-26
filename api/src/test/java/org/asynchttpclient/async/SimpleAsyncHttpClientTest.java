@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.ByteArrayPart;
 import org.asynchttpclient.Response;
@@ -45,7 +46,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())));
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBody(), MY_MESSAGE);
         } finally {
@@ -62,7 +63,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new AppendableBodyConsumer(s));
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(s.toString(), MY_MESSAGE);
         } finally {
@@ -79,7 +80,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(o.toString(), MY_MESSAGE);
         } finally {
@@ -96,7 +97,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             Future<Response> future = client.post(new InputStreamBodyGenerator(new ByteArrayInputStream(MY_MESSAGE.getBytes())), new OutputStreamBodyConsumer(o));
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(o.toString(), MY_MESSAGE);
         } finally {
@@ -118,7 +119,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
             Future<Response> future = client.put(new FileBodyGenerator(tmpfile));
 
             System.out.println("waiting for response");
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
 
             tmpfile.delete();
 
@@ -152,7 +153,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         try {
             Future<Response> future = derived.post(generator, consumer);
 
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(o.toString(), MY_MESSAGE);
         } finally {
@@ -203,7 +204,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
             Future<Response> future = client.post(generator, consumer);
 
-            Response response = future.get();
+            Response response = future.get(5, TimeUnit.SECONDS);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(o.toString(), MY_MESSAGE);
         } finally {
@@ -229,11 +230,11 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl()).build();
         SimpleAsyncHttpClient derived = client.derive().build();
         try {
-            derived.get().get();
+            derived.get().get(5, TimeUnit.SECONDS);
 
             derived.close();
 
-            Response response = client.get().get();
+            Response response = client.get().get(5, TimeUnit.SECONDS);
 
             assertEquals(response.getStatusCode(), 200);
         } finally {
@@ -249,7 +250,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         client.close();
 
         try {
-            derived.get().get();
+            derived.get().get(5, TimeUnit.SECONDS);
             fail("Expected closed AHC");
         } catch (IOException e) {
             // expected
@@ -260,7 +261,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPut() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+            Response response = client.put(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get(5, TimeUnit.SECONDS);
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");
@@ -284,7 +285,7 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
     public void testMultiPartPost() throws Exception {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setProviderClass(getProviderClass()).setUrl(getTargetUrl() + "/multipart").build();
         try {
-            Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get();
+            Response response = client.post(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8")).get(5, TimeUnit.SECONDS);
 
             String body = response.getResponseBody();
             String contentType = response.getHeader("X-Content-Type");
