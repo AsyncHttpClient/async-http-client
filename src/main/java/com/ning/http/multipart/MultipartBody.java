@@ -578,18 +578,21 @@ public class MultipartBody implements RandomAccessBody {
                     final SocketChannel channel = (SocketChannel) target;
                     channel.register(selector, SelectionKey.OP_WRITE);
 
-                    while (written < byteWriter.size() && selector.select() != 0) {
+                    while (written < byteWriter.size()) {
+                        selector.select(1000);
+                        maxSpin++;
                         final Set<SelectionKey> selectedKeys = selector.selectedKeys();
 
                         for (SelectionKey key : selectedKeys) {
                             if (key.isWritable()) {
                                 written += target.write(message);
+                                maxSpin = 0;
                             }
                         }
-                    }
 
-                    if (written < byteWriter.size()) {
-                        throw new IOException("Unable to write on channel " + target);
+                        if (maxSpin >= 10) {
+                            throw new IOException("Unable to write on channel " + target);
+                        }
                     }
                 } finally {
                     selector.close();
