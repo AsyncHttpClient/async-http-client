@@ -147,8 +147,8 @@ public class FilePart extends PartBase {
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
         String filename = this.source.getFileName();
+        super.sendDispositionHeader(out);
         if (filename != null) {
-            super.sendDispositionHeader(out);
             out.write(FILE_NAME_BYTES);
             out.write(QUOTE_BYTES);
             out.write(MultipartEncodingUtil.getAsciiBytes(filename));
