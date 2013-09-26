@@ -22,7 +22,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletException;
@@ -127,7 +126,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
             // now be polite and wait for body arrival too (otherwise we would be
             // dropping the "line" on server)
-            f.get(5, TimeUnit.SECONDS);
+            f.get();
             // it all should be here now
             assertEquals(cos.getByteCount(), HALF_GIG);
         } finally {
@@ -156,7 +155,7 @@ public abstract class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             // now be polite and wait for body arrival too (otherwise we would be
             // dropping the "line" on server)
             try {
-                f.get(5, TimeUnit.SECONDS);
+                f.get();
                 fail("get() should fail with IOException!");
             } catch (Exception e) {
                 // good

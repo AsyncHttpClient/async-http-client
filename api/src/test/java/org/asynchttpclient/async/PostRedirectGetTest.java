@@ -17,7 +17,6 @@ import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletException;
@@ -102,7 +101,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 }
 
             });
-            int statusCode = responseFuture.get(5, TimeUnit.SECONDS);
+            int statusCode = responseFuture.get();
             assertEquals(statusCode, 200);
         } finally {
             p.close();
@@ -137,7 +136,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                 }
 
             });
-            int statusCode = responseFuture.get(5, TimeUnit.SECONDS);
+            int statusCode = responseFuture.get();
             assertEquals(statusCode, 200);
         } finally {
             p.close();

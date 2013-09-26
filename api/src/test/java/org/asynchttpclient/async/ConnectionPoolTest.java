@@ -47,7 +47,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             for (i = 0; i < 3; i++) {
                 try {
                     log.info("{} requesting url [{}]...", i, url);
-                    Response response = client.prepareGet(url).execute().get(5, TimeUnit.SECONDS);
+                    Response response = client.prepareGet(url).execute().get();
                     log.info("{} response [{}].", i, response);
                 } catch (Exception ex) {
                     exception = ex;
@@ -71,7 +71,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                     log.info("{} requesting url [{}]...", i, url);
 
                     if (i < 5) {
-                        client.prepareGet(url).execute().get(5, TimeUnit.SECONDS);
+                        client.prepareGet(url).execute().get();
                     } else {
                         client.prepareGet(url).execute();
                     }
@@ -112,7 +112,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 }
             };
 
-            client.prepareGet(getTargetUrl()).execute(handler).get(5, TimeUnit.SECONDS);
+            client.prepareGet(getTargetUrl()).execute(handler).get();
             server.stop();
             server.start();
             client.prepareGet(getTargetUrl()).execute(handler);
@@ -215,7 +215,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             };
 
             try {
-                client.prepareGet(getTargetUrl()).execute(handler).get(5, TimeUnit.SECONDS);
+                client.prepareGet(getTargetUrl()).execute(handler).get();
                 fail("Must have received an exception");
             } catch (ExecutionException ex) {
                 assertNotNull(ex);

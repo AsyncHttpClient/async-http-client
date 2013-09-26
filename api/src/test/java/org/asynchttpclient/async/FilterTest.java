@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
@@ -74,7 +73,7 @@ public abstract class FilterTest extends AbstractBasicTest {
 
         AsyncHttpClient c = getAsyncHttpClient(b.build());
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         } finally {
@@ -95,7 +94,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
             for (Future<Response> f : futures) {
-                Response r = f.get(5, TimeUnit.SECONDS);
+                Response r = f.get();
                 assertNotNull(f.get());
                 assertEquals(r.getStatusCode(), 200);
             }
@@ -111,7 +110,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            /* Response response = */c.preparePost(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            /* Response response = */c.preparePost(getTargetUrl()).execute().get();
             fail("Should have timed out");
         } catch (IOException ex) {
             assertNotNull(ex);
@@ -135,7 +134,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -166,7 +165,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -198,7 +197,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
@@ -231,7 +230,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(b.build());
 
         try {
-            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get(5, TimeUnit.SECONDS);
+            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);

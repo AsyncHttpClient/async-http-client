@@ -18,8 +18,6 @@ import static org.testng.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
@@ -92,20 +90,19 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request deleteRequest = new RequestBuilder("DELETE").setUrl(getTargetUrl()).build();
-            c.executeRequest(deleteRequest).get(5, TimeUnit.SECONDS);
+            c.executeRequest(deleteRequest).get();
         } finally {
             c.close();
         }
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void mkcolWebDavTest1()
-    throws InterruptedException, IOException, ExecutionException, TimeoutException {
+    public void mkcolWebDavTest1() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = c.executeRequest(mkcolRequest).get(5, TimeUnit.SECONDS);
+            Response response = c.executeRequest(mkcolRequest).get();
 
             assertEquals(response.getStatusCode(), 201);
         } finally {
@@ -114,13 +111,12 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void mkcolWebDavTest2()
-    throws InterruptedException, IOException, ExecutionException, TimeoutException {
+    public void mkcolWebDavTest2() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
-            Response response = c.executeRequest(mkcolRequest).get(5, TimeUnit.SECONDS);
+            Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 409);
         } finally {
             c.close();
@@ -128,13 +124,12 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicPropFindWebDavTest()
-    throws InterruptedException, IOException, ExecutionException, TimeoutException {
+    public void basicPropFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
-            Response response = c.executeRequest(propFindRequest).get(5, TimeUnit.SECONDS);
+            Response response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 404);
         } finally {
@@ -143,21 +138,20 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void propFindWebDavTest()
-    throws InterruptedException, IOException, ExecutionException, TimeoutException {
+    public void propFindWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = c.executeRequest(mkcolRequest).get(5, TimeUnit.SECONDS);
+            Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
             Request putRequest = new RequestBuilder("PUT").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).setBody("this is a test").build();
-            response = c.executeRequest(putRequest).get(5, TimeUnit.SECONDS);
+            response = c.executeRequest(putRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(String.format("http://127.0.0.1:%s/folder1/Test.txt", port1)).build();
-            response = c.executeRequest(propFindRequest).get(5, TimeUnit.SECONDS);
+            response = c.executeRequest(propFindRequest).get();
 
             assertEquals(response.getStatusCode(), 207);
             assertTrue(response.getResponseBody().contains("<status>HTTP/1.1 200 OK</status>"));
@@ -167,13 +161,12 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void propFindCompletionHandlerWebDavTest()
-    throws InterruptedException, IOException, ExecutionException, TimeoutException {
+    public void propFindCompletionHandlerWebDavTest() throws InterruptedException, IOException, ExecutionException {
 
         AsyncHttpClient c = getAsyncHttpClient(null);
         try {
             Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = c.executeRequest(mkcolRequest).get(5, TimeUnit.SECONDS);
+            Response response = c.executeRequest(mkcolRequest).get();
             assertEquals(response.getStatusCode(), 201);
 
             Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
@@ -191,7 +184,7 @@ public abstract class WebDavBasicTest extends AbstractBasicTest {
                 public WebDavResponse onCompleted(WebDavResponse response) throws Exception {
                     return response;
                 }
-            }).get(5, TimeUnit.SECONDS);
+            }).get();
 
             assertNotNull(webDavResponse);
             assertEquals(webDavResponse.getStatusCode(), 200);

@@ -17,7 +17,6 @@ import static org.testng.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -47,7 +46,7 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
             Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
             System.out.println("waiting for response");
-            Response response = future.get(5, TimeUnit.SECONDS);
+            Response response = future.get();
             assertEquals(response.getStatusCode(), 404);
             assertEquals(o.toString(), "");
             assertTrue(response.getResponseBody().startsWith("<html>"));
@@ -64,7 +63,7 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
             Future<Response> future = client.get(new OutputStreamBodyConsumer(o));
 
             System.out.println("waiting for response");
-            Response response = future.get(5, TimeUnit.SECONDS);
+            Response response = future.get();
             assertEquals(response.getStatusCode(), 404);
             assertEquals(o.toString(), "");
             assertEquals(response.getResponseBody(), "");

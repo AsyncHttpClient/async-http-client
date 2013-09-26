@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -86,7 +85,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     return response;
                 }
-            }).get(5, TimeUnit.SECONDS);
+            }).get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
@@ -102,7 +101,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Future<Response> f = client.preparePut("http://127.0.0.1:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
-            Response resp = f.get(5, TimeUnit.SECONDS);
+            Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
@@ -143,7 +142,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted() throws Exception {
                     return null;
                 }
-            }).get(5, TimeUnit.SECONDS);
+            }).get();
             assertNull(resp);
             assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
         } finally {
@@ -185,7 +184,7 @@ public abstract class ZeroCopyFileTest extends AbstractBasicTest {
                 public Response onCompleted() throws Exception {
                     return null;
                 }
-            }).get(5, TimeUnit.SECONDS);
+            }).get();
             assertNull(resp);
             assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
         } finally {

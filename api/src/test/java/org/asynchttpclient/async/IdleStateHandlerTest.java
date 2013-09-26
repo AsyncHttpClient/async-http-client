@@ -20,7 +20,6 @@ import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -65,7 +64,7 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
         try {
-            c.prepareGet(getTargetUrl()).execute().get(5, TimeUnit.SECONDS);
+            c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);
         } finally {

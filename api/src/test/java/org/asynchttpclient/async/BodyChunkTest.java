@@ -24,7 +24,6 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 
@@ -51,7 +50,7 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
             Future<Response> future = client.executeRequest(requestBuilder.build());
 
             System.out.println("waiting for response");
-            Response response = future.get(5, TimeUnit.SECONDS);
+            Response response = future.get();
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getResponseBody(), MY_MESSAGE);
         } finally {

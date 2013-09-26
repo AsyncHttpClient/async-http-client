@@ -20,7 +20,6 @@ import java.net.ConnectException;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.HostnameVerifier;
@@ -131,7 +130,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             Future<Response> f = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute();
-            Response resp = f.get(5, TimeUnit.SECONDS);
+            Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
@@ -146,7 +145,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             try {
-                client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get(5, TimeUnit.SECONDS);
+                client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
                 fail("ConnectException expected");
             } catch (ExecutionException ex) {
                 assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -161,7 +160,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
-            client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get(5, TimeUnit.SECONDS);
+            client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             fail("ConnectException expected");
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -175,7 +174,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
         // request is made to 127.0.0.1, but cert presented for localhost - this should fail
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
-            client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get(5, TimeUnit.SECONDS);
+            client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             fail("ConnectException expected");
         } catch (ExecutionException ex) {
             assertEquals(ex.getCause().getClass(), ConnectException.class);
@@ -189,7 +188,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
 
         final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("127.0.0.1")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
-            Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get(5, TimeUnit.SECONDS);
+            Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);

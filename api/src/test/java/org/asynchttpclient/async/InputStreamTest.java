@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertEquals;
@@ -97,7 +96,7 @@ public abstract class InputStreamTest extends AbstractBasicTest {
                 }
             };
 
-            Response resp = c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute().get(5, TimeUnit.SECONDS);
+            Response resp = c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute().get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("X-Param"), "abc");

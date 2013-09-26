@@ -18,7 +18,6 @@ import static org.testng.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -115,7 +114,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             });
 
             try {
-                Response response = c.prepareGet(getTargetUrl()).execute(tl).get(5, TimeUnit.SECONDS);
+                Response response = c.prepareGet(getTargetUrl()).execute(tl).get();
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);
@@ -176,7 +175,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             });
 
             try {
-                Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get(5, TimeUnit.SECONDS);
+                Response response = client.preparePut(getTargetUrl()).setBody(file).execute(tl).get();
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);
@@ -235,7 +234,7 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
             });
 
             try {
-                Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get(5, TimeUnit.SECONDS);
+                Response response = client.preparePut(getTargetUrl()).setBody(new FileBodyGenerator(file)).execute(tl).get();
 
                 assertNotNull(response);
                 assertEquals(response.getStatusCode(), 200);

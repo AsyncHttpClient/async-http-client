@@ -127,7 +127,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
     public void testPutEmptyBody() throws Exception {
         AsyncHttpClient ahc = getAsyncHttpClient(null);
         try {
-            Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get(5, TimeUnit.SECONDS);
+            Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
 
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 204);

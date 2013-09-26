@@ -560,7 +560,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                 public Response onCompleted() throws Exception {
                     return builder.build();
                 }
-            }).get(5, TimeUnit.SECONDS);
+            }).get();
 
             assertNotNull(r);
             assertEquals(r.getStatusCode(), 200);

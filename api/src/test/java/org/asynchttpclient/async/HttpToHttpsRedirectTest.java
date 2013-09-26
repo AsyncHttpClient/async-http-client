@@ -20,7 +20,6 @@ import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.ServletException;
@@ -96,7 +95,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get(5, TimeUnit.SECONDS);
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
@@ -112,13 +111,13 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get(5, TimeUnit.SECONDS);
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
 
             // Test if the internal channel is downgraded to clean http.
-            response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/foo2").execute().get(5, TimeUnit.SECONDS);
+            response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/foo2").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getHeader("X-httpToHttps"), "PASS");
@@ -134,7 +133,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get(5, TimeUnit.SECONDS);
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
             assertEquals(response.getUri().toString(), getTargetUrl());

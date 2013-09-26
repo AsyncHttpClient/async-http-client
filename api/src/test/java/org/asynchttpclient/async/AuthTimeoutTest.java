@@ -85,7 +85,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         AsyncHttpClient client = newClient();
         try {
             Future<Response> f = execute(client, server, false);
-            f.get(5, TimeUnit.SECONDS);
+            f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
@@ -99,7 +99,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         AsyncHttpClient client = newClient();
         try {
             Future<Response> f = execute(client, server, true);
-            f.get(5, TimeUnit.SECONDS);
+            f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
@@ -113,7 +113,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         AsyncHttpClient client = newClient();
         try {
             Future<Response> f = execute(client, server2, false);
-            f.get(5, TimeUnit.SECONDS);
+            f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);
@@ -127,7 +127,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         AsyncHttpClient client = newClient();
         try {
             Future<Response> f = execute(client, server2, true);
-            f.get(5, TimeUnit.SECONDS);
+            f.get();
             fail("expected timeout");
         } catch (Exception e) {
             inspectException(e);

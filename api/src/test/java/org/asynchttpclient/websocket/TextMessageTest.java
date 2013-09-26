@@ -15,7 +15,6 @@ package org.asynchttpclient.websocket;
 import static org.testng.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHttpClient;
@@ -59,7 +58,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             latch.await();
             assertEquals(text.get(), "OnOpen");
@@ -74,7 +73,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         try {
             WebSocket websocket = null;
             try {
-                websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().build()).get(5, TimeUnit.SECONDS);
+                websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().build()).get();
             } catch (Throwable t) {
                 fail();
             }
@@ -90,7 +89,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         try {
             Throwable t = null;
             try {
-                /* WebSocket websocket = */c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get(5, TimeUnit.SECONDS);
+                /* WebSocket websocket = */c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
             } catch (Throwable t2) {
                 t = t2;
             }
@@ -124,7 +123,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             latch.await();
             assertEquals(text.get(), "OnClose");
@@ -157,7 +156,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             websocket.close();
 
@@ -201,7 +200,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             websocket.sendTextMessage("ECHO");
 
@@ -271,7 +270,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             websocket.sendTextMessage("ECHO");
 
@@ -316,7 +315,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
@@ -357,7 +356,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
                     t.printStackTrace();
                     latch.countDown();
                 }
-            }).build()).get(5, TimeUnit.SECONDS);
+            }).build()).get();
 
             websocket.streamText("ECHO", false);
             websocket.streamText("ECHO", true);
