@@ -54,6 +54,8 @@ import org.glassfish.grizzly.http.util.CookieSerializerUtils;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.MimeHeaders;
 import org.glassfish.grizzly.impl.SafeFutureImpl;
+import org.glassfish.grizzly.spdy.SpdySession;
+import org.glassfish.grizzly.spdy.SpdyStream;
 import org.glassfish.grizzly.ssl.SSLConnectionContext;
 import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.websockets.Version;
@@ -68,6 +70,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.Lock;
 
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
@@ -299,7 +302,24 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
         final Connection c = ctx.getConnection();
-        HttpContext.newInstance(ctx, c, c, c);
+        System.out.println("*** CONNECTION: " + c);
+        if (!Utils.isSpdyConnection(c)) {
+            HttpContext.newInstance(ctx, c, c, c);
+        } else {
+            SpdySession session = SpdySession.get(c);
+            final Lock lock = session.getNewClientStreamLock();
+            try {
+                lock.lock();
+                SpdyStream stream = session.openStream(
+                        requestPacketLocal,
+                        session.getNextLocalStreamId(),
+                        0, 0, 0, false, !requestPacketLocal.isExpectContent());
+                HttpContext.newInstance(ctx, stream, stream, stream);
+            } finally {
+                lock.unlock();
+            }
+
+        }
         HttpTxContext.set(ctx, httpTxContext);
         return sendRequest(sendingCtx, request, requestPacketLocal);
 

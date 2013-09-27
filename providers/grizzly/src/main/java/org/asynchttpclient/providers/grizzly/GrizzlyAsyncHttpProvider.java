@@ -44,7 +44,6 @@ import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.http.ContentEncoding;
 import org.glassfish.grizzly.http.GZipContentEncoding;
 import org.glassfish.grizzly.http.HttpClientFilter;
-import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.npn.ClientSideNegotiator;
 import org.glassfish.grizzly.spdy.NextProtoNegSupport;
 import org.glassfish.grizzly.spdy.SpdyFramingFilter;
@@ -485,7 +484,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     void timeout(final Connection c) {
 
         final String key = HttpTxContext.class.getName();
-        HttpTxContext ctx = null;
+        HttpTxContext ctx;
         if (!Utils.isSpdyConnection(c)) {
             ctx = (HttpTxContext) c.getAttributes().getAttribute(key);
             if (ctx != null) {

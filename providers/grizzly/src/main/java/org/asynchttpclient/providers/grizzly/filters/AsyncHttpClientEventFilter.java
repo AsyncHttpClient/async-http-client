@@ -54,13 +54,6 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter
     }
 
     @Override
-    public NextAction handleRead(FilterChainContext ctx) throws IOException {
-        final Connection c = ctx.getConnection();
-        HttpContext.newInstance(ctx, c, c, c);
-        return super.handleRead(ctx);
-    }
-
-    @Override
     public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
         eventHandler.exceptionOccurred(ctx, error);
     }
