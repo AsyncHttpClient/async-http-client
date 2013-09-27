@@ -91,7 +91,7 @@ public final class EventHandler {
 
     public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
-        HttpTxContext.get(ctx.getConnection()).abort(error);
+        HttpTxContext.get(ctx).abort(error);
 
     }
 
@@ -100,7 +100,7 @@ public final class EventHandler {
                                     FilterChainContext ctx) {
 
         final HttpTxContext context =
-                HttpTxContext.get(ctx.getConnection());
+                HttpTxContext.get(ctx);
         final AsyncHandler handler = context.getHandler();
         if (handler != null && context.getCurrentState() != ABORT) {
             try {
@@ -119,7 +119,7 @@ public final class EventHandler {
     @SuppressWarnings("UnusedParameters")
     public void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
         final HttpTxContext context =
-                HttpTxContext.get(ctx.getConnection());
+                HttpTxContext.get(ctx);
         final AsyncHandler handler = context.getHandler();
         if (handler instanceof TransferCompletionHandler) {
             ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
@@ -128,7 +128,7 @@ public final class EventHandler {
 
     public void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
         final HttpTxContext context =
-                HttpTxContext.get(ctx.getConnection());
+                HttpTxContext.get(ctx);
         final AsyncHandler handler = context.getHandler();
         if (handler instanceof TransferCompletionHandler) {
             final int written = content.getContent().remaining();
@@ -145,9 +145,7 @@ public final class EventHandler {
         if (httpHeader.isSkipRemainder()) {
             return;
         }
-        final Connection connection = ctx.getConnection();
-        final HttpTxContext context =
-                HttpTxContext.get(connection);
+        final HttpTxContext context = HttpTxContext.get(ctx);
         final int status = ((HttpResponsePacket) httpHeader).getStatus();
         if (HttpStatus.CONINTUE_100.statusMatches(status)) {
             ctx.notifyUpstream(new ContinueEvent(context));
@@ -221,8 +219,7 @@ public final class EventHandler {
 
         t.printStackTrace();
         httpHeader.setSkipRemainder(true);
-        final HttpTxContext context =
-                HttpTxContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx);
         context.abort(t);
     }
 
@@ -233,7 +230,7 @@ public final class EventHandler {
         //super.onHttpHeadersParsed(httpHeader, ctx);
         GrizzlyAsyncHttpProvider.LOGGER.debug("RESPONSE: {}", httpHeader);
         processKeepAlive(ctx.getConnection(), httpHeader);
-        final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx);
 
         if (httpHeader.isSkipRemainder()) {
             return;
@@ -271,12 +268,13 @@ public final class EventHandler {
                                                context.getFuture());
                     final HttpTxContext newContext =
                             context.copy();
+                    newContext.setRequest(newRequest);
                     context.setFuture(null);
-                    HttpTxContext.set(c, newContext);
                     context.getProvider().execute(c,
                                                   newRequest,
                                                   newHandler,
-                                                  context.getFuture());
+                                                  context.getFuture(),
+                                                  newContext);
                 } catch (Exception e) {
                     context.abort(e);
                 }
@@ -366,10 +364,7 @@ public final class EventHandler {
             return false;
         }
 
-        final HttpResponsePacket response =
-                (HttpResponsePacket) httpHeader;
-        final HttpTxContext context = HttpTxContext.get(
-                ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx);
         cleanup(ctx);
         final AsyncHandler handler = context.getHandler();
         if (handler != null) {
@@ -431,9 +426,9 @@ public final class EventHandler {
 
         final Connection c = ctx.getConnection();
         final HttpTxContext context =
-                HttpTxContext.get(c);
-        HttpTxContext.set(c, null);
-        if (!Utils.isIgnored(ctx.getConnection())) {
+                HttpTxContext.get(ctx);
+        HttpTxContext.remove(ctx, context);
+        if (!Utils.isIgnored(c)) {
             final ConnectionManager manager =
                     context.getProvider().getConnectionManager();
             //if (!manager.canReturnConnection(c)) {

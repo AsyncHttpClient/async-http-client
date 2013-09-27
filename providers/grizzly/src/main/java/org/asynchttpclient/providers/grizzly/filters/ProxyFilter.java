@@ -65,7 +65,7 @@ public final class ProxyFilter extends BaseFilter {
     throws IOException {
         org.glassfish.grizzly.http.HttpContent content = ctx.getMessage();
         HttpRequestPacket request = (HttpRequestPacket) content.getHttpHeader();
-        HttpTxContext context = HttpTxContext.get(ctx.getConnection());
+        HttpTxContext context = HttpTxContext.get(ctx);
         assert(context != null);
         Request req = context.getRequest();
         if (!secure) {

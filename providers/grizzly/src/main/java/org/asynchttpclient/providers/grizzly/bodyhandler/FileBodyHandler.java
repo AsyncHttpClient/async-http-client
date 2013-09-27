@@ -55,7 +55,7 @@ public final class FileBodyHandler implements BodyHandler {
 
         final File f = request.getFile();
         requestPacket.setContentLengthLong(f.length());
-        final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
+        final HttpTxContext context = HttpTxContext.get(ctx);
         if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
             final FileInputStream fis = new FileInputStream(request.getFile());
             final MemoryManager mm = ctx.getMemoryManager();

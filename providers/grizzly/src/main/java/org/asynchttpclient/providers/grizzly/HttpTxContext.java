@@ -18,12 +18,17 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.websocket.WebSocket;
+import org.glassfish.grizzly.CloseListener;
+import org.glassfish.grizzly.CloseType;
+import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.attributes.AttributeStorage;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.websockets.HandShake;
 import org.glassfish.grizzly.websockets.ProtocolHandler;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -57,6 +62,15 @@ public final class HttpTxContext {
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
     private WebSocket webSocket;
+    private CloseListener listener = new CloseListener< Closeable,CloseType>() {
+        @Override
+        public void onClosed(Closeable closeable, CloseType type)
+        throws IOException {
+            if (CloseType.REMOTELY.equals(type)) {
+                abort(new IOException("Remotely Closed"));
+            }
+        }
+    };
 
 
     // -------------------------------------------------------- Constructors
@@ -67,7 +81,6 @@ public final class HttpTxContext {
                           final Request request,
                           final AsyncHandler handler) {
         this.provider = provider;
-
         this.future = future;
         this.request = request;
         this.handler = handler;
@@ -81,35 +94,33 @@ public final class HttpTxContext {
     // ---------------------------------------------------------- Public Methods
 
 
-    public static void set(final AttributeStorage storage,
-                           final HttpTxContext httpTransactionState) {
-
-        if (httpTransactionState == null) {
-            REQUEST_STATE_ATTR.remove(storage);
-        } else {
-            REQUEST_STATE_ATTR.set(storage, httpTransactionState);
-        }
-
+    public static void set(final FilterChainContext ctx,
+                           final HttpTxContext httpTxContext) {
+        HttpContext httpContext = HttpContext.get(ctx);
+        httpContext.getCloseable().addCloseListener(httpTxContext.listener);
+        REQUEST_STATE_ATTR.set(httpContext, httpTxContext);
     }
 
-    public static HttpTxContext get(final AttributeStorage storage) {
-
-        return REQUEST_STATE_ATTR.get(storage);
-
+    public static void remove(final FilterChainContext ctx,
+                              final HttpTxContext httpTxContext) {
+        HttpContext httpContext = HttpContext.get(ctx);
+        httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
+        REQUEST_STATE_ATTR.remove(ctx);
     }
 
-
-    public static HttpTxContext create(final GrizzlyAsyncHttpProvider provider,
-                                                final GrizzlyResponseFuture future,
-                                                final Request request,
-                                                final AsyncHandler handler,
-                                                final AttributeStorage storage) {
-        final HttpTxContext context =
-                new HttpTxContext(provider, future, request, handler);
-        set(storage, context);
-        return context;
+    public static HttpTxContext get(FilterChainContext ctx) {
+        HttpContext httpContext = HttpContext.get(ctx);
+        return ((httpContext != null)
+                    ? REQUEST_STATE_ATTR.get(httpContext)
+                    : null);
     }
 
+    public static HttpTxContext create(final RequestInfoHolder requestInfoHolder) {
+        return new HttpTxContext(requestInfoHolder.getProvider(),
+                                  requestInfoHolder.getFuture(),
+                                  requestInfoHolder.getRequest(),
+                                  requestInfoHolder.getHandler());
+    }
 
     public void abort(final Throwable t) {
         if (future != null) {

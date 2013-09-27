@@ -21,10 +21,12 @@ import org.asynchttpclient.BodyGenerator;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.OutputSink;
 import org.glassfish.grizzly.WriteHandler;
 import org.glassfish.grizzly.WriteResult;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
 import org.glassfish.grizzly.nio.NIOConnection;
@@ -174,7 +176,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 try {
                     feeder.flush();
                 } catch (IOException ioe) {
-                    HttpTxContext ctx = HttpTxContext.get(c);
+                    HttpTxContext ctx = HttpTxContext.get(context);
                     ctx.abort(ioe);
                 }
             }
@@ -304,7 +306,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 throw new IllegalStateException(
                         "Asynchronous transfer has not been initiated.");
             }
-            blockUntilQueueFree(feedableBodyGenerator.context.getConnection());
+            blockUntilQueueFree(feedableBodyGenerator.context);
             final HttpContent content =
                     feedableBodyGenerator.contentBuilder
                             .content(buffer)
@@ -321,11 +323,13 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * will block is dependent on the write timeout of the transport
          * associated with the specified connection.
          */
-        private static void blockUntilQueueFree(final Connection c) {
-            if (!c.canWrite()) {
+        private static void blockUntilQueueFree(final FilterChainContext ctx) {
+            HttpContext httpContext = HttpContext.get(ctx);
+            final OutputSink outputSink = httpContext.getOutputSink();
+            if (!outputSink.canWrite()) {
                 final FutureImpl<Boolean> future =
                         Futures.createSafeFuture();
-                c.notifyCanWrite(new WriteHandler() {
+                outputSink.notifyCanWrite(new WriteHandler() {
 
                     @Override
                     public void onWritePossible() throws Exception {
@@ -338,26 +342,26 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     }
                 });
 
-                block(c, future);
+                block(ctx, future);
             }
         }
 
-        private static void block(final Connection c,
+        private static void block(final FilterChainContext ctx,
                                   final FutureImpl<Boolean> future) {
             try {
                 final long writeTimeout =
-                        c.getTransport().getWriteTimeout(MILLISECONDS);
+                        ctx.getConnection().getTransport().getWriteTimeout(MILLISECONDS);
                 if (writeTimeout != -1) {
                     future.get(writeTimeout, MILLISECONDS);
                 } else {
                     future.get();
                 }
             } catch (ExecutionException e) {
-                HttpTxContext ctx = HttpTxContext.get(c);
-                ctx.abort(e.getCause());
+                HttpTxContext httpTxContext = HttpTxContext.get(ctx);
+                httpTxContext.abort(e.getCause());
             } catch (Exception e) {
-                HttpTxContext ctx = HttpTxContext.get(c);
-                ctx.abort(e);
+                HttpTxContext httpTxContext = HttpTxContext.get(ctx);
+                httpTxContext.abort(e);
             }
         }
 
@@ -493,17 +497,19 @@ public class FeedableBodyGenerator implements BodyGenerator {
          */
         @Override
         public synchronized void flush() {
-            final Connection c = feedableBodyGenerator.context.getConnection();
+            final HttpContext httpContext =
+                    HttpContext.get(feedableBodyGenerator.context);
+            final OutputSink outputSink = httpContext.getOutputSink();
             if (isReady()) {
-                writeUntilFullOrDone(c);
+                writeUntilFullOrDone(outputSink);
                 if (!isDone()) {
                     if (!isReady()) {
                         notifyReadyToFeed(new ReadyToFeedListenerImpl());
                     }
-                    if (!c.canWrite()) {
+                    if (!outputSink.canWrite()) {
                         // write queue is full, leverage WriteListener to let us know
                         // when it is safe to write again.
-                        c.notifyCanWrite(new WriteHandlerImpl());
+                        outputSink.notifyCanWrite(new WriteHandlerImpl());
                     }
                 }
             } else {
@@ -515,8 +521,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // ----------------------------------------------------- Private Methods
 
 
-        private void writeUntilFullOrDone(final Connection c) {
-            while (c.canWrite()) {
+        private void writeUntilFullOrDone(final OutputSink outputSink) {
+            while (outputSink.canWrite()) {
                 if (isReady()) {
                     canFeed();
                 }
@@ -548,6 +554,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
 
             private final Connection c;
+            private final FilterChainContext ctx;
 
 
             // -------------------------------------------------------- Constructors
@@ -555,6 +562,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             private WriteHandlerImpl() {
                 this.c = feedableBodyGenerator.context.getConnection();
+                this.ctx = feedableBodyGenerator.context;
             }
 
 
@@ -577,10 +585,12 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void onError(Throwable t) {
-                c.setMaxAsyncWriteQueueSize(
-                        feedableBodyGenerator.origMaxPendingBytes);
-                HttpTxContext ctx = HttpTxContext.get(c);
-                ctx.abort(t);
+                if (!Utils.isSpdyConnection(c)) {
+                    c.setMaxAsyncWriteQueueSize(
+                            feedableBodyGenerator.origMaxPendingBytes);
+                }
+                HttpTxContext httpTxContext = HttpTxContext.get(ctx);
+                httpTxContext.abort(t);
             }
 
         } // END WriteHandlerImpl

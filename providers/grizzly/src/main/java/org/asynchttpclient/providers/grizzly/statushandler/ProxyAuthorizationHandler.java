@@ -23,6 +23,7 @@ import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.Base64;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
@@ -149,7 +150,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 final HttpTxContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTxContext.set(c, newContext);
+                HttpTxContext.set(ctx, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
@@ -163,18 +164,18 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                              "Negotiate " + challengeHeader);
 
 
-                return executeRequest(httpTransactionContext, req, c);
+                return executeRequest(httpTransactionContext, req, c, newContext);
             } else if (isNTLMSecondHandShake(proxyAuth)) {
                 final Connection c = ctx.getConnection();
                 final HttpTxContext newContext =
                         httpTransactionContext.copy();
 
                 httpTransactionContext.setFuture(null);
-                HttpTxContext.set(c, newContext);
+                HttpTxContext.set(ctx, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
-                return executeRequest(httpTransactionContext, req, c);
+                return executeRequest(httpTransactionContext, req, c, newContext);
 
             } else {
                 final Connection c = getConnectionForNextRequest(ctx,
@@ -184,12 +185,12 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 final HttpTxContext newContext =
                         httpTransactionContext.copy();
                 httpTransactionContext.setFuture(null);
-                HttpTxContext.set(c, newContext);
+                HttpTxContext.set(ctx, newContext);
 
                 newContext.setInvocationStatus(tempInvocationStatus);
 
                 //NTLM needs the same connection to be used for exchange of tokens
-                return executeRequest(httpTransactionContext, req, c);
+                return executeRequest(httpTransactionContext, req, c, newContext);
             }
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -200,11 +201,12 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
 
     private boolean executeRequest(
             final HttpTxContext httpTransactionContext,
-            final Request req, final Connection c) {
+            final Request req, final Connection c, final HttpTxContext httpTxContext) {
         httpTransactionContext.getProvider().execute(c,
                                                          req,
                                                          httpTransactionContext.getHandler(),
-                                                         httpTransactionContext.getFuture());
+                                                         httpTransactionContext.getFuture(),
+                                                         httpTxContext);
             return false;
     }
 

@@ -24,12 +24,8 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NTLMEngine;
-import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
-import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandlerFactory;
-import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.AsyncHttpClientEventFilter;
 import org.asynchttpclient.providers.grizzly.filters.AsyncHttpClientFilter;
-import org.asynchttpclient.providers.grizzly.filters.AsyncHttpClientTransportFilter;
 import org.asynchttpclient.providers.grizzly.filters.AsyncSpdyClientEventFilter;
 import org.asynchttpclient.providers.grizzly.filters.ClientEncodingFilter;
 import org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter;
@@ -44,12 +40,11 @@ import org.glassfish.grizzly.filterchain.Filter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.http.ContentEncoding;
 import org.glassfish.grizzly.http.GZipContentEncoding;
 import org.glassfish.grizzly.http.HttpClientFilter;
-import org.glassfish.grizzly.http.HttpContent;
-import org.glassfish.grizzly.http.HttpRequestPacket;
-import org.glassfish.grizzly.http.Method;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.npn.ClientSideNegotiator;
 import org.glassfish.grizzly.spdy.NextProtoNegSupport;
 import org.glassfish.grizzly.spdy.SpdyFramingFilter;
@@ -59,7 +54,6 @@ import org.glassfish.grizzly.spdy.SpdySession;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLConnectionContext;
 import org.glassfish.grizzly.ssl.SSLUtils;
-import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.impl.SafeFutureImpl;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
@@ -74,7 +68,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,7 +92,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public static final Logger LOGGER = LoggerFactory.getLogger(GrizzlyAsyncHttpProvider.class);
     public final static NTLMEngine NTLM_ENGINE = new NTLMEngine();
 
-    private final BodyHandlerFactory bodyHandlerFactory;
     private final AsyncHttpClientConfig clientConfig;
 
     private ConnectionManager connectionManager;
@@ -123,8 +115,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        bodyHandlerFactory = new BodyHandlerFactory(this);
-
     }
 
 
@@ -158,7 +148,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             public void completed(final Connection c) {
                 try {
                     touchConnection(c, request);
-                    execute(c, request, handler, future);
+                    execute(c, request, handler, future, null);
                 } catch (Exception e) {
                     failed(e);
                 }
@@ -239,12 +229,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     public <T> ListenableFuture<T> execute(final Connection c,
                                            final Request request,
                                            final AsyncHandler<T> handler,
-                                           final GrizzlyResponseFuture<T> future) {
+                                           final GrizzlyResponseFuture<T> future,
+                                           final HttpTxContext httpTxContext) {
         Utils.addRequestInFlight(c);
-        if (HttpTxContext.get(c) == null) {
-            HttpTxContext.create(this, future, request, handler, c);
-        }
-        c.write(request, createWriteCompletionHandler(future));
+        final RequestInfoHolder requestInfoHolder =
+                new RequestInfoHolder(this, request, handler, future, httpTxContext);
+        c.write(requestInfoHolder, createWriteCompletionHandler(future));
 
         return future;
     }
@@ -253,7 +243,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     void initializeTransport(final AsyncHttpClientConfig clientConfig) {
 
         final FilterChainBuilder secure = FilterChainBuilder.stateless();
-        secure.add(new AsyncHttpClientTransportFilter());
+        secure.add(new TransportFilter());
 
         final int timeout = clientConfig.getRequestTimeoutInMs();
         if (timeout > 0) {
@@ -271,8 +261,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     new IdleTimeoutFilter.TimeoutResolver() {
                         @Override
                         public long getTimeout(FilterChainContext ctx) {
-                            final HttpTxContext context =
-                                    HttpTxContext.get(ctx.getConnection());
+                            final HttpTxContext context = HttpTxContext.get(ctx);
                             if (context != null) {
                                 if (context.isWSRequest()) {
                                     return clientConfig.getWebSocketIdleTimeoutInMs();
@@ -495,68 +484,24 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     void timeout(final Connection c) {
 
-        final HttpTxContext context = HttpTxContext.get(c);
-        if (context != null) {
-            HttpTxContext.set(c, null);
-            context.abort(new TimeoutException("Timeout exceeded"));
-        }
-
-    }
-
-
-    @SuppressWarnings({"unchecked"})
-    public boolean sendRequest(final FilterChainContext ctx,
-                               final Request request,
-                               final HttpRequestPacket requestPacket)
-    throws IOException {
-
-        boolean isWriteComplete = true;
-
-        if (requestHasEntityBody(request)) {
-            final HttpTxContext context = HttpTxContext.get(ctx.getConnection());
-            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
-            if (requestPacket.getHeaders().contains(Header.Expect)
-                    && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
-                // We have to set the content-length now as the headers will be flushed
-                // before the FileBodyHandler is invoked.  If we don't do it here, and
-                // the user didn't explicitly set the length, then the transfer-encoding
-                // will be chunked and zero-copy file transfer will not occur.
-                final File f = request.getFile();
-                if (f != null) {
-                    requestPacket.setContentLengthLong(f.length());
-                }
-                handler = new ExpectHandler(handler);
+        final String key = HttpTxContext.class.getName();
+        HttpTxContext ctx = null;
+        if (!Utils.isSpdyConnection(c)) {
+            ctx = (HttpTxContext) c.getAttributes().getAttribute(key);
+            if (ctx != null) {
+                c.getAttributes().removeAttribute(key);
+                ctx.abort(new TimeoutException("Timeout exceeded"));
             }
-            context.setBodyHandler(handler);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("REQUEST: {}", requestPacket);
-            }
-            isWriteComplete = handler.doHandle(ctx, request, requestPacket);
         } else {
-            HttpContent content = HttpContent.builder(requestPacket).last(true).build();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("REQUEST: {}", requestPacket);
-            }
-            ctx.write(content, ctx.getTransportContext().getCompletionHandler());
+            throw new IllegalStateException();
         }
 
-
-        return isWriteComplete;
-    }
-
-
-    public static boolean requestHasEntityBody(final Request request) {
-
-        final String method = request.getMethod();
-        return (Method.POST.matchesMethod(method)
-                || Method.PUT.matchesMethod(method)
-                || Method.PATCH.matchesMethod(method)
-                || Method.DELETE.matchesMethod(method));
+//        if (context != null) {
+//            HttpTxContext.set(c, null);
+//            context.abort(new TimeoutException("Timeout exceeded"));
+//        }
 
     }
-
-
-    // ----------------------------------------------------------- Inner Classes
 
 
     // ---------------------------------------------------------- Nested Classes

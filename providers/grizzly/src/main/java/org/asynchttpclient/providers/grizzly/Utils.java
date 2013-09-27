@@ -13,10 +13,12 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import org.asynchttpclient.Request;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
+import org.glassfish.grizzly.http.Method;
 
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,5 +89,15 @@ public final class Utils {
     public static boolean isSpdyConnection(final Connection c) {
         Boolean result = SPDY.get(c);
         return (result != null ? result : false);
+    }
+
+    public static boolean requestHasEntityBody(final Request request) {
+
+        final String method = request.getMethod();
+        return (Method.POST.matchesMethod(method)
+                || Method.PUT.matchesMethod(method)
+                || Method.PATCH.matchesMethod(method)
+                || Method.DELETE.matchesMethod(method));
+
     }
 }

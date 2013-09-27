@@ -103,12 +103,13 @@ public final class AuthorizationHandler implements StatusHandler {
             final HttpTxContext newContext =
                     httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
-            HttpTxContext.set(c, newContext);
+            HttpTxContext.set(ctx, newContext);
             newContext.setInvocationStatus(STOP);
             httpTransactionContext.getProvider().execute(c,
                                                          req,
                                                          httpTransactionContext.getHandler(),
-                                                         httpTransactionContext.getFuture());
+                                                         httpTransactionContext.getFuture(),
+                                                         newContext);
             return false;
         } catch (Exception e) {
             httpTransactionContext.abort(e);

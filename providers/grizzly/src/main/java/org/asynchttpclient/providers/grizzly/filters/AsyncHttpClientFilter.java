@@ -29,7 +29,10 @@ import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.GrizzlyResponseFuture;
 import org.asynchttpclient.providers.grizzly.HttpTxContext;
+import org.asynchttpclient.providers.grizzly.RequestInfoHolder;
 import org.asynchttpclient.providers.grizzly.Utils;
+import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
+import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandlerFactory;
 import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
@@ -42,6 +45,7 @@ import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
+import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.ProcessingState;
@@ -54,6 +58,7 @@ import org.glassfish.grizzly.ssl.SSLConnectionContext;
 import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.websockets.Version;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -63,9 +68,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+import org.slf4j.Logger;
 
 import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
@@ -83,9 +90,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private ConcurrentLinkedQueue<HttpRequestPacketImpl> requestCache
                     = new ConcurrentLinkedQueue<HttpRequestPacketImpl>();
+    private final Logger logger;
 
     private final AsyncHttpClientConfig config;
     private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
+    private final BodyHandlerFactory bodyHandlerFactory;
 
     private static final Attribute<Boolean> PROXY_AUTH_FAILURE =
            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
@@ -95,9 +104,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     public AsyncHttpClientFilter(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider, final AsyncHttpClientConfig config) {
         this.grizzlyAsyncHttpProvider = grizzlyAsyncHttpProvider;
-
         this.config = config;
-
+        bodyHandlerFactory = new BodyHandlerFactory(grizzlyAsyncHttpProvider);
+        logger = GrizzlyAsyncHttpProvider.LOGGER;
     }
 
 
@@ -125,9 +134,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     throws IOException {
 
         Object message = ctx.getMessage();
-        if (message instanceof Request) {
+        if (message instanceof RequestInfoHolder) {
             ctx.setMessage(null);
-            if (!sendAsGrizzlyRequest((Request) message, ctx)) {
+            if (!sendAsGrizzlyRequest((RequestInfoHolder) message, ctx)) {
                 return ctx.getSuspendAction();
             }
         } else if (message instanceof Buffer) {
@@ -182,7 +191,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             grizzlyAsyncHttpProvider.execute(ctx.getConnection(),
                                              request,
                                              handler,
-                                             future);
+                                             future,
+                                             HttpTxContext.get(ctx));
             return ctx.getSuspendAction();
         }
 
@@ -203,32 +213,36 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
     }
     
-    private boolean sendAsGrizzlyRequest(final Request request,
+    private boolean sendAsGrizzlyRequest(final RequestInfoHolder requestInfoHolder,
                                          final FilterChainContext ctx)
     throws IOException {
 
-        final HttpTxContext httpCtx = HttpTxContext.get(ctx.getConnection());
+        HttpTxContext httpTxContext = requestInfoHolder.getHttpTxContext();
+        if (httpTxContext == null) {
+            httpTxContext = HttpTxContext.create(requestInfoHolder);
+        }
 
-        if (checkProxyAuthFailure(ctx, httpCtx)) {
+        if (checkProxyAuthFailure(ctx, httpTxContext)) {
             return true;
         }
 
-        final URI uri = httpCtx.getRequest().getURI();
+        final URI uri = httpTxContext.getRequest().getURI();
         boolean secure = Utils.isSecure(uri);
 
         // If the request is secure, check to see if an error occurred during
         // the handshake.  We have to do this here, as the error would occur
         // out of the scope of a HttpTxContext so there would be
         // no good way to communicate the problem to the caller.
-        if (secure && checkHandshakeError(ctx, httpCtx)) {
+        if (secure && checkHandshakeError(ctx, httpTxContext)) {
             return true;
         }
 
-        if (isUpgradeRequest(httpCtx.getHandler()) && isWSRequest(httpCtx.getRequestUrl())) {
-            httpCtx.setWSRequest(true);
-            convertToUpgradeRequest(httpCtx);
+        if (isUpgradeRequest(httpTxContext.getHandler()) && isWSRequest(httpTxContext.getRequestUrl())) {
+            httpTxContext.setWSRequest(true);
+            convertToUpgradeRequest(httpTxContext);
         }
 
+        final Request request = httpTxContext.getRequest();
         HttpRequestPacket requestPacket = requestCache.poll();
         if (requestPacket == null) {
             requestPacket = new HttpRequestPacketImpl();
@@ -244,7 +258,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             requestPacket.setRequestURI(uri.getPath());
         }
 
-        if (GrizzlyAsyncHttpProvider.requestHasEntityBody(request)) {
+        if (Utils.requestHasEntityBody(request)) {
             final long contentLength = request.getContentLength();
             if (contentLength > 0) {
                 requestPacket.setContentLengthLong(contentLength);
@@ -254,16 +268,16 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             }
         }
 
-        if (httpCtx.isWSRequest()) {
+        if (httpTxContext.isWSRequest()) {
             try {
-                final URI wsURI = new URI(httpCtx.getWsRequestURI());
-                httpCtx.setProtocolHandler(Version.RFC6455.createHandler(true));
-                httpCtx.setHandshake(
-                        httpCtx.getProtocolHandler().createHandShake(wsURI));
+                final URI wsURI = new URI(httpTxContext.getWsRequestURI());
+                httpTxContext.setProtocolHandler(Version.RFC6455.createHandler(true));
+                httpTxContext.setHandshake(
+                        httpTxContext.getProtocolHandler().createHandShake(wsURI));
                 requestPacket = (HttpRequestPacket)
-                        httpCtx.getHandshake().composeHeaders().getHttpHeader();
+                        httpTxContext.getHandshake().composeHeaders().getHttpHeader();
             } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Invalid WS URI: " + httpCtx.getWsRequestURI());
+                throw new IllegalArgumentException("Invalid WS URI: " + httpTxContext.getWsRequestURI());
             }
         }
 
@@ -273,7 +287,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         addGeneralHeaders(request, requestPacket);
         addCookies(request, requestPacket);
 
-        initTransferCompletionHandler(request, httpCtx.getHandler());
+        initTransferCompletionHandler(request, httpTxContext.getHandler());
 
         final HttpRequestPacket requestPacketLocal = requestPacket;
         FilterChainContext sendingCtx = ctx;
@@ -284,11 +298,55 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             // use a different FilterChainContext when invoking sendRequest().
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
+        final Connection c = ctx.getConnection();
+        HttpContext.newInstance(ctx, c, c, c);
+        HttpTxContext.set(ctx, httpTxContext);
+        return sendRequest(sendingCtx, request, requestPacketLocal);
 
-        return grizzlyAsyncHttpProvider.sendRequest(sendingCtx,
-                                                    request,
-                                                    requestPacketLocal);
+    }
 
+    @SuppressWarnings("unchecked")
+    public boolean sendRequest(final FilterChainContext ctx,
+                               final Request request,
+                               final HttpRequestPacket requestPacket)
+    throws IOException {
+
+        boolean isWriteComplete = true;
+
+        if (Utils.requestHasEntityBody(request)) {
+            final HttpTxContext context =
+                    HttpTxContext.get(ctx);
+            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
+            if (requestPacket.getHeaders().contains(Header.Expect)
+                    && requestPacket.getHeaders()
+                        .getValue(1)
+                        .equalsIgnoreCase("100-Continue")) {
+                // We have to set the content-length now as the headers will be flushed
+                // before the FileBodyHandler is invoked.  If we don't do it here, and
+                // the user didn't explicitly set the length, then the transfer-encoding
+                // will be chunked and zero-copy file transfer will not occur.
+                final File f = request.getFile();
+                if (f != null) {
+                    requestPacket.setContentLengthLong(f.length());
+                }
+                handler = new ExpectHandler(handler);
+            }
+            context.setBodyHandler(handler);
+            if (logger.isDebugEnabled()) {
+                logger.debug("REQUEST: {}", requestPacket);
+            }
+            isWriteComplete = handler.doHandle(ctx, request, requestPacket);
+        } else {
+            HttpContent content =
+                    HttpContent.builder(requestPacket).last(true).build();
+            if (logger.isDebugEnabled()) {
+                logger.debug("REQUEST: {}", requestPacket);
+            }
+            ctx.write(content, ctx.getTransportContext().getCompletionHandler());
+        }
+
+
+        return isWriteComplete;
     }
 
     private static FilterChainContext checkAndHandleFilterChainUpdate(final FilterChainContext ctx,

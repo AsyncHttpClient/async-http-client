@@ -16,7 +16,6 @@ package org.asynchttpclient.providers.grizzly.filters.events;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 
-import java.util.concurrent.Callable;
 
 /**
  * {@link FilterChainEvent} to dynamically enable/disable the SSLFilter on

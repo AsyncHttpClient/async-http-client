@@ -89,11 +89,12 @@ public final class RedirectHandler implements StatusHandler {
             newContext.setInvocationStatus(CONTINUE);
             newContext.setRequest(requestToSend);
             newContext.setRequestUrl(requestToSend.getUrl());
-            HttpTxContext.set(c, newContext);
+            HttpTxContext.set(ctx, newContext);
             httpTransactionContext.getProvider().execute(c,
                                                          requestToSend,
                                                          newContext.getHandler(),
-                                                         newContext.getFuture());
+                                                         newContext.getFuture(),
+                                                         newContext);
             return false;
         } catch (Exception e) {
             httpTransactionContext.abort(e);
