@@ -20,8 +20,6 @@ import java.io.IOException;
 
 /**
  * Interface to be used when implementing custom asynchronous I/O HTTP client.
- * By default, the {@link org.asynchttpclient.providers.jdk.JDKAsyncHttpProvider} is used if
- * none of the other provider modules are found on the classpath.
  */
 public interface AsyncHttpProvider extends Closeable {
 
