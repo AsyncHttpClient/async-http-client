@@ -22,7 +22,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -183,7 +182,7 @@ public interface Response {
     boolean hasResponseBody();
 
     public static class ResponseBuilder {
-        private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
+        private final List<HttpResponseBodyPart> bodyParts = new ArrayList<HttpResponseBodyPart>();
         private HttpResponseStatus status;
         private HttpResponseHeaders headers;
 
