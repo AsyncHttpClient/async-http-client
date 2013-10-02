@@ -170,7 +170,7 @@ final class HttpProtocol extends Protocol {
         return l;
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
+    private void finishUpdate(final NettyResponseFuture<?> future, ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
         if (lastValidChunk && future.isKeepAlive()) {
             channels.drainChannel(ctx, future);
         } else {
@@ -183,7 +183,7 @@ final class HttpProtocol extends Protocol {
         markAsDone(future, ctx);
     }
 
-    private final boolean updateBodyAndInterrupt(final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
+    private final boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
         boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
         if (c.closeUnderlyingConnection()) {
             future.setKeepAlive(false);
@@ -191,7 +191,7 @@ final class HttpProtocol extends Protocol {
         return state;
     }
 
-    private void markAsDone(final NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
+    private void markAsDone(NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
         // We need to make sure everything is OK before adding the
         // connection back to the pool.
         try {
@@ -409,7 +409,6 @@ final class HttpProtocol extends Protocol {
                     }
 
                     if (!interrupt && chunk.content().readableBytes() > 0) {
-                        // FIXME why
                         interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(chunk.content(), last));
                     }
 

@@ -66,6 +66,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final CountDownLatch latch = new CountDownLatch(1);
 
     // state mutated from outside the event loop
+    // TODO check if they are indeed mutated outside the event loop
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
     private final AtomicInteger redirectCount = new AtomicInteger();
