@@ -25,6 +25,6 @@ public class NettySimpleAsyncClientErrorBehaviourTest extends SimpleAsyncClientE
     }
 
     public String getProviderClass() {
-        return NettyProviderUtil.class.getName();
+        return NettyAsyncHttpProvider.class.getName();
     }
 }
