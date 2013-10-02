@@ -117,16 +117,6 @@ public abstract class Part implements org.asynchttpclient.Part {
     static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
-     * Return the boundary string.
-     * 
-     * @return the boundary string
-     * @deprecated uses a constant string. Rather use {@link #getPartBoundary}
-     */
-    public static String getBoundary() {
-        return BOUNDARY;
-    }
-
-    /**
      * The ASCII bytes to use as the multipart boundary.
      */
     private byte[] boundaryBytes;
@@ -165,7 +155,6 @@ public abstract class Part implements org.asynchttpclient.Part {
      * Gets the part boundary to be used.
      * 
      * @return the part boundary as an array of bytes.
-     * @since 3.0
      */
     protected byte[] getPartBoundary() {
         if (boundaryBytes == null) {

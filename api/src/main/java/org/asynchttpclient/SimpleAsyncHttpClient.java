@@ -557,8 +557,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setRealmDomain(String domain) {
-            realm().setDomain(domain);
+        public Builder setRealmNtlmDomain(String domain) {
+            realm().setNtlmDomain(domain);
             return this;
         }
 

@@ -124,14 +124,6 @@ public interface Request {
      * Return the current size of the content-lenght header based on the body's size.
      *
      * @return the current size of the content-lenght header based on the body's size.
-     * @deprecated
-     */
-    public long getLength();
-
-    /**
-     * Return the current size of the content-lenght header based on the body's size.
-     *
-     * @return the current size of the content-lenght header based on the body's size.
      */
     public long getContentLength();
 

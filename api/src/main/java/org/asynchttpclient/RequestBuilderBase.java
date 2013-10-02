@@ -98,7 +98,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
-                this.followRedirects = prototype.isRedirectOverrideSet()? prototype.isRedirectEnabled() : null;
+                this.followRedirects = prototype.isRedirectOverrideSet() ? prototype.isRedirectEnabled() : null;
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
@@ -107,16 +107,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        /* @Override */
-
+        @Override
         public String getMethod() {
             return method;
         }
 
+        @Override
         public InetAddress getInetAddress() {
             return address;
         }
 
+        @Override
         public InetAddress getLocalAddress() {
             return localAddress;
         }
@@ -130,12 +131,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        /* @Override */
+        @Override
         public String getUrl() {
             return removeTrailingSlash(getURI());
         }
 
-        /* @Override */
+        @Override
         public String getRawUrl() {
             return removeTrailingSlash(getRawURI());
         }
@@ -208,7 +209,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return URI.create(builder.toString());
         }
 
-        /* @Override */
+        @Override
         public FluentCaseInsensitiveStringsMap getHeaders() {
             if (headers == null) {
                 headers = new FluentCaseInsensitiveStringsMap();
@@ -221,87 +222,85 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return headers != null && !headers.isEmpty();
         }
 
-        /* @Override */
+        @Override
         public Collection<Cookie> getCookies() {
             if (cookies == null) {
-                cookies = Collections.unmodifiableCollection(Collections.<Cookie>emptyList());
+                cookies = Collections.unmodifiableCollection(Collections.<Cookie> emptyList());
             }
             return cookies;
         }
 
-        /* @Override */
+        @Override
         public byte[] getByteData() {
             return byteData;
         }
 
-        /* @Override */
+        @Override
         public String getStringData() {
             return stringData;
         }
 
-        /* @Override */
+        @Override
         public InputStream getStreamData() {
             return streamData;
         }
 
-        /* @Override */
+        @Override
         public BodyGenerator getBodyGenerator() {
             return bodyGenerator;
         }
 
-        /* @Override */
-
-        /**
-         * @return
-         * @deprecated
-         */
-        public long getLength() {
-            return length;
-        }
-
+        @Override
         public long getContentLength() {
             return length;
         }
 
-        /* @Override */
+        @Override
         public FluentStringsMap getParams() {
             return params;
         }
 
-        /* @Override */
+        @Override
         public List<Part> getParts() {
             return parts;
         }
 
-        /* @Override */
+        @Override
         public String getVirtualHost() {
             return virtualHost;
         }
 
+        @Override
         public FluentStringsMap getQueryParams() {
             return queryParams;
         }
 
+        @Override
         public ProxyServer getProxyServer() {
             return proxyServer;
         }
 
+        @Override
         public Realm getRealm() {
             return realm;
         }
 
+        @Override
         public File getFile() {
             return file;
         }
 
+        @Override
         public boolean isRedirectEnabled() {
-            return (followRedirects != null && followRedirects);
+            return followRedirects != null && followRedirects;
         }
 
-        public boolean isRedirectOverrideSet(){
+        @Override
+        public boolean isRedirectOverrideSet() {
             return followRedirects != null;
         }
 
+        @Override
         public int getRequestTimeoutInMs() {
             return requestTimeoutInMs;
         }
@@ -377,10 +376,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setInetAddress(InetAddress address) {
-    	request.address = address;
-    	return derived.cast(this);
+        request.address = address;
+        return derived.cast(this);
     }
-    
+
     public T setLocalInetAddress(InetAddress address) {
         request.localAddress = address;
         return derived.cast(this);
@@ -407,7 +406,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 url = s + url.substring(uri.getScheme().length() + 1);
                 return buildURI(url);
             } else {
-                throw new IllegalArgumentException("Invalid url "  + uri.toString());
+                throw new IllegalArgumentException("Invalid url " + uri.toString());
             }
         }
 

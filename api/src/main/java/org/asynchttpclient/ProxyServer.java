@@ -57,18 +57,6 @@ public class ProxyServer {
     private String encoding = "UTF-8";
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
-    private boolean isBasic = true;
-
-    @Deprecated
-    public boolean isBasic() {
-		return isBasic;
-	}
-
-    @Deprecated
-	public void setBasic(boolean isBasic) {
-		this.isBasic = isBasic;
-	}
-
 	public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
         this.host = host;

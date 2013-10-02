@@ -544,7 +544,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                         break;
                     case NTLM:
                         jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
-                        System.setProperty(NTLM_DOMAIN, realm.getDomain());
+                        System.setProperty(NTLM_DOMAIN, realm.getNtlmDomain());
                         break;
                     case NONE:
                         break;

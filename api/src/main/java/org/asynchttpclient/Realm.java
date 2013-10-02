@@ -168,16 +168,6 @@ public class Realm {
      * Return the NTLM domain to use. This value should map the JDK
      *
      * @return the NTLM domain
-     * @deprecated - use getNtlmDomain()
-     */
-    public String getDomain() {
-        return domain;
-    }
-
-    /**
-     * Return the NTLM domain to use. This value should map the JDK
-     *
-     * @return the NTLM domain
      */
     public String getNtlmDomain() {
         return domain;
@@ -279,17 +269,6 @@ public class Realm {
         private String enc = "UTF-8";
         private String host = "localhost";
         private boolean messageType2Received = false;
-
-        @Deprecated
-        public String getDomain() {
-            return domain;
-        }
-
-        @Deprecated
-        public RealmBuilder setDomain(String domain) {
-            this.domain = domain;
-            return this;
-        }
 
         public String getNtlmDomain() {
             return domain;
@@ -630,5 +609,4 @@ public class Realm {
                     opaque);
         }
     }
-
 }
