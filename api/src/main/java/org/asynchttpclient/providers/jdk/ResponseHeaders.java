@@ -30,7 +30,6 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final FluentCaseInsensitiveStringsMap headers;
 
     public ResponseHeaders(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
-        super(uri, provider, false);
         this.urlConnection = urlConnection;
         headers = computerHeaders();
     }

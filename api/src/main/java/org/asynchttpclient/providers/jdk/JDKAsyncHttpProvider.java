@@ -12,43 +12,9 @@
  */
 package org.asynchttpclient.providers.jdk;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.asynchttpclient.util.MiscUtil.*;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.Body;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.MaxRedirectException;
-import org.asynchttpclient.ProgressAsyncHandler;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Realm;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.IOExceptionFilter;
-import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.multipart.MultipartRequestEntity;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.AuthenticatorUtils;
-import org.asynchttpclient.util.ProxyUtils;
-import org.asynchttpclient.util.SslUtils;
-import org.asynchttpclient.util.UTF8UrlEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.naming.AuthenticationException;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -78,7 +44,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import javax.naming.AuthenticationException;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.Body;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.MaxRedirectException;
+import org.asynchttpclient.ProgressAsyncHandler;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Realm;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.multipart.MultipartRequestEntity;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.AuthenticatorUtils;
+import org.asynchttpclient.util.ProxyUtils;
+import org.asynchttpclient.util.SslUtils;
+import org.asynchttpclient.util.UTF8UrlEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
@@ -208,10 +204,6 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
     }
 
-    public Response prepareResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new JDKResponse(status, headers, bodyParts);
-    }
-
     private final class AsyncHttpUrlConnection<T> implements Callable<T> {
 
         private HttpURLConnection urlConnection;
@@ -254,7 +246,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, statusCode);
 
-                ResponseStatus status = new ResponseStatus(uri, urlConnection, JDKAsyncHttpProvider.this);
+                ResponseStatus status = new ResponseStatus(uri, urlConnection, config);
                 FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
                 for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                     fc = asyncFilter.filter(fc);

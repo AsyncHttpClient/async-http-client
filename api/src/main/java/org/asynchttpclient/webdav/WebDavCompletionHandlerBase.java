@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -81,12 +82,12 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     /* @Override */
     public final T onCompleted() throws Exception {
         if (status != null) {
-            Response response = status.provider().prepareResponse(status, headers, bodies);
+            Response response = status.prepareResponse(headers, bodies);
             Document document = null;
             if (status.getStatusCode() == 207) {
                 document = readXMLResponse(response.getResponseBodyAsStream());
             }
-            return onCompleted(new WebDavResponse(status.provider().prepareResponse(status, headers, bodies), document));
+            return onCompleted(new WebDavResponse(status.prepareResponse(headers, bodies), document));
         } else {
             throw new IllegalStateException("Status is null");
         }
@@ -111,47 +112,52 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
     private class HttpStatusWrapper extends HttpResponseStatus {
 
-        private final HttpResponseStatus wrapper;
+        private final HttpResponseStatus wrapped;
 
         private final String statusText;
 
         private final int statusCode;
 
         public HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
-            super(wrapper.getUrl(), wrapper.provider());
-            this.wrapper = wrapper;
+            super(wrapper.getUri(), null);
+            this.wrapped = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;
+        }
+        
+        @Override
+        public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+            return wrapped.prepareResponse(headers, bodyParts);
         }
 
         @Override
         public int getStatusCode() {
-            return (statusText == null ? wrapper.getStatusCode() : statusCode);
+            return (statusText == null ? wrapped.getStatusCode() : statusCode);
         }
 
         @Override
         public String getStatusText() {
-            return (statusText == null ? wrapper.getStatusText() : statusText);
+            return (statusText == null ? wrapped.getStatusText() : statusText);
         }
 
         @Override
         public String getProtocolName() {
-            return wrapper.getProtocolName();
+            return wrapped.getProtocolName();
         }
 
         @Override
         public int getProtocolMajorVersion() {
-            return wrapper.getProtocolMajorVersion();
+            return wrapped.getProtocolMajorVersion();
         }
 
         @Override
         public int getProtocolMinorVersion() {
-            return wrapper.getProtocolMinorVersion();
+            return wrapped.getProtocolMinorVersion();
         }
 
         @Override
         public String getProtocolText() {
-            return wrapper.getStatusText();
+            return wrapped.getStatusText();
         }
     }
 

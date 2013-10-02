@@ -32,7 +32,6 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private boolean closeConnection;
 
     public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
-        super(uri, provider);
         this.chunk = chunk;
         isLast = last;
     }

@@ -13,12 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.HttpResponseStatus;
-
-import org.glassfish.grizzly.http.HttpResponsePacket;
-
 import java.net.URI;
+import java.util.List;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 /**
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client
@@ -43,9 +46,9 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
     public GrizzlyResponseStatus(final HttpResponsePacket response,
                                  final URI uri,
-                                 final AsyncHttpProvider provider) {
+                                 AsyncHttpClientConfig config) {
 
-        super(uri, provider);
+        super(uri, config);
         statusCode = response.getStatus();
         statusText = response.getReasonPhrase();
         majorVersion = response.getProtocol().getMajorVersion();
@@ -57,7 +60,14 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
     // ----------------------------------------- Methods from HttpResponseStatus
 
-
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new GrizzlyResponse(this,
+                headers,
+                bodyParts,
+                config.isRfc6265CookieEncoding());
+    };
+    
     /**
      * {@inheritDoc}
      */

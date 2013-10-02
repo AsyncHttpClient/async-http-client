@@ -37,9 +37,8 @@ public class ResponseHeaders extends HttpResponseHeaders {
         this(uri, responseHeaders, null);
     }
 
-    // FIXME unused AsyncHttpProvider provider
     public ResponseHeaders(URI uri,HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
-        super(uri, null, traillingHeaders != null);
+        super(traillingHeaders != null);
         this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;
         headers = computerHeaders();

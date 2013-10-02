@@ -47,7 +47,7 @@ public abstract class ResponseBase implements Response
 
     /* @Override */
     public final URI getUri() {
-        return status.getUrl();
+        return status.getUri();
     }
 
     /* @Override */

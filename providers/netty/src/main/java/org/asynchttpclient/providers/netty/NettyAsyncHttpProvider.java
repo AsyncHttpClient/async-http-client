@@ -16,18 +16,13 @@
 package org.asynchttpclient.providers.netty;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseHeaders;
-import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
@@ -73,11 +68,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
         } catch (Throwable t) {
             LOGGER.warn("Unexpected error on close", t);
         }
-    }
-
-    @Override
-    public Response prepareResponse(final HttpResponseStatus status, final HttpResponseHeaders headers, final List<HttpResponseBodyPart> bodyParts) {
-        throw new UnsupportedOperationException("Mocked, should be refactored");
     }
 
     @Override

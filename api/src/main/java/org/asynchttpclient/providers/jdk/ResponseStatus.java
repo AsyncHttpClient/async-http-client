@@ -12,12 +12,16 @@
  */
 package org.asynchttpclient.providers.jdk;
 
-import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.util.List;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
@@ -26,9 +30,14 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpURLConnection urlConnection;
 
-    public ResponseStatus(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
-        super(uri, provider);
+    public ResponseStatus(URI uri, HttpURLConnection urlConnection, AsyncHttpClientConfig config) {
+        super(uri, config);
         this.urlConnection = urlConnection;
+    }
+    
+    @Override
+    public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
+        return new JDKResponse(this, headers, bodyParts);
     }
 
     /**

@@ -18,17 +18,12 @@ package org.asynchttpclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public abstract class HttpResponseBodyPart extends HttpContent {
-
-    public HttpResponseBodyPart(URI uri, AsyncHttpProvider provider) {
-        super(uri, provider);
-    }
+public abstract class HttpResponseBodyPart {
 
     /**
      * Return length of this part in bytes.

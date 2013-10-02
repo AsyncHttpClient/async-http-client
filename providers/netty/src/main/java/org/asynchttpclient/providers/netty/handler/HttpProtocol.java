@@ -242,7 +242,7 @@ final class HttpProtocol extends Protocol {
             ProxyServer proxyServer, HttpResponse response) throws Exception {
         Request request = future.getRequest();
         int statusCode = response.getStatus().code();
-        HttpResponseStatus status = new ResponseStatus(future.getURI(), response);
+        HttpResponseStatus status = new ResponseStatus(future.getURI(), response, config);
         HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
         final FluentCaseInsensitiveStringsMap headers = request.getHeaders();
         final RequestBuilder builder = new RequestBuilder(future.getRequest());

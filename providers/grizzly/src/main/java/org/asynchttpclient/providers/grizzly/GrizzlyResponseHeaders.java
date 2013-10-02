@@ -13,14 +13,11 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;
-
-import java.net.URI;
 
 
 /**
@@ -39,11 +36,8 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
     // ------------------------------------------------------------ Constructors
 
 
-    public GrizzlyResponseHeaders(final HttpResponsePacket response,
-                                  final URI uri,
-                                  final AsyncHttpProvider provider) {
+    public GrizzlyResponseHeaders(final HttpResponsePacket response) {
 
-        super(uri, provider);
         grizzlyHeaders = new MimeHeaders();
         grizzlyHeaders.copyFrom(response.getHeaders());
 

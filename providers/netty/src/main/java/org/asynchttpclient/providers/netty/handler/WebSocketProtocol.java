@@ -78,7 +78,7 @@ final class WebSocketProtocol extends Protocol {
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
 
-            HttpResponseStatus s = new ResponseStatus(future.getURI(), response);
+            HttpResponseStatus s = new ResponseStatus(future.getURI(), response, config);
             HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
 
             // FIXME there's a method for that IIRC
@@ -116,7 +116,7 @@ final class WebSocketProtocol extends Protocol {
 
             boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-            s = new ResponseStatus(future.getURI(), response);
+            s = new ResponseStatus(future.getURI(), response, config);
             final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
 
             final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;

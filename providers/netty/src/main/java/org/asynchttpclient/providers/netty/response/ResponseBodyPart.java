@@ -36,9 +36,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final boolean last;
     private boolean closeConnection = false;
 
-    // FIXME unused AsyncHttpProvider provider
     public ResponseBodyPart(URI uri, ByteBuf buf, boolean last) {
-        super(uri, null);
         bytes = ByteBufUtil.byteBuf2bytes(buf);
         this.last = last;
     }

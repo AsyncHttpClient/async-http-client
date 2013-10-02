@@ -189,22 +189,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
-    public Response prepareResponse(HttpResponseStatus status,
-                                    HttpResponseHeaders headers,
-                                    List<HttpResponseBodyPart> bodyParts) {
-
-        return new GrizzlyResponse(status,
-                                   headers,
-                                   bodyParts,
-                                   clientConfig.isRfc6265CookieEncoding());
-
-    }
-
-
     // ---------------------------------------------------------- Public Methods
 
 
@@ -321,7 +305,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         final AsyncHttpClientEventFilter eventFilter;
-        final EventHandler handler = new EventHandler(this);
+        final EventHandler handler = new EventHandler(clientConfig);
         if (providerConfig != null) {
             eventFilter =
                     new AsyncHttpClientEventFilter(handler,
@@ -434,7 +418,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         spdyFcb.set(idx, new SpdyFramingFilter());
         final SpdyMode spdyMode = ((npnEnabled) ? SpdyMode.NPN : SpdyMode.PLAIN);
         AsyncSpdyClientEventFilter spdyFilter =
-                new AsyncSpdyClientEventFilter(new EventHandler(this),
+                new AsyncSpdyClientEventFilter(new EventHandler(clientConfig),
                                                spdyMode,
                                                clientConfig.executorService());
         spdyFilter.setInitialWindowSize(clientConfig.getSpdyInitialWindowSize());

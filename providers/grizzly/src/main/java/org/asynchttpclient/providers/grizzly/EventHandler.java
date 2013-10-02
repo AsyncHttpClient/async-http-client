@@ -14,6 +14,7 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Cookie;
 import org.asynchttpclient.MaxRedirectException;
@@ -74,15 +75,15 @@ public final class EventHandler {
     }
 
 
-    private final GrizzlyAsyncHttpProvider provider;
+    private final AsyncHttpClientConfig config;
     GrizzlyAsyncHttpProvider.Cleanup cleanup;
 
 
     // -------------------------------------------------------- Constructors
 
 
-    EventHandler(final GrizzlyAsyncHttpProvider provider) {
-        this.provider = provider;
+    EventHandler(final AsyncHttpClientConfig config) {
+        this.config = config;
     }
 
 
@@ -107,8 +108,7 @@ public final class EventHandler {
                 context.setCurrentState(handler.onBodyPartReceived(
                         new GrizzlyResponseBodyPart(content,
                                                     context.getRequest().getURI(),
-                                                    ctx.getConnection(),
-                                                    provider)));
+                                                    ctx.getConnection())));
             } catch (Exception e) {
                 handler.onThrowable(e);
             }
@@ -188,7 +188,7 @@ public final class EventHandler {
         final GrizzlyResponseStatus responseStatus =
                 new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
                         context.getRequest().getURI(),
-                        provider);
+                        config);
         context.setResponseStatus(responseStatus);
         if (context.getStatusHandler() != null) {
             return;
@@ -238,9 +238,7 @@ public final class EventHandler {
 
         final AsyncHandler handler = context.getHandler();
         final GrizzlyResponseHeaders responseHeaders =
-                new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                                           context.getRequest().getURI(),
-                                           provider);
+                new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader);
         if (context.getProvider().getClientConfig().hasResponseFilters()) {
             final List<ResponseFilter> filters = context.getProvider()
                     .getClientConfig().getResponseFilters();

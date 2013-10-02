@@ -48,9 +48,7 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     public GrizzlyResponseBodyPart(final HttpContent content,
                                    final URI uri,
-                                   final Connection<?> connection,
-                                   final AsyncHttpProvider provider) {
-        super(uri, provider);
+                                   final Connection<?> connection) {
         this.content = content;
         this.connection = connection;
 
