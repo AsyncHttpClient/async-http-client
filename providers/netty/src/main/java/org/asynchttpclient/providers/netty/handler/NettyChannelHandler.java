@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
@@ -49,13 +50,13 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     private final Protocol httpProtocol;
     private final Protocol webSocketProtocol;
 
-    public NettyChannelHandler(AsyncHttpClientConfig config, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
+    public NettyChannelHandler(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
         this.config = config;
         this.requestSender = requestSender;
         this.channels = channels;
         this.closed = isClose;
-        httpProtocol = new HttpProtocol(channels, config, requestSender);
-        webSocketProtocol = new WebSocketProtocol(channels, config, requestSender);
+        httpProtocol = new HttpProtocol(channels, config, nettyConfig, requestSender);
+        webSocketProtocol = new WebSocketProtocol(channels, config, nettyConfig, requestSender);
     }
 
     @Override

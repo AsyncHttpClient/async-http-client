@@ -15,60 +15,18 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
-import io.netty.buffer.ByteBuf;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.providers.netty.util.ByteBufUtil;
 
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class ResponseBodyPart extends HttpResponseBodyPart {
+public abstract class ResponseBodyPart extends HttpResponseBodyPart {
 
-    private final byte[] bytes;
     private final boolean last;
-    private boolean closeConnection = false;
+    private boolean closeConnection;
 
-    public ResponseBodyPart(ByteBuf buf, boolean last) {
-        bytes = ByteBufUtil.byteBuf2bytes(buf);
+    public ResponseBodyPart(boolean last) {
         this.last = last;
-    }
-
-    /**
-     * Return the response body's part bytes received.
-     * 
-     * @return the response body's part bytes received.
-     */
-    @Override
-    public byte[] getBodyPartBytes() {
-        return bytes;
-    }
-
-    @Override
-    public InputStream readBodyPartBytes() {
-        return new ByteArrayInputStream(bytes);
-    }
-
-    @Override
-    public int length() {
-        return bytes.length;
-    }
-
-    @Override
-    public int writeTo(OutputStream outputStream) throws IOException {
-        outputStream.write(bytes);
-        return length();
-    }
-
-    @Override
-    public ByteBuffer getBodyByteBuffer() {
-        return ByteBuffer.wrap(bytes);
     }
 
     /**
@@ -83,7 +41,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      * {@inheritDoc}
      */
     @Override
-    public void markUnderlyingConnectionAsClosed() {
+    public void markUnderlyingConnectionAsToBeClosed() {
         closeConnection = true;
     }
 
@@ -91,7 +49,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
      * {@inheritDoc}
      */
     @Override
-    public boolean closeUnderlyingConnection() {
+    public boolean isUnderlyingConnectionToBeClosed() {
         return closeConnection;
     }
 }

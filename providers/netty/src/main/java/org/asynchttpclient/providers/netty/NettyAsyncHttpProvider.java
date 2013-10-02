@@ -34,7 +34,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
 
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Channels channels;
     private final NettyRequestSender requestSender;
@@ -43,13 +43,13 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         this.config = config;
-        asyncHttpProviderConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
+        nettyConfig = config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig ? //
         NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig())
                 : new NettyAsyncHttpProviderConfig();
 
-        channels = new Channels(config, asyncHttpProviderConfig);
+        channels = new Channels(config, nettyConfig);
         requestSender = new NettyRequestSender(closed, config, channels);
-        channelHandler = new NettyChannelHandler(config, requestSender, channels, closed);
+        channelHandler = new NettyChannelHandler(config, nettyConfig, requestSender, channels, closed);
         channels.configure(channelHandler);
     }
 
@@ -72,6 +72,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return requestSender.sendRequest(request, asyncHandler, null, asyncHttpProviderConfig.isAsyncConnect(), false);
+        return requestSender.sendRequest(request, asyncHandler, null, nettyConfig.isAsyncConnect(), false);
     }
 }

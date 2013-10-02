@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient.providers.netty;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -25,6 +26,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.response.DefaultResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
+import org.asynchttpclient.providers.netty.util.ByteBufUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +49,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      * Allow configuring the Netty's event loop.
      */
     private EventLoopGroup eventLoopGroup;
-    
+
     private AdditionalChannelInitializer httpAdditionalChannelInitializer;
     private AdditionalChannelInitializer wsAdditionalChannelInitializer;
     private AdditionalChannelInitializer httpsAdditionalChannelInitializer;
@@ -86,6 +91,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public final static String REUSE_ADDRESS = ChannelOption.SO_REUSEADDR.name();
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
+
+    private ResponseBodyPartFactory bodyPartFactory = new DefaultResponseBodyPartFactory();
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
@@ -219,9 +226,38 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public void setWssAdditionalChannelInitializer(AdditionalChannelInitializer wssAdditionalChannelInitializer) {
         this.wssAdditionalChannelInitializer = wssAdditionalChannelInitializer;
     }
-    
+
+    public ResponseBodyPartFactory getBodyPartFactory() {
+        return bodyPartFactory;
+    }
+
+    public void setBodyPartFactory(ResponseBodyPartFactory bodyPartFactory) {
+        this.bodyPartFactory = bodyPartFactory;
+    }
+
     public static interface AdditionalChannelInitializer {
 
         void initChannel(Channel ch) throws Exception;
+    }
+
+    public static interface ResponseBodyPartFactory {
+
+        ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
+    }
+
+    public static class DefaultResponseBodyPartFactory implements ResponseBodyPartFactory {
+
+        @Override
+        public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+            return new DefaultResponseBodyPart(ByteBufUtil.byteBuf2Bytes(buf), last);
+        }
+    }
+
+    public static class LazyResponseBodyPartFactory implements ResponseBodyPartFactory {
+
+        @Override
+        public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+            return new LazyResponseBodyPart(buf, last);
+        }
     }
 }

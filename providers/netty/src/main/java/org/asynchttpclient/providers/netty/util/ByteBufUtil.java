@@ -17,19 +17,48 @@ package org.asynchttpclient.providers.netty.util;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.List;
+
 public class ByteBufUtil {
 
-    public static byte[] byteBuf2bytes(ByteBuf b) {
-        int readable = b.readableBytes();
-        int readerIndex = b.readerIndex();
-        if (b.hasArray()) {
-            byte[] array = b.array();
-            if (b.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    public static byte[] byteBuf2Bytes(ByteBuf buf) {
+        int readable = buf.readableBytes();
+        int readerIndex = buf.readerIndex();
+        if (buf.hasArray()) {
+            byte[] array = buf.array();
+            if (buf.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
                 return array;
             }
         }
         byte[] array = new byte[readable];
-        b.getBytes(readerIndex, array);
+        buf.getBytes(readerIndex, array);
         return array;
+    }
+
+    public static byte[] byteBufs2Bytes(List<ByteBuf> bufs) {
+
+        if (bufs.isEmpty()) {
+            return EMPTY_BYTE_ARRAY;
+
+        } else if (bufs.size() == 1) {
+            return byteBuf2Bytes(bufs.get(0));
+
+        } else {
+            int totalSize = 0;
+            for (ByteBuf buf : bufs) {
+                totalSize += buf.readableBytes();
+            }
+
+            byte[] bytes = new byte[totalSize];
+            int offset = 0;
+            for (ByteBuf buf : bufs) {
+                int readable = buf.readableBytes();
+                buf.getBytes(buf.readerIndex(), bytes, offset, readable);
+                offset += readable;
+            }
+            return bytes;
+        }
     }
 }

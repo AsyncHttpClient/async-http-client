@@ -122,7 +122,7 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
      * {@inheritDoc}
      */
     @Override
-    public void markUnderlyingConnectionAsClosed() {
+    public void markUnderlyingConnectionAsToBeClosed() {
         ConnectionManager.markConnectionAsDoNotCache(connection);
     }
 
@@ -130,7 +130,7 @@ class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
      * {@inheritDoc}
      */
     @Override
-    public boolean closeUnderlyingConnection() {
+    public boolean isUnderlyingConnectionToBeClosed() {
         return !ConnectionManager.isConnectionCacheable(connection);
     }
 

@@ -15,7 +15,8 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -27,16 +28,17 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
 
+import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.DiscardEvent;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
@@ -54,8 +56,8 @@ final class WebSocketProtocol extends Protocol {
     private static final byte OPCODE_UNKNOWN = -1;
     protected byte pendingOpcode = OPCODE_UNKNOWN;
 
-    public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
-        super(channels, config, requestSender);
+    public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
+        super(channels, config, nettyConfig, requestSender);
     }
 
     // We don't need to synchronize as replacing the "ws-decoder" will
@@ -154,14 +156,15 @@ final class WebSocketProtocol extends Protocol {
                         pendingOpcode = OPCODE_BINARY;
                     }
 
-                    if (frame.content() != null && frame.content().readableBytes() > 0) {
-                        ResponseBodyPart rp = new ResponseBodyPart(frame.content(), frame.isFinalFragment());
+                    ByteBuf buf = frame.content();
+                    if (buf != null && buf.readableBytes() > 0) {
+                        ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
                         h.onBodyPartReceived(rp);
 
                         if (pendingOpcode == OPCODE_BINARY) {
                             webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                         } else {
-                            webSocket.onTextFragment(frame.content().toString(Constants.UTF8), frame.isFinalFragment());
+                            webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
                         }
                     }
                 }

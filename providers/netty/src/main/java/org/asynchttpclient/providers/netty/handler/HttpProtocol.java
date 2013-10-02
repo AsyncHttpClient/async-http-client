@@ -16,7 +16,8 @@
 package org.asynchttpclient.providers.netty.handler;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -42,26 +44,25 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
-import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.providers.netty.Callback;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.ResponseHeaders;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
+import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 final class HttpProtocol extends Protocol {
 
-    public HttpProtocol(Channels channels, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
-        super(channels, config, requestSender);
+    public HttpProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
+        super(channels, config, nettyConfig, requestSender);
     }
 
     private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
@@ -183,9 +184,9 @@ final class HttpProtocol extends Protocol {
         markAsDone(future, ctx);
     }
 
-    private final boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart c) throws Exception {
-        boolean state = handler.onBodyPartReceived(c) != STATE.CONTINUE;
-        if (c.closeUnderlyingConnection()) {
+    private final boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart bodyPart) throws Exception {
+        boolean state = handler.onBodyPartReceived(bodyPart) != STATE.CONTINUE;
+        if (bodyPart.isUnderlyingConnectionToBeClosed()) {
             future.setKeepAlive(false);
         }
         return state;
@@ -408,8 +409,9 @@ final class HttpProtocol extends Protocol {
                         }
                     }
 
-                    if (!interrupt && chunk.content().readableBytes() > 0) {
-                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(chunk.content(), last));
+                    ByteBuf buf = chunk.content();
+                    if (!interrupt && buf.readableBytes() > 0) {
+                        interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
                     }
 
                     if (interrupt || last) {
