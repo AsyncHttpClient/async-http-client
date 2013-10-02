@@ -12,13 +12,10 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
+import io.netty.channel.Channel;
 
 import java.util.concurrent.TimeUnit;
-
-import org.jboss.netty.channel.Channel;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;

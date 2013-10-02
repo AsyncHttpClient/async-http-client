@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;

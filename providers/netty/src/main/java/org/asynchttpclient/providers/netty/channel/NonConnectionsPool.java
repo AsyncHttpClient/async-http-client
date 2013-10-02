@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ning, Inc.
+ * Copyright 2010-2013 Ning, Inc.
  *
  * Ning licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -13,17 +13,30 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.asynchttpclient.providers.netty;
+package org.asynchttpclient.providers.netty.channel;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
+import io.netty.channel.Channel;
 
-public class NettyProviderUtil {
+import org.asynchttpclient.ConnectionsPool;
 
-    public static AsyncHttpClient nettyProvider(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new AsyncHttpClient(new NettyAsyncHttpProvider(config), config);
+public class NonConnectionsPool implements ConnectionsPool<String, Channel> {
+
+    public boolean offer(String uri, Channel connection) {
+        return false;
+    }
+
+    public Channel poll(String uri) {
+        return null;
+    }
+
+    public boolean removeAll(Channel connection) {
+        return false;
+    }
+
+    public boolean canCacheConnection() {
+        return true;
+    }
+
+    public void destroy() {
     }
 }

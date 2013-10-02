@@ -16,16 +16,17 @@
  */
 package org.asynchttpclient.providers.netty;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.asynchttpclient.AsyncHttpProviderConfig;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
@@ -40,14 +41,19 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private boolean useBlockingIO;
 
     /**
-     * Allow configuring the Netty's socket channel factory.
+     * Allow configuring the Netty's event loop.
      */
-    private NioClientSocketChannelFactory socketChannelFactory;
+    private EventLoopGroup eventLoopGroup;
+    
+    private AdditionalChannelInitializer httpAdditionalChannelInitializer;
+    private AdditionalChannelInitializer wsAdditionalChannelInitializer;
+    private AdditionalChannelInitializer httpsAdditionalChannelInitializer;
+    private AdditionalChannelInitializer wssAdditionalChannelInitializer;
 
     /**
-     * Allow configuring the Netty's boss executor service.
+     * Execute the connect operation asynchronously.
      */
-    private ExecutorService bossExecutorService;
+    private boolean asyncConnect;
 
     /**
      * HttpClientCodec's maxInitialLineLength
@@ -77,7 +83,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     /**
      * See {@link java.net.Socket#setReuseAddress(boolean)}
      */
-    public final static String REUSE_ADDRESS = "reuseAddress";
+    public final static String REUSE_ADDRESS = ChannelOption.SO_REUSEADDR.name();
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -96,7 +102,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
 
-        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win")) {
+        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase().contains("win")) {
             LOGGER.warn("Can't enable {} on Windows", REUSE_ADDRESS);
         } else {
             properties.put(name, value);
@@ -142,20 +148,20 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.useBlockingIO = useBlockingIO;
     }
 
-    public NioClientSocketChannelFactory getSocketChannelFactory() {
-        return socketChannelFactory;
+    public EventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
     }
 
-    public void setSocketChannelFactory(NioClientSocketChannelFactory socketChannelFactory) {
-        this.socketChannelFactory = socketChannelFactory;
+    public void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+        this.eventLoopGroup = eventLoopGroup;
     }
 
-    public ExecutorService getBossExecutorService() {
-        return bossExecutorService;
+    public boolean isAsyncConnect() {
+        return asyncConnect;
     }
 
-    public void setBossExecutorService(ExecutorService bossExecutorService) {
-        this.bossExecutorService = bossExecutorService;
+    public void setAsyncConnect(boolean asyncConnect) {
+        this.asyncConnect = asyncConnect;
     }
 
     public int getMaxInitialLineLength() {
@@ -180,5 +186,42 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setMaxChunkSize(int maxChunkSize) {
         this.maxChunkSize = maxChunkSize;
+    }
+
+    public AdditionalChannelInitializer getHttpAdditionalChannelInitializer() {
+        return httpAdditionalChannelInitializer;
+    }
+
+    public void setHttpAdditionalChannelInitializer(AdditionalChannelInitializer httpAdditionalChannelInitializer) {
+        this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
+    }
+
+    public AdditionalChannelInitializer getWsAdditionalChannelInitializer() {
+        return wsAdditionalChannelInitializer;
+    }
+
+    public void setWsAdditionalChannelInitializer(AdditionalChannelInitializer wsAdditionalChannelInitializer) {
+        this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
+    }
+
+    public AdditionalChannelInitializer getHttpsAdditionalChannelInitializer() {
+        return httpsAdditionalChannelInitializer;
+    }
+
+    public void setHttpsAdditionalChannelInitializer(AdditionalChannelInitializer httpsAdditionalChannelInitializer) {
+        this.httpsAdditionalChannelInitializer = httpsAdditionalChannelInitializer;
+    }
+
+    public AdditionalChannelInitializer getWssAdditionalChannelInitializer() {
+        return wssAdditionalChannelInitializer;
+    }
+
+    public void setWssAdditionalChannelInitializer(AdditionalChannelInitializer wssAdditionalChannelInitializer) {
+        this.wssAdditionalChannelInitializer = wssAdditionalChannelInitializer;
+    }
+    
+    public static interface AdditionalChannelInitializer {
+
+        void initChannel(Channel ch) throws Exception;
     }
 }

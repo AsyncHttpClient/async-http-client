@@ -16,9 +16,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.NettyProviderUtil;
 import org.asynchttpclient.websocket.TextMessageTest;
-import org.testng.annotations.Test;
 
-@Test
 public class NettyTextMessageTest extends TextMessageTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

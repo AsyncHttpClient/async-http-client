@@ -40,7 +40,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-// FIXME there's no retry actually
+//FIXME there's no retry actually
 public class RetryNonBlockingIssue extends AbstractBasicTest {
 
     @Override
@@ -52,9 +52,11 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         port1 = findFreePort();
         server = newJettyHttpServer(port1);
+
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         context.addServlet(new ServletHolder(new MockExceptionServlet()), "/*");
+
         server.setHandler(context);
         server.start();
     }
@@ -138,7 +140,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             StringBuilder b = new StringBuilder();
             for (ListenableFuture<Response> r : res) {
                 Response theres = r.get();
-                assertEquals(200, theres.getStatusCode());
+                assertEquals(theres.getStatusCode(), 200);
                 b.append("==============\r\n");
                 b.append("Response Headers\r\n");
                 Map<String, List<String>> heads = theres.getHeaders();
@@ -179,7 +181,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             StringBuilder b = new StringBuilder();
             for (ListenableFuture<Response> r : res) {
                 Response theres = r.get();
-                assertEquals(200, theres.getStatusCode());
+                assertEquals(theres.getStatusCode(), 200);
                 b.append("==============\r\n");
                 b.append("Response Headers\r\n");
                 Map<String, List<String>> heads = theres.getHeaders();
@@ -188,7 +190,8 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 assertTrue(heads.size() > 0);
 
             }
-            logger.debug(b.toString());
+            System.out.println(b.toString());
+            System.out.flush();
 
         } finally {
             client.close();

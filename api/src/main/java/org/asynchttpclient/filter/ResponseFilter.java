@@ -15,7 +15,7 @@ package org.asynchttpclient.filter;
 /**
  * A Filter interface that gets invoked before making the processing of the response bytes. {@link ResponseFilter} are invoked
  * before the actual response's status code get processed. That means authorization, proxy authentication and redirects
- * processing hasn't occured when {@link ResponseFilter} gets invoked.
+ * processing hasn't occurred when {@link ResponseFilter} gets invoked.
  */
 public interface ResponseFilter {
 

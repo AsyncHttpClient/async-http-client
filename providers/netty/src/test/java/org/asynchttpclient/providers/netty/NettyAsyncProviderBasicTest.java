@@ -12,15 +12,11 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.testng.annotations.Test;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.AsyncProvidersBasicTest;
 
-@Test
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override
@@ -29,9 +25,9 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     }
 
     @Override
-    protected AsyncHttpProviderConfig getProviderConfig() {
+    protected AsyncHttpProviderConfig<?, ?> getProviderConfig() {
         final NettyAsyncHttpProviderConfig config = new NettyAsyncHttpProviderConfig();
-        config.addProperty("tcpNoDelay", true);
+        config.addProperty("TCP_NODELAY", true);
         return config;
     }
 }

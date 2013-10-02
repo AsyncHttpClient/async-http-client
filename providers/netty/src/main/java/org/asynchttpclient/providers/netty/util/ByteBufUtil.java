@@ -13,17 +13,23 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.asynchttpclient.providers.netty;
+package org.asynchttpclient.providers.netty.util;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
+import io.netty.buffer.ByteBuf;
 
-public class NettyProviderUtil {
+public class ByteBufUtil {
 
-    public static AsyncHttpClient nettyProvider(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
+    public static byte[] byteBuf2bytes(ByteBuf b) {
+        int readable = b.readableBytes();
+        int readerIndex = b.readerIndex();
+        if (b.hasArray()) {
+            byte[] array = b.array();
+            if (b.arrayOffset() == 0 && readerIndex == 0 && array.length == readable) {
+                return array;
+            }
         }
-        return new AsyncHttpClient(new NettyAsyncHttpProvider(config), config);
+        byte[] array = new byte[readable];
+        b.getBytes(readerIndex, array);
+        return array;
     }
 }

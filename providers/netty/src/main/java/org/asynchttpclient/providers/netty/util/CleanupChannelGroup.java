@@ -28,17 +28,11 @@
 
 package org.asynchttpclient.providers.netty.util;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroupFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.channel.Channel;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -50,24 +44,20 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class CleanupChannelGroup extends DefaultChannelGroup {
 
-    private final static Logger logger = LoggerFactory.getLogger(CleanupChannelGroup.class);
 
     // internal vars --------------------------------------------------------------------------------------------------
 
-    private final AtomicBoolean closed;
-    private final ReentrantReadWriteLock lock;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     // constructors ---------------------------------------------------------------------------------------------------
 
     public CleanupChannelGroup() {
-        this.closed = new AtomicBoolean(false);
-        this.lock = new ReentrantReadWriteLock();
+        super(GlobalEventExecutor.INSTANCE);
     }
 
     public CleanupChannelGroup(String name) {
-        super(name);
-        this.closed = new AtomicBoolean(false);
-        this.lock = new ReentrantReadWriteLock();
+        super(name, GlobalEventExecutor.INSTANCE);
     }
 
     // DefaultChannelGroup --------------------------------------------------------------------------------------------
@@ -80,9 +70,11 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 // First time close() is called.
                 return super.close();
             } else {
-                Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
-                logger.debug("CleanupChannelGroup Already closed");
-                return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures);
+                  // FIXME DefaultChannelGroupFuture is package protected
+//                Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
+//                logger.debug("CleanupChannelGroup already closed");
+//                return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures, GlobalEventExecutor.INSTANCE);
+                throw new UnsupportedOperationException("CleanupChannelGroup already closed");
             }
         } finally {
             this.lock.writeLock().unlock();

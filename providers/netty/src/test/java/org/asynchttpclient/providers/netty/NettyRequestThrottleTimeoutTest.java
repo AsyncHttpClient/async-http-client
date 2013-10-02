@@ -12,11 +12,11 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -27,17 +27,16 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.continuation.Continuation;
-import org.eclipse.jetty.continuation.ContinuationSupport;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
-
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
+import org.eclipse.jetty.continuation.Continuation;
+import org.eclipse.jetty.continuation.ContinuationSupport;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.Test;
 
 public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
@@ -80,11 +79,12 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
 
-        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAllowPoolingConnection(true)
+                .setMaximumConnectionsTotal(1).build());
         try {
             final CountDownLatch latch = new CountDownLatch(2);
+            final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
 
-            final List<Exception> tooManyConnections = new ArrayList<Exception>(2);
             for (int i = 0; i < 2; i++) {
                 new Thread(new Runnable() {
 
@@ -119,7 +119,6 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
                     }
                 }).start();
-
             }
 
             try {
@@ -128,7 +127,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                 fail("failed to wait for requests to complete");
             }
 
-            assertTrue(tooManyConnections.size() == 0, "Should not have any connection errors where too many connections have been attempted");
+            assertTrue(tooManyConnections.isEmpty(), "Should not have any connection errors where too many connections have been attempted");
         } finally {
             client.close();
         }

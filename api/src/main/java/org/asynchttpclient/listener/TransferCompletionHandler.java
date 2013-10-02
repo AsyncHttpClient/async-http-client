@@ -13,7 +13,6 @@
 package org.asynchttpclient.listener;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
@@ -42,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * public void onBytesReceived(ByteBuffer buffer) {
  * }
  * <p/>
- * public void onBytesSent(ByteBuffer buffer) {
+ * public void onBytesSent(long amount, long current, long total) {
  * }
  * <p/>
  * public void onRequestResponseCompleted() {
@@ -61,9 +60,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<TransferListener>();
     private final boolean accumulateResponseBytes;
-    private TransferAdapter transferAdapter;
-    private AtomicLong bytesTransferred = new AtomicLong(0);
-    private AtomicLong totalBytesToTransfer = new AtomicLong(-1);
+    private FluentCaseInsensitiveStringsMap headers;
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link org.asynchttpclient.Response#getResponseBody()},
@@ -109,13 +106,13 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     /**
-     * Associate a {@link TransferCompletionHandler.TransferAdapter} with this listener.
+     * Set headers to this listener.
      * 
-     * @param transferAdapter
-     *            {@link TransferAdapter}
+     * @param headers
+     *            {@link FluentCaseInsensitiveStringsMap}
      */
-    public void transferAdapter(TransferAdapter transferAdapter) {
-        this.transferAdapter = transferAdapter;
+    public void headers(FluentCaseInsensitiveStringsMap headers) {
+        this.headers = headers;
     }
 
     @Override
@@ -136,49 +133,20 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     @Override
     public Response onCompleted(Response response) throws Exception {
-        if (bytesTransferred.get() > 0L) {
-            // onContentWriteCompleted hasn't been notified, it would have been set to -1L (async race)
-            onContentWriteCompleted();
-        }
         fireOnEnd();
         return response;
     }
 
     @Override
     public STATE onHeaderWriteCompleted() {
-        if (transferAdapter != null) {
-            fireOnHeadersSent(transferAdapter.getHeaders());
+        if (headers != null) {
+            fireOnHeadersSent(headers);
         }
-        return STATE.CONTINUE;
-    }
-
-    @Override
-    public STATE onContentWriteCompleted() {
-        // onContentWriteProgress might not have been called on last write
-        long transferred = bytesTransferred.getAndSet(-1L);
-        long expected = totalBytesToTransfer.get();
-
-        if (expected <= 0L && transferAdapter != null) {
-            FluentCaseInsensitiveStringsMap headers = transferAdapter.getHeaders();
-            String contentLengthString = headers.getFirstValue("Content-Length");
-            if (contentLengthString != null)
-                expected = Long.valueOf(contentLengthString);
-        }
-
-        if (expected > 0L && transferred != expected) {
-            fireOnBytesSent(expected - transferred, expected, expected);
-        }
-
         return STATE.CONTINUE;
     }
 
     @Override
     public STATE onContentWriteProgress(long amount, long current, long total) {
-        bytesTransferred.addAndGet(amount);
-
-        if (total > 0L)
-            totalBytesToTransfer.set(total);
-
         fireOnBytesSent(amount, current, total);
         return STATE.CONTINUE;
     }
@@ -245,18 +213,6 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
             } catch (Throwable t2) {
                 logger.warn("onThrowable", t2);
             }
-        }
-    }
-
-    public static class TransferAdapter {
-        private final FluentCaseInsensitiveStringsMap headers;
-
-        public TransferAdapter(FluentCaseInsensitiveStringsMap headers) {
-            this.headers = headers;
-        }
-
-        public FluentCaseInsensitiveStringsMap getHeaders() {
-            return headers;
         }
     }
 }

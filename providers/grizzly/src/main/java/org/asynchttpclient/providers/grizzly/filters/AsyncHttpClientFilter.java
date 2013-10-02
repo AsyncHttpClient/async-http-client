@@ -25,7 +25,6 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.UpgradeHandler;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.listener.TransferCompletionHandler.TransferAdapter;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.asynchttpclient.providers.grizzly.GrizzlyResponseFuture;
 import org.asynchttpclient.providers.grizzly.HttpTxContext;
@@ -395,8 +394,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (h instanceof TransferCompletionHandler) {
             final FluentCaseInsensitiveStringsMap map =
                     new FluentCaseInsensitiveStringsMap(request.getHeaders());
-            TransferCompletionHandler.class.cast(h)
-                    .transferAdapter(new TransferAdapter(map));
+            TransferCompletionHandler.class.cast(h).headers(map);
         }
     }
 

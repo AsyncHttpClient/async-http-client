@@ -15,9 +15,7 @@ package org.asynchttpclient.providers.netty;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.BasicAuthTest;
-import org.testng.annotations.Test;
 
-@Test
 public class NettyBasicAuthTest extends BasicAuthTest {
 
     @Override
@@ -28,10 +26,5 @@ public class NettyBasicAuthTest extends BasicAuthTest {
     @Override
     public String getProviderClass() {
     	return NettyAsyncHttpProvider.class.getName();
-    }
-    
-    @Test(enabled = false)
-    public void stringBuilderBodyConsumerTest() throws Exception {
-        // FIXME
     }
 }

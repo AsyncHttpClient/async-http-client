@@ -12,16 +12,8 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.assertEquals;
-
-import java.util.concurrent.Executors;
-
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.testng.annotations.Test;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Response;
 import org.asynchttpclient.async.AbstractBasicTest;
 
 public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
@@ -29,20 +21,5 @@ public class NettyAsyncHttpProviderTest extends AbstractBasicTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
-    }
-
-    @Test
-    public void bossThreadPoolExecutor() throws Exception {
-        NettyAsyncHttpProviderConfig conf = new NettyAsyncHttpProviderConfig();
-        conf.setBossExecutorService(Executors.newSingleThreadExecutor());
-
-        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(conf).build();
-        AsyncHttpClient c = getAsyncHttpClient(cf);
-        try {
-            Response r = c.prepareGet(getTargetUrl()).execute().get();
-            assertEquals(r.getStatusCode(), 200);
-        } finally {
-            c.close();
-        }
     }
 }
