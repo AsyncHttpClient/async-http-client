@@ -57,39 +57,43 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         NEW, POOLED, RECONNECTED, CLOSED,
     }
 
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private final AtomicBoolean isDone = new AtomicBoolean(false);
-    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-    private AsyncHandler<V> asyncHandler;
     private final int requestTimeoutInMs;
     private final AsyncHttpClientConfig config;
-    private Request request;
-    private HttpRequest nettyRequest;
-    private final AtomicReference<V> content = new AtomicReference<V>();
-    private URI uri;
-    private boolean keepAlive = true;
-    private HttpResponse httpResponse;
-    private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
+    private final long start = millisTime();
+    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
+    private final ProxyServer proxyServer;
+    private final int maxRetry;
+    private final CountDownLatch latch = new CountDownLatch(1);
+
+    // state mutated from outside the event loop
+    private final AtomicBoolean isDone = new AtomicBoolean(false);
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
     private final AtomicInteger redirectCount = new AtomicInteger();
-    private volatile FutureReaper reaperFuture;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
-    private final long start = millisTime();
     private final AtomicReference<STATE> state = new AtomicReference<STATE>(STATE.NEW);
     private final AtomicBoolean contentProcessed = new AtomicBoolean(false);
-    private Channel channel;
-    private boolean reuseChannel = false;
     private final AtomicInteger currentRetry = new AtomicInteger(0);
-    private final int maxRetry;
+    private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
+    private final AtomicReference<V> content = new AtomicReference<V>();
+    private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
+    private volatile FutureReaper reaperFuture;
+
+    // state mutated only inside the event loop
+    private Channel channel;
+    private URI uri;
+    private boolean keepAlive = true;
+    private Request request;
+    private HttpRequest nettyRequest;
+    private HttpResponse httpResponse;
+    private AsyncHandler<V> asyncHandler;
+    private HttpResponse pendingResponse;
+    private boolean streamWasAlreadyConsumed;
+    private boolean reuseChannel;
     private boolean writeHeaders;
     private boolean writeBody;
-    private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
-    private boolean allowConnect = false;
-    private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
-    private final ProxyServer proxyServer;
-    private final AtomicReference<HttpResponse> pendingResponse = new AtomicReference<HttpResponse>();
-    private final AtomicBoolean streamWasAlreadyConsumed = new AtomicBoolean(false);
+    private boolean allowConnect;
 
     public NettyResponseFuture(URI uri,//
             Request request,//
@@ -247,7 +251,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return getContent();
     }
 
-    public V getContent() throws ExecutionException {
+    private V getContent() throws ExecutionException {
         ExecutionException e = exEx.getAndSet(null);
         if (e != null) {
             throw e;
@@ -383,12 +387,20 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return statusReceived.getAndSet(sr);
     }
 
-    public AtomicReference<HttpResponse> getPendingResponse() {
+    public HttpResponse getPendingResponse() {
         return pendingResponse;
     }
 
-    public boolean getAndSetStreamWasAlreadyConsumed() {
-        return streamWasAlreadyConsumed.getAndSet(true);
+    public void setPendingResponse(HttpResponse pendingResponse) {
+        this.pendingResponse = pendingResponse;
+    }
+
+    public boolean isStreamWasAlreadyConsumed() {
+        return streamWasAlreadyConsumed;
+    }
+
+    public void setStreamWasAlreadyConsumed(boolean streamWasAlreadyConsumed) {
+        this.streamWasAlreadyConsumed = streamWasAlreadyConsumed;
     }
 
     @Override

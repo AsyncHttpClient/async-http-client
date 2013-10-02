@@ -31,7 +31,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -227,8 +226,7 @@ final class HttpProtocol extends Protocol {
         }
 
         // The handler may have been wrapped.
-        handler = fc.getAsyncHandler();
-        future.setAsyncHandler(handler);
+        future.setAsyncHandler(fc.getAsyncHandler());
 
         // The request has changed
         if (fc.replayRequest()) {
@@ -379,20 +377,19 @@ final class HttpProtocol extends Protocol {
 
         HttpRequest nettyRequest = future.getNettyRequest();
         AsyncHandler handler = future.getAsyncHandler();
-        Request request = future.getRequest();
         ProxyServer proxyServer = future.getProxyServer();
         try {
             if (e instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e;
                 NettyChannelHandler.LOGGER.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
-                future.getPendingResponse().set(response);
+                future.setPendingResponse(response);
                 return;
             }
 
             if (e instanceof HttpContent) {
 
-                AtomicReference<HttpResponse> responseRef = future.getPendingResponse();
-                HttpResponse response = responseRef.getAndSet(null);
+                HttpResponse response = future.getPendingResponse();
+                future.setPendingResponse(null);
                 if (handler != null) {
                     if (response != null && handleResponseAndExit(ctx, future, handler, nettyRequest, proxyServer, response)) {
                         return;
@@ -403,10 +400,6 @@ final class HttpProtocol extends Protocol {
                     boolean interrupt = false;
                     boolean last = chunk instanceof LastHttpContent;
 
-                    // FIXME
-                    // Netty 3 provider is broken: in case of trailing headers,
-                    // onHeadersReceived should be called before
-                    // updateBodyAndInterrupt
                     if (last) {
                         LastHttpContent lastChunk = (LastHttpContent) chunk;
                         HttpHeaders trailingHeaders = lastChunk.trailingHeaders();

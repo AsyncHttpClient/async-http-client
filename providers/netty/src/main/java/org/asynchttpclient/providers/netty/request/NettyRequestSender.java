@@ -358,13 +358,15 @@ public class NettyRequestSender {
 
     private boolean sendStreamAndExit(Channel channel, final InputStream is, NettyResponseFuture<?> future) throws IOException {
 
-        if (future.getAndSetStreamWasAlreadyConsumed()) {
+        if (future.isStreamWasAlreadyConsumed()) {
             if (is.markSupported())
                 is.reset();
             else {
                 LOGGER.warn("Stream has already been consumed and cannot be reset");
                 return true;
             }
+        } else {
+            future.setStreamWasAlreadyConsumed(true);
         }
 
         channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
