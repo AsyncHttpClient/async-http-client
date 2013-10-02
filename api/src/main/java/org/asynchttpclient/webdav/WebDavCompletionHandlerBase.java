@@ -15,6 +15,8 @@ package org.asynchttpclient.webdav;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Cookie;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -32,6 +34,9 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -127,7 +132,105 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         
         @Override
         public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-            return wrapped.prepareResponse(headers, bodyParts);
+            final Response wrappedResponse = wrapped.prepareResponse(headers, bodyParts);
+            
+            return new Response() {
+
+                @Override
+                public int getStatusCode() {
+                    return statusCode;
+                }
+
+                @Override
+                public String getStatusText() {
+                    return statusText;
+                }
+
+                @Override
+                public byte[] getResponseBodyAsBytes() throws IOException {
+                    return wrappedResponse.getResponseBodyAsBytes();
+                }
+
+                @Override
+                public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+                    return wrappedResponse.getResponseBodyAsByteBuffer();
+                }
+
+                @Override
+                public InputStream getResponseBodyAsStream() throws IOException {
+                    return wrappedResponse.getResponseBodyAsStream();
+                }
+
+                @Override
+                public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
+                    return wrappedResponse.getResponseBodyExcerpt(maxLength, charset);
+                }
+
+                @Override
+                public String getResponseBody(String charset) throws IOException {
+                    return wrappedResponse.getResponseBody(charset);
+                }
+
+                @Override
+                public String getResponseBodyExcerpt(int maxLength) throws IOException {
+                    return wrappedResponse.getResponseBodyExcerpt(maxLength);
+                }
+
+                @Override
+                public String getResponseBody() throws IOException {
+                    return wrappedResponse.getResponseBody();
+                }
+
+                @Override
+                public URI getUri() throws MalformedURLException {
+                    return wrappedResponse.getUri();
+                }
+
+                @Override
+                public String getContentType() {
+                    return wrappedResponse.getContentType();
+                }
+
+                @Override
+                public String getHeader(String name) {
+                    return wrappedResponse.getHeader(name);
+                }
+
+                @Override
+                public List<String> getHeaders(String name) {
+                    return wrappedResponse.getHeaders(name);
+                }
+
+                @Override
+                public FluentCaseInsensitiveStringsMap getHeaders() {
+                    return wrappedResponse.getHeaders();
+                }
+
+                @Override
+                public boolean isRedirected() {
+                    return wrappedResponse.isRedirected();
+                }
+
+                @Override
+                public List<Cookie> getCookies() {
+                    return wrappedResponse.getCookies();
+                }
+
+                @Override
+                public boolean hasResponseStatus() {
+                    return wrappedResponse.hasResponseStatus();
+                }
+
+                @Override
+                public boolean hasResponseHeaders() {
+                    return wrappedResponse.hasResponseHeaders();
+                }
+
+                @Override
+                public boolean hasResponseBody() {
+                    return wrappedResponse.hasResponseBody();
+                }
+            };
         }
 
         @Override
