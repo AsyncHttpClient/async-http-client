@@ -92,14 +92,6 @@ public class GrizzlyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     }
 
-
-    public void content(V v) {
-
-        delegate.result(v);
-
-    }
-
-
     public void touch() {
 
         provider.touchConnection(connection, request);

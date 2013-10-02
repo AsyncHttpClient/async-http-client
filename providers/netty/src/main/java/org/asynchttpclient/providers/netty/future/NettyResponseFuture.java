@@ -323,10 +323,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         runListeners();
     }
 
-    public void content(V v) {
-        content.set(v);
-    }
-
     public final Request getRequest() {
         return request;
     }

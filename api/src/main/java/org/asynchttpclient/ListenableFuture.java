@@ -55,13 +55,6 @@ public interface ListenableFuture<V> extends Future<V> {
     void abort(Throwable t);
 
     /**
-     * Set the content that will be returned by this instance
-     *
-     * @param v the content that will be returned by this instance
-     */
-    void content(V v);
-
-    /**
      * Touch the current instance to prevent external service to times out.
      */
     void touch();
