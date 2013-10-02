@@ -15,9 +15,9 @@ package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.async.SimpleAsyncHttpClientTest;
+import org.asynchttpclient.async.SimpleAsyncClientErrorBehaviourTest;
 
-public class GrizzlySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
+public class GrizzlySimpleAsyncClientErrorBehaviourTest extends SimpleAsyncClientErrorBehaviourTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
