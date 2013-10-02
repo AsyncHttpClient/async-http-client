@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -36,7 +35,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final boolean last;
     private boolean closeConnection = false;
 
-    public ResponseBodyPart(URI uri, ByteBuf buf, boolean last) {
+    public ResponseBodyPart(ByteBuf buf, boolean last) {
         bytes = ByteBufUtil.byteBuf2bytes(buf);
         this.last = last;
     }

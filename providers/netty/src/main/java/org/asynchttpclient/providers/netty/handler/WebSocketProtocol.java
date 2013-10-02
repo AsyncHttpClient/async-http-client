@@ -155,7 +155,7 @@ final class WebSocketProtocol extends Protocol {
                     }
 
                     if (frame.content() != null && frame.content().readableBytes() > 0) {
-                        ResponseBodyPart rp = new ResponseBodyPart(future.getURI(), frame.content(), frame.isFinalFragment());
+                        ResponseBodyPart rp = new ResponseBodyPart(frame.content(), frame.isFinalFragment());
                         h.onBodyPartReceived(rp);
 
                         if (pendingOpcode == OPCODE_BINARY) {

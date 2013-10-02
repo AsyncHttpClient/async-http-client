@@ -417,7 +417,7 @@ final class HttpProtocol extends Protocol {
 
                     if (!interrupt && chunk.content().readableBytes() > 0) {
                         // FIXME why
-                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(future.getURI(), chunk.content(), last));
+                        interrupt = updateBodyAndInterrupt(future, handler, new ResponseBodyPart(chunk.content(), last));
                     }
 
                     if (interrupt || last) {
