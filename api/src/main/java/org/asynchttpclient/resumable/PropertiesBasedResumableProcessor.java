@@ -96,10 +96,11 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public Map<String, Long> load() {
+        Scanner scan = null;
         try {
-            Scanner scan = new Scanner(new File(TMP, storeName), "UTF-8");
+            scan = new Scanner(new File(TMP, storeName), "UTF-8");
             scan.useDelimiter("[=\n]");
 
             String key;
@@ -115,6 +116,9 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         } catch (Throwable ex) {
             // Survive any exceptions
             log.warn(ex.getMessage(), ex);
+        } finally {
+            if (scan != null)
+                scan.close();
         }
         return properties;
     }

@@ -184,7 +184,7 @@ final class WebSocketProtocol extends Protocol {
                 return;
             }
 
-            NettyResponseFuture<?> nettyResponse = (NettyResponseFuture) attribute;
+            NettyResponseFuture<?> nettyResponse = (NettyResponseFuture<?>) attribute;
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
 
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());

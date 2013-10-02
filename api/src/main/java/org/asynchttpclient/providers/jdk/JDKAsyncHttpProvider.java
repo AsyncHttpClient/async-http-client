@@ -322,7 +322,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     InputStream stream = is;
                     if (bufferResponseInMemory || byteToRead <= 0) {
                         int[] lengthWrapper = new int[1];
-                        byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
+                        byte[] bytes = readFully(is, lengthWrapper);
                         stream = new ByteArrayInputStream(bytes, 0, lengthWrapper[0]);
                         byteToRead = lengthWrapper[0];
                     }
@@ -409,6 +409,34 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 }
             }
             return null;
+        }
+        
+        // FIXME Streams should be streamed, not turned into byte arrays
+        private final byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {
+            // just in case available() returns bogus (or -1), allocate non-trivial chunk
+            byte[] b = new byte[Math.max(512, in.available())];
+            int offset = 0;
+            while (true) {
+                int left = b.length - offset;
+                int count = in.read(b, offset, left);
+                if (count < 0) { // EOF
+                    break;
+                }
+                offset += count;
+                if (count == left) { // full buffer, need to expand
+                    b = doubleUp(b);
+                }
+            }
+            // wish Java had Tuple return type...
+            lengthWrapper[0] = offset;
+            return b;
+        }
+        
+        private final byte[] doubleUp(byte[] b) {
+            int len = b.length;
+            byte[] b2 = new byte[len + len];
+            System.arraycopy(b, 0, b2, 0, len);
+            return b2;
         }
 
         private FilterContext handleIoException(FilterContext fc) throws FilterException {
@@ -571,7 +599,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     urlConnection.getOutputStream().write(b);
                 } else if (request.getStreamData() != null) {
                     int[] lengthWrapper = new int[1];
-                    cachedBytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
+                    cachedBytes = readFully(request.getStreamData(), lengthWrapper);
                     cachedBytesLenght = lengthWrapper[0];
                     urlConnection.setRequestProperty("Content-Length", String.valueOf(cachedBytesLenght));
                     urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);

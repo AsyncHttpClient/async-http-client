@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -33,7 +34,6 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.testng.annotations.Test;
 
 /**
@@ -173,13 +173,9 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             Response r = client.prepareGet("http://www.cyberpresse.ca/").execute().get();
 
             InputStream stream = r.getResponseBodyAsStream();
-            // FIXME available is an ESTIMATE!!!
-            int available = stream.available();
-            int[] lengthWrapper = new int[1];
-            AsyncHttpProviderUtils.readFully(stream, lengthWrapper);
-            int byteToRead = lengthWrapper[0];
+            int contentLength = Integer.valueOf(r.getHeader("Content-Length"));
 
-            assertEquals(available, byteToRead);
+            assertEquals(contentLength, IOUtils.toByteArray(stream).length);
         } finally {
             client.close();
         }

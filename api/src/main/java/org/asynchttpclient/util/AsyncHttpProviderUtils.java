@@ -14,7 +14,6 @@ package org.asynchttpclient.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
@@ -377,35 +376,6 @@ public class AsyncHttpProviderUtils {
             ++i;
         }
         return new MultipartRequestEntity(parts, requestHeaders);
-    }
-
-    // FIXME remove this: tests should use IOUtils and main shouldn't read Stream but... stream them!
-    @Deprecated
-    public final static byte[] readFully(InputStream in, int[] lengthWrapper) throws IOException {
-        // just in case available() returns bogus (or -1), allocate non-trivial chunk
-        byte[] b = new byte[Math.max(512, in.available())];
-        int offset = 0;
-        while (true) {
-            int left = b.length - offset;
-            int count = in.read(b, offset, left);
-            if (count < 0) { // EOF
-                break;
-            }
-            offset += count;
-            if (count == left) { // full buffer, need to expand
-                b = doubleUp(b);
-            }
-        }
-        // wish Java had Tuple return type...
-        lengthWrapper[0] = offset;
-        return b;
-    }
-
-    private static byte[] doubleUp(byte[] b) {
-        int len = b.length;
-        byte[] b2 = new byte[len + len];
-        System.arraycopy(b, 0, b2, 0, len);
-        return b2;
     }
 
     public static String encodeCookies(Collection<Cookie> cookies) {
