@@ -108,7 +108,6 @@ public final class EventHandler {
             try {
                 context.setCurrentState(handler.onBodyPartReceived(
                         new GrizzlyResponseBodyPart(content,
-                                                    context.getRequest().getURI(),
                                                     ctx.getConnection())));
             } catch (Exception e) {
                 handler.onThrowable(e);

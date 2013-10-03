@@ -29,7 +29,6 @@ import org.glassfish.grizzly.ssl.SSLFilter;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -53,7 +52,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     public SwitchingSSLFilter(final SSLEngineConfigurator clientConfig) {
 
         super(null, clientConfig);
-        addHandshakeListener(new ProtocolHandshakeListener());
+
     }
 
 
@@ -176,52 +175,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
 
     private static void enableRead(final Connection c) throws IOException {
         c.enableIOEvent(IOEvent.READ);
-    }
-
-
-    // ---------------------------------------------------------- Nested Classes
-
-
-    private static interface HandshakeCompleteListener {
-            void complete();
-    }
-
-    private static final class ProtocolHandshakeListener implements HandshakeListener {
-
-
-        static final ConcurrentHashMap<Connection,HandshakeCompleteListener> listeners =
-                new ConcurrentHashMap<Connection,HandshakeCompleteListener>();
-
-
-        // --------------------------------------- Method from HandshakeListener
-
-
-        @Override
-        public void onStart(Connection connection) {
-            // no-op
-        }
-
-        @Override
-        public void onComplete(Connection connection) {
-            final HandshakeCompleteListener listener = listeners.get(connection);
-            if (listener != null) {
-                removeListener(connection);
-                listener.complete();
-            }
-        }
-
-
-        // --------------------------------------------- Package Private Methods
-
-
-        public static void addListener(final Connection c,
-                                       final HandshakeCompleteListener listener) {
-            listeners.putIfAbsent(c, listener);
-        }
-
-        static void removeListener(final Connection c) {
-            listeners.remove(c);
-        }
     }
 
 }

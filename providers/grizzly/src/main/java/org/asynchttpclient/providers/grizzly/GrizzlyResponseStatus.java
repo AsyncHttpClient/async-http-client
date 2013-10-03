@@ -66,7 +66,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
                 headers,
                 bodyParts,
                 config.isRfc6265CookieEncoding());
-    };
+    }
     
     /**
      * {@inheritDoc}

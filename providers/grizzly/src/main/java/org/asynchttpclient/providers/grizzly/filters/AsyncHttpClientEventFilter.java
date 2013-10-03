@@ -15,12 +15,9 @@ package org.asynchttpclient.providers.grizzly.filters;
 
 import org.asynchttpclient.providers.grizzly.EventHandler;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
-import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.http.HttpClientFilter;
 import org.glassfish.grizzly.http.HttpContent;
-import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpHeader;
 
 import java.io.IOException;

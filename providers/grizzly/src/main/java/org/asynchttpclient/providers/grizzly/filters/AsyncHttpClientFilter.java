@@ -301,7 +301,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
         final Connection c = ctx.getConnection();
-        System.out.println("*** CONNECTION: " + c);
         if (!Utils.isSpdyConnection(c)) {
             HttpContext.newInstance(ctx, c, c, c);
         } else {
