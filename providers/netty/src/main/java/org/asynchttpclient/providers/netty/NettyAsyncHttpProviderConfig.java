@@ -41,11 +41,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProviderConfig.class);
 
     /**
-     * Use Netty's blocking IO stategy.
-     */
-    private boolean useBlockingIO;
-
-    /**
      * Allow configuring the Netty's event loop.
      */
     private EventLoopGroup eventLoopGroup;
@@ -145,14 +140,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public Set<Map.Entry<String, Object>> propertiesSet() {
         return properties.entrySet();
-    }
-
-    public boolean isUseBlockingIO() {
-        return useBlockingIO;
-    }
-
-    public void setUseBlockingIO(boolean useBlockingIO) {
-        this.useBlockingIO = useBlockingIO;
     }
 
     public EventLoopGroup getEventLoopGroup() {

@@ -25,10 +25,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.oio.OioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.channel.socket.oio.OioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -112,34 +109,22 @@ public class Channels {
         this.config = config;
         this.asyncHttpProviderConfig = asyncHttpProviderConfig;
 
-        Class<? extends SocketChannel> socketChannelClass = null;
-        if (asyncHttpProviderConfig.isUseBlockingIO()) {
-            socketChannelClass = OioSocketChannel.class;
-            eventLoopGroup = new OioEventLoopGroup();
+        // check if external EventLoopGroup is defined
+        eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
+
+        if (eventLoopGroup == null) {
+            eventLoopGroup = new NioEventLoopGroup();
             allowReleaseEventLoopGroup = true;
-
         } else {
-            // check if external EventLoopGroup is defined
-            eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
-            if (eventLoopGroup instanceof OioEventLoopGroup) {
-                socketChannelClass = OioSocketChannel.class;
-                allowReleaseEventLoopGroup = false;
-
-            } else if (eventLoopGroup instanceof NioEventLoopGroup) {
-                socketChannelClass = NioSocketChannel.class;
-                allowReleaseEventLoopGroup = false;
-
-            } else {
-                socketChannelClass = NioSocketChannel.class;
-                eventLoopGroup = new NioEventLoopGroup();
-                allowReleaseEventLoopGroup = true;
-            }
+            if (!(eventLoopGroup instanceof NioEventLoopGroup))
+                throw new IllegalArgumentException("Only Nio is supported");
+            allowReleaseEventLoopGroup = false;
         }
 
-        plainBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        secureBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        webSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
-        secureWebSocketBootstrap = new Bootstrap().channel(socketChannelClass).group(eventLoopGroup);
+        plainBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
+        secureBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
+        webSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
+        secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
