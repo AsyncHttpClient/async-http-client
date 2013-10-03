@@ -440,6 +440,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         clientTransport.setIOStrategy(WorkerThreadIOStrategy.getInstance());
         if (service != null) {
             clientTransport.setWorkerThreadPool(service);
+        } else {
+            final int multiplier = clientConfig.getIoThreadMultiplier();
+            final int threadCount = multiplier * Runtime.getRuntime().availableProcessors();
+            clientTransport.getWorkerThreadPoolConfig()
+                    .setCorePoolSize(threadCount)
+                    .setMaxPoolSize(threadCount);
         }
     }
 
