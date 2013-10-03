@@ -45,7 +45,7 @@ public class WebDavResponse implements Response {
         return response.getStatusText();
     }
 
-    /* @Override */
+    @Override
     public byte[] getResponseBodyAsBytes() throws IOException {
         return response.getResponseBodyAsBytes();
     }

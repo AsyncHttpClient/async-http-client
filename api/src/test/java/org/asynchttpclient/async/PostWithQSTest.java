@@ -89,7 +89,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
         try {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-                /* @Override */
+                @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
                     if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=")) {
                         throw new IOException(status.getUri().toURL().toString());
@@ -112,7 +112,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
         try {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-                /* @Override */
+                @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
                     if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
                         throw new IOException("failed to parse the query properly");
@@ -135,7 +135,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
         try {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
-                /* @Override */
+                @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
                     if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
                         throw new IOException("failed to parse the query properly");

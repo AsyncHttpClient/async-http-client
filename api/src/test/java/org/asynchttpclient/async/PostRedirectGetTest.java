@@ -94,7 +94,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                     return response.getStatusCode();
                 }
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                     fail("Unexpected exception: " + t.getMessage(), t);
@@ -129,7 +129,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
                     return response.getStatusCode();
                 }
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace();
                     fail("Unexpected exception: " + t.getMessage(), t);
@@ -149,7 +149,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
         final AtomicInteger counter = new AtomicInteger();
 
-        /* @Override */
+        @Override
         public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             final boolean expectGet = (httpRequest.getHeader("x-expect-get") != null);

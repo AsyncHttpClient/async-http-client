@@ -431,20 +431,20 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
                 private int status = -1;
 
-                /* @Override */
+                @Override
                 public void onThrowable(Throwable t) {
                     whatCalled[OTHER] = true;
                     latch.countDown();
                 }
 
-                /* @Override */
+                @Override
                 public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                     whatCalled[OTHER] = true;
                     latch.countDown();
                     return STATE.ABORT;
                 }
 
-                /* @Override */
+                @Override
                 public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
                     whatCalled[STATUS] = true;
                     status = responseStatus.getStatusCode();
@@ -452,14 +452,14 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
                     return STATE.ABORT;
                 }
 
-                /* @Override */
+                @Override
                 public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
                     whatCalled[OTHER] = true;
                     latch.countDown();
                     return STATE.ABORT;
                 }
 
-                /* @Override */
+                @Override
                 public Integer onCompleted() throws Exception {
                     whatCalled[COMPLETED] = true;
                     latch.countDown();

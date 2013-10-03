@@ -42,7 +42,7 @@ public class ThrottleRequestFilter implements RequestFilter {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
 		try {

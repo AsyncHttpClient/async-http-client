@@ -54,7 +54,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public Body createBody() throws IOException {
         return new ISBody();
     }

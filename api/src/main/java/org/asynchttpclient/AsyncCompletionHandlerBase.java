@@ -36,7 +36,7 @@ public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response>
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void onThrowable(Throwable t) {
         log.debug(t.getMessage(), t);
     }

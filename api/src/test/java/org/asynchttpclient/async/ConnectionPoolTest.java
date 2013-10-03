@@ -244,7 +244,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
                 });
 
                 client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
-                    /* @Override */
+                    @Override
                     public void onThrowable(Throwable t) {
                         if (t.getMessage() != null && t.getMessage().equalsIgnoreCase(THIS_IS_NOT_FOR_YOU)) {
                             count.incrementAndGet();

@@ -43,7 +43,7 @@ public class NettyResponse extends ResponseBase {
         super(status, headers, bodyParts);
     }
 
-    /* @Override */
+    @Override
     public String getResponseBodyExcerpt(int maxLength) throws IOException {
         return getResponseBodyExcerpt(maxLength, null);
     }
@@ -69,12 +69,12 @@ public class NettyResponse extends ResponseBase {
         return Collections.unmodifiableList(cookies);
     }
 
-    /* @Override */
+    @Override
     public byte[] getResponseBodyAsBytes() throws IOException {
         return getResponseBodyAsByteBuffer().array();
     }
 
-    /* @Override */
+    @Override
     public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
 
         int length = 0;
@@ -88,17 +88,17 @@ public class NettyResponse extends ResponseBase {
         return target;
     }
 
-    /* @Override */
+    @Override
     public String getResponseBody() throws IOException {
         return getResponseBody(null);
     }
 
-    /* @Override */
+    @Override
     public String getResponseBody(String charset) throws IOException {
         return new String(getResponseBodyAsBytes(), calculateCharset(charset));
     }
 
-    /* @Override */
+    @Override
     public InputStream getResponseBodyAsStream() throws IOException {
         return new ByteArrayInputStream(getResponseBodyAsBytes());
     }

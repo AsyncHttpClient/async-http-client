@@ -39,7 +39,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         appendable.append(new String(byteBuffer.array(),
                                      byteBuffer.arrayOffset() + byteBuffer.position(),
@@ -50,7 +50,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void close() throws IOException {
         if (appendable instanceof Closeable) {
             Closeable.class.cast(appendable).close();

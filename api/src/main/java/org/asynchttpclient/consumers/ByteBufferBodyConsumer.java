@@ -31,7 +31,7 @@ public class ByteBufferBodyConsumer implements BodyConsumer {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         byteBuffer.put(byteBuffer);
     }
@@ -39,7 +39,7 @@ public class ByteBufferBodyConsumer implements BodyConsumer {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void close() throws IOException {
         byteBuffer.flip();
     }

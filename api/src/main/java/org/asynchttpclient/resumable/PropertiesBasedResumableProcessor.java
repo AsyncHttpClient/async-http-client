@@ -36,7 +36,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void put(String url, long transferredBytes) {
         properties.put(url, transferredBytes);
     }
@@ -44,7 +44,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void remove(String uri) {
         if (uri != null) {
             properties.remove(uri);
@@ -54,7 +54,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void save(Map<String, Long> map) {
         log.debug("Saving current download state {}", properties.toString());
         FileOutputStream os = null;

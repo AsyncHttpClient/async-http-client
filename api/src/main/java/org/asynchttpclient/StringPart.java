@@ -39,7 +39,7 @@ public class StringPart implements Part {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public String getName() {
         return name;
     }

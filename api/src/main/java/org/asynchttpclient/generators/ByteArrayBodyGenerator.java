@@ -64,7 +64,7 @@ public class ByteArrayBodyGenerator implements BodyGenerator {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public Body createBody() throws IOException {
         return new ByteBody();
     }

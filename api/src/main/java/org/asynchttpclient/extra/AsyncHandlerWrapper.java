@@ -23,7 +23,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public void onThrowable(Throwable t) {
 		try {
 			asyncHandler.onThrowable(t);
@@ -38,7 +38,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 		return asyncHandler.onBodyPartReceived(bodyPart);
 	}
@@ -46,7 +46,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
 		return asyncHandler.onStatusReceived(responseStatus);
 	}
@@ -54,7 +54,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
 		return asyncHandler.onHeadersReceived(headers);
 	}
@@ -62,7 +62,7 @@ public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 	/**
 	 * {@inheritDoc}
 	 */
-	/* @Override */
+	@Override
 	public T onCompleted() throws Exception {
 		available.release();
 		if (logger.isDebugEnabled()) {

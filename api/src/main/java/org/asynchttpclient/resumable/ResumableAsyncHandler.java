@@ -102,7 +102,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
@@ -121,7 +121,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public void onThrowable(Throwable t) {
         if (decoratedAsyncHandler != null) {
             decoratedAsyncHandler.onThrowable(t);
@@ -133,7 +133,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 
         if (accumulateBody) {
@@ -160,7 +160,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public Response onCompleted() throws Exception {
         resumableProcessor.remove(url);
         resumableListener.onAllBytesReceived();
@@ -175,7 +175,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
+    @Override
     public AsyncHandler.STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
