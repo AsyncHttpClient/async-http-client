@@ -36,6 +36,7 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.ProcessingState;
 import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.Header;
@@ -471,7 +472,7 @@ public final class EventHandler {
 
         final RequestBuilder builder = new RequestBuilder(ctx.getRequest());
         if (asGet) {
-            builder.setMethod("GET");
+            builder.setMethod(Method.GET.getMethodString());
         }
         builder.setUrl(uri.toString());
 

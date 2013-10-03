@@ -25,6 +25,7 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.ietf.jgss.GSSContext;
@@ -74,7 +75,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         Realm realm = new Realm.RealmBuilder().setPrincipal(principal)
                 .setPassword(password)
                 .setUri("/")
-                .setMethodName("CONNECT")
+                .setMethodName(Method.CONNECT.getMethodString())
                 .setUsePreemptiveAuth(true)
                 .parseProxyAuthenticateHeader(proxyAuth)
                 .build();
