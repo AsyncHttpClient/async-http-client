@@ -23,7 +23,6 @@ import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.Base64;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.util.Header;
