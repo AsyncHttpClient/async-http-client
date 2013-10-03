@@ -146,7 +146,16 @@ public class ApacheResponse implements Response {
     /* @Override */
 
     public boolean isRedirected() {
-        return (status.getStatusCode() >= 300) && (status.getStatusCode() <= 399);
+        switch (status.getStatusCode()) {
+        case 301:
+        case 302:
+        case 303:
+        case 307:
+        case 308:
+            return true;
+        default:
+            return false;
+        }
     }
 
     /* @Override */

@@ -248,9 +248,16 @@ public class GrizzlyResponse implements Response {
      * {@inheritDoc}
      */
     public boolean isRedirected() {
-
-        return between(status.getStatusCode(), 300, 399);
-
+        switch (status.getStatusCode()) {
+        case 301:
+        case 302:
+        case 303:
+        case 307:
+        case 308:
+            return true;
+        default:
+            return false;
+        }
     }
 
 
@@ -345,14 +352,4 @@ public class GrizzlyResponse implements Response {
         return Charsets.lookupCharset(charsetLocal);
 
     }
-
-
-    private boolean between(final int value,
-                            final int lowerBound,
-                            final int upperBound) {
-
-        return (value >= lowerBound && value <= upperBound);
-
-    }
-
 }
