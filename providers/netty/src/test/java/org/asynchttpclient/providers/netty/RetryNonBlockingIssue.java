@@ -156,48 +156,6 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
         }
     }
 
-    @Test
-    public void testRetryBlocking() throws IOException, InterruptedException, ExecutionException {
-
-        NettyAsyncHttpProviderConfig nettyConfig = new NettyAsyncHttpProviderConfig();
-        nettyConfig.setUseBlockingIO(true);
-
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setAllowPoolingConnection(true)//
-                .setMaximumConnectionsTotal(100)//
-                .setConnectionTimeoutInMs(60000)//
-                .setRequestTimeoutInMs(30000)//
-                .setAsyncHttpClientProviderConfig(nettyConfig)//
-                .build();
-
-        AsyncHttpClient client = getAsyncHttpClient(config);
-
-        try {
-            List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
-            for (int i = 0; i < 32; i++) {
-                res.add(testMethodRequest(client, 3, "servlet", UUID.randomUUID().toString()));
-            }
-
-            StringBuilder b = new StringBuilder();
-            for (ListenableFuture<Response> r : res) {
-                Response theres = r.get();
-                assertEquals(theres.getStatusCode(), 200);
-                b.append("==============\r\n");
-                b.append("Response Headers\r\n");
-                Map<String, List<String>> heads = theres.getHeaders();
-                b.append(heads + "\r\n");
-                b.append("==============\r\n");
-                assertTrue(heads.size() > 0);
-
-            }
-            System.out.println(b.toString());
-            System.out.flush();
-
-        } finally {
-            client.close();
-        }
-    }
-
     @SuppressWarnings("serial")
     public class MockExceptionServlet extends HttpServlet {
 
