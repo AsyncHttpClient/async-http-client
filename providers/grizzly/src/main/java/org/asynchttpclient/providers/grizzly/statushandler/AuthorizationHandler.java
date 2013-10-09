@@ -58,6 +58,14 @@ public final class AuthorizationHandler implements StatusHandler {
         }
         if (realm == null) {
             httpTransactionContext.setInvocationStatus(STOP);
+            if (httpTransactionContext.getHandler() != null) {
+                try {
+                    httpTransactionContext.getHandler().onStatusReceived(
+                            httpTransactionContext.getResponseStatus());
+                } catch (Exception e) {
+                    httpTransactionContext.abort(e);
+                }
+            }
             return true;
         }
 
