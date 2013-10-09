@@ -1475,6 +1475,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 }
                 if (realm == null) {
                     httpTransactionContext.invocationStatus = InvocationStatus.STOP;
+                    if (httpTransactionContext.handler != null) {
+                        try {
+                            httpTransactionContext.handler.onStatusReceived(httpTransactionContext.responseStatus);
+                        } catch (Exception e) {
+                            httpTransactionContext.abort(e);
+                        }
+                    }
                     return true;
                 }
 
