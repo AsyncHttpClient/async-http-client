@@ -224,13 +224,13 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                                                    final HttpResponsePacket response,
                                                    final HttpTxContext httpCtx)
     throws Exception {
-        if (response.getProcessingState().isKeepAlive()) {
-            return ctx.getConnection();
-        } else {
-            final ConnectionManager m =
-                    httpCtx.getProvider().getConnectionManager();
-            return m.obtainConnection(request, httpCtx.getFuture());
-        }
+        /*
+                if (response.getProcessingState().isKeepAlive()) {
+                    return ctx.getConnection();
+                } else { */
+                    final ConnectionManager m = httpCtx.getProvider().getConnectionManager();
+                    return m.obtainConnection(request, httpCtx.getFuture());
+                /* } */
     }
 
 

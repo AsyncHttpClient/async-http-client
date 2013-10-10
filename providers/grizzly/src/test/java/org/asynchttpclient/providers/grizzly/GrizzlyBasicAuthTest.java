@@ -29,16 +29,5 @@ public class GrizzlyBasicAuthTest extends BasicAuthTest {
     public String getProviderClass() {
         return GrizzlyAsyncHttpProvider.class.getName();
     }
-    
-    @Test(groups = { "standalone", "default_provider" }, enabled = false)
-    @Override
-    public void basicAuthFileTest() throws Exception {
-        // FIXME
-    }
 
-    @Test(groups = { "standalone", "default_provider" }, enabled = false)
-    @Override
-    public void basicAuthFileNoKeepAliveTest() throws Exception {
-        // FIXME
-    }
 }

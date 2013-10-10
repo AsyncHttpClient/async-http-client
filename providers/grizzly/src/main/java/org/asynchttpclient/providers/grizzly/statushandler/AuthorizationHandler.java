@@ -135,12 +135,13 @@ public final class AuthorizationHandler implements StatusHandler {
                                                    final HttpResponsePacket response,
                                                    final HttpTxContext httpCtx)
     throws Exception {
+        /*
         if (response.getProcessingState().isKeepAlive()) {
             return ctx.getConnection();
-        } else {
+        } else { */
             final ConnectionManager m = httpCtx.getProvider().getConnectionManager();
             return m.obtainConnection(request, httpCtx.getFuture());
-        }
+        /* } */
     }
 
 } // END AuthorizationHandler
