@@ -15,6 +15,7 @@ package com.ning.http.client.providers.grizzly;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
+import com.ning.http.client.AsyncHttpClient;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -127,6 +128,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -889,9 +891,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 requestPacket = builder.build();
             }
             requestPacket.setSecure(secure);
-            if (secure) {
-                ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(true, ctx.getConnection()));
-            }
+
+            ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(secure, ctx.getConnection()));
+
             if (!useProxy && !httpCtx.isWSRequest) {
                 addQueryString(request, requestPacket);
             }
@@ -2839,7 +2841,35 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return result;
         }
     } // END AHCWebSocketListenerAdapter
-    
+
+
+    public static void main(String[] args) {
+            SecureRandom secureRandom = new SecureRandom();
+            SSLContext sslContext = null;
+            try {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, null, secureRandom);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+                    .setConnectionTimeoutInMs(5000)
+                    .setSSLContext(sslContext).build();
+            AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+            try {
+                long start = System.currentTimeMillis();
+                try {
+                    client.executeRequest(client.prepareGet("http://www.google.com").build()).get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("COMPLETE: " + (System.currentTimeMillis() - start) + "ms");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 }
 
 
