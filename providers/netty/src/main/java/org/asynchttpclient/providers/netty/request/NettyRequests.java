@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -61,7 +60,7 @@ public class NettyRequests {
             method = HttpMethod.CONNECT;
         else
             method = HttpMethod.valueOf(request.getMethod());
-        
+
         String host = null;
         HttpVersion httpVersion;
         String requestUri;
@@ -107,18 +106,6 @@ public class NettyRequests {
         }
 
         if (method != HttpMethod.CONNECT) {
-            FluentCaseInsensitiveStringsMap h = request.getHeaders();
-            if (h != null) {
-                for (Entry<String, List<String>> header : h) {
-                    String name = header.getKey();
-                    if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
-                        for (String value : header.getValue()) {
-                            headers.put(name, value);
-                        }
-                    }
-                }
-            }
-
             if (config.isCompressionEnabled()) {
                 headers.put(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
             }
@@ -186,6 +173,7 @@ public class NettyRequests {
         }
 
         if (proxyServer != null) {
+            // FIXME Wikipedia says that Proxy-Connection was a misunderstanding of Connection http://en.wikipedia.org/wiki/List_of_HTTP_header_fields
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
                 headers.put("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
             }
@@ -297,6 +285,15 @@ public class NettyRequests {
         } else {
             nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
         }
+
+        // assign headers as configured on request
+        if (method != HttpMethod.CONNECT) {
+            for (Entry<String, List<String>> header : request.getHeaders()) {
+                nettyRequest.headers().set(header.getKey(), header.getValue());
+            }
+        }
+
+        // override with computed ones
         for (Entry<String, Object> header : headers.entrySet()) {
             nettyRequest.headers().set(header.getKey(), header.getValue());
         }
