@@ -818,7 +818,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
 
                 } else if (request.getEntityWriter() != null) {
-                    int length = getPredefinedContentLength(request, nettyRequest);
+                    int length = (int) request.getContentLength();
 
                     if (length == -1) {
                         length = MAX_BUFFERED_BYTES;
@@ -1607,15 +1607,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         return false;
-    }
-
-    private final static int getPredefinedContentLength(Request request, HttpRequest r) {
-        int length = (int) request.getContentLength();
-        if (length == -1 && r.getHeader(HttpHeaders.Names.CONTENT_LENGTH) != null) {
-            length = Integer.valueOf(r.getHeader(HttpHeaders.Names.CONTENT_LENGTH));
-        }
-
-        return length;
     }
 
     public static <T> NettyResponseFuture<T> newFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, HttpRequest nettyRequest, AsyncHttpClientConfig config, NettyAsyncHttpProvider provider, ProxyServer proxyServer) {
