@@ -114,7 +114,6 @@ public class NettyRequests {
                     }
                 }
             }
-            headers.replaceAll(h);
 
             if (config.isCompressionEnabled()) {
                 headers.replace(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
