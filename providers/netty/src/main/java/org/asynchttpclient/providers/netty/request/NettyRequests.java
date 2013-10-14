@@ -31,9 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -65,7 +63,7 @@ public class NettyRequests {
         String host = null;
         HttpVersion httpVersion;
         String requestUri;
-        Map<String, Object> headers = new HashMap<String, Object>();
+        FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
         ByteBuf content = null;
         boolean webSocket = isWebSocket(uri);
 
@@ -89,18 +87,18 @@ public class NettyRequests {
         }
 
         if (webSocket) {
-            headers.put(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
-            headers.put(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            headers.put(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
-            headers.put(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
-            headers.put(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
+            headers.replace(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
+            headers.replace(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
+            headers.replace(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
+            headers.replace(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
+            headers.replace(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
         }
 
         if (host != null) {
             if (request.getVirtualHost() != null || uri.getPort() == -1) {
-                headers.put(HttpHeaders.Names.HOST, host);
+                headers.replace(HttpHeaders.Names.HOST, host);
             } else {
-                headers.put(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
+                headers.replace(HttpHeaders.Names.HOST, host + ":" + uri.getPort());
             }
         } else {
             host = "127.0.0.1";
@@ -108,24 +106,15 @@ public class NettyRequests {
 
         if (method != HttpMethod.CONNECT) {
             FluentCaseInsensitiveStringsMap h = request.getHeaders();
-            if (h != null) {
-                for (Entry<String, List<String>> header : h) {
-                    String name = header.getKey();
-                    if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
-                        for (String value : header.getValue()) {
-                            headers.put(name, value);
-                        }
-                    }
-                }
-            }
+            headers.replaceAll(h);
 
             if (config.isCompressionEnabled()) {
-                headers.put(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
+                headers.replace(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
             if (isNTLM(auth)) {
-                headers.put(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
+                headers.replace(HttpHeaders.Names.PROXY_AUTHORIZATION, auth.get(0));
             }
         }
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
@@ -144,12 +133,12 @@ public class NettyRequests {
 
             switch (realm.getAuthScheme()) {
             case BASIC:
-                headers.put(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
+                headers.replace(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
                 break;
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        headers.put(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
+                        headers.replace(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -158,7 +147,7 @@ public class NettyRequests {
             case NTLM:
                 try {
                     String msg = NTLMEngine.INSTANCE.generateType1Msg("NTLM " + domain, authHost);
-                    headers.put(HttpHeaders.Names.AUTHORIZATION, "NTLM " + msg);
+                    headers.replace(HttpHeaders.Names.AUTHORIZATION, "NTLM " + msg);
                 } catch (NTLMEngineException e) {
                     throw new IOException(e);
                 }
@@ -172,7 +161,7 @@ public class NettyRequests {
                 } catch (Throwable e) {
                     throw new IOException(e);
                 }
-                headers.put(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+                headers.replace(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
                 break;
             case NONE:
                 break;
@@ -182,12 +171,12 @@ public class NettyRequests {
         }
 
         if (!webSocket && !request.getHeaders().containsKey(HttpHeaders.Names.CONNECTION)) {
-            headers.put(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
+            headers.replace(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
         if (proxyServer != null) {
             if (!request.getHeaders().containsKey("Proxy-Connection")) {
-                headers.put("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
+                headers.replace("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
             }
 
             if (proxyServer.getPrincipal() != null) {
@@ -197,7 +186,7 @@ public class NettyRequests {
                     if (!isNTLM(auth)) {
                         try {
                             String msg = NTLMEngine.INSTANCE.generateType1Msg(proxyServer.getNtlmDomain(), proxyServer.getHost());
-                            headers.put(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
+                            headers.replace(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + msg);
                         } catch (NTLMEngineException e) {
                             IOException ie = new IOException();
                             ie.initCause(e);
@@ -205,29 +194,29 @@ public class NettyRequests {
                         }
                     }
                 } else {
-                    headers.put(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+                    headers.replace(HttpHeaders.Names.PROXY_AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
                 }
             }
         }
 
         // Add default accept headers
         if (!request.getHeaders().containsKey(HttpHeaders.Names.ACCEPT)) {
-            headers.put(HttpHeaders.Names.ACCEPT, "*/*");
+            headers.replace(HttpHeaders.Names.ACCEPT, "*/*");
         }
 
         String userAgentHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.USER_AGENT);
         if (userAgentHeader != null) {
-            headers.put(HttpHeaders.Names.USER_AGENT, userAgentHeader);
+            headers.replace(HttpHeaders.Names.USER_AGENT, userAgentHeader);
         } else if (config.getUserAgent() != null) {
-            headers.put(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
+            headers.replace(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
         } else {
-            headers.put(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
+            headers.replace(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
         }
 
         boolean hasDeferredContent = false;
         if (method != HttpMethod.CONNECT) {
             if (isNonEmpty(request.getCookies())) {
-                headers.put(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
+                headers.replace(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
             if (method != HttpMethod.HEAD && method != HttpMethod.OPTIONS && method != HttpMethod.TRACE) {
@@ -235,17 +224,17 @@ public class NettyRequests {
                 String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
                 if (request.getByteData() != null) {
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, request.getByteData().length);
+                    headers.replace(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                     content = Unpooled.wrappedBuffer(request.getByteData());
 
                 } else if (request.getStringData() != null) {
                     byte[] bytes = request.getStringData().getBytes(bodyCharset);
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                    headers.replace(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                     content = Unpooled.wrappedBuffer(bytes);
 
                 } else if (request.getStreamData() != null) {
                     hasDeferredContent = true;
-                    headers.put(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                    headers.replace(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
 
                 } else if (isNonEmpty(request.getParams())) {
                     StringBuilder sb = new StringBuilder();
@@ -260,19 +249,19 @@ public class NettyRequests {
                     }
                     sb.setLength(sb.length() - 1);
                     byte[] bytes = sb.toString().getBytes(bodyCharset);
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                    headers.replace(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                     content = Unpooled.wrappedBuffer(bytes);
 
                     if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
-                        headers.put(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+                        headers.replace(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
                     }
 
                 } else if (request.getParts() != null) {
                     // FIXME use Netty multipart
                     MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
-                    headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
+                    headers.replace(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
+                    headers.replace(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
                     hasDeferredContent = true;
 
                 } else if (request.getFile() != null) {
@@ -280,7 +269,7 @@ public class NettyRequests {
                     if (!file.isFile()) {
                         throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
                     }
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, file.length());
+                    headers.replace(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(file.length()));
                     hasDeferredContent = true;
 
                 } else if (request.getBodyGenerator() != null) {
@@ -297,7 +286,7 @@ public class NettyRequests {
         } else {
             nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
         }
-        for (Entry<String, Object> header : headers.entrySet()) {
+        for (Entry<String, List<String>> header : headers.entrySet()) {
             nettyRequest.headers().set(header.getKey(), header.getValue());
         }
         return nettyRequest;
