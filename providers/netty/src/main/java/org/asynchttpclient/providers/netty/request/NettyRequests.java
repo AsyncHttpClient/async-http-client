@@ -106,6 +106,14 @@ public class NettyRequests {
 
         if (method != HttpMethod.CONNECT) {
             FluentCaseInsensitiveStringsMap h = request.getHeaders();
+            if (h != null) {
+                for (Entry<String, List<String>> header : h) {
+                    String name = header.getKey();
+                    if (!HttpHeaders.Names.HOST.equalsIgnoreCase(name)) {
+                        headers.replace(name, header.getValue());
+                    }
+                }
+            }
             headers.replaceAll(h);
 
             if (config.isCompressionEnabled()) {
