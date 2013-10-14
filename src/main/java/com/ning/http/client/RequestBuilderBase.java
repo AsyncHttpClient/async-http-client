@@ -370,7 +370,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setUrl(String url) {
-        request.originalUri = buildURI(url);
+        return setURI(URI.create(url));
+    }
+
+    public T setURI(URI uri) {
+        request.originalUri = uri;
+        addQueryParameters(request.originalUri);
         request.uri = null;
         request.rawUri = null;
         return derived.cast(this);
@@ -386,32 +391,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private URI buildURI(String url) {
-        URI uri = URI.create(url);
-
-        if (uri.getRawPath() == null) {
-            // AHC-96
-            // Let's try to derive it
-            StringBuilder buildedUrl = new StringBuilder();
-
-            if (uri.getScheme() != null) {
-                buildedUrl.append(uri.getScheme());
-                buildedUrl.append("://");
-            }
-
-            if (uri.getAuthority() != null) {
-                buildedUrl.append(uri.getAuthority());
-            }
-            if (url.indexOf("://") == -1) {
-                String s = buildedUrl.toString();
-                url = s + url.substring(uri.getScheme().length() + 1);
-                return buildURI(url);
-            } else {
-                throw new IllegalArgumentException("Invalid url "
-                        + uri.toString());
-            }
-        }
-
+    private void addQueryParameters(URI uri) {
         if (isNonEmpty(uri.getRawQuery())) {
             String[] queries = uri.getRawQuery().split("&");
             int pos;
@@ -432,7 +412,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
         }
-        return uri;
     }
 
     public T setVirtualHost(String virtualHost) {
