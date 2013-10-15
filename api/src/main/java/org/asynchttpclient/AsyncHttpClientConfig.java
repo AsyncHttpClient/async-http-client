@@ -503,12 +503,20 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
-     *
-     * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
+     * @return <code>true</code> if both the application and reaper thread pools
+     * haven't yet been shutdown.
+     * @since 1.7.21
      */
-    public boolean isClosed() {
-        return applicationThreadPool.isShutdown() || reaper.isShutdown();
+    public boolean isValid() {
+        boolean atpRunning = true;
+        try {
+            atpRunning = applicationThreadPool.isShutdown();
+        } catch (Exception ignore) {
+            // isShutdown() will thrown an exception in an EE7 environment
+            // when using a ManagedExecutorService.
+            // When this is the case, we assume it's running.
+        }
+        return (atpRunning && !reaper.isShutdown());
     }
 
     /**
@@ -1226,23 +1234,6 @@ public class AsyncHttpClientConfig {
                     }
                 });
             }
-
-//            if (applicationThreadPool == null) {
-//                applicationThreadPool =
-//                        Executors.newCachedThreadPool(new ThreadFactory() {
-//                            final AtomicInteger counter = new AtomicInteger();
-//                            public Thread newThread(Runnable r) {
-//                                Thread t = new Thread(r,
-//                                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
-//                                t.setDaemon(true);
-//                                return t;
-//                            }
-//                        });
-//            }
-//
-//            if (applicationThreadPool.isShutdown()) {
-//                throw new IllegalStateException("ExecutorServices closed");
-//            }
 
             if (proxyServerSelector == null && useProxySelector) {
                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
