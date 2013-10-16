@@ -46,6 +46,8 @@ import org.asynchttpclient.multipart.ByteArrayPartSource;
 import org.asynchttpclient.multipart.MultipartRequestEntity;
 import org.asynchttpclient.multipart.PartSource;
 
+import com.ning.http.util.MiscUtil;
+
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
  * <p/>
@@ -530,13 +532,24 @@ public class AsyncHttpProviderUtils {
         throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
     }
 
-    private final static String removeQuote(String s) {
+    public final static String removeQuotes(String s) {
         if (MiscUtil.isNonEmpty(s)) {
-            if (s.charAt(0) == '"')
-                s = s.substring(1);
+            int start = 0;
+            int end = s.length();
+            boolean changed = false;
 
-            if (s.charAt(s.length() - 1) == '"')
-                s = s.substring(0, s.length() - 1);
+            if (s.charAt(0) == '"') {
+                changed = true;
+                start++;
+            }
+
+            if (s.charAt(s.length() - 1) == '"') {
+                changed = true;
+                end--;
+            }
+
+            if (changed)
+                s = s.substring(start, end);
         }
         return s;
     }
