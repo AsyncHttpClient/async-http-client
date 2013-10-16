@@ -1666,13 +1666,11 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         return String.format("http:127.0.0.1:%d/foo/test", port1);
     }
 
-    @Test(groups = { "standalone", "default_provider" })
+    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { IllegalArgumentException.class })
     public void invalidUri() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder builder = client.prepareGet(getBrokenTargetUrl());
-            Response r = client.executeRequest(builder.build()).get();
-            assertEquals(200, r.getStatusCode());
+            client.prepareGet(getBrokenTargetUrl());
         } finally {
             client.close();
         }

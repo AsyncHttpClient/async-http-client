@@ -20,6 +20,7 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -374,6 +375,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setURI(URI uri) {
+        if (uri.getPath() == null)
+            throw new IllegalArgumentException("Unsupported uri format: " + uri);
         request.originalUri = uri;
         addQueryParameters(request.originalUri);
         request.uri = null;
