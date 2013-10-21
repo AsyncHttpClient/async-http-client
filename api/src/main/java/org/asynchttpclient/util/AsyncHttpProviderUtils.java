@@ -46,8 +46,6 @@ import org.asynchttpclient.multipart.ByteArrayPartSource;
 import org.asynchttpclient.multipart.MultipartRequestEntity;
 import org.asynchttpclient.multipart.PartSource;
 
-import com.ning.http.util.MiscUtil;
-
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
  * <p/>
