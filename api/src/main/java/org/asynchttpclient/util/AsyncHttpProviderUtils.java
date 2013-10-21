@@ -516,7 +516,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public static int convertExpireField(String timestring) {
-        String trimmedTimeString = removeQuote(timestring.trim());
+        String trimmedTimeString = removeQuotes(timestring.trim());
 
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             Date date = sdf.parse(trimmedTimeString, new ParsePosition(0));
