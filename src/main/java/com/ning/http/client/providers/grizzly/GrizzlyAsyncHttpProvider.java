@@ -868,7 +868,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             if (requestHasEntityBody(request)) {
                 final long contentLength = request.getContentLength();
-                if (contentLength > 0) {
+                if (contentLength >= 0) {
                     builder.contentLength(contentLength);
                     builder.chunked(false);
                 } else {
@@ -2193,7 +2193,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final BodyGenerator generator = request.getBodyGenerator();
             final Body bodyLocal = generator.createBody();
             final long len = bodyLocal.getContentLength();
-            if (len > 0) {
+            if (len >= 0) {
                 requestPacket.setContentLengthLong(len);
             } else {
                 requestPacket.setChunked(true);
