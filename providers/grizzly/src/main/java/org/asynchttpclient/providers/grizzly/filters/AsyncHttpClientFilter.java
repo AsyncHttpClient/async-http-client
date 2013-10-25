@@ -262,7 +262,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         if (Utils.requestHasEntityBody(request)) {
             final long contentLength = request.getContentLength();
-            if (contentLength > 0) {
+            if (contentLength >= 0) {
                 requestPacket.setContentLengthLong(contentLength);
                 requestPacket.setChunked(false);
             } else {

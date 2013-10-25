@@ -44,7 +44,7 @@ public final class BodyGeneratorBodyHandler implements BodyHandler {
         final BodyGenerator generator = request.getBodyGenerator();
         final Body bodyLocal = generator.createBody();
         final long len = bodyLocal.getContentLength();
-        if (len > 0) {
+        if (len >= 0) {
             requestPacket.setContentLengthLong(len);
         } else {
             requestPacket.setChunked(true);
