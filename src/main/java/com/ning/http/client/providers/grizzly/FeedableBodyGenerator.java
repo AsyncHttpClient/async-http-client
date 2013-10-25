@@ -33,6 +33,7 @@ import org.glassfish.grizzly.nio.NIOConnection;
 import org.glassfish.grizzly.nio.SelectorRunner;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLFilter;
+import org.glassfish.grizzly.threadpool.Threads;
 import org.glassfish.grizzly.utils.Futures;
 
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.getHttpTransactionContext;
@@ -193,7 +194,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // If the current thread is a selector thread, we need to execute
         // the remainder of the task on the worker thread to prevent
         // it from being blocked.
-        if (isCurrentThreadSelectorRunner()) {
+        if (isServiceThread()) {
             c.getTransport().getWorkerThreadPool().execute(r);
         } else {
             r.run();
@@ -204,10 +205,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
     // --------------------------------------------------------- Private Methods
 
 
-    private boolean isCurrentThreadSelectorRunner() {
-        final NIOConnection c = (NIOConnection) context.getConnection();
-        final SelectorRunner runner = c.getSelectorRunner();
-        return (Thread.currentThread() == runner.getRunnerThread());
+    private boolean isServiceThread() {
+        return Threads.isService();
     }
 
 
