@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -16,6 +16,8 @@ package com.ning.http.client.providers.grizzly;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Part;
+import com.ning.http.multipart.MultipartBody;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -2072,31 +2074,64 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return isNonEmpty(request.getParts());
         }
 
-        @SuppressWarnings({"unchecked"})
         public boolean doHandle(final FilterChainContext ctx,
-                             final Request request,
-                             final HttpRequestPacket requestPacket)
-        throws IOException {
+                                final Request request,
+                                final HttpRequestPacket requestPacket)
+                throws IOException {
 
-            MultipartRequestEntity mre =
-                    AsyncHttpProviderUtils.createMultipartRequestEntity(
-                            request.getParts(),
-                            request.getHeaders());
-            requestPacket.setContentLengthLong(mre.getContentLength());
-            requestPacket.setContentType(mre.getContentType());
-            final MemoryManager mm = ctx.getMemoryManager();
-            Buffer b = mm.allocate(512);
-            BufferOutputStream o = new BufferOutputStream(mm, b, true);
-            mre.writeRequest(o);
-            b = o.getBuffer();
-            b.trim();
-            if (b.hasRemaining()) {
-                final HttpContent content = requestPacket.httpContentBuilder().content(b).build();
-                content.setLast(true);
-                ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+            final List<Part> parts = request.getParts();
+            final MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(parts, request.getHeaders());
+            final long contentLength = mre.getContentLength();
+            final String contentType = mre.getContentType();
+            requestPacket.setContentLengthLong(contentLength);
+            requestPacket.setContentType(contentType);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("REQUEST(modified): contentLength={}, contentType={}", new Object[]{requestPacket.getContentLength(), requestPacket.getContentType()});
             }
 
-            return true;
+            final FeedableBodyGenerator generator = new FeedableBodyGenerator() {
+                @Override
+                public Body createBody() throws IOException {
+                    return new MultipartBody(parts, contentType, String.valueOf(contentLength));
+                }
+            };
+            generator.setFeeder(new FeedableBodyGenerator.BaseFeeder(generator) {
+                @Override
+                public void flush() throws IOException {
+                    final Body bodyLocal = feedableBodyGenerator.createBody();
+                    try {
+                        final MemoryManager mm = ctx.getMemoryManager();
+                        boolean last = false;
+                        while (!last) {
+                            Buffer buffer = mm.allocate(BodyHandler.MAX_CHUNK_SIZE);
+                            buffer.allowBufferDispose(true);
+                            final long readBytes = bodyLocal.read(buffer.toByteBuffer());
+                            if (readBytes > 0) {
+                                buffer.position((int) readBytes);
+                                buffer.trim();
+                            } else {
+                                buffer.dispose();
+                                if (readBytes < 0) {
+                                    last = true;
+                                    buffer = Buffers.EMPTY_BUFFER;
+                                } else {
+                                    throw new IllegalStateException("MultipartBody unexpectedly returned 0 bytes available");
+                                }
+                            }
+                            feed(buffer, last);
+                        }
+                    } finally {
+                        if (bodyLocal != null) {
+                            try {
+                                bodyLocal.close();
+                            } catch (IOException ignore) {
+                            }
+                        }
+                    }
+                }
+            });
+            generator.initializeAsynchronousTransfer(ctx, requestPacket);
+            return false;
         }
 
     } // END PartsBodyHandler
