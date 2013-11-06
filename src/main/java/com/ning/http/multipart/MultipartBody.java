@@ -79,9 +79,6 @@ public class MultipartBody implements RandomAccessBody {
             int overallLength = 0;
 
             final int maxLength = buffer.remaining();
-            if (maxLength <= 0) {
-                return maxLength;
-            }
 
             if (startPart == parts.size() && endWritten) {
                 return -1;
@@ -208,7 +205,8 @@ public class MultipartBody implements RandomAccessBody {
     private void initializeByteArrayBody(FilePart filePart)
             throws IOException {
 
-        ByteArrayOutputStream output = generateByteArrayBody(filePart);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        filePart.sendData(output);
 
         initializeBuffer(output);
 
@@ -395,13 +393,6 @@ public class MultipartBody implements RandomAccessBody {
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         Part.sendPart(output, filePart, boundary);
         return writeToTarget(target, output);
-    }
-
-    private ByteArrayOutputStream generateByteArrayBody(FilePart filePart)
-            throws IOException {
-        final ByteArrayOutputStream output = new ByteArrayOutputStream();
-        filePart.sendData(output);
-        return output;
     }
 
     private long handleFileEnd(WritableByteChannel target, FilePart filePart)
