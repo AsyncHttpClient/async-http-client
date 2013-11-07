@@ -91,7 +91,7 @@ public class MultipartBodyTest {
                 } catch (IOException ie) {
                     Assert.fail("read failure");
                 }
-                if (readBytes >= 0) {
+                if (readBytes > 0) {
                     totalBytes += readBytes;
                 } else {
                     last = true;
