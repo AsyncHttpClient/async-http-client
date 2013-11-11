@@ -2093,7 +2093,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(request.getUrl()).build();
-
                         log.debug("Sending authentication to {}", request.getUrl());
                         AsyncCallable ac = new AsyncCallable(future) {
                             public Object call() throws Exception {
@@ -2103,6 +2102,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             }
                         };
 
+                        if (future.getKeepAlive()) {
+                            future.setReuseChannel(true);
+                        }
                         if (future.getKeepAlive() && response.isChunked()) {
                             // We must make sure there is no bytes left before executing the next request.
                             ctx.setAttachment(ac);
