@@ -35,6 +35,7 @@ import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +120,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (!requestSender.retry(ctx.channel(), future)) {
-                    channels.abort(future, new IOException("Remotely Closed"));
+                    channels.abort(future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
                 }
             } else {
                 channels.closeChannel(ctx);

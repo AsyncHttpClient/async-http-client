@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.websocket.WebSocket;
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
@@ -67,7 +68,7 @@ public final class HttpTxContext {
         public void onClosed(Closeable closeable, CloseType type)
         throws IOException {
             if (CloseType.REMOTELY.equals(type)) {
-                abort(new IOException("Remotely Closed"));
+                abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
             }
         }
     };

@@ -28,6 +28,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -195,7 +196,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
     protected void inspectException(Throwable t) {
         assertNotNull(t.getCause());
         assertEquals(t.getCause().getClass(), IOException.class);
-        if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
+        if (t.getCause() != AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION) {
             fail();
         }
     }

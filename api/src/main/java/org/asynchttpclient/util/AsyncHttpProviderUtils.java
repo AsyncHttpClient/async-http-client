@@ -14,6 +14,7 @@ package org.asynchttpclient.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
@@ -52,7 +53,13 @@ import org.asynchttpclient.multipart.PartSource;
  * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
-    
+
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
+
+    static {
+        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[] {});
+    }
+
     private final static byte[] NO_BYTES = new byte[0];
 
     public final static String DEFAULT_CHARSET = "ISO-8859-1";
