@@ -14,6 +14,7 @@ package org.asynchttpclient.async;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -21,6 +22,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -76,7 +78,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
         } catch (Exception t) {
             assertNotNull(t.getCause());
             assertEquals(t.getCause().getClass(), IOException.class);
-            if (!t.getCause().getMessage().startsWith("Remotely Closed")) {
+            if (t.getCause() != AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION) {
                 fail();
             }
         } finally {
