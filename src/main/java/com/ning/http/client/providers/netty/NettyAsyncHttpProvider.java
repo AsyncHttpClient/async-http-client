@@ -58,6 +58,7 @@ import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
+
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
@@ -106,6 +107,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -153,6 +155,10 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
+    public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
+    static {
+        REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
+    }
     private final static String HTTP_HANDLER = "httpHandler";
     protected final static String SSL_HANDLER = "sslHandler";
     private final static String HTTPS = "https";
@@ -1379,7 +1385,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (remotelyClosed(ctx.getChannel(), future)) {
-                    abort(future, new IOException("Remotely Closed"));
+                    abort(future, REMOTELY_CLOSED_EXCEPTION);
                 }
             } else {
                 closeChannel(ctx);
