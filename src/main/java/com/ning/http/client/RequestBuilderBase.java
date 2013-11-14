@@ -624,7 +624,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
-        if ((request.length < 0) && (request.streamData == null) && allowBody(request.getMethod())) {
+        if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
             String contentLength = request.headers.getFirstValue("Content-Length");
 
@@ -637,10 +637,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
         return request;
-    }
-
-    private boolean allowBody(String method) {
-        return !(method.equalsIgnoreCase("GET") || method.equalsIgnoreCase("OPTIONS") || method.equalsIgnoreCase("TRACE") || method.equalsIgnoreCase("HEAD"));
     }
 
     public T addOrReplaceCookie(Cookie cookie) {
