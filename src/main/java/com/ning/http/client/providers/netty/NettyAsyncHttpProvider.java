@@ -271,8 +271,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     @Override
     public String toString() {
+        int availablePermits = freeConnections != null ? freeConnections.availablePermits() : 0;
         return String.format("NettyAsyncHttpProvider:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s",//
-                config.getMaxTotalConnections() - freeConnections.availablePermits(),//
+                config.getMaxTotalConnections() - availablePermits,//
                 openChannels.toString(),//
                 connectionsPool.toString());
     }
