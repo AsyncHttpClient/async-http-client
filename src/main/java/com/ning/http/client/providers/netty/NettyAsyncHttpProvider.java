@@ -475,10 +475,18 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     } else {
                         nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
                     }
-                    
+
                 } else if (future.getRequest().getParts() != null) {
                     String contentType = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
-                    String length = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_LENGTH);
+                    String contentLength = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_LENGTH);
+
+                    long length = -1;
+                    if (contentLength != null) {
+                        length = Long.parseLong(contentLength);
+                    } else {
+                        nettyRequest.addHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                    }
+
                     body = new MultipartBody(future.getRequest().getParts(), contentType, length);
                 }
             }
@@ -822,7 +830,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
+                    if (mre.getContentLength() >= 0) {
+                        nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
+                    }
 
                 } else if (request.getEntityWriter() != null) {
                     int length = (int) request.getContentLength();
