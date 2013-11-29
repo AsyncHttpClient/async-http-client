@@ -79,7 +79,7 @@ public class MultipartBodyTest {
         final long expectedContentLength = mre.getContentLength();
 
         // get real bytes
-        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), String.valueOf(expectedContentLength));
+        final Body multipartBody = new MultipartBody(parts, mre.getContentType(), expectedContentLength);
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);
             boolean last = false;
