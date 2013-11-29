@@ -260,7 +260,9 @@ public class NettyRequests {
                     MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
                     headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
+                    if (mre.getContentLength() >= 0) {
+                        headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
+                    }
                     hasDeferredContent = true;
 
                 } else if (request.getFile() != null) {

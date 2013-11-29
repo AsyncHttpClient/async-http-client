@@ -49,9 +49,9 @@ public class MultipartBody implements RandomAccessBody {
 
     enum FileLocation {NONE, START, MIDDLE, END}
 
-    public MultipartBody(List<org.asynchttpclient.Part> parts, String contentType, String contentLength) {
+    public MultipartBody(List<org.asynchttpclient.Part> parts, String contentType, long contentLength) {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
-        this.contentLength = Long.parseLong(contentLength);
+        this.contentLength = contentLength;
         this.parts = parts;
 
         files = new ArrayList<RandomAccessFile>();

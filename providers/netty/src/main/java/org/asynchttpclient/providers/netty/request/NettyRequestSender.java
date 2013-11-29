@@ -439,7 +439,14 @@ public class NettyRequestSender {
             }
         } else if (future.getRequest().getParts() != null) {
             String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
-            String length = headers.get(HttpHeaders.Names.CONTENT_LENGTH);
+            String contentLength = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_LENGTH);
+
+            long length = -1;
+            if (contentLength != null) {
+                length = Long.parseLong(contentLength);
+            } else {
+                nettyRequest.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+            }
             body = new MultipartBody(future.getRequest().getParts(), contentType, length);
         }
 
