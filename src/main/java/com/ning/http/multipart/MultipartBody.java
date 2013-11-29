@@ -50,8 +50,8 @@ public class MultipartBody implements RandomAccessBody {
 
     public MultipartBody(List<com.ning.http.client.Part> parts, String contentType, long contentLength) {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
-        
         this.parts = parts;
+        this.contentLength = contentLength;
 
         files = new ArrayList<RandomAccessFile>();
 
