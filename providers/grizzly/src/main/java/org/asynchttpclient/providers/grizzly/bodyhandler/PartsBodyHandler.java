@@ -67,8 +67,7 @@ public final class PartsBodyHandler implements BodyHandler {
         final FeedableBodyGenerator generator = new FeedableBodyGenerator() {
             @Override
             public Body createBody() throws IOException {
-                return new MultipartBody(parts, contentType,
-                                         String.valueOf(contentLength));
+                return new MultipartBody(parts, contentType, contentLength);
             }
         };
         generator.setFeeder(new FeedableBodyGenerator.BaseFeeder(generator) {
