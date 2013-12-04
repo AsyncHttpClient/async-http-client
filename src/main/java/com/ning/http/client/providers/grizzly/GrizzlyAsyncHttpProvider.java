@@ -1836,12 +1836,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                              final HttpRequestPacket requestPacket)
         throws IOException {
 
-            String charset = request.getBodyEncoding();
-            if (charset == null) {
-                charset = Charsets.ASCII_CHARSET.name();
-            }
-            final byte[] data = new String(request.getByteData(), charset).getBytes(charset);
             final MemoryManager mm = ctx.getMemoryManager();
+            final byte[] data = request.getByteData();
             final Buffer gBuffer = Buffers.wrap(mm, data);
             if (requestPacket.getContentLength() == -1) {
                     if (!clientConfig.isCompressionEnabled()) {
