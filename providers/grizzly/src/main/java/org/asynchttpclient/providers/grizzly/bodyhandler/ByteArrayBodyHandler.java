@@ -46,11 +46,7 @@ public final class ByteArrayBodyHandler implements BodyHandler {
                          final HttpRequestPacket requestPacket)
     throws IOException {
 
-        String charset = request.getBodyEncoding();
-        if (charset == null) {
-            charset = Charsets.ASCII_CHARSET.name();
-        }
-        final byte[] data = new String(request.getByteData(), charset).getBytes(charset);
+        final byte[] data = request.getByteData();
         final MemoryManager mm = ctx.getMemoryManager();
         final Buffer gBuffer = Buffers.wrap(mm, data);
         if (requestPacket.getContentLength() == -1) {
