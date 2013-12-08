@@ -133,7 +133,7 @@ Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler
 String bodyResponse = f.get();
 ```
 
-Finally, you can also configure the AsyncHttpClient via it's AsyncHttpClientConfig object:
+Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfig object:
 
 ```java
 AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
