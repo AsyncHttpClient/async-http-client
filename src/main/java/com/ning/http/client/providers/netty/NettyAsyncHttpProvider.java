@@ -17,6 +17,7 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHandler.STATE;
+import com.ning.http.client.AsyncHandlerExtensions;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.Body;
@@ -506,6 +507,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             // Leave it to true.
             if (future.getAndSetWriteHeaders(true)) {
                 try {
+                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions)
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
+
                     channel.write(nettyRequest).addListener(new ProgressListener(true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
                     log.debug(cause.getMessage(), cause);
