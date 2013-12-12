@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -85,8 +86,9 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         } else {
             Throwable cause = f.getCause();
 
-            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), future.canRetry());
-            if (future.canRetry() && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
+            boolean canRetry = future.canRetry();
+            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), canRetry);
+            if (canRetry && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
                     || cause instanceof ClosedChannelException
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
