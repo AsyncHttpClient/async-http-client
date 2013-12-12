@@ -228,7 +228,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             return true;
         }
 
-        final URI uri = httpTxContext.getRequest().getURI();
+        final Request request = httpTxContext.getRequest();
+        final URI uri = request.isUseRawUrl() ? request.getRawURI() : request.getURI();
         boolean secure = Utils.isSecure(uri);
 
         // If the request is secure, check to see if an error occurred during
@@ -244,7 +245,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             convertToUpgradeRequest(httpTxContext);
         }
 
-        final Request request = httpTxContext.getRequest();
         HttpRequestPacket requestPacket = requestCache.poll();
         if (requestPacket == null) {
             requestPacket = new HttpRequestPacketImpl();
