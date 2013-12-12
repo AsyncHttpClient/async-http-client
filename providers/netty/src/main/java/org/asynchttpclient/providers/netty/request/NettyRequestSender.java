@@ -105,11 +105,13 @@ public class NettyRequestSender {
                 future.getAndSetStatusReceived(false);
 
                 LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest());
+                if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+                    AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+                }
 
                 try {
                     sendNextRequest(future.getRequest(), future);
                     success = true;
-
                 } catch (IOException iox) {
                     future.setState(NettyResponseFuture.STATE.CLOSED);
                     future.abort(iox);
@@ -556,6 +558,9 @@ public class NettyRequestSender {
         future.touch();
 
         LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+        }
         channels.drainChannel(ctx, future);
         sendNextRequest(newRequest, future);
     }
