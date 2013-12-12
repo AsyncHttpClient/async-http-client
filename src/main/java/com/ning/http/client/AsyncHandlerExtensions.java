@@ -19,7 +19,6 @@ package com.ning.http.client;
  * 
  * More additional hooks might come, such as:
  * <ul>
- *   <li>onRetry()</li>
  *   <li>onConnected()</li>
  *   <li>onConnectionClosed()</li>
  *   <li>onBytesSent(long numberOfBytes)</li>
@@ -35,4 +34,9 @@ public interface AsyncHandlerExtensions {
      * Currently only supported by the Netty provider.
      */
     void onRequestSent();
+
+    /**
+     * Notify the callback every time a request is being retried.
+     */
+    void onRetry();
 }

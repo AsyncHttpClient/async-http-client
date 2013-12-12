@@ -1297,6 +1297,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, HttpResponse response, ChannelHandlerContext ctx) throws IOException {
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+        }
         final Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
@@ -1430,6 +1433,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         future.setState(NettyResponseFuture.STATE.RECONNECTED);
 
         log.debug("Trying to recover request {}\n", future.getNettyRequest());
+        if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+            AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
+        }
 
         try {
             nextRequest(future.getRequest(), future);
