@@ -53,6 +53,8 @@ import org.asynchttpclient.util.UTF8UrlEncoder;
 
 public class NettyRequests {
 
+    public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
+
     public static HttpRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) throws IOException {
 
         HttpMethod method = null;
@@ -107,7 +109,7 @@ public class NettyRequests {
 
         if (method != HttpMethod.CONNECT) {
             if (config.isCompressionEnabled()) {
-                headers.put(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE);
+                headers.put(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
