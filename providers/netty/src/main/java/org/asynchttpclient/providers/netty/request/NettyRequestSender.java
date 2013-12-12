@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHandlerExtensions;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
@@ -501,6 +502,9 @@ public class NettyRequestSender {
             // FIXME That doesn't just leave to true, the set is always done? and what's the point of not having a is/get?
             if (future.getAndSetWriteHeaders(true)) {
                 try {
+                    if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
+                        AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
+                    }
                     channel.writeAndFlush(nettyRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
