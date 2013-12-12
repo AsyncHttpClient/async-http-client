@@ -15,32 +15,9 @@ package com.ning.http.client.providers.grizzly;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Part;
+import com.ning.http.client.*;
 import com.ning.http.multipart.MultipartBody;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FluentStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.UpgradeHandler;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
@@ -1111,6 +1088,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final AsyncHandler handler = context.handler;
             if (handler instanceof TransferCompletionHandler) {
                 ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
+            }
+            if (handler instanceof AsyncHandlerExtensions) {
+                ((AsyncHandlerExtensions) handler).onRequestSent();
             }
         }
 
