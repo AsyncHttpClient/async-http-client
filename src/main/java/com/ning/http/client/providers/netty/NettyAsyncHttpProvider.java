@@ -156,6 +156,9 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
+
+    public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
+
     public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
     static {
         REMOTELY_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
@@ -676,7 +679,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             if (config.isCompressionEnabled()) {
-                nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
+                nettyRequest.setHeader(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
             }
         } else {
             List<String> auth = request.getHeaders().get(HttpHeaders.Names.PROXY_AUTHORIZATION);
