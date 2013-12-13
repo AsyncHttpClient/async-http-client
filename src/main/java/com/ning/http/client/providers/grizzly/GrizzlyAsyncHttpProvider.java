@@ -874,7 +874,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(secure, ctx.getConnection()));
 
             if (!useProxy && !httpCtx.isWSRequest) {
-                addQueryString(request, requestPacket);
+                requestPacket.setQueryString(uri.getRawQuery());
+                //addQueryString(request, requestPacket);
             }
             addHeaders(request, requestPacket);
             addCookies(request, requestPacket);
