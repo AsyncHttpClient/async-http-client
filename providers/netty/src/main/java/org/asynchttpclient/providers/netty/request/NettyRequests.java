@@ -220,64 +220,61 @@ public class NettyRequests {
                 headers.put(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
-            if (method != HttpMethod.HEAD && method != HttpMethod.OPTIONS && method != HttpMethod.TRACE) {
+            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
-                String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+            if (request.getByteData() != null) {
+                headers.put(HttpHeaders.Names.CONTENT_LENGTH, request.getByteData().length);
+                content = Unpooled.wrappedBuffer(request.getByteData());
 
-                if (request.getByteData() != null) {
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, request.getByteData().length);
-                    content = Unpooled.wrappedBuffer(request.getByteData());
+            } else if (request.getStringData() != null) {
+                byte[] bytes = request.getStringData().getBytes(bodyCharset);
+                headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                content = Unpooled.wrappedBuffer(bytes);
 
-                } else if (request.getStringData() != null) {
-                    byte[] bytes = request.getStringData().getBytes(bodyCharset);
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-                    content = Unpooled.wrappedBuffer(bytes);
+            } else if (request.getStreamData() != null) {
+                hasDeferredContent = true;
+                headers.put(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
 
-                } else if (request.getStreamData() != null) {
-                    hasDeferredContent = true;
-                    headers.put(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-
-                } else if (isNonEmpty(request.getParams())) {
-                    StringBuilder sb = new StringBuilder();
-                    for (final Entry<String, List<String>> paramEntry : request.getParams()) {
-                        final String key = paramEntry.getKey();
-                        for (final String value : paramEntry.getValue()) {
-                            UTF8UrlEncoder.appendEncoded(sb, key);
-                            sb.append("=");
-                            UTF8UrlEncoder.appendEncoded(sb, value);
-                            sb.append("&");
-                        }
+            } else if (isNonEmpty(request.getParams())) {
+                StringBuilder sb = new StringBuilder();
+                for (final Entry<String, List<String>> paramEntry : request.getParams()) {
+                    final String key = paramEntry.getKey();
+                    for (final String value : paramEntry.getValue()) {
+                        UTF8UrlEncoder.appendEncoded(sb, key);
+                        sb.append("=");
+                        UTF8UrlEncoder.appendEncoded(sb, value);
+                        sb.append("&");
                     }
-                    sb.setLength(sb.length() - 1);
-                    byte[] bytes = sb.toString().getBytes(bodyCharset);
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-                    content = Unpooled.wrappedBuffer(bytes);
-
-                    if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
-                        headers.put(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-                    }
-
-                } else if (request.getParts() != null) {
-                    // FIXME use Netty multipart
-                    MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
-
-                    headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                    if (mre.getContentLength() >= 0) {
-                        headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
-                    }
-                    hasDeferredContent = true;
-
-                } else if (request.getFile() != null) {
-                    File file = request.getFile();
-                    if (!file.isFile()) {
-                        throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
-                    }
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, file.length());
-                    hasDeferredContent = true;
-
-                } else if (request.getBodyGenerator() != null) {
-                    hasDeferredContent = true;
                 }
+                sb.setLength(sb.length() - 1);
+                byte[] bytes = sb.toString().getBytes(bodyCharset);
+                headers.put(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                content = Unpooled.wrappedBuffer(bytes);
+
+                if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
+                    headers.put(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+                }
+
+            } else if (request.getParts() != null) {
+                // FIXME use Netty multipart
+                MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
+
+                headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
+                if (mre.getContentLength() >= 0) {
+                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
+                }
+                hasDeferredContent = true;
+
+            } else if (request.getFile() != null) {
+                File file = request.getFile();
+                if (!file.isFile()) {
+                    throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
+                }
+                headers.put(HttpHeaders.Names.CONTENT_LENGTH, file.length());
+                hasDeferredContent = true;
+
+            } else if (request.getBodyGenerator() != null) {
+                hasDeferredContent = true;
             }
         }
 
