@@ -777,7 +777,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) throws Exception {
                     try {
                         assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getHeader("X-Accept-Encoding"), "gzip");
+                        assertEquals(response.getHeader("X-Accept-Encoding"), "gzip,deflate");
                     } finally {
                         l.countDown();
                     }
