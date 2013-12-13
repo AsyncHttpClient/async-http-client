@@ -801,7 +801,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(request.getByteData()));
             } else if (request.getStringData() != null) {
-                System.err.println("!!!!HEY STRING DATA");
                 byte[] bytes = request.getStringData().getBytes(bodyCharset);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
