@@ -12,17 +12,12 @@
  */
 package com.ning.http.client.async.netty;
 
-import com.ning.http.client.*;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.async.AsyncProvidersBasicTest;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.assertEquals;
 
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
