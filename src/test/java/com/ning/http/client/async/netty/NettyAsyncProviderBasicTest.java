@@ -12,12 +12,17 @@
  */
 package com.ning.http.client.async.netty;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProviderConfig;
+import com.ning.http.client.*;
 import com.ning.http.client.async.AsyncProvidersBasicTest;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static org.testng.Assert.assertEquals;
 
 public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
@@ -33,4 +38,45 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         config.addProperty("tcpNoDelay", true);
         return config;
     }
+
+    @Test(groups = { "standalone", "default_provider", "async" })
+    @Override
+    public void asyncDoPostBasicGZIPTest() throws Throwable {
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).build();
+        AsyncHttpClient client = getAsyncHttpClient(cf);
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
+            h.add("Content-Type", "application/x-www-form-urlencoded");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 5; i++) {
+                sb.append("param_");
+                sb.append(i);
+                sb.append("=value_");
+                sb.append(i);
+                sb.append("&");
+            }
+            sb.setLength(sb.length() - 1);
+
+            client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandlerAdapter() {
+
+                @Override
+                public Response onCompleted(Response response) throws Exception {
+                    try {
+                        assertEquals(response.getStatusCode(), 200);
+                        assertEquals(response.getHeader("X-Accept-Encoding"), "gzip,deflate");
+                    } finally {
+                        l.countDown();
+                    }
+                    return response;
+                }
+            }).get();
+            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                Assert.fail("Timeout out");
+            }
+        } finally {
+            client.close();
+        }
+    }
+
 }
