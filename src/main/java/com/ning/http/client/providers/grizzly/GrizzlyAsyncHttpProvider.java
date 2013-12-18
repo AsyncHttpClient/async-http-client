@@ -844,7 +844,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.uri(uri.toString());
                 }
             } else {
-                builder.uri(uri.getPath());
+                builder.uri(uri.getRawPath());
             }
             if (requestHasEntityBody(request)) {
                 final long contentLength = request.getContentLength();
@@ -1163,9 +1163,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     }
                 }
             }
+            final Request req = context.request;
+            final URI req_uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
             final GrizzlyResponseStatus responseStatus =
                     new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
-                            context.request.getURI(),
+                            req_uri,
                             provider);
             context.responseStatus = responseStatus;
             if (context.statusHandler != null) {
