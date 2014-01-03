@@ -703,12 +703,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             switch (realm.getAuthScheme()) {
             case BASIC:
-                nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
+                nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
                 break;
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
+                        nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -716,7 +716,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 break;
             case NTLM:
                 try {
-                    nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
+                    nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, ntlmEngine.generateType1Msg("NTLM " + domain, authHost));
                 } catch (NTLMEngineException e) {
                     IOException ie = new IOException();
                     ie.initCause(e);
@@ -734,7 +734,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     ie.initCause(e);
                     throw ie;
                 }
-                nettyRequest.setHeader(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+                nettyRequest.addHeader(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
                 break;
             case NONE:
                 break;
