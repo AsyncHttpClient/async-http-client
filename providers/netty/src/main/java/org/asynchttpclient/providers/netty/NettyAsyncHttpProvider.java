@@ -73,6 +73,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
-        return requestSender.sendRequest(request, asyncHandler, null, nettyConfig.isAsyncConnect(), false);
+        return requestSender.sendRequest(request, asyncHandler, null, false);
     }
 }

@@ -35,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Map;
@@ -148,8 +147,7 @@ public class NettyRequestSender {
     }
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> f) throws IOException {
-        // FIXME Why is sendNextRequest always asyncConnect?
-        sendRequest(request, f.getAsyncHandler(), f, true, true);
+        sendRequest(request, f.getAsyncHandler(), f, true);
     }
 
     // FIXME is this useful? Can't we do that when building the request?
@@ -222,46 +220,8 @@ public class NettyRequestSender {
         }
     }
 
-    private void performSyncConnect(ChannelFuture channelFuture, URI uri, boolean acquiredConnection, NettyConnectListener<?> cl, AsyncHandler<?> asyncHandler) throws IOException {
-
-        try {
-            channelFuture.syncUninterruptibly();
-        } catch (Throwable t) {
-            if (t.getCause() != null)
-                t = t.getCause();
-
-            ConnectException ce = null;
-            if (t instanceof ConnectException)
-                ce = ConnectException.class.cast(t);
-            else
-                ce = new ConnectException(t.getMessage());
-
-            if (acquiredConnection) {
-                channels.releaseFreeConnections();
-            }
-            channelFuture.cancel(false);
-            channels.abort(cl.future(), ce);
-        }
-
-        try {
-            cl.operationComplete(channelFuture);
-        } catch (Exception e) {
-            if (acquiredConnection) {
-                channels.releaseFreeConnections();
-            }
-            IOException ioe = new IOException(e.getMessage());
-            ioe.initCause(e);
-            try {
-                asyncHandler.onThrowable(ioe);
-            } catch (Throwable t) {
-                LOGGER.warn("c.operationComplete()", t);
-            }
-            throw ioe;
-        }
-    }
-
     private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
-            boolean asyncConnect, boolean reclaimCache) throws IOException {
+            boolean reclaimCache) throws IOException {
 
         boolean useSSl = isSecure(uri) && proxy == null;
 
@@ -284,12 +244,7 @@ public class NettyRequestSender {
             return cl.future();
         }
 
-        // FIXME what does it have to do with the presence of a file?
-        if (!asyncConnect && request.getFile() == null) {
-            performSyncConnect(channelFuture, uri, acquiredConnection, cl, asyncHandler);
-        } else {
-            channelFuture.addListener(cl);
-        }
+        channelFuture.addListener(cl);
 
         LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", cl.future().getNettyRequest(), channelFuture.channel());
 
@@ -300,7 +255,7 @@ public class NettyRequestSender {
         return cl.future();
     }
 
-    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean asyncConnect, boolean reclaimCache)
+    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache)
             throws IOException {
 
         if (closed.get()) {
@@ -319,7 +274,7 @@ public class NettyRequestSender {
         if (channel != null && channel.isOpen() && channel.isActive()) {
             return sendRequestWithCachedChannel(channel, request, uri, proxy, future, asyncHandler);
         } else {
-            return sendRequestWithNewChannel(request, uri, proxy, future, asyncHandler, asyncConnect, reclaimCache);
+            return sendRequestWithNewChannel(request, uri, proxy, future, asyncHandler, reclaimCache);
         }
     }
 

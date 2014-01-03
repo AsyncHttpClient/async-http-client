@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 // FIXME Netty 3: NettyConnectListener don't need to be passed the request as
 // the future has it too
 final class NettyConnectListener<T> implements ChannelFutureListener {
-    private final static Logger logger = LoggerFactory.getLogger(NettyConnectListener.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
@@ -75,18 +75,18 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     public void onFutureFailure(Channel channel, Throwable cause) {
 
         boolean canRetry = future.canRetry();
-        logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);
+        LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);
         if (canRetry && cause != null
                 && (NettyResponseFutures.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
-            logger.debug("Retrying {} ", future.getNettyRequest());
+            LOGGER.debug("Retrying {} ", future.getNettyRequest());
             // FIXME Netty 3 use the wrong statement
             if (requestSender.retry(channel, future)) {
                 return;
             }
         }
 
-        logger.debug("Failed to recover from exception: {} with channel {}", cause, channel);
+        LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, channel);
 
         boolean printCause = cause != null && cause.getMessage() != null;
         ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getURI().toString() : future.getURI().toString());

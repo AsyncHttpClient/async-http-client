@@ -15,22 +15,27 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+import org.asynchttpclient.providers.netty.util.ByteBufUtil;
+
 /**
  * A callback class used when an HTTP response body is received.
+ * Bytes are eagerly fetched from the ByteBuf
  */
-public class DefaultResponseBodyPart extends ResponseBodyPart {
+public class EagerResponseBodyPart extends ResponseBodyPart {
 
     private final byte[] bytes;
 
-    public DefaultResponseBodyPart(byte[] bytes, boolean last) {
+    public EagerResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
-        this.bytes = bytes;
+        bytes = ByteBufUtil.byteBuf2Bytes(buf);
     }
 
     /**

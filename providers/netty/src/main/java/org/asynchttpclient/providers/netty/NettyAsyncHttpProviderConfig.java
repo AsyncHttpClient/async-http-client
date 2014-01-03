@@ -26,10 +26,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.response.DefaultResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
-import org.asynchttpclient.providers.netty.util.ByteBufUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +48,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private AdditionalChannelInitializer wsAdditionalChannelInitializer;
     private AdditionalChannelInitializer httpsAdditionalChannelInitializer;
     private AdditionalChannelInitializer wssAdditionalChannelInitializer;
-
-    /**
-     * Execute the connect operation asynchronously.
-     */
-    private boolean asyncConnect;
 
     /**
      * HttpClientCodec's maxInitialLineLength
@@ -87,7 +81,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
-    private ResponseBodyPartFactory bodyPartFactory = new DefaultResponseBodyPartFactory();
+    private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
@@ -148,14 +142,6 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
-    }
-
-    public boolean isAsyncConnect() {
-        return asyncConnect;
-    }
-
-    public void setAsyncConnect(boolean asyncConnect) {
-        this.asyncConnect = asyncConnect;
     }
 
     public int getMaxInitialLineLength() {
@@ -232,13 +218,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
     }
 
-    public static class DefaultResponseBodyPartFactory implements ResponseBodyPartFactory {
+    public static class EagerResponseBodyPartFactory implements ResponseBodyPartFactory {
 
         @Override
         public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            byte[] bytes = ByteBufUtil.byteBuf2Bytes(buf);
-            buf.release();
-            return new DefaultResponseBodyPart(bytes, last);
+            return new EagerResponseBodyPart(buf, last);
         }
     }
 

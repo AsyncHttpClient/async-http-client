@@ -33,7 +33,6 @@ public class LazyResponseBodyPart extends ResponseBodyPart {
 
     public LazyResponseBodyPart(ByteBuf buf, boolean last) {
         super(last);
-        buf.retain();
         this.buf = buf;
     }
 

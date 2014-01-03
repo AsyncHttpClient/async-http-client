@@ -92,8 +92,8 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private Realm ntlmChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
-            NettyResponseFuture<?> future) throws NTLMEngineException {
+    private Realm ntlmChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future)
+            throws NTLMEngineException {
 
         boolean useRealm = (proxyServer == null && realm != null);
 
@@ -207,8 +207,8 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private boolean applyResponseFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status,
-            HttpResponseHeaders responseHeaders) throws IOException {
+    private boolean applyResponseFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
+            throws IOException {
 
         AsyncHandler handler = future.getAsyncHandler();
         FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
@@ -410,8 +410,12 @@ final class HttpProtocol extends Protocol {
                     }
 
                     ByteBuf buf = chunk.content();
-                    if (!interrupt && buf.readableBytes() > 0) {
-                        interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
+                    try {
+                        if (!interrupt && buf.readableBytes() > 0) {
+                            interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
+                        }
+                    } finally {
+                        buf.release();
                     }
 
                     if (interrupt || last) {

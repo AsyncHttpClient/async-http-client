@@ -158,13 +158,17 @@ final class WebSocketProtocol extends Protocol {
 
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
-                        ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
-                        h.onBodyPartReceived(rp);
+                        try {
+                            ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                            h.onBodyPartReceived(rp);
 
-                        if (pendingOpcode == OPCODE_BINARY) {
-                            webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
-                        } else {
-                            webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
+                            if (pendingOpcode == OPCODE_BINARY) {
+                                webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
+                            } else {
+                                webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
+                            }
+                        } finally {
+                            buf.release();
                         }
                     }
                 }
