@@ -236,7 +236,9 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
         @Override
         public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
-            return new DefaultResponseBodyPart(ByteBufUtil.byteBuf2Bytes(buf), last);
+            byte[] bytes = ByteBufUtil.byteBuf2Bytes(buf);
+            buf.release();
+            return new DefaultResponseBodyPart(bytes, last);
         }
     }
 
