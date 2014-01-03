@@ -67,6 +67,7 @@ public class NettyRequests {
         HttpVersion httpVersion;
         String requestUri;
         Map<String, Object> headers = new HashMap<String, Object>();
+        String authorizationHeader = null;
         ByteBuf content = null;
         boolean webSocket = isWebSocket(uri);
 
@@ -133,12 +134,12 @@ public class NettyRequests {
 
             switch (realm.getAuthScheme()) {
             case BASIC:
-                headers.put(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeBasicAuthentication(realm));
+                authorizationHeader = AuthenticatorUtils.computeBasicAuthentication(realm);
                 break;
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        headers.put(HttpHeaders.Names.AUTHORIZATION, AuthenticatorUtils.computeDigestAuthentication(realm));
+                        authorizationHeader =  AuthenticatorUtils.computeDigestAuthentication(realm);
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -147,7 +148,7 @@ public class NettyRequests {
             case NTLM:
                 try {
                     String msg = NTLMEngine.INSTANCE.generateType1Msg("NTLM " + domain, authHost);
-                    headers.put(HttpHeaders.Names.AUTHORIZATION, "NTLM " + msg);
+                    authorizationHeader =  "NTLM " + msg;
                 } catch (NTLMEngineException e) {
                     throw new IOException(e);
                 }
@@ -161,7 +162,7 @@ public class NettyRequests {
                 } catch (Throwable e) {
                     throw new IOException(e);
                 }
-                headers.put(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
+                authorizationHeader =  "Negotiate " + challengeHeader;
                 break;
             case NONE:
                 break;
@@ -298,6 +299,12 @@ public class NettyRequests {
         for (Entry<String, Object> header : headers.entrySet()) {
             nettyRequest.headers().set(header.getKey(), header.getValue());
         }
+        
+        if (authorizationHeader != null) {
+            // don't override authorization but append
+            nettyRequest.headers().add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
+        }
+        
         return nettyRequest;
     }
 }
