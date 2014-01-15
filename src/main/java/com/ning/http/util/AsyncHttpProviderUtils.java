@@ -300,25 +300,23 @@ public class AsyncHttpProviderUtils {
         for (Part part : params) {
             if (part instanceof com.ning.http.multipart.Part) {
                 parts[i] = (com.ning.http.multipart.Part) part;
+
             } else if (part instanceof StringPart) {
-                parts[i] = new com.ning.http.multipart.StringPart(part.getName(),
-                        ((StringPart) part).getValue(),
-                        ((StringPart) part).getCharset());
+                StringPart stringPart = (StringPart) part;
+                parts[i] = new com.ning.http.multipart.StringPart(part.getName(), stringPart.getValue(), stringPart.getCharset());
+
             } else if (part instanceof FilePart) {
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
-                        ((FilePart) part).getFile(),
-                        ((FilePart) part).getMimeType(),
-                        ((FilePart) part).getCharSet());
+                FilePart filePart = (FilePart) part;
+                parts[i] = new com.ning.http.multipart.FilePart(part.getName(), filePart.getFile(), filePart.getMimeType(), filePart.getCharSet());
 
             } else if (part instanceof ByteArrayPart) {
-                PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getData());
-                parts[i] = new com.ning.http.multipart.FilePart(part.getName(),
-                        source,
-                        ((ByteArrayPart) part).getMimeType(),
-                        ((ByteArrayPart) part).getCharSet());
+                ByteArrayPart byteArrayPart = (ByteArrayPart) part;
+                PartSource source = new ByteArrayPartSource(byteArrayPart.getFileName(), byteArrayPart.getData());
+                parts[i] = new com.ning.http.multipart.FilePart(part.getName(), source, byteArrayPart.getMimeType(), byteArrayPart.getCharSet());
 
             } else if (part == null) {
                 throw new NullPointerException("Part cannot be null");
+ 
             } else {
                 throw new IllegalArgumentException(String.format("Unsupported part type for multipart parameter %s",
                         part.getName()));
