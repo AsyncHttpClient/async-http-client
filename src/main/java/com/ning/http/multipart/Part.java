@@ -358,9 +358,8 @@ public abstract class Part implements com.ning.http.client.Part {
      * Return the length of the main content
      * 
      * @return long The length.
-     * @throws IOException If an IO problem occurs
      */
-    protected abstract long lengthOfData() throws IOException;
+    protected abstract long lengthOfData();
 
     /**
      * Write the end data to the output stream.
@@ -399,7 +398,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @return long The length.
      * @throws IOException If an IO problem occurs
      */
-    public long length() throws IOException {
+    public long length() {
         
         long lengthOfData = lengthOfData();
         
@@ -501,9 +500,8 @@ public abstract class Part implements com.ning.http.client.Part {
      * 
      * @param parts The parts.
      * @return The total length
-     * @throws IOException If an I/O error occurs while writing the parts.
      */
-    public static long getLengthOfParts(Part[] parts) throws IOException {
+    public static long getLengthOfParts(Part[] parts) {
         return getLengthOfParts(parts, DEFAULT_BOUNDARY_BYTES);
     }
 
@@ -516,7 +514,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since 3.0
      */
-    public static long getLengthOfParts(Part[] parts, byte[] partBoundary) throws IOException {
+    public static long getLengthOfParts(Part[] parts, byte[] partBoundary) {
         if (parts == null) {
             throw new IllegalArgumentException("Parts may not be null");
         }

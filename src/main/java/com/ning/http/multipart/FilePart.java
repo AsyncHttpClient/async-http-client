@@ -217,9 +217,8 @@ public class FilePart extends PartBase {
      * Return the length of the data.
      * 
      * @return The length.
-     * @throws IOException if an IO problem occurs
      */
-    protected long lengthOfData() throws IOException {
+    protected long lengthOfData() {
         return source.getLength();
     }
 
