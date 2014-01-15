@@ -15,7 +15,6 @@
  */
 package com.ning.http.multipart;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -212,6 +211,10 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(getPartBoundary());
     }
 
+    private int startLength() {
+        return EXTRA_BYTES.length + getPartBoundary().length;
+    }
+
     /**
      * Write the content disposition header to the specified output stream
      * 
@@ -226,6 +229,18 @@ public abstract class Part implements com.ning.http.client.Part {
             out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
             out.write(QUOTE_BYTES);
         }
+    }
+
+    protected int dispositionHeaderLength() {
+        int length = 0;
+        if (getName() != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_DISPOSITION_BYTES.length;
+            length += QUOTE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(getName()).length;
+            length += QUOTE_BYTES.length;
+        }
+        return length;
     }
 
     /**
@@ -248,6 +263,22 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
+    protected int contentTypeHeaderLength() {
+        int length = 0;
+        String contentType = getContentType();
+        if (contentType != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_TYPE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(contentType).length;
+            String charSet = getCharSet();
+            if (charSet != null) {
+                length += CHARSET_BYTES.length;
+                length += MultipartEncodingUtil.getAsciiBytes(charSet).length;
+            }
+        }
+        return length;
+    }
+
     /**
      * Write the content transfer encoding header to the specified output stream
      * 
@@ -261,6 +292,17 @@ public abstract class Part implements com.ning.http.client.Part {
             out.write(CONTENT_TRANSFER_ENCODING_BYTES);
             out.write(MultipartEncodingUtil.getAsciiBytes(transferEncoding));
         }
+    }
+
+    protected int transferEncodingHeaderLength() {
+        int length = 0;
+        String transferEncoding = getTransferEncoding();
+        if (transferEncoding != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_TRANSFER_ENCODING_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(transferEncoding).length;
+        }
+        return length;
     }
 
     /**
@@ -278,6 +320,17 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
+    protected int contentIdHeaderLength() {
+        int length = 0;
+        String contentId = getContentId();
+        if (contentId != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_ID_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(contentId).length;
+        }
+        return length;
+    }
+
     /**
      * Write the end of the header to the output stream
      * 
@@ -289,6 +342,10 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
+    protected int endOfHeaderLength() {
+        return CRLF_BYTES.length * 2;
+    }
+    
     /**
      * Write the data to the specified output stream
      * 
@@ -315,6 +372,10 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
+    protected int endLength() {
+        return CRLF_BYTES.length;
+    }
+
     /**
      * Write all the data to the output stream. If you override this method make sure to override #length() as well
      * 
@@ -339,18 +400,21 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs
      */
     public long length() throws IOException {
-        if (lengthOfData() < 0) {
+        
+        long lengthOfData = lengthOfData();
+        
+        if (lengthOfData < 0) {
             return -1;
+        } else {
+            return lengthOfData//
+                    + startLength()//
+                    + dispositionHeaderLength()//
+                    + contentTypeHeaderLength()//
+                    + transferEncodingHeaderLength()//
+                    + contentIdHeaderLength()//
+                    + endOfHeaderLength()//
+                    + endLength();
         }
-        ByteArrayOutputStream overhead = new ByteArrayOutputStream();
-        sendStart(overhead);
-        sendDispositionHeader(overhead);
-        sendContentTypeHeader(overhead);
-        sendTransferEncodingHeader(overhead);
-        sendContentIdHeader(overhead);
-        sendEndOfHeader(overhead);
-        sendEnd(overhead);
-        return overhead.size() + lengthOfData();
     }
 
     /**

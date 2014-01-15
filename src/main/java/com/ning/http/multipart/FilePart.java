@@ -156,6 +156,18 @@ public class FilePart extends PartBase {
         }
     }
 
+    protected int dispositionHeaderLength() {
+        String filename = this.source.getFileName();
+        int length = super.dispositionHeaderLength();
+        if (filename != null) {
+            length += FILE_NAME_BYTES.length;
+            length += QUOTE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(filename).length;
+            length += QUOTE_BYTES.length;
+        }
+        return length;
+    }
+
     /**
      * Write the data in "source" to the specified stream.
      * 
