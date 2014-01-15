@@ -18,12 +18,17 @@ package com.ning.http.multipart;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This class is an adaptation of the Apache HttpClient implementation
  * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
 public abstract class Part implements com.ning.http.client.Part {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Part.class);
 
     /**
      * Carriage return/linefeed
@@ -443,21 +448,27 @@ public abstract class Part implements com.ning.http.client.Part {
      * @since 3.0
      */
     public static long getLengthOfParts(Part[] parts, byte[] partBoundary) {
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        long total = 0;
-        for (Part part : parts) {
-            long l = part.length(partBoundary);
-            if (l < 0) {
-                return -1;
+        
+        try {
+            if (parts == null) {
+                throw new IllegalArgumentException("Parts may not be null");
             }
-            total += l;
+            long total = 0;
+            for (Part part : parts) {
+                long l = part.length(partBoundary);
+                if (l < 0) {
+                    return -1;
+                }
+                total += l;
+            }
+            total += EXTRA_BYTES.length;
+            total += partBoundary.length;
+            total += EXTRA_BYTES.length;
+            total += CRLF_BYTES.length;
+            return total;
+        } catch (Exception e) {
+            LOGGER.error("An exception occurred while getting the length of the parts", e);
+            return 0L;
         }
-        total += EXTRA_BYTES.length;
-        total += partBoundary.length;
-        total += EXTRA_BYTES.length;
-        total += CRLF_BYTES.length;
-        return total;
     }
 }

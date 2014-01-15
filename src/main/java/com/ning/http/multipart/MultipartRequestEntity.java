@@ -19,9 +19,6 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Random;
@@ -57,16 +54,16 @@ public class MultipartRequestEntity implements RequestEntity {
         return bytes;
     }
 
-    private final Logger log = LoggerFactory.getLogger(MultipartRequestEntity.class);
-
     /**
      * The MIME parts as set by the constructor
      */
-    protected Part[] parts;
+    protected final Part[] parts;
 
     private final byte[] multipartBoundary;
 
     private final String contentType;
+    
+    private final long contentLength;
 
     /**
      * Creates a new multipart entity containing the given parts.
@@ -93,6 +90,8 @@ public class MultipartRequestEntity implements RequestEntity {
         	multipartBoundary = generateMultipartBoundary();
             contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
         }
+        
+        contentLength = Part.getLengthOfParts(parts, multipartBoundary);
     }
 
     private String computeContentType(String base) {
@@ -128,12 +127,7 @@ public class MultipartRequestEntity implements RequestEntity {
     }
 
     public long getContentLength() {
-        try {
-            return Part.getLengthOfParts(parts, multipartBoundary);
-        } catch (Exception e) {
-            log.error("An exception occurred while getting the length of the parts", e);
-            return 0L;
-        }
+        return contentLength;
     }
 
     public String getContentType() {
