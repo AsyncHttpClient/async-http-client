@@ -231,8 +231,8 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
-    protected int dispositionHeaderLength() {
-        int length = 0;
+    protected long dispositionHeaderLength() {
+        long length = 0L;
         if (getName() != null) {
             length += CRLF_BYTES.length;
             length += CONTENT_DISPOSITION_BYTES.length;
@@ -263,8 +263,8 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
-    protected int contentTypeHeaderLength() {
-        int length = 0;
+    protected long contentTypeHeaderLength() {
+        long length = 0L;
         String contentType = getContentType();
         if (contentType != null) {
             length += CRLF_BYTES.length;
@@ -294,8 +294,8 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
-    protected int transferEncodingHeaderLength() {
-        int length = 0;
+    protected long transferEncodingHeaderLength() {
+        long length = 0L;
         String transferEncoding = getTransferEncoding();
         if (transferEncoding != null) {
             length += CRLF_BYTES.length;
@@ -320,8 +320,8 @@ public abstract class Part implements com.ning.http.client.Part {
         }
     }
 
-    protected int contentIdHeaderLength() {
-        int length = 0;
+    protected long contentIdHeaderLength() {
+        long length = 0L;
         String contentId = getContentId();
         if (contentId != null) {
             length += CRLF_BYTES.length;
@@ -342,7 +342,7 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
-    protected int endOfHeaderLength() {
+    protected long endOfHeaderLength() {
         return CRLF_BYTES.length * 2;
     }
     
@@ -371,7 +371,7 @@ public abstract class Part implements com.ning.http.client.Part {
         out.write(CRLF_BYTES);
     }
 
-    protected int endLength() {
+    protected long endLength() {
         return CRLF_BYTES.length;
     }
 
@@ -402,8 +402,8 @@ public abstract class Part implements com.ning.http.client.Part {
         
         long lengthOfData = lengthOfData();
         
-        if (lengthOfData < 0) {
-            return -1;
+        if (lengthOfData < 0L) {
+            return -1L;
         } else {
             return lengthOfData//
                     + startLength()//

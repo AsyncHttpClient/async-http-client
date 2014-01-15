@@ -156,9 +156,9 @@ public class FilePart extends PartBase {
         }
     }
 
-    protected int dispositionHeaderLength() {
+    protected long dispositionHeaderLength() {
         String filename = this.source.getFileName();
-        int length = super.dispositionHeaderLength();
+        long length = super.dispositionHeaderLength();
         if (filename != null) {
             length += FILE_NAME_BYTES.length;
             length += QUOTE_BYTES.length;

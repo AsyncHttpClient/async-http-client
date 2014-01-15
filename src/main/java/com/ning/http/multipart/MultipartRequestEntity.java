@@ -134,7 +134,7 @@ public class MultipartRequestEntity implements RequestEntity {
             return Part.getLengthOfParts(parts, multipartBoundary);
         } catch (Exception e) {
             log.error("An exception occurred while getting the length of the parts", e);
-            return 0;
+            return 0L;
         }
     }
 
