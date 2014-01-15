@@ -12,22 +12,24 @@
  */
 package org.asynchttpclient.multipart;
 
-import org.asynchttpclient.RandomAccessBody;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.asynchttpclient.RandomAccessBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultipartBody implements RandomAccessBody {
 
@@ -36,16 +38,17 @@ public class MultipartBody implements RandomAccessBody {
     private final byte[] boundary;
     private final long contentLength;
     private final List<Part> parts;
+    // FIXME why keep all of them open?
     private final List<RandomAccessFile> files = new ArrayList<RandomAccessFile>();
 
     private int startPart = 0;
-    ByteArrayInputStream currentStream;
-    int currentStreamPosition = -1;
-    boolean endWritten = false;
-    boolean doneWritingParts = false;
-    FileLocation fileLocation = FileLocation.NONE;
-    FilePart currentFilePart;
-    FileChannel currentFileChannel;
+    private ByteArrayInputStream currentStream;
+    private int currentStreamPosition = -1;
+    private boolean endWritten = false;
+    private boolean doneWritingParts = false;
+    private FileLocation fileLocation = FileLocation.NONE;
+    private AbstractFilePart currentFilePart;
+    private FileChannel currentFileChannel;
 
     enum FileLocation {
         NONE, START, MIDDLE, END
@@ -109,9 +112,9 @@ public class MultipartBody implements RandomAccessBody {
                     initializeStringPart(currentPart);
                     startPart++;
 
-                } else if (part instanceof FilePart) {
+                } else if (part instanceof AbstractFilePart) {
                     if (fileLocation == FileLocation.NONE) {
-                        currentFilePart = (FilePart) part;
+                        currentFilePart = (AbstractFilePart) part;
                         initializeFilePart(currentFilePart);
                     } else if (fileLocation == FileLocation.START) {
                         initializeFileBody(currentFilePart);
@@ -154,7 +157,7 @@ public class MultipartBody implements RandomAccessBody {
         }
     }
 
-    private void initializeFileEnd(FilePart currentPart) throws IOException {
+    private void initializeFileEnd(AbstractFilePart currentPart) throws IOException {
 
         ByteArrayOutputStream output = generateFileEnd(currentPart);
 
@@ -164,37 +167,23 @@ public class MultipartBody implements RandomAccessBody {
 
     }
 
-    private void initializeFileBody(FilePart currentPart) throws IOException {
+    private void initializeFileBody(AbstractFilePart currentPart) throws IOException {
 
-        if (currentPart.getSource() instanceof FilePartSource) {
-
-            FilePartSource source = (FilePartSource) currentPart.getSource();
-
-            File file = source.getFile();
-
-            RandomAccessFile raf = new RandomAccessFile(file, "r");
+        if (currentPart instanceof FilePart) {
+            RandomAccessFile raf = new RandomAccessFile(FilePart.class.cast(currentPart).getFile(), "r");
             files.add(raf);
 
             currentFileChannel = raf.getChannel();
 
         } else {
-            PartSource partSource = currentPart.getSource();
-
-            InputStream stream = partSource.createInputStream();
-
-            byte[] bytes = new byte[(int) partSource.getLength()];
-
-            stream.read(bytes);
-
-            currentStream = new ByteArrayInputStream(bytes);
-
+            currentStream = new ByteArrayInputStream(ByteArrayPart.class.cast(currentPart).getBytes());
             currentStreamPosition = 0;
         }
 
         fileLocation = FileLocation.MIDDLE;
     }
 
-    private void initializeFilePart(FilePart filePart) throws IOException {
+    private void initializeFilePart(AbstractFilePart filePart) throws IOException {
 
         ByteArrayOutputStream output = generateFileStart(filePart);
         initializeBuffer(output);
@@ -231,11 +220,8 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private void initializeBuffer(ByteArrayOutputStream outputStream) throws IOException {
-
         currentStream = new ByteArrayInputStream(outputStream.toByteArray());
-
         currentStreamPosition = 0;
-
     }
 
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
@@ -253,33 +239,31 @@ public class MultipartBody implements RandomAccessBody {
             tempPart++;
         }
         ByteArrayOutputStream endWriter = new ByteArrayOutputStream();
-
         Part.sendMessageEnd(endWriter, boundary);
-
-        overallLength += writeToTarget(target, endWriter);
+        overallLength += writeToTarget(target, endWriter.toByteArray());
 
         startPart = tempPart;
 
         return overallLength;
     }
 
-    private long handleFileEnd(WritableByteChannel target, FilePart filePart) throws IOException {
+    private long handleFileEnd(WritableByteChannel target, AbstractFilePart filePart) throws IOException {
         ByteArrayOutputStream endOverhead = generateFileEnd(filePart);
-        return this.writeToTarget(target, endOverhead);
+        return this.writeToTarget(target, endOverhead.toByteArray());
     }
 
-    private ByteArrayOutputStream generateFileEnd(FilePart filePart) throws IOException {
+    private ByteArrayOutputStream generateFileEnd(AbstractFilePart filePart) throws IOException {
         ByteArrayOutputStream endOverhead = new ByteArrayOutputStream();
         filePart.sendEnd(endOverhead);
         return endOverhead;
     }
 
-    private long handleFileHeaders(WritableByteChannel target, FilePart filePart) throws IOException {
+    private long handleFileHeaders(WritableByteChannel target, AbstractFilePart filePart) throws IOException {
         ByteArrayOutputStream overhead = generateFileStart(filePart);
-        return writeToTarget(target, overhead);
+        return writeToTarget(target, overhead.toByteArray());
     }
 
-    private ByteArrayOutputStream generateFileStart(FilePart filePart) throws IOException {
+    private ByteArrayOutputStream generateFileStart(AbstractFilePart filePart) throws IOException {
         ByteArrayOutputStream overhead = new ByteArrayOutputStream();
 
         filePart.sendStart(overhead, boundary);
@@ -292,102 +276,84 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
+
         FilePartStallHandler handler = new FilePartStallHandler(filePart.getStalledTime(), filePart);
 
         handler.start();
 
-        if (filePart.getSource() instanceof FilePartSource) {
-            int length = 0;
-
-            length += handleFileHeaders(target, filePart);
-            FilePartSource source = (FilePartSource) filePart.getSource();
-
-            File file = source.getFile();
-
-            RandomAccessFile raf = new RandomAccessFile(file, "r");
-            files.add(raf);
-
-            FileChannel fc = raf.getChannel();
-
-            long l = file.length();
-            int fileLength = 0;
-            long nWrite = 0;
-            synchronized (fc) {
-                while (fileLength != l) {
-                    if (handler.isFailed()) {
-                        LOGGER.debug("Stalled error");
-                        throw new FileUploadStalledException();
-                    }
-                    try {
-                        nWrite = fc.transferTo(fileLength, l, target);
-
-                        if (nWrite == 0) {
-                            LOGGER.info("Waiting for writing...");
-                            try {
-                                fc.wait(50);
-                            } catch (InterruptedException e) {
-                                LOGGER.trace(e.getMessage(), e);
-                            }
-                        } else {
-                            handler.writeHappened();
-                        }
-                    } catch (IOException ex) {
-                        String message = ex.getMessage();
-
-                        // http://bugs.sun.com/view_bug.do?bug_id=5103988
-                        if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
-                            try {
-                                fc.wait(1000);
-                            } catch (InterruptedException e) {
-                                LOGGER.trace(e.getMessage(), e);
-                            }
-                            LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
-                            continue;
-                        } else {
-                            throw ex;
-                        }
-                    }
-                    fileLength += nWrite;
-                }
-            }
-            handler.completed();
-
-            fc.close();
-
-            length += handleFileEnd(target, filePart);
-
-            return length;
-        } else {
-            return handlePartSource(target, filePart);
-        }
-    }
-
-    private long handlePartSource(WritableByteChannel target, FilePart filePart) throws IOException {
-
         int length = 0;
 
         length += handleFileHeaders(target, filePart);
+        File file = FilePart.class.cast(filePart).getFile();
 
-        PartSource partSource = filePart.getSource();
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        files.add(raf);
 
-        InputStream stream = partSource.createInputStream();
+        FileChannel fc = raf.getChannel();
 
-        try {
-            int nRead = 0;
-            while (nRead != -1) {
-                // Do not buffer the entire monster in memory.
-                byte[] bytes = new byte[8192];
-                nRead = stream.read(bytes);
-                if (nRead > 0) {
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream(nRead);
-                    bos.write(bytes, 0, nRead);
-                    writeToTarget(target, bos);
+        long l = file.length();
+        int fileLength = 0;
+        long nWrite = 0;
+        synchronized (fc) {
+            while (fileLength != l) {
+                if (handler.isFailed()) {
+                    LOGGER.debug("Stalled error");
+                    throw new FileUploadStalledException();
                 }
+                try {
+                    nWrite = fc.transferTo(fileLength, l, target);
+
+                    if (nWrite == 0) {
+                        LOGGER.info("Waiting for writing...");
+                        try {
+                            fc.wait(50);
+                        } catch (InterruptedException e) {
+                            LOGGER.trace(e.getMessage(), e);
+                        }
+                    } else {
+                        handler.writeHappened();
+                    }
+                } catch (IOException ex) {
+                    String message = ex.getMessage();
+
+                    // http://bugs.sun.com/view_bug.do?bug_id=5103988
+                    if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
+                        try {
+                            fc.wait(1000);
+                        } catch (InterruptedException e) {
+                            LOGGER.trace(e.getMessage(), e);
+                        }
+                        LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
+                        continue;
+                    } else {
+                        throw ex;
+                    }
+                }
+                fileLength += nWrite;
             }
-        } finally {
-            stream.close();
         }
+        handler.completed();
+
+        fc.close();
+
         length += handleFileEnd(target, filePart);
+
+        return length;
+    }
+
+    private long handleByteArrayPart(WritableByteChannel target, ByteArrayPart part) throws IOException {
+
+        FilePartStallHandler handler = new FilePartStallHandler(part.getStalledTime(), part);
+
+        handler.start();
+
+        int length = 0;
+
+        length += handleFileHeaders(target, part);
+
+        byte[] bytes = ByteArrayPart.class.cast(part).getBytes();
+        writeToTarget(target, bytes);
+        length += handleFileEnd(target, part);
 
         return length;
     }
@@ -395,27 +361,28 @@ public class MultipartBody implements RandomAccessBody {
     private long handleStringPart(WritableByteChannel target, StringPart currentPart) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Part.sendPart(outputStream, currentPart, boundary);
-        return writeToTarget(target, outputStream);
+        return writeToTarget(target, outputStream.toByteArray());
     }
 
     private long handleMultiPart(WritableByteChannel target, Part currentPart) throws IOException {
 
-        if (currentPart.getClass().equals(StringPart.class)) {
-            return handleStringPart(target, (StringPart) currentPart);
-        } else if (currentPart.getClass().equals(FilePart.class)) {
-            FilePart filePart = (FilePart) currentPart;
-
-            return handleFilePart(target, filePart);
+        if (currentPart instanceof StringPart) {
+            return handleStringPart(target, StringPart.class.cast(currentPart));
+        } else if (currentPart instanceof FilePart) {
+            return handleFilePart(target, FilePart.class.cast(currentPart));
+        } else if (currentPart instanceof ByteArrayPart) {
+            return handleByteArrayPart(target, ByteArrayPart.class.cast(currentPart));
+        } else {
+            throw new IllegalArgumentException("Can't handle part of type " + currentPart.getClass());
         }
-        return 0;
     }
 
-    private long writeToTarget(WritableByteChannel target, ByteArrayOutputStream byteWriter) throws IOException {
+    private long writeToTarget(WritableByteChannel target, byte[] bytes) throws IOException {
 
         int written = 0;
         int maxSpin = 0;
-        synchronized (byteWriter) {
-            ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
+        synchronized (bytes) {
+            ByteBuffer message = ByteBuffer.wrap(bytes);
 
             if (target instanceof SocketChannel) {
                 final Selector selector = Selector.open();
@@ -423,7 +390,7 @@ public class MultipartBody implements RandomAccessBody {
                     final SocketChannel channel = (SocketChannel) target;
                     channel.register(selector, SelectionKey.OP_WRITE);
 
-                    while (written < byteWriter.size()) {
+                    while (written < bytes.length) {
                         selector.select(1000);
                         maxSpin++;
                         final Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -442,13 +409,13 @@ public class MultipartBody implements RandomAccessBody {
                     selector.close();
                 }
             } else {
-                while ((target.isOpen()) && (written < byteWriter.size())) {
+                while ((target.isOpen()) && (written < bytes.length)) {
                     long nWrite = target.write(message);
                     written += nWrite;
                     if (nWrite == 0 && maxSpin++ < 10) {
                         LOGGER.info("Waiting for writing...");
                         try {
-                            byteWriter.wait(1000);
+                            bytes.wait(1000);
                         } catch (InterruptedException e) {
                             LOGGER.trace(e.getMessage(), e);
                         }

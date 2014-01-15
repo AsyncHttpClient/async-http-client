@@ -47,7 +47,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.multipart.ByteArrayPartSource;
+import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.multipart.FilePart;
 import org.asynchttpclient.multipart.StringPart;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
@@ -177,7 +177,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET));
             builder.addBodyPart(new StringPart("Hair", "ridiculous", AsyncHttpProviderUtils.DEFAULT_CHARSET));
 
-            builder.addBodyPart(new FilePart("file4", new ByteArrayPartSource("bytearray.txt", expectedContents.getBytes("UTF-8")), "text/plain", "UTF-8"));
+            builder.addBodyPart(new ByteArrayPart("file4", expectedContents.getBytes("UTF-8"), "text/plain", "UTF-8", "bytearray.txt"));
 
             Request r = builder.build();
 

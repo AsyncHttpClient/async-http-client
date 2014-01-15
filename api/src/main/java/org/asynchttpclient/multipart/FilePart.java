@@ -16,194 +16,53 @@
 package org.asynchttpclient.multipart;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
-public class FilePart extends PartBase {
+public class FilePart extends AbstractFilePart {
 
-    /**
-     * Default content encoding of file attachments.
-     */
-    public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+    private final File file;
+    private final String fileName;
 
-    /**
-     * Default charset of file attachments.
-     */
-    public static final String DEFAULT_CHARSET = "ISO-8859-1";
+    public FilePart(String name, File file) {
+        this(name, file, null, null);
+    }
 
-    /**
-     * Default transfer encoding of file attachments.
-     */
-    public static final String DEFAULT_TRANSFER_ENCODING = "binary";
+    public FilePart(String name, File file, String contentType) {
+        this(name, file, null, contentType, null);
+    }
 
-    /**
-     * Attachment's file name
-     */
-    protected static final String FILE_NAME = "; filename=";
+    public FilePart(String name, File file, String contentType, String charset) {
+        this(name, file, null, contentType, charset, null);
+    }
 
-    /**
-     * Attachment's file name as a byte array
-     */
-    private static final byte[] FILE_NAME_BYTES = MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
+    public FilePart(String name, File file, String contentType, String charset, String fileName) {
+        this(name, file, null, contentType, charset, fileName);
+    }
 
-    /**
-     * Source of the file part.
-     */
-    private final PartSource source;
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name for this part
-     * @param partSource
-     *            the source for this part
-     * @param contentType
-     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset
-     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId
-     */
-    public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
-
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? "ISO-8859-1" : charset, DEFAULT_TRANSFER_ENCODING, contentId);
-
-        if (partSource == null) {
-            throw new IllegalArgumentException("Source may not be null");
+    public FilePart(String name, File file, String contentType, String charset, String fileName, String contentId) {
+        super(name, contentType, charset, contentId);
+        this.file = file;
+        if (file == null) {
+            throw new NullPointerException("file");
         }
-        this.source = partSource;
-    }
-
-    public FilePart(String name, PartSource partSource, String contentType, String charset) {
-        this(name, partSource, contentType, charset, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name for this part
-     * @param partSource
-     *            the source for this part
-     */
-    public FilePart(String name, PartSource partSource) {
-        this(name, partSource, null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name of the file part
-     * @param file
-     *            the file to post
-     * @throws java.io.FileNotFoundException
-     *             if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, File file) throws FileNotFoundException {
-        this(name, new FilePartSource(file), null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name of the file part
-     * @param file
-     *            the file to post
-     * @param contentType
-     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset
-     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException
-     *             if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, File file, String contentType, String charset) throws FileNotFoundException {
-        this(name, new FilePartSource(file), contentType, charset);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name of the file part
-     * @param fileName
-     *            the file name
-     * @param file
-     *            the file to post
-     * @throws FileNotFoundException
-     *             if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, String fileName, File file) throws FileNotFoundException {
-        this(name, new FilePartSource(fileName, file), null, null);
-    }
-
-    /**
-     * FilePart Constructor.
-     * 
-     * @param name
-     *            the name of the file part
-     * @param fileName
-     *            the file name
-     * @param file
-     *            the file to post
-     * @param contentType
-     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset
-     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException
-     *             if the <i>file</i> is not a normal file or if it is not readable.
-     */
-    public FilePart(String name, String fileName, File file, String contentType, String charset) throws FileNotFoundException {
-        this(name, new FilePartSource(fileName, file), contentType, charset);
-    }
-
-    /**
-     * Write the disposition header to the output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws java.io.IOException
-     *             If an IO problem occurs
-     */
-    protected void sendDispositionHeader(OutputStream out) throws IOException {
-        super.sendDispositionHeader(out);
-        String filename = this.source.getFileName();
-        if (filename != null) {
-            out.write(FILE_NAME_BYTES);
-            out.write(QUOTE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(filename));
-            out.write(QUOTE_BYTES);
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
         }
-    }
-
-    protected long dispositionHeaderLength() {
-        String filename = this.source.getFileName();
-        long length = super.dispositionHeaderLength();
-        if (filename != null) {
-            length += FILE_NAME_BYTES.length;
-            length += QUOTE_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(filename).length;
-            length += QUOTE_BYTES.length;
+        if (!file.canRead()) {
+            throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
         }
-        return length;
+        this.fileName = fileName != null ? fileName : file.getName();
     }
 
-    /**
-     * Write the data in "source" to the specified stream.
-     * 
-     * @param out
-     *            The output stream.
-     * @throws IOException
-     *             if an IO problem occurs.
-     */
+    @Override
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
     protected void sendData(OutputStream out) throws IOException {
         if (lengthOfData() == 0) {
 
@@ -214,7 +73,7 @@ public class FilePart extends PartBase {
         }
 
         byte[] tmp = new byte[4096];
-        InputStream instream = source.createInputStream();
+        InputStream instream = new FileInputStream(file);
         try {
             int len;
             while ((len = instream.read(tmp)) >= 0) {
@@ -226,32 +85,12 @@ public class FilePart extends PartBase {
         }
     }
 
-    public void setStalledTime(long ms) {
-        _stalledTime = ms;
-    }
-
-    public long getStalledTime() {
-        return _stalledTime;
-    }
-
-    /**
-     * Returns the source of the file part.
-     * 
-     * @return The source.
-     */
-    protected PartSource getSource() {
-        return this.source;
-    }
-
-    /**
-     * Return the length of the data.
-     * 
-     * @return The length.
-     */
+    @Override
     protected long lengthOfData() {
-        return source.getLength();
+        return file.length();
     }
 
-    private long _stalledTime = -1;
-
+    public File getFile() {
+        return file;
+    }
 }

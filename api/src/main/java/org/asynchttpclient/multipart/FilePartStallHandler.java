@@ -19,7 +19,7 @@ import java.util.TimerTask;
  * @author Gail Hernandez
  */
 public class FilePartStallHandler extends TimerTask {
-	public FilePartStallHandler(long waitTime, FilePart filePart) {
+	public FilePartStallHandler(long waitTime, AbstractFilePart filePart) {
 		_waitTime = waitTime;
 		_failed = false;
 		_written = false;

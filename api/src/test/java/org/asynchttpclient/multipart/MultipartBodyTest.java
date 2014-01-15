@@ -13,7 +13,6 @@
 package org.asynchttpclient.multipart;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -35,15 +34,11 @@ public class MultipartBodyTest {
 
         // add a file
         final File testFile = getTestfile();
-        try {
-            parts.add(new FilePart("filePart", testFile));
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + testFile);
-        }
+        parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
         try {
-            parts.add(new FilePart("baPart", new ByteArrayPartSource("fileName", "testMultiPart".getBytes("utf-8")), "application/test", "utf-8"));
+            parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8", "fileName"));
         } catch (UnsupportedEncodingException ignore) {
         }
 
@@ -69,8 +64,7 @@ public class MultipartBodyTest {
     private static void compareContentLength(final List<Part> parts) {
         Assert.assertNotNull(parts);
         // get expected values
-        MultipartRequestEntity mre = null;
-        mre = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
+        MultipartRequestEntity mre = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
         final long expectedContentLength = mre.getContentLength();
 
         // get real bytes
