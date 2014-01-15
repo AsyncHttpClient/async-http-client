@@ -496,16 +496,6 @@ public abstract class Part implements com.ning.http.client.Part {
     }
 
     /**
-     * Return the total sum of all parts and that of the last boundary
-     * 
-     * @param parts The parts.
-     * @return The total length
-     */
-    public static long getLengthOfParts(Part[] parts) {
-        return getLengthOfParts(parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
      * Gets the length of the multipart message including the given parts.
      * 
      * @param parts The parts.
