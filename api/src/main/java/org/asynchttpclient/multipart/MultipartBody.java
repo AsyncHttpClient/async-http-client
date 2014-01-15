@@ -154,16 +154,6 @@ public class MultipartBody implements RandomAccessBody {
         }
     }
 
-    private void initializeByteArrayBody(FilePart filePart) throws IOException {
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        filePart.sendData(output);
-
-        initializeBuffer(output);
-
-        fileLocation = FileLocation.MIDDLE;
-    }
-
     private void initializeFileEnd(FilePart currentPart) throws IOException {
 
         ByteArrayOutputStream output = generateFileEnd(currentPart);
@@ -206,22 +196,15 @@ public class MultipartBody implements RandomAccessBody {
 
     private void initializeFilePart(FilePart filePart) throws IOException {
 
-        filePart.setPartBoundary(boundary);
-
         ByteArrayOutputStream output = generateFileStart(filePart);
-
         initializeBuffer(output);
-
         fileLocation = FileLocation.START;
     }
 
     private void initializeStringPart(StringPart currentPart) throws IOException {
-        currentPart.setPartBoundary(boundary);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
         Part.sendPart(outputStream, currentPart, boundary);
-
         initializeBuffer(outputStream);
     }
 
@@ -281,33 +264,25 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFileEnd(WritableByteChannel target, FilePart filePart) throws IOException {
-
         ByteArrayOutputStream endOverhead = generateFileEnd(filePart);
-
         return this.writeToTarget(target, endOverhead);
     }
 
     private ByteArrayOutputStream generateFileEnd(FilePart filePart) throws IOException {
         ByteArrayOutputStream endOverhead = new ByteArrayOutputStream();
-
         filePart.sendEnd(endOverhead);
         return endOverhead;
     }
 
     private long handleFileHeaders(WritableByteChannel target, FilePart filePart) throws IOException {
-        filePart.setPartBoundary(boundary);
-
         ByteArrayOutputStream overhead = generateFileStart(filePart);
-
         return writeToTarget(target, overhead);
     }
 
     private ByteArrayOutputStream generateFileStart(FilePart filePart) throws IOException {
         ByteArrayOutputStream overhead = new ByteArrayOutputStream();
 
-        filePart.setPartBoundary(boundary);
-
-        filePart.sendStart(overhead);
+        filePart.sendStart(overhead, boundary);
         filePart.sendDispositionHeader(overhead);
         filePart.sendContentTypeHeader(overhead);
         filePart.sendTransferEncodingHeader(overhead);
@@ -418,19 +393,12 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleStringPart(WritableByteChannel target, StringPart currentPart) throws IOException {
-
-        currentPart.setPartBoundary(boundary);
-
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
         Part.sendPart(outputStream, currentPart, boundary);
-
         return writeToTarget(target, outputStream);
     }
 
     private long handleMultiPart(WritableByteChannel target, Part currentPart) throws IOException {
-
-        currentPart.setPartBoundary(boundary);
 
         if (currentPart.getClass().equals(StringPart.class)) {
             return handleStringPart(target, (StringPart) currentPart);

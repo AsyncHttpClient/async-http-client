@@ -111,9 +111,8 @@ public class StringPart extends PartBase {
      * Return the length of the data.
      * 
      * @return The length of the data.
-     * @throws IOException If an IO problem occurs
      */
-    protected long lengthOfData() throws IOException {
+    protected long lengthOfData() {
         return getContent().length;
     }
 

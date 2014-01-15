@@ -61,10 +61,14 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name for this part
-     * @param partSource the source for this part
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
+     * @param name
+     *            the name for this part
+     * @param partSource
+     *            the source for this part
+     * @param contentType
+     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset
+     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
      * @param contentId
      */
     public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
@@ -76,7 +80,7 @@ public class FilePart extends PartBase {
         }
         this.source = partSource;
     }
-    
+
     public FilePart(String name, PartSource partSource, String contentType, String charset) {
         this(name, partSource, contentType, charset, null);
     }
@@ -84,8 +88,10 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name for this part
-     * @param partSource the source for this part
+     * @param name
+     *            the name for this part
+     * @param partSource
+     *            the source for this part
      */
     public FilePart(String name, PartSource partSource) {
         this(name, partSource, null, null);
@@ -94,9 +100,12 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name of the file part
-     * @param file the file to post
-     * @throws java.io.FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
+     * @param name
+     *            the name of the file part
+     * @param file
+     *            the file to post
+     * @throws java.io.FileNotFoundException
+     *             if the <i>file</i> is not a normal file or if it is not readable.
      */
     public FilePart(String name, File file) throws FileNotFoundException {
         this(name, new FilePartSource(file), null, null);
@@ -105,11 +114,16 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name of the file part
-     * @param file the file to post
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
+     * @param name
+     *            the name of the file part
+     * @param file
+     *            the file to post
+     * @param contentType
+     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset
+     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
+     * @throws FileNotFoundException
+     *             if the <i>file</i> is not a normal file or if it is not readable.
      */
     public FilePart(String name, File file, String contentType, String charset) throws FileNotFoundException {
         this(name, new FilePartSource(file), contentType, charset);
@@ -118,10 +132,14 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name of the file part
-     * @param fileName the file name
-     * @param file the file to post
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
+     * @param name
+     *            the name of the file part
+     * @param fileName
+     *            the file name
+     * @param file
+     *            the file to post
+     * @throws FileNotFoundException
+     *             if the <i>file</i> is not a normal file or if it is not readable.
      */
     public FilePart(String name, String fileName, File file) throws FileNotFoundException {
         this(name, new FilePartSource(fileName, file), null, null);
@@ -130,12 +148,18 @@ public class FilePart extends PartBase {
     /**
      * FilePart Constructor.
      * 
-     * @param name the name of the file part
-     * @param fileName the file name
-     * @param file the file to post
-     * @param contentType the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
-     * @param charset the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @throws FileNotFoundException if the <i>file</i> is not a normal file or if it is not readable.
+     * @param name
+     *            the name of the file part
+     * @param fileName
+     *            the file name
+     * @param file
+     *            the file to post
+     * @param contentType
+     *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
+     * @param charset
+     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
+     * @throws FileNotFoundException
+     *             if the <i>file</i> is not a normal file or if it is not readable.
      */
     public FilePart(String name, String fileName, File file, String contentType, String charset) throws FileNotFoundException {
         this(name, new FilePartSource(fileName, file), contentType, charset);
@@ -144,8 +168,10 @@ public class FilePart extends PartBase {
     /**
      * Write the disposition header to the output stream
      * 
-     * @param out The output stream
-     * @throws java.io.IOException If an IO problem occurs
+     * @param out
+     *            The output stream
+     * @throws java.io.IOException
+     *             If an IO problem occurs
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
         super.sendDispositionHeader(out);
@@ -158,11 +184,25 @@ public class FilePart extends PartBase {
         }
     }
 
+    protected long dispositionHeaderLength() {
+        String filename = this.source.getFileName();
+        long length = super.dispositionHeaderLength();
+        if (filename != null) {
+            length += FILE_NAME_BYTES.length;
+            length += QUOTE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(filename).length;
+            length += QUOTE_BYTES.length;
+        }
+        return length;
+    }
+
     /**
      * Write the data in "source" to the specified stream.
      * 
-     * @param out The output stream.
-     * @throws IOException if an IO problem occurs.
+     * @param out
+     *            The output stream.
+     * @throws IOException
+     *             if an IO problem occurs.
      */
     protected void sendData(OutputStream out) throws IOException {
         if (lengthOfData() == 0) {
@@ -207,9 +247,8 @@ public class FilePart extends PartBase {
      * Return the length of the data.
      * 
      * @return The length.
-     * @throws IOException if an IO problem occurs
      */
-    protected long lengthOfData() throws IOException {
+    protected long lengthOfData() {
         return source.getLength();
     }
 

@@ -15,10 +15,12 @@
  */
 package org.asynchttpclient.multipart;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -27,15 +29,7 @@ import java.util.List;
  */
 public abstract class Part {
 
-    /**
-     * The boundary
-     */
-    protected static final String BOUNDARY = "----------------314159265358979323846";
-
-    /**
-     * The default boundary to be used if etBoundaryBytes(byte[]) has not been called.
-     */
-    private static final byte[] DEFAULT_BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Part.class);
 
     /**
      * Carriage return/linefeed
@@ -118,11 +112,6 @@ public abstract class Part {
     static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
-     * The ASCII bytes to use as the multipart boundary.
-     */
-    private byte[] boundaryBytes;
-
-    /**
      * Return the name of this part.
      * 
      * @return The name.
@@ -150,31 +139,12 @@ public abstract class Part {
      */
     public abstract String getTransferEncoding();
 
+    /**
+     * Return the content ID of this part.
+     * 
+     * @return the content ID, or <code>null</code> to exclude the content ID header
+     */
     public abstract String getContentId();
-
-    /**
-     * Gets the part boundary to be used.
-     * 
-     * @return the part boundary as an array of bytes.
-     */
-    protected byte[] getPartBoundary() {
-        if (boundaryBytes == null) {
-            // custom boundary bytes have not been set, use the default.
-            return DEFAULT_BOUNDARY_BYTES;
-        } else {
-            return boundaryBytes;
-        }
-    }
-
-    /**
-     * Sets the part boundary. Only meant to be used by {@link Part#sendParts(java.io.OutputStream, Part[], byte[])} and {@link Part#getLengthOfParts(Part[], byte[])}
-     * 
-     * @param boundaryBytes An array of ASCII bytes.
-     * @since 3.0
-     */
-    void setPartBoundary(byte[] boundaryBytes) {
-        this.boundaryBytes = boundaryBytes;
-    }
 
     /**
      * Tests if this part can be sent more than once.
@@ -189,19 +159,29 @@ public abstract class Part {
     /**
      * Write the start to the specified output stream
      * 
-     * @param out The output stream
-     * @throws java.io.IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @param boundary
+     *            the boundary
+     * @throws java.io.IOException
+     *             If an IO problem occurs.
      */
-    protected void sendStart(OutputStream out) throws IOException {
+    protected void sendStart(OutputStream out, byte[] boundary) throws IOException {
         out.write(EXTRA_BYTES);
-        out.write(getPartBoundary());
+        out.write(boundary);
+    }
+
+    private int startLength(byte[] boundary) {
+        return EXTRA_BYTES.length + boundary.length;
     }
 
     /**
      * Write the content disposition header to the specified output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
         if (getName() != null) {
@@ -213,11 +193,25 @@ public abstract class Part {
         }
     }
 
+    protected long dispositionHeaderLength() {
+        long length = 0L;
+        if (getName() != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_DISPOSITION_BYTES.length;
+            length += QUOTE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(getName()).length;
+            length += QUOTE_BYTES.length;
+        }
+        return length;
+    }
+
     /**
      * Write the content type header to the specified output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendContentTypeHeader(OutputStream out) throws IOException {
         String contentType = getContentType();
@@ -233,11 +227,29 @@ public abstract class Part {
         }
     }
 
+    protected long contentTypeHeaderLength() {
+        long length = 0L;
+        String contentType = getContentType();
+        if (contentType != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_TYPE_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(contentType).length;
+            String charSet = getCharSet();
+            if (charSet != null) {
+                length += CHARSET_BYTES.length;
+                length += MultipartEncodingUtil.getAsciiBytes(charSet).length;
+            }
+        }
+        return length;
+    }
+
     /**
      * Write the content transfer encoding header to the specified output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendTransferEncodingHeader(OutputStream out) throws IOException {
         String transferEncoding = getTransferEncoding();
@@ -248,11 +260,24 @@ public abstract class Part {
         }
     }
 
+    protected long transferEncodingHeaderLength() {
+        long length = 0L;
+        String transferEncoding = getTransferEncoding();
+        if (transferEncoding != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_TRANSFER_ENCODING_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(transferEncoding).length;
+        }
+        return length;
+    }
+
     /**
      * Write the content ID header to the specified output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendContentIdHeader(OutputStream out) throws IOException {
         String contentId = getContentId();
@@ -263,22 +288,41 @@ public abstract class Part {
         }
     }
 
+    protected long contentIdHeaderLength() {
+        long length = 0L;
+        String contentId = getContentId();
+        if (contentId != null) {
+            length += CRLF_BYTES.length;
+            length += CONTENT_ID_BYTES.length;
+            length += MultipartEncodingUtil.getAsciiBytes(contentId).length;
+        }
+        return length;
+    }
+
     /**
      * Write the end of the header to the output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendEndOfHeader(OutputStream out) throws IOException {
         out.write(CRLF_BYTES);
         out.write(CRLF_BYTES);
     }
 
+    protected long endOfHeaderLength() {
+        return CRLF_BYTES.length * 2;
+    }
+
     /**
      * Write the data to the specified output stream
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected abstract void sendData(OutputStream out) throws IOException;
 
@@ -286,31 +330,41 @@ public abstract class Part {
      * Return the length of the main content
      * 
      * @return long The length.
-     * @throws IOException If an IO problem occurs
      */
-    protected abstract long lengthOfData() throws IOException;
+    protected abstract long lengthOfData();
 
     /**
      * Write the end data to the output stream.
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @throws IOException
+     *             If an IO problem occurs.
      */
     protected void sendEnd(OutputStream out) throws IOException {
         out.write(CRLF_BYTES);
     }
 
+    protected long endLength() {
+        return CRLF_BYTES.length;
+    }
+
     /**
      * Write all the data to the output stream. If you override this method make sure to override #length() as well
      * 
-     * @param out The output stream
-     * @throws IOException If an IO problem occurs.
+     * @param out
+     *            The output stream
+     * @param boundary
+     *            the boundary
+     * @throws IOException
+     *             If an IO problem occurs.
      */
-    public void send(OutputStream out) throws IOException {
-        sendStart(out);
+    public void send(OutputStream out, byte[] boundary) throws IOException {
+        sendStart(out, boundary);
         sendDispositionHeader(out);
         sendContentTypeHeader(out);
         sendTransferEncodingHeader(out);
+        sendContentIdHeader(out);
         sendEndOfHeader(out);
         sendData(out);
         sendEnd(out);
@@ -320,21 +374,25 @@ public abstract class Part {
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
      * 
      * @return long The length.
-     * @throws IOException If an IO problem occurs
+     * @throws IOException
+     *             If an IO problem occurs
      */
-    public long length() throws IOException {
-        if (lengthOfData() < 0) {
-            return -1;
+    public long length(byte[] boundary) {
+
+        long lengthOfData = lengthOfData();
+
+        if (lengthOfData < 0L) {
+            return -1L;
+        } else {
+            return lengthOfData//
+                    + startLength(boundary)//
+                    + dispositionHeaderLength()//
+                    + contentTypeHeaderLength()//
+                    + transferEncodingHeaderLength()//
+                    + contentIdHeaderLength()//
+                    + endOfHeaderLength()//
+                    + endLength();
         }
-        ByteArrayOutputStream overhead = new ByteArrayOutputStream();
-        sendStart(overhead);
-        sendDispositionHeader(overhead);
-        sendContentTypeHeader(overhead);
-        sendTransferEncodingHeader(overhead);
-        sendContentIdHeader(overhead);
-        sendEndOfHeader(overhead);
-        sendEnd(overhead);
-        return overhead.size() + lengthOfData();
     }
 
     /**
@@ -350,10 +408,14 @@ public abstract class Part {
     /**
      * Write all parts and the last boundary to the specified output stream.
      * 
-     * @param out The stream to write to.
-     * @param parts The parts to write.
-     * @param partBoundary The ASCII bytes to use as the part boundary.
-     * @throws IOException If an I/O error occurs while writing the parts.
+     * @param out
+     *            The stream to write to.
+     * @param parts
+     *            The parts to write.
+     * @param partBoundary
+     *            The ASCII bytes to use as the part boundary.
+     * @throws IOException
+     *             If an I/O error occurs while writing the parts.
      * @since 3.0
      */
     public static void sendParts(OutputStream out, List<Part> parts, byte[] partBoundary) throws IOException {
@@ -365,9 +427,7 @@ public abstract class Part {
             throw new IllegalArgumentException("partBoundary may not be empty");
         }
         for (Part part : parts) {
-            // set the part boundary before the part is sent
-            part.setPartBoundary(partBoundary);
-            part.send(out);
+            part.send(out, partBoundary);
         }
         out.write(EXTRA_BYTES);
         out.write(partBoundary);
@@ -390,9 +450,12 @@ public abstract class Part {
     /**
      * Write all parts and the last boundary to the specified output stream.
      * 
-     * @param out The stream to write to.
-     * @param part The part to write.
-     * @throws IOException If an I/O error occurs while writing the parts.
+     * @param out
+     *            The stream to write to.
+     * @param part
+     *            The part to write.
+     * @throws IOException
+     *             If an I/O error occurs while writing the parts.
      * @since N/A
      */
     public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
@@ -401,37 +464,43 @@ public abstract class Part {
             throw new IllegalArgumentException("Parts may not be null");
         }
 
-        part.setPartBoundary(partBoundary);
-        part.send(out);
+        part.send(out, partBoundary);
     }
 
     /**
      * Gets the length of the multipart message including the given parts.
      * 
-     * @param parts The parts.
-     * @param partBoundary The ASCII bytes to use as the part boundary.
+     * @param parts
+     *            The parts.
+     * @param partBoundary
+     *            The ASCII bytes to use as the part boundary.
      * @return The total length
-     * @throws IOException If an I/O error occurs while writing the parts.
+     * @throws IOException
+     *             If an I/O error occurs while writing the parts.
      * @since 3.0
      */
-    public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) throws IOException {
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        long total = 0;
-        for (Part part : parts) {
-            // set the part boundary before we calculate the part's length
-            part.setPartBoundary(partBoundary);
-            long l = part.length();
-            if (l < 0) {
-                return -1;
+    public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) {
+
+        try {
+            if (parts == null) {
+                throw new IllegalArgumentException("Parts may not be null");
             }
-            total += l;
+            long total = 0;
+            for (Part part : parts) {
+                long l = part.length(partBoundary);
+                if (l < 0) {
+                    return -1;
+                }
+                total += l;
+            }
+            total += EXTRA_BYTES.length;
+            total += partBoundary.length;
+            total += EXTRA_BYTES.length;
+            total += CRLF_BYTES.length;
+            return total;
+        } catch (Exception e) {
+            LOGGER.error("An exception occurred while getting the length of the parts", e);
+            return 0L;
         }
-        total += EXTRA_BYTES.length;
-        total += partBoundary.length;
-        total += EXTRA_BYTES.length;
-        total += CRLF_BYTES.length;
-        return total;
     }
 }

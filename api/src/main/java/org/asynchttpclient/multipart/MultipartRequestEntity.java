@@ -15,16 +15,14 @@
  */
 package org.asynchttpclient.multipart;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.asynchttpclient.util.MiscUtil.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Random;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -57,21 +55,22 @@ public class MultipartRequestEntity implements RequestEntity {
         return bytes;
     }
 
-    private final Logger log = LoggerFactory.getLogger(MultipartRequestEntity.class);
-
     /**
      * The MIME parts as set by the constructor
      */
-    protected final List<Part>parts;
+    private final List<Part> parts;
 
     private final byte[] multipartBoundary;
 
     private final String contentType;
 
+    private final long contentLength;
+
     /**
      * Creates a new multipart entity containing the given parts.
      * 
-     * @param parts The parts to include.
+     * @param parts
+     *            The parts to include.
      */
     public MultipartRequestEntity(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
@@ -94,6 +93,8 @@ public class MultipartRequestEntity implements RequestEntity {
             multipartBoundary = generateMultipartBoundary();
             contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
         }
+
+        contentLength = Part.getLengthOfParts(parts, multipartBoundary);
     }
 
     private String computeContentType(String base) {
@@ -104,8 +105,8 @@ public class MultipartRequestEntity implements RequestEntity {
     }
 
     /**
-     * Returns the MIME boundary string that is used to demarcate boundaries of this part. The first call to this method will implicitly create a new boundary string. To create a boundary string first the HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise a
-     * random one is generated.
+     * Returns the MIME boundary string that is used to demarcate boundaries of this part. The first call to this method will implicitly create a new boundary string. To create a
+     * boundary string first the HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise a random one is generated.
      * 
      * @return The boundary string of this entity in ASCII encoding.
      */
@@ -117,7 +118,7 @@ public class MultipartRequestEntity implements RequestEntity {
      * Returns <code>true</code> if all parts are repeatable, <code>false</code> otherwise.
      */
     public boolean isRepeatable() {
-        for (Part part: parts) {
+        for (Part part : parts) {
             if (!part.isRepeatable()) {
                 return false;
             }
@@ -130,16 +131,10 @@ public class MultipartRequestEntity implements RequestEntity {
     }
 
     public long getContentLength() {
-        try {
-            return Part.getLengthOfParts(parts, multipartBoundary);
-        } catch (Exception e) {
-            log.error("An exception occurred while getting the length of the parts", e);
-            return 0;
-        }
+        return contentLength;
     }
 
     public String getContentType() {
         return contentType;
     }
 }
-
