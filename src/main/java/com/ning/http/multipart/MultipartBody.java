@@ -329,12 +329,11 @@ public class MultipartBody implements RandomAccessBody {
 
             tempPart++;
         }
-        ByteArrayOutputStream endWriter =
-                new ByteArrayOutputStream();
+        ByteArrayOutputStream endWriter = new ByteArrayOutputStream();
 
         Part.sendMessageEnd(endWriter, boundary);
 
-        overallLength += writeToTarget(target, endWriter);
+        overallLength += writeToTarget(target, endWriter.toByteArray());
 
         startPart = tempPart;
 
@@ -391,7 +390,7 @@ public class MultipartBody implements RandomAccessBody {
 
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         Part.sendPart(output, filePart, boundary);
-        return writeToTarget(target, output);
+        return writeToTarget(target, output.toByteArray());
     }
 
     private long handleFileEnd(WritableByteChannel target, FilePart filePart)
@@ -399,7 +398,7 @@ public class MultipartBody implements RandomAccessBody {
 
         ByteArrayOutputStream endOverhead = generateFileEnd(filePart);
 
-        return this.writeToTarget(target, endOverhead);
+        return this.writeToTarget(target, endOverhead.toByteArray());
     }
 
     private ByteArrayOutputStream generateFileEnd(FilePart filePart)
@@ -415,7 +414,7 @@ public class MultipartBody implements RandomAccessBody {
 
         ByteArrayOutputStream overhead = generateFileStart(filePart);
 
-        return writeToTarget(target, overhead);
+        return writeToTarget(target, overhead.toByteArray());
     }
 
     private ByteArrayOutputStream generateFileStart(FilePart filePart)
@@ -525,7 +524,7 @@ public class MultipartBody implements RandomAccessBody {
                 if (nRead > 0) {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream(nRead);
                     bos.write(bytes, 0, nRead);
-                    writeToTarget(target, bos);
+                    writeToTarget(target, bos.toByteArray());
                 }
             }
         } finally {
@@ -544,7 +543,7 @@ public class MultipartBody implements RandomAccessBody {
 
         Part.sendPart(outputStream, currentPart, boundary);
 
-        return writeToTarget(target, outputStream);
+        return writeToTarget(target, outputStream.toByteArray());
     }
 
     private long handleMultiPart(WritableByteChannel target, Part currentPart) throws IOException {
@@ -561,13 +560,13 @@ public class MultipartBody implements RandomAccessBody {
         return 0;
     }
 
-    private long writeToTarget(WritableByteChannel target, ByteArrayOutputStream byteWriter)
+    private long writeToTarget(WritableByteChannel target, byte[] bytes)
             throws IOException {
 
         int written = 0;
         int maxSpin = 0;
-        synchronized (byteWriter) {
-            ByteBuffer message = ByteBuffer.wrap(byteWriter.toByteArray());
+        synchronized (bytes) {
+            ByteBuffer message = ByteBuffer.wrap(bytes);
 
             if (target instanceof SocketChannel) {
                 final Selector selector = Selector.open();
@@ -575,7 +574,7 @@ public class MultipartBody implements RandomAccessBody {
                     final SocketChannel channel = (SocketChannel) target;
                     channel.register(selector, SelectionKey.OP_WRITE);
 
-                    while (written < byteWriter.size()) {
+                    while (written < bytes.length) {
                         selector.select(1000);
                         maxSpin++;
                         final Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -595,13 +594,13 @@ public class MultipartBody implements RandomAccessBody {
                     selector.close();
                 }
             } else {
-                while ((target.isOpen()) && (written < byteWriter.size())) {
+                while ((target.isOpen()) && (written < bytes.length)) {
                     long nWrite = target.write(message);
                     written += nWrite;
                     if (nWrite == 0 && maxSpin++ < 10) {
                         logger.info("Waiting for writing...");
                         try {
-                            byteWriter.wait(1000);
+                            bytes.wait(1000);
                         } catch (InterruptedException e) {
                             logger.trace(e.getMessage(), e);
                         }
@@ -616,5 +615,4 @@ public class MultipartBody implements RandomAccessBody {
         }
         return written;
     }
-
 }
