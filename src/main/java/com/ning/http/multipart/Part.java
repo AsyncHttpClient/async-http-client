@@ -26,16 +26,6 @@ import java.io.OutputStream;
 public abstract class Part implements com.ning.http.client.Part {
 
     /**
-     * The boundary
-     */
-    protected static final String BOUNDARY = "----------------314159265358979323846";
-
-    /**
-     * The default boundary to be used if etBoundaryBytes(byte[]) has not been called.
-     */
-    private static final byte[] DEFAULT_BOUNDARY_BYTES = MultipartEncodingUtil.getAsciiBytes(BOUNDARY);
-
-    /**
      * Carriage return/linefeed
      */
     protected static final String CRLF = "\r\n";
@@ -116,21 +106,6 @@ public abstract class Part implements com.ning.http.client.Part {
     static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
-     * Return the boundary string.
-     * 
-     * @return the boundary string
-     * @deprecated uses a constant string. Rather use {@link #getPartBoundary}
-     */
-    public static String getBoundary() {
-        return BOUNDARY;
-    }
-
-    /**
-     * The ASCII bytes to use as the multipart boundary.
-     */
-    private byte[] boundaryBytes;
-
-    /**
      * Return the name of this part.
      * 
      * @return The name.
@@ -166,31 +141,6 @@ public abstract class Part implements com.ning.http.client.Part {
     public abstract String getContentId();
 
     /**
-     * Gets the part boundary to be used.
-     * 
-     * @return the part boundary as an array of bytes.
-     * @since 3.0
-     */
-    protected byte[] getPartBoundary() {
-        if (boundaryBytes == null) {
-            // custom boundary bytes have not been set, use the default.
-            return DEFAULT_BOUNDARY_BYTES;
-        } else {
-            return boundaryBytes;
-        }
-    }
-
-    /**
-     * Sets the part boundary. Only meant to be used by {@link Part#sendParts(java.io.OutputStream, Part[], byte[])} and {@link Part#getLengthOfParts(Part[], byte[])}
-     * 
-     * @param boundaryBytes An array of ASCII bytes.
-     * @since 3.0
-     */
-    void setPartBoundary(byte[] boundaryBytes) {
-        this.boundaryBytes = boundaryBytes;
-    }
-
-    /**
      * Tests if this part can be sent more than once.
      * 
      * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
@@ -204,15 +154,16 @@ public abstract class Part implements com.ning.http.client.Part {
      * Write the start to the specified output stream
      * 
      * @param out The output stream
+     * @param boundary the boundary
      * @throws java.io.IOException If an IO problem occurs.
      */
-    protected void sendStart(OutputStream out) throws IOException {
+    protected void sendStart(OutputStream out, byte[] boundary) throws IOException {
         out.write(EXTRA_BYTES);
-        out.write(getPartBoundary());
+        out.write(boundary);
     }
 
-    private int startLength() {
-        return EXTRA_BYTES.length + getPartBoundary().length;
+    private int startLength(byte[] boundary) {
+        return EXTRA_BYTES.length + boundary.length;
     }
 
     /**
@@ -379,10 +330,11 @@ public abstract class Part implements com.ning.http.client.Part {
      * Write all the data to the output stream. If you override this method make sure to override #length() as well
      * 
      * @param out The output stream
+     * @param boundary the boundary
      * @throws IOException If an IO problem occurs.
      */
-    public void send(OutputStream out) throws IOException {
-        sendStart(out);
+    public void send(OutputStream out, byte[] boundary) throws IOException {
+        sendStart(out, boundary);
         sendDispositionHeader(out);
         sendContentTypeHeader(out);
         sendTransferEncodingHeader(out);
@@ -398,7 +350,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @return long The length.
      * @throws IOException If an IO problem occurs
      */
-    public long length() {
+    public long length(byte[] boundary) {
         
         long lengthOfData = lengthOfData();
         
@@ -406,7 +358,7 @@ public abstract class Part implements com.ning.http.client.Part {
             return -1L;
         } else {
             return lengthOfData//
-                    + startLength()//
+                    + startLength(boundary)//
                     + dispositionHeaderLength()//
                     + contentTypeHeaderLength()//
                     + transferEncodingHeaderLength()//
@@ -431,17 +383,6 @@ public abstract class Part implements com.ning.http.client.Part {
      * 
      * @param out The stream to write to.
      * @param parts The parts to write.
-     * @throws IOException If an I/O error occurs while writing the parts.
-     */
-    public static void sendParts(OutputStream out, final Part[] parts) throws IOException {
-        sendParts(out, parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out The stream to write to.
-     * @param parts The parts to write.
      * @param partBoundary The ASCII bytes to use as the part boundary.
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since 3.0
@@ -455,9 +396,7 @@ public abstract class Part implements com.ning.http.client.Part {
             throw new IllegalArgumentException("partBoundary may not be empty");
         }
         for (Part part : parts) {
-            // set the part boundary before the part is sent
-            part.setPartBoundary(partBoundary);
-            part.send(out);
+            part.send(out, partBoundary);
         }
         out.write(EXTRA_BYTES);
         out.write(partBoundary);
@@ -491,8 +430,7 @@ public abstract class Part implements com.ning.http.client.Part {
             throw new IllegalArgumentException("Parts may not be null");
         }
 
-        part.setPartBoundary(partBoundary);
-        part.send(out);
+        part.send(out, partBoundary);
     }
 
     /**
@@ -510,9 +448,7 @@ public abstract class Part implements com.ning.http.client.Part {
         }
         long total = 0;
         for (Part part : parts) {
-            // set the part boundary before we calculate the part's length
-            part.setPartBoundary(partBoundary);
-            long l = part.length();
+            long l = part.length(partBoundary);
             if (l < 0) {
                 return -1;
             }

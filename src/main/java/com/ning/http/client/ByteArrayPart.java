@@ -17,11 +17,11 @@
 package com.ning.http.client;
 
 public class ByteArrayPart implements Part {
-    private String name;
-    private String fileName;
-    private byte[] data;
-    private String mimeType;
-    private String charSet;
+    private final String name;
+    private final String fileName;
+    private final byte[] data;
+    private final String mimeType;
+    private final String charSet;
 
     public ByteArrayPart(String name, String fileName, byte[] data, String mimeType, String charSet) {
         this.name = name;

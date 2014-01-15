@@ -251,8 +251,6 @@ public class MultipartBody implements RandomAccessBody {
     private void initializeFilePart(FilePart filePart)
             throws IOException {
 
-        filePart.setPartBoundary(boundary);
-
         ByteArrayOutputStream output = generateFileStart(filePart);
 
         initializeBuffer(output.toByteArray());
@@ -262,7 +260,6 @@ public class MultipartBody implements RandomAccessBody {
 
     private void initializeStringPart(StringPart currentPart)
             throws IOException {
-        currentPart.setPartBoundary(boundary);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -404,7 +401,6 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFileHeaders(WritableByteChannel target, FilePart filePart) throws IOException {
-        filePart.setPartBoundary(boundary);
 
         ByteArrayOutputStream overhead = generateFileStart(filePart);
 
@@ -415,9 +411,7 @@ public class MultipartBody implements RandomAccessBody {
             throws IOException {
         ByteArrayOutputStream overhead = new ByteArrayOutputStream();
 
-        filePart.setPartBoundary(boundary);
-
-        filePart.sendStart(overhead);
+        filePart.sendStart(overhead, boundary);
         filePart.sendDispositionHeader(overhead);
         filePart.sendContentTypeHeader(overhead);
         filePart.sendTransferEncodingHeader(overhead);
@@ -531,8 +525,6 @@ public class MultipartBody implements RandomAccessBody {
 
     private long handleStringPart(WritableByteChannel target, StringPart currentPart) throws IOException {
 
-        currentPart.setPartBoundary(boundary);
-
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         Part.sendPart(outputStream, currentPart, boundary);
@@ -541,8 +533,6 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleMultiPart(WritableByteChannel target, Part currentPart) throws IOException {
-
-        currentPart.setPartBoundary(boundary);
 
         if (currentPart.getClass().equals(StringPart.class)) {
             return handleStringPart(target, (StringPart) currentPart);

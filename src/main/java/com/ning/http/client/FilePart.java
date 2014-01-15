@@ -22,10 +22,10 @@ import java.io.File;
  * A file multipart part.
  */
 public class FilePart implements Part {
-    private String name;
-    private File file;
-    private String mimeType;
-    private String charSet;
+    private final String name;
+    private final File file;
+    private final String mimeType;
+    private final String charSet;
 
     public FilePart(String name, File file, String mimeType, String charSet) {
         this.name = name;
@@ -37,7 +37,6 @@ public class FilePart implements Part {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
     public String getName() {
         return name;
     }
