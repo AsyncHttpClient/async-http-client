@@ -34,82 +34,82 @@ public abstract class Part {
     /**
      * Carriage return/linefeed
      */
-    protected static final String CRLF = "\r\n";
+    public static final String CRLF = "\r\n";
 
     /**
      * Carriage return/linefeed as a byte array
      */
-    static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
+    public static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
 
     /**
      * Content dispostion characters
      */
-    protected static final String QUOTE = "\"";
+    public static final String QUOTE = "\"";
 
     /**
      * Content dispostion as a byte array
      */
-    static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
+    public static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
 
     /**
      * Extra characters
      */
-    protected static final String EXTRA = "--";
+    public static final String EXTRA = "--";
 
     /**
      * Extra characters as a byte array
      */
-    static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
+    public static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
 
     /**
      * Content dispostion characters
      */
-    protected static final String CONTENT_DISPOSITION = "Content-Disposition: form-data; name=";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition: form-data; name=";
 
     /**
      * Content dispostion as a byte array
      */
-    static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+    public static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_TYPE = "Content-Type: ";
+    public static final String CONTENT_TYPE = "Content-Type: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
+    public static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
 
     /**
      * Content charset
      */
-    protected static final String CHARSET = "; charset=";
+    public static final String CHARSET = "; charset=";
 
     /**
      * Content charset as a byte array
      */
-    static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
+    public static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
+    public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
+    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_ID = "Content-ID: ";
+    public static final String CONTENT_ID = "Content-ID: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
+    public static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
      * Return the name of this part.

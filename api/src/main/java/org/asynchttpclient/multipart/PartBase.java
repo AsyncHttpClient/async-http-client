@@ -25,24 +25,24 @@ public abstract class PartBase extends Part {
     /**
      * Name of the file part.
      */
-    private String name;
+    private final String name;
 
     /**
      * Content type of the file part.
      */
-    private String contentType;
+    private final String contentType;
 
     /**
      * Content encoding of the file part.
      */
-    private String charSet;
+    private final String charSet;
 
     /**
      * The transfer encoding.
      */
-    private String transferEncoding;
+    private final String transferEncoding;
 
-    private String contentId;
+    private final String contentId;
 
     /**
      * Constructor.
@@ -101,50 +101,7 @@ public abstract class PartBase extends Part {
         return transferEncoding;
     }
 
-    /**
-     * Sets the character encoding.
-     * 
-     * @param charSet the character encoding, or <code>null</code> to exclude the character encoding header
-     */
-    public void setCharSet(String charSet) {
-        this.charSet = charSet;
-    }
-
-    /**
-     * Sets the content type.
-     * 
-     * @param contentType the content type, or <code>null</code> to exclude the content type header
-     */
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    /**
-     * Sets the part name.
-     * 
-     * @param name
-     */
-    public void setName(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Name must not be null");
-        }
-        this.name = name;
-    }
-
-    /**
-     * Sets the transfer encoding.
-     * 
-     * @param transferEncoding the transfer encoding, or <code>null</code> to exclude the transfer encoding header
-     */
-    public void setTransferEncoding(String transferEncoding) {
-        this.transferEncoding = transferEncoding;
-    }
-
     public String getContentId() {
         return contentId;
-    }
-
-    public void setContentId(String contentId) {
-        this.contentId = contentId;
     }
 }

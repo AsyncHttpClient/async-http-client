@@ -170,7 +170,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
             builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic"));
+            builder.addBodyPart(new StringPart("Name", "Dominic", "UTF-8"));
             builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
 
             builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET));

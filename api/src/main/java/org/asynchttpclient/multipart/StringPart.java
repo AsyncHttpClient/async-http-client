@@ -43,13 +43,12 @@ public class StringPart extends PartBase {
     /**
      * Contents of this StringPart.
      */
-    private byte[] content;
+    private final byte[] content;
 
-    /**
-     * The String value of this part.
-     */
-    private final String value;
-
+    public StringPart(String name, String value, String charset) {
+        this(name, value, charset, null);
+    }
+    
     /**
      * Constructor.
      * 
@@ -68,21 +67,7 @@ public class StringPart extends PartBase {
             // See RFC 2048, 2.8. "8bit Data"
             throw new IllegalArgumentException("NULs may not be present in string parts");
         }
-        this.value = value;
-    }
-
-    public StringPart(String name, String value, String charset) {
-        this(name, value, charset, null);
-    }
-
-    /**
-     * Constructor.
-     * 
-     * @param name The name of the part
-     * @param value the string to post
-     */
-    public StringPart(String name, String value) {
-        this(name, value, null, null);
+        content = MultipartEncodingUtil.getBytes(value, charset);
     }
 
     /**
@@ -91,9 +76,6 @@ public class StringPart extends PartBase {
      * @return the content in bytes
      */
     private byte[] getContent() {
-        if (content == null) {
-            content = MultipartEncodingUtil.getBytes(value, getCharSet());
-        }
         return content;
     }
 
@@ -115,15 +97,4 @@ public class StringPart extends PartBase {
     protected long lengthOfData() {
         return getContent().length;
     }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.commons.httpclient.methods.multipart.BasePart#setCharSet(java.lang.String)
-     */
-    public void setCharSet(String charSet) {
-        super.setCharSet(charSet);
-        this.content = null;
-    }
-
 }
