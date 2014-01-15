@@ -834,8 +834,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                if (mre.getContentLength() >= 0) {
-                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(mre.getContentLength()));
+                long contentLength = mre.getContentLength();
+                if (contentLength >= 0) {
+                    nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
                 }
 
             } else if (request.getEntityWriter() != null) {
