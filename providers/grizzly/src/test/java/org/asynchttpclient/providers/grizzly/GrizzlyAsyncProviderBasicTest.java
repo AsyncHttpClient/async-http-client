@@ -17,14 +17,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.AsyncProvidersBasicTest;
-import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.grizzly.TransportCustomizer;
-import org.glassfish.grizzly.filterchain.FilterChainBuilder;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
-import org.testng.annotations.Test;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
 
 public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
@@ -39,4 +31,8 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         return config;
     }
 
+    @Override
+    protected String acceptEncodingHeader() {
+        return "gzip";
+    }
 }
