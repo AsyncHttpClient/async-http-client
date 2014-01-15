@@ -258,7 +258,7 @@ public class NettyRequests {
 
             } else if (request.getParts() != null) {
                 // FIXME use Netty multipart
-                MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
+                MultipartRequestEntity mre = new MultipartRequestEntity(request.getParts(), request.getHeaders());
 
                 headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
                 if (mre.getContentLength() >= 0) {

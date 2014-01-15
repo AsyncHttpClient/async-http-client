@@ -14,14 +14,12 @@ package org.asynchttpclient.multipart;
 
 import org.asynchttpclient.RandomAccessBody;
 
-import org.asynchttpclient.ByteArrayPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -33,35 +31,30 @@ import java.util.Set;
 
 public class MultipartBody implements RandomAccessBody {
 
-    private byte[] boundary;
-    private long contentLength;
-    private List<org.asynchttpclient.Part> parts;
-    private List<RandomAccessFile> files;
-    private int startPart;
-    private final static Logger logger = LoggerFactory.getLogger(MultipartBody.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(MultipartBody.class);
+
+    private final byte[] boundary;
+    private final long contentLength;
+    private final List<Part> parts;
+    private final List<RandomAccessFile> files = new ArrayList<RandomAccessFile>();
+
+    private int startPart = 0;
     ByteArrayInputStream currentStream;
-    int currentStreamPosition;
-    boolean endWritten;
-    boolean doneWritingParts;
-    FileLocation fileLocation;
+    int currentStreamPosition = -1;
+    boolean endWritten = false;
+    boolean doneWritingParts = false;
+    FileLocation fileLocation = FileLocation.NONE;
     FilePart currentFilePart;
     FileChannel currentFileChannel;
 
-    enum FileLocation {NONE, START, MIDDLE, END}
+    enum FileLocation {
+        NONE, START, MIDDLE, END
+    }
 
-    public MultipartBody(List<org.asynchttpclient.Part> parts, String contentType, long contentLength) {
+    public MultipartBody(List<Part> parts, String contentType, long contentLength) {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
         this.contentLength = contentLength;
         this.parts = parts;
-
-        files = new ArrayList<RandomAccessFile>();
-
-        startPart = 0;
-        currentStreamPosition = -1;
-        endWritten = false;
-        doneWritingParts = false;
-        fileLocation = FileLocation.NONE;
-        currentFilePart = null;
     }
 
     public void close() throws IOException {
@@ -86,7 +79,7 @@ public class MultipartBody implements RandomAccessBody {
 
             boolean full = false;
             while (!full && !doneWritingParts) {
-                org.asynchttpclient.Part part = null;
+                Part part = null;
                 if (startPart < parts.size()) {
                     part = parts.get(startPart);
                 }
@@ -114,55 +107,14 @@ public class MultipartBody implements RandomAccessBody {
                     StringPart currentPart = (StringPart) part;
 
                     initializeStringPart(currentPart);
-
                     startPart++;
-                } else if (part instanceof org.asynchttpclient.StringPart) {
-                    StringPart currentPart = generateClientStringpart(part);
 
-                    initializeStringPart(currentPart);
-
-                    startPart++;
                 } else if (part instanceof FilePart) {
                     if (fileLocation == FileLocation.NONE) {
                         currentFilePart = (FilePart) part;
                         initializeFilePart(currentFilePart);
                     } else if (fileLocation == FileLocation.START) {
                         initializeFileBody(currentFilePart);
-                    } else if (fileLocation == FileLocation.MIDDLE) {
-                        initializeFileEnd(currentFilePart);
-                    } else if (fileLocation == FileLocation.END) {
-                        startPart++;
-                        fileLocation = FileLocation.NONE;
-                        if (startPart == parts.size() && currentStream.available() == 0) {
-                            doneWritingParts = true;
-                        }
-                    }
-                } else if (part instanceof org.asynchttpclient.FilePart) {
-                    if (fileLocation == FileLocation.NONE) {
-                        currentFilePart = generateClientFilePart(part);
-                        initializeFilePart(currentFilePart);
-                    } else if (fileLocation == FileLocation.START) {
-                        initializeFileBody(currentFilePart);
-                    } else if (fileLocation == FileLocation.MIDDLE) {
-                        initializeFileEnd(currentFilePart);
-                    } else if (fileLocation == FileLocation.END) {
-                        startPart++;
-                        fileLocation = FileLocation.NONE;
-                        if (startPart == parts.size() && currentStream.available() == 0) {
-                            doneWritingParts = true;
-                        }
-                    }
-                } else if (part instanceof ByteArrayPart) {
-                    ByteArrayPart bytePart =
-                            (ByteArrayPart) part;
-
-                    if (fileLocation == FileLocation.NONE) {
-                        currentFilePart =
-                                generateClientByteArrayPart(bytePart);
-
-                        initializeFilePart(currentFilePart);
-                    } else if (fileLocation == FileLocation.START) {
-                        initializeByteArrayBody(currentFilePart);
                     } else if (fileLocation == FileLocation.MIDDLE) {
                         initializeFileEnd(currentFilePart);
                     } else if (fileLocation == FileLocation.END) {
@@ -197,13 +149,12 @@ public class MultipartBody implements RandomAccessBody {
             return overallLength;
 
         } catch (Exception e) {
-            logger.info("read exception", e);
+            LOGGER.info("read exception", e);
             return 0;
         }
     }
 
-    private void initializeByteArrayBody(FilePart filePart)
-            throws IOException {
+    private void initializeByteArrayBody(FilePart filePart) throws IOException {
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         filePart.sendData(output);
@@ -213,8 +164,7 @@ public class MultipartBody implements RandomAccessBody {
         fileLocation = FileLocation.MIDDLE;
     }
 
-    private void initializeFileEnd(FilePart currentPart)
-            throws IOException {
+    private void initializeFileEnd(FilePart currentPart) throws IOException {
 
         ByteArrayOutputStream output = generateFileEnd(currentPart);
 
@@ -224,8 +174,7 @@ public class MultipartBody implements RandomAccessBody {
 
     }
 
-    private void initializeFileBody(FilePart currentPart)
-            throws IOException {
+    private void initializeFileBody(FilePart currentPart) throws IOException {
 
         if (currentPart.getSource() instanceof FilePartSource) {
 
@@ -255,8 +204,7 @@ public class MultipartBody implements RandomAccessBody {
         fileLocation = FileLocation.MIDDLE;
     }
 
-    private void initializeFilePart(FilePart filePart)
-            throws IOException {
+    private void initializeFilePart(FilePart filePart) throws IOException {
 
         filePart.setPartBoundary(boundary);
 
@@ -267,8 +215,7 @@ public class MultipartBody implements RandomAccessBody {
         fileLocation = FileLocation.START;
     }
 
-    private void initializeStringPart(StringPart currentPart)
-            throws IOException {
+    private void initializeStringPart(StringPart currentPart) throws IOException {
         currentPart.setPartBoundary(boundary);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -278,8 +225,7 @@ public class MultipartBody implements RandomAccessBody {
         initializeBuffer(outputStream);
     }
 
-    private int writeToBuffer(ByteBuffer buffer, int length)
-            throws IOException {
+    private int writeToBuffer(ByteBuffer buffer, int length) throws IOException {
 
         int available = currentStream.available();
 
@@ -301,8 +247,7 @@ public class MultipartBody implements RandomAccessBody {
         return writeLength;
     }
 
-    private void initializeBuffer(ByteArrayOutputStream outputStream)
-            throws IOException {
+    private void initializeBuffer(ByteArrayOutputStream outputStream) throws IOException {
 
         currentStream = new ByteArrayInputStream(outputStream.toByteArray());
 
@@ -310,8 +255,7 @@ public class MultipartBody implements RandomAccessBody {
 
     }
 
-    public long transferTo(long position, long count, WritableByteChannel target)
-            throws IOException {
+    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
 
         long overallLength = 0;
 
@@ -321,17 +265,11 @@ public class MultipartBody implements RandomAccessBody {
 
         int tempPart = startPart;
 
-        for (org.asynchttpclient.Part part : parts) {
-            if (part instanceof Part) {
-                overallLength += handleMultiPart(target, (Part) part);
-            } else {
-                overallLength += handleClientPart(target, part);
-            }
-
+        for (Part part : parts) {
+            overallLength += handleMultiPart(target, part);
             tempPart++;
         }
-        ByteArrayOutputStream endWriter =
-                new ByteArrayOutputStream();
+        ByteArrayOutputStream endWriter = new ByteArrayOutputStream();
 
         Part.sendMessageEnd(endWriter, boundary);
 
@@ -342,71 +280,14 @@ public class MultipartBody implements RandomAccessBody {
         return overallLength;
     }
 
-    private long handleClientPart(
-            WritableByteChannel target, org.asynchttpclient.Part part) throws IOException {
-
-        if (part.getClass().equals(org.asynchttpclient.StringPart.class)) {
-            StringPart currentPart = generateClientStringpart(part);
-
-            return handleStringPart(target, currentPart);
-        } else if (part.getClass().equals(org.asynchttpclient.FilePart.class)) {
-            FilePart filePart = generateClientFilePart(part);
-
-            return handleFilePart(target, filePart);
-        } else if (part.getClass().equals(ByteArrayPart.class)) {
-            ByteArrayPart bytePart = (ByteArrayPart) part;
-
-            FilePart filePart = generateClientByteArrayPart(bytePart);
-
-            return handleByteArrayPart(target, filePart, bytePart.getData());
-        }
-
-        return 0;
-    }
-
-    private FilePart generateClientByteArrayPart(
-            ByteArrayPart bytePart) {
-        ByteArrayPartSource source = new ByteArrayPartSource(bytePart.getFileName(), bytePart.getData());
-
-        FilePart filePart = new FilePart(bytePart.getName(), source, bytePart.getMimeType(), bytePart.getCharSet());
-        return filePart;
-    }
-
-    private FilePart generateClientFilePart(org.asynchttpclient.Part part)
-            throws FileNotFoundException {
-        org.asynchttpclient.FilePart
-                currentPart = (org.asynchttpclient.FilePart) part;
-
-        FilePart filePart = new FilePart(currentPart.getName(), currentPart.getFile(), currentPart.getMimeType(), currentPart.getCharSet());
-        return filePart;
-    }
-
-    private StringPart generateClientStringpart(org.asynchttpclient.Part part) {
-        org.asynchttpclient.StringPart
-                stringPart = (org.asynchttpclient.StringPart) part;
-
-        StringPart currentPart = new StringPart(stringPart.getName(), stringPart.getValue(), stringPart.getCharset());
-        return currentPart;
-    }
-
-    private long handleByteArrayPart(WritableByteChannel target,
-                                     FilePart filePart, byte[] data) throws IOException {
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Part.sendPart(output, filePart, boundary);
-        return writeToTarget(target, output);
-    }
-
-    private long handleFileEnd(WritableByteChannel target, FilePart filePart)
-            throws IOException {
+    private long handleFileEnd(WritableByteChannel target, FilePart filePart) throws IOException {
 
         ByteArrayOutputStream endOverhead = generateFileEnd(filePart);
 
         return this.writeToTarget(target, endOverhead);
     }
 
-    private ByteArrayOutputStream generateFileEnd(FilePart filePart)
-            throws IOException {
+    private ByteArrayOutputStream generateFileEnd(FilePart filePart) throws IOException {
         ByteArrayOutputStream endOverhead = new ByteArrayOutputStream();
 
         filePart.sendEnd(endOverhead);
@@ -421,8 +302,7 @@ public class MultipartBody implements RandomAccessBody {
         return writeToTarget(target, overhead);
     }
 
-    private ByteArrayOutputStream generateFileStart(FilePart filePart)
-            throws IOException {
+    private ByteArrayOutputStream generateFileStart(FilePart filePart) throws IOException {
         ByteArrayOutputStream overhead = new ByteArrayOutputStream();
 
         filePart.setPartBoundary(boundary);
@@ -437,8 +317,7 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     private long handleFilePart(WritableByteChannel target, FilePart filePart) throws IOException {
-        FilePartStallHandler handler = new FilePartStallHandler(
-                filePart.getStalledTime(), filePart);
+        FilePartStallHandler handler = new FilePartStallHandler(filePart.getStalledTime(), filePart);
 
         handler.start();
 
@@ -461,18 +340,18 @@ public class MultipartBody implements RandomAccessBody {
             synchronized (fc) {
                 while (fileLength != l) {
                     if (handler.isFailed()) {
-                        logger.debug("Stalled error");
+                        LOGGER.debug("Stalled error");
                         throw new FileUploadStalledException();
                     }
                     try {
                         nWrite = fc.transferTo(fileLength, l, target);
 
                         if (nWrite == 0) {
-                            logger.info("Waiting for writing...");
+                            LOGGER.info("Waiting for writing...");
                             try {
                                 fc.wait(50);
                             } catch (InterruptedException e) {
-                                logger.trace(e.getMessage(), e);
+                                LOGGER.trace(e.getMessage(), e);
                             }
                         } else {
                             handler.writeHappened();
@@ -485,9 +364,9 @@ public class MultipartBody implements RandomAccessBody {
                             try {
                                 fc.wait(1000);
                             } catch (InterruptedException e) {
-                                logger.trace(e.getMessage(), e);
+                                LOGGER.trace(e.getMessage(), e);
                             }
-                            logger.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
+                            LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
                             continue;
                         } else {
                             throw ex;
@@ -563,8 +442,7 @@ public class MultipartBody implements RandomAccessBody {
         return 0;
     }
 
-    private long writeToTarget(WritableByteChannel target, ByteArrayOutputStream byteWriter)
-            throws IOException {
+    private long writeToTarget(WritableByteChannel target, ByteArrayOutputStream byteWriter) throws IOException {
 
         int written = 0;
         int maxSpin = 0;
@@ -600,11 +478,11 @@ public class MultipartBody implements RandomAccessBody {
                     long nWrite = target.write(message);
                     written += nWrite;
                     if (nWrite == 0 && maxSpin++ < 10) {
-                        logger.info("Waiting for writing...");
+                        LOGGER.info("Waiting for writing...");
                         try {
                             byteWriter.wait(1000);
                         } catch (InterruptedException e) {
-                            logger.trace(e.getMessage(), e);
+                            LOGGER.trace(e.getMessage(), e);
                         }
                     } else {
                         if (maxSpin >= 10) {
@@ -617,5 +495,4 @@ public class MultipartBody implements RandomAccessBody {
         }
         return written;
     }
-
 }

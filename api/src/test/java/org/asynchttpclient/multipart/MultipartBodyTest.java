@@ -12,12 +12,6 @@
  */
 package org.asynchttpclient.multipart;
 
-import org.asynchttpclient.*;
-import org.asynchttpclient.Part;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,6 +21,11 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.asynchttpclient.Body;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
 
@@ -44,7 +43,7 @@ public class MultipartBodyTest {
 
         // add a byte array
         try {
-            parts.add(new ByteArrayPart("baPart", "fileName", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8"));
+            parts.add(new FilePart("baPart", new ByteArrayPartSource("fileName", "testMultiPart".getBytes("utf-8")), "application/test", "utf-8"));
         } catch (UnsupportedEncodingException ignore) {
         }
 
@@ -71,11 +70,7 @@ public class MultipartBodyTest {
         Assert.assertNotNull(parts);
         // get expected values
         MultipartRequestEntity mre = null;
-        try {
-            mre = AsyncHttpProviderUtils.createMultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
-        } catch (FileNotFoundException fne) {
-            Assert.fail("file not found: " + parts);
-        }
+        mre = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap());
         final long expectedContentLength = mre.getContentLength();
 
         // get real bytes

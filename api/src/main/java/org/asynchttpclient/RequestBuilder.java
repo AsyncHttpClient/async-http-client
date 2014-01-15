@@ -19,6 +19,8 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 
+import org.asynchttpclient.multipart.Part;
+
 /**
  * Builder for a {@link Request}.
  * Warning: mutable and not thread-safe! Beware that it holds a reference on the Request instance it builds,

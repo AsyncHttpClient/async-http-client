@@ -13,7 +13,6 @@
 package org.asynchttpclient.util;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -35,17 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.ByteArrayPart;
 import org.asynchttpclient.Cookie;
-import org.asynchttpclient.FilePart;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Part;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.StringPart;
-import org.asynchttpclient.multipart.ByteArrayPartSource;
-import org.asynchttpclient.multipart.MultipartRequestEntity;
-import org.asynchttpclient.multipart.PartSource;
 
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
@@ -340,49 +331,6 @@ public class AsyncHttpProviderUtils {
         if (port == -1)
             port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
         return port;
-    }
-
-    /**
-     * This is quite ugly as our internal names are duplicated, but we build on top of HTTP Client implementation.
-     *
-     * @param params
-     * @param requestHeaders
-     * @return a MultipartRequestEntity.
-     * @throws java.io.FileNotFoundException
-     */
-    public final static MultipartRequestEntity createMultipartRequestEntity(List<Part> params, FluentCaseInsensitiveStringsMap requestHeaders) throws FileNotFoundException {
-        org.asynchttpclient.multipart.Part[] parts = new org.asynchttpclient.multipart.Part[params.size()];
-        int i = 0;
-
-        for (Part part : params) {
-            if (part instanceof org.asynchttpclient.multipart.Part) {
-                parts[i] = (org.asynchttpclient.multipart.Part) part;
-            } else if (part instanceof StringPart) {
-                parts[i] = new org.asynchttpclient.multipart.StringPart(part.getName(),
-                        ((StringPart) part).getValue(),
-                        ((StringPart) part).getCharset());
-            } else if (part instanceof FilePart) {
-                parts[i] = new org.asynchttpclient.multipart.FilePart(part.getName(),
-                        ((FilePart) part).getFile(),
-                        ((FilePart) part).getMimeType(),
-                        ((FilePart) part).getCharSet());
-
-            } else if (part instanceof ByteArrayPart) {
-                PartSource source = new ByteArrayPartSource(((ByteArrayPart) part).getFileName(), ((ByteArrayPart) part).getData());
-                parts[i] = new org.asynchttpclient.multipart.FilePart(part.getName(),
-                        source,
-                        ((ByteArrayPart) part).getMimeType(),
-                        ((ByteArrayPart) part).getCharSet());
-
-            } else if (part == null) {
-                throw new NullPointerException("Part cannot be null");
-            } else {
-                throw new IllegalArgumentException(String.format("Unsupported part type for multipart parameter %s",
-                        part.getName()));
-            }
-            ++i;
-        }
-        return new MultipartRequestEntity(parts, requestHeaders);
     }
 
     public static String encodeCookies(Collection<Cookie> cookies) {

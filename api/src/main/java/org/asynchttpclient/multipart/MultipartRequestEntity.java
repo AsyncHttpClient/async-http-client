@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -61,7 +62,7 @@ public class MultipartRequestEntity implements RequestEntity {
     /**
      * The MIME parts as set by the constructor
      */
-    protected Part[] parts;
+    protected final List<Part>parts;
 
     private final byte[] multipartBoundary;
 
@@ -72,7 +73,7 @@ public class MultipartRequestEntity implements RequestEntity {
      * 
      * @param parts The parts to include.
      */
-    public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
+    public MultipartRequestEntity(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
@@ -116,8 +117,8 @@ public class MultipartRequestEntity implements RequestEntity {
      * Returns <code>true</code> if all parts are repeatable, <code>false</code> otherwise.
      */
     public boolean isRepeatable() {
-        for (int i = 0; i < parts.length; i++) {
-            if (!parts[i].isRepeatable()) {
+        for (Part part: parts) {
+            if (!part.isRepeatable()) {
                 return false;
             }
         }

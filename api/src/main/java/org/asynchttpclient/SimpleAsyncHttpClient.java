@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
 import org.asynchttpclient.simple.HeaderMap;

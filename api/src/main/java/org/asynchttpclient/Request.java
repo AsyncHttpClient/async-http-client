@@ -23,6 +23,8 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
+import org.asynchttpclient.multipart.Part;
+
 /**
  * The Request class can be used to construct HTTP request:
  * <blockquote><pre>

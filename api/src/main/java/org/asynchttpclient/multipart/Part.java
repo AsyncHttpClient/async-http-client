@@ -18,13 +18,14 @@ package org.asynchttpclient.multipart;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
  * 
  * @link http://hc.apache.org/httpclient-3.x/
  */
-public abstract class Part implements org.asynchttpclient.Part {
+public abstract class Part {
 
     /**
      * The boundary
@@ -351,22 +352,11 @@ public abstract class Part implements org.asynchttpclient.Part {
      * 
      * @param out The stream to write to.
      * @param parts The parts to write.
-     * @throws IOException If an I/O error occurs while writing the parts.
-     */
-    public static void sendParts(OutputStream out, final Part[] parts) throws IOException {
-        sendParts(out, parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out The stream to write to.
-     * @param parts The parts to write.
      * @param partBoundary The ASCII bytes to use as the part boundary.
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since 3.0
      */
-    public static void sendParts(OutputStream out, Part[] parts, byte[] partBoundary) throws IOException {
+    public static void sendParts(OutputStream out, List<Part> parts, byte[] partBoundary) throws IOException {
 
         if (parts == null) {
             throw new IllegalArgumentException("Parts may not be null");
@@ -416,17 +406,6 @@ public abstract class Part implements org.asynchttpclient.Part {
     }
 
     /**
-     * Return the total sum of all parts and that of the last boundary
-     * 
-     * @param parts The parts.
-     * @return The total length
-     * @throws IOException If an I/O error occurs while writing the parts.
-     */
-    public static long getLengthOfParts(Part[] parts) throws IOException {
-        return getLengthOfParts(parts, DEFAULT_BOUNDARY_BYTES);
-    }
-
-    /**
      * Gets the length of the multipart message including the given parts.
      * 
      * @param parts The parts.
@@ -435,7 +414,7 @@ public abstract class Part implements org.asynchttpclient.Part {
      * @throws IOException If an I/O error occurs while writing the parts.
      * @since 3.0
      */
-    public static long getLengthOfParts(Part[] parts, byte[] partBoundary) throws IOException {
+    public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) throws IOException {
         if (parts == null) {
             throw new IllegalArgumentException("Parts may not be null");
         }

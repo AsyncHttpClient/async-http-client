@@ -16,7 +16,7 @@
 package org.asynchttpclient.async;
 
 import static org.asynchttpclient.async.util.TestUtils.*;
-import static org.asynchttpclient.util.DateUtil.millisTime;
+import static org.asynchttpclient.util.DateUtil.*;
 import static org.testng.Assert.*;
 
 import java.io.ByteArrayInputStream;
@@ -49,12 +49,12 @@ import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.Cookie;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.MaxRedirectException;
-import org.asynchttpclient.Part;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.StringPart;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.multipart.StringPart;
 import org.testng.annotations.Test;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {

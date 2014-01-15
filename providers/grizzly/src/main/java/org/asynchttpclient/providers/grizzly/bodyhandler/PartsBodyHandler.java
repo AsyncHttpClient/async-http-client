@@ -14,13 +14,12 @@
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
 import org.asynchttpclient.Body;
-import org.asynchttpclient.Part;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.multipart.MultipartRequestEntity;
+import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.grizzly.FeedableBodyGenerator;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
@@ -41,16 +40,13 @@ public final class PartsBodyHandler implements BodyHandler {
         return isNonEmpty(request.getParts());
     }
 
-    @SuppressWarnings({"unchecked"})
     public boolean doHandle(final FilterChainContext ctx,
                          final Request request,
                          final HttpRequestPacket requestPacket)
     throws IOException {
 
         final List<Part> parts = request.getParts();
-        final MultipartRequestEntity mre =
-                AsyncHttpProviderUtils.createMultipartRequestEntity(
-                        parts, request.getHeaders());
+        final MultipartRequestEntity mre = new MultipartRequestEntity(parts, request.getHeaders());
         final long contentLength = mre.getContentLength();
         final String contentType = mre.getContentType();
         requestPacket.setContentLengthLong(contentLength);

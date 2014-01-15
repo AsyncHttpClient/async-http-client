@@ -17,6 +17,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
+import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
@@ -556,14 +557,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+    public T setParameters(Map<String, Collection<String>> parameters) {
         resetNonMultipartData();
         resetMultipartData();
         request.params = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
-    public T addBodyPart(Part part) throws IllegalArgumentException {
+    public T addBodyPart(Part part) {
         resetParameters();
         resetNonMultipartData();
         if (request.parts == null) {
