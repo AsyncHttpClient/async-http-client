@@ -32,19 +32,21 @@ import java.util.Set;
 
 public class MultipartBody implements RandomAccessBody {
 
-    private byte[] boundary;
-    private long contentLength;
-    private List<com.ning.http.client.Part> parts;
-    private List<RandomAccessFile> files;
-    private int startPart;
     private final static Logger logger = LoggerFactory.getLogger(MultipartBody.class);
-    ByteArrayInputStream currentStream;
-    int currentStreamPosition;
-    boolean endWritten;
-    boolean doneWritingParts;
-    FileLocation fileLocation;
-    FilePart currentFilePart;
-    FileChannel currentFileChannel;
+
+    private final byte[] boundary;
+    private final long contentLength;
+    private final List<com.ning.http.client.Part> parts;
+    private final List<RandomAccessFile> files = new ArrayList<RandomAccessFile>();
+
+    private int startPart = 0;
+    private ByteArrayInputStream currentStream;
+    private int currentStreamPosition = -1;
+    private boolean endWritten = false;
+    private boolean doneWritingParts = false;
+    private FileLocation fileLocation = FileLocation.NONE;
+    private FilePart currentFilePart;
+    private FileChannel currentFileChannel;
 
     enum FileLocation {NONE, START, MIDDLE, END}
 
@@ -52,15 +54,6 @@ public class MultipartBody implements RandomAccessBody {
         this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
         this.parts = parts;
         this.contentLength = contentLength;
-
-        files = new ArrayList<RandomAccessFile>();
-
-        startPart = 0;
-        currentStreamPosition = -1;
-        endWritten = false;
-        doneWritingParts = false;
-        fileLocation = FileLocation.NONE;
-        currentFilePart = null;
     }
 
     public void close() throws IOException {
@@ -180,7 +173,7 @@ public class MultipartBody implements RandomAccessBody {
 
                     Part.sendMessageEnd(endWriter, boundary);
 
-                    initializeBuffer(endWriter);
+                    initializeBuffer(endWriter.toByteArray());
                 }
 
                 if (currentStreamPosition > -1) {
@@ -207,7 +200,7 @@ public class MultipartBody implements RandomAccessBody {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         filePart.sendData(output);
 
-        initializeBuffer(output);
+        initializeBuffer(output.toByteArray());
 
         fileLocation = FileLocation.MIDDLE;
     }
@@ -217,7 +210,7 @@ public class MultipartBody implements RandomAccessBody {
 
         ByteArrayOutputStream output = generateFileEnd(currentPart);
 
-        initializeBuffer(output);
+        initializeBuffer(output.toByteArray());
 
         fileLocation = FileLocation.END;
 
@@ -238,6 +231,7 @@ public class MultipartBody implements RandomAccessBody {
             currentFileChannel = raf.getChannel();
 
         } else {
+            // ByteArrayPartSource
             PartSource partSource = currentPart.getSource();
 
             InputStream stream = partSource.createInputStream();
@@ -261,7 +255,7 @@ public class MultipartBody implements RandomAccessBody {
 
         ByteArrayOutputStream output = generateFileStart(filePart);
 
-        initializeBuffer(output);
+        initializeBuffer(output.toByteArray());
 
         fileLocation = FileLocation.START;
     }
@@ -274,7 +268,7 @@ public class MultipartBody implements RandomAccessBody {
 
         Part.sendPart(outputStream, currentPart, boundary);
 
-        initializeBuffer(outputStream);
+        initializeBuffer(outputStream.toByteArray());
     }
 
     private int writeToBuffer(ByteBuffer buffer, int length)
@@ -300,10 +294,10 @@ public class MultipartBody implements RandomAccessBody {
         return writeLength;
     }
 
-    private void initializeBuffer(ByteArrayOutputStream outputStream)
+    private void initializeBuffer(byte[] bytes)
             throws IOException {
 
-        currentStream = new ByteArrayInputStream(outputStream.toByteArray());
+        currentStream = new ByteArrayInputStream(bytes);
 
         currentStreamPosition = 0;
 
