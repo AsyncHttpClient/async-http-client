@@ -70,7 +70,6 @@ public class MultipartRequestEntity implements RequestEntity {
 
     /**
      * Creates a new multipart entity containing the given parts.
-     * 
      * @param parts The parts to include.
      */
     public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
@@ -104,8 +103,7 @@ public class MultipartRequestEntity implements RequestEntity {
     }
 
     /**
-     * Returns the MIME boundary string that is used to demarcate boundaries of this part. The first call to this method will implicitly create a new boundary string. To create a boundary string first the HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise a
-     * random one is generated.
+     * Returns the MIME boundary string that is used to demarcate boundaries of this part.
      * 
      * @return The boundary string of this entity in ASCII encoding.
      */
@@ -117,8 +115,8 @@ public class MultipartRequestEntity implements RequestEntity {
      * Returns <code>true</code> if all parts are repeatable, <code>false</code> otherwise.
      */
     public boolean isRepeatable() {
-        for (int i = 0; i < parts.length; i++) {
-            if (!parts[i].isRepeatable()) {
+        for (Part part : parts) {
+            if (!part.isRepeatable()) {
                 return false;
             }
         }
