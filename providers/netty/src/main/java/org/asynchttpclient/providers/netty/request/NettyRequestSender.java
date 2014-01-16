@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -57,9 +58,11 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.generators.FileBodyGenerator;
 import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.multipart.MultipartBody;
+import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.FutureReaper;
@@ -255,8 +258,7 @@ public class NettyRequestSender {
         return cl.future();
     }
 
-    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache)
-            throws IOException {
+    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache) throws IOException {
 
         if (closed.get()) {
             throw new IOException("Closed");
@@ -278,17 +280,15 @@ public class NettyRequestSender {
         }
     }
 
-    private void sendFileBody(Channel channel, File file, NettyResponseFuture<?> future) throws IOException {
+    private void sendFileBody(Channel channel, File file, long offset, long fileLength, NettyResponseFuture<?> future) throws IOException {
         final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
         try {
-            long fileLength = raf.length();
-
             ChannelFuture writeFuture;
             if (Channels.getSslHandler(channel) != null) {
-                writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+                writeFuture = channel.write(new ChunkedFile(raf, offset, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
             } else {
-                FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+                FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, fileLength);
                 writeFuture = channel.write(region, channel.newProgressivePromise());
             }
             // FIXME probably useless in Netty 4
@@ -345,10 +345,13 @@ public class NettyRequestSender {
     public void sendBody(final Channel channel, final Body body, NettyResponseFuture<?> future) {
         Object msg;
         if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
+            // FIXME also do something for multipart and use a ChunkedInput
             msg = new BodyFileRegion((RandomAccessBody) body);
+
         } else {
-            BodyGenerator bg = future.getRequest().getBodyGenerator();
             msg = new BodyChunkedInput(body);
+
+            BodyGenerator bg = future.getRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator) {
                 FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
                     @Override
@@ -374,38 +377,48 @@ public class NettyRequestSender {
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 
-    private Body computeBody(HttpRequest nettyRequest, NettyResponseFuture<?> future) {
+    private Body computeBodyAndSetContentLengthOrTransferEncodingHeader(HttpRequest nettyRequest, NettyResponseFuture<?> future) {
 
-        if (nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
-            return null;
-        }
-
-        HttpHeaders headers = nettyRequest.headers();
         BodyGenerator bg = future.getRequest().getBodyGenerator();
+        List<Part> parts = future.getRequest().getParts();
         Body body = null;
-        if (bg != null) {
-            try {
-                body = bg.createBody();
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
+
+        if (bg != null || parts != null) {
+            HttpHeaders headers = nettyRequest.headers();
+            long length = -1L;
+
+            if (bg instanceof FileBodyGenerator) {
+                // don't even compute body, file be be directly passed
+                length = FileBodyGenerator.class.cast(bg).getRegionLength();
+
+            } else if (bg instanceof InputStreamBodyGenerator) {
+                // don't even compute body, stream be be directly passed
+                length = -1L;
+
+            } else if (bg != null) {
+                try {
+                    body = bg.createBody();
+                    length = body.getContentLength();
+
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+
+            } else {
+                String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
+                String contentLength = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_LENGTH);
+
+                if (contentLength != null) {
+                    length = Long.parseLong(contentLength);
+                }
+                body = new MultipartBody(parts, contentType, length);
             }
-            long length = body.getContentLength();
+
             if (length >= 0) {
                 headers.set(HttpHeaders.Names.CONTENT_LENGTH, length);
             } else {
                 headers.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
             }
-        } else if (future.getRequest().getParts() != null) {
-            String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
-            String contentLength = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_LENGTH);
-
-            long length = -1;
-            if (contentLength != null) {
-                length = Long.parseLong(contentLength);
-            } else {
-                nettyRequest.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-            }
-            body = new MultipartBody(future.getRequest().getParts(), contentType, length);
         }
 
         return body;
@@ -449,7 +462,9 @@ public class NettyRequestSender {
 
             HttpRequest nettyRequest = future.getNettyRequest();
             AsyncHandler<T> handler = future.getAsyncHandler();
-            Body body = computeBody(nettyRequest, future);
+
+            // beware: compute early because actually also write headers
+            Body body = computeBodyAndSetContentLengthOrTransferEncodingHeader(nettyRequest, future);
 
             if (handler instanceof TransferCompletionHandler) {
                 configureTransferAdapter(handler, nettyRequest);
@@ -477,14 +492,22 @@ public class NettyRequestSender {
 
             // FIXME OK, why? and what's the point of not having a is/get?
             if (future.getAndSetWriteBody(true)) {
-                if (!future.getNettyRequest().getMethod().equals(HttpMethod.CONNECT)) {
+                if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
+
                     if (future.getRequest().getFile() != null) {
-                        sendFileBody(channel, future.getRequest().getFile(), future);
+                        File file = future.getRequest().getFile();
+                        sendFileBody(channel, file, 0, file.length(), future);
+
+                    } else if (future.getRequest().getBodyGenerator() instanceof FileBodyGenerator) {
+                        // 2 different ways of passing a file, wouhou!
+                        FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) future.getRequest().getBodyGenerator();
+                        sendFileBody(channel, fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), future);
 
                     } else if (future.getRequest().getStreamData() != null) {
                         if (sendStreamAndExit(channel, future.getRequest().getStreamData(), future))
                             return;
                     } else if (future.getRequest().getBodyGenerator() instanceof InputStreamBodyGenerator) {
+                        // 2 different ways of passing a stream, wouhou!
                         if (sendStreamAndExit(channel, InputStreamBodyGenerator.class.cast(future.getRequest().getBodyGenerator()).getInputStream(), future))
                             return;
 

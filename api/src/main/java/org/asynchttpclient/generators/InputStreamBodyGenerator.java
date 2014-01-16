@@ -23,25 +23,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire
- * stream in memory.
+ * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
  * <p/>
- * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation.
- * If not, mechanisms like authentication, redirect, or resumable download will not works.
+ * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
+ * resumable download will not works.
  */
 public class InputStreamBodyGenerator implements BodyGenerator {
 
     private final InputStream inputStream;
-    private final static Logger logger = LoggerFactory.getLogger(InputStreamBodyGenerator.class);
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this.inputStream = inputStream;
-
-        if (inputStream.markSupported()) {
-            inputStream.mark(0);
-        } else {
-            logger.info("inputStream.markSupported() not supported. Some features will not work.");
-        }
     }
 
     public InputStream getInputStream() {
@@ -53,14 +45,27 @@ public class InputStreamBodyGenerator implements BodyGenerator {
      */
     @Override
     public Body createBody() throws IOException {
-        return new InputStreamBody();
+        return new InputStreamBody(inputStream);
     }
 
-    protected class InputStreamBody implements Body {
+    private static class InputStreamBody implements Body {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
+
+        private final InputStream inputStream;
         private byte[] chunk;
 
+        private InputStreamBody(InputStream inputStream) {
+            this.inputStream = inputStream;
+            if (inputStream.markSupported()) {
+                inputStream.mark(0);
+            } else {
+                LOGGER.info("inputStream.markSupported() not supported. Some features will not work.");
+            }
+        }
+
         public long getContentLength() {
-            return -1;
+            return -1L;
         }
 
         public long read(ByteBuffer buffer) throws IOException {
@@ -68,12 +73,11 @@ public class InputStreamBodyGenerator implements BodyGenerator {
             // To be safe.
             chunk = new byte[buffer.remaining() - 10];
 
-
             int read = -1;
             try {
                 read = inputStream.read(chunk);
             } catch (IOException ex) {
-                logger.warn("Unable to read", ex);
+                LOGGER.warn("Unable to read", ex);
             }
 
             if (read > 0) {

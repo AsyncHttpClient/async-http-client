@@ -28,7 +28,5 @@ public interface BodyGenerator {
      * @return The request body, never {@code null}.
      * @throws IOException If the body could not be created.
      */
-    Body createBody()
-            throws IOException;
-
+    Body createBody() throws IOException;
 }
