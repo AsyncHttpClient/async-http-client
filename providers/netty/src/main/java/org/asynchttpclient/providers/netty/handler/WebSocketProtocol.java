@@ -53,12 +53,6 @@ final class WebSocketProtocol extends Protocol {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketProtocol.class);
 
-    private static final byte OPCODE_TEXT = 0x1;
-    private static final byte OPCODE_BINARY = 0x2;
-    private static final byte OPCODE_UNKNOWN = -1;
-    // FIXME How is this threadsafe? WebSocketProtocol instance is a member of NettyChannelHandler which is @Shareable
-    protected byte pendingOpcode = OPCODE_UNKNOWN;
-
     public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         super(channels, config, nettyConfig, requestSender);
     }
@@ -134,11 +128,7 @@ final class WebSocketProtocol extends Protocol {
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
                 } else {
-                    if (frame instanceof TextWebSocketFrame) {
-                        pendingOpcode = OPCODE_TEXT;
-                    } else if (frame instanceof BinaryWebSocketFrame) {
-                        pendingOpcode = OPCODE_BINARY;
-                    }
+                    boolean binaryFrame = frame instanceof BinaryWebSocketFrame;
 
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
@@ -146,7 +136,7 @@ final class WebSocketProtocol extends Protocol {
                             ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
                             h.onBodyPartReceived(rp);
 
-                            if (pendingOpcode == OPCODE_BINARY) {
+                            if (binaryFrame) {
                                 webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                             } else {
                                 webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
