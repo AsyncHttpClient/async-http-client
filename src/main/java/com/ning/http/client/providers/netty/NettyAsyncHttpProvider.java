@@ -2264,7 +2264,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         private static final byte OPCODE_TEXT = 0x1;
         private static final byte OPCODE_BINARY = 0x2;
         private static final byte OPCODE_UNKNOWN = -1;
-        protected byte pendingOpcode = OPCODE_UNKNOWN;
 
         // We don't need to synchronize as replacing the "ws-decoder" will process using the same thread.
         private void invokeOnSucces(ChannelHandlerContext ctx, WebSocketUpgradeHandler h) {
@@ -2351,6 +2350,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 final WebSocketFrame frame = (WebSocketFrame) e.getMessage();
 
+                byte pendingOpcode = OPCODE_UNKNOWN;
                 if (frame instanceof TextWebSocketFrame) {
                     pendingOpcode = OPCODE_TEXT;
                 } else if (frame instanceof BinaryWebSocketFrame) {
