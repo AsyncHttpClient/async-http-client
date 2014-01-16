@@ -55,7 +55,8 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     public MultipartBody(List<Part> parts, String contentType, long contentLength) {
-        this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()));
+        this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=")
+                + "boundary=".length()));
         this.contentLength = contentLength;
         this.parts = parts;
     }
@@ -113,14 +114,19 @@ public class MultipartBody implements RandomAccessBody {
                     startPart++;
 
                 } else if (part instanceof AbstractFilePart) {
-                    if (fileLocation == FileLocation.NONE) {
+
+                    switch (fileLocation) {
+                    case NONE:
                         currentFilePart = (AbstractFilePart) part;
                         initializeFilePart(currentFilePart);
-                    } else if (fileLocation == FileLocation.START) {
+                        break;
+                    case START:
                         initializeFileBody(currentFilePart);
-                    } else if (fileLocation == FileLocation.MIDDLE) {
+                        break;
+                    case MIDDLE:
                         initializeFileEnd(currentFilePart);
-                    } else if (fileLocation == FileLocation.END) {
+                        break;
+                    case END:
                         startPart++;
                         fileLocation = FileLocation.NONE;
                         if (startPart == parts.size() && currentStream.available() == 0) {
