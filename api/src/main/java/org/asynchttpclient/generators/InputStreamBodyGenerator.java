@@ -19,7 +19,6 @@ import java.nio.ByteBuffer;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
-import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,11 +31,8 @@ import org.slf4j.LoggerFactory;
  */
 public class InputStreamBodyGenerator implements BodyGenerator {
 
-    private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
-    private final static byte[] ZERO = "0".getBytes(StandardCharsets.US_ASCII);
     private final InputStream inputStream;
     private final static Logger logger = LoggerFactory.getLogger(InputStreamBodyGenerator.class);
-    private boolean patchNettyChunkingIssue = false;
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this.inputStream = inputStream;
@@ -57,12 +53,10 @@ public class InputStreamBodyGenerator implements BodyGenerator {
      */
     @Override
     public Body createBody() throws IOException {
-        return new ISBody();
+        return new InputStreamBody();
     }
 
-    protected class ISBody implements Body {
-        private boolean eof = false;
-        private int endDataCount = 0;
+    protected class InputStreamBody implements Body {
         private byte[] chunk;
 
         public long getContentLength() {
@@ -82,50 +76,11 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                 logger.warn("Unable to read", ex);
             }
 
-            if (patchNettyChunkingIssue) {
-                if (read == -1) {
-                    // Since we are chuncked, we must output extra bytes before considering the input stream closed.
-                    // chunking requires to end the chunking:
-                    // - A Terminating chunk of  "0\r\n" bytes,
-                    // - Then a separate packet of "\r\n" bytes
-                    if (!eof) {
-                        endDataCount++;
-                        if (endDataCount == 2)
-                            eof = true;
-
-                        if (endDataCount == 1)
-                            buffer.put(ZERO);
-
-                        buffer.put(END_PADDING);
-
-
-                        return buffer.position();
-                    } else {
-                        if (inputStream.markSupported()) {
-                            inputStream.reset();
-                        }
-                        eof = false;
-                    }
-                    return -1;
-                }
-
-                /**
-                 * Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
-                 */
-
-                buffer.put(Integer.toHexString(read).getBytes(StandardCharsets.US_ASCII));
-                // Chunking is separated by "<bytesreads>\r\n"
-                buffer.put(END_PADDING);
+            if (read > 0) {
                 buffer.put(chunk, 0, read);
-                // Was missing the final chunk \r\n.
-                buffer.put(END_PADDING);
             } else {
-                if (read > 0) {
-                    buffer.put(chunk, 0, read);
-                } else {
-                    if (inputStream.markSupported()) {
-                        inputStream.reset();
-                    }
+                if (inputStream.markSupported()) {
+                    inputStream.reset();
                 }
             }
             return read;
@@ -134,14 +89,5 @@ public class InputStreamBodyGenerator implements BodyGenerator {
         public void close() throws IOException {
             inputStream.close();
         }
-    }
-
-    /**
-     * HACK: This is required because Netty has issues with chunking.
-     *
-     * @param patchNettyChunkingIssue
-     */
-    public void patchNettyChunkingIssue(boolean patchNettyChunkingIssue) {
-        this.patchNettyChunkingIssue = patchNettyChunkingIssue;
     }
 }
