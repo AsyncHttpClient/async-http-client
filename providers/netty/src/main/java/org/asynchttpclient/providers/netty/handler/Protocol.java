@@ -73,14 +73,15 @@ public abstract class Protocol {
                 URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
 
                 if (!uri.toString().equals(future.getURI().toString())) {
-                    final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
+                    final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
                     if (config.isRemoveQueryParamOnRedirect()) {
-                        nBuilder.setQueryParameters(null);
+                        requestBuilder.setQueryParameters(null);
                     }
 
                     // FIXME why not do that for 301 and 307 too?
+                    // FIXME I think condition is wrong
                     if ((status.equals(FOUND) || status.equals(SEE_OTHER)) && !(status.equals(FOUND) && config.isStrict302Handling())) {
-                        nBuilder.setMethod(HttpMethod.GET.name());
+                        requestBuilder.setMethod(HttpMethod.GET.name());
                     }
 
                     // in case of a redirect from HTTP to HTTPS, future attributes might change
@@ -90,20 +91,20 @@ public abstract class Protocol {
                     future.setURI(uri);
                     String newUrl = uri.toString();
                     if (request.getUrl().startsWith(WEBSOCKET)) {
-                        newUrl = newUrl.replace(HTTP, WEBSOCKET);
+                        newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
 
                     logger.debug("Redirecting to {}", newUrl);
 
                     for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE)) {
                         for (Cookie c : CookieDecoder.decode(cookieStr)) {
-                            nBuilder.addOrReplaceCookie(c);
+                            requestBuilder.addOrReplaceCookie(c);
                         }
                     }
 
                     for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE2)) {
                         for (Cookie c : CookieDecoder.decode(cookieStr)) {
-                            nBuilder.addOrReplaceCookie(c);
+                            requestBuilder.addOrReplaceCookie(c);
                         }
                     }
 
@@ -125,7 +126,7 @@ public abstract class Protocol {
                         callback.call();
                     }
 
-                    Request target = nBuilder.setUrl(newUrl).build();
+                    Request target = requestBuilder.setUrl(newUrl).build();
                     future.setRequest(target);
                     // FIXME why not reuse the channel is same host?
                     requestSender.sendNextRequest(target, future);
