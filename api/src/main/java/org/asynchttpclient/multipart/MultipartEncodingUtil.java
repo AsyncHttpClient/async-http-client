@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.multipart;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -25,39 +25,27 @@ import java.io.UnsupportedEncodingException;
 public class MultipartEncodingUtil {
 
     public static byte[] getAsciiBytes(String data) {
-        try {
-            return data.getBytes("US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return data.getBytes(Charset.forName("US-ASCII"));
     }
 
     public static String getAsciiString(final byte[] data) {
         if (data == null) {
-            throw new IllegalArgumentException("Parameter may not be null");
+            throw new NullPointerException("data");
         }
 
-        try {
-            return new String(data, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(data, Charset.forName("US-ASCII"));
     }
 
     public static byte[] getBytes(final String data, String charset) {
 
         if (data == null) {
-            throw new IllegalArgumentException("data may not be null");
+            throw new NullPointerException("data");
         }
 
         if (charset == null || charset.length() == 0) {
-            throw new IllegalArgumentException("charset may not be null or empty");
+            throw new NullPointerException("charset");
         }
 
-        try {
-            return data.getBytes(charset);
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException(String.format("Unsupported encoding: %s", charset));
-        }
+        return data.getBytes(Charset.forName(charset));
     }
 }
