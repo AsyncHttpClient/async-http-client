@@ -34,7 +34,6 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
@@ -52,7 +51,6 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 .statusMatches(statusCode));
     }
 
-    @SuppressWarnings({"unchecked"})
     public boolean handleStatus(final HttpResponsePacket responsePacket,
                                 final HttpTxContext httpTransactionContext,
                                 final FilterChainContext ctx) {
@@ -82,12 +80,9 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
         if (proxyAuthLowerCase.startsWith("basic")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
-            try {
-                req.getHeaders().add(Header.ProxyAuthorization.toString(),
-                                     AuthenticatorUtils.computeBasicAuthentication(
-                                             realm));
-            } catch (UnsupportedEncodingException ignored) {
-            }
+            req.getHeaders().add(Header.ProxyAuthorization.toString(),
+                                 AuthenticatorUtils.computeBasicAuthentication(
+                                         realm));
         } else if (proxyAuthLowerCase.startsWith("digest")) {
             req.getHeaders().remove(Header.ProxyAuthenticate.toString());
             req.getHeaders().remove(Header.ProxyAuthorization.toString());
@@ -98,8 +93,6 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
             } catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException(
                         "Digest authentication not supported", e);
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException("Unsupported encoding.", e);
             }
         } else if (proxyAuthLowerCase.startsWith("ntlm")) {
 

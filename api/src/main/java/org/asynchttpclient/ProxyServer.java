@@ -17,11 +17,13 @@
 package org.asynchttpclient;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * Represents a proxy server.
@@ -54,7 +56,8 @@ public class ProxyServer {
     private final String password;
     private final int port;
     private final URI uri;
-    private String encoding = "UTF-8";
+    private String encoding = StandardCharsets.UTF_8.name();
+    private Charset charset = StandardCharsets.UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
 	public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
@@ -104,11 +107,16 @@ public class ProxyServer {
 
     public ProxyServer setEncoding(String encoding) {
         this.encoding = encoding;
+        this.charset = Charset.forName(encoding);
         return this;
     }
 
     public String getEncoding() {
         return encoding;
+    }
+
+    public Charset getCharset() {
+        return charset;
     }
 
     public URI getURI() {

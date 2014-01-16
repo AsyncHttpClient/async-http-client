@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public abstract class Part {
     /**
      * Carriage return/linefeed as a byte array
      */
-    public static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
+    public static final byte[] CRLF_BYTES = CRLF.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content dispostion characters
@@ -49,7 +50,7 @@ public abstract class Part {
     /**
      * Content dispostion as a byte array
      */
-    public static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
+    public static final byte[] QUOTE_BYTES = QUOTE.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Extra characters
@@ -59,7 +60,7 @@ public abstract class Part {
     /**
      * Extra characters as a byte array
      */
-    public static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
+    public static final byte[] EXTRA_BYTES = EXTRA.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content dispostion characters
@@ -69,7 +70,7 @@ public abstract class Part {
     /**
      * Content dispostion as a byte array
      */
-    public static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+    public static final byte[] CONTENT_DISPOSITION_BYTES = CONTENT_DISPOSITION.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header
@@ -79,7 +80,7 @@ public abstract class Part {
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
+    public static final byte[] CONTENT_TYPE_BYTES = CONTENT_TYPE.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content charset
@@ -89,7 +90,7 @@ public abstract class Part {
     /**
      * Content charset as a byte array
      */
-    public static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
+    public static final byte[] CHARSET_BYTES = CHARSET.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header
@@ -99,7 +100,7 @@ public abstract class Part {
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
+    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = CONTENT_TRANSFER_ENCODING.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header
@@ -109,7 +110,7 @@ public abstract class Part {
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
+    public static final byte[] CONTENT_ID_BYTES = CONTENT_ID.getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Return the name of this part.
@@ -188,7 +189,7 @@ public abstract class Part {
             out.write(CRLF_BYTES);
             out.write(CONTENT_DISPOSITION_BYTES);
             out.write(QUOTE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
+            out.write(getName().getBytes(StandardCharsets.US_ASCII));
             out.write(QUOTE_BYTES);
         }
     }
@@ -199,7 +200,7 @@ public abstract class Part {
             length += CRLF_BYTES.length;
             length += CONTENT_DISPOSITION_BYTES.length;
             length += QUOTE_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(getName()).length;
+            length += getName().getBytes(StandardCharsets.US_ASCII).length;
             length += QUOTE_BYTES.length;
         }
         return length;
@@ -218,11 +219,11 @@ public abstract class Part {
         if (contentType != null) {
             out.write(CRLF_BYTES);
             out.write(CONTENT_TYPE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(contentType));
+            out.write(contentType.getBytes(StandardCharsets.US_ASCII));
             String charSet = getCharSet();
             if (charSet != null) {
                 out.write(CHARSET_BYTES);
-                out.write(MultipartEncodingUtil.getAsciiBytes(charSet));
+                out.write(charSet.getBytes(StandardCharsets.US_ASCII));
             }
         }
     }
@@ -233,11 +234,11 @@ public abstract class Part {
         if (contentType != null) {
             length += CRLF_BYTES.length;
             length += CONTENT_TYPE_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(contentType).length;
+            length += contentType.getBytes(StandardCharsets.US_ASCII).length;
             String charSet = getCharSet();
             if (charSet != null) {
                 length += CHARSET_BYTES.length;
-                length += MultipartEncodingUtil.getAsciiBytes(charSet).length;
+                length += charSet.getBytes(StandardCharsets.US_ASCII).length;
             }
         }
         return length;
@@ -256,7 +257,7 @@ public abstract class Part {
         if (transferEncoding != null) {
             out.write(CRLF_BYTES);
             out.write(CONTENT_TRANSFER_ENCODING_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(transferEncoding));
+            out.write(transferEncoding.getBytes(StandardCharsets.US_ASCII));
         }
     }
 
@@ -266,7 +267,7 @@ public abstract class Part {
         if (transferEncoding != null) {
             length += CRLF_BYTES.length;
             length += CONTENT_TRANSFER_ENCODING_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(transferEncoding).length;
+            length += transferEncoding.getBytes(StandardCharsets.US_ASCII).length;
         }
         return length;
     }
@@ -284,7 +285,7 @@ public abstract class Part {
         if (contentId != null) {
             out.write(CRLF_BYTES);
             out.write(CONTENT_ID_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(contentId));
+            out.write(contentId.getBytes(StandardCharsets.US_ASCII));
         }
     }
 
@@ -294,7 +295,7 @@ public abstract class Part {
         if (contentId != null) {
             length += CRLF_BYTES.length;
             length += CONTENT_ID_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(contentId).length;
+            length += contentId.getBytes(StandardCharsets.US_ASCII).length;
         }
         return length;
     }

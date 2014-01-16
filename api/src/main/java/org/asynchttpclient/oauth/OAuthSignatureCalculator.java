@@ -16,19 +16,19 @@
  */
 package org.asynchttpclient.oauth;
 
-import org.asynchttpclient.FluentStringsMap;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilderBase;
-import org.asynchttpclient.SignatureCalculator;
-import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.UTF8Codec;
-import org.asynchttpclient.util.UTF8UrlEncoder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.asynchttpclient.FluentStringsMap;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilderBase;
+import org.asynchttpclient.SignatureCalculator;
+import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StandardCharsets;
+import org.asynchttpclient.util.UTF8UrlEncoder;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures
@@ -152,7 +152,7 @@ public class OAuthSignatureCalculator
         signedText.append('&');
         UTF8UrlEncoder.appendEncoded(signedText, encodedParams);
 
-        byte[] rawBase = UTF8Codec.toUTF8(signedText.toString());
+        byte[] rawBase = signedText.toString().getBytes(StandardCharsets.UTF_8);
         byte[] rawSignature = mac.digest(rawBase);
         // and finally, base64 encoded... phew!
         return Base64.encode(rawSignature);

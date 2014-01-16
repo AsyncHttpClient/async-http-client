@@ -19,6 +19,7 @@ import java.security.MessageDigest;
 
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
+import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 public class RealmTest {
@@ -26,7 +27,7 @@ public class RealmTest {
     public void testClone() {
         RealmBuilder builder = new RealmBuilder();
         builder.setPrincipal("user").setPassword("pass");
-        builder.setEnconding("enc").setUsePreemptiveAuth(true);
+        builder.setEncoding(StandardCharsets.UTF_8.name()).setUsePreemptiveAuth(true);
         builder.setRealmName("realm").setAlgorithm("algo");
         builder.setScheme(AuthScheme.BASIC);
         Realm orig = builder.build();

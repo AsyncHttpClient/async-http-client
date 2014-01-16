@@ -13,14 +13,15 @@
 
 package org.asynchttpclient.generators;
 
-import org.asynchttpclient.Body;
-import org.asynchttpclient.BodyGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+
+import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.util.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire
@@ -31,8 +32,8 @@ import java.nio.ByteBuffer;
  */
 public class InputStreamBodyGenerator implements BodyGenerator {
 
-    private final static byte[] END_PADDING = "\r\n".getBytes();
-    private final static byte[] ZERO = "0".getBytes();
+    private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
+    private final static byte[] ZERO = "0".getBytes(StandardCharsets.US_ASCII);
     private final InputStream inputStream;
     private final static Logger logger = LoggerFactory.getLogger(InputStreamBodyGenerator.class);
     private boolean patchNettyChunkingIssue = false;
@@ -85,8 +86,8 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                 if (read == -1) {
                     // Since we are chuncked, we must output extra bytes before considering the input stream closed.
                     // chunking requires to end the chunking:
-                    // - A Terminating chunk of  "0\r\n".getBytes(),
-                    // - Then a separate packet of "\r\n".getBytes()
+                    // - A Terminating chunk of  "0\r\n" bytes,
+                    // - Then a separate packet of "\r\n" bytes
                     if (!eof) {
                         endDataCount++;
                         if (endDataCount == 2)
@@ -112,7 +113,7 @@ public class InputStreamBodyGenerator implements BodyGenerator {
                  * Netty 3.2.3 doesn't support chunking encoding properly, so we chunk encoding ourself.
                  */
 
-                buffer.put(Integer.toHexString(read).getBytes());
+                buffer.put(Integer.toHexString(read).getBytes(StandardCharsets.US_ASCII));
                 // Chunking is separated by "<bytesreads>\r\n"
                 buffer.put(END_PADDING);
                 buffer.put(chunk, 0, read);

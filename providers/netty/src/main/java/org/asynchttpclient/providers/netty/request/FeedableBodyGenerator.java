@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time
@@ -27,8 +28,8 @@ import org.asynchttpclient.BodyGenerator;
  * for finishing payload transferring asynchronously.
  */
 public class FeedableBodyGenerator implements BodyGenerator {
-    private final static byte[] END_PADDING = "\r\n".getBytes();
-    private final static byte[] ZERO = "0".getBytes();
+    private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
+    private final static byte[] ZERO = "0".getBytes(StandardCharsets.US_ASCII);
     private final Queue<BodyPart> queue = new ConcurrentLinkedQueue<BodyPart>();
     private final AtomicInteger queueSize = new AtomicInteger();
     private FeedListener listener;
@@ -86,7 +87,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
             int capacity = buffer.remaining() - 10; // be safe (we'll have to add size, ending, etc.)
             int size = Math.min(nextPart.buffer.remaining(), capacity);
-            buffer.put(Integer.toHexString(size).getBytes());
+            buffer.put(Integer.toHexString(size).getBytes(StandardCharsets.US_ASCII));
             buffer.put(END_PADDING);
             for (int i=0; i < size; i++) {
               buffer.put(nextPart.buffer.get());

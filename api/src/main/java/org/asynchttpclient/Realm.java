@@ -18,9 +18,11 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.
@@ -46,33 +48,17 @@ public class Realm {
     private final String enc;
     private final String host;
     private final boolean messageType2Received;
-
     private final String domain;
+    private final Charset charset;
 
     public enum AuthScheme {
-        DIGEST,
-        BASIC,
-        NTLM,
-        SPNEGO,
-        KERBEROS,
-        NONE
+        DIGEST, BASIC, NTLM, SPNEGO, KERBEROS, NONE
     }
 
-    private Realm(AuthScheme scheme,
-                  String principal,
-                  String password,
-                  String realmName,
-                  String nonce,
-                  String algorithm,
-                  String response,
-                  String qop,
-                  String nc,
-                  String cnonce,
-                  String uri,
-                  String method,
-                  boolean usePreemptiveAuth,
-                  String domain, String enc, String host, boolean messageType2Received,
-                  String opaque) {
+    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce,
+            String algorithm, String response, String qop, String nc, String cnonce, String uri, String method,
+            boolean usePreemptiveAuth, String domain, String enc, String host, boolean messageType2Received,
+            String opaque) {
 
         this.principal = principal;
         this.password = password;
@@ -92,6 +78,7 @@ public class Realm {
         this.enc = enc;
         this.host = host;
         this.messageType2Received = messageType2Received;
+        this.charset = enc != null ? Charset.forName(enc) : null;
     }
 
     public String getPrincipal() {
@@ -151,13 +138,17 @@ public class Realm {
         return enc;
     }
 
+    public Charset getCharset() {
+        return charset;
+    }
+
     public String getMethodName() {
         return methodName;
     }
 
     /**
      * Return true is preemptive authentication is enabled
-     *
+     * 
      * @return true is preemptive authentication is enabled
      */
     public boolean getUsePreemptiveAuth() {
@@ -166,7 +157,7 @@ public class Realm {
 
     /**
      * Return the NTLM domain to use. This value should map the JDK
-     *
+     * 
      * @return the NTLM domain
      */
     public String getNtlmDomain() {
@@ -175,7 +166,7 @@ public class Realm {
 
     /**
      * Return the NTLM host.
-     *
+     * 
      * @return the NTLM host
      */
     public String getNtlmHost() {
@@ -188,42 +179,45 @@ public class Realm {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         Realm realm = (Realm) o;
 
-        if (algorithm != null ? !algorithm.equals(realm.algorithm) : realm.algorithm != null) return false;
-        if (cnonce != null ? !cnonce.equals(realm.cnonce) : realm.cnonce != null) return false;
-        if (nc != null ? !nc.equals(realm.nc) : realm.nc != null) return false;
-        if (nonce != null ? !nonce.equals(realm.nonce) : realm.nonce != null) return false;
-        if (password != null ? !password.equals(realm.password) : realm.password != null) return false;
-        if (principal != null ? !principal.equals(realm.principal) : realm.principal != null) return false;
-        if (qop != null ? !qop.equals(realm.qop) : realm.qop != null) return false;
-        if (realmName != null ? !realmName.equals(realm.realmName) : realm.realmName != null) return false;
-        if (response != null ? !response.equals(realm.response) : realm.response != null) return false;
-        if (scheme != realm.scheme) return false;
-        if (uri != null ? !uri.equals(realm.uri) : realm.uri != null) return false;
+        if (algorithm != null ? !algorithm.equals(realm.algorithm) : realm.algorithm != null)
+            return false;
+        if (cnonce != null ? !cnonce.equals(realm.cnonce) : realm.cnonce != null)
+            return false;
+        if (nc != null ? !nc.equals(realm.nc) : realm.nc != null)
+            return false;
+        if (nonce != null ? !nonce.equals(realm.nonce) : realm.nonce != null)
+            return false;
+        if (password != null ? !password.equals(realm.password) : realm.password != null)
+            return false;
+        if (principal != null ? !principal.equals(realm.principal) : realm.principal != null)
+            return false;
+        if (qop != null ? !qop.equals(realm.qop) : realm.qop != null)
+            return false;
+        if (realmName != null ? !realmName.equals(realm.realmName) : realm.realmName != null)
+            return false;
+        if (response != null ? !response.equals(realm.response) : realm.response != null)
+            return false;
+        if (scheme != realm.scheme)
+            return false;
+        if (uri != null ? !uri.equals(realm.uri) : realm.uri != null)
+            return false;
 
         return true;
     }
 
     @Override
     public String toString() {
-        return "Realm{" +
-                "principal='" + principal + '\'' +
-                ", password='" + password + '\'' +
-                ", scheme=" + scheme +
-                ", realmName='" + realmName + '\'' +
-                ", nonce='" + nonce + '\'' +
-                ", algorithm='" + algorithm + '\'' +
-                ", response='" + response + '\'' +
-                ", qop='" + qop + '\'' +
-                ", nc='" + nc + '\'' +
-                ", cnonce='" + cnonce + '\'' +
-                ", uri='" + uri + '\'' +
-                ", methodName='" + methodName + '\'' +
-                '}';
+        return "Realm{" + "principal='" + principal + '\'' + ", password='" + password + '\'' + ", scheme=" + scheme
+                + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm + '\''
+                + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='"
+                + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + '}';
     }
 
     @Override
@@ -247,8 +241,8 @@ public class Realm {
      */
     public static class RealmBuilder {
         //
-        //  Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
-        //  This code is already Apache licenced.
+        // Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
+        // This code is already Apache licenced.
         //
 
         private String principal = "";
@@ -287,7 +281,6 @@ public class Realm {
             this.host = host;
             return this;
         }
-
 
         public String getPrincipal() {
             return principal;
@@ -432,7 +425,7 @@ public class Realm {
             }
             return this;
         }
-        
+
         public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
             this.messageType2Received = messageType2Received;
             return this;
@@ -446,7 +439,7 @@ public class Realm {
             setNonce(clone.getNonce());
             setPassword(clone.getPassword());
             setPrincipal(clone.getPrincipal());
-            setEnconding(clone.getEncoding());
+            setEncoding(clone.getEncoding());
             setOpaque(clone.getOpaque());
             setQop(clone.getQop());
             setScheme(clone.getScheme());
@@ -461,7 +454,7 @@ public class Realm {
         private void newCnonce() {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes("ISO-8859-1"));
+                byte[] b = md.digest(String.valueOf(System.currentTimeMillis()).getBytes(StandardCharsets.ISO_8859_1));
                 cnonce = toHexString(b);
             } catch (Exception e) {
                 throw new SecurityException(e);
@@ -477,7 +470,8 @@ public class Realm {
             }
 
             int match = headerLine.indexOf(token);
-            if (match <= 0) return "";
+            if (match <= 0)
+                return "";
 
             // = to skip
             match += token.length() + 1;
@@ -491,54 +485,37 @@ public class Realm {
             return enc;
         }
 
-        public RealmBuilder setEnconding(String enc) {
+        public RealmBuilder setEncoding(String enc) {
             this.enc = enc;
             return this;
         }
 
-        private void newResponse() throws UnsupportedEncodingException {
+        private void newResponse() {
             MessageDigest md = null;
             try {
                 md = MessageDigest.getInstance("MD5");
             } catch (NoSuchAlgorithmException e) {
                 throw new SecurityException(e);
             }
-            md.update(new StringBuilder(principal)
-                    .append(":")
-                    .append(realmName)
-                    .append(":")
-                    .append(password)
-                    .toString().getBytes("ISO-8859-1"));
+            md.update(new StringBuilder(principal).append(":").append(realmName).append(":").append(password)
+                    .toString().getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha1 = md.digest();
 
             md.reset();
 
-            //HA2 if qop is auth-int is methodName:url:md5(entityBody)
-            md.update(new StringBuilder(methodName)
-                    .append(':')
-                    .append(uri).toString().getBytes("ISO-8859-1"));
+            // HA2 if qop is auth-int is methodName:url:md5(entityBody)
+            md.update(new StringBuilder(methodName).append(':').append(uri).toString().getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha2 = md.digest();
 
-            if(qop==null || qop.length() == 0) {
-                 md.update(new StringBuilder(toBase16(ha1))
-                    .append(':')
-                    .append(nonce)
-                    .append(':')
-                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+            if (qop == null || qop.length() == 0) {
+                md.update(new StringBuilder(toBase16(ha1)).append(':').append(nonce).append(':').append(toBase16(ha2))
+                        .toString().getBytes(StandardCharsets.ISO_8859_1));
 
-             } else {
-                 //qop ="auth" or "auth-int"
-                 md.update(new StringBuilder(toBase16(ha1))
-                    .append(':')
-                    .append(nonce)
-                    .append(':')
-                    .append(NC)
-                    .append(':')
-                    .append(cnonce)
-                    .append(':')
-                    .append(qop)
-                    .append(':')
-                    .append(toBase16(ha2)).toString().getBytes("ISO-8859-1"));
+            } else {
+                // qop ="auth" or "auth-int"
+                md.update(new StringBuilder(toBase16(ha1)).append(':').append(nonce).append(':').append(NC).append(':')
+                        .append(cnonce).append(':').append(qop).append(':').append(toBase16(ha2)).toString()
+                        .getBytes(StandardCharsets.ISO_8859_1));
             }
 
             byte[] digest = md.digest();
@@ -574,7 +551,7 @@ public class Realm {
 
         /**
          * Build a {@link Realm}
-         *
+         * 
          * @return a {@link Realm}
          */
         public Realm build() {
@@ -582,31 +559,11 @@ public class Realm {
             // Avoid generating
             if (isNonEmpty(nonce)) {
                 newCnonce();
-                try {
-                    newResponse();
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                newResponse();
             }
 
-            return new Realm(scheme,
-                    principal,
-                    password,
-                    realmName,
-                    nonce,
-                    algorithm,
-                    response,
-                    qop,
-                    nc,
-                    cnonce,
-                    uri,
-                    methodName,
-                    usePreemptive,
-                    domain,
-                    enc,
-                    host,
-                    messageType2Received,
-                    opaque);
+            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri,
+                    methodName, usePreemptive, domain, enc, host, messageType2Received, opaque);
         }
     }
 }

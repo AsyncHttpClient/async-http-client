@@ -12,27 +12,26 @@
  */
 package org.asynchttpclient.util;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtil.*;
+
+import java.security.NoSuchAlgorithmException;
 
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-
 public final class AuthenticatorUtils {
 
-    public static String computeBasicAuthentication(Realm realm) throws UnsupportedEncodingException {
+    public static String computeBasicAuthentication(Realm realm) {
         String s = realm.getPrincipal() + ":" + realm.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(realm.getEncoding()));
+        return "Basic " + Base64.encode(s.getBytes(realm.getCharset()));
     }
 
-    public static String computeBasicAuthentication(ProxyServer proxyServer) throws UnsupportedEncodingException {
+    public static String computeBasicAuthentication(ProxyServer proxyServer) {
         String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
-        return "Basic " + Base64.encode(s.getBytes(proxyServer.getEncoding()));
+        return "Basic " + Base64.encode(s.getBytes(proxyServer.getCharset()));
     }
 
-    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         construct(builder, "username", realm.getPrincipal());
@@ -48,14 +47,14 @@ public final class AuthenticatorUtils {
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
 
-        return new String(builder.toString().getBytes("ISO_8859_1"));
+        return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
 	public static String computeDigestAuthentication(ProxyServer proxy) {
 		try{
 	        StringBuilder builder = new StringBuilder().append("Digest ");
 	        construct(builder, "username", proxy.getPrincipal(),true);
-	        return new String(builder.toString().getBytes("ISO_8859_1"));
+	        return new String(builder.toString().getBytes(StandardCharsets.ISO_8859_1));
 		}
 		catch (Exception e){
 			e.printStackTrace();

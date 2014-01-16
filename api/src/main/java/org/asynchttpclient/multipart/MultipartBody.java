@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.asynchttpclient.RandomAccessBody;
+import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +56,7 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     public MultipartBody(List<Part> parts, String contentType, long contentLength) {
-        this.boundary = MultipartEncodingUtil.getAsciiBytes(contentType.substring(contentType.indexOf("boundary=")
-                + "boundary=".length()));
+        this.boundary = contentType.substring(contentType.indexOf("boundary=") + "boundary=".length()).getBytes(StandardCharsets.US_ASCII);
         this.contentLength = contentLength;
         this.parts = parts;
     }

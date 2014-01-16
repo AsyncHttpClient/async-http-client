@@ -12,11 +12,12 @@
  */
 package org.asynchttpclient.providers.netty.ws;
 
-import org.asynchttpclient.util.Base64;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StandardCharsets;
 
 public final class WebSocketUtil {
     public static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -28,7 +29,7 @@ public final class WebSocketUtil {
 
     public static String getAcceptKey(String key) throws UnsupportedEncodingException {
         String acceptSeed = key + MAGIC_GUID;
-        byte[] sha1 = sha1(acceptSeed.getBytes("US-ASCII"));
+        byte[] sha1 = sha1(acceptSeed.getBytes(StandardCharsets.US_ASCII));
         return base64Encode(sha1);
     }
 
@@ -67,6 +68,4 @@ public final class WebSocketUtil {
     public static int createRandomNumber(int min, int max) {
         return (int) (Math.random() * max + min);
     }
-
 }
-

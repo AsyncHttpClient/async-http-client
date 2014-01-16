@@ -589,7 +589,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setRealmEnconding(String enc) {
-            realm().setEnconding(enc);
+            realm().setEncoding(enc);
             return this;
         }
 

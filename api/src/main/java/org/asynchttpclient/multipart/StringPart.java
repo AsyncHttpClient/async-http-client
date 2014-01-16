@@ -17,6 +17,7 @@ package org.asynchttpclient.multipart;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation
@@ -67,7 +68,7 @@ public class StringPart extends PartBase {
             // See RFC 2048, 2.8. "8bit Data"
             throw new IllegalArgumentException("NULs may not be present in string parts");
         }
-        content = MultipartEncodingUtil.getBytes(value, charset);
+        content = value.getBytes(Charset.forName(charset));
     }
 
     /**

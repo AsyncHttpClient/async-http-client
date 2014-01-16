@@ -24,7 +24,6 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
@@ -82,12 +81,9 @@ public final class AuthorizationHandler implements StatusHandler {
         String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
         if (lowerCaseAuth.startsWith("basic")) {
             req.getHeaders().remove(Header.Authorization.toString());
-            try {
                 req.getHeaders().add(Header.Authorization.toString(),
                                      AuthenticatorUtils.computeBasicAuthentication(
                                              realm));
-            } catch (UnsupportedEncodingException ignored) {
-            }
         } else if (lowerCaseAuth.startsWith("digest")) {
             req.getHeaders().remove(Header.Authorization.toString());
             try {
@@ -95,8 +91,6 @@ public final class AuthorizationHandler implements StatusHandler {
                                      AuthenticatorUtils.computeDigestAuthentication(realm));
             } catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException("Digest authentication not supported", e);
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException("Unsupported encoding.", e);
             }
         } else {
             throw new IllegalStateException("Unsupported authorization method: " + auth);

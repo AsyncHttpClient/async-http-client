@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
@@ -221,7 +222,7 @@ public class NettyRequests {
                 headers.put(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
-            String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
+            Charset bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : Charset.forName(request.getBodyEncoding());
 
             if (request.getByteData() != null) {
                 headers.put(HttpHeaders.Names.CONTENT_LENGTH, request.getByteData().length);

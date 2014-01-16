@@ -19,6 +19,7 @@ import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class AsyncHttpProviderUtils {
 
     private final static byte[] NO_BYTES = new byte[0];
 
-    public final static String DEFAULT_CHARSET = "ISO-8859-1";
+    public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 

@@ -18,6 +18,8 @@ package org.asynchttpclient.multipart;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.asynchttpclient.util.StandardCharsets;
+
 /**
  * This class is an adaptation of the Apache HttpClient implementation
  * 
@@ -33,7 +35,7 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * Default charset of file attachments.
      */
-    public static final String DEFAULT_CHARSET = "ISO-8859-1";
+    public static final String DEFAULT_CHARSET = StandardCharsets.ISO_8859_1.name();
 
     /**
      * Default transfer encoding of file attachments.
@@ -48,7 +50,7 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * Attachment's file name as a byte array
      */
-    private static final byte[] FILE_NAME_BYTES = MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
+    private static final byte[] FILE_NAME_BYTES = FILE_NAME.getBytes(StandardCharsets.US_ASCII);
 
     private long stalledTime = -1L;
 
@@ -85,7 +87,7 @@ public abstract class AbstractFilePart extends PartBase {
         if (filename != null) {
             out.write(FILE_NAME_BYTES);
             out.write(QUOTE_BYTES);
-            out.write(MultipartEncodingUtil.getAsciiBytes(filename));
+            out.write(filename.getBytes(StandardCharsets.US_ASCII));
             out.write(QUOTE_BYTES);
         }
     }
@@ -96,7 +98,7 @@ public abstract class AbstractFilePart extends PartBase {
         if (filename != null) {
             length += FILE_NAME_BYTES.length;
             length += QUOTE_BYTES.length;
-            length += MultipartEncodingUtil.getAsciiBytes(filename).length;
+            length += filename.getBytes(StandardCharsets.US_ASCII).length;
             length += QUOTE_BYTES.length;
         }
         return length;
