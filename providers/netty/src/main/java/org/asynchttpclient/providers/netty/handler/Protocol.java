@@ -95,13 +95,13 @@ public abstract class Protocol {
 
                     logger.debug("Redirecting to {}", newUrl);
 
-                    for (String cookieStr : future.getHttpResponse().headers().getAll(HttpHeaders.Names.SET_COOKIE)) {
+                    for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE)) {
                         for (Cookie c : CookieDecoder.decode(cookieStr)) {
                             nBuilder.addOrReplaceCookie(c);
                         }
                     }
 
-                    for (String cookieStr : future.getHttpResponse().headers().getAll(HttpHeaders.Names.SET_COOKIE2)) {
+                    for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE2)) {
                         for (Cookie c : CookieDecoder.decode(cookieStr)) {
                             nBuilder.addOrReplaceCookie(c);
                         }

@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient.providers.netty.future;
 
-import static org.asynchttpclient.util.DateUtil.millisTime;
+import static org.asynchttpclient.util.DateUtil.*;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.URI;
@@ -40,6 +40,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.listenable.AbstractListenableFuture;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +51,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
-    private final static Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
-    public final static String MAX_RETRY = "org.asynchttpclient.providers.netty.maxRetry";
+    private static final Logger logger = LoggerFactory.getLogger(NettyResponseFuture.class);
+    public static final String MAX_RETRY = "org.asynchttpclient.providers.netty.maxRetry";
 
     public enum STATE {
         NEW, POOLED, RECONNECTED, CLOSED,
@@ -86,8 +87,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private URI uri;
     private boolean keepAlive = true;
     private Request request;
-    private HttpRequest nettyRequest;
-    private HttpResponse httpResponse;
+    private NettyRequest nettyRequest;
+    private HttpHeaders httpHeaders;
     private AsyncHandler<V> asyncHandler;
     private HttpResponse pendingResponse;
     private boolean streamWasAlreadyConsumed;
@@ -99,7 +100,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public NettyResponseFuture(URI uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
-            HttpRequest nettyRequest,//
+            NettyRequest nettyRequest,//
             int requestTimeoutInMs,//
             AsyncHttpClientConfig config,//
             ConnectionPoolKeyStrategy connectionPoolKeyStrategy,//
@@ -333,11 +334,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return request;
     }
 
-    public final HttpRequest getNettyRequest() {
+    public final NettyRequest getNettyRequest() {
         return nettyRequest;
     }
 
-    public final void setNettyRequest(HttpRequest nettyRequest) {
+    public final void setNettyRequest(NettyRequest nettyRequest) {
         this.nettyRequest = nettyRequest;
     }
 
@@ -353,12 +354,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.keepAlive = keepAlive;
     }
 
-    public final HttpResponse getHttpResponse() {
-        return httpResponse;
+    public final HttpHeaders getHttpHeaders() {
+        return httpHeaders;
     }
 
-    public final void setHttpResponse(final HttpResponse httpResponse) {
-        this.httpResponse = httpResponse;
+    public final void setHttpHeaders(HttpHeaders httpHeaders) {
+        this.httpHeaders = httpHeaders;
     }
 
     public int incrementAndGetCurrentRedirectCount() {
@@ -495,7 +496,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\tcontent=" + content + //
                 ",\n\turi=" + uri + //
                 ",\n\tkeepAlive=" + keepAlive + //
-                ",\n\thttpResponse=" + httpResponse + //
+                ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
                 ",\n\treaperFuture=" + reaperFuture + //

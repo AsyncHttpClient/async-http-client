@@ -48,9 +48,14 @@ import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
 import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class WebSocketProtocol extends Protocol {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketProtocol.class);
+
+    
     private static final byte OPCODE_TEXT = 0x1;
     private static final byte OPCODE_BINARY = 0x2;
     private static final byte OPCODE_UNKNOWN = -1;
@@ -67,7 +72,7 @@ final class WebSocketProtocol extends Protocol {
             try {
                 h.onSuccess(new NettyWebSocket(ctx.channel()));
             } catch (Exception ex) {
-                NettyChannelHandler.LOGGER.warn("onSuccess unexpected exception", ex);
+                LOGGER.warn("onSuccess unexpected exception", ex);
             }
         }
     }
@@ -105,7 +110,7 @@ final class WebSocketProtocol extends Protocol {
                 return;
             }
 
-            future.setHttpResponse(response);
+            future.setHttpHeaders(response.headers());
             if (redirect(request, future, response, ctx))
                 return;
 
@@ -128,7 +133,7 @@ final class WebSocketProtocol extends Protocol {
             }
 
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-            String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
+            String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
                 throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
             }
@@ -173,12 +178,12 @@ final class WebSocketProtocol extends Protocol {
                     }
                 }
             } else {
-                NettyChannelHandler.LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
+                LOGGER.debug("UpgradeHandler returned a null NettyWebSocket ");
             }
         } else if (e instanceof LastHttpContent) {
             // FIXME what to do with this kind of messages?
         } else {
-            NettyChannelHandler.LOGGER.error("Invalid message {}", e);
+            LOGGER.error("Invalid message {}", e);
         }
     }
 
@@ -186,7 +191,7 @@ final class WebSocketProtocol extends Protocol {
     public void onError(ChannelHandlerContext ctx, Throwable e) {
         try {
             Object attribute = Channels.getDefaultAttribute(ctx);
-            NettyChannelHandler.LOGGER.warn("onError {}", e);
+            LOGGER.warn("onError {}", e);
             if (!(attribute instanceof NettyResponseFuture)) {
                 return;
             }
@@ -200,13 +205,13 @@ final class WebSocketProtocol extends Protocol {
                 webSocket.close();
             }
         } catch (Throwable t) {
-            NettyChannelHandler.LOGGER.error("onError", t);
+            LOGGER.error("onError", t);
         }
     }
 
     @Override
     public void onClose(ChannelHandlerContext ctx) {
-        NettyChannelHandler.LOGGER.trace("onClose {}");
+        LOGGER.trace("onClose {}");
         Object attribute = Channels.getDefaultAttribute(ctx);
         if (!(attribute instanceof NettyResponseFuture)) {
             return;
@@ -222,7 +227,7 @@ final class WebSocketProtocol extends Protocol {
             if (attribute != DiscardEvent.INSTANCE)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
         } catch (Throwable t) {
-            NettyChannelHandler.LOGGER.error("onError", t);
+            LOGGER.error("onError", t);
         }
     }
 }

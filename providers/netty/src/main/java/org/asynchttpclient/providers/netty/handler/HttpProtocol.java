@@ -53,13 +53,18 @@ import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.response.ResponseHeaders;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class HttpProtocol extends Protocol {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpProtocol.class);
 
     public HttpProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         super(channels, config, nettyConfig, requestSender);
@@ -199,7 +204,7 @@ final class HttpProtocol extends Protocol {
             future.done();
         } catch (Throwable t) {
             // Never propagate exception once we know we are done.
-            NettyChannelHandler.LOGGER.debug(t.getMessage(), t);
+            LOGGER.debug(t.getMessage(), t);
         }
 
         if (!future.isKeepAlive() || !ctx.channel().isActive()) {
@@ -249,7 +254,7 @@ final class HttpProtocol extends Protocol {
 
         // store the original headers so we can re-send all them to
         // the handler in case of trailing headers
-        future.setHttpResponse(response);
+        future.setHttpHeaders(response.headers());
 
         future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
 
@@ -280,7 +285,7 @@ final class HttpProtocol extends Protocol {
 
                 final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(URI.create(request.getUrl()).getPath()).build();
 
-                NettyChannelHandler.LOGGER.debug("Sending authentication to {}", request.getUrl());
+                LOGGER.debug("Sending authentication to {}", request.getUrl());
                 Callback callback = new Callback(future) {
                     public void call() throws Exception {
                         channels.drainChannel(ctx, future);
@@ -309,7 +314,7 @@ final class HttpProtocol extends Protocol {
         } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code()) {
             List<String> proxyAuth = getAuthorizationToken(response.headers(), HttpHeaders.Names.PROXY_AUTHENTICATE);
             if (realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
-                NettyChannelHandler.LOGGER.debug("Sending proxy authentication to {}", request.getUrl());
+                LOGGER.debug("Sending proxy authentication to {}", request.getUrl());
 
                 future.setState(NettyResponseFuture.STATE.NEW);
                 Realm newRealm = null;
@@ -335,14 +340,14 @@ final class HttpProtocol extends Protocol {
 
         } else if (statusCode == OK.code() && nettyRequest.getMethod() == HttpMethod.CONNECT) {
 
-            NettyChannelHandler.LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
+            LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
 
             if (future.isKeepAlive()) {
                 future.attachChannel(ctx.channel(), true);
             }
 
             try {
-                NettyChannelHandler.LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
+                LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
                 channels.upgradeProtocol(ctx.channel().pipeline(), request.getURI().getScheme());
             } catch (Throwable ex) {
                 channels.abort(future, ex);
@@ -376,23 +381,22 @@ final class HttpProtocol extends Protocol {
             return;
         }
 
-        HttpRequest nettyRequest = future.getNettyRequest();
+        NettyRequest nettyRequest = future.getNettyRequest();
         AsyncHandler handler = future.getAsyncHandler();
         ProxyServer proxyServer = future.getProxyServer();
         try {
             if (e instanceof HttpResponse) {
                 HttpResponse response = (HttpResponse) e;
-                NettyChannelHandler.LOGGER.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest, response);
+                LOGGER.debug("\n\nRequest {}\n\nResponse {}\n", nettyRequest.getHttpRequest(), response);
                 future.setPendingResponse(response);
                 return;
             }
 
             if (e instanceof HttpContent) {
-
                 HttpResponse response = future.getPendingResponse();
                 future.setPendingResponse(null);
                 if (handler != null) {
-                    if (response != null && handleResponseAndExit(ctx, future, handler, nettyRequest, proxyServer, response)) {
+                    if (response != null && handleResponseAndExit(ctx, future, handler, nettyRequest.getHttpRequest(), proxyServer, response)) {
                         return;
                     }
 
@@ -405,7 +409,7 @@ final class HttpProtocol extends Protocol {
                         LastHttpContent lastChunk = (LastHttpContent) chunk;
                         HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
                         if (!trailingHeaders.isEmpty()) {
-                            interrupt = handler.onHeadersReceived(new ResponseHeaders(future.getURI(), future.getHttpResponse().headers(), trailingHeaders)) != STATE.CONTINUE;
+                            interrupt = handler.onHeadersReceived(new ResponseHeaders(future.getURI(), future.getHttpHeaders(), trailingHeaders)) != STATE.CONTINUE;
                         }
                     }
 

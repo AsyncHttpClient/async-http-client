@@ -23,7 +23,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -31,13 +30,11 @@ import io.netty.handler.stream.ChunkedFile;
 import io.netty.handler.stream.ChunkedStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -58,17 +55,21 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
-import org.asynchttpclient.generators.FileBodyGenerator;
-import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.multipart.MultipartBody;
-import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.FutureReaper;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
-import org.asynchttpclient.providers.netty.request.FeedableBodyGenerator.FeedListener;
+import org.asynchttpclient.providers.netty.request.body.BodyChunkedInput;
+import org.asynchttpclient.providers.netty.request.body.BodyFileRegion;
+import org.asynchttpclient.providers.netty.request.body.FeedableBodyGenerator;
+import org.asynchttpclient.providers.netty.request.body.FeedableBodyGenerator.FeedListener;
+import org.asynchttpclient.providers.netty.request.body.NettyBody;
+import org.asynchttpclient.providers.netty.request.body.NettyBodyBody;
+import org.asynchttpclient.providers.netty.request.body.NettyFileBody;
+import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
+import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.ProxyUtils;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
@@ -170,7 +171,7 @@ public class NettyRequestSender {
 
     private <T> ListenableFuture<T> sendRequestWithCachedChannel(Channel channel, Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future,
             AsyncHandler<T> asyncHandler) throws IOException {
-        HttpRequest nettyRequest = null;
+        NettyRequest nettyRequest = null;
 
         if (future == null) {
             nettyRequest = NettyRequests.newNettyRequest(config, request, uri, false, proxy);
@@ -182,7 +183,7 @@ public class NettyRequestSender {
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
 
-        LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, nettyRequest);
+        LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, nettyRequest.getHttpRequest());
         Channels.setDefaultAttribute(channel, future);
 
         try {
@@ -249,7 +250,7 @@ public class NettyRequestSender {
 
         channelFuture.addListener(cl);
 
-        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", cl.future().getNettyRequest(), channelFuture.channel());
+        LOGGER.debug("\nNon cached request \n{}\n\nusing Channel \n{}\n", cl.future().getNettyRequest().getHttpRequest(), channelFuture.channel());
 
         if (!cl.future().isCancelled() || !cl.future().isDone()) {
             channels.registerChannel(channelFuture.channel());
@@ -280,15 +281,15 @@ public class NettyRequestSender {
         }
     }
 
-    private void sendFileBody(Channel channel, File file, long offset, long fileLength, NettyResponseFuture<?> future) throws IOException {
-        final RandomAccessFile raf = new RandomAccessFile(file, "r");
+    private void sendFileBody(Channel channel, NettyFileBody fileBody, NettyResponseFuture<?> future) throws IOException {
+        final RandomAccessFile raf = new RandomAccessFile(fileBody.getFile(), "r");
 
         try {
             ChannelFuture writeFuture;
             if (Channels.getSslHandler(channel) != null) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, fileLength, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+                writeFuture = channel.write(new ChunkedFile(raf, fileBody.getOffset(), fileBody.getContentLength(), Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
             } else {
-                FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, fileLength);
+                FileRegion region = new DefaultFileRegion(raf.getChannel(), fileBody.getOffset(), fileBody.getContentLength());
                 writeFuture = channel.write(region, channel.newProgressivePromise());
             }
             // FIXME probably useless in Netty 4
@@ -314,7 +315,9 @@ public class NettyRequestSender {
         }
     }
 
-    private boolean sendStreamAndExit(Channel channel, final InputStream is, NettyResponseFuture<?> future) throws IOException {
+    private boolean sendStreamAndExit(Channel channel, NettyInputStreamBody body, NettyResponseFuture<?> future) throws IOException {
+
+        final InputStream is = body.getInputStream();
 
         if (future.isStreamWasAlreadyConsumed()) {
             if (is.markSupported())
@@ -344,6 +347,7 @@ public class NettyRequestSender {
 
     public void sendBody(final Channel channel, final Body body, NettyResponseFuture<?> future) {
         Object msg;
+
         if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
             // FIXME also do something for multipart and use a ChunkedInput
             msg = new BodyFileRegion((RandomAccessBody) body);
@@ -363,11 +367,10 @@ public class NettyRequestSender {
         }
         ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
 
-        final Body b = body;
         writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
             public void operationComplete(ChannelProgressiveFuture cf) {
                 try {
-                    b.close();
+                    body.close();
                 } catch (IOException e) {
                     LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
                 }
@@ -377,56 +380,9 @@ public class NettyRequestSender {
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 
-    private Body computeBodyAndSetContentLengthOrTransferEncodingHeader(HttpRequest nettyRequest, NettyResponseFuture<?> future) {
-
-        BodyGenerator bg = future.getRequest().getBodyGenerator();
-        List<Part> parts = future.getRequest().getParts();
-        Body body = null;
-
-        if (bg != null || parts != null) {
-            HttpHeaders headers = nettyRequest.headers();
-            long length = -1L;
-
-            if (bg instanceof FileBodyGenerator) {
-                // don't even compute body, file be be directly passed
-                length = FileBodyGenerator.class.cast(bg).getRegionLength();
-
-            } else if (bg instanceof InputStreamBodyGenerator) {
-                // don't even compute body, stream be be directly passed
-                length = -1L;
-
-            } else if (bg != null) {
-                try {
-                    body = bg.createBody();
-                    length = body.getContentLength();
-
-                } catch (IOException ex) {
-                    throw new IllegalStateException(ex);
-                }
-
-            } else {
-                String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
-                String contentLength = nettyRequest.headers().get(HttpHeaders.Names.CONTENT_LENGTH);
-
-                if (contentLength != null) {
-                    length = Long.parseLong(contentLength);
-                }
-                body = new MultipartBody(parts, contentType, length);
-            }
-
-            if (length >= 0) {
-                headers.set(HttpHeaders.Names.CONTENT_LENGTH, length);
-            } else {
-                headers.set(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-            }
-        }
-
-        return body;
-    }
-
-    private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest nettyRequest) {
+    private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, String> entries : nettyRequest.headers()) {
+        for (Map.Entry<String, String> entries : httpRequest.headers()) {
             h.add(entries.getKey(), entries.getValue());
         }
 
@@ -460,14 +416,12 @@ public class NettyRequestSender {
                 return;
             }
 
-            HttpRequest nettyRequest = future.getNettyRequest();
+            NettyRequest nettyRequest = future.getNettyRequest();
+            HttpRequest httpRequest = nettyRequest.getHttpRequest();
             AsyncHandler<T> handler = future.getAsyncHandler();
 
-            // beware: compute early because actually also write headers
-            Body body = computeBodyAndSetContentLengthOrTransferEncodingHeader(nettyRequest, future);
-
             if (handler instanceof TransferCompletionHandler) {
-                configureTransferAdapter(handler, nettyRequest);
+                configureTransferAdapter(handler, httpRequest);
             }
 
             // Leave it to true.
@@ -477,7 +431,8 @@ public class NettyRequestSender {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
                         AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
                     }
-                    channel.writeAndFlush(nettyRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
+                    channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(
+                            new ProgressListener(config, true, future.getAsyncHandler(), future));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
                     LOGGER.debug(cause.getMessage(), cause);
@@ -492,27 +447,24 @@ public class NettyRequestSender {
 
             // FIXME OK, why? and what's the point of not having a is/get?
             if (future.getAndSetWriteBody(true)) {
-                if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
+                if (!httpRequest.getMethod().equals(HttpMethod.CONNECT)) {
 
-                    if (future.getRequest().getFile() != null) {
-                        File file = future.getRequest().getFile();
-                        sendFileBody(channel, file, 0, file.length(), future);
+                    NettyBody nettyBody = nettyRequest.getBody();
 
-                    } else if (future.getRequest().getBodyGenerator() instanceof FileBodyGenerator) {
-                        // 2 different ways of passing a file, wouhou!
-                        FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) future.getRequest().getBodyGenerator();
-                        sendFileBody(channel, fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), future);
+                    if (nettyBody instanceof NettyFileBody) {
+                        sendFileBody(channel, (NettyFileBody) nettyBody, future);
 
-                    } else if (future.getRequest().getStreamData() != null) {
-                        if (sendStreamAndExit(channel, future.getRequest().getStreamData(), future))
-                            return;
-                    } else if (future.getRequest().getBodyGenerator() instanceof InputStreamBodyGenerator) {
-                        // 2 different ways of passing a stream, wouhou!
-                        if (sendStreamAndExit(channel, InputStreamBodyGenerator.class.cast(future.getRequest().getBodyGenerator()).getInputStream(), future))
+                    } else if (nettyBody instanceof NettyInputStreamBody) {
+                        if (sendStreamAndExit(channel, (NettyInputStreamBody) nettyBody, future))
+                            // FIXME why bypassing scheduling the reaper when using a stream?
                             return;
 
-                    } else if (body != null) {
-                        sendBody(channel, body, future);
+                    } else if (nettyBody instanceof NettyMultipartBody) {
+                        // FIXME use dedicated implementation
+                        sendBody(channel, NettyMultipartBody.class.cast(nettyBody).getMultipartBody(), future);
+
+                    } else if (nettyBody instanceof NettyBodyBody) {
+                        sendBody(channel, NettyBodyBody.class.cast(nettyBody).getBody(), future);
                     }
                 }
             }
@@ -528,7 +480,6 @@ public class NettyRequestSender {
         scheduleReaper(future);
     }
 
-    // FIXME Clean up Netty 3: replayRequest's response parameter is unused + WTF return???
     public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, ChannelHandlerContext ctx) throws IOException {
         Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());

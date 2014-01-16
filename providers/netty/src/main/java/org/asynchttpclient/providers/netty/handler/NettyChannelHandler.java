@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 @Sharable
 public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
-    static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelHandler.class);
 
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;

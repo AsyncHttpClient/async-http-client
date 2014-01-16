@@ -16,8 +16,8 @@
 package org.asynchttpclient.providers.netty.request;
 
 import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
+import static org.asynchttpclient.util.MiscUtil.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -41,11 +41,17 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.multipart.MultipartRequestEntity;
+import org.asynchttpclient.generators.FileBodyGenerator;
+import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
+import org.asynchttpclient.providers.netty.request.body.NettyBody;
+import org.asynchttpclient.providers.netty.request.body.NettyBodyBody;
+import org.asynchttpclient.providers.netty.request.body.NettyFileBody;
+import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
+import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
@@ -56,7 +62,7 @@ public class NettyRequests {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
-    public static HttpRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) throws IOException {
+    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) throws IOException {
 
         HttpMethod method = null;
         if (allowConnect && proxyServer != null && isSecure(uri))
@@ -140,7 +146,7 @@ public class NettyRequests {
             case DIGEST:
                 if (isNonEmpty(realm.getNonce())) {
                     try {
-                        authorizationHeader =  AuthenticatorUtils.computeDigestAuthentication(realm);
+                        authorizationHeader = AuthenticatorUtils.computeDigestAuthentication(realm);
                     } catch (NoSuchAlgorithmException e) {
                         throw new SecurityException(e);
                     }
@@ -149,7 +155,7 @@ public class NettyRequests {
             case NTLM:
                 try {
                     String msg = NTLMEngine.INSTANCE.generateType1Msg("NTLM " + domain, authHost);
-                    authorizationHeader =  "NTLM " + msg;
+                    authorizationHeader = "NTLM " + msg;
                 } catch (NTLMEngineException e) {
                     throw new IOException(e);
                 }
@@ -163,7 +169,7 @@ public class NettyRequests {
                 } catch (Throwable e) {
                     throw new IOException(e);
                 }
-                authorizationHeader =  "Negotiate " + challengeHeader;
+                authorizationHeader = "Negotiate " + challengeHeader;
                 break;
             case NONE:
                 break;
@@ -216,7 +222,7 @@ public class NettyRequests {
             headers.put(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
         }
 
-        boolean hasDeferredContent = false;
+        NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
             if (isNonEmpty(request.getCookies())) {
                 headers.put(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
@@ -234,8 +240,7 @@ public class NettyRequests {
                 content = Unpooled.wrappedBuffer(bytes);
 
             } else if (request.getStreamData() != null) {
-                hasDeferredContent = true;
-                headers.put(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+                nettyBody = new NettyInputStreamBody(request.getStreamData());
 
             } else if (isNonEmpty(request.getParams())) {
                 StringBuilder sb = new StringBuilder();
@@ -258,54 +263,64 @@ public class NettyRequests {
                 }
 
             } else if (request.getParts() != null) {
-                // FIXME use Netty multipart
-                MultipartRequestEntity mre = new MultipartRequestEntity(request.getParts(), request.getHeaders());
-
-                headers.put(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
-                if (mre.getContentLength() >= 0) {
-                    headers.put(HttpHeaders.Names.CONTENT_LENGTH, mre.getContentLength());
-                }
-                hasDeferredContent = true;
+                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders());
 
             } else if (request.getFile() != null) {
                 File file = request.getFile();
                 if (!file.isFile()) {
                     throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
                 }
-                headers.put(HttpHeaders.Names.CONTENT_LENGTH, file.length());
-                hasDeferredContent = true;
+                nettyBody = new NettyFileBody(file, 0L, file.length());
+
+            } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
+                FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength());
+
+            } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+                InputStreamBodyGenerator inputStreamBodyGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
+                nettyBody = new NettyInputStreamBody(inputStreamBodyGenerator.getInputStream());
 
             } else if (request.getBodyGenerator() != null) {
-                hasDeferredContent = true;
+                nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody());
             }
         }
 
-        HttpRequest nettyRequest;
-        if (hasDeferredContent) {
-            nettyRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
+        HttpRequest httpRequest;
+        if (nettyBody != null) {
+            if (nettyBody.getContentLength() >= 0)
+                headers.put(HttpHeaders.Names.CONTENT_LENGTH, nettyBody.getContentLength());
+            else {
+                headers.put(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+            }
+
+            if (nettyBody.getContentType() != null)
+                headers.put(HttpHeaders.Names.CONTENT_TYPE, nettyBody.getContentType());
+
+            httpRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
+
         } else if (content != null) {
-            nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, content);
+            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, content);
         } else {
-            nettyRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
+            httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri);
         }
 
         // assign headers as configured on request
         if (method != HttpMethod.CONNECT) {
             for (Entry<String, List<String>> header : request.getHeaders()) {
-                nettyRequest.headers().set(header.getKey(), header.getValue());
+                httpRequest.headers().set(header.getKey(), header.getValue());
             }
         }
 
         // override with computed ones
         for (Entry<String, Object> header : headers.entrySet()) {
-            nettyRequest.headers().set(header.getKey(), header.getValue());
+            httpRequest.headers().set(header.getKey(), header.getValue());
         }
-        
+
         if (authorizationHeader != null) {
             // don't override authorization but append
-            nettyRequest.headers().add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
+            httpRequest.headers().add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
         }
-        
-        return nettyRequest;
+
+        return new NettyRequest(httpRequest, nettyBody);
     }
 }

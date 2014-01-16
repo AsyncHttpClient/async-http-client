@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty.request;
+package org.asynchttpclient.providers.netty.request.body;
 
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
@@ -23,7 +23,7 @@ import org.asynchttpclient.RandomAccessBody;
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.
  */
-class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
+public class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
 
     private final RandomAccessBody body;
     private long transfered;

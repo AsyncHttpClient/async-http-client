@@ -1,7 +1,6 @@
 package org.asynchttpclient.providers.netty.future;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
 
 import java.net.URI;
 
@@ -9,11 +8,12 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 public class NettyResponseFutures {
 
-    public static <T> NettyResponseFuture<T> newNettyResponseFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, HttpRequest nettyRequest, AsyncHttpClientConfig config, ProxyServer proxyServer) {
+    public static <T> NettyResponseFuture<T> newNettyResponseFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, AsyncHttpClientConfig config, ProxyServer proxyServer) {
 
         int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//

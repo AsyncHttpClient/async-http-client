@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty.request;
+package org.asynchttpclient.providers.netty.request.body;
 
 import org.asynchttpclient.Body;
 
@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 /**
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
  */
-class BodyChunkedInput implements ChunkedInput<ByteBuf> {
+public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
     private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 

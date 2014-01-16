@@ -19,7 +19,6 @@ package org.asynchttpclient.providers.netty.request;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.ssl.SslHandler;
 
 import java.io.IOException;
@@ -124,7 +123,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
         public NettyConnectListener<T> build(final URI uri) throws IOException {
             ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-            HttpRequest nettyRequest = NettyRequests.newNettyRequest(config, request, uri, true, proxyServer);
+            NettyRequest nettyRequest = NettyRequests.newNettyRequest(config, request, uri, true, proxyServer);
             if (future == null) {
                 future = NettyResponseFutures.newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, config, proxyServer);
             } else {
