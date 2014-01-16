@@ -34,9 +34,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
@@ -56,10 +53,10 @@ final class WebSocketProtocol extends Protocol {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketProtocol.class);
 
-    
     private static final byte OPCODE_TEXT = 0x1;
     private static final byte OPCODE_BINARY = 0x2;
     private static final byte OPCODE_UNKNOWN = -1;
+    // FIXME How is this threadsafe? WebSocketProtocol instance is a member of NettyChannelHandler which is @Shareable
     protected byte pendingOpcode = OPCODE_UNKNOWN;
 
     public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
