@@ -50,8 +50,7 @@ public abstract class AbstractFilePart extends PartBase {
      */
     private static final byte[] FILE_NAME_BYTES = MultipartEncodingUtil.getAsciiBytes(FILE_NAME);
 
-    // FIXME used?
-    private long _stalledTime = -1;
+    private long stalledTime = -1L;
 
     /**
      * FilePart Constructor.
@@ -67,7 +66,7 @@ public abstract class AbstractFilePart extends PartBase {
      * @param contentId
      */
     public AbstractFilePart(String name, String contentType, String charset, String contentId) {
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? "ISO-8859-1" : charset, DEFAULT_TRANSFER_ENCODING, contentId);
+        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
     }
 
     public abstract String getFileName();
@@ -104,10 +103,10 @@ public abstract class AbstractFilePart extends PartBase {
     }
 
     public void setStalledTime(long ms) {
-        _stalledTime = ms;
+        stalledTime = ms;
     }
 
     public long getStalledTime() {
-        return _stalledTime;
+        return stalledTime;
     }
 }
