@@ -63,7 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 final class HttpProtocol extends Protocol {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpProtocol.class);
 
     public HttpProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
@@ -212,36 +212,6 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private boolean applyResponseFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
-            throws IOException {
-
-        AsyncHandler handler = future.getAsyncHandler();
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
-                .build();
-
-        for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-            try {
-                fc = asyncFilter.filter(fc);
-                // FIXME Is it worth protecting against this?
-                if (fc == null) {
-                    throw new NullPointerException("FilterContext is null");
-                }
-            } catch (FilterException efe) {
-                channels.abort(future, efe);
-            }
-        }
-
-        // The handler may have been wrapped.
-        future.setAsyncHandler(fc.getAsyncHandler());
-
-        // The request has changed
-        if (fc.replayRequest()) {
-            requestSender.replayRequest(future, fc, ctx);
-            return true;
-        }
-        return false;
-    }
-
     private boolean handleResponseAndExit(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest nettyRequest,
             ProxyServer proxyServer, HttpResponse response) throws Exception {
         Request request = future.getRequest();
@@ -258,7 +228,7 @@ final class HttpProtocol extends Protocol {
 
         future.setKeepAlive(!HttpHeaders.Values.CLOSE.equalsIgnoreCase(response.headers().get(HttpHeaders.Names.CONNECTION)));
 
-        if (!config.getResponseFilters().isEmpty() && applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
+        if (applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
             return true;
         }
 

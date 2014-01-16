@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -84,29 +85,10 @@ final class WebSocketProtocol extends Protocol {
 
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
-
-            HttpResponseStatus s = new ResponseStatus(future.getURI(), response, config);
+            HttpResponseStatus status = new ResponseStatus(future.getURI(), response, config);
             HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
 
-            // FIXME there's a method for that IIRC
-            FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(h).request(request).responseStatus(s).responseHeaders(responseHeaders).build();
-            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
-                try {
-                    fc = asyncFilter.filter(fc);
-                    if (fc == null) {
-                        throw new NullPointerException("FilterContext is null");
-                    }
-                } catch (FilterException efe) {
-                    channels.abort(future, efe);
-                }
-            }
-
-            // The handler may have been wrapped.
-            future.setAsyncHandler(fc.getAsyncHandler());
-
-            // The request has changed
-            if (fc.replayRequest()) {
-                requestSender.replayRequest(future, fc, ctx);
+            if (applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
                 return;
             }
 
@@ -118,13 +100,13 @@ final class WebSocketProtocol extends Protocol {
             boolean validUpgrade = response.headers().get(HttpHeaders.Names.UPGRADE) != null;
             String c = response.headers().get(HttpHeaders.Names.CONNECTION);
             if (c == null) {
-                c = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase());
+                c = response.headers().get(HttpHeaders.Names.CONNECTION.toLowerCase(Locale.ENGLISH));
             }
 
-            boolean validConnection = c == null ? false : c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
+            boolean validConnection = c != null && c.equalsIgnoreCase(HttpHeaders.Values.UPGRADE);
 
-            s = new ResponseStatus(future.getURI(), response, config);
-            final boolean statusReceived = h.onStatusReceived(s) == STATE.UPGRADE;
+            status = new ResponseStatus(future.getURI(), response, config);
+            final boolean statusReceived = h.onStatusReceived(status) == STATE.UPGRADE;
 
             final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
             if (!headerOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
@@ -222,8 +204,7 @@ final class WebSocketProtocol extends Protocol {
             WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(nettyResponse.getAsyncHandler());
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
-            // FIXME How could this test not succeed, attachment is a
-            // NettyResponseFuture????
+            // FIXME How could this test not succeed, we just checked above that attribute is a NettyResponseFuture????
             if (attribute != DiscardEvent.INSTANCE)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
         } catch (Throwable t) {

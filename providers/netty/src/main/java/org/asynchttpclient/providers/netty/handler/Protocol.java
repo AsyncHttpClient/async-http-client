@@ -19,13 +19,20 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 
+import java.io.IOException;
 import java.net.URI;
 
+import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Cookie;
+import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.MaxRedirectException;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
@@ -63,9 +70,12 @@ public abstract class Protocol {
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
         boolean isRedirectStatus = status.equals(MOVED_PERMANENTLY) || status.equals(FOUND) || status.equals(SEE_OTHER) || status.equals(TEMPORARY_REDIRECT);
-        if (redirectEnabled && isRedirectStatus) {
 
-            if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
+        if (redirectEnabled && isRedirectStatus) {
+            if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
+                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+
+            } else {
                 // We must allow 401 handling again.
                 future.getAndSetAuth(false);
 
@@ -132,8 +142,38 @@ public abstract class Protocol {
                     requestSender.sendNextRequest(target, future);
                     return true;
                 }
-            } else {
-                throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
+            }
+        }
+        return false;
+    }
+
+    protected boolean applyResponseFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
+            throws IOException {
+
+        if (!config.getResponseFilters().isEmpty()) {
+            AsyncHandler handler = future.getAsyncHandler();
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
+                    .build();
+
+            for (ResponseFilter asyncFilter : config.getResponseFilters()) {
+                try {
+                    fc = asyncFilter.filter(fc);
+                    // FIXME Is it worth protecting against this?
+                    if (fc == null) {
+                        throw new NullPointerException("FilterContext is null");
+                    }
+                } catch (FilterException efe) {
+                    channels.abort(future, efe);
+                }
+            }
+
+            // The handler may have been wrapped.
+            future.setAsyncHandler(fc.getAsyncHandler());
+
+            // The request has changed
+            if (fc.replayRequest()) {
+                requestSender.replayRequest(future, fc, ctx);
+                return true;
             }
         }
         return false;

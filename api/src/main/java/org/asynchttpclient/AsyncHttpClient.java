@@ -581,20 +581,16 @@ public class AsyncHttpClient implements Closeable {
      * @return {@link FilterContext}
      */
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
-        if (config.hasRequestFilters()) {
-            final List<RequestFilter> requestFilters = config.getRequestFilters();
-            for (int i = 0, len = requestFilters.size(); i < len; i++) {
-                final RequestFilter asyncFilter = requestFilters.get(i);
-                try {
-                    fc = asyncFilter.filter(fc);
-                    if (fc == null) {
-                        throw new NullPointerException("FilterContext is null");
-                    }
-                } catch (FilterException e) {
-                    IOException ex = new IOException();
-                    ex.initCause(e);
-                    throw ex;
+        for (RequestFilter asyncFilter: config.getRequestFilters()) {
+            try {
+                fc = asyncFilter.filter(fc);
+                if (fc == null) {
+                    throw new NullPointerException("FilterContext is null");
                 }
+            } catch (FilterException e) {
+                IOException ex = new IOException();
+                ex.initCause(e);
+                throw ex;
             }
         }
 
