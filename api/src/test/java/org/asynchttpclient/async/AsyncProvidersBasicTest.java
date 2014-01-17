@@ -478,7 +478,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                         assertEquals(response.getStatusCode(), 200);
                         List<Cookie> cookies = response.getCookies();
                         assertEquals(cookies.size(), 1);
-                        assertEquals(cookies.get(0).toString(), coo.toString());
+                        assertEquals(cookies.get(0).toString(), "foo=value");
                     } finally {
                         l.countDown();
                     }
