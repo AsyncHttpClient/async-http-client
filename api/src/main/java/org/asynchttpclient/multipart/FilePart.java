@@ -64,7 +64,7 @@ public class FilePart extends AbstractFilePart {
 
     @Override
     protected void sendData(OutputStream out) throws IOException {
-        if (lengthOfData() == 0) {
+        if (getDataLength() == 0) {
 
             // this file contains no data, so there is nothing to send.
             // we don't want to create a zero length buffer as this will
@@ -86,7 +86,7 @@ public class FilePart extends AbstractFilePart {
     }
 
     @Override
-    protected long lengthOfData() {
+    protected long getDataLength() {
         return file.length();
     }
 

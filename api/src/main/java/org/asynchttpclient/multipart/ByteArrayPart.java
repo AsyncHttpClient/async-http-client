@@ -59,7 +59,7 @@ public class ByteArrayPart extends AbstractFilePart {
     }
 
     @Override
-    protected long lengthOfData() {
+    protected long getDataLength() {
         return bytes.length;
     }
 

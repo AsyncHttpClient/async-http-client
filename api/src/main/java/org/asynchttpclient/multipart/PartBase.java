@@ -15,11 +15,6 @@
  */
 package org.asynchttpclient.multipart;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
 public abstract class PartBase extends Part {
 
     /**
@@ -56,7 +51,7 @@ public abstract class PartBase extends Part {
     public PartBase(String name, String contentType, String charSet, String transferEncoding, String contentId) {
 
         if (name == null) {
-            throw new IllegalArgumentException("Name must not be null");
+            throw new NullPointerException("name");
         }
         this.name = name;
         this.contentType = contentType;

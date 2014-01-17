@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
 public class StringPart extends PartBase {
 
     /**
@@ -72,22 +67,13 @@ public class StringPart extends PartBase {
     }
 
     /**
-     * Gets the content in bytes. Bytes are lazily created to allow the charset to be changed after the part is created.
-     * 
-     * @return the content in bytes
-     */
-    private byte[] getContent() {
-        return content;
-    }
-
-    /**
      * Writes the data to the given OutputStream.
      * 
      * @param out the OutputStream to write to
      * @throws java.io.IOException if there is a write error
      */
     protected void sendData(OutputStream out) throws IOException {
-        out.write(getContent());
+        out.write(content);
     }
 
     /**
@@ -95,7 +81,7 @@ public class StringPart extends PartBase {
      * 
      * @return The length of the data.
      */
-    protected long lengthOfData() {
-        return getContent().length;
+    protected long getDataLength() {
+        return content.length;
     }
 }

@@ -23,94 +23,49 @@ import org.asynchttpclient.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
 public abstract class Part {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Part.class);
 
     /**
-     * Carriage return/linefeed
-     */
-    public static final String CRLF = "\r\n";
-
-    /**
      * Carriage return/linefeed as a byte array
      */
-    public static final byte[] CRLF_BYTES = CRLF.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content dispostion characters
-     */
-    public static final String QUOTE = "\"";
+    public static final byte[] CRLF_BYTES = "\r\n".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content dispostion as a byte array
      */
-    public static final byte[] QUOTE_BYTES = QUOTE.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Extra characters
-     */
-    public static final String EXTRA = "--";
+    public static final byte[] QUOTE_BYTES = "\"".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Extra characters as a byte array
      */
-    public static final byte[] EXTRA_BYTES = EXTRA.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content dispostion characters
-     */
-    public static final String CONTENT_DISPOSITION = "Content-Disposition: form-data; name=";
+    public static final byte[] EXTRA_BYTES = "--".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content dispostion as a byte array
      */
-    public static final byte[] CONTENT_DISPOSITION_BYTES = CONTENT_DISPOSITION.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content type header
-     */
-    public static final String CONTENT_TYPE = "Content-Type: ";
+    public static final byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: form-data; name=".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_TYPE_BYTES = CONTENT_TYPE.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content charset
-     */
-    public static final String CHARSET = "; charset=";
+    public static final byte[] CONTENT_TYPE_BYTES = "Content-Type: ".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content charset as a byte array
      */
-    public static final byte[] CHARSET_BYTES = CHARSET.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content type header
-     */
-    public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
+    public static final byte[] CHARSET_BYTES = "; charset=".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = CONTENT_TRANSFER_ENCODING.getBytes(StandardCharsets.US_ASCII);
-
-    /**
-     * Content type header
-     */
-    public static final String CONTENT_ID = "Content-ID: ";
+    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = "Content-Transfer-Encoding: ".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header as a byte array
      */
-    public static final byte[] CONTENT_ID_BYTES = CONTENT_ID.getBytes(StandardCharsets.US_ASCII);
+    public static final byte[] CONTENT_ID_BYTES = "Content-ID: ".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Return the name of this part.
@@ -157,198 +112,64 @@ public abstract class Part {
         return true;
     }
 
-    /**
-     * Write the start to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @param boundary
-     *            the boundary
-     * @throws java.io.IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendStart(OutputStream out, byte[] boundary) throws IOException {
-        out.write(EXTRA_BYTES);
-        out.write(boundary);
+    protected void visitStart(PartVisitor visitor, byte[] boundary) throws IOException {
+        visitor.withBytes(EXTRA_BYTES);
+        visitor.withBytes(boundary);
     }
 
-    private int startLength(byte[] boundary) {
-        return EXTRA_BYTES.length + boundary.length;
-    }
-
-    /**
-     * Write the content disposition header to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendDispositionHeader(OutputStream out) throws IOException {
+    protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
         if (getName() != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_DISPOSITION_BYTES);
-            out.write(QUOTE_BYTES);
-            out.write(getName().getBytes(StandardCharsets.US_ASCII));
-            out.write(QUOTE_BYTES);
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_DISPOSITION_BYTES);
+            visitor.withBytes(QUOTE_BYTES);
+            visitor.withBytes(getName().getBytes(StandardCharsets.US_ASCII));
+            visitor.withBytes(QUOTE_BYTES);
         }
     }
 
-    protected long dispositionHeaderLength() {
-        long length = 0L;
-        if (getName() != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_DISPOSITION_BYTES.length;
-            length += QUOTE_BYTES.length;
-            length += getName().getBytes(StandardCharsets.US_ASCII).length;
-            length += QUOTE_BYTES.length;
-        }
-        return length;
-    }
-
-    /**
-     * Write the content type header to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendContentTypeHeader(OutputStream out) throws IOException {
+    protected void visitContentTypeHeader(PartVisitor visitor) throws IOException {
         String contentType = getContentType();
         if (contentType != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_TYPE_BYTES);
-            out.write(contentType.getBytes(StandardCharsets.US_ASCII));
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_TYPE_BYTES);
+            visitor.withBytes(contentType.getBytes(StandardCharsets.US_ASCII));
             String charSet = getCharSet();
             if (charSet != null) {
-                out.write(CHARSET_BYTES);
-                out.write(charSet.getBytes(StandardCharsets.US_ASCII));
+                visitor.withBytes(CHARSET_BYTES);
+                visitor.withBytes(charSet.getBytes(StandardCharsets.US_ASCII));
             }
         }
     }
 
-    protected long contentTypeHeaderLength() {
-        long length = 0L;
-        String contentType = getContentType();
-        if (contentType != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_TYPE_BYTES.length;
-            length += contentType.getBytes(StandardCharsets.US_ASCII).length;
-            String charSet = getCharSet();
-            if (charSet != null) {
-                length += CHARSET_BYTES.length;
-                length += charSet.getBytes(StandardCharsets.US_ASCII).length;
-            }
-        }
-        return length;
-    }
-
-    /**
-     * Write the content transfer encoding header to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendTransferEncodingHeader(OutputStream out) throws IOException {
+    protected void visitTransferEncodingHeader(PartVisitor visitor) throws IOException {
         String transferEncoding = getTransferEncoding();
         if (transferEncoding != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_TRANSFER_ENCODING_BYTES);
-            out.write(transferEncoding.getBytes(StandardCharsets.US_ASCII));
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_TRANSFER_ENCODING_BYTES);
+            visitor.withBytes(transferEncoding.getBytes(StandardCharsets.US_ASCII));
         }
     }
 
-    protected long transferEncodingHeaderLength() {
-        long length = 0L;
-        String transferEncoding = getTransferEncoding();
-        if (transferEncoding != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_TRANSFER_ENCODING_BYTES.length;
-            length += transferEncoding.getBytes(StandardCharsets.US_ASCII).length;
-        }
-        return length;
-    }
-
-    /**
-     * Write the content ID header to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendContentIdHeader(OutputStream out) throws IOException {
+    protected void visitContentIdHeader(PartVisitor visitor) throws IOException {
         String contentId = getContentId();
         if (contentId != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_ID_BYTES);
-            out.write(contentId.getBytes(StandardCharsets.US_ASCII));
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_ID_BYTES);
+            visitor.withBytes(contentId.getBytes(StandardCharsets.US_ASCII));
         }
     }
 
-    protected long contentIdHeaderLength() {
-        long length = 0L;
-        String contentId = getContentId();
-        if (contentId != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_ID_BYTES.length;
-            length += contentId.getBytes(StandardCharsets.US_ASCII).length;
-        }
-        return length;
+    protected void visitEndOfHeader(PartVisitor visitor) throws IOException {
+        visitor.withBytes(CRLF_BYTES);
+        visitor.withBytes(CRLF_BYTES);
     }
 
-    /**
-     * Write the end of the header to the output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendEndOfHeader(OutputStream out) throws IOException {
-        out.write(CRLF_BYTES);
-        out.write(CRLF_BYTES);
+    protected void visitEnd(PartVisitor visitor) throws IOException {
+        visitor.withBytes(CRLF_BYTES);
     }
 
-    protected long endOfHeaderLength() {
-        return CRLF_BYTES.length * 2;
-    }
-
-    /**
-     * Write the data to the specified output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
+    protected abstract long getDataLength();
     protected abstract void sendData(OutputStream out) throws IOException;
-
-    /**
-     * Return the length of the main content
-     * 
-     * @return long The length.
-     */
-    protected abstract long lengthOfData();
-
-    /**
-     * Write the end data to the output stream.
-     * 
-     * @param out
-     *            The output stream
-     * @throws IOException
-     *             If an IO problem occurs.
-     */
-    protected void sendEnd(OutputStream out) throws IOException {
-        out.write(CRLF_BYTES);
-    }
-
-    protected long endLength() {
-        return CRLF_BYTES.length;
-    }
 
     /**
      * Write all the data to the output stream. If you override this method make sure to override #length() as well
@@ -361,38 +182,45 @@ public abstract class Part {
      *             If an IO problem occurs.
      */
     public void send(OutputStream out, byte[] boundary) throws IOException {
-        sendStart(out, boundary);
-        sendDispositionHeader(out);
-        sendContentTypeHeader(out);
-        sendTransferEncodingHeader(out);
-        sendContentIdHeader(out);
-        sendEndOfHeader(out);
-        sendData(out);
-        sendEnd(out);
+
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
+
+        visitStart(visitor, boundary);
+        visitDispositionHeader(visitor);
+        visitContentTypeHeader(visitor);
+        visitTransferEncodingHeader(visitor);
+        visitContentIdHeader(visitor);
+        visitEndOfHeader(visitor);
+        sendData(visitor.getOutputStream());
+        visitEnd(visitor);
     }
 
     /**
      * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
      * 
      * @return long The length.
-     * @throws IOException
-     *             If an IO problem occurs
      */
     public long length(byte[] boundary) {
 
-        long lengthOfData = lengthOfData();
+        long dataLength = getDataLength();
+        try {
 
-        if (lengthOfData < 0L) {
-            return -1L;
-        } else {
-            return lengthOfData//
-                    + startLength(boundary)//
-                    + dispositionHeaderLength()//
-                    + contentTypeHeaderLength()//
-                    + transferEncodingHeaderLength()//
-                    + contentIdHeaderLength()//
-                    + endOfHeaderLength()//
-                    + endLength();
+            if (dataLength < 0L) {
+                return -1L;
+            } else {
+                CounterPartVisitor visitor = new CounterPartVisitor();
+                visitStart(visitor, boundary);
+                visitDispositionHeader(visitor);
+                visitContentTypeHeader(visitor);
+                visitTransferEncodingHeader(visitor);
+                visitContentIdHeader(visitor);
+                visitEndOfHeader(visitor);
+                visitEnd(visitor);
+                return dataLength + visitor.getCount();
+            }
+        } catch (IOException e) {
+            // can't happen
+            throw new RuntimeException("IOException while computing length, WTF", e);
         }
     }
 
@@ -412,23 +240,13 @@ public abstract class Part {
             throw new IllegalArgumentException("partBoundary may not be empty");
         }
 
-        out.write(EXTRA_BYTES);
-        out.write(partBoundary);
-        out.write(EXTRA_BYTES);
-        out.write(CRLF_BYTES);
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
+        visitor.withBytes(EXTRA_BYTES);
+        visitor.withBytes(partBoundary);
+        visitor.withBytes(EXTRA_BYTES);
+        visitor.withBytes(CRLF_BYTES);
     }
 
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out
-     *            The stream to write to.
-     * @param part
-     *            The part to write.
-     * @throws IOException
-     *             If an I/O error occurs while writing the parts.
-     * @since N/A
-     */
     public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
 
         if (part == null) {
@@ -438,18 +256,6 @@ public abstract class Part {
         part.send(out, partBoundary);
     }
 
-    /**
-     * Gets the length of the multipart message including the given parts.
-     * 
-     * @param parts
-     *            The parts.
-     * @param partBoundary
-     *            The ASCII bytes to use as the part boundary.
-     * @return The total length
-     * @throws IOException
-     *             If an I/O error occurs while writing the parts.
-     * @since 3.0
-     */
     public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) {
 
         try {

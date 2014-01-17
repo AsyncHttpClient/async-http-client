@@ -16,7 +16,6 @@
 package org.asynchttpclient.multipart;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.asynchttpclient.util.StandardCharsets;
 
@@ -43,14 +42,9 @@ public abstract class AbstractFilePart extends PartBase {
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
 
     /**
-     * Attachment's file name
-     */
-    protected static final String FILE_NAME = "; filename=";
-
-    /**
      * Attachment's file name as a byte array
      */
-    private static final byte[] FILE_NAME_BYTES = FILE_NAME.getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(StandardCharsets.US_ASCII);
 
     private long stalledTime = -1L;
 
@@ -73,35 +67,15 @@ public abstract class AbstractFilePart extends PartBase {
 
     public abstract String getFileName();
 
-    /**
-     * Write the disposition header to the output stream
-     * 
-     * @param out
-     *            The output stream
-     * @throws java.io.IOException
-     *             If an IO problem occurs
-     */
-    protected void sendDispositionHeader(OutputStream out) throws IOException {
-        super.sendDispositionHeader(out);
+    protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
+        super.visitDispositionHeader(visitor);
         String filename = getFileName();
         if (filename != null) {
-            out.write(FILE_NAME_BYTES);
-            out.write(QUOTE_BYTES);
-            out.write(filename.getBytes(StandardCharsets.US_ASCII));
-            out.write(QUOTE_BYTES);
+            visitor.withBytes(FILE_NAME_BYTES);
+            visitor.withBytes(QUOTE_BYTES);
+            visitor.withBytes(filename.getBytes(StandardCharsets.US_ASCII));
+            visitor.withBytes(QUOTE_BYTES);
         }
-    }
-
-    protected long dispositionHeaderLength() {
-        String filename = this.getFileName();
-        long length = super.dispositionHeaderLength();
-        if (filename != null) {
-            length += FILE_NAME_BYTES.length;
-            length += QUOTE_BYTES.length;
-            length += filename.getBytes(StandardCharsets.US_ASCII).length;
-            length += QUOTE_BYTES.length;
-        }
-        return length;
     }
 
     public void setStalledTime(long ms) {
