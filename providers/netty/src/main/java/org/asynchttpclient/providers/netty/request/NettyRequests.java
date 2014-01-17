@@ -317,11 +317,6 @@ public final class NettyRequests {
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
-        // FIXME Wikipedia says that Proxy-Connection was a misunderstanding of Connection http://en.wikipedia.org/wiki/List_of_HTTP_header_fields
-        if (!httpRequest.headers().contains("Proxy-Connection")) {
-            httpRequest.headers().set("Proxy-Connection", AsyncHttpProviderUtils.keepAliveHeaderValue(config));
-        }
-
         final Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         String hostHeader = hostHeader(request, uri, realm);

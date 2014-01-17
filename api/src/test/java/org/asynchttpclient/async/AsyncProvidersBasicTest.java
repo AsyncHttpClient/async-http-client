@@ -741,7 +741,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             }).get();
 
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("X-Proxy-Connection"), "keep-alive");
+            assertEquals(response.getHeader("X-Connection"), "keep-alive");
         } finally {
             client.close();
         }
