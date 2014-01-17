@@ -406,36 +406,6 @@ public abstract class Part {
         return this.getName();
     }
 
-    /**
-     * Write all parts and the last boundary to the specified output stream.
-     * 
-     * @param out
-     *            The stream to write to.
-     * @param parts
-     *            The parts to write.
-     * @param partBoundary
-     *            The ASCII bytes to use as the part boundary.
-     * @throws IOException
-     *             If an I/O error occurs while writing the parts.
-     * @since 3.0
-     */
-    public static void sendParts(OutputStream out, List<Part> parts, byte[] partBoundary) throws IOException {
-
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        if (partBoundary == null || partBoundary.length == 0) {
-            throw new IllegalArgumentException("partBoundary may not be empty");
-        }
-        for (Part part : parts) {
-            part.send(out, partBoundary);
-        }
-        out.write(EXTRA_BYTES);
-        out.write(partBoundary);
-        out.write(EXTRA_BYTES);
-        out.write(CRLF_BYTES);
-    }
-
     public static void sendMessageEnd(OutputStream out, byte[] partBoundary) throws IOException {
 
         if (partBoundary == null || partBoundary.length == 0) {

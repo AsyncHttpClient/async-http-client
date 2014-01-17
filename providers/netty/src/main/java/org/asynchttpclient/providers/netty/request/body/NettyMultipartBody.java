@@ -32,7 +32,7 @@ public class NettyMultipartBody implements NettyBody {
         MultipartRequestEntity mre = new MultipartRequestEntity(parts, headers);
         contentType = mre.getContentType();
         contentLength = mre.getContentLength();
-        multipartBody = new MultipartBody(parts, contentType, contentLength);
+        multipartBody = new MultipartBody(parts, contentType, contentLength, mre.getMultipartBoundary());
     }
 
     public MultipartBody getMultipartBody() {

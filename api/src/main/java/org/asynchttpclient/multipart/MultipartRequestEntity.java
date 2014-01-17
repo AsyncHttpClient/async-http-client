@@ -17,8 +17,6 @@ package org.asynchttpclient.multipart;
 
 import static org.asynchttpclient.util.MiscUtil.*;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Random;
 
@@ -56,11 +54,6 @@ public class MultipartRequestEntity implements RequestEntity {
         return bytes;
     }
 
-    /**
-     * The MIME parts as set by the constructor
-     */
-    private final List<Part> parts;
-
     private final byte[] multipartBoundary;
 
     private final String contentType;
@@ -77,7 +70,6 @@ public class MultipartRequestEntity implements RequestEntity {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
-        this.parts = parts;
         String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
         if (isNonEmpty(contentTypeHeader)) {
             int boundaryLocation = contentTypeHeader.indexOf("boundary=");
@@ -111,24 +103,8 @@ public class MultipartRequestEntity implements RequestEntity {
      * 
      * @return The boundary string of this entity in ASCII encoding.
      */
-    protected byte[] getMultipartBoundary() {
+    public byte[] getMultipartBoundary() {
         return multipartBoundary;
-    }
-
-    /**
-     * Returns <code>true</code> if all parts are repeatable, <code>false</code> otherwise.
-     */
-    public boolean isRepeatable() {
-        for (Part part : parts) {
-            if (!part.isRepeatable()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public void writeRequest(OutputStream out) throws IOException {
-        Part.sendParts(out, parts, multipartBoundary);
     }
 
     public long getContentLength() {

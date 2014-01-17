@@ -49,6 +49,7 @@ public final class PartsBodyHandler implements BodyHandler {
         final MultipartRequestEntity mre = new MultipartRequestEntity(parts, request.getHeaders());
         final long contentLength = mre.getContentLength();
         final String contentType = mre.getContentType();
+        final byte[] multipartBoundary = mre.getMultipartBoundary();
         requestPacket.setContentLengthLong(contentLength);
         requestPacket.setContentType(contentType);
         if (GrizzlyAsyncHttpProvider.LOGGER.isDebugEnabled()) {
@@ -63,7 +64,7 @@ public final class PartsBodyHandler implements BodyHandler {
         final FeedableBodyGenerator generator = new FeedableBodyGenerator() {
             @Override
             public Body createBody() throws IOException {
-                return new MultipartBody(parts, contentType, contentLength);
+                return new MultipartBody(parts, contentType, contentLength, multipartBoundary);
             }
         };
         generator.setFeeder(new FeedableBodyGenerator.BaseFeeder(generator) {
