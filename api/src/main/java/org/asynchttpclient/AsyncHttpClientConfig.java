@@ -632,7 +632,7 @@ public class AsyncHttpClientConfig {
         private boolean spdyEnabled;
         private int spdyInitialWindowSize = 10 * 1024 * 1024;
         private int spdyMaxConcurrentStreams = 100;
-        private boolean rfc6265CookieEncoding;
+        private boolean rfc6265CookieEncoding = true;
         private boolean asyncConnectMode;
 
         public Builder() {
