@@ -15,8 +15,10 @@
  */
 package org.asynchttpclient.multipart;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 public class StringPart extends PartBase {
@@ -44,14 +46,18 @@ public class StringPart extends PartBase {
     public StringPart(String name, String value, String charset) {
         this(name, value, charset, null);
     }
-    
+
     /**
      * Constructor.
      * 
-     * @param name The name of the part
-     * @param value the string to post
-     * @param charset the charset to be used to encode the string, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId the content id
+     * @param name
+     *            The name of the part
+     * @param value
+     *            the string to post
+     * @param charset
+     *            the charset to be used to encode the string, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
+     * @param contentId
+     *            the content id
      */
     public StringPart(String name, String value, String charset, String contentId) {
 
@@ -69,8 +75,10 @@ public class StringPart extends PartBase {
     /**
      * Writes the data to the given OutputStream.
      * 
-     * @param out the OutputStream to write to
-     * @throws java.io.IOException if there is a write error
+     * @param out
+     *            the OutputStream to write to
+     * @throws java.io.IOException
+     *             if there is a write error
      */
     protected void sendData(OutputStream out) throws IOException {
         out.write(content);
@@ -83,5 +91,16 @@ public class StringPart extends PartBase {
      */
     protected long getDataLength() {
         return content.length;
+    }
+    
+    public byte[] getBytes(byte[] boundary) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        write(outputStream, boundary);
+        return outputStream.toByteArray();
+    }
+
+    @Override
+    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
+        return MultipartUtils.writeBytesToChannel(target, getBytes(boundary));
     }
 }

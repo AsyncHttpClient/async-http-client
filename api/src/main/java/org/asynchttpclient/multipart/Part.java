@@ -17,15 +17,11 @@ package org.asynchttpclient.multipart;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
+import java.nio.channels.WritableByteChannel;
 
 import org.asynchttpclient.util.StandardCharsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class Part {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Part.class);
 
     /**
      * Carriage return/linefeed as a byte array
@@ -169,6 +165,7 @@ public abstract class Part {
     }
 
     protected abstract long getDataLength();
+
     protected abstract void sendData(OutputStream out) throws IOException;
 
     /**
@@ -181,7 +178,7 @@ public abstract class Part {
      * @throws IOException
      *             If an IO problem occurs.
      */
-    public void send(OutputStream out, byte[] boundary) throws IOException {
+    public void write(OutputStream out, byte[] boundary) throws IOException {
 
         OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
 
@@ -234,50 +231,5 @@ public abstract class Part {
         return this.getName();
     }
 
-    public static void sendMessageEnd(OutputStream out, byte[] partBoundary) throws IOException {
-
-        if (partBoundary == null || partBoundary.length == 0) {
-            throw new IllegalArgumentException("partBoundary may not be empty");
-        }
-
-        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
-        visitor.withBytes(EXTRA_BYTES);
-        visitor.withBytes(partBoundary);
-        visitor.withBytes(EXTRA_BYTES);
-        visitor.withBytes(CRLF_BYTES);
-    }
-
-    public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
-
-        if (part == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-
-        part.send(out, partBoundary);
-    }
-
-    public static long getLengthOfParts(List<Part> parts, byte[] partBoundary) {
-
-        try {
-            if (parts == null) {
-                throw new IllegalArgumentException("Parts may not be null");
-            }
-            long total = 0;
-            for (Part part : parts) {
-                long l = part.length(partBoundary);
-                if (l < 0) {
-                    return -1;
-                }
-                total += l;
-            }
-            total += EXTRA_BYTES.length;
-            total += partBoundary.length;
-            total += EXTRA_BYTES.length;
-            total += CRLF_BYTES.length;
-            return total;
-        } catch (Exception e) {
-            LOGGER.error("An exception occurred while getting the length of the parts", e);
-            return 0L;
-        }
-    }
+    public abstract long write(WritableByteChannel target, byte[] boundary) throws IOException;
 }

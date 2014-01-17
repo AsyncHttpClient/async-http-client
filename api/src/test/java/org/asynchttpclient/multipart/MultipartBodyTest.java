@@ -66,7 +66,7 @@ public class MultipartBodyTest {
         // get expected values
 
         // get real bytes
-        final Body multipartBody = MultipartBodyFactory.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
+        final Body multipartBody = MultipartUtils.newMultipartBody(parts, new FluentCaseInsensitiveStringsMap());
         final long expectedContentLength = multipartBody.getContentLength();
         try {
             final ByteBuffer buffer = ByteBuffer.allocate(8192);

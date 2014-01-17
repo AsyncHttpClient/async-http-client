@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.multipart.MultipartBody;
-import org.asynchttpclient.multipart.MultipartBodyFactory;
+import org.asynchttpclient.multipart.MultipartUtils;
 import org.asynchttpclient.multipart.Part;
 
 public class NettyMultipartBody implements NettyBody {
@@ -27,7 +27,7 @@ public class NettyMultipartBody implements NettyBody {
     private final MultipartBody multipartBody;
 
     public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers) {
-        multipartBody = MultipartBodyFactory.newMultipartBody(parts, headers);
+        multipartBody = MultipartUtils.newMultipartBody(parts, headers);
     }
 
     public MultipartBody getMultipartBody() {

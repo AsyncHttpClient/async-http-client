@@ -17,6 +17,7 @@ package org.asynchttpclient.multipart;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.WritableByteChannel;
 
 public class ByteArrayPart extends AbstractFilePart {
 
@@ -65,5 +66,22 @@ public class ByteArrayPart extends AbstractFilePart {
 
     public byte[] getBytes() {
         return bytes;
+    }
+
+    @Override
+    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
+        FilePartStallHandler handler = new FilePartStallHandler(getStalledTime(), this);
+
+        try {
+            handler.start();
+
+            long length = MultipartUtils.writeBytesToChannel(target, generateFileStart(boundary));
+            length += MultipartUtils.writeBytesToChannel(target, bytes);
+            length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
+
+            return length;
+        } finally {
+            handler.completed();
+        }
     }
 }

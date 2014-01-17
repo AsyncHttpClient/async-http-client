@@ -13,10 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
+import static org.asynchttpclient.util.MiscUtil.*;
+
+import java.io.IOException;
+import java.util.List;
+
 import org.asynchttpclient.Body;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.multipart.MultipartBody;
-import org.asynchttpclient.multipart.MultipartBodyFactory;
+import org.asynchttpclient.multipart.MultipartUtils;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.grizzly.FeedableBodyGenerator;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
@@ -25,11 +30,6 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
-
-import java.io.IOException;
-import java.util.List;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class PartsBodyHandler implements BodyHandler {
 
@@ -46,7 +46,7 @@ public final class PartsBodyHandler implements BodyHandler {
     throws IOException {
 
         final List<Part> parts = request.getParts();
-        final MultipartBody multipartBody = MultipartBodyFactory.newMultipartBody(parts, request.getHeaders());
+        final MultipartBody multipartBody = MultipartUtils.newMultipartBody(parts, request.getHeaders());
         requestPacket.setContentLengthLong(multipartBody.getContentLength());
         requestPacket.setContentType(multipartBody.getContentType());
         if (GrizzlyAsyncHttpProvider.LOGGER.isDebugEnabled()) {

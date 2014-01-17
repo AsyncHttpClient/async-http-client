@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.multipart;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.asynchttpclient.util.StandardCharsets;
@@ -84,5 +85,25 @@ public abstract class AbstractFilePart extends PartBase {
 
     public long getStalledTime() {
         return stalledTime;
+    }
+
+    protected byte[] generateFileStart(byte[] boundary) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
+        visitStart(visitor, boundary);
+        visitDispositionHeader(visitor);
+        visitContentTypeHeader(visitor);
+        visitTransferEncodingHeader(visitor);
+        visitContentIdHeader(visitor);
+        visitEndOfHeader(visitor);
+
+        return out.toByteArray();
+    }
+
+    protected byte[] generateFileEnd() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
+        visitEnd(visitor);
+        return out.toByteArray();
     }
 }

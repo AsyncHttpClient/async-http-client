@@ -20,8 +20,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FilePart extends AbstractFilePart {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilePart.class);
 
     private final File file;
     private final String fileName;
@@ -92,5 +100,71 @@ public class FilePart extends AbstractFilePart {
 
     public File getFile() {
         return file;
+    }
+
+    @Override
+    public long write(WritableByteChannel target, byte[] boundary) throws IOException {
+        FilePartStallHandler handler = new FilePartStallHandler(getStalledTime(), this);
+
+        handler.start();
+
+        int length = 0;
+
+        length += MultipartUtils.writeBytesToChannel(target, generateFileStart(boundary));
+
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        FileChannel fc = raf.getChannel();
+
+        long l = file.length();
+        int fileLength = 0;
+        long nWrite = 0;
+        // FIXME why sync?
+        try {
+            synchronized (fc) {
+                while (fileLength != l) {
+                    if (handler.isFailed()) {
+                        LOGGER.debug("Stalled error");
+                        throw new FileUploadStalledException();
+                    }
+                    try {
+                        nWrite = fc.transferTo(fileLength, l, target);
+
+                        if (nWrite == 0) {
+                            LOGGER.info("Waiting for writing...");
+                            try {
+                                fc.wait(50);
+                            } catch (InterruptedException e) {
+                                LOGGER.trace(e.getMessage(), e);
+                            }
+                        } else {
+                            handler.writeHappened();
+                        }
+                    } catch (IOException ex) {
+                        String message = ex.getMessage();
+
+                        // http://bugs.sun.com/view_bug.do?bug_id=5103988
+                        if (message != null && message.equalsIgnoreCase("Resource temporarily unavailable")) {
+                            try {
+                                fc.wait(1000);
+                            } catch (InterruptedException e) {
+                                LOGGER.trace(e.getMessage(), e);
+                            }
+                            LOGGER.warn("Experiencing NIO issue http://bugs.sun.com/view_bug.do?bug_id=5103988. Retrying");
+                            continue;
+                        } else {
+                            throw ex;
+                        }
+                    }
+                    fileLength += nWrite;
+                }
+            }
+        } finally {
+            handler.completed();
+            raf.close();
+        }
+
+        length += MultipartUtils.writeBytesToChannel(target, generateFileEnd());
+
+        return length;
     }
 }
