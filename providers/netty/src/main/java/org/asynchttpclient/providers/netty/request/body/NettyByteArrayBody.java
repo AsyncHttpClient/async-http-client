@@ -15,43 +15,31 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
-import java.io.File;
-import java.io.IOException;
+public class NettyByteArrayBody implements NettyBody {
 
-public class NettyFileBody implements NettyBody {
+    private final byte[] bytes;
+    private final String contentType;
 
-    private final File file;
-    private final long offset;
-    private final long length;
-
-    public NettyFileBody(File file) throws IOException {
-        this(file, 0, file.length());
-    }
-    
-    public NettyFileBody(File file, long offset, long length) throws IOException {
-        if (!file.isFile()) {
-            throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
-        }
-        this.file = file;
-        this.offset = offset;
-        this.length = length;
+    public NettyByteArrayBody(byte[] bytes) {
+        this(bytes, null);
     }
 
-    public File getFile() {
-        return file;
+    public NettyByteArrayBody(byte[] bytes, String contentType) {
+        this.bytes = bytes;
+        this.contentType = contentType;
     }
 
-    public long getOffset() {
-        return offset;
+    public byte[] getBytes() {
+        return bytes;
     }
 
     @Override
     public long getContentLength() {
-        return length;
+        return bytes.length;
     }
 
     @Override
     public String getContentType() {
-        return null;
+        return contentType;
     }
 }
