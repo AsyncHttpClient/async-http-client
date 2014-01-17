@@ -17,7 +17,9 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.async.AsyncProvidersBasicTest;
+import org.testng.annotations.Test;
 
+@Test
 public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
 
     @Override
@@ -34,5 +36,9 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     @Override
     protected String acceptEncodingHeader() {
         return "gzip";
+    }
+    
+    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
+    public void asyncDoGetCookieTest() throws Exception {
     }
 }
