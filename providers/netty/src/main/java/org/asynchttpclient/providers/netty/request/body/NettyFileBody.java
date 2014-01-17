@@ -15,10 +15,29 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.channel.FileRegion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.stream.ChunkedFile;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.Constants;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.ProgressListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NettyFileBody implements NettyBody {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
 
     private final File file;
     private final long offset;
@@ -27,7 +46,7 @@ public class NettyFileBody implements NettyBody {
     public NettyFileBody(File file) throws IOException {
         this(file, 0, file.length());
     }
-    
+
     public NettyFileBody(File file, long offset, long length) throws IOException {
         if (!file.isFile()) {
             throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
@@ -53,5 +72,40 @@ public class NettyFileBody implements NettyBody {
     @Override
     public String getContentType() {
         return null;
+    }
+
+    @Override
+    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        final RandomAccessFile raf = new RandomAccessFile(file, "r");
+
+        try {
+            ChannelFuture writeFuture;
+            if (Channels.getSslHandler(channel) != null) {
+                writeFuture = channel.write(new ChunkedFile(raf, offset, length, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+            } else {
+                FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
+                writeFuture = channel.write(region, channel.newProgressivePromise());
+            }
+            // FIXME probably useless in Netty 4
+            writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+                public void operationComplete(ChannelProgressiveFuture cf) {
+                    try {
+                        raf.close();
+                    } catch (IOException e) {
+                        LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                    }
+                    super.operationComplete(cf);
+                }
+            });
+            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        } catch (IOException ex) {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                }
+            }
+            throw ex;
+        }
     }
 }

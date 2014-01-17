@@ -15,9 +15,18 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import java.io.IOException;
+
+import io.netty.channel.Channel;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+
 public interface NettyBody {
 
     long getContentLength();
 
     String getContentType();
+
+    void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException;
 }

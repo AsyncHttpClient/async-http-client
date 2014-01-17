@@ -15,9 +15,23 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.stream.ChunkedStream;
+
+import java.io.IOException;
 import java.io.InputStream;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.ProgressListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class NettyInputStreamBody implements NettyBody {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
     private final InputStream inputStream;
 
@@ -37,5 +51,33 @@ public class NettyInputStreamBody implements NettyBody {
     @Override
     public String getContentType() {
         return null;
+    }
+
+    @Override
+    public void write(Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        final InputStream is = inputStream;
+
+        if (future.isStreamWasAlreadyConsumed()) {
+            if (is.markSupported())
+                is.reset();
+            else {
+                LOGGER.warn("Stream has already been consumed and cannot be reset");
+                return;
+            }
+        } else {
+            future.setStreamWasAlreadyConsumed(true);
+        }
+
+        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+            public void operationComplete(ChannelProgressiveFuture cf) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                }
+                super.operationComplete(cf);
+            }
+        });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 }

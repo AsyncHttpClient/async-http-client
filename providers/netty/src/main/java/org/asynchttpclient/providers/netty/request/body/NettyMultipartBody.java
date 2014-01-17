@@ -22,25 +22,21 @@ import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.multipart.MultipartUtils;
 import org.asynchttpclient.multipart.Part;
 
-public class NettyMultipartBody implements NettyBody {
+public class NettyMultipartBody extends NettyBodyBody {
 
-    private final MultipartBody multipartBody;
+    private final String contentType;
 
     public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers) {
-        multipartBody = MultipartUtils.newMultipartBody(parts, headers);
+        this(MultipartUtils.newMultipartBody(parts, headers));
     }
 
-    public MultipartBody getMultipartBody() {
-        return multipartBody;
-    }
-
-    @Override
-    public long getContentLength() {
-        return multipartBody.getContentLength();
+    private NettyMultipartBody(MultipartBody body) {
+        super(body);
+        contentType = body.getContentType();
     }
 
     @Override
     public String getContentType() {
-        return multipartBody.getContentType();
-    }
+        return contentType;
+    };
 }

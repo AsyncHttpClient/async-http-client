@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -238,16 +237,14 @@ public final class NettyRequests {
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders());
 
             } else if (request.getFile() != null) {
-                File file = request.getFile();
-                nettyBody = new NettyFileBody(file);
+                nettyBody = new NettyFileBody(request.getFile());
 
             } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
                 nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength());
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
-                InputStreamBodyGenerator inputStreamBodyGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyInputStreamBody(inputStreamBodyGenerator.getInputStream());
+                nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
 
             } else if (request.getBodyGenerator() != null) {
                 nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody());

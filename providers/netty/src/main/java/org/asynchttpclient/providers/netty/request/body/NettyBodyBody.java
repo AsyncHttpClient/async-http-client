@@ -15,9 +15,28 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.stream.ChunkedWriteHandler;
+
+import java.io.IOException;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.RandomAccessBody;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.ProgressListener;
+import org.asynchttpclient.providers.netty.request.body.FeedableBodyGenerator.FeedListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NettyBodyBody implements NettyBody {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyBodyBody.class);
 
     private final Body body;
 
@@ -38,4 +57,40 @@ public class NettyBodyBody implements NettyBody {
     public String getContentType() {
         return null;
     };
+
+    @Override
+    public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
+        Object msg;
+
+        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
+            // FIXME also do something for multipart and use a ChunkedInput
+            msg = new BodyFileRegion((RandomAccessBody) body);
+
+        } else {
+            msg = new BodyChunkedInput(body);
+
+            BodyGenerator bg = future.getRequest().getBodyGenerator();
+            if (bg instanceof FeedableBodyGenerator) {
+                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+                    @Override
+                    public void onContentAdded() {
+                        channel.pipeline().get(ChunkedWriteHandler.class).resumeTransfer();
+                    }
+                });
+            }
+        }
+        ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
+
+        writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+            public void operationComplete(ChannelProgressiveFuture cf) {
+                try {
+                    body.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                }
+                super.operationComplete(cf);
+            }
+        });
+        channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
 }
