@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.multipart;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -38,8 +37,8 @@ public class MultipartBody implements RandomAccessBody {
     private boolean transfertDone = false;
 
     private int currentPart = 0;
-    private ByteArrayInputStream currentStream;
-    private int currentStreamPosition = -1;
+    private byte[] currentBytes;
+    private int currentBytesPosition = -1;
     private boolean doneWritingParts = false;
     private FileLocation fileLocation = FileLocation.NONE;
     private FileChannel currentFileChannel;
@@ -112,17 +111,18 @@ public class MultipartBody implements RandomAccessBody {
                     overallLength += writeCurrentFile(buffer);
                     full = overallLength == maxLength;
 
-                } else if (currentStreamPosition > -1) {
-                    overallLength += writeCurrentStream(buffer, maxLength - overallLength);
+                } else if (currentBytesPosition > -1) {
+                    overallLength += writeCurrentBytes(buffer, maxLength - overallLength);
                     full = overallLength == maxLength;
 
-                    if (currentPart == parts.size() && currentStream.available() == 0) {
+                    if (currentPart == parts.size() && currentBytesFullyRead()) {
                         doneWritingParts = true;
                     }
 
                 } else if (part instanceof StringPart) {
                     StringPart stringPart = (StringPart) part;
-                    initializeNewCurrentStream(stringPart.getBytes(boundary));
+                    // set new bytes, not full, so will loop to writeCurrentBytes above
+                    initializeCurrentBytes(stringPart.getBytes(boundary));
                     currentPart++;
 
                 } else if (part instanceof AbstractFilePart) {
@@ -131,8 +131,8 @@ public class MultipartBody implements RandomAccessBody {
 
                     switch (fileLocation) {
                     case NONE:
-                        // create new stream, not full, so will loop to writeCurrentStream above
-                        initializeNewCurrentStream(filePart.generateFileStart(boundary));
+                        // set new bytes, not full, so will loop to writeCurrentBytes above
+                        initializeCurrentBytes(filePart.generateFileStart(boundary));
                         fileLocation = FileLocation.START;
                         break;
                     case START:
@@ -141,13 +141,13 @@ public class MultipartBody implements RandomAccessBody {
                         fileLocation = FileLocation.MIDDLE;
                         break;
                     case MIDDLE:
-                        initializeNewCurrentStream(filePart.generateFileEnd());
+                        initializeCurrentBytes(filePart.generateFileEnd());
                         fileLocation = FileLocation.END;
                         break;
                     case END:
                         currentPart++;
                         fileLocation = FileLocation.NONE;
-                        if (currentPart == parts.size() && currentStream.available() == 0) {
+                        if (currentPart == parts.size()) {
                             doneWritingParts = true;
                         }
                     }
@@ -155,16 +155,16 @@ public class MultipartBody implements RandomAccessBody {
             }
 
             if (doneWritingParts) {
-                if (currentStreamPosition == -1) {
-                    initializeNewCurrentStream(MultipartUtils.getMessageEnd(boundary));
+                if (currentBytesPosition == -1) {
+                    initializeCurrentBytes(MultipartUtils.getMessageEnd(boundary));
                 }
 
-                if (currentStreamPosition > -1) {
-                    overallLength += writeCurrentStream(buffer, maxLength - overallLength);
+                if (currentBytesPosition > -1) {
+                    overallLength += writeCurrentBytes(buffer, maxLength - overallLength);
 
-                    if (currentStream.available() == 0) {
-                        currentStream.close();
-                        currentStreamPosition = -1;
+                    if (currentBytesFullyRead()) {
+                        currentBytes = null;
+                        currentBytesPosition = -1;
                         transfertDone = true;
                     }
                 }
@@ -177,6 +177,10 @@ public class MultipartBody implements RandomAccessBody {
         }
     }
 
+    private boolean currentBytesFullyRead() {
+        return currentBytes == null || currentBytesPosition >= currentBytes.length - 1;
+    }
+
     private void initializeFileBody(AbstractFilePart part) throws IOException {
 
         if (part instanceof FilePart) {
@@ -185,16 +189,16 @@ public class MultipartBody implements RandomAccessBody {
             currentFileChannel = raf.getChannel();
 
         } else if (part instanceof ByteArrayPart) {
-            initializeNewCurrentStream(ByteArrayPart.class.cast(part).getBytes());
+            initializeCurrentBytes(ByteArrayPart.class.cast(part).getBytes());
 
         } else {
             throw new IllegalArgumentException("Unknow AbstractFilePart type");
         }
     }
 
-    private void initializeNewCurrentStream(byte[] bytes) throws IOException {
-        currentStream = new ByteArrayInputStream(bytes);
-        currentStreamPosition = 0;
+    private void initializeCurrentBytes(byte[] bytes) throws IOException {
+        currentBytes = bytes;
+        currentBytesPosition = 0;
     }
 
     private int writeCurrentFile(ByteBuffer buffer) throws IOException {
@@ -214,23 +218,20 @@ public class MultipartBody implements RandomAccessBody {
         return read;
     }
 
-    private int writeCurrentStream(ByteBuffer buffer, int length) throws IOException {
+    private int writeCurrentBytes(ByteBuffer buffer, int length) throws IOException {
 
-        int available = currentStream.available();
+        int available = currentBytes.length - currentBytesPosition;
 
         int writeLength = Math.min(available, length);
 
         if (writeLength > 0) {
-            byte[] bytes = new byte[writeLength];
-
-            currentStream.read(bytes);
-            buffer.put(bytes);
+            buffer.put(currentBytes, currentBytesPosition, writeLength);
 
             if (available <= length) {
-                currentStream.close();
-                currentStreamPosition = -1;
+                currentBytesPosition = -1;
+                currentBytes = null;
             } else {
-                currentStreamPosition += writeLength;
+                currentBytesPosition += writeLength;
             }
         }
 
