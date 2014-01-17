@@ -23,12 +23,7 @@ import java.util.Random;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.util.StandardCharsets;
 
-/**
- * This class is an adaptation of the Apache HttpClient implementation
- * 
- * @link http://hc.apache.org/httpclient-3.x/
- */
-public class MultipartRequestEntity implements RequestEntity {
+public final class MultipartBodyFactory {
 
     /**
      * The Content-Type for multipart/form-data.
@@ -40,36 +35,23 @@ public class MultipartRequestEntity implements RequestEntity {
      */
     private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
 
-    /**
-     * Generates a random multipart boundary string.
-     * 
-     * @return
-     */
-    private static byte[] generateMultipartBoundary() {
-        Random rand = new Random();
-        byte[] bytes = new byte[rand.nextInt(11) + 30]; // a random size from 30 to 40
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = MULTIPART_CHARS[rand.nextInt(MULTIPART_CHARS.length)];
-        }
-        return bytes;
+    private MultipartBodyFactory() {
     }
-
-    private final byte[] multipartBoundary;
-
-    private final String contentType;
-
-    private final long contentLength;
-
+    
     /**
      * Creates a new multipart entity containing the given parts.
      * 
      * @param parts
      *            The parts to include.
      */
-    public MultipartRequestEntity(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
+    public static MultipartBody newMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
             throw new IllegalArgumentException("parts cannot be null");
         }
+        
+        byte[] multipartBoundary;
+        String contentType;
+        
         String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
         if (isNonEmpty(contentTypeHeader)) {
             int boundaryLocation = contentTypeHeader.indexOf("boundary=");
@@ -80,38 +62,31 @@ public class MultipartRequestEntity implements RequestEntity {
             } else {
                 // generate boundary and append it to existing Content-Type
                 multipartBoundary = generateMultipartBoundary();
-                contentType = computeContentType(contentTypeHeader);
+                contentType = computeContentType(contentTypeHeader, multipartBoundary);
             }
         } else {
             multipartBoundary = generateMultipartBoundary();
-            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE);
+            contentType = computeContentType(MULTIPART_FORM_CONTENT_TYPE, multipartBoundary);
         }
 
-        contentLength = Part.getLengthOfParts(parts, multipartBoundary);
+        long contentLength = Part.getLengthOfParts(parts, multipartBoundary);
+        
+        return new MultipartBody(parts, contentType, contentLength, multipartBoundary);
     }
 
-    private String computeContentType(String base) {
+    private static byte[] generateMultipartBoundary() {
+        Random rand = new Random();
+        byte[] bytes = new byte[rand.nextInt(11) + 30]; // a random size from 30 to 40
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = MULTIPART_CHARS[rand.nextInt(MULTIPART_CHARS.length)];
+        }
+        return bytes;
+    }
+    
+    private static String computeContentType(String base, byte[] multipartBoundary) {
         StringBuilder buffer = new StringBuilder(base);
         if (!base.endsWith(";"))
             buffer.append(";");
         return buffer.append(" boundary=").append(new String(multipartBoundary, StandardCharsets.US_ASCII)).toString();
-    }
-
-    /**
-     * Returns the MIME boundary string that is used to demarcate boundaries of this part. The first call to this method will implicitly create a new boundary string. To create a
-     * boundary string first the HttpMethodParams.MULTIPART_BOUNDARY parameter is considered. Otherwise a random one is generated.
-     * 
-     * @return The boundary string of this entity in ASCII encoding.
-     */
-    public byte[] getMultipartBoundary() {
-        return multipartBoundary;
-    }
-
-    public long getContentLength() {
-        return contentLength;
-    }
-
-    public String getContentType() {
-        return contentType;
     }
 }

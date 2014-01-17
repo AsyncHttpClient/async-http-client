@@ -16,7 +16,7 @@ package org.asynchttpclient.providers.grizzly.bodyhandler;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.multipart.MultipartBody;
-import org.asynchttpclient.multipart.MultipartRequestEntity;
+import org.asynchttpclient.multipart.MultipartBodyFactory;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.grizzly.FeedableBodyGenerator;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
@@ -46,12 +46,9 @@ public final class PartsBodyHandler implements BodyHandler {
     throws IOException {
 
         final List<Part> parts = request.getParts();
-        final MultipartRequestEntity mre = new MultipartRequestEntity(parts, request.getHeaders());
-        final long contentLength = mre.getContentLength();
-        final String contentType = mre.getContentType();
-        final byte[] multipartBoundary = mre.getMultipartBoundary();
-        requestPacket.setContentLengthLong(contentLength);
-        requestPacket.setContentType(contentType);
+        final MultipartBody multipartBody = MultipartBodyFactory.newMultipartBody(parts, request.getHeaders());
+        requestPacket.setContentLengthLong(multipartBody.getContentLength());
+        requestPacket.setContentType(multipartBody.getContentType());
         if (GrizzlyAsyncHttpProvider.LOGGER.isDebugEnabled()) {
             GrizzlyAsyncHttpProvider.LOGGER.debug(
                     "REQUEST(modified): contentLength={}, contentType={}",
@@ -64,7 +61,7 @@ public final class PartsBodyHandler implements BodyHandler {
         final FeedableBodyGenerator generator = new FeedableBodyGenerator() {
             @Override
             public Body createBody() throws IOException {
-                return new MultipartBody(parts, contentType, contentLength, multipartBoundary);
+                return multipartBody;
             }
         };
         generator.setFeeder(new FeedableBodyGenerator.BaseFeeder(generator) {

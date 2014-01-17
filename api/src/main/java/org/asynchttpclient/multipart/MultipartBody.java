@@ -37,6 +37,7 @@ public class MultipartBody implements RandomAccessBody {
 
     private final byte[] boundary;
     private final long contentLength;
+    private final String contentType;
     private final List<Part> parts;
     // FIXME why keep all of them open?
     private final List<RandomAccessFile> files = new ArrayList<RandomAccessFile>();
@@ -57,6 +58,7 @@ public class MultipartBody implements RandomAccessBody {
     public MultipartBody(List<Part> parts, String contentType, long contentLength, byte[] boundary) {
         this.boundary = boundary;
         this.contentLength = contentLength;
+        this.contentType = contentType;
         this.parts = parts;
     }
 
@@ -68,6 +70,10 @@ public class MultipartBody implements RandomAccessBody {
 
     public long getContentLength() {
         return contentLength;
+    }
+
+    public String getContentType() {
+        return contentType;
     }
 
     public long read(ByteBuffer buffer) throws IOException {
