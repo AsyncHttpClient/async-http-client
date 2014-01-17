@@ -13,6 +13,7 @@
 package org.asynchttpclient.consumers;
 
 import org.asynchttpclient.BodyConsumer;
+import org.asynchttpclient.util.StandardCharsets;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,12 +34,9 @@ public class AppendableBodyConsumer implements BodyConsumer {
 
     public AppendableBodyConsumer(Appendable appendable) {
         this.appendable = appendable;
-        this.encoding = "UTF-8";
+        this.encoding = StandardCharsets.UTF_8.name();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void consume(ByteBuffer byteBuffer) throws IOException {
         appendable.append(new String(byteBuffer.array(),
@@ -47,9 +45,6 @@ public class AppendableBodyConsumer implements BodyConsumer {
                                      encoding));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() throws IOException {
         if (appendable instanceof Closeable) {

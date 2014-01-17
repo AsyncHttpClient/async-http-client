@@ -31,6 +31,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.io.FileUtils;
 import org.asynchttpclient.async.HostnameVerifierTest;
+import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -69,7 +70,7 @@ public class TestUtils {
             LARGE_IMAGE_FILE = new File(TestUtils.class.getClassLoader().getResource("300k.png").toURI());
             LARGE_IMAGE_BYTES = FileUtils.readFileToByteArray(LARGE_IMAGE_FILE);
             SIMPLE_TEXT_FILE = new File(TestUtils.class.getClassLoader().getResource("SimpleTextFile.txt").toURI());
-            SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, "UTF-8");
+            SIMPLE_TEXT_FILE_STRING = FileUtils.readFileToString(SIMPLE_TEXT_FILE, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }

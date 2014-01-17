@@ -55,6 +55,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.multipart.StringPart;
+import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
@@ -653,7 +654,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             final CountDownLatch l = new CountDownLatch(1);
 
-            Part p = new StringPart("foo", "bar", "UTF-8");
+            Part p = new StringPart("foo", "bar", StandardCharsets.UTF_8.name());
 
             client.preparePost(getTargetUrl()).addBodyPart(p).execute(new AsyncCompletionHandlerAdapter() {
 
@@ -1598,7 +1599,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         try {
             Response response = client.preparePost(getTargetUrl()).setBody("MIRROR").execute().get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(new String(response.getResponseBodyAsBytes(), "UTF-8"), "MIRROR");
+            assertEquals(new String(response.getResponseBodyAsBytes(), StandardCharsets.UTF_8), "MIRROR");
         } finally {
             client.close();
         }

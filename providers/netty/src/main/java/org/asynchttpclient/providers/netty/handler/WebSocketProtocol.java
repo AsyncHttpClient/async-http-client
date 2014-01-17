@@ -33,7 +33,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
@@ -44,6 +43,7 @@ import org.asynchttpclient.providers.netty.response.ResponseHeaders;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
 import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
+import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +69,7 @@ final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void handle(ChannelHandlerContext ctx, NettyResponseFuture future, Object e) throws Exception {
+    public void handle(ChannelHandlerContext ctx, NettyResponseFuture<?> future, Object e) throws Exception {
         WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
         Request request = future.getRequest();
 
@@ -138,7 +138,7 @@ final class WebSocketProtocol extends Protocol {
                             if (binaryFrame) {
                                 webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                             } else {
-                                webSocket.onTextFragment(buf.toString(Constants.UTF8), frame.isFinalFragment());
+                                webSocket.onTextFragment(buf.toString(StandardCharsets.UTF_8), frame.isFinalFragment());
                             }
                         } finally {
                             buf.release();

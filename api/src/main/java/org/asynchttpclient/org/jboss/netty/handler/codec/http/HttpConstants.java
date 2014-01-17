@@ -17,6 +17,8 @@ package org.asynchttpclient.org.jboss.netty.handler.codec.http;
 
 import java.nio.charset.Charset;
 
+import org.asynchttpclient.util.StandardCharsets;
+
 public final class HttpConstants {
 
     /**
@@ -67,7 +69,7 @@ public final class HttpConstants {
     /**
      * Default character set (UTF-8)
      */
-    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private HttpConstants() {
         // Unused

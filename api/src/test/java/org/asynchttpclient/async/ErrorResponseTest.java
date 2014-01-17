@@ -18,6 +18,7 @@ package org.asynchttpclient.async;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -25,6 +26,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
@@ -50,7 +52,7 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
             response.setContentType("text/plain");
             response.setStatus(400);
             OutputStream out = response.getOutputStream();
-            out.write(BAD_REQUEST_STR.getBytes("UTF-8"));
+            out.write(BAD_REQUEST_STR.getBytes(StandardCharsets.UTF_8));
             out.flush();
         }
     }

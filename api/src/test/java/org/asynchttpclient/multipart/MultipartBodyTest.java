@@ -14,7 +14,6 @@ package org.asynchttpclient.multipart;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -23,6 +22,7 @@ import java.util.List;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.util.StandardCharsets;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -37,13 +37,10 @@ public class MultipartBodyTest {
         parts.add(new FilePart("filePart", testFile));
 
         // add a byte array
-        try {
-            parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes("utf-8"), "application/test", "utf-8", "fileName"));
-        } catch (UnsupportedEncodingException ignore) {
-        }
+        parts.add(new ByteArrayPart("baPart", "testMultiPart".getBytes(StandardCharsets.UTF_8), "application/test", StandardCharsets.UTF_8.name(), "fileName"));
 
         // add a string
-        parts.add(new StringPart("stringPart", "testString", "utf-8"));
+        parts.add(new StringPart("stringPart", "testString", StandardCharsets.UTF_8.name()));
 
         compareContentLength(parts);
     }

@@ -19,6 +19,7 @@ import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -406,7 +407,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         if (useRawUrl) {
                             addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
                         } else {
-                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
+                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), StandardCharsets.UTF_8.name()), URLDecoder.decode(query.substring(pos + 1), StandardCharsets.UTF_8.name()));
                         }
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);

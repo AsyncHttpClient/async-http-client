@@ -34,6 +34,7 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
 /**
@@ -185,7 +186,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     public void testUrlRequestParametersEncoding() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, "UTF-8");
+            String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, StandardCharsets.UTF_8.name());
             logger.info(String.format("Executing request [%s] ...", requestUrl2));
             Response response = client.prepareGet(requestUrl2).execute().get();
             assertEquals(response.getStatusCode(), 301);

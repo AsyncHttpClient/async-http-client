@@ -260,7 +260,7 @@ public class Realm {
         private String methodName = "GET";
         private boolean usePreemptive = false;
         private String domain = System.getProperty("http.auth.ntlm.domain", "");
-        private String enc = "UTF-8";
+        private String enc = StandardCharsets.UTF_8.name();
         private String host = "localhost";
         private boolean messageType2Received = false;
 

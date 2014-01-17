@@ -136,7 +136,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
         try {
             tmpFile = File.createTempFile("textbytearray", ".txt");
             os = new FileOutputStream(tmpFile);
-            IOUtils.write(expectedContents.getBytes("UTF-8"), os);
+            IOUtils.write(expectedContents.getBytes(StandardCharsets.UTF_8), os);
             tmpFileCreated = true;
 
             testFiles.add(tmpFile);
@@ -169,10 +169,10 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
             RequestBuilder builder = new RequestBuilder("POST");
             builder.setUrl("http://localhost" + ":" + port1 + "/upload/bob");
-            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new FilePart("file1", testResource1File, "text/plain", StandardCharsets.UTF_8.name()));
             builder.addBodyPart(new FilePart("file2", testResource2File, "application/x-gzip", null));
-            builder.addBodyPart(new StringPart("Name", "Dominic", "UTF-8"));
-            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", "UTF-8"));
+            builder.addBodyPart(new StringPart("Name", "Dominic", StandardCharsets.UTF_8.name()));
+            builder.addBodyPart(new FilePart("file3", testResource3File, "text/plain", StandardCharsets.UTF_8.name()));
 
             builder.addBodyPart(new StringPart("Age", "3", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));
             builder.addBodyPart(new StringPart("Height", "shrimplike", AsyncHttpProviderUtils.DEFAULT_CHARSET.name()));

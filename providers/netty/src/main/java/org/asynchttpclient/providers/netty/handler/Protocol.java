@@ -151,7 +151,7 @@ public abstract class Protocol {
             throws IOException {
 
         if (!config.getResponseFilters().isEmpty()) {
-            AsyncHandler handler = future.getAsyncHandler();
+            AsyncHandler<?> handler = future.getAsyncHandler();
             FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
                     .build();
 

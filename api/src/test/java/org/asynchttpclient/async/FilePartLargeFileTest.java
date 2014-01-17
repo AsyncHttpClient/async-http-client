@@ -27,6 +27,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.multipart.FilePart;
+import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
@@ -62,7 +63,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutImageFile() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build());
         try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", "UTF-8")).execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", StandardCharsets.UTF_8.name())).execute().get();
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();
@@ -75,7 +76,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", "UTF-8")).execute().get();
+            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", StandardCharsets.UTF_8.name())).execute().get();
             assertEquals(response.getStatusCode(), 200);
         } finally {
             client.close();

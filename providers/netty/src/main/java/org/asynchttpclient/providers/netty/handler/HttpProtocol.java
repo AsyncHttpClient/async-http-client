@@ -44,9 +44,6 @@ import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.providers.netty.Callback;
@@ -342,7 +339,7 @@ final class HttpProtocol extends Protocol {
     }
 
     @Override
-    public void handle(final ChannelHandlerContext ctx, final NettyResponseFuture future, final Object e) throws Exception {
+    public void handle(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final Object e) throws Exception {
         future.touch();
 
         // The connect timeout occurred.
@@ -352,7 +349,7 @@ final class HttpProtocol extends Protocol {
         }
 
         NettyRequest nettyRequest = future.getNettyRequest();
-        AsyncHandler handler = future.getAsyncHandler();
+        AsyncHandler<?> handler = future.getAsyncHandler();
         ProxyServer proxyServer = future.getProxyServer();
         try {
             if (e instanceof HttpResponse) {

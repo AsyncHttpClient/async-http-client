@@ -29,6 +29,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -71,8 +72,8 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
             OutputStream out = response.getOutputStream();
             if (request.getHeader("X-Content") != null) {
                 String content = request.getHeader("X-Content");
-                response.setHeader("Content-Length", String.valueOf(content.getBytes("UTF-8").length));
-                out.write(content.substring(1).getBytes("UTF-8"));
+                response.setHeader("Content-Length", String.valueOf(content.getBytes(StandardCharsets.UTF_8).length));
+                out.write(content.substring(1).getBytes(StandardCharsets.UTF_8));
             } else {
                 response.setStatus(200);
             }

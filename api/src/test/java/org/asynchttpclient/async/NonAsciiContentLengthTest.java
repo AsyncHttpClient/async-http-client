@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -78,11 +79,11 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding("UTF-8");
+            BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding(StandardCharsets.UTF_8.name());
             Future<Response> f = r.execute();
             Response resp = f.get();
             assertEquals(resp.getStatusCode(), 200);
-            assertEquals(body, resp.getResponseBody("UTF-8"));
+            assertEquals(body, resp.getResponseBody(StandardCharsets.UTF_8.name()));
         } finally {
             client.close();
         }

@@ -36,6 +36,7 @@ import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
+import org.asynchttpclient.util.StandardCharsets;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
@@ -81,28 +82,24 @@ import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 /**
- * This {@link org.glassfish.grizzly.filterchain.Filter} is typically the last
- * in the {@FilterChain}.  Its primary responsibility is converting the
- * async-http-client {@link Request} into a Grizzly {@link HttpRequestPacket}.
- *
+ * This {@link org.glassfish.grizzly.filterchain.Filter} is typically the last in the {@FilterChain}. Its primary responsibility is converting the async-http-client
+ * {@link Request} into a Grizzly {@link HttpRequestPacket}.
+ * 
  * @since 1.7
  * @author The Grizzly Team
  */
 public final class AsyncHttpClientFilter extends BaseFilter {
 
-    private ConcurrentLinkedQueue<HttpRequestPacketImpl> requestCache
-                    = new ConcurrentLinkedQueue<HttpRequestPacketImpl>();
+    private ConcurrentLinkedQueue<HttpRequestPacketImpl> requestCache = new ConcurrentLinkedQueue<HttpRequestPacketImpl>();
     private final Logger logger;
 
     private final AsyncHttpClientConfig config;
     private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
     private final BodyHandlerFactory bodyHandlerFactory;
 
-    private static final Attribute<Boolean> PROXY_AUTH_FAILURE =
-           Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
+    private static final Attribute<Boolean> PROXY_AUTH_FAILURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
 
     // -------------------------------------------------------- Constructors
-
 
     public AsyncHttpClientFilter(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider, final AsyncHttpClientConfig config) {
         this.grizzlyAsyncHttpProvider = grizzlyAsyncHttpProvider;
@@ -111,19 +108,15 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         logger = GrizzlyAsyncHttpProvider.LOGGER;
     }
 
-
     // --------------------------------------------- Methods from BaseFilter
 
-
     @Override
-    public NextAction handleRead(final FilterChainContext ctx)
-    throws IOException {
+    public NextAction handleRead(final FilterChainContext ctx) throws IOException {
         final HttpContent httpContent = ctx.getMessage();
         if (httpContent.isLast()) {
             // Perform the cleanup logic if it's the last chunk of the payload
-            final HttpResponsePacket response =
-                    (HttpResponsePacket) httpContent.getHttpHeader();
-            
+            final HttpResponsePacket response = (HttpResponsePacket) httpContent.getHttpHeader();
+
             recycleRequestResponsePackets(ctx.getConnection(), response);
             return ctx.getStopAction();
         }
@@ -132,8 +125,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     @Override
-    public NextAction handleWrite(final FilterChainContext ctx)
-    throws IOException {
+    public NextAction handleWrite(final FilterChainContext ctx) throws IOException {
 
         Object message = ctx.getMessage();
         if (message instanceof RequestInfoHolder) {
@@ -150,14 +142,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     @SuppressWarnings("unchecked")
     @Override
-    public NextAction handleEvent(final FilterChainContext ctx,
-                                  final FilterChainEvent event)
-    throws IOException {
+    public NextAction handleEvent(final FilterChainContext ctx, final FilterChainEvent event) throws IOException {
 
         final Object type = event.type();
         if (type == ContinueEvent.class) {
-            final ContinueEvent
-                    continueEvent = (ContinueEvent) event;
+            final ContinueEvent continueEvent = (ContinueEvent) event;
             ((ExpectHandler) continueEvent.getContext().getBodyHandler()).finish(ctx);
         } else if (type == TunnelRequestEvent.class) {
             // Disable SSL for the time being...
@@ -173,28 +162,20 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             Request request = builder.build();
 
             AsyncHandler handler = new AsyncCompletionHandler() {
-                            @Override
-                            public Object onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != 200) {
-                                    PROXY_AUTH_FAILURE.set(ctx.getConnection(), Boolean.TRUE);
-                                }
-                                ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection()));
-                                ctx.notifyDownstream(event);
-                                return response;
-                            }
-                        };
-            final GrizzlyResponseFuture future =
-                    new GrizzlyResponseFuture(grizzlyAsyncHttpProvider,
-                                              request,
-                                              handler,
-                                              proxyServer);
+                @Override
+                public Object onCompleted(Response response) throws Exception {
+                    if (response.getStatusCode() != 200) {
+                        PROXY_AUTH_FAILURE.set(ctx.getConnection(), Boolean.TRUE);
+                    }
+                    ctx.notifyDownstream(new SSLSwitchingEvent(true, ctx.getConnection()));
+                    ctx.notifyDownstream(event);
+                    return response;
+                }
+            };
+            final GrizzlyResponseFuture future = new GrizzlyResponseFuture(grizzlyAsyncHttpProvider, request, handler, proxyServer);
             future.setDelegate(SafeFutureImpl.create());
 
-            grizzlyAsyncHttpProvider.execute(ctx.getConnection(),
-                                             request,
-                                             handler,
-                                             future,
-                                             HttpTxContext.get(ctx));
+            grizzlyAsyncHttpProvider.execute(ctx.getConnection(), request, handler, future, HttpTxContext.get(ctx));
             return ctx.getSuspendAction();
         }
 
@@ -202,11 +183,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     }
 
-
     // ----------------------------------------------------- Private Methods
 
-    private static void recycleRequestResponsePackets(final Connection c,
-                                                      final HttpResponsePacket response) {
+    private static void recycleRequestResponsePackets(final Connection c, final HttpResponsePacket response) {
         if (!Utils.isSpdyConnection(c)) {
             HttpRequestPacket request = response.getRequest();
             request.setExpectContent(false);
@@ -214,10 +193,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             request.recycle();
         }
     }
-    
-    private boolean sendAsGrizzlyRequest(final RequestInfoHolder requestInfoHolder,
-                                         final FilterChainContext ctx)
-    throws IOException {
+
+    private boolean sendAsGrizzlyRequest(final RequestInfoHolder requestInfoHolder, final FilterChainContext ctx) throws IOException {
 
         HttpTxContext httpTxContext = requestInfoHolder.getHttpTxContext();
         if (httpTxContext == null) {
@@ -233,7 +210,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         boolean secure = Utils.isSecure(uri);
 
         // If the request is secure, check to see if an error occurred during
-        // the handshake.  We have to do this here, as the error would occur
+        // the handshake. We have to do this here, as the error would occur
         // out of the scope of a HttpTxContext so there would be
         // no good way to communicate the problem to the caller.
         if (secure && checkHandshakeError(ctx, httpTxContext)) {
@@ -274,10 +251,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             try {
                 final URI wsURI = new URI(httpTxContext.getWsRequestURI());
                 httpTxContext.setProtocolHandler(Version.RFC6455.createHandler(true));
-                httpTxContext.setHandshake(
-                        httpTxContext.getProtocolHandler().createHandShake(wsURI));
-                requestPacket = (HttpRequestPacket)
-                        httpTxContext.getHandshake().composeHeaders().getHttpHeader();
+                httpTxContext.setHandshake(httpTxContext.getProtocolHandler().createHandShake(wsURI));
+                requestPacket = (HttpRequestPacket) httpTxContext.getHandshake().composeHeaders().getHttpHeader();
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid WS URI: " + httpTxContext.getWsRequestURI());
             }
@@ -296,7 +271,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         if (secure) {
             // Check to see if the ProtocolNegotiator has given
-            // us a different FilterChain to use.  If so, we need
+            // us a different FilterChain to use. If so, we need
             // use a different FilterChainContext when invoking sendRequest().
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
@@ -308,10 +283,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final Lock lock = session.getNewClientStreamLock();
             try {
                 lock.lock();
-                SpdyStream stream = session.openStream(
-                        requestPacketLocal,
-                        session.getNextLocalStreamId(),
-                        0, 0, 0, false, !requestPacketLocal.isExpectContent());
+                SpdyStream stream = session.openStream(requestPacketLocal, session.getNextLocalStreamId(), 0, 0, 0, false, !requestPacketLocal.isExpectContent());
                 HttpContext.newInstance(ctx, stream, stream, stream);
             } finally {
                 lock.unlock();
@@ -324,23 +296,16 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     }
 
     @SuppressWarnings("unchecked")
-    public boolean sendRequest(final FilterChainContext ctx,
-                               final Request request,
-                               final HttpRequestPacket requestPacket)
-    throws IOException {
+    public boolean sendRequest(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         boolean isWriteComplete = true;
 
         if (Utils.requestHasEntityBody(request)) {
-            final HttpTxContext context =
-                    HttpTxContext.get(ctx);
+            final HttpTxContext context = HttpTxContext.get(ctx);
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
-            if (requestPacket.getHeaders().contains(Header.Expect)
-                    && requestPacket.getHeaders()
-                        .getValue(1)
-                        .equalsIgnoreCase("100-Continue")) {
+            if (requestPacket.getHeaders().contains(Header.Expect) && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
                 // We have to set the content-length now as the headers will be flushed
-                // before the FileBodyHandler is invoked.  If we don't do it here, and
+                // before the FileBodyHandler is invoked. If we don't do it here, and
                 // the user didn't explicitly set the length, then the transfer-encoding
                 // will be chunked and zero-copy file transfer will not occur.
                 final File f = request.getFile();
@@ -355,60 +320,51 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             }
             isWriteComplete = handler.doHandle(ctx, request, requestPacket);
         } else {
-            HttpContent content =
-                    HttpContent.builder(requestPacket).last(true).build();
+            HttpContent content = HttpContent.builder(requestPacket).last(true).build();
             if (logger.isDebugEnabled()) {
                 logger.debug("REQUEST: {}", requestPacket);
             }
             ctx.write(content, ctx.getTransportContext().getCompletionHandler());
         }
 
-
         return isWriteComplete;
     }
 
-    private static FilterChainContext checkAndHandleFilterChainUpdate(final FilterChainContext ctx,
-                                                                      final FilterChainContext sendingCtx) {
+    private static FilterChainContext checkAndHandleFilterChainUpdate(final FilterChainContext ctx, final FilterChainContext sendingCtx) {
         FilterChainContext ctxLocal = sendingCtx;
-        SSLConnectionContext sslCtx =
-                SSLUtils.getSslConnectionContext(ctx.getConnection());
+        SSLConnectionContext sslCtx = SSLUtils.getSslConnectionContext(ctx.getConnection());
         if (sslCtx != null) {
             FilterChain fc = sslCtx.getNewConnectionFilterChain();
 
             if (fc != null) {
                 // Create a new FilterChain context using the new
                 // FilterChain.
-                // TODO:  We need to mark this connection somehow
-                //        as being only suitable for this type of
-                //        request.
+                // TODO: We need to mark this connection somehow
+                // as being only suitable for this type of
+                // request.
                 ctxLocal = obtainProtocolChainContext(ctx, fc);
             }
         }
         return ctxLocal;
     }
 
-    private static void initTransferCompletionHandler(final Request request,
-                                                      final AsyncHandler h)
-    throws IOException {
+    private static void initTransferCompletionHandler(final Request request, final AsyncHandler h) throws IOException {
         if (h instanceof TransferCompletionHandler) {
-            final FluentCaseInsensitiveStringsMap map =
-                    new FluentCaseInsensitiveStringsMap(request.getHeaders());
+            final FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap(request.getHeaders());
             TransferCompletionHandler.class.cast(h).headers(map);
         }
     }
 
-    private static boolean checkHandshakeError(final FilterChainContext ctx,
-                                               final HttpTxContext httpCtx) {
-            Throwable t = getHandshakeError(ctx.getConnection());
-            if (t != null) {
-                httpCtx.abort(t);
-                return true;
-            }
+    private static boolean checkHandshakeError(final FilterChainContext ctx, final HttpTxContext httpCtx) {
+        Throwable t = getHandshakeError(ctx.getConnection());
+        if (t != null) {
+            httpCtx.abort(t);
+            return true;
+        }
         return false;
     }
 
-    private static boolean checkProxyAuthFailure(final FilterChainContext ctx,
-                                                 final HttpTxContext httpCtx) {
+    private static boolean checkProxyAuthFailure(final FilterChainContext ctx, final HttpTxContext httpCtx) {
         final Boolean failed = PROXY_AUTH_FAILURE.get(ctx.getConnection());
         if (failed != null && failed) {
             httpCtx.abort(new IllegalStateException("Unable to authenticate with proxy"));
@@ -417,28 +373,19 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return false;
     }
 
-    private static FilterChainContext obtainProtocolChainContext(
-            final FilterChainContext ctx,
-            final FilterChain completeProtocolFilterChain) {
+    private static FilterChainContext obtainProtocolChainContext(final FilterChainContext ctx, final FilterChain completeProtocolFilterChain) {
 
-        final FilterChainContext newFilterChainContext =
-                completeProtocolFilterChain.obtainFilterChainContext(
-                        ctx.getConnection(),
-                        ctx.getStartIdx() + 1,
-                        completeProtocolFilterChain.size(),
-                        ctx.getFilterIdx() + 1);
+        final FilterChainContext newFilterChainContext = completeProtocolFilterChain.obtainFilterChainContext(ctx.getConnection(), ctx.getStartIdx() + 1,
+                completeProtocolFilterChain.size(), ctx.getFilterIdx() + 1);
 
         newFilterChainContext.setAddressHolder(ctx.getAddressHolder());
         newFilterChainContext.setMessage(ctx.getMessage());
-        newFilterChainContext.getInternalContext().setIoEvent(
-                ctx.getInternalContext().getIoEvent());
+        newFilterChainContext.getInternalContext().setIoEvent(ctx.getInternalContext().getIoEvent());
         ctx.getConnection().setProcessor(completeProtocolFilterChain);
         return newFilterChainContext;
     }
 
-    private static void addHostHeader(final Request request,
-                                      final URI uri,
-                                      final HttpRequestPacket requestPacket) {
+    private static void addHostHeader(final Request request, final URI uri, final HttpRequestPacket requestPacket) {
         String host = request.getVirtualHost();
         if (host != null) {
             requestPacket.addHeader(Header.Host, host);
@@ -472,8 +419,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         ctx.setRequestUrl(sb.toString());
     }
 
-    private void addGeneralHeaders(final Request request,
-                                   final HttpRequestPacket requestPacket) {
+    private void addGeneralHeaders(final Request request, final HttpRequestPacket requestPacket) {
 
         if (request.hasHeaders()) {
             final FluentCaseInsensitiveStringsMap map = request.getHeaders();
@@ -482,8 +428,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 final List<String> headerValues = entry.getValue();
                 if (isNonEmpty(headerValues)) {
                     for (int i = 0, len = headerValues.size(); i < len; i++) {
-                        requestPacket.addHeader(headerName,
-                                                headerValues.get(i));
+                        requestPacket.addHeader(headerName, headerValues.get(i));
                     }
                 }
             }
@@ -491,8 +436,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         final MimeHeaders headers = requestPacket.getHeaders();
         if (!headers.contains(Header.Connection)) {
-            //final boolean canCache = context.provider.clientConfig.getAllowPoolingConnection();
-            requestPacket.addHeader(Header.Connection, /*(canCache ? */"keep-alive" /*: "close")*/);
+            // final boolean canCache = context.provider.clientConfig.getAllowPoolingConnection();
+            requestPacket.addHeader(Header.Connection, /* (canCache ? */"keep-alive" /* : "close") */);
         }
 
         if (!headers.contains(Header.Accept)) {
@@ -505,15 +450,12 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     }
 
-
-    private void addCookies(final Request request,
-                                   final HttpRequestPacket requestPacket) {
+    private void addCookies(final Request request, final HttpRequestPacket requestPacket) {
 
         final Collection<Cookie> cookies = request.getCookies();
         if (isNonEmpty(cookies)) {
             StringBuilder sb = new StringBuilder(128);
-            org.glassfish.grizzly.http.Cookie[] gCookies =
-                    new org.glassfish.grizzly.http.Cookie[cookies.size()];
+            org.glassfish.grizzly.http.Cookie[] gCookies = new org.glassfish.grizzly.http.Cookie[cookies.size()];
             convertCookies(cookies, gCookies);
             CookieSerializerUtils.serializeClientCookies(sb, false, config.isRfc6265CookieEncoding(), gCookies);
             requestPacket.addHeader(Header.Cookie, sb.toString());
@@ -521,15 +463,11 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     }
 
-
-    private static void convertCookies(final Collection<Cookie> cookies,
-                                       final org.glassfish.grizzly.http.Cookie[] gCookies) {
+    private static void convertCookies(final Collection<Cookie> cookies, final org.glassfish.grizzly.http.Cookie[] gCookies) {
         int idx = 0;
         if (!cookies.isEmpty()) {
             for (final Cookie cookie : cookies) {
-                final org.glassfish.grizzly.http.Cookie gCookie =
-                        new org.glassfish.grizzly.http.Cookie(cookie.getName(),
-                                                              cookie.getValue());
+                final org.glassfish.grizzly.http.Cookie gCookie = new org.glassfish.grizzly.http.Cookie(cookie.getName(), cookie.getValue());
                 gCookie.setDomain(cookie.getDomain());
                 gCookie.setPath(cookie.getPath());
                 gCookie.setVersion(cookie.getVersion());
@@ -542,9 +480,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     }
 
-
-    private static void addQueryString(final Request request,
-                                       final HttpRequestPacket requestPacket) {
+    private static void addQueryString(final Request request, final HttpRequestPacket requestPacket) {
 
         final FluentStringsMap map = request.getQueryParams();
         if (isNonEmpty(map)) {
@@ -557,11 +493,10 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                         for (int i = 0, len = values.size(); i < len; i++) {
                             final String value = values.get(i);
                             if (isNonEmpty(value)) {
-                                sb.append(URLEncoder.encode(name, "UTF-8")).append('=')
-                                    .append(URLEncoder.encode(values.get(i),
-                                                              "UTF-8")).append('&');
+                                sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name())).append('=')
+                                        .append(URLEncoder.encode(values.get(i), StandardCharsets.UTF_8.name())).append('&');
                             } else {
-                                sb.append(URLEncoder.encode(name, "UTF-8")).append('&');
+                                sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name())).append('&');
                             }
                         }
                     } catch (UnsupportedEncodingException ignored) {
@@ -581,7 +516,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         private ProcessingState processingState = new ProcessingState();
 
         // -------------------------------------- Methods from HttpRequestPacketImpl
-
 
         @Override
         public ProcessingState getProcessingState() {

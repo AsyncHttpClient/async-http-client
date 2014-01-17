@@ -102,7 +102,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         Scanner scan = null;
         try {
-            scan = new Scanner(new File(TMP, storeName), "UTF-8");
+            scan = new Scanner(new File(TMP, storeName), StandardCharsets.UTF_8.name());
             scan.useDelimiter("[=\n]");
 
             String key;
