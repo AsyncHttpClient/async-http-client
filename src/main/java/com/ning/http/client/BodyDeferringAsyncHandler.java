@@ -80,7 +80,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
     private final OutputStream output;
 
-    private volatile boolean responseSet;
+    private boolean responseSet;
 
     private volatile Response response;
 
@@ -151,6 +151,12 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     public Response onCompleted() throws IOException {
+
+        if (!responseSet) {
+            response = responseBuilder.build();
+            responseSet = true;
+        }
+
         // Counting down to handle error cases too.
         // In "normal" cases, latch is already at 0 here
         // But in other cases, for example when because of some error
