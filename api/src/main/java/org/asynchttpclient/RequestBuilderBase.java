@@ -479,20 +479,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.parts = null;
     }
 
-    private void checkIfBodyAllowed() {
-        if ("HEAD".equals(request.method)) {
-            throw new IllegalArgumentException("Can NOT set Body on HTTP Request Method HEAD.");
-        }
-    }
-
     public T setBody(File file) {
-        checkIfBodyAllowed();
         request.file = file;
         return derived.cast(this);
     }
 
     public T setBody(byte[] data) throws IllegalArgumentException {
-        checkIfBodyAllowed();
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -501,7 +493,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(String data) throws IllegalArgumentException {
-        checkIfBodyAllowed();
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -510,7 +501,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(InputStream stream) throws IllegalArgumentException {
-        checkIfBodyAllowed();
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -519,7 +509,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(BodyGenerator bodyGenerator) {
-        checkIfBodyAllowed();
         request.bodyGenerator = bodyGenerator;
         return derived.cast(this);
     }
