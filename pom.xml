@@ -81,7 +81,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.6.6.Final</version>
+            <version>3.9.0.Final</version>
         </dependency>
 
         <dependency>
@@ -489,13 +489,13 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-websockets</artifactId>
-                    <version>2.3.7</version>
+                    <version>2.3.10</version>
                     <optional>true</optional>
                 </dependency>
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-http-server</artifactId>
-                    <version>2.3.5</version>
+                    <version>2.3.10</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
