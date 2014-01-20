@@ -15,10 +15,21 @@
  */
 package com.ning.http.client.providers.netty;
 
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.*;
-import static com.ning.http.util.AsyncHttpProviderUtils.*;
-import static com.ning.http.util.MiscUtil.*;
-import static org.jboss.netty.channel.Channels.*;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.REUSE_ADDRESS;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
+import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static org.jboss.netty.channel.Channels.pipeline;
 
 import java.io.File;
 import java.io.FileInputStream;

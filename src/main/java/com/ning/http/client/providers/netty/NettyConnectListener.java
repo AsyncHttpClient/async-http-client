@@ -41,7 +41,6 @@ import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 /**
  * Non Blocking connect.
  */
