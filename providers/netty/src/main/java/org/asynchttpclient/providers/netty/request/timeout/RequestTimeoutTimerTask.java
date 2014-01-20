@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.providers.netty.request.timeout;
 
-import static org.asynchttpclient.util.DateUtil.*;
+import static org.asynchttpclient.util.DateUtil.millisTime;
 import io.netty.util.Timeout;
 
 import java.util.concurrent.atomic.AtomicBoolean;

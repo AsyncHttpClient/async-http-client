@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.Constants;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
@@ -38,6 +37,8 @@ import org.slf4j.LoggerFactory;
 public class NettyFileBody implements NettyBody {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyFileBody.class);
+
+    public final static int MAX_BUFFERED_BYTES = 8192;
 
     private final File file;
     private final long offset;
@@ -81,7 +82,7 @@ public class NettyFileBody implements NettyBody {
         try {
             ChannelFuture writeFuture;
             if (Channels.getSslHandler(channel) != null) {
-                writeFuture = channel.write(new ChunkedFile(raf, offset, length, Constants.MAX_BUFFERED_BYTES), channel.newProgressivePromise());
+                writeFuture = channel.write(new ChunkedFile(raf, offset, length, MAX_BUFFERED_BYTES), channel.newProgressivePromise());
             } else {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
                 writeFuture = channel.write(region, channel.newProgressivePromise());

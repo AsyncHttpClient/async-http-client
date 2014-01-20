@@ -15,8 +15,11 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
+import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;

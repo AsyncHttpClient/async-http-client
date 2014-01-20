@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.providers.netty.future;
 
-import static org.asynchttpclient.util.DateUtil.*;
+import static org.asynchttpclient.util.DateUtil.millisTime;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;

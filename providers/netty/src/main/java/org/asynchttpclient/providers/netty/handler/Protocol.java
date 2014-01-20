@@ -12,8 +12,12 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
+import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
+import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
+import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;

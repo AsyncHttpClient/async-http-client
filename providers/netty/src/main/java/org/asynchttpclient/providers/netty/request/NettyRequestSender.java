@@ -15,7 +15,8 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

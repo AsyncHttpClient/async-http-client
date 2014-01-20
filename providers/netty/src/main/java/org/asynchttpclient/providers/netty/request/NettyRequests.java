@@ -15,9 +15,11 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtil.*;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.*;
-import static org.asynchttpclient.util.MiscUtil.*;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
