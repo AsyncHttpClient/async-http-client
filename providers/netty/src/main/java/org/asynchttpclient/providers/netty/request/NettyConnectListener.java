@@ -40,8 +40,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Non Blocking connect.
  */
-// FIXME Netty 3: NettyConnectListener don't need to be passed the request as
-// the future has it too
 final class NettyConnectListener<T> implements ChannelFutureListener {
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
@@ -79,7 +77,6 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 && (NettyResponseFutures.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
             LOGGER.debug("Retrying {} ", future.getNettyRequest());
-            // FIXME Netty 3 use the wrong statement
             if (requestSender.retry(channel, future)) {
                 return;
             }
@@ -111,7 +108,6 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         private final AsyncHandler<T> asyncHandler;
         private NettyResponseFuture<T> future;
 
-        // FIXME Netty3 useless constructor
         public Builder(AsyncHttpClientConfig config, NettyRequestSender requestSender, Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
 
             this.config = config;

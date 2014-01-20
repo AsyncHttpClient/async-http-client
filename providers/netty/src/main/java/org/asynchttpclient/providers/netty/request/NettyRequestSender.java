@@ -186,15 +186,19 @@ public class NettyRequestSender {
         return future;
     }
 
+    private InetSocketAddress remoteAddress(Request request, URI uri, ProxyServer proxy) {
+        if (request.getInetAddress() != null)
+            return new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
+
+        else if (proxy == null || ProxyUtils.avoidProxy(proxy, uri.getHost()))
+            return new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
+
+        else
+            return new InetSocketAddress(proxy.getHost(), proxy.getPort());
+    }
+
     private ChannelFuture connect(Request request, URI uri, ProxyServer proxy, Bootstrap bootstrap) {
-        InetSocketAddress remoteAddress;
-        if (request.getInetAddress() != null) {
-            remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
-        } else if (proxy == null || ProxyUtils.avoidProxy(proxy, uri.getHost())) {
-            remoteAddress = new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
-        } else {
-            remoteAddress = new InetSocketAddress(proxy.getHost(), proxy.getPort());
-        }
+        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy);
 
         if (request.getLocalAddress() != null) {
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
