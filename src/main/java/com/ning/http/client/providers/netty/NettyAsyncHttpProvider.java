@@ -15,50 +15,38 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.AsyncHandler.STATE;
-import com.ning.http.client.AsyncHandlerExtensions;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProvider;
-import com.ning.http.client.Body;
-import com.ning.http.client.BodyGenerator;
-import com.ning.http.client.ConnectionPoolKeyStrategy;
-import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
-import com.ning.http.client.ProgressAsyncHandler;
-import com.ning.http.client.ProxyServer;
-import com.ning.http.client.RandomAccessBody;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.IOExceptionFilter;
-import com.ning.http.client.filter.ResponseFilter;
-import com.ning.http.client.generators.InputStreamBodyGenerator;
-import com.ning.http.client.listener.TransferCompletionHandler;
-import com.ning.http.client.ntlm.NTLMEngine;
-import com.ning.http.client.ntlm.NTLMEngineException;
-import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
-import com.ning.http.client.websocket.WebSocketUpgradeHandler;
-import com.ning.http.multipart.MultipartBody;
-import com.ning.http.multipart.MultipartRequestEntity;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.AuthenticatorUtils;
-import com.ning.http.util.CleanupChannelGroup;
-import com.ning.http.util.ProxyUtils;
-import com.ning.http.util.SslUtils;
-import com.ning.http.util.UTF8UrlEncoder;
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
+import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.*;
+import static com.ning.http.util.AsyncHttpProviderUtils.*;
+import static com.ning.http.util.MiscUtil.*;
+import static org.jboss.netty.channel.Channels.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLEngine;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -104,56 +92,59 @@ import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLEngine;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
-import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.BOSS_EXECUTOR_SERVICE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.DISABLE_NESTED_REQUEST;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.EXECUTE_ASYNC_CONNECT;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_HEADER_SIZE;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.REUSE_ADDRESS;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
-import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
-import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static com.ning.http.util.DateUtil.millisTime;
-import static com.ning.http.util.MiscUtil.isNonEmpty;
-import static org.jboss.netty.channel.Channels.pipeline;
+import com.ning.http.client.AsyncHandler;
+import com.ning.http.client.AsyncHandler.STATE;
+import com.ning.http.client.AsyncHandlerExtensions;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.AsyncHttpProvider;
+import com.ning.http.client.Body;
+import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.ConnectionPoolKeyStrategy;
+import com.ning.http.client.ConnectionsPool;
+import com.ning.http.client.Cookie;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.PerRequestConfig;
+import com.ning.http.client.ProgressAsyncHandler;
+import com.ning.http.client.ProxyServer;
+import com.ning.http.client.RandomAccessBody;
+import com.ning.http.client.Realm;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Response;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.IOExceptionFilter;
+import com.ning.http.client.filter.ResponseFilter;
+import com.ning.http.client.generators.InputStreamBodyGenerator;
+import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.ntlm.NTLMEngine;
+import com.ning.http.client.ntlm.NTLMEngineException;
+import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
+import com.ning.http.client.providers.netty.timeout.IdleConnectionTimeoutTimerTask;
+import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
+import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
+import com.ning.http.client.websocket.WebSocketUpgradeHandler;
+import com.ning.http.multipart.MultipartBody;
+import com.ning.http.multipart.MultipartRequestEntity;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.AuthenticatorUtils;
+import com.ning.http.util.CleanupChannelGroup;
+import com.ning.http.util.ProxyUtils;
+import com.ning.http.util.SslUtils;
+import com.ning.http.util.UTF8UrlEncoder;
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
+import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
 
@@ -208,6 +199,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
+    private HashedWheelTimer hashedWheelTimer;
 
     private static boolean isNTLM(List<String> auth) {
         return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
@@ -271,6 +263,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         useRawUrl = config.isUseRawUrl();
+        
+        hashedWheelTimer = new HashedWheelTimer();
+        hashedWheelTimer.start();
     }
 
     @Override
@@ -597,18 +592,24 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             future.touch();
-            int requestTimeout = requestTimeoutInMs(config, future.getRequest().getPerRequestConfig());
-            int schedulePeriod = requestTimeout != -1 ? (config.getIdleConnectionTimeoutInMs() != -1 ? Math.min(requestTimeout, config.getIdleConnectionTimeoutInMs()) : requestTimeout) : config.getIdleConnectionTimeoutInMs();
-            if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
-                ReaperFuture reaperFuture = new ReaperFuture(future);
-                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
-                reaperFuture.setScheduledFuture(scheduledFuture);
-                future.setReaperFuture(reaperFuture);
+            int requestTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
+            TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
+            if (requestTimeoutInMs != -1) {
+                Timeout requestTimeout = newTimeoutInMs(new RequestTimeoutTimerTask(future, this, timeoutsHolder), requestTimeoutInMs);
+                timeoutsHolder.requestTimeout = requestTimeout;
             }
+
+            int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
+            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs < requestTimeoutInMs) {
+                // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
+                Timeout idleConnectionTimeout = newTimeoutInMs(new IdleConnectionTimeoutTimerTask(future, this, timeoutsHolder,
+                        requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
+                timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;    
+            }
+
         } catch (RejectedExecutionException ex) {
             abort(future, ex);
         }
-
     }
 
     protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
@@ -871,7 +872,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
                 if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
                     NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-                    future.setReaperFuture(null);
+                    future.cancelTimeouts();
                 }
             }
 
@@ -884,6 +885,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 webSocketBootstrap.releaseExternalResources();
                 secureWebSocketBootstrap.releaseExternalResources();
             }
+
+            hashedWheelTimer.stop();
+
         } catch (Throwable t) {
             log.warn("Unexpected error on close", t);
         }
@@ -907,7 +911,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
 
-        if (isClose.get()) {
+        if (isClose()) {
             throw new IOException("Closed");
         }
 
@@ -1329,7 +1333,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         execute(request, future, useCache, true, true);
     }
 
-    private void abort(NettyResponseFuture<?> future, Throwable t) {
+    public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
         if (channel != null && openChannels.contains(channel)) {
             closeChannel(channel.getPipeline().getContext(NettyAsyncHttpProvider.class));
@@ -1364,7 +1368,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
 
-        if (isClose.get()) {
+        if (isClose()) {
             return;
         }
 
@@ -1413,7 +1417,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
     protected boolean remotelyClosed(Channel channel, NettyResponseFuture<?> future) {
 
-        if (isClose.get()) {
+        if (isClose()) {
             return true;
         }
 
@@ -1721,94 +1725,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             future.touch();
             if (asyncHandler instanceof ProgressAsyncHandler) {
                 ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(amount, current, total);
-            }
-        }
-    }
-
-    /**
-     * Because some implementation of the ThreadSchedulingService do not clean up cancel task until they try to run them, we wrap the task with the future so the when the NettyResponseFuture cancel the reaper future this wrapper will release the references to the channel and the
-     * nettyResponseFuture immediately. Otherwise, the memory referenced this way will only be released after the request timeout period which can be arbitrary long.
-     */
-    private final class ReaperFuture implements Future, Runnable {
-        private Future scheduledFuture;
-        private NettyResponseFuture<?> nettyResponseFuture;
-
-        public ReaperFuture(NettyResponseFuture<?> nettyResponseFuture) {
-            this.nettyResponseFuture = nettyResponseFuture;
-        }
-
-        public void setScheduledFuture(Future scheduledFuture) {
-            this.scheduledFuture = scheduledFuture;
-        }
-
-        /**
-         * @Override
-         */
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            nettyResponseFuture = null;
-            return scheduledFuture.cancel(mayInterruptIfRunning);
-        }
-
-        /**
-         * @Override
-         */
-        public Object get() throws InterruptedException, ExecutionException {
-            return scheduledFuture.get();
-        }
-
-        /**
-         * @Override
-         */
-        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return scheduledFuture.get(timeout, unit);
-        }
-
-        /**
-         * @Override
-         */
-        public boolean isCancelled() {
-            return scheduledFuture.isCancelled();
-        }
-
-        /**
-         * @Override
-         */
-        public boolean isDone() {
-            return scheduledFuture.isDone();
-        }
-
-        private void expire(String message) {
-            log.debug("{} for {}", message, nettyResponseFuture);
-            abort(nettyResponseFuture, new TimeoutException(message));
-            nettyResponseFuture = null;
-        }
-
-        /**
-         * @Override
-         */
-        public synchronized void run() {
-            if (isClose.get()) {
-                cancel(true);
-                return;
-            }
-
-            boolean futureDone = nettyResponseFuture.isDone();
-            boolean futureCanceled = nettyResponseFuture.isCancelled();
-
-            if (nettyResponseFuture != null && !futureDone && !futureCanceled) {
-
-                long now = millisTime();
-                if (nettyResponseFuture.hasRequestTimedOut(now)) {
-                    long age = now - nettyResponseFuture.getStart();
-                    expire("Request reached time out of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms after " + age + " ms");
-
-                } else if (nettyResponseFuture.hasConnectionIdleTimedOut(now)) {
-                    long age = now - nettyResponseFuture.getStart();
-                    expire("Request reached idle time out of " + nettyResponseFuture.getIdleConnectionTimeoutInMs() + " ms after " + age + " ms");
-                }
-
-            } else if (nettyResponseFuture == null || futureDone || futureCanceled) {
-                cancel(true);
             }
         }
     }
@@ -2450,6 +2366,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 log.error("onError", t);
             }
         }
+    }
+    
+    public boolean isClose() {
+        return isClose.get();
+    }
+    
+    public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
+        return hashedWheelTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
     }
 
     private static boolean isWebSocket(URI uri) {

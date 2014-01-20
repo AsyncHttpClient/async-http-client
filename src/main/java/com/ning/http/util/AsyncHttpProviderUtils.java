@@ -35,6 +35,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Part;
+import com.ning.http.client.Request;
 import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -547,5 +548,9 @@ public class AsyncHttpProviderUtils {
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
         return config.getAllowPoolingConnection() ? "keep-alive" : "close";
+    }
+    
+    public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
+        return (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != 0) ? request.getPerRequestConfig().getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
     }
 }

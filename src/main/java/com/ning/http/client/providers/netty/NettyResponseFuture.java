@@ -41,6 +41,7 @@ import com.ning.http.client.ConnectionPoolKeyStrategy;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
+import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
 
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.
@@ -70,7 +71,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
     private final AtomicInteger redirectCount = new AtomicInteger();
-    private volatile Future<?> reaperFuture;
+    private volatile boolean requestTimeoutReached;
+    private volatile boolean idleConnectionTimeoutReached;
+    private volatile TimeoutsHolder timeoutsHolder;
     private final AtomicBoolean inAuth = new AtomicBoolean(false);
     private final AtomicBoolean statusReceived = new AtomicBoolean(false);
     private final AtomicLong touch = new AtomicLong(millisTime());
@@ -159,7 +162,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public boolean cancel(boolean force) {
-        cancelReaper();
+        cancelTimeouts();
 
         if (isCancelled.get())
             return false;
@@ -189,16 +192,23 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        long now = millisTime();
-        return hasConnectionIdleTimedOut(now) || hasRequestTimedOut(now);
+        return requestTimeoutReached || idleConnectionTimeoutReached;
     }
 
-    public boolean hasConnectionIdleTimedOut(long now) {
-        return idleConnectionTimeoutInMs != -1 && (now - touch.get()) >= idleConnectionTimeoutInMs;
+    public void setRequestTimeoutReached() {
+        this.requestTimeoutReached = true;
     }
 
-    public boolean hasRequestTimedOut(long now) {
-        return requestTimeoutInMs != -1 && (now - start) >= requestTimeoutInMs;
+    public boolean isRequestTimeoutReached() {
+        return requestTimeoutReached;
+    }
+
+    public void setIdleConnectionTimeoutReached() {
+        this.idleConnectionTimeoutReached = true;
+    }
+
+    public boolean isIdleConnectionTimeoutReached() {
+        return idleConnectionTimeoutReached;
     }
 
     /**
@@ -209,14 +219,15 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         try {
             return get(requestTimeoutInMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            cancelReaper();
+            cancelTimeouts();
             throw new ExecutionException(e);
         }
     }
 
-    void cancelReaper() {
-        if (reaperFuture != null) {
-            reaperFuture.cancel(false);
+    public void cancelTimeouts() {
+        if (timeoutsHolder != null) {
+            timeoutsHolder.cancel();
+            timeoutsHolder = null;
         }
     }
 
@@ -251,7 +262,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         }
                         throw new ExecutionException(te);
                     } finally {
-                        cancelReaper();
+                        cancelTimeouts();
                     }
                 }
             }
@@ -287,7 +298,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         }
                         throw new RuntimeException(ex);
                     } finally {
-                        cancelReaper();
+                        cancelTimeouts();
                     }
                 }
             }
@@ -299,7 +310,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public final void done() {
 
         try {
-            cancelReaper();
+            cancelTimeouts();
 
             if (exEx.get() != null) {
                 return;
@@ -320,7 +331,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void abort(final Throwable t) {
-        cancelReaper();
+        cancelTimeouts();
 
         if (isDone.get() || isCancelled.get())
             return;
@@ -379,11 +390,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return redirectCount.incrementAndGet();
     }
 
-    protected void setReaperFuture(Future<?> reaperFuture) {
-        cancelReaper();
-        this.reaperFuture = reaperFuture;
-    }
-
     protected boolean isInAuth() {
         return inAuth.get();
     }
@@ -407,15 +413,17 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
     public void touch() {
         touch.set(millisTime());
+    }
+
+    public long getLastTouch() {
+        return touch.get();
     }
 
     /**
      * {@inheritDoc}
      */
-    /* @Override */
     public boolean getAndSetWriteHeaders(boolean writeHeaders) {
         boolean b = this.writeHeaders;
         this.writeHeaders = writeHeaders;
@@ -425,7 +433,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     /**
      * {@inheritDoc}
      */
-    /* @Override */
     public boolean getAndSetWriteBody(boolean writeBody) {
         boolean b = this.writeBody;
         this.writeBody = writeBody;
@@ -512,7 +519,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\thttpResponse=" + httpResponse + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\treaperFuture=" + reaperFuture + //
+                ",\n\ttimeoutsHolder=" + timeoutsHolder + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //
