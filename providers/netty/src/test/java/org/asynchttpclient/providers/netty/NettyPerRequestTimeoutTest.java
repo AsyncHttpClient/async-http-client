@@ -19,13 +19,12 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.PerRequestTimeoutTest;
 
 public class NettyPerRequestTimeoutTest extends PerRequestTimeoutTest {
-    
+
     @Override
     protected void checkTimeoutMessage(String message) {
-        assertTrue(message
-                .startsWith("Request reached time out of 100 ms after "));
+        assertTrue(message.startsWith("Request reached timeout of 100 ms after "));
     }
-    
+
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);

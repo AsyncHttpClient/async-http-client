@@ -37,6 +37,9 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -46,6 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
 
@@ -103,6 +107,8 @@ public class Channels {
             return removed;
         }
     };
+
+    private final HashedWheelTimer hashedWheelTimer;
 
     public Channels(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig asyncHttpProviderConfig) {
 
@@ -176,6 +182,9 @@ public class Channels {
         webSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureWebSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
+
+        hashedWheelTimer = new HashedWheelTimer();
+        hashedWheelTimer.start();
     }
 
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
@@ -271,13 +280,15 @@ public class Channels {
             Object attribute = getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
-                future.setReaperFuture(null);
+                future.cancelTimeouts();
             }
         }
         openChannels.close();
         if (allowReleaseEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
+
+        hashedWheelTimer.stop();
     }
 
     // some servers can use the same port for HTTP and HTTPS
@@ -454,6 +465,10 @@ public class Channels {
         }
 
         future.abort(t);
+    }
+
+    public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
+        return hashedWheelTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
     }
 
     public static SslHandler getSslHandler(Channel channel) {

@@ -41,6 +41,7 @@ import org.asynchttpclient.listenable.AbstractListenableFuture;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.request.NettyRequest;
+import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     private final int requestTimeoutInMs;
-    private final AsyncHttpClientConfig config;
+    private volatile boolean requestTimeoutReached;
+    private volatile boolean idleConnectionTimeoutReached;
     private final long start = millisTime();
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
     private final ProxyServer proxyServer;
@@ -80,7 +82,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
     private final AtomicReference<V> content = new AtomicReference<V>();
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
-    private volatile FutureReaper reaperFuture;
+    private volatile TimeoutsHolder timeoutsHolder;
 
     // state mutated only inside the event loop
     private Channel channel;
@@ -111,7 +113,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.request = request;
         this.nettyRequest = nettyRequest;
         this.uri = uri;
-        this.config = config;
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
 
@@ -156,7 +157,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     @Override
     public boolean cancel(boolean force) {
-        cancelReaper();
+        cancelTimeouts();
 
         if (isCancelled.get())
             return false;
@@ -186,16 +187,23 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      * @return <code>true</code> if response has expired and should be terminated.
      */
     public boolean hasExpired() {
-        long now = millisTime();
-        return hasConnectionIdleTimedOut(now) || hasRequestTimedOut(now);
+        return requestTimeoutReached || idleConnectionTimeoutReached;
     }
 
-    public boolean hasConnectionIdleTimedOut(long now) {
-        return config.getIdleConnectionTimeoutInMs() != -1 && (now - touch.get()) >= config.getIdleConnectionTimeoutInMs();
+    public void setRequestTimeoutReached() {
+        this.requestTimeoutReached = true;
     }
 
-    public boolean hasRequestTimedOut(long now) {
-        return requestTimeoutInMs != -1 && (now - start) >= requestTimeoutInMs;
+    public boolean isRequestTimeoutReached() {
+        return requestTimeoutReached;
+    }
+
+    public void setIdleConnectionTimeoutReached() {
+        this.idleConnectionTimeoutReached = true;
+    }
+
+    public boolean isIdleConnectionTimeoutReached() {
+        return idleConnectionTimeoutReached;
     }
 
     @Override
@@ -203,14 +211,15 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         try {
             return get(requestTimeoutInMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            cancelReaper();
+            cancelTimeouts();
             throw new ExecutionException(e);
         }
     }
 
-    public void cancelReaper() {
-        if (reaperFuture != null) {
-            reaperFuture.cancel(false);
+    public void cancelTimeouts() {
+        if (timeoutsHolder != null) {
+            timeoutsHolder.cancel();
+            timeoutsHolder = null;
         }
     }
 
@@ -242,7 +251,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         }
                         throw new ExecutionException(te);
                     } finally {
-                        cancelReaper();
+                        cancelTimeouts();
                     }
                 }
             }
@@ -278,7 +287,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                         }
                         throw new RuntimeException(ex);
                     } finally {
-                        cancelReaper();
+                        cancelTimeouts();
                     }
                 }
             }
@@ -290,7 +299,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public final void done() {
 
         try {
-            cancelReaper();
+            cancelTimeouts();
 
             if (exEx.get() != null) {
                 return;
@@ -311,7 +320,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void abort(final Throwable t) {
-        cancelReaper();
+        cancelTimeouts();
 
         if (isDone.get() || isCancelled.get())
             return;
@@ -366,9 +375,8 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return redirectCount.incrementAndGet();
     }
 
-    public void setReaperFuture(FutureReaper reaperFuture) {
-        cancelReaper();
-        this.reaperFuture = reaperFuture;
+    public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
+        this.timeoutsHolder = timeoutsHolder;
     }
 
     public boolean isInAuth() {
@@ -410,6 +418,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     @Override
     public void touch() {
         touch.set(millisTime());
+    }
+    
+    public long getLastTouch() {
+        return touch.get();
     }
 
     @Override
@@ -499,7 +511,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 ",\n\thttpHeaders=" + httpHeaders + //
                 ",\n\texEx=" + exEx + //
                 ",\n\tredirectCount=" + redirectCount + //
-                ",\n\treaperFuture=" + reaperFuture + //
+                ",\n\timeoutsHolder=" + timeoutsHolder + //
                 ",\n\tinAuth=" + inAuth + //
                 ",\n\tstatusReceived=" + statusReceived + //
                 ",\n\ttouch=" + touch + //

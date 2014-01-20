@@ -22,14 +22,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.util.Timeout;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
@@ -45,9 +44,11 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
 import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.FutureReaper;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
+import org.asynchttpclient.providers.netty.request.timeout.IdleConnectionTimeoutTimerTask;
+import org.asynchttpclient.providers.netty.request.timeout.RequestTimeoutTimerTask;
+import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.ProxyUtils;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
@@ -268,21 +269,26 @@ public class NettyRequestSender {
         TransferCompletionHandler.class.cast(handler).headers(h);
     }
 
-    private void scheduleReaper(NettyResponseFuture<?> future) {
-        try {
-            future.touch();
-            int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
-            int schedulePeriod = requestTimeout != -1 ? (config.getIdleConnectionTimeoutInMs() != -1 ? Math.min(requestTimeout, config.getIdleConnectionTimeoutInMs())
-                    : requestTimeout) : config.getIdleConnectionTimeoutInMs();
+    private void scheduleTimeouts(NettyResponseFuture<?> nettyResponseFuture) {
 
-            if (schedulePeriod != -1 && !future.isDone() && !future.isCancelled()) {
-                FutureReaper reaperFuture = new FutureReaper(future, config, closed, channels);
-                Future<?> scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, 0, schedulePeriod, TimeUnit.MILLISECONDS);
-                reaperFuture.setScheduledFuture(scheduledFuture);
-                future.setReaperFuture(reaperFuture);
+        try {
+            nettyResponseFuture.touch();
+            int requestTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, nettyResponseFuture.getRequest());
+            TimeoutsHolder timeoutsHolder = new TimeoutsHolder();
+            if (requestTimeoutInMs != -1) {
+                Timeout requestTimeout = channels.newTimeoutInMs(new RequestTimeoutTimerTask(nettyResponseFuture, channels, timeoutsHolder, closed), requestTimeoutInMs);
+                timeoutsHolder.requestTimeout = requestTimeout;
+            }
+
+            int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
+            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs < requestTimeoutInMs) {
+                // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
+                Timeout idleConnectionTimeout = channels.newTimeoutInMs(new IdleConnectionTimeoutTimerTask(nettyResponseFuture, channels, timeoutsHolder, closed,
+                        requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
+                timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
             }
         } catch (RejectedExecutionException ex) {
-            channels.abort(future, ex);
+            channels.abort(nettyResponseFuture, ex);
         }
     }
 
@@ -335,7 +341,7 @@ public class NettyRequestSender {
             }
         }
 
-        scheduleReaper(future);
+        scheduleTimeouts(future);
     }
 
     public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, ChannelHandlerContext ctx) throws IOException {
