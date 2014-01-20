@@ -78,12 +78,12 @@ final class WebSocketProtocol extends Protocol {
             HttpResponseStatus status = new ResponseStatus(future.getURI(), response, config);
             HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
 
-            if (applyResponseFiltersAndReplayRequest(ctx, future, status, responseHeaders)) {
+            if (handleResponseFiltersReplayRequestAndExit(ctx, future, status, responseHeaders)) {
                 return;
             }
 
             future.setHttpHeaders(response.headers());
-            if (redirect(request, future, response, ctx))
+            if (handleRedirectAndExit(request, future, response, ctx))
                 return;
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);

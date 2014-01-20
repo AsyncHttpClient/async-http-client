@@ -65,7 +65,7 @@ public abstract class Protocol {
 
     public abstract void onClose(ChannelHandlerContext ctx);
 
-    protected boolean redirect(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
+    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
@@ -147,7 +147,7 @@ public abstract class Protocol {
         return false;
     }
 
-    protected boolean applyResponseFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
+    protected boolean handleResponseFiltersReplayRequestAndExit(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
             throws IOException {
 
         if (!config.getResponseFilters().isEmpty()) {
