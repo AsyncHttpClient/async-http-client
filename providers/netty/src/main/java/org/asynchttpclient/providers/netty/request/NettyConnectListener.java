@@ -21,19 +21,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
 
-import java.io.IOException;
 import java.net.ConnectException;
-import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
-import org.asynchttpclient.util.ProxyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +35,14 @@ import org.slf4j.LoggerFactory;
  * Non Blocking connect.
  */
 final class NettyConnectListener<T> implements ChannelFutureListener {
+
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
+
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
 
-    private NettyConnectListener(AsyncHttpClientConfig config, NettyRequestSender requestSender, NettyResponseFuture<T> future) {
+    public NettyConnectListener(AsyncHttpClientConfig config, NettyRequestSender requestSender, NettyResponseFuture<T> future) {
         this.requestSender = requestSender;
         this.config = config;
         this.future = future;
@@ -97,36 +93,6 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             onFutureSuccess(f.channel());
         } else {
             onFutureFailure(f.channel(), f.cause());
-        }
-    }
-
-    public static class Builder<T> {
-        private final AsyncHttpClientConfig config;
-
-        private final NettyRequestSender requestSender;
-        private final Request request;
-        private final AsyncHandler<T> asyncHandler;
-        private NettyResponseFuture<T> future;
-
-        public Builder(AsyncHttpClientConfig config, NettyRequestSender requestSender, Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
-
-            this.config = config;
-            this.requestSender = requestSender;
-            this.request = request;
-            this.asyncHandler = asyncHandler;
-            this.future = future;
-        }
-
-        public NettyConnectListener<T> build(final URI uri) throws IOException {
-            ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-            NettyRequest nettyRequest = NettyRequests.newNettyRequest(config, request, uri, true, proxyServer);
-            if (future == null) {
-                future = NettyResponseFutures.newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, config, proxyServer);
-            } else {
-                future.setNettyRequest(nettyRequest);
-                future.setRequest(request);
-            }
-            return new NettyConnectListener<T>(config, requestSender, future);
         }
     }
 }

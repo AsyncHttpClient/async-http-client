@@ -140,10 +140,9 @@ public abstract class Protocol {
                         callback.call();
                     }
 
-                    Request target = requestBuilder.setUrl(newUrl).build();
-                    future.setRequest(target);
+                    Request redirectRequest = requestBuilder.setUrl(newUrl).build();
                     // FIXME why not reuse the channel is same host?
-                    requestSender.sendNextRequest(target, future);
+                    requestSender.sendNextRequest(redirectRequest, future);
                     return true;
                 }
             }

@@ -65,13 +65,6 @@ public final class NettyRequests {
     private NettyRequests() {
     }
 
-    private static HttpMethod method(Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) {
-        if (allowConnect && proxyServer != null && isSecure(uri))
-            return HttpMethod.CONNECT;
-        else
-            return HttpMethod.valueOf(request.getMethod());
-    }
-
     private static String requestUri(AsyncHttpClientConfig config, URI uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
             return AsyncHttpProviderUtils.getAuthority(uri);
@@ -256,9 +249,9 @@ public final class NettyRequests {
         return nettyBody;
     }
 
-    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ProxyServer proxyServer) throws IOException {
+    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
-        final HttpMethod method = method(request, uri, allowConnect, proxyServer);
+        final HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         final HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         final String requestUri = requestUri(config, uri, proxyServer, method);
 
