@@ -65,8 +65,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
 
         Object attribute = Channels.getDefaultAttribute(ctx);
 
-        // FIXME is || !(e instanceof HttpContent) necessary?
-        if (attribute instanceof Callback && (e instanceof LastHttpContent /* || !(e instanceof HttpContent) */)) {
+        if (attribute instanceof Callback && e instanceof LastHttpContent) {
             Callback ac = (Callback) attribute;
             ac.call();
             Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
