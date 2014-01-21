@@ -860,6 +860,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
                 try {
                     final URI wsURI = new URI(httpCtx.wsRequestURI);
+                    secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
                     httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
                     requestPacket = (HttpRequestPacket)
