@@ -37,8 +37,5 @@ public class GrizzlyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
     protected String acceptEncodingHeader() {
         return "gzip";
     }
-    
-    @Test(groups = { "standalone", "default_provider", "async" }, enabled = false)
-    public void asyncDoGetCookieTest() throws Exception {
-    }
+
 }
