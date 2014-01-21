@@ -39,7 +39,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.0.14.Final</version>
+            <version>4.0.15.Final</version>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
