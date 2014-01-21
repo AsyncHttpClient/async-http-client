@@ -459,7 +459,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         try {
             /**
-             * If the channel is dead because it was pooled and the remote server decided to close it, we just let it go and the closeChannel do it's work.
+             * If the channel is dead because it was pooled and the remote server decided to close it, we just let it go and the channelClosed do it's work.
              */
             if (!channel.isOpen() || !channel.isConnected()) {
                 return;
@@ -920,6 +920,48 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         doConnect(request, f.getAsyncHandler(), f, useCache, asyncConnect, reclaimCache);
     }
 
+    private <T> NettyResponseFuture<T> buildNettyResponseFutureWithCachedChannel(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, ProxyServer proxyServer,
+            URI uri, ChannelBuffer bufferedBytes, int maxTry) throws IOException {
+
+        for (int i = 0; i < maxTry; i++) {
+            if (maxTry == 0)
+                return null;
+
+            Channel channel = null;
+            if (f != null && f.reuseChannel() && f.channel() != null) {
+                channel = f.channel();
+            } else {
+                URI connectionKeyUri = proxyServer != null ? proxyServer.getURI() : uri;
+                channel = lookupInCache(connectionKeyUri, request.getConnectionPoolKeyStrategy());
+            }
+
+            if (channel == null)
+                return null;
+            else {
+                HttpRequest nettyRequest = null;
+
+                if (f == null) {
+                    nettyRequest = buildRequest(config, request, uri, false, bufferedBytes, proxyServer);
+                    f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
+                } else if (i == 0) {
+                    // only build request on first try
+                    nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes, proxyServer);
+                    f.setNettyRequest(nettyRequest);
+                }
+                f.setState(NettyResponseFuture.STATE.POOLED);
+                f.attachChannel(channel, false);
+
+                if (channel.isOpen() && channel.isConnected()) {
+                    f.channel().getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
+                    return f;
+                } else
+                    // else, channel was closed by the server since we fetched it from the pool, starting over
+                    f.attachChannel(null);
+            }
+        }
+        return null;
+    }
+    
     private <T> ListenableFuture<T> doConnect(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, boolean useCache, boolean asyncConnect, boolean reclaimCache) throws IOException {
 
         if (isClose()) {
@@ -939,58 +981,40 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else {
             uri = request.getURI();
         }
-        Channel channel = null;
-
-        if (useCache) {
-            if (f != null && f.reuseChannel() && f.channel() != null) {
-                channel = f.channel();
-            } else {
-                URI connectionKeyUri = useProxy ? proxyServer.getURI() : uri;
-                channel = lookupInCache(connectionKeyUri, request.getConnectionPoolKeyStrategy());
-            }
-        }
-
         ChannelBuffer bufferedBytes = null;
         if (f != null && f.getRequest().getFile() == null && !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
             bufferedBytes = f.getNettyRequest().getContent();
         }
 
         boolean useSSl = isSecure(uri) && !useProxy;
-        if (channel != null && channel.isOpen() && channel.isConnected()) {
-            HttpRequest nettyRequest = null;
 
-            if (f == null) {
-                nettyRequest = buildRequest(config, request, uri, false, bufferedBytes, proxyServer);
-                f = newFuture(uri, request, asyncHandler, nettyRequest, config, this, proxyServer);
-            } else {
-                nettyRequest = buildRequest(config, request, uri, f.isConnectAllowed(), bufferedBytes, proxyServer);
-                f.setNettyRequest(nettyRequest);
-            }
-            f.setState(NettyResponseFuture.STATE.POOLED);
-            f.attachChannel(channel, false);
+        if (useCache) {
+            // 3 tentatives
+            NettyResponseFuture<T> connectedFuture = buildNettyResponseFutureWithCachedChannel(request, asyncHandler, f, proxyServer, uri, bufferedBytes, 3);
 
-            log.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, nettyRequest);
-            channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(f);
-
-            try {
-                writeRequest(channel, config, f);
-            } catch (Exception ex) {
-                log.debug("writeRequest failure", ex);
-                if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
-                    log.debug("SSLEngine failure", ex);
-                    f = null;
-                } else {
-                    try {
-                        asyncHandler.onThrowable(ex);
-                    } catch (Throwable t) {
-                        log.warn("doConnect.writeRequest()", t);
+            if (connectedFuture != null) {
+                log.debug("\nUsing cached Channel {}\n for request \n{}\n", connectedFuture.channel(), connectedFuture.getNettyRequest());
+    
+                try {
+                    writeRequest(connectedFuture.channel(), config, connectedFuture);
+                } catch (Exception ex) {
+                    log.debug("writeRequest failure", ex);
+                    if (useSSl && ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
+                        log.debug("SSLEngine failure", ex);
+                        connectedFuture = null;
+                    } else {
+                        try {
+                            asyncHandler.onThrowable(ex);
+                        } catch (Throwable t) {
+                            log.warn("doConnect.writeRequest()", t);
+                        }
+                        IOException ioe = new IOException(ex.getMessage());
+                        ioe.initCause(ex);
+                        throw ioe;
                     }
-                    IOException ioe = new IOException(ex.getMessage());
-                    ioe.initCause(ex);
-                    throw ioe;
                 }
+                return connectedFuture;
             }
-            return f;
         }
 
         // Do not throw an exception when we need an extra connection for a redirect.
