@@ -394,6 +394,7 @@ final class HttpProtocol extends Protocol {
                             interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
                         }
                     } finally {
+                        // FIXME we shouldn't need this, should we? But a leak was reported there without it?!
                         buf.release();
                     }
 
