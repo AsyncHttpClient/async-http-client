@@ -81,9 +81,6 @@ public final class ProxyFilter extends BaseFilter {
 
     private void addProxyHeaders(final Realm realm,
                                  final HttpRequestPacket request) {
-        if (!request.getHeaders().contains(Header.ProxyConnection)) {
-            request.setHeader(Header.ProxyConnection, "keep-alive");
-        }
         if (realm != null && realm.getUsePreemptiveAuth()) {
             final String authHeaderValue = generateAuthHeader(realm);
             if (authHeaderValue != null) {
