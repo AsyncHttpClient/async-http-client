@@ -27,7 +27,7 @@ public class NettyResponseFutures {
 
         String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
         if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
-            f.getAndSetWriteBody(false);
+            f.setDontWriteBodyBecauseExpectContinue(true);
         }
         return f;
     }

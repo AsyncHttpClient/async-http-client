@@ -360,8 +360,7 @@ public class NettyRequestSender {
                 }
             }
 
-            // FIXME OK, why? and what's the point of not having a is/get?
-            if (future.getAndSetWriteBody(true) && !httpRequest.getMethod().equals(HttpMethod.CONNECT) && nettyRequest.getBody() != null)
+            if (!future.isDontWriteBodyBecauseExpectContinue() && !httpRequest.getMethod().equals(HttpMethod.CONNECT) && nettyRequest.getBody() != null)
                 nettyRequest.getBody().write(channel, future, config);
 
         } catch (Throwable ioe) {

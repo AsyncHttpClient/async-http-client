@@ -96,7 +96,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean streamWasAlreadyConsumed;
     private boolean reuseChannel;
     private boolean headersAlreadyWrittenOnContinue;
-    private boolean writeBody;
+    private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
     public NettyResponseFuture(URI uri,//
@@ -121,7 +121,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } else {
             maxRetry = config.getMaxRequestRetry();
         }
-        writeBody = true;
     }
 
     public URI getURI() {
@@ -431,10 +430,12 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return headersAlreadyWrittenOnContinue;
     }
 
-    public boolean getAndSetWriteBody(boolean writeBody) {
-        boolean b = this.writeBody;
-        this.writeBody = writeBody;
-        return b;
+    public void setDontWriteBodyBecauseExpectContinue(boolean dontWriteBodyBecauseExpectContinue) {
+        this.dontWriteBodyBecauseExpectContinue = dontWriteBodyBecauseExpectContinue;
+    }
+
+    public boolean isDontWriteBodyBecauseExpectContinue() {
+        return dontWriteBodyBecauseExpectContinue;
     }
 
     public void attachChannel(Channel channel) {
