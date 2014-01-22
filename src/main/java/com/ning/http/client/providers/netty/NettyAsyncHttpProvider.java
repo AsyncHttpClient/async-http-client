@@ -415,7 +415,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
             try {
                 // Always make sure the channel who got cached support the proper protocol. It could
-                // only occurs when a HttpMethod.CONNECT is used against a proxy that require upgrading from http to
+                // only occurs when a HttpMethod.CONNECT is used against a proxy that requires upgrading from http to
                 // https.
                 return verifyChannelPipeline(channel, uri.getScheme());
             } catch (Exception ex) {
