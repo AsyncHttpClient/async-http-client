@@ -365,8 +365,9 @@ public class AsyncHttpClient implements Closeable {
      * Close the underlying connections.
      */
     public void close() {
-        httpProvider.close();
-        isClosed.set(true);
+        if (isClosed.compareAndSet(false, true)) {
+            httpProvider.close();
+        }
     }
 
     /**

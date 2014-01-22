@@ -875,33 +875,34 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public void close() {
-        isClose.set(true);
-        try {
-            connectionsPool.destroy();
-            openChannels.close();
+        if (isClose.compareAndSet(false, true)) {
+            try {
+                connectionsPool.destroy();
+                openChannels.close();
 
-            for (Channel channel : openChannels) {
-                ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
-                if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
-                    NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
-                    future.cancelTimeouts();
+                for (Channel channel : openChannels) {
+                    ChannelHandlerContext ctx = channel.getPipeline().getContext(NettyAsyncHttpProvider.class);
+                    if (ctx.getAttachment() instanceof NettyResponseFuture<?>) {
+                        NettyResponseFuture<?> future = (NettyResponseFuture<?>) ctx.getAttachment();
+                        future.cancelTimeouts();
+                    }
                 }
+
+                config.executorService().shutdown();
+                config.reaper().shutdown();
+                if (this.allowReleaseSocketChannelFactory) {
+                    socketChannelFactory.releaseExternalResources();
+                    plainBootstrap.releaseExternalResources();
+                    secureBootstrap.releaseExternalResources();
+                    webSocketBootstrap.releaseExternalResources();
+                    secureWebSocketBootstrap.releaseExternalResources();
+                }
+
+                hashedWheelTimer.stop();
+
+            } catch (Throwable t) {
+                log.warn("Unexpected error on close", t);
             }
-
-            config.executorService().shutdown();
-            config.reaper().shutdown();
-            if (this.allowReleaseSocketChannelFactory) {
-                socketChannelFactory.releaseExternalResources();
-                plainBootstrap.releaseExternalResources();
-                secureBootstrap.releaseExternalResources();
-                webSocketBootstrap.releaseExternalResources();
-                secureWebSocketBootstrap.releaseExternalResources();
-            }
-
-            hashedWheelTimer.stop();
-
-        } catch (Throwable t) {
-            log.warn("Unexpected error on close", t);
         }
     }
 
