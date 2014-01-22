@@ -85,7 +85,6 @@ import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
-import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -159,6 +158,8 @@ import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyAsyncHttpProvider.class);
+
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
     public static final IOException REMOTELY_CLOSED_EXCEPTION = new IOException("Remotely Closed");
@@ -222,6 +223,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
         } else {
             asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
+        }
+
+        if (config.getRequestCompressionLevel() > 0) {
+            LOGGER.warn("Request was enabled but Netty actually doesn't support this feature");
         }
 
         if (asyncHttpProviderConfig.getProperty(USE_BLOCKING_IO) != null) {
@@ -304,10 +309,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelPipeline pipeline = pipeline();
 
                 pipeline.addLast(HTTP_HANDLER, createHttpClientCodec());
-
-                if (config.getRequestCompressionLevel() > 0) {
-                    pipeline.addLast("deflater", new HttpContentCompressor(config.getRequestCompressionLevel()));
-                }
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast("inflater", new HttpContentDecompressor());
