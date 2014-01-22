@@ -271,9 +271,8 @@ final class HttpProtocol extends Protocol {
                     // SPNEGO KERBEROS
                 } else if (negociate) {
                     newRealm = kerberosChallenge(proxyAuthenticateHeaders, request, proxyServer, request.getHeaders(), realm, future);
-                    if (newRealm == null) {
+                    if (newRealm == null)
                         return true;
-                    }
                 } else {
                     newRealm = future.getRequest().getRealm();
                 }
@@ -283,7 +282,6 @@ final class HttpProtocol extends Protocol {
                 requestSender.sendNextRequest(new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(newRealm).build(), future);
                 return true;
             }
-
         }
         return false;
     }
