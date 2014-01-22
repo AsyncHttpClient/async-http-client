@@ -44,7 +44,7 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
 
             long now = millisTime();
 
-            long currentIdleConnectionTimeoutInstant = idleConnectionTimeout - nettyResponseFuture.getLastTouch();
+            long currentIdleConnectionTimeoutInstant = idleConnectionTimeout + nettyResponseFuture.getLastTouch();
             long durationBeforeCurrentIdleConnectionTimeout = currentIdleConnectionTimeoutInstant - now;
 
             if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
