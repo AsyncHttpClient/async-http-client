@@ -45,6 +45,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+
 import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
@@ -85,6 +86,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -107,7 +109,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -129,6 +134,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
     private final AtomicInteger maxConnections = new AtomicInteger();
     private final MultiThreadedHttpConnectionManager connectionManager;
     private final HttpClientParams params;
+    private final ScheduledExecutorService reaper;
 
     static {
         final SocketFactory factory = new TrustingSSLSocketFactory();
@@ -157,13 +163,26 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         params.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler());
 
-        AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
-        if (providerConfig instanceof ApacheAsyncHttpProvider) {
-            configure(ApacheAsyncHttpProviderConfig.class.cast(providerConfig));
-        }
+        reaper = getReaper(config.getAsyncHttpProviderConfig());
     }
 
-    private void configure(ApacheAsyncHttpProviderConfig config) {
+    private ScheduledExecutorService getReaper(AsyncHttpProviderConfig<?, ?> providerConfig) {
+
+        ScheduledExecutorService reaper = null;
+        if (providerConfig instanceof ApacheAsyncHttpProvider) {
+            reaper = ApacheAsyncHttpProviderConfig.class.cast(providerConfig).getReaper();
+        }
+
+        if (reaper == null)
+            reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "AsyncHttpClient-Reaper");
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+
+        return reaper;
     }
 
     public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException {
@@ -211,6 +230,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
     }
 
     public void close() {
+        reaper.shutdown();
         if (idleConnectionTimeoutThread != null) {
             idleConnectionTimeoutThread.shutdown();
             idleConnectionTimeoutThread = null;
@@ -455,7 +475,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
                 if (delay != -1) {
                     ReaperFuture reaperFuture = new ReaperFuture(future);
-                    Future scheduledFuture = config.reaper().scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
+                    Future scheduledFuture = reaper.scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
                     reaperFuture.setScheduledFuture(scheduledFuture);
                     future.setReaperFuture(reaperFuture);
                 }

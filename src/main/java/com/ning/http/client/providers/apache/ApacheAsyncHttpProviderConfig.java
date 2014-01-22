@@ -12,16 +12,18 @@
  */
 package com.ning.http.client.providers.apache;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+
+import com.ning.http.client.AsyncHttpProviderConfig;
 
 public class ApacheAsyncHttpProviderConfig implements AsyncHttpProviderConfig<String, String> {
 
     private final ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String, String>();
 
+    private ScheduledExecutorService reaper;
 
     public AsyncHttpProviderConfig addProperty(String name, String value) {
         properties.put(name, value);
@@ -38,5 +40,13 @@ public class ApacheAsyncHttpProviderConfig implements AsyncHttpProviderConfig<St
 
     public Set<Map.Entry<String, String>> propertiesSet() {
         return properties.entrySet();
+    }
+
+    public void setReaper(ScheduledExecutorService reaper) {
+        this.reaper = reaper;
+    }
+
+    public ScheduledExecutorService getReaper() {
+        return reaper;
     }
 }

@@ -65,7 +65,6 @@ public class AsyncHttpClientConfig {
     protected boolean compressionEnabled;
     protected String userAgent;
     protected boolean allowPoolingConnection;
-    protected ScheduledExecutorService reaper;
     protected ExecutorService applicationThreadPool;
     protected ProxyServerSelector proxyServerSelector;
     protected SSLContext sslContext;
@@ -148,7 +147,6 @@ public class AsyncHttpClientConfig {
         this.ioExceptionFilters = ioExceptionFilters;
         this.requestCompressionLevel = requestCompressionLevel;
         this.maxRequestRetry = maxRequestRetry;
-        this.reaper = reaper;
         this.allowSslConnectionPool = allowSslConnectionCaching;
         this.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
         this.hostnameVerifier = hostnameVerifier;
@@ -164,15 +162,6 @@ public class AsyncHttpClientConfig {
         }
         this.proxyServerSelector = proxyServerSelector;
         this.useRawUrl = useRawUrl;
-    }
-
-    /**
-     * A {@link ScheduledExecutorService} used to expire idle connections.
-     *
-     * @return {@link ScheduledExecutorService}
-     */
-    public ScheduledExecutorService reaper() {
-        return reaper;
     }
 
     /**
@@ -469,7 +458,7 @@ public class AsyncHttpClientConfig {
             // when using a ManagedExecutorService.
             // When this is the case, we assume it's running.
         }
-        return (atpRunning && !reaper.isShutdown());
+        return atpRunning;
     }
 
     /**
@@ -1091,7 +1080,6 @@ public class AsyncHttpClientConfig {
             userAgent = prototype.getUserAgent();
             redirectEnabled = prototype.isRedirectEnabled();
             compressionEnabled = prototype.isCompressionEnabled();
-            reaper = prototype.reaper();
             applicationThreadPool = prototype.executorService();
 
             requestFilters.clear();
