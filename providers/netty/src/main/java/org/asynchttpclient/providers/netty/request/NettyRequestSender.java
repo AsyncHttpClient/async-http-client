@@ -44,6 +44,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
@@ -62,11 +63,13 @@ public class NettyRequestSender {
 
     private final AtomicBoolean closed;
     private final AsyncHttpClientConfig config;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final Channels channels;
 
-    public NettyRequestSender(AtomicBoolean closed, AsyncHttpClientConfig config, Channels channels) {
+    public NettyRequestSender(AtomicBoolean closed, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Channels channels) {
         this.closed = closed;
         this.config = config;
+        this.nettyConfig = nettyConfig;
         this.channels = channels;
     }
 
@@ -237,7 +240,7 @@ public class NettyRequestSender {
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture, URI uri,
             ProxyServer proxy, boolean forceConnect) throws IOException {
 
-        NettyRequest nettyRequest = NettyRequests.newNettyRequest(config, request, uri, forceConnect, proxy);
+        NettyRequest nettyRequest = NettyRequests.newNettyRequest(config, nettyConfig, request, uri, forceConnect, proxy);
 
         if (originalFuture == null) {
             return NettyResponseFutures.newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, config, proxy);

@@ -86,6 +86,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private ChannelPool channelPool;
 
+    private boolean disableZeroCopy;
+
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
     }
@@ -217,6 +219,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setChannelPool(ChannelPool channelPool) {
         this.channelPool = channelPool;
+    }
+
+    public boolean isDisableZeroCopy() {
+        return disableZeroCopy;
+    }
+
+    public void setDisableZeroCopy(boolean disableZeroCopy) {
+        this.disableZeroCopy = disableZeroCopy;
     }
 
     public static interface AdditionalChannelInitializer {

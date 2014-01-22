@@ -21,17 +21,18 @@ import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.multipart.MultipartUtils;
 import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 
 public class NettyMultipartBody extends NettyBodyBody {
 
     private final String contentType;
 
-    public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers) {
-        this(MultipartUtils.newMultipartBody(parts, headers));
+    public NettyMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap headers, NettyAsyncHttpProviderConfig nettyConfig) {
+        this(MultipartUtils.newMultipartBody(parts, headers), nettyConfig);
     }
 
-    private NettyMultipartBody(MultipartBody body) {
-        super(body);
+    private NettyMultipartBody(MultipartBody body, NettyAsyncHttpProviderConfig nettyConfig) {
+        super(body, nettyConfig);
         contentType = body.getContentType();
     }
 

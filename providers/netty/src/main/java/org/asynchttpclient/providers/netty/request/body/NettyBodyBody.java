@@ -27,6 +27,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
 import org.asynchttpclient.RandomAccessBody;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
@@ -39,9 +40,11 @@ public class NettyBodyBody implements NettyBody {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyBodyBody.class);
 
     private final Body body;
+    private final boolean disableZeroCopy;
 
-    public NettyBodyBody(Body body) {
+    public NettyBodyBody(Body body, NettyAsyncHttpProviderConfig nettyConfig) {
         this.body = body;
+        disableZeroCopy = nettyConfig.isDisableZeroCopy();
     }
 
     public Body getBody() {
@@ -62,8 +65,7 @@ public class NettyBodyBody implements NettyBody {
     public void write(final Channel channel, NettyResponseFuture<?> future, AsyncHttpClientConfig config) throws IOException {
         Object msg;
 
-        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody) {
-            // FIXME also do something for multipart and use a ChunkedInput
+        if (Channels.getSslHandler(channel) == null && body instanceof RandomAccessBody && !disableZeroCopy) {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {

@@ -48,7 +48,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
                 : new NettyAsyncHttpProviderConfig();
 
         channels = new Channels(config, nettyConfig);
-        requestSender = new NettyRequestSender(closed, config, channels);
+        requestSender = new NettyRequestSender(closed, config, nettyConfig, channels);
         channelHandler = new NettyChannelHandler(config, nettyConfig, requestSender, channels, closed);
         channels.configure(channelHandler);
     }

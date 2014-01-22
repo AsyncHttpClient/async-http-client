@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.ProgressListener;
@@ -43,18 +44,20 @@ public class NettyFileBody implements NettyBody {
     private final File file;
     private final long offset;
     private final long length;
+    private final boolean disableZeroCopy;
 
-    public NettyFileBody(File file) throws IOException {
-        this(file, 0, file.length());
+    public NettyFileBody(File file, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
+        this(file, 0, file.length(), nettyConfig);
     }
 
-    public NettyFileBody(File file, long offset, long length) throws IOException {
+    public NettyFileBody(File file, long offset, long length, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
         if (!file.isFile()) {
             throw new IOException(String.format("File %s is not a file or doesn't exist", file.getAbsolutePath()));
         }
         this.file = file;
         this.offset = offset;
         this.length = length;
+        disableZeroCopy = nettyConfig.isDisableZeroCopy();
     }
 
     public File getFile() {
@@ -81,7 +84,7 @@ public class NettyFileBody implements NettyBody {
 
         try {
             ChannelFuture writeFuture;
-            if (Channels.getSslHandler(channel) != null) {
+            if (Channels.getSslHandler(channel) != null || disableZeroCopy) {
                 writeFuture = channel.write(new ChunkedFile(raf, offset, length, MAX_BUFFERED_BYTES), channel.newProgressivePromise());
             } else {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);

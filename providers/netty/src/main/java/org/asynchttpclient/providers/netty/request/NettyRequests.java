@@ -46,6 +46,7 @@ import org.asynchttpclient.ntlm.NTLMEngine;
 import org.asynchttpclient.ntlm.NTLMEngineException;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.request.body.NettyBody;
 import org.asynchttpclient.providers.netty.request.body.NettyBodyBody;
 import org.asynchttpclient.providers.netty.request.body.NettyByteArrayBody;
@@ -205,7 +206,7 @@ public final class NettyRequests {
         return sb.toString().getBytes(bodyCharset);
     }
 
-    private static NettyBody body(Request request, HttpMethod method) throws IOException {
+    private static NettyBody body(Request request, HttpMethod method, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
         NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
 
@@ -229,33 +230,33 @@ public final class NettyRequests {
                 nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getParams(), bodyCharset), contentType);
 
             } else if (request.getParts() != null) {
-                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders());
+                nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
 
             } else if (request.getFile() != null) {
-                nettyBody = new NettyFileBody(request.getFile());
+                nettyBody = new NettyFileBody(request.getFile(), nettyConfig);
 
             } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength());
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), nettyConfig);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
 
             } else if (request.getBodyGenerator() != null) {
-                nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody());
+                nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), nettyConfig);
             }
         }
 
         return nettyBody;
     }
 
-    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
         final HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         final HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
         final String requestUri = requestUri(config, uri, proxyServer, method);
 
-        NettyBody body = body(request, method);
+        NettyBody body = body(request, method, nettyConfig);
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
