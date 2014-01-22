@@ -193,11 +193,10 @@ public class NettyRequestSender {
     private ChannelFuture connect(Request request, URI uri, ProxyServer proxy, Bootstrap bootstrap) {
         InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy);
 
-        if (request.getLocalAddress() != null) {
+        if (request.getLocalAddress() != null)
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
-        } else {
+        else
             return bootstrap.connect(remoteAddress);
-        }
     }
 
     private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
@@ -265,9 +264,7 @@ public class NettyRequestSender {
             if (isChannelValid(channel)) {
                 if (newFuture == null)
                     newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, false);
-                else
-                    // no need to recreate fully the future, just need to re-attach the new channel
-                    newFuture.attachChannel(channel);
+
                 if (isChannelValid(channel))
                     // if the channel is still active, we can use it, otherwise try gain
                     return sendRequestWithCachedChannel(channel, request, uri, proxyServer, newFuture, asyncHandler);
