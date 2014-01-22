@@ -287,9 +287,9 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertNotNull(resp);
-            assertNotNull(resp.getHeader("X-Auth"));
+            assertNotNull(resp, "Response shouldn't be null");
+            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK, "Status code should be 200-OK");
+            assertNotNull(resp.getHeader("X-Auth"), "X-Auth shouldn't be null");
 
         } finally {
             if (client != null)
