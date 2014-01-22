@@ -25,18 +25,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ConnectionsPool;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple implementation of {@link org.asynchttpclient.ConnectionsPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * A simple implementation of {@link ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
  */
-public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
+public class DefaultChannelPool implements ChannelPool {
 
-    private final static Logger log = LoggerFactory.getLogger(NettyConnectionsPool.class);
+    private final static Logger log = LoggerFactory.getLogger(DefaultChannelPool.class);
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
@@ -48,11 +47,11 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final int maxConnectionLifeTimeInMs;
     private final long maxIdleTime;
 
-    public NettyConnectionsPool(AsyncHttpClientConfig config) {
+    public DefaultChannelPool(AsyncHttpClientConfig config) {
         this(config.getMaxTotalConnections(), config.getMaxConnectionPerHost(), config.getIdleConnectionInPoolTimeoutInMs(), config.isSslConnectionPoolEnabled(), config.getMaxConnectionLifeTimeInMs(), new Timer(true));
     }
 
-    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs, Timer idleConnectionDetector) {
+    public DefaultChannelPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs, Timer idleConnectionDetector) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;

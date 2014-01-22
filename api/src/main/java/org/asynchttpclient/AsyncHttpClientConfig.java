@@ -93,7 +93,6 @@ public class AsyncHttpClientConfig {
     protected SSLContext sslContext;
     protected SSLEngineFactory sslEngineFactory;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
-    protected ConnectionsPool<?, ?> connectionsPool;
     protected Realm realm;
     protected List<RequestFilter> requestFilters;
     protected List<ResponseFilter> responseFilters;
@@ -136,7 +135,7 @@ public class AsyncHttpClientConfig {
                                   SSLContext sslContext,
                                   SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
-                                  ConnectionsPool<?, ?> connectionsPool, Realm realm,
+                                  Realm realm,
                                   List<RequestFilter> requestFilters,
                                   List<ResponseFilter> responseFilters,
                                   List<IOExceptionFilter> ioExceptionFilters,
@@ -171,7 +170,6 @@ public class AsyncHttpClientConfig {
         this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
-        this.connectionsPool = connectionsPool;
         this.realm = realm;
         this.requestFilters = requestFilters;
         this.responseFilters = responseFilters;
@@ -331,15 +329,6 @@ public class AsyncHttpClientConfig {
      */
     public SSLContext getSSLContext() {
         return sslContext;
-    }
-
-    /**
-     * Return an instance of {@link ConnectionsPool}
-     *
-     * @return an instance of {@link ConnectionsPool}
-     */
-    public ConnectionsPool<?, ?> getConnectionsPool() {
-        return connectionsPool;
     }
 
     /**
@@ -605,7 +594,6 @@ public class AsyncHttpClientConfig {
         private SSLContext sslContext;
         private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
-        private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
         private int requestCompressionLevel = -1;
         private int maxRequestRetry = 5;
@@ -842,17 +830,6 @@ public class AsyncHttpClientConfig {
          */
         public Builder setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
             this.providerConfig = providerConfig;
-            return this;
-        }
-
-        /**
-         * Set the {@link ConnectionsPool}
-         *
-         * @param connectionsPool the {@link ConnectionsPool}
-         * @return a {@link Builder}
-         */
-        public Builder setConnectionsPool(ConnectionsPool<?, ?> connectionsPool) {
-            this.connectionsPool = connectionsPool;
             return this;
         }
 
@@ -1167,7 +1144,6 @@ public class AsyncHttpClientConfig {
         public Builder(AsyncHttpClientConfig prototype) {
             allowPoolingConnection = prototype.getAllowPoolingConnection();
             providerConfig = prototype.getAsyncHttpProviderConfig();
-            connectionsPool = prototype.getConnectionsPool();
             defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
             defaultIdleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
             defaultIdleConnectionTimeoutInMs = prototype.getIdleConnectionTimeoutInMs();
@@ -1254,7 +1230,6 @@ public class AsyncHttpClientConfig {
                     sslContext,
                     sslEngineFactory,
                     providerConfig,
-                    connectionsPool,
                     realm,
                     requestFilters,
                     responseFilters,

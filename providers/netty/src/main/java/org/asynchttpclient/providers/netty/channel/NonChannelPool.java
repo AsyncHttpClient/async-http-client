@@ -17,9 +17,7 @@ package org.asynchttpclient.providers.netty.channel;
 
 import io.netty.channel.Channel;
 
-import org.asynchttpclient.ConnectionsPool;
-
-public class NonConnectionsPool implements ConnectionsPool<String, Channel> {
+public class NonChannelPool implements ChannelPool {
 
     public boolean offer(String uri, Channel connection) {
         return false;

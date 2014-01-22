@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelPool;
 import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
@@ -82,6 +83,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
     private ResponseBodyPartFactory bodyPartFactory = new EagerResponseBodyPartFactory();
+
+    private ChannelPool channelPool;
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
@@ -206,6 +209,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setBodyPartFactory(ResponseBodyPartFactory bodyPartFactory) {
         this.bodyPartFactory = bodyPartFactory;
+    }
+
+    public ChannelPool getChannelPool() {
+        return channelPool;
+    }
+
+    public void setChannelPool(ChannelPool channelPool) {
+        this.channelPool = channelPool;
     }
 
     public static interface AdditionalChannelInitializer {

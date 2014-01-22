@@ -57,7 +57,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     public String toString() {
         int availablePermits = channels.freeConnections != null ? channels.freeConnections.availablePermits() : 0;
         return String.format("NettyAsyncHttpProvider4:\n\t- maxConnections: %d\n\t- openChannels: %s\n\t- connectionPools: %s", config.getMaxTotalConnections()
-                - availablePermits, channels.openChannels.toString(), channels.connectionsPool.toString());
+                - availablePermits, channels.openChannels.toString(), channels.channelPool.toString());
     }
 
     @Override

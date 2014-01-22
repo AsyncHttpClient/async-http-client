@@ -417,7 +417,6 @@ public class AsyncHttpClient implements Closeable {
      *
      * @return true if closed
      */
-    @SuppressWarnings("UnusedDeclaration")
     public boolean isClosed() {
         return isClosed.get();
     }
@@ -427,7 +426,6 @@ public class AsyncHttpClient implements Closeable {
      *
      * @return {@link AsyncHttpClientConfig}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public AsyncHttpClientConfig getConfig() {
         return config;
     }
@@ -435,7 +433,6 @@ public class AsyncHttpClient implements Closeable {
     /**
      * Set default signature calculator to use for requests build by this client instance
      */
-    @SuppressWarnings("UnusedDeclaration")
     public AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator) {
         this.signatureCalculator = signatureCalculator;
         return this;
@@ -457,7 +454,6 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public BoundRequestBuilder prepareConnect(String url) {
         return requestBuilder("CONNECT", url);
     }
@@ -508,7 +504,6 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public BoundRequestBuilder prepareDelete(String url) {
         return requestBuilder("DELETE", url);
     }
@@ -519,7 +514,6 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public BoundRequestBuilder preparePatch(String url) {
         return requestBuilder("PATCH", url);
     }
@@ -530,7 +524,6 @@ public class AsyncHttpClient implements Closeable {
      * @param url A well formed URL.
      * @return {@link RequestBuilder}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public BoundRequestBuilder prepareTrace(String url) {
         return requestBuilder("TRACE", url);
     }
@@ -541,7 +534,6 @@ public class AsyncHttpClient implements Closeable {
      * @param request a {@link Request}
      * @return {@link RequestBuilder}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public BoundRequestBuilder prepareRequest(Request request) {
         return requestBuilder(request);
     }

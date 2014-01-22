@@ -12,15 +12,18 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import io.netty.channel.Channel;
 
 import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ConnectionsPool;
 import org.asynchttpclient.async.ConnectionPoolTest;
+import org.asynchttpclient.providers.netty.channel.ChannelPool;
+import org.testng.annotations.Test;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
@@ -29,9 +32,9 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
         return NettyProviderUtil.nettyProvider(config);
     }
 
-    @Override
+    @Test(groups = { "standalone", "default_provider" })
     public void testInvalidConnectionsPool() {
-        ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
+        ChannelPool cp = new ChannelPool() {
 
             public boolean offer(String key, Channel connection) {
                 return false;
@@ -54,7 +57,9 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
+        NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
+        providerConfig.setChannelPool(cp);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
         try {
             Exception exception = null;
             try {
@@ -70,9 +75,9 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
         }
     }
 
-    @Override
+    @Test(groups = { "standalone", "default_provider" })
     public void testValidConnectionsPool() {
-        ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
+        ChannelPool cp = new ChannelPool() {
 
             public boolean offer(String key, Channel connection) {
                 return true;
@@ -95,7 +100,9 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
             }
         };
 
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
+        NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
+        providerConfig.setChannelPool(cp);
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
         try {
             Exception exception = null;
             try {

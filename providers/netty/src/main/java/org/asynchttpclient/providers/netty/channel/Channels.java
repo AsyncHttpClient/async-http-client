@@ -57,7 +57,6 @@ import javax.net.ssl.SSLEngine;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
-import org.asynchttpclient.ConnectionsPool;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
@@ -85,7 +84,7 @@ public class Channels {
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
 
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
+    private final NettyAsyncHttpProviderConfig nettyProviderConfig;
 
     private EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
@@ -95,7 +94,7 @@ public class Channels {
     private final Bootstrap webSocketBootstrap;
     private final Bootstrap secureWebSocketBootstrap;
 
-    public final ConnectionsPool<String, Channel> connectionsPool;
+    public final ChannelPool channelPool;
     public final Semaphore freeConnections;
     public final boolean trackConnections;
     public final ChannelGroup openChannels = new CleanupChannelGroup("asyncHttpClient") {
@@ -111,10 +110,10 @@ public class Channels {
 
     private final HashedWheelTimer hashedWheelTimer;
 
-    public Channels(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig asyncHttpProviderConfig) {
+    public Channels(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyProviderConfig) {
 
         this.config = config;
-        this.asyncHttpProviderConfig = asyncHttpProviderConfig;
+        this.nettyProviderConfig = nettyProviderConfig;
 
         // FIXME https://github.com/netty/netty/issues/2132
         if (config.getRequestCompressionLevel() > 0) {
@@ -122,7 +121,7 @@ public class Channels {
         }
 
         // check if external EventLoopGroup is defined
-        eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
+        eventLoopGroup = nettyProviderConfig.getEventLoopGroup();
 
         if (eventLoopGroup == null) {
             eventLoopGroup = new NioEventLoopGroup();
@@ -139,15 +138,15 @@ public class Channels {
         secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
-        ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
+        ChannelPool cp = nettyProviderConfig.getChannelPool();
         if (cp == null) {
             if (config.getAllowPoolingConnection()) {
-                cp = new NettyConnectionsPool(config);
+                cp = new DefaultChannelPool(config);
             } else {
-                cp = new NonConnectionsPool();
+                cp = new NonChannelPool();
             }
         }
-        this.connectionsPool = cp;
+        this.channelPool = cp;
         if (config.getMaxTotalConnections() != -1) {
             trackConnections = true;
             freeConnections = new Semaphore(config.getMaxTotalConnections());
@@ -168,8 +167,8 @@ public class Channels {
             }
         }
 
-        if (asyncHttpProviderConfig != null) {
-            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+        if (nettyProviderConfig != null) {
+            for (Entry<String, Object> entry : nettyProviderConfig.propertiesSet()) {
                 ChannelOption<Object> key = optionMap.get(entry.getKey());
                 if (key != null) {
                     Object value = entry.getValue();
@@ -214,8 +213,8 @@ public class Channels {
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HANDLER, httpProcessor);
 
-                if (asyncHttpProviderConfig.getHttpAdditionalChannelInitializer() != null) {
-                    asyncHttpProviderConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
+                if (nettyProviderConfig.getHttpAdditionalChannelInitializer() != null) {
+                    nettyProviderConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
                 }
             }
         });
@@ -228,8 +227,8 @@ public class Channels {
                         .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
                         .addLast(AHC_HANDLER, httpProcessor);
 
-                if (asyncHttpProviderConfig.getWsAdditionalChannelInitializer() != null) {
-                    asyncHttpProviderConfig.getWsAdditionalChannelInitializer().initChannel(ch);
+                if (nettyProviderConfig.getWsAdditionalChannelInitializer() != null) {
+                    nettyProviderConfig.getWsAdditionalChannelInitializer().initChannel(ch);
                 }
             }
         });
@@ -248,8 +247,8 @@ public class Channels {
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
                         .addLast(AHC_HANDLER, httpProcessor);
 
-                if (asyncHttpProviderConfig.getHttpsAdditionalChannelInitializer() != null) {
-                    asyncHttpProviderConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
+                if (nettyProviderConfig.getHttpsAdditionalChannelInitializer() != null) {
+                    nettyProviderConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
                 }
             }
         });
@@ -264,8 +263,8 @@ public class Channels {
                         .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
                         .addLast(AHC_HANDLER, httpProcessor);
 
-                if (asyncHttpProviderConfig.getWssAdditionalChannelInitializer() != null) {
-                    asyncHttpProviderConfig.getWssAdditionalChannelInitializer().initChannel(ch);
+                if (nettyProviderConfig.getWssAdditionalChannelInitializer() != null) {
+                    nettyProviderConfig.getWssAdditionalChannelInitializer().initChannel(ch);
                 }
             }
         });
@@ -276,7 +275,7 @@ public class Channels {
     }
 
     public void close() {
-        connectionsPool.destroy();
+        channelPool.destroy();
         for (Channel channel : openChannels) {
             Object attribute = getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
@@ -306,8 +305,8 @@ public class Channels {
     }
 
     protected HttpClientCodec newHttpClientCodec() {
-        if (asyncHttpProviderConfig != null) {
-            return new HttpClientCodec(asyncHttpProviderConfig.getMaxInitialLineLength(), asyncHttpProviderConfig.getMaxHeaderSize(), asyncHttpProviderConfig.getMaxChunkSize(),
+        if (nettyProviderConfig != null) {
+            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(),
                     false);
 
         } else {
@@ -343,7 +342,7 @@ public class Channels {
     }
 
     public Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        final Channel channel = connectionsPool.poll(connectionPoolKeyStrategy.getKey(uri));
+        final Channel channel = channelPool.poll(connectionPoolKeyStrategy.getKey(uri));
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -364,7 +363,7 @@ public class Channels {
 
     public boolean acquireConnection(AsyncHandler<?> asyncHandler) throws IOException {
 
-        if (!connectionsPool.canCacheConnection()) {
+        if (!channelPool.canCacheConnection()) {
             IOException ex = new IOException("Too many connections " + config.getMaxTotalConnections());
             try {
                 asyncHandler.onThrowable(ex);
@@ -396,7 +395,7 @@ public class Channels {
     }
 
     public boolean offerToPool(String key, Channel channel) {
-        return connectionsPool.offer(key, channel);
+        return channelPool.offer(key, channel);
     }
 
     public void releaseFreeConnections() {
@@ -404,7 +403,7 @@ public class Channels {
     }
 
     public void removeFromPool(ChannelHandlerContext ctx) {
-        connectionsPool.removeAll(ctx.channel());
+        channelPool.removeAll(ctx.channel());
     }
 
     public void closeChannel(ChannelHandlerContext ctx) {
@@ -437,7 +436,7 @@ public class Channels {
     public void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
         setDefaultAttribute(ctx, new Callback(future) {
             public void call() throws Exception {
-                if (!(future.isKeepAlive() && ctx.channel().isActive() && connectionsPool.offer(getPoolKey(future), ctx.channel()))) {
+                if (!(future.isKeepAlive() && ctx.channel().isActive() && channelPool.offer(getPoolKey(future), ctx.channel()))) {
                     finishChannel(ctx);
                 }
             }
@@ -450,7 +449,7 @@ public class Channels {
     }
 
     public void removeAll(Channel channel) {
-        connectionsPool.removeAll(channel);
+        channelPool.removeAll(channel);
     }
 
     public void abort(NettyResponseFuture<?> future, Throwable t) {
