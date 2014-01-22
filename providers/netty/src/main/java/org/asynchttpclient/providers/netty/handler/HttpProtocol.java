@@ -245,7 +245,7 @@ final class HttpProtocol extends Protocol {
 
     private boolean handleContinueAndExit(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, int statusCode) {
         if (statusCode == CONTINUE.code()) {
-            future.getAndSetWriteHeaders(false);
+            future.setHeadersAlreadyWrittenOnContinue(true);;
             future.getAndSetWriteBody(true);
             // FIXME why not reuse the channel?
             requestSender.writeRequest(ctx.channel(), config, future);

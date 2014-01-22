@@ -328,9 +328,8 @@ public class NettyRequestSender {
 
     public final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
         try {
-            // If the channel is dead because it was pooled and the remote
-            // server decided to close it, we just let it go and the
-            // closeChannel do it's work.
+            // if the channel is dead because it was pooled and the remote server decided to close it,
+            // we just let it go and the channelInactive do its work
             if (!channel.isOpen() || !channel.isActive()) {
                 return;
             }
@@ -343,9 +342,7 @@ public class NettyRequestSender {
                 configureTransferAdapter(handler, httpRequest);
             }
 
-            // Leave it to true.
-            // FIXME That doesn't just leave to true, the set is always done? and what's the point of not having a is/get?
-            if (future.getAndSetWriteHeaders(true)) {
+            if (!future.isHeadersAlreadyWrittenOnContinue()) {
                 try {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
                         AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();

@@ -95,7 +95,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private HttpResponse pendingResponse;
     private boolean streamWasAlreadyConsumed;
     private boolean reuseChannel;
-    private boolean writeHeaders;
+    private boolean headersAlreadyWrittenOnContinue;
     private boolean writeBody;
     private boolean allowConnect;
 
@@ -121,7 +121,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } else {
             maxRetry = config.getMaxRequestRetry();
         }
-        writeHeaders = true;
         writeBody = true;
     }
 
@@ -419,19 +418,19 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public void touch() {
         touch.set(millisTime());
     }
-    
+
     public long getLastTouch() {
         return touch.get();
     }
 
-    @Override
-    public boolean getAndSetWriteHeaders(boolean writeHeaders) {
-        boolean b = this.writeHeaders;
-        this.writeHeaders = writeHeaders;
-        return b;
+    public void setHeadersAlreadyWrittenOnContinue(boolean headersAlreadyWrittenOnContinue) {
+        this.headersAlreadyWrittenOnContinue = headersAlreadyWrittenOnContinue;
     }
 
-    @Override
+    public boolean isHeadersAlreadyWrittenOnContinue() {
+        return headersAlreadyWrittenOnContinue;
+    }
+
     public boolean getAndSetWriteBody(boolean writeBody) {
         boolean b = this.writeBody;
         this.writeBody = writeBody;

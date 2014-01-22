@@ -60,16 +60,6 @@ public interface ListenableFuture<V> extends Future<V> {
     void touch();
 
     /**
-     * Write the {@link Request} headers
-     */
-    boolean getAndSetWriteHeaders(boolean writeHeader);
-
-    /**
-     * Write the {@link Request} body
-     */
-    boolean getAndSetWriteBody(boolean writeBody);
-
-    /**
      * <p>Adds a listener and executor to the ListenableFuture.
      * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
      * to the executor} for execution when the {@code Future}'s computation is
