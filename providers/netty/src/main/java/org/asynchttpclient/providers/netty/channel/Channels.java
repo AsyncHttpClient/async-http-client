@@ -29,7 +29,6 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpRequestEncoder;
 import io.netty.handler.codec.http.HttpResponseDecoder;
@@ -117,6 +116,11 @@ public class Channels {
         this.config = config;
         this.asyncHttpProviderConfig = asyncHttpProviderConfig;
 
+        // FIXME https://github.com/netty/netty/issues/2132
+        if (config.getRequestCompressionLevel() > 0) {
+            LOGGER.warn("Request was enabled but Netty actually doesn't support this feature, see https://github.com/netty/netty/issues/2132");
+        }
+
         // check if external EventLoopGroup is defined
         eventLoopGroup = asyncHttpProviderConfig.getEventLoopGroup();
 
@@ -202,12 +206,7 @@ public class Channels {
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-                ChannelPipeline pipeline = ch.pipeline()//
-                        .addLast(HTTP_HANDLER, newHttpClientCodec());
-
-                if (config.getRequestCompressionLevel() > 0) {
-                    pipeline.addLast(DEFLATER_HANDLER, new HttpContentCompressor(config.getRequestCompressionLevel()));
-                }
+                ChannelPipeline pipeline = ch.pipeline().addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.isCompressionEnabled()) {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
