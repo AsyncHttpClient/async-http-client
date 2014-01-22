@@ -78,6 +78,11 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private final ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<String, Object>();
 
+    /**
+     * Allow one to disable zero copy for bodies and use chunking instead;
+     */
+    private boolean disableZeroCopy;
+
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, "false");
     }
@@ -135,5 +140,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     public Set<Map.Entry<String, Object>> propertiesSet() {
         return properties.entrySet();
+    }
+
+    public void setDisableZeroCopy(boolean disableZeroCopy) {
+        this.disableZeroCopy = disableZeroCopy;
+    }
+
+    public boolean isDisableZeroCopy() {
+        return disableZeroCopy;
     }
 }

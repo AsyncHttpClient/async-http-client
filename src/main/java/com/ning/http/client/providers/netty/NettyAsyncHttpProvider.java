@@ -202,16 +202,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     };
     private final ConnectionsPool<String, Channel> connectionsPool;
     private Semaphore freeConnections = null;
-    private final NettyAsyncHttpProviderConfig asyncHttpProviderConfig;
+    private final NettyAsyncHttpProviderConfig providerConfig;
     private boolean executeConnectAsync = true;
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
     private final boolean trackConnections;
     private final boolean useRawUrl;
+    private final boolean disableZeroCopy;
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
-    private HashedWheelTimer hashedWheelTimer;
+    private final HashedWheelTimer hashedWheelTimer;
 
     private static boolean isNTLM(List<String> auth) {
         return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
@@ -220,21 +221,21 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
         if (config.getAsyncHttpProviderConfig() instanceof NettyAsyncHttpProviderConfig) {
-            asyncHttpProviderConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
+            providerConfig = NettyAsyncHttpProviderConfig.class.cast(config.getAsyncHttpProviderConfig());
         } else {
-            asyncHttpProviderConfig = new NettyAsyncHttpProviderConfig();
+            providerConfig = new NettyAsyncHttpProviderConfig();
         }
 
         if (config.getRequestCompressionLevel() > 0) {
             LOGGER.warn("Request was enabled but Netty actually doesn't support this feature");
         }
 
-        if (asyncHttpProviderConfig.getProperty(USE_BLOCKING_IO) != null) {
+        if (providerConfig.getProperty(USE_BLOCKING_IO) != null) {
             socketChannelFactory = new OioClientSocketChannelFactory(config.executorService());
             this.allowReleaseSocketChannelFactory = true;
         } else {
             // check if external NioClientSocketChannelFactory is defined
-            Object oo = asyncHttpProviderConfig.getProperty(SOCKET_CHANNEL_FACTORY);
+            Object oo = providerConfig.getProperty(SOCKET_CHANNEL_FACTORY);
             if (oo instanceof NioClientSocketChannelFactory) {
                 this.socketChannelFactory = NioClientSocketChannelFactory.class.cast(oo);
 
@@ -242,7 +243,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 this.allowReleaseSocketChannelFactory = false;
             } else {
                 ExecutorService e;
-                Object o = asyncHttpProviderConfig.getProperty(BOSS_EXECUTOR_SERVICE);
+                Object o = providerConfig.getProperty(BOSS_EXECUTOR_SERVICE);
                 if (o instanceof ExecutorService) {
                     e = ExecutorService.class.cast(o);
                 } else {
@@ -279,7 +280,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         useRawUrl = config.isUseRawUrl();
-        
+        disableZeroCopy = providerConfig.isDisableZeroCopy();
         hashedWheelTimer = new HashedWheelTimer();
         hashedWheelTimer.start();
     }
@@ -294,8 +295,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     void configureNetty() {
-        if (asyncHttpProviderConfig != null) {
-            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+        if (providerConfig != null) {
+            for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
                 plainBootstrap.setOption(entry.getKey(), entry.getValue());
             }
             configureHttpClientCodec();
@@ -304,7 +305,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         plainBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
 
-            /* @Override */
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = pipeline();
 
@@ -320,11 +320,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         });
         DefaultChannelFuture.setUseDeadLockChecker(false);
 
-        if (asyncHttpProviderConfig != null) {
-            Object value = asyncHttpProviderConfig.getProperty(EXECUTE_ASYNC_CONNECT);
+        if (providerConfig != null) {
+            Object value = providerConfig.getProperty(EXECUTE_ASYNC_CONNECT);
             if (value instanceof Boolean) {
                 executeConnectAsync = Boolean.class.cast(value);
-            } else if (asyncHttpProviderConfig.getProperty(DISABLE_NESTED_REQUEST) != null) {
+            } else if (providerConfig.getProperty(DISABLE_NESTED_REQUEST) != null) {
                 DefaultChannelFuture.setUseDeadLockChecker(true);
             }
         }
@@ -343,15 +343,15 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     protected void configureHttpClientCodec() {
-        httpClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpClientCodecMaxInitialLineLength);
-        httpClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpClientCodecMaxHeaderSize);
-        httpClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpClientCodecMaxChunkSize);
+        httpClientCodecMaxInitialLineLength = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpClientCodecMaxInitialLineLength);
+        httpClientCodecMaxHeaderSize = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpClientCodecMaxHeaderSize);
+        httpClientCodecMaxChunkSize = providerConfig.getProperty(HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpClientCodecMaxChunkSize);
     }
 
     protected void configureHttpsClientCodec() {
-        httpsClientCodecMaxInitialLineLength = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpsClientCodecMaxInitialLineLength);
-        httpsClientCodecMaxHeaderSize = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpsClientCodecMaxHeaderSize);
-        httpsClientCodecMaxChunkSize = asyncHttpProviderConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
+        httpsClientCodecMaxInitialLineLength = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH, Integer.class, httpsClientCodecMaxInitialLineLength);
+        httpsClientCodecMaxHeaderSize = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_HEADER_SIZE, Integer.class, httpsClientCodecMaxHeaderSize);
+        httpsClientCodecMaxChunkSize = providerConfig.getProperty(HTTPS_CLIENT_CODEC_MAX_CHUNK_SIZE, Integer.class, httpsClientCodecMaxChunkSize);
     }
 
     void constructSSLPipeline(final NettyConnectListener<?> cl) {
@@ -399,8 +399,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         });
 
-        if (asyncHttpProviderConfig != null) {
-            for (Entry<String, Object> entry : asyncHttpProviderConfig.propertiesSet()) {
+        if (providerConfig != null) {
+            for (Entry<String, Object> entry : providerConfig.propertiesSet()) {
                 secureBootstrap.setOption(entry.getKey(), entry.getValue());
                 secureWebSocketBootstrap.setOption(entry.getKey(), entry.getValue());
             }
@@ -544,7 +544,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             fileLength = raf.length();
 
                             ChannelFuture writeFuture;
-                            if (ssl) {
+                            if (ssl || disableZeroCopy) {
                                 writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, MAX_BUFFERED_BYTES));
                             } else {
                                 final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
@@ -572,7 +572,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     } else if (body != null) {
 
                         ChannelFuture writeFuture;
-                        if (!ssl && body instanceof RandomAccessBody) {
+                        if (!ssl && !disableZeroCopy && body instanceof RandomAccessBody) {
                             BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
                             writeFuture = channel.write(bodyFileRegion);
                         } else {
@@ -1059,7 +1059,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // Do no enable this with win.
         if (!System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win")) {
-            bootstrap.setOption("reuseAddress", asyncHttpProviderConfig.getProperty(REUSE_ADDRESS));
+            bootstrap.setOption("reuseAddress", providerConfig.getProperty(REUSE_ADDRESS));
         }
 
         try {
