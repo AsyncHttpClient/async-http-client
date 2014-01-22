@@ -62,12 +62,13 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public void close() {
-        closed.set(true);
-        try {
-            channels.close();
-            config.reaper().shutdown();
-        } catch (Throwable t) {
-            LOGGER.warn("Unexpected error on close", t);
+        if (closed.compareAndSet(false, true)) {
+            try {
+                channels.close();
+                config.reaper().shutdown();
+            } catch (Throwable t) {
+                LOGGER.warn("Unexpected error on close", t);
+            }
         }
     }
 

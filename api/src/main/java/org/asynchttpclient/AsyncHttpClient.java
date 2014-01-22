@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -372,7 +371,6 @@ public class AsyncHttpClient implements Closeable {
      *
      * @return an {@link AsyncHttpProvider}
      */
-    @SuppressWarnings("UnusedDeclaration")
     public AsyncHttpProvider getProvider() {
         return httpProvider;
     }
@@ -381,14 +379,13 @@ public class AsyncHttpClient implements Closeable {
      * Close the underlying connections.
      */
     public void close() {
-        httpProvider.close();
-        isClosed.set(true);
+        if (isClosed.compareAndSet(false, true))
+            httpProvider.close();
     }
 
     /**
      * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
      */
-    @SuppressWarnings("UnusedDeclaration")
     public void closeAsynchronously() {
         config.applicationThreadPool.submit(new Runnable() {
 
