@@ -253,17 +253,17 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     public static interface ResumableProcessor {
 
         /**
-         * Associate a key with the number of bytes sucessfully transferred.
+         * Associate a key with the number of bytes successfully transferred.
          *
          * @param key              a key. The recommended way is to use an url.
-         * @param transferredBytes The number of bytes sucessfully transferred.
+         * @param transferredBytes The number of bytes successfully transferred.
          */
         public void put(String key, long transferredBytes);
 
         /**
          * Remove the key associate value.
          *
-         * @param key key from which the value will be discarted
+         * @param key key from which the value will be discarded
          */
         public void remove(String key);
 
