@@ -35,16 +35,18 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProgressListener.class);
 
     private final AsyncHttpClientConfig config;
-    private final boolean notifyHeaders;
     private final AsyncHandler<?> asyncHandler;
     private final NettyResponseFuture<?> future;
+    private final boolean notifyHeaders;
+    private final long expectedTotal;
     private long lastProgress = 0L;
 
-    public ProgressListener(AsyncHttpClientConfig config, boolean notifyHeaders, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future) {
+    public ProgressListener(AsyncHttpClientConfig config, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future, boolean notifyHeaders, long expectedTotal) {
         this.config = config;
-        this.notifyHeaders = notifyHeaders;
         this.asyncHandler = asyncHandler;
         this.future = future;
+        this.notifyHeaders = notifyHeaders;
+        this.expectedTotal = expectedTotal;
     }
 
     private boolean abortOnThrowable(Throwable cause, Channel channel) {
@@ -111,6 +113,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
         if (!notifyHeaders && asyncHandler instanceof ProgressAsyncHandler) {
             long lastLastProgress = lastProgress;
             lastProgress = progress;
+            if (total < 0)
+                total = expectedTotal;
             ProgressAsyncHandler.class.cast(asyncHandler).onContentWriteProgress(progress - lastLastProgress, progress, total);
         }
     }

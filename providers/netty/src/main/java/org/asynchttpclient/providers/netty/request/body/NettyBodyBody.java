@@ -81,7 +81,7 @@ public class NettyBodyBody implements NettyBody {
         }
         ChannelFuture writeFuture = channel.write(msg, channel.newProgressivePromise());
 
-        writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+        writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
             public void operationComplete(ChannelProgressiveFuture cf) {
                 try {
                     body.close();

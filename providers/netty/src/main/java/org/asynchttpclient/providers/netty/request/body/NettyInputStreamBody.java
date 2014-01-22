@@ -68,7 +68,7 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamWasAlreadyConsumed(true);
         }
 
-        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
             public void operationComplete(ChannelProgressiveFuture cf) {
                 try {
                     is.close();

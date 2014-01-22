@@ -350,7 +350,7 @@ public class NettyRequestSender {
                     if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
                         AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRequestSent();
                     }
-                    channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, true, future.getAsyncHandler(), future));
+                    channel.writeAndFlush(httpRequest, channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, true, 0L));
                 } catch (Throwable cause) {
                     // FIXME why not notify?
                     LOGGER.debug(cause.getMessage(), cause);

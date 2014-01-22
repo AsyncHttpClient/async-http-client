@@ -87,10 +87,10 @@ public class NettyFileBody implements NettyBody {
                 FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
                 writeFuture = channel.write(region, channel.newProgressivePromise());
             }
-            // FIXME probably useless in Netty 4
-            writeFuture.addListener(new ProgressListener(config, false, future.getAsyncHandler(), future) {
+            writeFuture.addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
                 public void operationComplete(ChannelProgressiveFuture cf) {
                     try {
+                        // FIXME probably useless in Netty 4
                         raf.close();
                     } catch (IOException e) {
                         LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
