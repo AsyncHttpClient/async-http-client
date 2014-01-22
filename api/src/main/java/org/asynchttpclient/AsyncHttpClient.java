@@ -16,24 +16,25 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
-import org.asynchttpclient.filter.RequestFilter;
-import org.asynchttpclient.multipart.Part;
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
-
 import java.io.Closeable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.filter.RequestFilter;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.resumable.ResumableAsyncHandler;
+import org.eclipse.jetty.http.HttpContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class support asynchronous and synchronous HTTP request.
@@ -387,11 +388,16 @@ public class AsyncHttpClient implements Closeable {
      * Asynchronous close the {@link AsyncHttpProvider} by spawning a thread and avoid blocking.
      */
     public void closeAsynchronously() {
-        config.applicationThreadPool.submit(new Runnable() {
-
+        final ExecutorService e = Executors.newSingleThreadExecutor();
+        e.submit(new Runnable() {
             public void run() {
-                httpProvider.close();
-                isClosed.set(true);
+                try {
+                    close();
+                } catch (Throwable t) {
+                    logger.warn("", t);
+                } finally {
+                    e.shutdown();
+                }
             }
         });
     }
