@@ -23,7 +23,6 @@ import javax.net.ssl.SSLSession;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -79,13 +78,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureExecutors() {
-        reaper = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "AsyncHttpClient-Reaper");
-                t.setDaemon(true);
-                return t;
-            }
-        });
         applicationThreadPool = Executors.newCachedThreadPool(new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "AsyncHttpClient-Callback");
@@ -147,14 +139,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setAllowPoolingConnection(boolean allowPoolingConnection) {
         this.allowPoolingConnection = allowPoolingConnection;
-        return this;
-    }
-
-    public AsyncHttpClientConfigBean setReaper(ScheduledExecutorService reaper) {
-        if (this.reaper != null) {
-            this.reaper.shutdownNow();
-        }
-        this.reaper = reaper;
         return this;
     }
 
