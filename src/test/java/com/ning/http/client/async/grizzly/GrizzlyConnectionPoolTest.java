@@ -15,17 +15,14 @@ package com.ning.http.client.async.grizzly;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
 
-import org.glassfish.grizzly.Connection;
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.Response;
 import com.ning.http.client.async.ConnectionPoolTest;
 import com.ning.http.client.async.ProviderUtil;
@@ -61,87 +58,6 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             }
             assertNotNull(exception);
             assertNotNull(exception.getMessage());
-        } finally {
-            client.close();
-        }
-    }
-
-    @Override
-    public void testValidConnectionsPool() {
-        ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {
-
-            public boolean offer(String key, Connection connection) {
-                return true;
-            }
-
-            public Connection poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Connection connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return true;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNull(exception);
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void testInvalidConnectionsPool() {
-
-        ConnectionsPool<String, Connection> cp = new ConnectionsPool<String, Connection>() {
-
-            public boolean offer(String key, Connection connection) {
-                return false;
-            }
-
-            public Connection poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Connection connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return false;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNotNull(exception);
         } finally {
             client.close();
         }

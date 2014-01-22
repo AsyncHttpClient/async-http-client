@@ -15,17 +15,10 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncCompletionHandlerBase;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.ConnectionsPool;
-import com.ning.http.client.Response;
-import org.jboss.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.Map;
@@ -35,10 +28,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncCompletionHandlerBase;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Response;
 
 public abstract class ConnectionPoolTest extends AbstractBasicTest {
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
@@ -128,89 +127,6 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
             }
 
             assertEquals(remoteAddresses.size(), 2);
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void testInvalidConnectionsPool() {
-
-        ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
-
-            public boolean offer(String key, Channel connection) {
-                return false;
-            }
-
-            public Channel poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Channel connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return false;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNotNull(exception);
-            assertEquals(exception.getMessage(), "Too many connections -1");
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider" })
-    public void testValidConnectionsPool() {
-
-        ConnectionsPool<String, Channel> cp = new ConnectionsPool<String, Channel>() {
-
-            public boolean offer(String key, Channel connection) {
-                return true;
-            }
-
-            public Channel poll(String connection) {
-                return null;
-            }
-
-            public boolean removeAll(Channel connection) {
-                return false;
-            }
-
-            public boolean canCacheConnection() {
-                return true;
-            }
-
-            public void destroy() {
-
-            }
-        };
-
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setConnectionsPool(cp).build());
-        try {
-            Exception exception = null;
-            try {
-                client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNull(exception);
         } finally {
             client.close();
         }
