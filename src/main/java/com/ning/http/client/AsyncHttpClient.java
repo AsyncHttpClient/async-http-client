@@ -375,17 +375,21 @@ public class AsyncHttpClient implements Closeable {
      */
     public void closeAsynchronously() {
         final ExecutorService e = Executors.newSingleThreadExecutor();
-        e.submit(new Runnable() {
-            public void run() {
-                try {
-                    close();
-                } catch (Throwable t) {
-                    logger.warn("", t);
-                } finally {
-                    e.shutdown();
+        try {
+            e.submit(new Runnable() {
+                public void run() {
+                    try {
+                        close();
+                    } catch (Throwable t) {
+                        logger.warn("", t);
+                    } finally {
+                        e.shutdown();
+                    }
                 }
-            }
-        });
+            });
+        } finally {
+            e.shutdown();
+        }
     }
 
     @Override
