@@ -388,9 +388,8 @@ final class HttpProtocol extends Protocol {
 
                     ByteBuf buf = chunk.content();
                     try {
-                        if (!interrupt && buf.readableBytes() > 0) {
+                        if (!interrupt)
                             interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
-                        }
                     } finally {
                         // FIXME we shouldn't need this, should we? But a leak was reported there without it?!
                         buf.release();
