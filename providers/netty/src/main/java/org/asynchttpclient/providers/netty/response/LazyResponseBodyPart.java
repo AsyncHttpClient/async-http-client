@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public class LazyResponseBodyPart extends ResponseBodyPart {
+public class LazyResponseBodyPart extends NettyResponseBodyPart {
 
     private static final String ERROR_MESSAGE = "This implementation is intended for one to directly read from the underlying ByteBuf and release after usage. Not for the fainted heart!";
 

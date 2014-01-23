@@ -38,7 +38,7 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.ResponseHeaders;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.asynchttpclient.providers.netty.ws.NettyWebSocket;
@@ -132,7 +132,7 @@ final class WebSocketProtocol extends Protocol {
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
                         try {
-                            ResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
+                            NettyResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
                             h.onBodyPartReceived(rp);
 
                             if (binaryFrame) {

@@ -29,7 +29,7 @@ import org.asynchttpclient.providers.netty.util.ByteBufUtil;
  * A callback class used when an HTTP response body is received.
  * Bytes are eagerly fetched from the ByteBuf
  */
-public class EagerResponseBodyPart extends ResponseBodyPart {
+public class EagerResponseBodyPart extends NettyResponseBodyPart {
 
     private final byte[] bytes;
 

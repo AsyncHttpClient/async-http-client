@@ -20,12 +20,12 @@ import org.asynchttpclient.HttpResponseBodyPart;
 /**
  * A callback class used when an HTTP response body is received.
  */
-public abstract class ResponseBodyPart extends HttpResponseBodyPart {
+public abstract class NettyResponseBodyPart extends HttpResponseBodyPart {
 
     private final boolean last;
     private boolean closeConnection;
 
-    public ResponseBodyPart(boolean last) {
+    public NettyResponseBodyPart(boolean last) {
         this.last = last;
     }
 

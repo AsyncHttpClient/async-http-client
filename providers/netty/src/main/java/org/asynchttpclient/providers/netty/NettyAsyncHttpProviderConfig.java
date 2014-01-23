@@ -29,7 +29,7 @@ import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.ChannelPool;
 import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.ResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -236,13 +236,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public static interface ResponseBodyPartFactory {
 
-        ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
+        NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
     }
 
     public static class EagerResponseBodyPartFactory implements ResponseBodyPartFactory {
 
         @Override
-        public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
             return new EagerResponseBodyPart(buf, last);
         }
     }
@@ -250,7 +250,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     public static class LazyResponseBodyPartFactory implements ResponseBodyPartFactory {
 
         @Override
-        public ResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
+        public NettyResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
             return new LazyResponseBodyPart(buf, last);
         }
     }
