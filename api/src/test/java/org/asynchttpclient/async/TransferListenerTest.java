@@ -98,7 +98,8 @@ public abstract class TransferListenerTest extends AbstractBasicTest {
                 }
 
                 public void onBytesReceived(byte[] b) {
-                    bb.set(b);
+                    if (b.length != 0)
+                        bb.set(b);
                 }
 
                 public void onBytesSent(long amount, long current, long total) {

@@ -197,7 +197,7 @@ public interface Response {
         }
 
         public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {
-            bodyParts.add(bodyPart);
+            if (bodyPart.length() > 0) bodyParts.add(bodyPart);
             return this;
         }
 

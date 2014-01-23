@@ -115,9 +115,11 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 }
 
                 public STATE onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
-                    String s = new String(e.getBodyPartBytes());
-                    logger.info("got part: {}", s);
-                    queue.put(s);
+                    if (e.length() != 0) {
+                        String s = new String(e.getBodyPartBytes());
+                        logger.info("got part: {}", s);
+                        queue.put(s);
+                    }
                     return STATE.CONTINUE;
                 }
 
