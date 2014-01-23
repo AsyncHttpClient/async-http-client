@@ -21,10 +21,11 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
 public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 
-	INSTANCE;
-	
-	@Override
-	public String getKey(URI uri) {
-		return AsyncHttpProviderUtils.getBaseUrl(uri);
-	}
+    INSTANCE;
+
+    @Override
+    public String getKey(URI uri, ProxyServer proxyServer) {
+        String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
+        return proxyServer != null ? AsyncHttpProviderUtils.getBaseUrl(proxyServer.getURI()) + serverPart : serverPart;
+    }
 }

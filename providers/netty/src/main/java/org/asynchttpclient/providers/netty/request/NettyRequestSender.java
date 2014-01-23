@@ -144,12 +144,10 @@ public class NettyRequestSender {
 
     private Channel getCachedChannel(NettyResponseFuture<?> future, URI uri, ConnectionPoolKeyStrategy poolKeyGen, ProxyServer proxyServer) {
 
-        if (future != null && future.reuseChannel() && isChannelValid(future.channel())) {
+        if (future != null && future.reuseChannel() && isChannelValid(future.channel()))
             return future.channel();
-        } else {
-            URI connectionKeyUri = proxyServer != null ? proxyServer.getURI() : uri;
-            return channels.lookupInCache(connectionKeyUri, poolKeyGen);
-        }
+        else
+            return channels.pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen);
     }
 
     private <T> ListenableFuture<T> sendRequestWithCachedChannel(Channel channel, Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future,

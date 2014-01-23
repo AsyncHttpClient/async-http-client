@@ -64,7 +64,6 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -308,7 +307,8 @@ public class Channels {
 
     protected HttpClientCodec newHttpClientCodec() {
         if (nettyProviderConfig != null) {
-            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(), false);
+            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(),
+                    false);
 
         } else {
             return new HttpClientCodec();
@@ -342,8 +342,8 @@ public class Channels {
         ctx.pipeline().replace(Channels.HTTP_DECODER_HANDLER, Channels.WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
     }
 
-    public Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        final Channel channel = channelPool.poll(connectionPoolKeyStrategy.getKey(uri));
+    public Channel pollAndVerifyCachedChannel(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
+        final Channel channel = channelPool.poll(connectionPoolKeyStrategy.getKey(uri, proxy));
 
         if (channel != null) {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -445,10 +445,7 @@ public class Channels {
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
-        String serverPart = future.getConnectionPoolKeyStrategy().getKey(future.getURI());
-
-        ProxyServer proxy = future.getProxyServer();
-        return proxy != null ? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
+        return future.getConnectionPoolKeyStrategy().getKey(future.getURI(), future.getProxyServer());
     }
 
     public void removeAll(Channel channel) {

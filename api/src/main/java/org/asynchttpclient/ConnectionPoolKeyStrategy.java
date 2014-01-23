@@ -19,5 +19,5 @@ import java.net.URI;
 
 public interface ConnectionPoolKeyStrategy {
 
-	String getKey(URI uri);
+	String getKey(URI uri, ProxyServer proxy);
 }
