@@ -1287,20 +1287,21 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         addType3NTLMAuthorizationHeader(wwwAuth, headers, proxyServer.getPrincipal(), proxyServer.getPassword(), proxyServer.getNtlmDomain(), proxyServer.getHost());
         Realm newRealm;
         
-        Realm.RealmBuilder realmBuilder;
+        Realm.RealmBuilder realmBuilder = new Realm.RealmBuilder();
         if (realm != null) {
-            realmBuilder = new Realm.RealmBuilder().clone(realm);
-        } else {
-            realmBuilder = new Realm.RealmBuilder();
+            realmBuilder = realmBuilder.clone(realm);
         }
         newRealm = realmBuilder.setUri(request.getURI().getPath()).setMethodName(request.getMethod()).build();
 
         return newRealm;
     }
 
-    private String getPoolKey(NettyResponseFuture<?> future) throws MalformedURLException {
-        URI uri = future.getProxyServer() != null ? future.getProxyServer().getURI() : future.getURI();
-        return future.getConnectionPoolKeyStrategy().getKey(uri);
+    private String getPoolKey(NettyResponseFuture<?> future) {
+        
+        String serverPart = future.getConnectionPoolKeyStrategy().getKey(future.getURI());
+
+        ProxyServer proxy = future.getProxyServer();
+        return proxy != null? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
     }
 
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
