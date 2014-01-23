@@ -57,12 +57,14 @@ import javax.net.ssl.SSLEngine;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -306,8 +308,7 @@ public class Channels {
 
     protected HttpClientCodec newHttpClientCodec() {
         if (nettyProviderConfig != null) {
-            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(),
-                    false);
+            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(), false);
 
         } else {
             return new HttpClientCodec();
@@ -444,8 +445,10 @@ public class Channels {
     }
 
     public String getPoolKey(NettyResponseFuture<?> future) {
-        URI uri = future.getProxyServer() != null ? future.getProxyServer().getURI() : future.getURI();
-        return future.getConnectionPoolKeyStrategy().getKey(uri);
+        String serverPart = future.getConnectionPoolKeyStrategy().getKey(future.getURI());
+
+        ProxyServer proxy = future.getProxyServer();
+        return proxy != null ? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
     }
 
     public void removeAll(Channel channel) {
