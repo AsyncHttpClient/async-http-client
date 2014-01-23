@@ -2434,8 +2434,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         private static String getPoolKey(Request request, ProxyServer proxyServer) {
-            URI uri = proxyServer != null? proxyServer.getURI(): request.getURI();
-            return request.getConnectionPoolKeyStrategy().getKey(uri);
+            String serverPart =
+                    request.getConnectionPoolKeyStrategy().getKey(request.getURI());
+            return proxyServer != null
+                    ? AsyncHttpProviderUtils.getBaseUrl(proxyServer.getURI())
+                         + serverPart
+                    : serverPart;
         }
 
         // ------------------------------------------------------ Nested Classes
