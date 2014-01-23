@@ -352,8 +352,7 @@ public class ConnectionManager {
 
     private static String getPoolKey(final Request request, ProxyServer proxyServer) {
         final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
-        URI uri = proxyServer != null ? proxyServer.getURI() : request.getURI();
-        return keyStrategy.getKey(uri);
+        return keyStrategy.getKey(request.getURI(), proxyServer);
     }
 
 }
