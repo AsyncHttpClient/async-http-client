@@ -13,17 +13,13 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.websocket.TextMessageTest;
-import com.ning.http.client.websocket.WebSocket;
-import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
-import com.ning.http.client.websocket.WebSocketListener;
-import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
@@ -95,6 +91,46 @@ public abstract class CloseCodeReasonMessageTest extends TextMessageTest {
         public void onError(Throwable t) {
             t.printStackTrace();
             latch.countDown();
+        }
+    }
+
+    @Test(timeOut = 60000)
+    public void wrongStatusCode() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
+
+            WebSocket websocket = c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+
+                @Override
+                public void onMessage(String message) {
+                }
+
+                @Override
+                public void onFragment(String fragment, boolean last) {
+                }
+
+                @Override
+                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    throwable.set(t);
+                    latch.countDown();
+                }
+            }).build()).get();
+
+            latch.await();
+            assertNotNull(throwable.get());
+            assertEquals(throwable.get().getClass(), IllegalStateException.class);
+        } finally {
+            c.close();
         }
     }
 }
