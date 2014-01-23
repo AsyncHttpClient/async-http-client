@@ -139,4 +139,8 @@ public class GrizzlyResponseBodyPart extends HttpResponseBodyPart {
 
     }
 
+    @Override
+    public int length() {
+        return content.getContent().remaining();
+    }
 }

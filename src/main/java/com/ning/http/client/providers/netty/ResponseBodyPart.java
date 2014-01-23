@@ -35,6 +35,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final ChannelBuffer content;
     private final AtomicReference<byte[]> bytes = new AtomicReference<byte[]>(null);
     private final boolean isLast;
+    private final int length;
     private boolean closeConnection = false;
 
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
@@ -44,6 +45,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
         super(uri, provider);
         content = chunk != null ? chunk.getContent() : response.getContent();
+        length = content.readableBytes();
         isLast = last;
     }
 
@@ -105,5 +107,10 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public boolean closeUnderlyingConnection() {
         return closeConnection;
+    }
+
+    @Override
+    public int length() {
+        return length;
     }
 }
