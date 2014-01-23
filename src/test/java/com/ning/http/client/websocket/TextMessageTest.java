@@ -401,44 +401,4 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             c.close();
         }
     }
-
-    @Test(timeOut = 60000)
-    public void wrongStatusCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
-        try {
-            final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
-
-            WebSocket websocket = c.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
-
-                @Override
-                public void onMessage(String message) {
-                }
-
-                @Override
-                public void onFragment(String fragment, boolean last) {
-                }
-
-                @Override
-                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
-                }
-
-                @Override
-                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    throwable.set(t);
-                    latch.countDown();
-                }
-            }).build()).get();
-
-            latch.await();
-            assertNotNull(throwable.get());
-            assertEquals(throwable.get().getClass(), IllegalStateException.class);
-        } finally {
-            c.close();
-        }
-    }
 }
