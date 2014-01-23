@@ -34,7 +34,7 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      *
      * @return the response body's part bytes received.
      */
-    abstract public byte[] getBodyPartBytes();
+    public abstract byte[] getBodyPartBytes();
 
     /**
      * Write the available bytes to the {@link java.io.OutputStream}
@@ -43,7 +43,7 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      * @return The number of bytes written
      * @throws IOException
      */
-    abstract public int writeTo(OutputStream outputStream) throws IOException;
+    public abstract int writeTo(OutputStream outputStream) throws IOException;
 
     /**
      * Return a {@link ByteBuffer} that wraps the actual bytes read from the response's chunk. The {@link ByteBuffer}
@@ -51,27 +51,28 @@ public abstract class HttpResponseBodyPart extends HttpContent {
      *
      * @return {@link ByteBuffer}
      */
-    abstract public ByteBuffer getBodyByteBuffer();
+    public abstract ByteBuffer getBodyByteBuffer();
 
     /**
      * Return true if this is the last part.
      *
      * @return true if this is the last part.
      */
-    abstract public boolean isLast();
+    public abstract boolean isLast();
 
     /**
      * Close the underlying connection once the processing has completed. Invoking that method means the
      * underlying TCP connection will be closed as soon as the processing of the response is completed. That
      * means the underlying connection will never get pooled.
      */
-    abstract public void markUnderlyingConnectionAsClosed();
+    public abstract void markUnderlyingConnectionAsClosed();
 
     /**
      * Return true of the underlying connection will be closed once the response has been fully processed.
      *
      * @return true of the underlying connection will be closed once the response has been fully processed.
      */
-    abstract public boolean closeUnderlyingConnection();
+    public abstract boolean closeUnderlyingConnection();
 
+    public abstract int length();
 }

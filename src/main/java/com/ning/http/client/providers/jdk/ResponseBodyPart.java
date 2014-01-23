@@ -78,4 +78,9 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     public boolean closeUnderlyingConnection() {
         return closeConnection;
     }
+
+    @Override
+    public int length() {
+        return chunk != null? chunk.length: 0;
+    }
 }
