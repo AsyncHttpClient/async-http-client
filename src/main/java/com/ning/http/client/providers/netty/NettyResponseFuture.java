@@ -17,7 +17,6 @@ package com.ning.http.client.providers.netty;
 
 import static com.ning.http.util.DateUtil.millisTime;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -121,7 +120,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         writeBody = true;
     }
 
-    protected URI getURI() throws MalformedURLException {
+    protected URI getURI() {
         return uri;
     }
 
