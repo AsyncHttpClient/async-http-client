@@ -36,6 +36,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
     private final long maxTextSize;
     private final AtomicBoolean ok = new AtomicBoolean(false);
     private final AtomicBoolean onSuccessCalled = new AtomicBoolean(false);
+    private int status;
 
     private WebSocketUpgradeHandler(Builder b) {
         l = b.l;
@@ -52,7 +53,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
         onFailure(t);
     }
 
-    public boolean touchSuccess(){
+    public boolean touchSuccess() {
         return onSuccessCalled.getAndSet(true);
     }
 
@@ -69,6 +70,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     @Override
     public final STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+        status = responseStatus.getStatusCode();
         if (responseStatus.getStatusCode() == 101) {
             return STATE.UPGRADE;
         } else {
@@ -89,6 +91,14 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
      */
     @Override
     public final WebSocket onCompleted() throws Exception {
+
+        if (status != 101) {
+            for (WebSocketListener w : l) {
+                w.onError(new IllegalStateException(String.format("Invalid Status Code %d", status)));
+            }
+            return null;
+        }
+
         if (webSocket == null) {
             throw new IllegalStateException("WebSocket is null");
         }
@@ -202,6 +212,7 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
         /**
          * Build a {@link WebSocketUpgradeHandler}
+         *
          * @return a {@link WebSocketUpgradeHandler}
          */
         public WebSocketUpgradeHandler build() {
