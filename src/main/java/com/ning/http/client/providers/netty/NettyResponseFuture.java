@@ -87,7 +87,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final int maxRetry;
     private boolean writeHeaders;
     private boolean writeBody;
-    private final AtomicBoolean throwableCalled = new AtomicBoolean(false);
+    private final AtomicBoolean onThrowableCalled = new AtomicBoolean(false);
     private boolean allowConnect = false;
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
     private final ProxyServer proxyServer;
@@ -142,7 +142,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
      */
     /* @Override */
     public boolean isDone() {
-        return isDone.get();
+        return isDone.get() || isCancelled.get();
     }
 
     /**
@@ -173,7 +173,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         } catch (Throwable t) {
             // Ignore
         }
-        if (!throwableCalled.getAndSet(true)) {
+        if (!onThrowableCalled.getAndSet(true)) {
             try {
                 asyncHandler.onThrowable(new CancellationException());
             } catch (Throwable t) {
@@ -252,7 +252,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
                 } catch (Throwable t) {
                     // Ignore
                 }
-                if (!throwableCalled.getAndSet(true)) {
+                if (!onThrowableCalled.getAndSet(true)) {
                     try {
                         TimeoutException te = new TimeoutException(String.format("No response received after %s", l));
                         try {
@@ -289,7 +289,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             try {
                 update = asyncHandler.onCompleted();
             } catch (Throwable ex) {
-                if (!throwableCalled.getAndSet(true)) {
+                if (!onThrowableCalled.getAndSet(true)) {
                     try {
                         try {
                             asyncHandler.onThrowable(ex);
@@ -337,7 +337,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
-        if (!throwableCalled.getAndSet(true)) {
+        if (onThrowableCalled.compareAndSet(false, true)) {
             try {
                 asyncHandler.onThrowable(t);
             } catch (Throwable te) {
