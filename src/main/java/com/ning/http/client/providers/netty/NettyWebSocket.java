@@ -38,8 +38,9 @@ public class NettyWebSocket implements WebSocket {
     private final Channel channel;
     private final ConcurrentLinkedQueue<WebSocketListener> listeners = new ConcurrentLinkedQueue<WebSocketListener>();
 
-    private StringBuilder textBuffer;
-    private ByteArrayOutputStream byteBuffer;
+    private final StringBuilder textBuffer = new StringBuilder();
+    private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+
     private int maxBufferSize = 128000000;
 
     public NettyWebSocket(Channel channel) {
@@ -129,65 +130,86 @@ public class NettyWebSocket implements WebSocket {
     }
 
     protected void onBinaryFragment(byte[] message, boolean last) {
+
+        if (!last) {
+            try {
+                byteBuffer.write(message);
+            } catch (Exception ex) {
+                byteBuffer.reset();
+                onError(ex);
+                return;
+            }
+
+            if (byteBuffer.size() > maxBufferSize) {
+                byteBuffer.reset();
+                Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
+                onError(e);
+                this.close();
+                return;
+            }
+        }
+
         for (WebSocketListener l : listeners) {
             if (l instanceof WebSocketByteListener) {
                 try {
-                	WebSocketByteListener.class.cast(l).onFragment(message,last);
-                	
-                	if(byteBuffer == null) {
-                		byteBuffer = new ByteArrayOutputStream();
-                	}
-                	
-                	byteBuffer.write(message);
-                	
-                	if(byteBuffer.size() > maxBufferSize) {
-                		Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
-                        l.onError(e);
-                		this.close();
-                		return;
-                	}
-                	
-
-                	if(last) {
-                    	WebSocketByteListener.class.cast(l).onMessage(byteBuffer.toByteArray());
-                    	byteBuffer = null;
-                    	textBuffer = null;
-                	}
+                    if (!last) {
+                        WebSocketByteListener.class.cast(l).onFragment(message, last);
+                    } else {
+                        if (byteBuffer.size() > 0) {
+                            byteBuffer.write(message);
+                            WebSocketByteListener.class.cast(l).onFragment(message, last);
+                            WebSocketByteListener.class.cast(l).onMessage(byteBuffer.toByteArray());
+                        } else {
+                            WebSocketByteListener.class.cast(l).onMessage(message);
+                        }
+                    }
                 } catch (Exception ex) {
                     l.onError(ex);
                 }
             }
         }
+
+        if (last) {
+            byteBuffer.reset();
+        }
     }
 
     protected void onTextFragment(String message, boolean last) {
+
+        if (!last) {
+            textBuffer.append(message);
+
+            if (textBuffer.length() > maxBufferSize) {
+                textBuffer.setLength(0);
+                Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
+                onError(e);
+                this.close();
+                return;
+            }
+        }
+
         for (WebSocketListener l : listeners) {
             if (l instanceof WebSocketTextListener) {
                 try {
-                    WebSocketTextListener.class.cast(l).onFragment(message,last);
-                    
-                	if(textBuffer == null) {
-                		textBuffer = new StringBuilder();
-                	}
-                	
-                	textBuffer.append(message);
-                	
-                	if(textBuffer.length() > maxBufferSize) {
-                		Exception e = new Exception("Exceeded Netty Web Socket maximum buffer size of " + getMaxBufferSize());
-                        l.onError(e);
-                		this.close();
-                		return;
-                	}
-                	
-                	if(last) {
-                    	WebSocketTextListener.class.cast(l).onMessage(textBuffer.toString());
-                    	byteBuffer = null;
-                    	textBuffer = null;
-                	}
+                    if (!last) {
+                        WebSocketTextListener.class.cast(l).onFragment(message, last);
+                    } else {
+                        if (textBuffer.length() > 0) {
+                            WebSocketTextListener.class.cast(l).onFragment(message, last);
+
+                            WebSocketTextListener.class.cast(l).onMessage(textBuffer.append(message).toString());
+                        } else {
+                            WebSocketTextListener.class.cast(l).onMessage(message);
+                        }
+                    }
                 } catch (Exception ex) {
                     l.onError(ex);
                 }
             }
+        }
+
+        if (last) {
+            textBuffer.setLength(0);
         }
     }
 
