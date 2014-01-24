@@ -1180,7 +1180,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         context.currentState = handler.onStatusReceived(responseStatus);
                         if (context.isWSRequest && context.currentState == AsyncHandler.STATE.ABORT) {
                             httpHeader.setSkipRemainder(true);
-                            context.abort(new HandshakeException("Upgrade failed"));
+                            try {
+                                context.result(handler.onCompleted());
+                                context.done();
+                            } catch (Exception e) {
+                                context.abort(e);
+                            }
                         }
                     }
                 } catch (Exception e) {
