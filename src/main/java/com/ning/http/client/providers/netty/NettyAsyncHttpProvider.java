@@ -1751,7 +1751,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
              * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization, causing unpredictable behavior.
              */
             Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : NettyAsyncHttpProvider.this.getConfig().getRealm();
-            boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth() == true;
+            boolean startPublishing = future.isInAuth() || realm == null || realm.getUsePreemptiveAuth();
 
             if (startPublishing && asyncHandler instanceof ProgressAsyncHandler) {
                 if (notifyHeaders) {
