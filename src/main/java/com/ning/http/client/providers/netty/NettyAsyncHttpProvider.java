@@ -1228,6 +1228,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             return null;
         }
     }
+    
+    private void addNTLMAuthorization(FluentCaseInsensitiveStringsMap headers, String challengeHeader) {
+        headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+    }
 
     private void addType3NTLMAuthorizationHeader(
             List<String> auth,
@@ -1238,11 +1242,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             String workstation)  throws NTLMEngineException {
         headers.remove(HttpHeaders.Names.AUTHORIZATION);
 
-        if (isNTLM(auth)) {
+        // Beware of space!, see #462
+        if (isNonEmpty(auth) && auth.get(0).startsWith("NTLM ")) {
             String serverChallenge = auth.get(0).trim().substring("NTLM ".length());
             String challengeHeader = ntlmEngine.generateType3Msg(username, password, domain, workstation, serverChallenge);
-
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            addNTLMAuthorization(headers, challengeHeader);
         }
     }
 
@@ -1260,7 +1264,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
             URI uri = request.getURI();
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            addNTLMAuthorization(headers, challengeHeader);
             newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(uri.getRawPath()).setMethodName(request.getMethod()).setNtlmMessageType2Received(true).build();
             future.getAndSetAuth(false);
         } else {
