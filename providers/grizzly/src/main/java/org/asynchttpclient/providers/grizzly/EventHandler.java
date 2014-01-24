@@ -42,7 +42,6 @@ import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
-import org.glassfish.grizzly.websockets.HandshakeException;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.WebSocketHolder;
 
@@ -201,7 +200,12 @@ public final class EventHandler {
                     context.setCurrentState(handler.onStatusReceived(responseStatus));
                     if (context.isWSRequest() && context.getCurrentState() == ABORT) {
                         httpHeader.setSkipRemainder(true);
-                        context.abort(new HandshakeException("Upgrade failed"));
+                        try {
+                            context.result(handler.onCompleted());
+                            context.done();
+                        } catch (Exception e) {
+                            context.abort(e);
+                        }
                     }
                 }
             } catch (Exception e) {

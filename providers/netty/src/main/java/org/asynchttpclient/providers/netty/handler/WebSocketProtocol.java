@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -24,10 +23,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
-
-import java.io.IOException;
-import java.util.Locale;
-
 import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -47,6 +42,11 @@ import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Locale;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 
 final class WebSocketProtocol extends Protocol {
 
@@ -98,8 +98,17 @@ final class WebSocketProtocol extends Protocol {
             status = new ResponseStatus(future.getURI(), response, config);
             final boolean statusReceived = h.onStatusReceived(status) == STATE.UPGRADE;
 
+             if (!statusReceived) {
+                 try {
+                     h.onCompleted();
+                 } finally {
+                     future.done();
+                 }
+                 return;
+             }
+
             final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
-            if (!headerOK || !validStatus || !validUpgrade || !validConnection || !statusReceived) {
+            if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
                 channels.abort(future, new IOException("Invalid handshake response"));
                 return;
             }
@@ -107,7 +116,7 @@ final class WebSocketProtocol extends Protocol {
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
             String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
-                throw new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key));
+                channels.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
 
             Channels.upgradePipelineForWebSockets(ctx);
