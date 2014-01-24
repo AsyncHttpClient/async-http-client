@@ -512,7 +512,7 @@ public class MultipartBody implements RandomAccessBody {
                 if (nRead > 0) {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream(nRead);
                     bos.write(bytes, 0, nRead);
-                    writeToTarget(target, bos.toByteArray());
+                    length += writeToTarget(target, bos.toByteArray());
                 }
             }
         } finally {
