@@ -20,6 +20,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
@@ -98,6 +99,10 @@ final class HttpProtocol extends Protocol {
         }
     }
 
+    private void addNTLMAuthorizationHeader(FluentCaseInsensitiveStringsMap headers, String challengeHeader) {
+        headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+    }
+    
     private Realm ntlmChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future)
             throws NTLMEngineException {
 
@@ -112,7 +117,7 @@ final class HttpProtocol extends Protocol {
             String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
 
             URI uri = request.getURI();
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            addNTLMAuthorizationHeader(headers, challengeHeader);
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
@@ -149,11 +154,10 @@ final class HttpProtocol extends Protocol {
             throws NTLMEngineException {
         headers.remove(HttpHeaders.Names.AUTHORIZATION);
 
-        if (isNTLM(auth)) {
+        if (isNonEmpty(auth) && auth.get(0).startsWith("NTLM ")) {
             String serverChallenge = auth.get(0).trim().substring("NTLM ".length());
             String challengeHeader = NTLMEngine.INSTANCE.generateType3Msg(username, password, domain, workstation, serverChallenge);
-
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+            addNTLMAuthorizationHeader(headers, challengeHeader);
         }
     }
 
