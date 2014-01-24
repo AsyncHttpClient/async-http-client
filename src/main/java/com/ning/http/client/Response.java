@@ -203,7 +203,9 @@ public interface Response {
             } else if (httpContent instanceof HttpResponseHeaders) {
                 headers = (HttpResponseHeaders) httpContent;
             } else if (httpContent instanceof HttpResponseBodyPart) {
-                bodies.add((HttpResponseBodyPart) httpContent);
+                HttpResponseBodyPart part = (HttpResponseBodyPart) httpContent;
+                if (part.length() > 0)
+                    bodies.add(part);
             }
             return this;
         }
