@@ -196,14 +196,20 @@ public interface Response {
             return this;
         }
 
+        /**
+         * @param bodyPart
+         *            a body part (possibly empty, but will be filtered out)
+         * @return this
+         */
         public ResponseBuilder accumulate(HttpResponseBodyPart bodyPart) {
-            if (bodyPart.length() > 0) bodyParts.add(bodyPart);
+            if (bodyPart.length() > 0)
+                bodyParts.add(bodyPart);
             return this;
         }
 
         /**
          * Build a {@link Response} instance
-       * 
+         * 
          * @return a {@link Response} instance
          */
         public Response build() {
@@ -219,5 +225,4 @@ public interface Response {
             headers = null;
         }
     }
-
 }

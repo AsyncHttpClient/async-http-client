@@ -41,8 +41,6 @@ import org.asynchttpclient.Request;
 
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.
- * <p/>
- * The cookies's handling code is from the Netty framework.
  */
 public class AsyncHttpProviderUtils {
 
@@ -200,6 +198,11 @@ public class AsyncHttpProviderUtils {
         return new String(contentToBytes(bodyParts), charset);
     }
 
+    /**
+     * @param bodyParts NON EMPTY body part
+     * @return
+     * @throws UnsupportedEncodingException
+     */
     public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
         final int partCount = bodyParts.size();
         if (partCount == 0) {
@@ -224,6 +227,12 @@ public class AsyncHttpProviderUtils {
         return bytes;
     }
 
+    /**
+     * @param bodyParts NON EMPTY body part
+     * @param maxLen
+     * @return
+     * @throws UnsupportedEncodingException
+     */
     public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts, int maxLen) throws UnsupportedEncodingException {
         final int partCount = bodyParts.size();
         if (partCount == 0) {
@@ -257,6 +266,10 @@ public class AsyncHttpProviderUtils {
         return result;
     }
     
+    /**
+     * @param bodyParts NON EMPTY body part
+     * @return
+     */
     public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts)
     {
         switch (bodyParts.size()) {
