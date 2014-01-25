@@ -535,17 +535,14 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                     if (future.getRequest().getFile() != null) {
                         final File file = future.getRequest().getFile();
-                        long fileLength = 0;
                         final RandomAccessFile raf = new RandomAccessFile(file, "r");
 
                         try {
-                            fileLength = raf.length();
-
                             ChannelFuture writeFuture;
-                            if (ssl || disableZeroCopy) {
-                                writeFuture = channel.write(new ChunkedFile(raf, 0, fileLength, MAX_BUFFERED_BYTES));
+                            if (disableZeroCopy || ssl) {
+                                writeFuture = channel.write(new ChunkedFile(raf, 0, raf.length(), MAX_BUFFERED_BYTES));
                             } else {
-                                final FileRegion region = new OptimizedFileRegion(raf, 0, fileLength);
+                                final FileRegion region = new OptimizedFileRegion(raf, 0, raf.length());
                                 writeFuture = channel.write(region);
                             }
                             writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
@@ -568,17 +565,16 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             throw ex;
                         }
                     } else if (body != null) {
+                        final Body b = body;
 
                         ChannelFuture writeFuture;
-                        if (!ssl && !disableZeroCopy && body instanceof RandomAccessBody) {
-                            BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
-                            writeFuture = channel.write(bodyFileRegion);
-                        } else {
+                        if (disableZeroCopy || ssl || !(body instanceof RandomAccessBody)) {
                             BodyChunkedInput bodyChunkedInput = new BodyChunkedInput(body);
                             writeFuture = channel.write(bodyChunkedInput);
+                        } else {
+                            BodyFileRegion bodyFileRegion = new BodyFileRegion((RandomAccessBody) body);
+                            writeFuture = channel.write(bodyFileRegion);
                         }
-
-                        final Body b = body;
                         writeFuture.addListener(new ProgressListener(false, future.getAsyncHandler(), future) {
                             public void operationComplete(ChannelFuture cf) {
                                 try {
