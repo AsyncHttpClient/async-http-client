@@ -17,8 +17,10 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import com.ning.http.client.ListenableFuture;
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
@@ -42,22 +44,21 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
             String url = getTargetUrl();
             int i;
             Exception exception = null;
-            for (i = 0; i < 20; i++) {
-                try {
-                    log.info("{} requesting url [{}]...", i, url);
-
-                    if (i < 5) {
-                        client.prepareGet(url).execute().get();
-                    } else {
-                        client.prepareGet(url).execute();
-                    }
-                } catch (Exception ex) {
-                    exception = ex;
-                    break;
-                }
+            ListenableFuture lockRequest = null;
+            try {
+                lockRequest = client.prepareGet(url).addHeader("LockThread", "true").execute();
+            } catch (Exception e) {
+                fail("Unexpected exception thrown.", e);
             }
-            assertNotNull(exception);
-            assertNotNull(exception.getMessage());
+            try {
+                client.prepareConnect(url).execute().get();
+            } catch (IOException ioe) {
+                assertNotNull(ioe);
+                assertEquals("Max connections exceeded", ioe.getMessage());
+            } catch (Exception e) {
+                fail("Unexpected exception thrown.", e);
+            }
+            lockRequest.cancel(true);
         } finally {
             client.close();
         }
