@@ -42,8 +42,6 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
         AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
         try {
             String url = getTargetUrl();
-            int i;
-            Exception exception = null;
             ListenableFuture lockRequest = null;
             try {
                 lockRequest = client.prepareGet(url).addHeader("LockThread", "true").execute();
