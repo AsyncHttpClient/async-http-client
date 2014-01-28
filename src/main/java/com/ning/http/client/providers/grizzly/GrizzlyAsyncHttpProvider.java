@@ -15,6 +15,7 @@ package com.ning.http.client.providers.grizzly;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
+import com.google.common.base.Throwables;
 import com.ning.http.client.*;
 import com.ning.http.multipart.MultipartBody;
 import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
@@ -683,6 +684,13 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             c.getAttributes().setAttribute("tunnel-established", Boolean.TRUE);
         }
 
+        URI getRequestURI() {
+            try {
+                return new URI(this.requestUrl);
+            } catch (URISyntaxException ex) {
+                throw Throwables.propagate(ex);
+            }
+        }
 
     } // END HttpTransactionContext
 
@@ -815,7 +823,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 convertToUpgradeRequest(httpCtx);
             }
             final Request req = httpCtx.request;
-            final URI uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
+            final URI uri = req.isUseRawUrl() ? req.getRawURI() : httpCtx.getRequestURI();
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             boolean secure = "https".equals(uri.getScheme());
             builder.method(request.getMethod());
