@@ -612,6 +612,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
                 timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;    
             }
+            future.setTimeoutsHolder(timeoutsHolder);
 
         } catch (RejectedExecutionException ex) {
             abort(future, ex);

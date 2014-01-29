@@ -210,6 +210,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return idleConnectionTimeoutReached;
     }
 
+    public void setTimeoutsHolder(TimeoutsHolder timeoutsHolder) {
+        this.timeoutsHolder = timeoutsHolder;
+    }
+
     /**
      * {@inheritDoc}
      */
