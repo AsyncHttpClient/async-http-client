@@ -2402,7 +2402,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
                 h.resetSuccess();
 
-                if (!(ctx.getAttachment() instanceof DiscardEvent))
+                log.trace("Connection was closed abnormally (that is, with no close frame being sent).");
+                if (!(ctx.getAttachment() instanceof DiscardEvent) && webSocket != null)
                     webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
             } catch (Throwable t) {
                 log.error("onError", t);
