@@ -307,10 +307,9 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     public final void done() {
+        cancelTimeouts();
 
         try {
-            cancelTimeouts();
-
             if (exEx.get() != null) {
                 return;
             }

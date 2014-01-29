@@ -606,7 +606,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
 
             int idleConnectionTimeoutInMs = config.getIdleConnectionTimeoutInMs();
-            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs < requestTimeoutInMs) {
+            if (idleConnectionTimeoutInMs != -1 && idleConnectionTimeoutInMs <= requestTimeoutInMs) {
                 // no need for a idleConnectionTimeout that's less than the requestTimeoutInMs
                 Timeout idleConnectionTimeout = newTimeoutInMs(new IdleConnectionTimeoutTimerTask(future, this, timeoutsHolder,
                         requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
@@ -1496,6 +1496,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug(t.getMessage(), t);
         }
 
+        // FIXME why isReadable and not isConnected
         if (!future.getKeepAlive() || !ctx.getChannel().isReadable()) {
             closeChannel(ctx);
         }
