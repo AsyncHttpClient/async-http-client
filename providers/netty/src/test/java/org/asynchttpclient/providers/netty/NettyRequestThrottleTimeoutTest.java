@@ -127,6 +127,9 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                 fail("failed to wait for requests to complete");
             }
 
+            for (Exception e: tooManyConnections)
+                logger.error("Exception while calling execute", e);
+
             assertTrue(tooManyConnections.isEmpty(), "Should not have any connection errors where too many connections have been attempted");
         } finally {
             client.close();
