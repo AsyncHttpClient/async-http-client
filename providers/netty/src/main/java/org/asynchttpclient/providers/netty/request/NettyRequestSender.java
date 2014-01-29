@@ -344,6 +344,7 @@ public class NettyRequestSender {
                         requestTimeoutInMs, idleConnectionTimeoutInMs), idleConnectionTimeoutInMs);
                 timeoutsHolder.idleConnectionTimeout = idleConnectionTimeout;
             }
+            nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
         } catch (RejectedExecutionException ex) {
             channels.abort(nettyResponseFuture, ex);
         }
