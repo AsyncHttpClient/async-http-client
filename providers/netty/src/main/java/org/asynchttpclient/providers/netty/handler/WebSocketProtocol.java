@@ -200,7 +200,8 @@ final class WebSocketProtocol extends Protocol {
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
 
             // FIXME How could this test not succeed, we just checked above that attribute is a NettyResponseFuture????
-            if (attribute != DiscardEvent.INSTANCE)
+            LOGGER.trace("Connection was closed abnormally (that is, with no close frame being sent).");
+            if (attribute != DiscardEvent.INSTANCE && webSocket != null)
                 webSocket.close(1006, "Connection was closed abnormally (that is, with no close frame being sent).");
         } catch (Throwable t) {
             LOGGER.error("onError", t);
