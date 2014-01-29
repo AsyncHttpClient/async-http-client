@@ -87,7 +87,7 @@ public class Channels {
     private final AsyncHttpClientConfig config;
     private final NettyAsyncHttpProviderConfig nettyProviderConfig;
 
-    private EventLoopGroup eventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
     private final boolean allowReleaseEventLoopGroup;
 
     private final Bootstrap plainBootstrap;
@@ -109,6 +109,7 @@ public class Channels {
         }
     };
 
+    private final boolean allowStopHashedWheelTimer;
     private final HashedWheelTimer hashedWheelTimer;
 
     public Channels(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyProviderConfig) {
@@ -122,16 +123,11 @@ public class Channels {
         }
 
         // check if external EventLoopGroup is defined
-        eventLoopGroup = nettyProviderConfig.getEventLoopGroup();
+        allowReleaseEventLoopGroup = nettyProviderConfig.getEventLoopGroup() == null;
+        eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyProviderConfig.getEventLoopGroup();
 
-        if (eventLoopGroup == null) {
-            eventLoopGroup = new NioEventLoopGroup();
-            allowReleaseEventLoopGroup = true;
-        } else {
-            if (!(eventLoopGroup instanceof NioEventLoopGroup))
-                throw new IllegalArgumentException("Only Nio is supported");
-            allowReleaseEventLoopGroup = false;
-        }
+        if (!(eventLoopGroup instanceof NioEventLoopGroup))
+            throw new IllegalArgumentException("Only Nio is supported");
 
         plainBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
         secureBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
@@ -189,7 +185,8 @@ public class Channels {
         secureBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureWebSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
 
-        hashedWheelTimer = new HashedWheelTimer();
+        allowStopHashedWheelTimer = nettyProviderConfig.getHashedWheelTimer() == null;
+        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : nettyProviderConfig.getHashedWheelTimer();
         hashedWheelTimer.start();
     }
 
@@ -285,11 +282,12 @@ public class Channels {
             }
         }
         openChannels.close();
-        if (allowReleaseEventLoopGroup) {
-            eventLoopGroup.shutdownGracefully();
-        }
 
-        hashedWheelTimer.stop();
+        if (allowReleaseEventLoopGroup)
+            eventLoopGroup.shutdownGracefully();
+
+        if (allowStopHashedWheelTimer)
+            hashedWheelTimer.stop();
     }
 
     // some servers can use the same port for HTTP and HTTPS
@@ -307,8 +305,7 @@ public class Channels {
 
     protected HttpClientCodec newHttpClientCodec() {
         if (nettyProviderConfig != null) {
-            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(),
-                    false);
+            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(), false);
 
         } else {
             return new HttpClientCodec();

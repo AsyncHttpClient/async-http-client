@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.HashedWheelTimer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -87,6 +88,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private ChannelPool channelPool;
 
     private boolean disableZeroCopy;
+
+    private HashedWheelTimer hashedWheelTimer;
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
@@ -227,6 +230,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setDisableZeroCopy(boolean disableZeroCopy) {
         this.disableZeroCopy = disableZeroCopy;
+    }
+
+    public HashedWheelTimer getHashedWheelTimer() {
+        return hashedWheelTimer;
+    }
+
+    public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
+        this.hashedWheelTimer = hashedWheelTimer;
     }
 
     public static interface AdditionalChannelInitializer {
