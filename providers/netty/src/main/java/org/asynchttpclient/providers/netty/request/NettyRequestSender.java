@@ -180,19 +180,19 @@ public class NettyRequestSender {
         return future;
     }
 
-    private InetSocketAddress remoteAddress(Request request, URI uri, ProxyServer proxy) {
+    private InetSocketAddress remoteAddress(Request request, URI uri, ProxyServer proxy, boolean useProxy) {
         if (request.getInetAddress() != null)
             return new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
 
-        else if (proxy == null || ProxyUtils.avoidProxy(proxy, uri.getHost()))
+        else if (!useProxy || ProxyUtils.avoidProxy(proxy, uri.getHost()))
             return new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
 
         else
             return new InetSocketAddress(proxy.getHost(), proxy.getPort());
     }
 
-    private ChannelFuture connect(Request request, URI uri, ProxyServer proxy, Bootstrap bootstrap) {
-        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy);
+    private ChannelFuture connect(Request request, URI uri, ProxyServer proxy, boolean useProxy, Bootstrap bootstrap) {
+        InetSocketAddress remoteAddress = remoteAddress(request, uri, proxy, useProxy);
 
         if (request.getLocalAddress() != null)
             return bootstrap.connect(remoteAddress, new InetSocketAddress(request.getLocalAddress(), 0));
@@ -200,21 +200,21 @@ public class NettyRequestSender {
             return bootstrap.connect(remoteAddress);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
+    private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, URI uri, ProxyServer proxy, boolean useProxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
             boolean reclaimCache) throws IOException {
 
-        boolean useSSl = isSecure(uri) && proxy == null;
+        boolean useSSl = isSecure(uri) && !useProxy;
 
         // Do not throw an exception when we need an extra connection for a redirect
         // FIXME why? This violate the max connection per host handling, right?
         boolean acquiredConnection = !reclaimCache && channels.acquireConnection(asyncHandler);
-        Bootstrap bootstrap = channels.getBootstrap(request.getUrl(), useSSl);
+        Bootstrap bootstrap = channels.getBootstrap(request.getUrl(), useSSl, useProxy);
 
         NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, this, future);
 
         ChannelFuture channelFuture;
         try {
-            channelFuture = connect(request, uri, proxy, bootstrap);
+            channelFuture = connect(request, uri, proxy, useProxy, bootstrap);
 
         } catch (Throwable t) {
             if (acquiredConnection) {
@@ -275,11 +275,11 @@ public class NettyRequestSender {
         }
 
         newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, true);
-        return sendRequestWithNewChannel(request, uri, proxyServer, newFuture, asyncHandler, reclaimCache);
+        return sendRequestWithNewChannel(request, uri, proxyServer, true, newFuture, asyncHandler, reclaimCache);
     }
 
     private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache, URI uri,
-            ProxyServer proxyServer, boolean forceConnect) throws IOException {
+            ProxyServer proxyServer, boolean useProxy, boolean forceConnect) throws IOException {
         // We know for sure if we have to force to connect or not, so we can build the HttpRequest right away
         // This reduces the probability of having a pooled channel closed by the server by the time we build the request
         NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, uri, proxyServer, forceConnect);
@@ -289,7 +289,7 @@ public class NettyRequestSender {
         if (isChannelValid(channel))
             return sendRequestWithCachedChannel(channel, request, uri, proxyServer, newFuture, asyncHandler);
         else
-            return sendRequestWithNewChannel(request, uri, proxyServer, newFuture, asyncHandler, reclaimCache);
+            return sendRequestWithNewChannel(request, uri, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
     }
 
     public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future, boolean reclaimCache) throws IOException {
@@ -305,16 +305,18 @@ public class NettyRequestSender {
 
         URI uri = config.isUseRawUrl() ? request.getRawURI() : request.getURI();
         ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
-
-        if (proxyServer != null && isSecure(uri)) {
+        boolean resultOfAConnect = future != null && future.getNettyRequest() != null && future.getNettyRequest().getHttpRequest().getMethod() == HttpMethod.CONNECT;
+        boolean useProxy = proxyServer != null && !resultOfAConnect;
+        
+        if (useProxy && isSecure(uri)) {
             // SSL proxy, have to handle CONNECT
             if (future != null && future.isConnectAllowed())
                 // CONNECT forced
-                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, true);
+                return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, true, true);
             else
                 return sendRequestThroughSslProxy(request, asyncHandler, future, reclaimCache, uri, proxyServer);
         } else
-            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, false);
+            return sendRequestWithCertainForceConnect(request, asyncHandler, future, reclaimCache, uri, proxyServer, useProxy, false);
     }
 
     private void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {

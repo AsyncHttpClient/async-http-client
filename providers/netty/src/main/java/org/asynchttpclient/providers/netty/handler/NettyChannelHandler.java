@@ -71,7 +71,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
 
         } else if (attribute instanceof NettyResponseFuture) {
-            Protocol p = (ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
+            Protocol p = ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol;
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
 
             p.handle(ctx, future, e);

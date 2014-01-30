@@ -18,6 +18,7 @@ package org.asynchttpclient.providers.netty.channel;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,8 +31,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpRequestEncoder;
-import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.ssl.SslHandler;
@@ -73,12 +72,11 @@ public class Channels {
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
     public static final String HTTP_HANDLER = "httpHandler";
     public static final String SSL_HANDLER = "sslHandler";
-    public static final String AHC_HANDLER = "httpProcessor";
+    public static final String HTTP_PROCESSOR = "httpProcessor";
+    public static final String WS_PROCESSOR = "wsProcessor";
     public static final String DEFLATER_HANDLER = "deflater";
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunkedWriter";
-    public static final String HTTP_DECODER_HANDLER = "http-decoder";
-    public static final String HTTP_ENCODER_HANDLER = "http-encoder";
     public static final String WS_DECODER_HANDLER = "ws-decoder";
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
@@ -209,7 +207,7 @@ public class Channels {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getHttpAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
@@ -221,9 +219,8 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
-                        .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(WS_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getWsAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWsAdditionalChannelInitializer().initChannel(ch);
@@ -243,7 +240,7 @@ public class Channels {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getHttpsAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
@@ -257,9 +254,8 @@ public class Channels {
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
                         .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
-                        .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
-                        .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(WS_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getWssAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWssAdditionalChannelInitializer().initChannel(ch);
@@ -268,8 +264,8 @@ public class Channels {
         });
     }
 
-    public Bootstrap getBootstrap(String url, boolean useSSl) {
-        return url.startsWith(WEBSOCKET) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
+    public Bootstrap getBootstrap(String url, boolean useSSl, boolean useProxy) {
+        return (url.startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
     }
 
     public void close() {
@@ -328,15 +324,15 @@ public class Channels {
         } else {
             p.addFirst(HTTP_HANDLER, newHttpClientCodec());
         }
+
+        if (isWebSocket(scheme)) {
+            p.replace(HTTP_PROCESSOR, WS_PROCESSOR, p.get(HTTP_PROCESSOR));
+        }
     }
 
     public static void upgradePipelineForWebSockets(ChannelHandlerContext ctx) {
-        ctx.pipeline().replace(Channels.HTTP_ENCODER_HANDLER, Channels.WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        // ctx.pipeline().get(HttpResponseDecoder.class).replace("ws-decoder",
-        // new WebSocket08FrameDecoder(false, false));
-        // FIXME Right way? Which maxFramePayloadLength? Configurable I
-        // guess
-        ctx.pipeline().replace(Channels.HTTP_DECODER_HANDLER, Channels.WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
+        ctx.pipeline().replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        ctx.pipeline().addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
     }
 
     public Channel pollAndVerifyCachedChannel(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
