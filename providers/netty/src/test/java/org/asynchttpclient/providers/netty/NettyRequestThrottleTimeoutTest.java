@@ -81,11 +81,14 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         final AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAllowPoolingConnection(true)
                 .setMaximumConnectionsTotal(1).build());
+        
+        int samples = 10;
+        
         try {
-            final CountDownLatch latch = new CountDownLatch(2);
+            final CountDownLatch latch = new CountDownLatch(samples);
             final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<Exception>(2));
 
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < samples; i++) {
                 new Thread(new Runnable() {
 
                     public void run() {
@@ -97,12 +100,12 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
                                     @Override
                                     public Response onCompleted(Response response) throws Exception {
-                                        requestThrottle.release();
                                         return response;
                                     }
 
                                     @Override
                                     public void onThrowable(Throwable t) {
+                                        t.printStackTrace();
                                         requestThrottle.release();
                                     }
                                 });
