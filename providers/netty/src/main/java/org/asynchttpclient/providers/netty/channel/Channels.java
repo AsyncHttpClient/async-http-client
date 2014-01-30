@@ -126,6 +126,11 @@ public class Channels {
         allowReleaseEventLoopGroup = nettyProviderConfig.getEventLoopGroup() == null;
         eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyProviderConfig.getEventLoopGroup();
 
+        // check if external HashedWheelTimer is defined
+        allowStopHashedWheelTimer = nettyProviderConfig.getHashedWheelTimer() == null;
+        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : nettyProviderConfig.getHashedWheelTimer();
+        hashedWheelTimer.start();
+
         if (!(eventLoopGroup instanceof NioEventLoopGroup))
             throw new IllegalArgumentException("Only Nio is supported");
 
@@ -134,11 +139,10 @@ public class Channels {
         webSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
         secureWebSocketBootstrap = new Bootstrap().channel(NioSocketChannel.class).group(eventLoopGroup);
 
-        // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ChannelPool cp = nettyProviderConfig.getChannelPool();
         if (cp == null) {
             if (config.getAllowPoolingConnection()) {
-                cp = new DefaultChannelPool(config);
+                cp = new DefaultChannelPool(config, hashedWheelTimer);
             } else {
                 cp = new NonChannelPool();
             }
@@ -184,10 +188,6 @@ public class Channels {
         webSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureWebSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
-
-        allowStopHashedWheelTimer = nettyProviderConfig.getHashedWheelTimer() == null;
-        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : nettyProviderConfig.getHashedWheelTimer();
-        hashedWheelTimer.start();
     }
 
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {

@@ -14,14 +14,16 @@ package org.asynchttpclient.providers.netty.channel;
 
 import static org.asynchttpclient.util.DateUtil.millisTime;
 import io.netty.channel.Channel;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -40,25 +42,31 @@ public class DefaultChannelPool implements ChannelPool {
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final Timer idleConnectionDetector;
+    private final HashedWheelTimer hashedWheelTimer;
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
     private final int maxConnectionLifeTimeInMs;
     private final long maxIdleTime;
 
-    public DefaultChannelPool(AsyncHttpClientConfig config) {
-        this(config.getMaxTotalConnections(), config.getMaxConnectionPerHost(), config.getIdleConnectionInPoolTimeoutInMs(), config.isSslConnectionPoolEnabled(), config.getMaxConnectionLifeTimeInMs(), new Timer(true));
+    public DefaultChannelPool(AsyncHttpClientConfig config, HashedWheelTimer hashedWheelTimer) {
+        this(config.getMaxTotalConnections(), config.getMaxConnectionPerHost(), config.getIdleConnectionInPoolTimeoutInMs(), config.isSslConnectionPoolEnabled(), config
+                .getMaxConnectionLifeTimeInMs(), hashedWheelTimer);
     }
 
-    public DefaultChannelPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs, Timer idleConnectionDetector) {
+    public DefaultChannelPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs,
+            HashedWheelTimer hashedWheelTimer) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
-        this.idleConnectionDetector = idleConnectionDetector;
-        this.idleConnectionDetector.schedule(new IdleChannelDetector(), maxIdleTime, maxIdleTime);
+        this.hashedWheelTimer = hashedWheelTimer;
+        scheduleNewIdleChannelDetector(new IdleChannelDetector());
+    }
+
+    private void scheduleNewIdleChannelDetector(TimerTask task) {
+        this.hashedWheelTimer.newTimeout(task, maxIdleTime, TimeUnit.MILLISECONDS);
     }
 
     private static class IdleChannel {
@@ -74,12 +82,15 @@ public class DefaultChannelPool implements ChannelPool {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof IdleChannel)) return false;
+            if (this == o)
+                return true;
+            if (!(o instanceof IdleChannel))
+                return false;
 
             IdleChannel that = (IdleChannel) o;
 
-            if (channel != null ? !channel.equals(that.channel) : that.channel != null) return false;
+            if (channel != null ? !channel.equals(that.channel) : that.channel != null)
+                return false;
 
             return true;
         }
@@ -90,11 +101,13 @@ public class DefaultChannelPool implements ChannelPool {
         }
     }
 
-    private class IdleChannelDetector extends TimerTask {
+    private class IdleChannelDetector implements TimerTask {
+
         @Override
-        public void run() {
+        public void run(Timeout timeout) throws Exception {
             try {
-                if (closed.get()) return;
+                if (closed.get())
+                    return;
 
                 if (log.isDebugEnabled()) {
                     Set<String> keys = connectionsPool.keySet();
@@ -140,15 +153,17 @@ public class DefaultChannelPool implements ChannelPool {
 
                 if (log.isTraceEnabled()) {
                     int openChannels = 0;
-                    for (ConcurrentLinkedQueue<IdleChannel> hostChannels: connectionsPool.values()) {
+                    for (ConcurrentLinkedQueue<IdleChannel> hostChannels : connectionsPool.values()) {
                         openChannels += hostChannels.size();
                     }
-                    log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n",
-                            openChannels, channelsInTimeout.size(), endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
+                    log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels, channelsInTimeout.size(),
+                            endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
                 }
             } catch (Throwable t) {
                 log.error("uncaught exception!", t);
             }
+
+            scheduleNewIdleChannelDetector(timeout.task());
         }
     }
 
@@ -156,19 +171,20 @@ public class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel channel) {
-        if (closed.get()) return false;
+        if (closed.get())
+            return false;
 
         if (!sslConnectionPoolEnabled && uri.startsWith("https")) {
             return false;
         }
 
         Long createTime = channel2CreationDate.get(channel);
-        if (createTime == null){
-           channel2CreationDate.putIfAbsent(channel, millisTime());
-        }
-        else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime() ) {
-           log.debug("Channel {} expired", channel);
-           return false;
+        if (createTime == null) {
+            channel2CreationDate.putIfAbsent(channel, millisTime());
+
+        } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime()) {
+            log.debug("Channel {} expired", channel);
+            return false;
         }
 
         log.debug("Adding uri: {} for channel {}", uri, channel);
@@ -178,7 +194,8 @@ public class DefaultChannelPool implements ChannelPool {
         if (idleConnectionForHost == null) {
             ConcurrentLinkedQueue<IdleChannel> newPool = new ConcurrentLinkedQueue<IdleChannel>();
             idleConnectionForHost = connectionsPool.putIfAbsent(uri, newPool);
-            if (idleConnectionForHost == null) idleConnectionForHost = newPool;
+            if (idleConnectionForHost == null)
+                idleConnectionForHost = newPool;
         }
 
         boolean added;
@@ -233,7 +250,8 @@ public class DefaultChannelPool implements ChannelPool {
     }
 
     private boolean remove(IdleChannel pooledChannel) {
-        if (pooledChannel == null || closed.get()) return false;
+        if (pooledChannel == null || closed.get())
+            return false;
 
         boolean isRemoved = false;
         ConcurrentLinkedQueue<IdleChannel> pooledConnectionForHost = connectionsPool.get(pooledChannel.uri);
@@ -267,11 +285,8 @@ public class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public void destroy() {
-        if (closed.getAndSet(true)) return;
-
-        // stop timer
-        idleConnectionDetector.cancel();
-        idleConnectionDetector.purge();
+        if (closed.getAndSet(true))
+            return;
 
         for (Channel channel : channel2IdleChannel.keySet()) {
             close(channel);
