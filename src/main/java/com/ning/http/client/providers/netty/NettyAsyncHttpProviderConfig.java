@@ -16,11 +16,13 @@
  */
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.AsyncHttpProviderConfig;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.jboss.netty.util.HashedWheelTimer;
+
+import com.ning.http.client.AsyncHttpProviderConfig;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.
@@ -59,7 +61,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Allow configuring the Netty's HttpClientCodec.
-    */
+     */
     public final static String HTTP_CLIENT_CODEC_MAX_INITIAL_LINE_LENGTH = "httpClientCodecMaxInitialLineLength";
     public final static String HTTP_CLIENT_CODEC_MAX_HEADER_SIZE = "httpClientCodecMaxHeaderSize";
     public final static String HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE = "httpClientCodecMaxChunkSize";
@@ -83,15 +85,19 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     private boolean disableZeroCopy;
 
+    private HashedWheelTimer hashedWheelTimer;
+
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, "false");
     }
 
     /**
      * Add a property that will be used when the AsyncHttpClient initialize its {@link com.ning.http.client.AsyncHttpProvider}
-     *
-     * @param name  the name of the property
-     * @param value the value of the property
+     * 
+     * @param name
+     *            the name of the property
+     * @param value
+     *            the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
@@ -101,7 +107,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Return the value associated with the property's name
-     *
+     * 
      * @param name
      * @return this instance of AsyncHttpProviderConfig
      */
@@ -111,21 +117,21 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Return the value associated with the property's name
-     *
+     * 
      * @param name
      * @return this instance of AsyncHttpProviderConfig
      */
     public <T> T getProperty(String name, Class<T> type, T defaultValue) {
-      Object value = properties.get(name);
-      if (value != null && type.isAssignableFrom(value.getClass())) {
-        return type.cast(value);
-      }
-      return defaultValue;
+        Object value = properties.get(name);
+        if (value != null && type.isAssignableFrom(value.getClass())) {
+            return type.cast(value);
+        }
+        return defaultValue;
     }
 
     /**
      * Remove the value associated with the property's name
-     *
+     * 
      * @param name
      * @return true if removed
      */
@@ -135,7 +141,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     /**
      * Return the curent entry set.
-     *
+     * 
      * @return a the curent entry set.
      */
     public Set<Map.Entry<String, Object>> propertiesSet() {
@@ -148,5 +154,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public boolean isDisableZeroCopy() {
         return disableZeroCopy;
+    }
+
+    public HashedWheelTimer getHashedWheelTimer() {
+        return hashedWheelTimer;
+    }
+
+    public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
+        this.hashedWheelTimer = hashedWheelTimer;
     }
 }
