@@ -252,7 +252,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     e = Executors.newCachedThreadPool();
                 }
                 int numWorkers = config.getIoThreadMultiplier() * Runtime.getRuntime().availableProcessors();
-                log.debug("Number of application's worker threads is {}", numWorkers);
+                log.trace("Number of application's worker threads is {}", numWorkers);
                 socketChannelFactory = new NioClientSocketChannelFactory(e, config.executorService(), numWorkers);
                 allowReleaseSocketChannelFactory = true;
             }
