@@ -16,13 +16,13 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import org.asynchttpclient.util.StandardCharsets;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.asynchttpclient.util.StandardCharsets;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.
@@ -214,7 +214,7 @@ public class Realm {
 
     @Override
     public String toString() {
-        return "Realm{" + "principal='" + principal + '\'' + ", password='" + password + '\'' + ", scheme=" + scheme
+        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme
                 + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm + '\''
                 + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='"
                 + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + '}';
