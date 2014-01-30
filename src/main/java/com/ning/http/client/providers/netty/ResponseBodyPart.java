@@ -60,7 +60,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
             return bytes.get();
         }
 
-        byte[] b = ChannelBufferUtil.channelBuffer2bytes(getChannelBuffer());
+        byte[] b = ChannelBufferUtil.channelBuffer2bytes(content);
         bytes.set(b);
         return b;
     }
