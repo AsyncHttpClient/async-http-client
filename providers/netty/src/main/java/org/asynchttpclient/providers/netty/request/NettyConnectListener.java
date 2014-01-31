@@ -27,7 +27,7 @@ import java.nio.channels.ClosedChannelException;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         boolean canRetry = future.canRetry();
         LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", channel, canRetry);
         if (canRetry && cause != null
-                && (NettyResponseFutures.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
+                && (StackTraceInspector.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
             LOGGER.debug("Retrying {} ", future.getNettyRequest());
             if (requestSender.retry(future, channel)) {

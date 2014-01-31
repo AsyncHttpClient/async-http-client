@@ -32,7 +32,7 @@ import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
@@ -173,7 +173,7 @@ public class Processor extends ChannelInboundHandlerAdapter {
                     }
                 }
 
-                if (NettyResponseFutures.abortOnReadCloseException(cause) || NettyResponseFutures.abortOnWriteCloseException(cause)) {
+                if (StackTraceInspector.abortOnReadCloseException(cause) || StackTraceInspector.abortOnWriteCloseException(cause)) {
                     LOGGER.debug("Trying to recover from dead Channel: {}", channel);
                     return;
                 }

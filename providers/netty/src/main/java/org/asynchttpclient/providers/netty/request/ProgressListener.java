@@ -26,7 +26,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProgressAsyncHandler;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.NettyResponseFutures;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
                 } catch (RuntimeException ex) {
                     LOGGER.debug(ex.getMessage(), ex);
                 }
-            } else if (cause instanceof ClosedChannelException || NettyResponseFutures.abortOnReadCloseException(cause) || NettyResponseFutures.abortOnWriteCloseException(cause)) {
+            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadCloseException(cause) || StackTraceInspector.abortOnWriteCloseException(cause)) {
 
                 if (LOGGER.isDebugEnabled())
                     LOGGER.debug(cause.getMessage(), cause);
