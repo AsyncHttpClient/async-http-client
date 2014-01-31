@@ -18,7 +18,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
@@ -63,13 +63,13 @@ public abstract class Protocol {
         this.requestSender = requestSender;
     }
 
-    public abstract void handle(ChannelHandlerContext ctx, NettyResponseFuture<?> future, Object message) throws Exception;
+    public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
 
-    public abstract void onError(ChannelHandlerContext ctx, Throwable error);
+    public abstract void onError(Channel channel, Throwable error);
 
-    public abstract void onClose(ChannelHandlerContext ctx);
+    public abstract void onClose(Channel channel);
 
-    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
+    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final Channel channel) throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
@@ -124,8 +124,8 @@ public abstract class Protocol {
 
                     Callback callback = new Callback(future) {
                         public void call() throws Exception {
-                            if (!(initialConnectionKeepAlive && ctx.channel().isActive() && channels.offerToPool(initialPoolKey, ctx.channel()))) {
-                                channels.finishChannel(ctx);
+                            if (!(initialConnectionKeepAlive && channel.isActive() && channels.offerToPool(initialPoolKey, channel))) {
+                                channels.finishChannel(channel);
                             }
                         }
                     };
@@ -134,7 +134,7 @@ public abstract class Protocol {
                         // We must make sure there is no bytes left before
                         // executing the next request.
                         // FIXME investigate this
-                        Channels.setDefaultAttribute(ctx, callback);
+                        Channels.setDefaultAttribute(channel, callback);
                     } else {
                         // FIXME don't understand: this offers the connection to the pool, or even closes it, while the request has not been sent, right?
                         callback.call();
@@ -150,7 +150,7 @@ public abstract class Protocol {
         return false;
     }
 
-    protected boolean handleResponseFiltersReplayRequestAndExit(ChannelHandlerContext ctx, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
+    protected boolean handleResponseFiltersReplayRequestAndExit(Channel channel, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
             throws IOException {
 
         if (!config.getResponseFilters().isEmpty()) {
@@ -175,7 +175,7 @@ public abstract class Protocol {
 
             // The request has changed
             if (fc.replayRequest()) {
-                requestSender.replayRequest(future, fc, ctx);
+                requestSender.replayRequest(future, fc, channel);
                 return true;
             }
         }

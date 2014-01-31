@@ -18,9 +18,9 @@ package org.asynchttpclient.providers.netty.channel;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
+import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -30,8 +30,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpRequestEncoder;
-import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.ssl.SslHandler;
@@ -51,6 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
@@ -62,7 +61,8 @@ import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
+import org.asynchttpclient.providers.netty.handler.HttpProcessor;
+import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
@@ -73,12 +73,11 @@ public class Channels {
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
     public static final String HTTP_HANDLER = "httpHandler";
     public static final String SSL_HANDLER = "sslHandler";
-    public static final String AHC_HANDLER = "httpProcessor";
+    public static final String HTTP_PROCESSOR = "httpProcessor";
+    public static final String WS_PROCESSOR = "wsProcessor";
     public static final String DEFLATER_HANDLER = "deflater";
     public static final String INFLATER_HANDLER = "inflater";
     public static final String CHUNKED_WRITER_HANDLER = "chunkedWriter";
-    public static final String HTTP_DECODER_HANDLER = "http-decoder";
-    public static final String HTTP_ENCODER_HANDLER = "http-encoder";
     public static final String WS_DECODER_HANDLER = "ws-decoder";
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
 
@@ -198,7 +197,9 @@ public class Channels {
         return sslEngine;
     }
 
-    public void configure(final NettyChannelHandler httpProcessor) {
+    public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
+
+        final HttpProcessor httpProcessor = new HttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
 
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -209,7 +210,7 @@ public class Channels {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getHttpAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getHttpAdditionalChannelInitializer().initChannel(ch);
@@ -221,9 +222,8 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
-                        .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(WS_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getWsAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWsAdditionalChannelInitializer().initChannel(ch);
@@ -243,7 +243,7 @@ public class Channels {
                     pipeline.addLast(INFLATER_HANDLER, new HttpContentDecompressor());
                 }
                 pipeline.addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getHttpsAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getHttpsAdditionalChannelInitializer().initChannel(ch);
@@ -257,9 +257,8 @@ public class Channels {
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
                         .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
-                        .addLast(HTTP_DECODER_HANDLER, new HttpResponseDecoder())//
-                        .addLast(HTTP_ENCODER_HANDLER, new HttpRequestEncoder())//
-                        .addLast(AHC_HANDLER, httpProcessor);
+                        .addLast(HTTP_HANDLER, newHttpClientCodec())//
+                        .addLast(WS_PROCESSOR, httpProcessor);
 
                 if (nettyProviderConfig.getWssAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWssAdditionalChannelInitializer().initChannel(ch);
@@ -268,8 +267,8 @@ public class Channels {
         });
     }
 
-    public Bootstrap getBootstrap(String url, boolean useSSl) {
-        return url.startsWith(WEBSOCKET) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
+    public Bootstrap getBootstrap(String url, boolean useSSl, boolean useProxy) {
+        return (url.startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
     }
 
     public void close() {
@@ -328,15 +327,15 @@ public class Channels {
         } else {
             p.addFirst(HTTP_HANDLER, newHttpClientCodec());
         }
+
+        if (isWebSocket(scheme)) {
+            p.replace(HTTP_PROCESSOR, WS_PROCESSOR, p.get(HTTP_PROCESSOR));
+        }
     }
 
-    public static void upgradePipelineForWebSockets(ChannelHandlerContext ctx) {
-        ctx.pipeline().replace(Channels.HTTP_ENCODER_HANDLER, Channels.WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        // ctx.pipeline().get(HttpResponseDecoder.class).replace("ws-decoder",
-        // new WebSocket08FrameDecoder(false, false));
-        // FIXME Right way? Which maxFramePayloadLength? Configurable I
-        // guess
-        ctx.pipeline().replace(Channels.HTTP_DECODER_HANDLER, Channels.WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
+    public static void upgradePipelineForWebSockets(Channel channel) {
+        channel.pipeline().replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        channel.pipeline().addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
     }
 
     public Channel pollAndVerifyCachedChannel(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
@@ -400,42 +399,38 @@ public class Channels {
         freeConnections.release();
     }
 
-    public void removeFromPool(ChannelHandlerContext ctx) {
-        channelPool.removeAll(ctx.channel());
+    public void removeFromPool(Channel channel) {
+        channelPool.removeAll(channel);
     }
 
-    public void closeChannel(ChannelHandlerContext ctx) {
-        removeFromPool(ctx);
-        finishChannel(ctx);
+    public void closeChannel(Channel channel) {
+        removeFromPool(channel);
+        finishChannel(channel);
     }
 
-    public void finishChannel(ChannelHandlerContext ctx) {
-        setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
+    public void finishChannel(Channel channel) {
+        setDefaultAttribute(channel, DiscardEvent.INSTANCE);
 
         // The channel may have already been removed if a timeout occurred, and
         // this method may be called just after.
-        if (ctx.channel() == null) {
+        if (channel == null)
             return;
-        }
 
-        LOGGER.debug("Closing Channel {} ", ctx.channel());
-
+        LOGGER.debug("Closing Channel {} ", channel);
         try {
-            ctx.channel().close();
+            channel.close();
         } catch (Throwable t) {
             LOGGER.debug("Error closing a connection", t);
         }
 
-        if (ctx.channel() != null) {
-            openChannels.remove(ctx.channel());
-        }
+        openChannels.remove(channel);
     }
 
-    public void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
-        setDefaultAttribute(ctx, new Callback(future) {
+    public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
+        setDefaultAttribute(channel, new Callback(future) {
             public void call() throws Exception {
-                if (!(future.isKeepAlive() && ctx.channel().isActive() && channelPool.offer(getPoolKey(future), ctx.channel()))) {
-                    finishChannel(ctx);
+                if (!(future.isKeepAlive() && channel.isActive() && channelPool.offer(getPoolKey(future), channel))) {
+                    finishChannel(channel);
                 }
             }
         });
@@ -452,7 +447,7 @@ public class Channels {
     public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
         if (channel != null && openChannels.contains(channel)) {
-            closeChannel(channel.pipeline().context(NettyChannelHandler.class));
+            closeChannel(channel);
             openChannels.remove(channel);
         }
 
@@ -469,27 +464,15 @@ public class Channels {
     }
 
     public static SslHandler getSslHandler(Channel channel) {
-        return (SslHandler) channel.pipeline().get(Channels.SSL_HANDLER);
+        return channel.pipeline().get(SslHandler.class);
     }
 
     public static Object getDefaultAttribute(Channel channel) {
-        return getDefaultAttribute(channel.pipeline().context(NettyChannelHandler.class));
-    }
-
-    public static Object getDefaultAttribute(ChannelHandlerContext ctx) {
-        if (ctx == null) {
-            // ctx might be null if the channel never reached the handler
-            return null;
-        }
-        Attribute<Object> attr = ctx.attr(DEFAULT_ATTRIBUTE);
+        Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
         return attr != null ? attr.get() : null;
     }
 
     public static void setDefaultAttribute(Channel channel, Object o) {
-        setDefaultAttribute(channel.pipeline().context(NettyChannelHandler.class), o);
-    }
-
-    public static void setDefaultAttribute(ChannelHandlerContext ctx, Object o) {
-        ctx.attr(DEFAULT_ATTRIBUTE).set(o);
+        channel.attr(DEFAULT_ATTRIBUTE).set(o);
     }
 }

@@ -24,7 +24,6 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Channels channels;
     private final NettyRequestSender requestSender;
-    private final NettyChannelHandler channelHandler;
 
     public NettyAsyncHttpProvider(AsyncHttpClientConfig config) {
 
@@ -49,8 +47,7 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
         channels = new Channels(config, nettyConfig);
         requestSender = new NettyRequestSender(closed, config, nettyConfig, channels);
-        channelHandler = new NettyChannelHandler(config, nettyConfig, requestSender, channels, closed);
-        channels.configure(channelHandler);
+        channels.configureProcessor(requestSender, closed);
     }
 
     @Override

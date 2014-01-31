@@ -299,7 +299,8 @@ public final class NettyRequests {
         }
 
         // connection header and friends
-        if (isWebSocket(uri)) {
+        boolean webSocket = isWebSocket(uri.getScheme());
+        if (method != HttpMethod.CONNECT && webSocket) {
             httpRequest.headers().set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
             httpRequest.headers().set(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));

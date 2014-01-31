@@ -19,8 +19,8 @@ public class HttpUtil {
         return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
     }
 
-    public static boolean isWebSocket(URI uri) {
-        return WEBSOCKET.equalsIgnoreCase(uri.getScheme()) || WEBSOCKET_SSL.equalsIgnoreCase(uri.getScheme());
+    public static boolean isWebSocket(String scheme) {
+        return WEBSOCKET.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
     }
 
     public static boolean isSecure(String scheme) {

@@ -22,7 +22,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -161,17 +161,17 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private void finishUpdate(final NettyResponseFuture<?> future, ChannelHandlerContext ctx, boolean lastValidChunk) throws IOException {
+    private void finishUpdate(final NettyResponseFuture<?> future, Channel channel, boolean lastValidChunk) throws IOException {
         if (lastValidChunk && future.isKeepAlive()) {
-            channels.drainChannel(ctx, future);
+            channels.drainChannel(channel, future);
         } else {
-            if (future.isKeepAlive() && ctx.channel().isActive() && channels.offerToPool(channels.getPoolKey(future), ctx.channel())) {
-                markAsDone(future, ctx);
+            if (future.isKeepAlive() && channel.isActive() && channels.offerToPool(channels.getPoolKey(future), channel)) {
+                markAsDone(future, channel);
                 return;
             }
-            channels.finishChannel(ctx);
+            channels.finishChannel(channel);
         }
-        markAsDone(future, ctx);
+        markAsDone(future, channel);
     }
 
     private final boolean updateBodyAndInterrupt(NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseBodyPart bodyPart) throws Exception {
@@ -182,7 +182,7 @@ final class HttpProtocol extends Protocol {
         return state;
     }
 
-    private void markAsDone(NettyResponseFuture<?> future, final ChannelHandlerContext ctx) throws MalformedURLException {
+    private void markAsDone(NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
         // We need to make sure everything is OK before adding the
         // connection back to the pool.
         try {
@@ -192,13 +192,13 @@ final class HttpProtocol extends Protocol {
             LOGGER.debug(t.getMessage(), t);
         }
 
-        if (!future.isKeepAlive() || !ctx.channel().isActive()) {
-            channels.closeChannel(ctx);
+        if (!future.isKeepAlive() || !channel.isActive()) {
+            channels.closeChannel(channel);
         }
     }
 
     private boolean handleUnauthorizedAndExit(int statusCode, Realm realm, final Request request, HttpResponse response, final NettyResponseFuture<?> future,
-            ProxyServer proxyServer, final ChannelHandlerContext ctx) throws Exception {
+            ProxyServer proxyServer, final Channel channel) throws Exception {
         if (statusCode == UNAUTHORIZED.code() && realm != null) {
 
             List<String> authenticateHeaders = response.headers().getAll(HttpHeaders.Names.WWW_AUTHENTICATE);
@@ -227,7 +227,7 @@ final class HttpProtocol extends Protocol {
                 LOGGER.debug("Sending authentication to {}", request.getUrl());
                 Callback callback = new Callback(future) {
                     public void call() throws Exception {
-                        channels.drainChannel(ctx, future);
+                        channels.drainChannel(channel, future);
                         requestSender.sendNextRequest(nextRequest, future);
                     }
                 };
@@ -235,7 +235,7 @@ final class HttpProtocol extends Protocol {
                 if (future.isKeepAlive() && HttpHeaders.isTransferEncodingChunked(response)) {
                     // We must make sure there is no bytes left
                     // before executing the next request.
-                    Channels.setDefaultAttribute(ctx, callback);
+                    Channels.setDefaultAttribute(channel, callback);
                 } else {
                     callback.call();
                 }
@@ -247,12 +247,12 @@ final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean handleContinueAndExit(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, int statusCode) {
+    private boolean handleContinueAndExit(final Channel channel, final NettyResponseFuture<?> future, int statusCode) {
         if (statusCode == CONTINUE.code()) {
             future.setHeadersAlreadyWrittenOnContinue(true);
             future.setDontWriteBodyBecauseExpectContinue(false);
             // FIXME why not reuse the channel?
-            requestSender.writeRequest(ctx.channel(), config, future);
+            requestSender.writeRequest(channel, config, future);
             return true;
 
         }
@@ -291,18 +291,18 @@ final class HttpProtocol extends Protocol {
     }
 
     private boolean handleConnectOKAndExit(int statusCode, Realm realm, final Request request, HttpRequest httpRequest, HttpResponse response, final NettyResponseFuture<?> future,
-            ProxyServer proxyServer, final ChannelHandlerContext ctx) throws IOException {
+            ProxyServer proxyServer, final Channel channel) throws IOException {
         if (statusCode == OK.code() && httpRequest.getMethod() == HttpMethod.CONNECT) {
 
             LOGGER.debug("Connected to {}:{}", proxyServer.getHost(), proxyServer.getPort());
 
             if (future.isKeepAlive()) {
-                future.attachChannel(ctx.channel(), true);
+                future.attachChannel(channel, true);
             }
 
             try {
                 LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                channels.upgradeProtocol(ctx.channel().pipeline(), request.getURI().getScheme());
+                channels.upgradeProtocol(channel.pipeline(), request.getURI().getScheme());
             } catch (Throwable ex) {
                 channels.abort(future, ex);
             }
@@ -315,16 +315,16 @@ final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean handleHanderAndExit(ChannelHandlerContext ctx, NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseStatus status,
+    private boolean handleHanderAndExit(Channel channel, NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseStatus status,
             HttpResponseHeaders responseHeaders, HttpResponse response) throws Exception {
         if (!future.getAndSetStatusReceived(true) && (handler.onStatusReceived(status) != STATE.CONTINUE || handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE)) {
-            finishUpdate(future, ctx, HttpHeaders.isTransferEncodingChunked(response));
+            finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
         }
         return false;
     }
 
-    private boolean handleResponseAndExit(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest httpRequest,
+    private boolean handleResponseAndExit(final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest httpRequest,
             ProxyServer proxyServer, HttpResponse response) throws Exception {
 
         // store the original headers so we can re-send all them to
@@ -339,22 +339,22 @@ final class HttpProtocol extends Protocol {
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
 
-        return handleResponseFiltersReplayRequestAndExit(ctx, future, status, responseHeaders)//
-                || handleUnauthorizedAndExit(statusCode, realm, request, response, future, proxyServer, ctx)//
-                || handleContinueAndExit(ctx, future, statusCode)//
+        return handleResponseFiltersReplayRequestAndExit(channel, future, status, responseHeaders)//
+                || handleUnauthorizedAndExit(statusCode, realm, request, response, future, proxyServer, channel)//
+                || handleContinueAndExit(channel, future, statusCode)//
                 || handleProxyAuthenticationRequiredAndExit(statusCode, realm, request, response, future, proxyServer)
-                || handleConnectOKAndExit(statusCode, realm, request, httpRequest, response, future, proxyServer, ctx)//
-                || handleRedirectAndExit(request, future, response, ctx)//
-                || handleHanderAndExit(ctx, future, handler, status, responseHeaders, response);
+                || handleConnectOKAndExit(statusCode, realm, request, httpRequest, response, future, proxyServer, channel)//
+                || handleRedirectAndExit(request, future, response, channel)//
+                || handleHanderAndExit(channel, future, handler, status, responseHeaders, response);
     }
 
     @Override
-    public void handle(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future, final Object e) throws Exception {
+    public void handle(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
         future.touch();
 
         // The connect timeout occurred.
         if (future.isCancelled() || future.isDone()) {
-            channels.finishChannel(ctx);
+            channels.finishChannel(channel);
             return;
         }
 
@@ -373,7 +373,7 @@ final class HttpProtocol extends Protocol {
                 HttpResponse response = future.getPendingResponse();
                 future.setPendingResponse(null);
                 if (handler != null) {
-                    if (response != null && handleResponseAndExit(ctx, future, handler, nettyRequest.getHttpRequest(), proxyServer, response)) {
+                    if (response != null && handleResponseAndExit(channel, future, handler, nettyRequest.getHttpRequest(), proxyServer, response)) {
                         return;
                     }
 
@@ -401,30 +401,30 @@ final class HttpProtocol extends Protocol {
                     }
 
                     if (interrupt || last) {
-                        finishUpdate(future, ctx, !last);
+                        finishUpdate(future, channel, !last);
                     }
                 }
             }
         } catch (Exception t) {
             if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(ctx, future, IOException.class.cast(t))) {
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, IOException.class.cast(t))) {
                 return;
             }
 
             try {
                 channels.abort(future, t);
             } finally {
-                finishUpdate(future, ctx, false);
+                finishUpdate(future, channel, false);
                 throw t;
             }
         }
     }
 
     @Override
-    public void onError(ChannelHandlerContext ctx, Throwable error) {
+    public void onError(Channel channel, Throwable error) {
     }
 
     @Override
-    public void onClose(ChannelHandlerContext ctx) {
+    public void onClose(Channel channel) {
     }
 }
