@@ -40,7 +40,6 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig.ResponseBodyPartFactory;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
@@ -54,14 +53,20 @@ public abstract class Protocol {
 
     protected final Channels channels;
     protected final AsyncHttpClientConfig config;
+    protected final NettyAsyncHttpProviderConfig nettyConfig;
     protected final NettyRequestSender requestSender;
-    protected final ResponseBodyPartFactory bodyPartFactory;
+
+    private final boolean hasResponseFilters;
+    protected final boolean hasIOExceptionFilters;
 
     public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         this.channels = channels;
         this.config = config;
         this.requestSender = requestSender;
-        this.bodyPartFactory = nettyConfig.getBodyPartFactory();
+        this.nettyConfig = nettyConfig;
+
+        hasResponseFilters = !config.getResponseFilters().isEmpty();
+        hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
     }
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
@@ -154,7 +159,7 @@ public abstract class Protocol {
     protected boolean handleResponseFiltersReplayRequestAndExit(Channel channel, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
             throws IOException {
 
-        if (!config.getResponseFilters().isEmpty()) {
+        if (hasResponseFilters) {
             AsyncHandler<?> handler = future.getAsyncHandler();
             FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
                     .build();
