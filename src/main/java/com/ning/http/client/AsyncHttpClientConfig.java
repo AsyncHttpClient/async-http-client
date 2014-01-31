@@ -30,7 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -103,7 +102,6 @@ public class AsyncHttpClientConfig {
                                   boolean compressionEnabled,
                                   String userAgent,
                                   boolean keepAlive,
-                                  ScheduledExecutorService reaper,
                                   ExecutorService applicationThreadPool,
                                   ProxyServerSelector proxyServerSelector,
                                   SSLContext sslContext,
@@ -543,7 +541,6 @@ public class AsyncHttpClientConfig {
         private boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         private boolean allowPoolingConnection = true;
         private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
-        private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
@@ -713,17 +710,6 @@ public class AsyncHttpClientConfig {
          */
         public Builder setKeepAlive(boolean allowPoolingConnection) {
             this.allowPoolingConnection = allowPoolingConnection;
-            return this;
-        }
-
-        /**
-         * Set the{@link ScheduledExecutorService} used to expire idle connections.
-         *
-         * @param reaper the{@link ScheduledExecutorService} used to expire idle connections.
-         * @return a {@link Builder}
-         */
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            this.reaper = reaper;
             return this;
         }
 
@@ -1107,18 +1093,6 @@ public class AsyncHttpClientConfig {
          * @return an {@link AsyncHttpClientConfig}
          */
         public AsyncHttpClientConfig build() {
-
-            if (reaper == null) {
-                reaper = Executors.newScheduledThreadPool(Runtime.getRuntime()
-                        .availableProcessors(), new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r, "AsyncHttpClient-Reaper");
-                        t.setDaemon(true);
-                        return t;
-                    }
-                });
-            }
-
             if (applicationThreadPool == null) {
                 applicationThreadPool = Executors
                         .newCachedThreadPool(new ThreadFactory() {
@@ -1156,7 +1130,6 @@ public class AsyncHttpClientConfig {
                     compressionEnabled,
                     userAgent,
                     allowPoolingConnection,
-                    reaper,
                     applicationThreadPool,
                     proxyServerSelector,
                     sslContext,
