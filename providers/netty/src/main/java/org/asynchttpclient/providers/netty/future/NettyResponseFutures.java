@@ -22,7 +22,7 @@ public class NettyResponseFutures {
     public static boolean abortOnDisconnectException(Throwable cause) {
         try {
             for (StackTraceElement element : cause.getStackTrace()) {
-                if (element.getClassName().equals("io.netty.handler.ssl.SslHandler") && element.getMethodName().equals("channelDisconnected")) {
+                if (element.getClassName().equals("io.netty.handler.ssl.SslHandler") && element.getMethodName().equals("disconnect")) {
                     return true;
                 }
             }
