@@ -1,37 +1,7 @@
 package org.asynchttpclient.providers.netty.future;
 
-import io.netty.handler.codec.http.HttpHeaders;
-
-import java.net.URI;
-
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.providers.netty.request.NettyRequest;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-
 public class NettyResponseFutures {
 
-    public static <T> NettyResponseFuture<T> newNettyResponseFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, AsyncHttpClientConfig config, ProxyServer proxyServer) {
-
-        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
-        NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//
-                request,//
-                asyncHandler,//
-                nettyRequest,//
-                requestTimeout,//
-                config,//
-                request.getConnectionPoolKeyStrategy(),//
-                proxyServer);
-
-        String expectHeader = request.getHeaders().getFirstValue(HttpHeaders.Names.EXPECT);
-        if (expectHeader != null && expectHeader.equalsIgnoreCase(HttpHeaders.Values.CONTINUE)) {
-            f.setDontWriteBodyBecauseExpectContinue(true);
-        }
-        return f;
-    }
-    
     public static boolean abortOnConnectCloseException(Throwable cause) {
         try {
             for (StackTraceElement element : cause.getStackTrace()) {
