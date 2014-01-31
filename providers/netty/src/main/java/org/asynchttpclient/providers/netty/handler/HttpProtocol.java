@@ -252,7 +252,7 @@ final class HttpProtocol extends Protocol {
             future.setHeadersAlreadyWrittenOnContinue(true);
             future.setDontWriteBodyBecauseExpectContinue(false);
             // FIXME why not reuse the channel?
-            requestSender.writeRequest(channel, config, future);
+            requestSender.writeRequest(future, channel);
             return true;
 
         }
@@ -393,7 +393,7 @@ final class HttpProtocol extends Protocol {
                     ByteBuf buf = chunk.content();
                     try {
                         if (!interrupt && (buf.readableBytes() > 0 || last)) {
-                            interrupt = updateBodyAndInterrupt(future, handler, nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, last));
+                            interrupt = updateBodyAndInterrupt(future, handler, bodyPartFactory.newResponseBodyPart(buf, last));
                         }
                     } finally {
                         // FIXME we shouldn't need this, should we? But a leak was reported there without it?!
@@ -407,7 +407,7 @@ final class HttpProtocol extends Protocol {
             }
         } catch (Exception t) {
             if (t instanceof IOException && !config.getIOExceptionFilters().isEmpty()
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, IOException.class.cast(t))) {
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {
                 return;
             }
 

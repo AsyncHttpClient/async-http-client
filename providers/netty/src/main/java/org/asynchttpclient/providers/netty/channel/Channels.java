@@ -292,17 +292,20 @@ public class Channels {
             hashedWheelTimer.stop();
     }
 
-    // some servers can use the same port for HTTP and HTTPS
-    public Channel verifyChannelPipeline(Channel channel, String scheme) throws IOException, GeneralSecurityException {
+    /**
+     * Always make sure the channel who got cached support the proper protocol.
+     * It could only occurs when a HttpMethod.CONNECT is used against a proxy
+     * that requires upgrading from http to https.
+     */
+    public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
 
-        if (channel.pipeline().get(SSL_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
-            channel.pipeline().remove(SSL_HANDLER);
-        } else if (channel.pipeline().get(HTTP_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
-            return channel;
-        } else if (channel.pipeline().get(SSL_HANDLER) == null && isSecure(scheme)) {
-            channel.pipeline().addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
-        }
-        return channel;
+        boolean isSecure = isSecure(scheme);
+        if (pipeline.get(SSL_HANDLER) != null) {
+            if (!isSecure)
+                pipeline.remove(SSL_HANDLER);
+
+        } else if (isSecure)
+            pipeline.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
     }
 
     protected HttpClientCodec newHttpClientCodec() {
@@ -348,17 +351,12 @@ public class Channels {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
 
             try {
-                // Always make sure the channel who got cached support the
-                // proper protocol. It could
-                // only occurs when a HttpMethod.CONNECT is used against a proxy
-                // that require upgrading from http to
-                // https.
-                return verifyChannelPipeline(channel, uri.getScheme());
+                verifyChannelPipeline(channel.pipeline(), uri.getScheme());
             } catch (Exception ex) {
                 LOGGER.debug(ex.getMessage(), ex);
             }
         }
-        return null;
+        return channel;
     }
 
     public boolean acquireConnection(AsyncHandler<?> asyncHandler) throws IOException {

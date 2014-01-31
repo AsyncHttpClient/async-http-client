@@ -40,6 +40,7 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig.ResponseBodyPartFactory;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
@@ -54,13 +55,13 @@ public abstract class Protocol {
     protected final Channels channels;
     protected final AsyncHttpClientConfig config;
     protected final NettyRequestSender requestSender;
-    protected final NettyAsyncHttpProviderConfig nettyConfig;
+    protected final ResponseBodyPartFactory bodyPartFactory;
 
     public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         this.channels = channels;
         this.config = config;
-        this.nettyConfig = nettyConfig;
         this.requestSender = requestSender;
+        this.bodyPartFactory = nettyConfig.getBodyPartFactory();
     }
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;

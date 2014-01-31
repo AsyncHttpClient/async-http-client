@@ -119,14 +119,14 @@ public class Processor extends ChannelInboundHandlerAdapter {
             NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attachment);
             future.touch();
 
-            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, new IOException("Channel Closed"))) {
+            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, new IOException("Channel Closed"), channel)) {
                 return;
             }
 
             protocol.onClose(channel);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
-                if (!requestSender.retry(channel, future)) {
+                if (!requestSender.retry(future, channel)) {
                     channels.abort(future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
                 }
             } else {
@@ -137,21 +137,18 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) throws Exception {
-        Channel channel = ctx.channel();
         Throwable cause = e.getCause() != null ? e.getCause() : e;
-        NettyResponseFuture<?> future = null;
 
-        if (cause instanceof PrematureChannelClosureException) {
+        if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException) {
             return;
         }
+
+        Channel channel = ctx.channel();
+        NettyResponseFuture<?> future = null;
 
         LOGGER.debug("Unexpected I/O exception on channel {}", channel, cause);
 
         try {
-            if (cause instanceof ClosedChannelException) {
-                return;
-            }
-
             Object attribute = Channels.getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attribute;
@@ -160,16 +157,15 @@ public class Processor extends ChannelInboundHandlerAdapter {
 
                 if (cause instanceof IOException) {
 
-                    // FIXME why drop the original exception and create a new
-                    // one?
+                    // FIXME why drop the original exception and create a new one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, new IOException("Channel Closed"))) {
+                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(future, new IOException("Channel Closed"), channel)) {
                             return;
                         }
                     } else {
-                        // Close the channel so the recovering can occurs.
+                        // Close the channel so the recovering can occur
                         try {
-                            ctx.channel().close();
+                            channel.close();
                         } catch (Throwable t) {
                             // Swallow.
                         }

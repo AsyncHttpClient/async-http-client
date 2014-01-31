@@ -62,7 +62,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             throw exception;
         }
 
-        requestSender.writeRequest(channel, config, future);
+        requestSender.writeRequest(future, channel);
     }
 
     public void onFutureFailure(Channel channel, Throwable cause) {
@@ -73,7 +73,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
                 && (NettyResponseFutures.abortOnDisconnectException(cause) || cause instanceof ClosedChannelException || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
             LOGGER.debug("Retrying {} ", future.getNettyRequest());
-            if (requestSender.retry(channel, future)) {
+            if (requestSender.retry(future, channel)) {
                 return;
             }
         }

@@ -72,7 +72,7 @@ public class NettyRequestSender {
         this.channels = channels;
     }
 
-    public boolean retry(Channel channel, NettyResponseFuture<?> future) {
+    public boolean retry(NettyResponseFuture<?> future, Channel channel) {
 
         boolean success = false;
 
@@ -109,7 +109,7 @@ public class NettyRequestSender {
         return success;
     }
 
-    public boolean applyIoExceptionFiltersAndReplayRequest(Channel channel, NettyResponseFuture<?> future, IOException e) throws IOException {
+    public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e, Channel channel) throws IOException {
 
         boolean replayed = false;
 
@@ -149,8 +149,8 @@ public class NettyRequestSender {
             return channels.pollAndVerifyCachedChannel(uri, proxyServer, poolKeyGen);
     }
 
-    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Channel channel, Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future,
-            AsyncHandler<T> asyncHandler) throws IOException {
+    private <T> ListenableFuture<T> sendRequestWithCachedChannel(Request request, URI uri, ProxyServer proxy, NettyResponseFuture<T> future,
+            AsyncHandler<T> asyncHandler, Channel channel) throws IOException {
 
         future.setState(NettyResponseFuture.STATE.POOLED);
         future.attachChannel(channel, false);
@@ -159,7 +159,7 @@ public class NettyRequestSender {
         Channels.setDefaultAttribute(channel, future);
 
         try {
-            writeRequest(channel, config, future);
+            writeRequest(future, channel);
         } catch (Exception ex) {
             LOGGER.debug("writeRequest failure", ex);
             if (ex.getMessage() != null && ex.getMessage().contains("SSLEngine")) {
@@ -267,7 +267,7 @@ public class NettyRequestSender {
 
                 if (isChannelValid(channel))
                     // if the channel is still active, we can use it, otherwise try gain
-                    return sendRequestWithCachedChannel(channel, request, uri, proxyServer, newFuture, asyncHandler);
+                    return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
             } else
                 // pool is empty
                 break;
@@ -286,7 +286,7 @@ public class NettyRequestSender {
         Channel channel = getCachedChannel(future, uri, request.getConnectionPoolKeyStrategy(), proxyServer);
 
         if (isChannelValid(channel))
-            return sendRequestWithCachedChannel(channel, request, uri, proxyServer, newFuture, asyncHandler);
+            return sendRequestWithCachedChannel(request, uri, proxyServer, newFuture, asyncHandler, channel);
         else
             return sendRequestWithNewChannel(request, uri, proxyServer, useProxy, newFuture, asyncHandler, reclaimCache);
     }
@@ -351,7 +351,7 @@ public class NettyRequestSender {
         }
     }
 
-    public final <T> void writeRequest(final Channel channel, final AsyncHttpClientConfig config, final NettyResponseFuture<T> future) {
+    public final <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
         try {
             // if the channel is dead because it was pooled and the remote server decided to close it,
             // we just let it go and the channelInactive do its work
