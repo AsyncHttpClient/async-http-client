@@ -62,14 +62,14 @@ public class NettyRequestSender {
 
     private final AtomicBoolean closed;
     private final AsyncHttpClientConfig config;
-    private final NettyAsyncHttpProviderConfig nettyConfig;
     private final Channels channels;
+    private final NettyRequestFactory requestFactory;
 
     public NettyRequestSender(AtomicBoolean closed, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Channels channels) {
         this.closed = closed;
         this.config = config;
-        this.nettyConfig = nettyConfig;
         this.channels = channels;
+        requestFactory = new NettyRequestFactory(config, nettyConfig);
     }
 
     public boolean retry(NettyResponseFuture<?> future, Channel channel) {
@@ -237,7 +237,7 @@ public class NettyRequestSender {
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture, URI uri,
             ProxyServer proxy, boolean forceConnect) throws IOException {
 
-        NettyRequest nettyRequest = NettyRequests.newNettyRequest(config, nettyConfig, request, uri, forceConnect, proxy);
+        NettyRequest nettyRequest = requestFactory.newNettyRequest(request, uri, forceConnect, proxy);
 
         if (originalFuture == null) {
             return NettyResponseFutures.newNettyResponseFuture(uri, request, asyncHandler, nettyRequest, config, proxy);

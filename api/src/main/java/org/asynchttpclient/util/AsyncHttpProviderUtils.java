@@ -450,9 +450,7 @@ public class AsyncHttpProviderUtils {
 
     public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider,
                                             AsyncHttpClientConfig config) {
-        return new StringBuilder(config.getUserAgent())
-                .append(' ')
-                .append('(')
+        return new StringBuilder("AHC (")
                 .append(httpProvider.getSimpleName())
                 .append(" - ")
                 .append(System.getProperty("os.name"))

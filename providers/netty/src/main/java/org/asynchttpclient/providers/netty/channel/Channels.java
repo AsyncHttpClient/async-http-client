@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.providers.netty.channel;
 
-import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;

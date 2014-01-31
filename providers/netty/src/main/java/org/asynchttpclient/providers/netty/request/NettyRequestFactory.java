@@ -59,14 +59,19 @@ import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
 
-public final class NettyRequests {
+public final class NettyRequestFactory {
 
     public static final String GZIP_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
 
-    private NettyRequests() {
+    private final AsyncHttpClientConfig config;
+    private final NettyAsyncHttpProviderConfig nettyConfig;
+
+    public NettyRequestFactory(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig) {
+        this.config = config;
+        this.nettyConfig = nettyConfig;
     }
 
-    private static String requestUri(AsyncHttpClientConfig config, URI uri, ProxyServer proxyServer, HttpMethod method) {
+    private String requestUri(URI uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
             return AsyncHttpProviderUtils.getAuthority(uri);
 
@@ -80,7 +85,7 @@ public final class NettyRequests {
             return uri.getRawPath();
     }
 
-    private static String hostHeader(Request request, URI uri, Realm realm) {
+    private String hostHeader(Request request, URI uri, Realm realm) {
 
         String hostHeader = null;
 
@@ -96,7 +101,7 @@ public final class NettyRequests {
         return hostHeader;
     }
 
-    private static String authorizationHeader(AsyncHttpClientConfig config, Request request, URI uri, ProxyServer proxyServer, Realm realm) throws IOException {
+    private String authorizationHeader(Request request, URI uri, ProxyServer proxyServer, Realm realm) throws IOException {
 
         String authorizationHeader = null;
 
@@ -159,7 +164,7 @@ public final class NettyRequests {
         return authorizationHeader;
     }
 
-    private static String proxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) throws IOException {
+    private String proxyAuthorizationHeader(Request request, ProxyServer proxyServer, HttpMethod method) throws IOException {
 
         String proxyAuthorization = null;
 
@@ -190,7 +195,7 @@ public final class NettyRequests {
         return proxyAuthorization;
     }
 
-    private static byte[] computeBodyFromParams(FluentStringsMap params, Charset bodyCharset) {
+    private byte[] computeBodyFromParams(FluentStringsMap params, Charset bodyCharset) {
 
         StringBuilder sb = new StringBuilder();
         for (Entry<String, List<String>> paramEntry : params) {
@@ -206,7 +211,7 @@ public final class NettyRequests {
         return sb.toString().getBytes(bodyCharset);
     }
 
-    private static NettyBody body(Request request, HttpMethod method, NettyAsyncHttpProviderConfig nettyConfig) throws IOException {
+    private NettyBody body(Request request, HttpMethod method) throws IOException {
         NettyBody nettyBody = null;
         if (method != HttpMethod.CONNECT) {
 
@@ -250,13 +255,13 @@ public final class NettyRequests {
         return nettyBody;
     }
 
-    public static NettyRequest newNettyRequest(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
-        final HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
-        final HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-        final String requestUri = requestUri(config, uri, proxyServer, method);
+        HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
+        HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        String requestUri = requestUri(uri, proxyServer, method);
 
-        NettyBody body = body(request, method, nettyConfig);
+        NettyBody body = body(request, method);
 
         HttpRequest httpRequest;
         NettyRequest nettyRequest;
@@ -311,13 +316,13 @@ public final class NettyRequests {
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, AsyncHttpProviderUtils.keepAliveHeaderValue(config));
         }
 
-        final Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
 
         String hostHeader = hostHeader(request, uri, realm);
         if (hostHeader != null)
             httpRequest.headers().set(HttpHeaders.Names.HOST, hostHeader);
 
-        String authorizationHeader = authorizationHeader(config, request, uri, proxyServer, realm);
+        String authorizationHeader = authorizationHeader(request, uri, proxyServer, realm);
         if (authorizationHeader != null)
             // don't override authorization but append
             httpRequest.headers().add(HttpHeaders.Names.AUTHORIZATION, authorizationHeader);
@@ -332,11 +337,8 @@ public final class NettyRequests {
 
         // Add default user agent
         if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT)) {
-            if (config.getUserAgent() != null) {
-                httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, config.getUserAgent());
-            } else {
-                httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config));
-            }
+            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config);
+            httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, userAgent);
         }
 
         return nettyRequest;
