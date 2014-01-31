@@ -20,7 +20,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
-import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
@@ -40,24 +39,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class HttpProcessor extends ChannelInboundHandlerAdapter {
+public class Processor extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Processor.class);
 
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final Channels channels;
     private final AtomicBoolean closed;
-    private final Protocol httpProtocol;
-    private final Protocol webSocketProtocol;
+    private final Protocol protocol;
 
-    public HttpProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
+    public static Processor newHttpProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels,
+            AtomicBoolean isClose) {
+        return new Processor(config, nettyConfig, requestSender, channels, isClose, new HttpProtocol(channels, config, nettyConfig, requestSender));
+    }
+
+    public static Processor newWsProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels,
+            AtomicBoolean isClose) {
+        return new Processor(config, nettyConfig, requestSender, channels, isClose, new WebSocketProtocol(channels, config, nettyConfig, requestSender));
+    }
+
+    private Processor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose,
+            Protocol protocol) {
         this.config = config;
         this.requestSender = requestSender;
         this.channels = channels;
         this.closed = isClose;
-        httpProtocol = new HttpProtocol(channels, config, nettyConfig, requestSender);
-        webSocketProtocol = new WebSocketProtocol(channels, config, nettyConfig, requestSender);
+        this.protocol = protocol;
     }
 
     @Override
@@ -72,10 +80,9 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
             Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
 
         } else if (attribute instanceof NettyResponseFuture) {
-            Protocol p = ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol;
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
 
-            p.handle(channel, future, e);
+            protocol.handle(channel, future, e);
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             try {
@@ -116,8 +123,7 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            Protocol p = (ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol);
-            p.onClose(channel);
+            protocol.onClose(channel);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
                 if (!requestSender.retry(channel, future)) {
@@ -191,7 +197,6 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
             }
         }
 
-        Protocol protocol = ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol;
         protocol.onError(channel, e);
 
         channels.closeChannel(channel);

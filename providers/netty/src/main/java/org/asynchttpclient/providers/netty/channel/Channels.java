@@ -61,7 +61,7 @@ import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.handler.HttpProcessor;
+import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
 import org.asynchttpclient.util.SslUtils;
@@ -110,6 +110,8 @@ public class Channels {
 
     private final boolean allowStopHashedWheelTimer;
     private final HashedWheelTimer hashedWheelTimer;
+
+    private Processor wsProcessor;
 
     public Channels(final AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyProviderConfig) {
 
@@ -199,7 +201,8 @@ public class Channels {
 
     public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
 
-        final HttpProcessor httpProcessor = new HttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
+        final Processor httpProcessor = Processor.newHttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
+        wsProcessor = Processor.newWsProcessor(config, nettyProviderConfig, requestSender, this, closed);
 
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -223,7 +226,7 @@ public class Channels {
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(WS_PROCESSOR, httpProcessor);
+                        .addLast(WS_PROCESSOR, wsProcessor);
 
                 if (nettyProviderConfig.getWsAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWsAdditionalChannelInitializer().initChannel(ch);
@@ -258,7 +261,7 @@ public class Channels {
                 ch.pipeline()//
                         .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
-                        .addLast(WS_PROCESSOR, httpProcessor);
+                        .addLast(WS_PROCESSOR, wsProcessor);
 
                 if (nettyProviderConfig.getWssAdditionalChannelInitializer() != null) {
                     nettyProviderConfig.getWssAdditionalChannelInitializer().initChannel(ch);
@@ -329,7 +332,7 @@ public class Channels {
         }
 
         if (isWebSocket(scheme)) {
-            p.replace(HTTP_PROCESSOR, WS_PROCESSOR, p.get(HTTP_PROCESSOR));
+            p.replace(HTTP_PROCESSOR, WS_PROCESSOR, wsProcessor);
         }
     }
 
