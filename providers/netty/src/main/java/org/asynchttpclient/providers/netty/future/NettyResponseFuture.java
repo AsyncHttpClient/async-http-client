@@ -161,7 +161,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return false;
 
         try {
-            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+            Channels.setProcessorContextDefaultAttribute(channel, DiscardEvent.INSTANCE);
             channel.close();
         } catch (Throwable t) {
             // Ignore
@@ -234,7 +234,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             if (expired) {
                 isCancelled.set(true);
                 try {
-                    Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+                    Channels.setProcessorContextDefaultAttribute(channel, DiscardEvent.INSTANCE);
                     channel.close();
                 } catch (Throwable t) {
                     // Ignore

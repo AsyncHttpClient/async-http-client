@@ -133,7 +133,7 @@ public class DefaultChannelPool implements ChannelPool {
                 long endConcurrentLoop = millisTime();
 
                 for (IdleChannel idleChannel : channelsInTimeout) {
-                    Object attachment = Channels.getDefaultAttribute(idleChannel.channel);
+                    Object attachment = Channels.getProcessorContextDefaultAttribute(idleChannel.channel);
                     if (attachment != null) {
                         if (attachment instanceof NettyResponseFuture) {
                             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
@@ -188,7 +188,7 @@ public class DefaultChannelPool implements ChannelPool {
         }
 
         log.debug("Adding uri: {} for channel {}", uri, channel);
-        Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+        Channels.setProcessorContextDefaultAttribute(channel, DiscardEvent.INSTANCE);
 
         ConcurrentLinkedQueue<IdleChannel> idleConnectionForHost = connectionsPool.get(uri);
         if (idleConnectionForHost == null) {
@@ -298,7 +298,7 @@ public class DefaultChannelPool implements ChannelPool {
 
     private void close(Channel channel) {
         try {
-            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
+            Channels.setProcessorContextDefaultAttribute(channel, DiscardEvent.INSTANCE);
             channel2CreationDate.remove(channel);
             channel.close();
         } catch (Throwable t) {

@@ -81,7 +81,7 @@ public class NettyRequestSender {
             channels.removeAll(channel);
 
             if (future == null) {
-                Object attachment = Channels.getDefaultAttribute(channel);
+                Object attachment = Channels.getProcessorContextDefaultAttribute(channel);
                 if (attachment instanceof NettyResponseFuture)
                     future = (NettyResponseFuture<?>) attachment;
             }
@@ -157,7 +157,7 @@ public class NettyRequestSender {
         future.attachChannel(channel, false);
 
         LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
-        Channels.setDefaultAttribute(channel, future);
+        Channels.setProcessorContextDefaultAttribute(channel, future);
 
         try {
             writeRequest(channel, config, future);

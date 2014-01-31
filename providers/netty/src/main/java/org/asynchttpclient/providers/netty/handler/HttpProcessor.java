@@ -40,9 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
+public class HttpProcessor extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpProcessor.class);
 
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
@@ -51,7 +51,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     private final Protocol httpProtocol;
     private final Protocol webSocketProtocol;
 
-    public NettyChannelHandler(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
+    public HttpProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
         this.config = config;
         this.requestSender = requestSender;
         this.channels = channels;
@@ -97,7 +97,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
             LOGGER.trace("super.channelClosed", ex);
         }
 
-        channels.removeFromPool(ctx);
+        channels.removeFromPool(ctx.channel());
         Object attachment = Channels.getDefaultAttribute(ctx);
         LOGGER.debug("Channel Closed: {} with attachment {}", ctx.channel(), attachment);
 
@@ -114,7 +114,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            Protocol p = (ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol);
+            Protocol p = (ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol);
             p.onClose(ctx);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {

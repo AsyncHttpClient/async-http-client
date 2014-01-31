@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 
@@ -61,7 +62,8 @@ import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.handler.NettyChannelHandler;
+import org.asynchttpclient.providers.netty.handler.HttpProcessor;
+import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
@@ -196,7 +198,9 @@ public class Channels {
         return sslEngine;
     }
 
-    public void configure(final NettyChannelHandler httpProcessor) {
+    public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
+
+        final HttpProcessor httpProcessor = new HttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
 
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -271,7 +275,7 @@ public class Channels {
     public void close() {
         channelPool.destroy();
         for (Channel channel : openChannels) {
-            Object attribute = getDefaultAttribute(channel);
+            Object attribute = getProcessorContextDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
                 future.cancelTimeouts();
@@ -396,35 +400,33 @@ public class Channels {
         freeConnections.release();
     }
 
-    public void removeFromPool(ChannelHandlerContext ctx) {
-        channelPool.removeAll(ctx.channel());
+    public void removeFromPool(Channel channel) {
+        channelPool.removeAll(channel);
     }
 
     public void closeChannel(ChannelHandlerContext ctx) {
-        removeFromPool(ctx);
+        removeFromPool(ctx.channel());
         finishChannel(ctx);
     }
 
     public void finishChannel(ChannelHandlerContext ctx) {
         setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
 
+        Channel channel = ctx.channel();
+
         // The channel may have already been removed if a timeout occurred, and
         // this method may be called just after.
-        if (ctx.channel() == null) {
+        if (channel == null)
             return;
-        }
 
-        LOGGER.debug("Closing Channel {} ", ctx.channel());
-
+        LOGGER.debug("Closing Channel {} ", channel);
         try {
-            ctx.channel().close();
+            channel.close();
         } catch (Throwable t) {
             LOGGER.debug("Error closing a connection", t);
         }
 
-        if (ctx.channel() != null) {
-            openChannels.remove(ctx.channel());
-        }
+        openChannels.remove(channel);
     }
 
     public void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
@@ -448,7 +450,7 @@ public class Channels {
     public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
         if (channel != null && openChannels.contains(channel)) {
-            closeChannel(channel.pipeline().context(NettyChannelHandler.class));
+            closeChannel(getProcessorContext(channel));
             openChannels.remove(channel);
         }
 
@@ -465,11 +467,11 @@ public class Channels {
     }
 
     public static SslHandler getSslHandler(Channel channel) {
-        return (SslHandler) channel.pipeline().get(Channels.SSL_HANDLER);
+        return channel.pipeline().get(SslHandler.class);
     }
 
-    public static Object getDefaultAttribute(Channel channel) {
-        return getDefaultAttribute(channel.pipeline().context(NettyChannelHandler.class));
+    public static Object getProcessorContextDefaultAttribute(Channel channel) {
+        return getDefaultAttribute(getProcessorContext(channel));
     }
 
     public static Object getDefaultAttribute(ChannelHandlerContext ctx) {
@@ -481,11 +483,15 @@ public class Channels {
         return attr != null ? attr.get() : null;
     }
 
-    public static void setDefaultAttribute(Channel channel, Object o) {
-        setDefaultAttribute(channel.pipeline().context(NettyChannelHandler.class), o);
+    public static void setProcessorContextDefaultAttribute(Channel channel, Object o) {
+        setDefaultAttribute(getProcessorContext(channel), o);
     }
 
     public static void setDefaultAttribute(ChannelHandlerContext ctx, Object o) {
         ctx.attr(DEFAULT_ATTRIBUTE).set(o);
+    }
+
+    private static ChannelHandlerContext getProcessorContext(Channel channel) {
+        return channel.pipeline().context(HttpProcessor.class);
     }
 }
