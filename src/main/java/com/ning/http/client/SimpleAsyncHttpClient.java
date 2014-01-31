@@ -530,11 +530,6 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setScheduledExecutorService(ScheduledExecutorService reaper) {
-            configBuilder.setScheduledExecutorService(reaper);
-            return this;
-        }
-
         public Builder setExecutorService(ExecutorService applicationThreadPool) {
             configBuilder.setExecutorService(applicationThreadPool);
             return this;
