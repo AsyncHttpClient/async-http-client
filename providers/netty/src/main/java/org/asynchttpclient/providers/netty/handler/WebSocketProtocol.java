@@ -15,14 +15,19 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+
+import java.io.IOException;
+import java.util.Locale;
+
 import org.asynchttpclient.AsyncHandler.STATE;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -43,11 +48,6 @@ import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Locale;
-
-import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
-
 final class WebSocketProtocol extends Protocol {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketProtocol.class);
@@ -58,10 +58,10 @@ final class WebSocketProtocol extends Protocol {
 
     // We don't need to synchronize as replacing the "ws-decoder" will
     // process using the same thread.
-    private void invokeOnSucces(ChannelHandlerContext ctx, WebSocketUpgradeHandler h) {
+    private void invokeOnSucces(Channel channel, WebSocketUpgradeHandler h) {
         if (!h.touchSuccess()) {
             try {
-                h.onSuccess(new NettyWebSocket(ctx.channel()));
+                h.onSuccess(new NettyWebSocket(channel));
             } catch (Exception ex) {
                 LOGGER.warn("onSuccess unexpected exception", ex);
             }
@@ -69,7 +69,7 @@ final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void handle(ChannelHandlerContext ctx, NettyResponseFuture<?> future, Object e) throws Exception {
+    public void handle(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
         WebSocketUpgradeHandler h = WebSocketUpgradeHandler.class.cast(future.getAsyncHandler());
         Request request = future.getRequest();
 
@@ -78,12 +78,12 @@ final class WebSocketProtocol extends Protocol {
             HttpResponseStatus status = new ResponseStatus(future.getURI(), response, config);
             HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
 
-            if (handleResponseFiltersReplayRequestAndExit(ctx, future, status, responseHeaders)) {
+            if (handleResponseFiltersReplayRequestAndExit(channel, future, status, responseHeaders)) {
                 return;
             }
 
             future.setHttpHeaders(response.headers());
-            if (handleRedirectAndExit(request, future, response, ctx))
+            if (handleRedirectAndExit(request, future, response, channel))
                 return;
 
             boolean validStatus = response.getStatus().equals(SWITCHING_PROTOCOLS);
@@ -119,20 +119,20 @@ final class WebSocketProtocol extends Protocol {
                 channels.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }
 
-            Channels.upgradePipelineForWebSockets(ctx);
+            Channels.upgradePipelineForWebSockets(channel);
 
-            invokeOnSucces(ctx, h);
+            invokeOnSucces(channel, h);
             future.done();
 
         } else if (e instanceof WebSocketFrame) {
 
             final WebSocketFrame frame = (WebSocketFrame) e;
             NettyWebSocket webSocket = NettyWebSocket.class.cast(h.onCompleted());
-            invokeOnSucces(ctx, h);
+            invokeOnSucces(channel, h);
 
             if (webSocket != null) {
                 if (frame instanceof CloseWebSocketFrame) {
-                    Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
+                    Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
                 } else {
@@ -165,9 +165,9 @@ final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onError(ChannelHandlerContext ctx, Throwable e) {
+    public void onError(Channel channel, Throwable e) {
         try {
-            Object attribute = Channels.getDefaultAttribute(ctx);
+            Object attribute = Channels.getDefaultAttribute(channel);
             LOGGER.warn("onError {}", e);
             if (!(attribute instanceof NettyResponseFuture)) {
                 return;
@@ -187,9 +187,9 @@ final class WebSocketProtocol extends Protocol {
     }
 
     @Override
-    public void onClose(ChannelHandlerContext ctx) {
+    public void onClose(Channel channel) {
         LOGGER.trace("onClose {}");
-        Object attribute = Channels.getDefaultAttribute(ctx);
+        Object attribute = Channels.getDefaultAttribute(channel);
         if (!(attribute instanceof NettyResponseFuture)) {
             return;
         }

@@ -63,23 +63,24 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object e) throws Exception {
 
-        Object attribute = Channels.getDefaultAttribute(ctx);
+        Channel channel = ctx.channel();
+        Object attribute = Channels.getDefaultAttribute(channel);
 
         if (attribute instanceof Callback && e instanceof LastHttpContent) {
             Callback ac = (Callback) attribute;
             ac.call();
-            Channels.setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
+            Channels.setDefaultAttribute(channel, DiscardEvent.INSTANCE);
 
         } else if (attribute instanceof NettyResponseFuture) {
             Protocol p = ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol;
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
 
-            p.handle(ctx, future, e);
+            p.handle(channel, future, e);
 
         } else if (attribute != DiscardEvent.INSTANCE) {
             try {
-                LOGGER.trace("Closing an orphan channel {}", ctx.channel());
-                ctx.channel().close();
+                LOGGER.trace("Closing an orphan channel {}", channel);
+                channel.close();
             } catch (Throwable t) {
             }
         }
@@ -97,32 +98,33 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
             LOGGER.trace("super.channelClosed", ex);
         }
 
-        channels.removeFromPool(ctx.channel());
-        Object attachment = Channels.getDefaultAttribute(ctx);
-        LOGGER.debug("Channel Closed: {} with attachment {}", ctx.channel(), attachment);
+        Channel channel = ctx.channel();
+        channels.removeFromPool(channel);
+        Object attachment = Channels.getDefaultAttribute(channel);
+        LOGGER.debug("Channel Closed: {} with attachment {}", channel, attachment);
 
         if (attachment instanceof Callback) {
             Callback callback = (Callback) attachment;
-            Channels.setDefaultAttribute(ctx, callback.future());
+            Channels.setDefaultAttribute(channel, callback.future());
             callback.call();
 
         } else if (attachment instanceof NettyResponseFuture<?>) {
             NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attachment);
             future.touch();
 
-            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(ctx, future, new IOException("Channel Closed"))) {
+            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, new IOException("Channel Closed"))) {
                 return;
             }
 
             Protocol p = (ctx.pipeline().get(Channels.HTTP_PROCESSOR) != null ? httpProtocol : webSocketProtocol);
-            p.onClose(ctx);
+            p.onClose(channel);
 
             if (future != null && !future.isDone() && !future.isCancelled()) {
-                if (!requestSender.retry(ctx.channel(), future)) {
+                if (!requestSender.retry(channel, future)) {
                     channels.abort(future, AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
                 }
             } else {
-                channels.closeChannel(ctx);
+                channels.closeChannel(channel);
             }
         }
     }
@@ -144,7 +146,7 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            Object attribute = Channels.getDefaultAttribute(ctx);
+            Object attribute = Channels.getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attribute;
                 future.attachChannel(null, false);
@@ -155,7 +157,7 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
                     // FIXME why drop the original exception and create a new
                     // one?
                     if (!config.getIOExceptionFilters().isEmpty()) {
-                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(ctx, future, new IOException("Channel Closed"))) {
+                        if (requestSender.applyIoExceptionFiltersAndReplayRequest(channel, future, new IOException("Channel Closed"))) {
                             return;
                         }
                     } else {
@@ -190,9 +192,9 @@ public class HttpProcessor extends ChannelInboundHandlerAdapter {
         }
 
         Protocol protocol = ctx.pipeline().get(HttpClientCodec.class) != null ? httpProtocol : webSocketProtocol;
-        protocol.onError(ctx, e);
+        protocol.onError(channel, e);
 
-        channels.closeChannel(ctx);
+        channels.closeChannel(channel);
         // FIXME not really sure
         // ctx.fireChannelRead(e);
         ctx.close();

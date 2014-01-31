@@ -21,7 +21,6 @@ import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -275,7 +274,7 @@ public class Channels {
     public void close() {
         channelPool.destroy();
         for (Channel channel : openChannels) {
-            Object attribute = getProcessorContextDefaultAttribute(channel);
+            Object attribute = getDefaultAttribute(channel);
             if (attribute instanceof NettyResponseFuture<?>) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
                 future.cancelTimeouts();
@@ -334,9 +333,9 @@ public class Channels {
         }
     }
 
-    public static void upgradePipelineForWebSockets(ChannelHandlerContext ctx) {
-        ctx.pipeline().replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
-        ctx.pipeline().addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
+    public static void upgradePipelineForWebSockets(Channel channel) {
+        channel.pipeline().replace(HTTP_HANDLER, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
+        channel.pipeline().addBefore(WS_PROCESSOR, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, false, 10 * 1024));
     }
 
     public Channel pollAndVerifyCachedChannel(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
@@ -404,15 +403,13 @@ public class Channels {
         channelPool.removeAll(channel);
     }
 
-    public void closeChannel(ChannelHandlerContext ctx) {
-        removeFromPool(ctx.channel());
-        finishChannel(ctx);
+    public void closeChannel(Channel channel) {
+        removeFromPool(channel);
+        finishChannel(channel);
     }
 
-    public void finishChannel(ChannelHandlerContext ctx) {
-        setDefaultAttribute(ctx, DiscardEvent.INSTANCE);
-
-        Channel channel = ctx.channel();
+    public void finishChannel(Channel channel) {
+        setDefaultAttribute(channel, DiscardEvent.INSTANCE);
 
         // The channel may have already been removed if a timeout occurred, and
         // this method may be called just after.
@@ -429,11 +426,11 @@ public class Channels {
         openChannels.remove(channel);
     }
 
-    public void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
-        setDefaultAttribute(ctx, new Callback(future) {
+    public void drainChannel(final Channel channel, final NettyResponseFuture<?> future) {
+        setDefaultAttribute(channel, new Callback(future) {
             public void call() throws Exception {
-                if (!(future.isKeepAlive() && ctx.channel().isActive() && channelPool.offer(getPoolKey(future), ctx.channel()))) {
-                    finishChannel(ctx);
+                if (!(future.isKeepAlive() && channel.isActive() && channelPool.offer(getPoolKey(future), channel))) {
+                    finishChannel(channel);
                 }
             }
         });
@@ -450,7 +447,7 @@ public class Channels {
     public void abort(NettyResponseFuture<?> future, Throwable t) {
         Channel channel = future.channel();
         if (channel != null && openChannels.contains(channel)) {
-            closeChannel(getProcessorContext(channel));
+            closeChannel(channel);
             openChannels.remove(channel);
         }
 
@@ -470,28 +467,12 @@ public class Channels {
         return channel.pipeline().get(SslHandler.class);
     }
 
-    public static Object getProcessorContextDefaultAttribute(Channel channel) {
-        return getDefaultAttribute(getProcessorContext(channel));
-    }
-
-    public static Object getDefaultAttribute(ChannelHandlerContext ctx) {
-        if (ctx == null) {
-            // ctx might be null if the channel never reached the handler
-            return null;
-        }
-        Attribute<Object> attr = ctx.attr(DEFAULT_ATTRIBUTE);
+    public static Object getDefaultAttribute(Channel channel) {
+        Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
         return attr != null ? attr.get() : null;
     }
 
-    public static void setProcessorContextDefaultAttribute(Channel channel, Object o) {
-        setDefaultAttribute(getProcessorContext(channel), o);
-    }
-
-    public static void setDefaultAttribute(ChannelHandlerContext ctx, Object o) {
-        ctx.attr(DEFAULT_ATTRIBUTE).set(o);
-    }
-
-    private static ChannelHandlerContext getProcessorContext(Channel channel) {
-        return channel.pipeline().context(HttpProcessor.class);
+    public static void setDefaultAttribute(Channel channel, Object o) {
+        channel.attr(DEFAULT_ATTRIBUTE).set(o);
     }
 }

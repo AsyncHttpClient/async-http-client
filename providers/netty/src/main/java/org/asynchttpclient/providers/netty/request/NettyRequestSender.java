@@ -20,7 +20,6 @@ import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.Timeout;
@@ -81,7 +80,7 @@ public class NettyRequestSender {
             channels.removeAll(channel);
 
             if (future == null) {
-                Object attachment = Channels.getProcessorContextDefaultAttribute(channel);
+                Object attachment = Channels.getDefaultAttribute(channel);
                 if (attachment instanceof NettyResponseFuture)
                     future = (NettyResponseFuture<?>) attachment;
             }
@@ -110,7 +109,7 @@ public class NettyRequestSender {
         return success;
     }
 
-    public boolean applyIoExceptionFiltersAndReplayRequest(ChannelHandlerContext ctx, NettyResponseFuture<?> future, IOException e) throws IOException {
+    public boolean applyIoExceptionFiltersAndReplayRequest(Channel channel, NettyResponseFuture<?> future, IOException e) throws IOException {
 
         boolean replayed = false;
 
@@ -127,7 +126,7 @@ public class NettyRequestSender {
         }
 
         if (fc.replayRequest()) {
-            replayRequest(future, fc, ctx);
+            replayRequest(future, fc, channel);
             replayed = true;
         }
         return replayed;
@@ -157,7 +156,7 @@ public class NettyRequestSender {
         future.attachChannel(channel, false);
 
         LOGGER.debug("\nUsing cached Channel {}\n for request \n{}\n", channel, future.getNettyRequest().getHttpRequest());
-        Channels.setProcessorContextDefaultAttribute(channel, future);
+        Channels.setDefaultAttribute(channel, future);
 
         try {
             writeRequest(channel, config, future);
@@ -400,7 +399,7 @@ public class NettyRequestSender {
         scheduleTimeouts(future);
     }
 
-    public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, ChannelHandlerContext ctx) throws IOException {
+    public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, Channel channel) throws IOException {
         Request newRequest = fc.getRequest();
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setState(NettyResponseFuture.STATE.NEW);
@@ -410,7 +409,7 @@ public class NettyRequestSender {
         if (future.getAsyncHandler() instanceof AsyncHandlerExtensions) {
             AsyncHandlerExtensions.class.cast(future.getAsyncHandler()).onRetry();
         }
-        channels.drainChannel(ctx, future);
+        channels.drainChannel(channel, future);
         sendNextRequest(newRequest, future);
     }
 }

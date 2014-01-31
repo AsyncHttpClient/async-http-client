@@ -53,7 +53,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
     }
 
     public void onFutureSuccess(final Channel channel) throws ConnectException {
-        Channels.setProcessorContextDefaultAttribute(channel, future);
+        Channels.setDefaultAttribute(channel, future);
         SslHandler sslHandler = Channels.getSslHandler(channel);
 
         if (sslHandler != null && !config.getHostnameVerifier().verify(future.getURI().getHost(), sslHandler.engine().getSession())) {
