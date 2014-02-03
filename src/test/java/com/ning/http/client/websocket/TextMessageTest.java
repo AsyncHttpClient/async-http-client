@@ -45,7 +45,10 @@ public abstract class TextMessageTest extends AbstractBasicTest {
         @Override
         public void onMessage(String s) {
             try {
-                connection.sendMessage(s);
+                if (s.equals("CLOSE"))
+                    connection.close();
+                else
+                    connection.sendMessage(s);
             } catch (IOException e) {
                 try {
                     connection.sendMessage("FAIL");
@@ -401,4 +404,53 @@ public abstract class TextMessageTest extends AbstractBasicTest {
             c.close();
         }
     }
+
+    @Test(timeOut = 60000)
+    public void echoTextAndThenClose() throws Throwable {
+        AsyncHttpClient c = getAsyncHttpClient(null);
+        try {
+            final CountDownLatch textLatch = new CountDownLatch(1);
+            final CountDownLatch closeLatch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<String>("");
+
+            final WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener() {
+
+                @Override
+                public void onMessage(String message) {
+                    text.set(text.get() + message);
+                    textLatch.countDown();
+                }
+
+                @Override
+                public void onFragment(String fragment, boolean last) {
+                }
+
+                @Override
+                public void onOpen(com.ning.http.client.websocket.WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(com.ning.http.client.websocket.WebSocket websocket) {
+                    closeLatch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                    closeLatch.countDown();
+                }
+            }).build()).get();
+
+            websocket.sendTextMessage("ECHO");
+            textLatch.await();
+
+            websocket.sendTextMessage("CLOSE");
+            closeLatch.await();
+
+            assertEquals(text.get(), "ECHO");
+        } finally {
+            c.close();
+        }
+    }
+
 }
