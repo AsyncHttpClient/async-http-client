@@ -136,15 +136,13 @@ final class WebSocketProtocol extends Protocol {
                     CloseWebSocketFrame closeFrame = CloseWebSocketFrame.class.cast(frame);
                     webSocket.onClose(closeFrame.statusCode(), closeFrame.reasonText());
                 } else {
-                    boolean binaryFrame = frame instanceof BinaryWebSocketFrame;
-
                     ByteBuf buf = frame.content();
                     if (buf != null && buf.readableBytes() > 0) {
                         try {
                             NettyResponseBodyPart rp = nettyConfig.getBodyPartFactory().newResponseBodyPart(buf, frame.isFinalFragment());
                             h.onBodyPartReceived(rp);
 
-                            if (binaryFrame) {
+                            if (frame instanceof BinaryWebSocketFrame) {
                                 webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
                             } else {
                                 webSocket.onTextFragment(buf.toString(StandardCharsets.UTF_8), frame.isFinalFragment());
