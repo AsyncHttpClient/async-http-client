@@ -14,7 +14,7 @@ public class EchoSocket extends WebSocketAdapter {
         sess.setIdleTimeout(10000);
         sess.setMaximumMessageSize(1000);
     }
-    
+
     @Override
     public void onWebSocketClose(int statusCode, String reason) {
         try {
@@ -44,7 +44,10 @@ public class EchoSocket extends WebSocketAdapter {
             return;
         }
         try {
-            getRemote().sendString(message);
+            if (message.equals("CLOSE"))
+                getSession().close();
+            else
+                getRemote().sendString(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
