@@ -2366,7 +2366,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     if (webSocket != null) {
                         if (pendingOpcode == OPCODE_BINARY) {
                             webSocket.onBinaryFragment(rp.getBodyPartBytes(), frame.isFinalFragment());
-                        } else {
+                        } else if (pendingOpcode == OPCODE_TEXT) {
                             webSocket.onTextFragment(frame.getBinaryData().toString(UTF8), frame.isFinalFragment());
                         }
 
