@@ -469,7 +469,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             h.add("Test4", "Test4");
             h.add("Test5", "Test5");
 
-            final Cookie coo = new Cookie("/", "foo", "value", "/", -1, false);
+            final Cookie coo = Cookie.newValidCookie("/", "foo", "value", "/", -1, false);
             client.prepareGet(getTargetUrl()).setHeaders(h).addCookie(coo).execute(new AsyncCompletionHandlerAdapter() {
 
                 @Override

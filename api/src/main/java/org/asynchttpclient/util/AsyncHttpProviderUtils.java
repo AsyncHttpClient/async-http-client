@@ -28,14 +28,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.Request;
 
@@ -56,20 +51,15 @@ public class AsyncHttpProviderUtils {
 
     private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
 
-
     protected final static ThreadLocal<SimpleDateFormat[]> simpleDateFormat = new ThreadLocal<SimpleDateFormat[]>() {
         protected SimpleDateFormat[] initialValue() {
 
-            return new SimpleDateFormat[]
-                    {
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
-                            new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US), //ASCTIME
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US)
-                    };
+            return new SimpleDateFormat[] {
+                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
+                    new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), // RFC1036
+                    new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US), // ASCTIME
+                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US), new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
+                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US), new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US) };
         }
     };
 
@@ -77,78 +67,10 @@ public class AsyncHttpProviderUtils {
         return simpleDateFormat.get();
     }
 
-
-    //space ' '
-    static final byte SP = 32;
-
-    //tab ' '
-    static final byte HT = 9;
-
-    /**
-     * Carriage return
-     */
-    static final byte CR = 13;
-
-    /**
-     * Equals '='
-     */
-    static final byte EQUALS = 61;
-
-    /**
-     * Line feed character
-     */
-    static final byte LF = 10;
-
-    /**
-     * carriage return line feed
-     */
-    static final byte[] CRLF = new byte[]{CR, LF};
-
-    /**
-     * Colon ':'
-     */
-    static final byte COLON = 58;
-
-    /**
-     * Semicolon ';'
-     */
-    static final byte SEMICOLON = 59;
-
-    /**
-     * comma ','
-     */
-    static final byte COMMA = 44;
-
-    static final byte DOUBLE_QUOTE = '"';
-
-    static final String PATH = "Path";
-
-    static final String EXPIRES = "Expires";
-
-    static final String MAX_AGE = "Max-Age";
-
-    static final String DOMAIN = "Domain";
-
-    static final String SECURE = "Secure";
-
-    static final String HTTPONLY = "HTTPOnly";
-
-    static final String COMMENT = "Comment";
-
-    static final String COMMENTURL = "CommentURL";
-
-    static final String DISCARD = "Discard";
-
-    static final String PORT = "Port";
-
-    static final String VERSION = "Version";
-
     public static final void validateSupportedScheme(URI uri) {
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
-                && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
-                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 
@@ -158,11 +80,9 @@ public class AsyncHttpProviderUtils {
 
         String path = uri.getPath();
         if (path == null) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ", must be non-null");
+            throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null");
         } else if (path.length() > 0 && path.charAt(0) != '/') {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ". must start with a '/'");
+            throw new IllegalArgumentException("The URI path, of the URI " + uri + ". must start with a '/'");
         } else if (path.length() == 0) {
             return URI.create(u + "/");
         }
@@ -251,7 +171,7 @@ public class AsyncHttpProviderUtils {
         byte[] result = new byte[maxLen];
         for (HttpResponseBodyPart part : bodyParts) {
             byte[] chunk = part.getBodyPartBytes();
-            int amount = Math.min(maxLen-size, chunk.length);
+            int amount = Math.min(maxLen - size, chunk.length);
             System.arraycopy(chunk, 0, result, size, amount);
             size += amount;
             if (size == maxLen) {
@@ -265,13 +185,12 @@ public class AsyncHttpProviderUtils {
         }
         return result;
     }
-    
+
     /**
      * @param bodyParts NON EMPTY body part
      * @return
      */
-    public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts)
-    {
+    public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts) {
         switch (bodyParts.size()) {
         case 0:
             return new ByteArrayInputStream(NO_BYTES);
@@ -284,7 +203,7 @@ public class AsyncHttpProviderUtils {
         }
         return new SequenceInputStream(streams.elements());
     }
-    
+
     public final static String getHost(URI uri) {
         String host = uri.getHost();
         if (host == null) {
@@ -294,9 +213,9 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static URI getRedirectUri(URI uri, String location) {
-        if(location == null)
+        if (location == null)
             throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
-        
+
         URI locationURI = null;
         try {
             locationURI = new URI(location);
@@ -307,7 +226,7 @@ public class AsyncHttpProviderUtils {
                 throw new IllegalArgumentException("Don't know how to turn this location into a proper URI:" + location, e);
             } else {
                 StringBuilder properUrl = new StringBuilder(location.length()).append(parts[0]).append("?");
-                
+
                 String[] queryParams = parts[1].split("&");
                 for (int i = 0; i < queryParams.length; i++) {
                     String queryParam = queryParams[i];
@@ -320,21 +239,17 @@ public class AsyncHttpProviderUtils {
                         UTF8UrlEncoder.appendEncoded(properUrl, nameValue[1]);
                     }
                 }
-                
+
                 locationURI = URI.create(properUrl.toString());
             }
         }
-        
+
         URI redirectUri = uri.resolve(locationURI);
 
         String scheme = redirectUri.getScheme();
 
-        if (scheme == null || !scheme.equalsIgnoreCase("http")
-                && !scheme.equalsIgnoreCase("https")
-                && !scheme.equals("ws")
-                && !scheme.equals("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri
-                    + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equals("ws") && !scheme.equals("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
         }
 
         return redirectUri.normalize();
@@ -347,119 +262,9 @@ public class AsyncHttpProviderUtils {
         return port;
     }
 
-    public static String encodeCookies(Collection<Cookie> cookies) {
-        StringBuilder sb = new StringBuilder();
-
-        for (Cookie cookie : cookies) {
-            if (cookie.getVersion() >= 1) {
-                add(sb, '$' + VERSION, 1);
-            }
-
-            add(sb, cookie.getName(), cookie.getValue());
-
-            if (cookie.getPath() != null) {
-                add(sb, '$' + PATH, cookie.getPath());
-            }
-
-            if (cookie.getDomain() != null) {
-                add(sb, '$' + DOMAIN, cookie.getDomain());
-            }
-
-            if (cookie.getVersion() >= 1) {
-                if (!cookie.getPorts().isEmpty()) {
-                    sb.append('$');
-                    sb.append(PORT);
-                    sb.append((char) EQUALS);
-                    sb.append((char) DOUBLE_QUOTE);
-                    for (int port : cookie.getPorts()) {
-                        sb.append(port);
-                        sb.append((char) COMMA);
-                    }
-                    sb.setCharAt(sb.length() - 1, (char) DOUBLE_QUOTE);
-                    sb.append((char) SEMICOLON);
-                }
-            }
-        }
-
-        sb.setLength(sb.length() - 1);
-        return sb.toString();
-    }
-
-    private static void add(StringBuilder sb, String name, String val) {
-        if (val == null) {
-            addQuoted(sb, name, "");
-            return;
-        }
-
-        for (int i = 0; i < val.length(); i++) {
-            char c = val.charAt(i);
-            switch (c) {
-                case '\t':
-                case ' ':
-                case '"':
-                case '(':
-                case ')':
-                case ',':
-                case '/':
-                case ':':
-                case ';':
-                case '<':
-                case '=':
-                case '>':
-                case '?':
-                case '@':
-                case '[':
-                case '\\':
-                case ']':
-                case '{':
-                case '}':
-                    addQuoted(sb, name, val);
-                    return;
-            }
-        }
-
-        addUnquoted(sb, name, val);
-    }
-
-    private static void addUnquoted(StringBuilder sb, String name, String val) {
-        sb.append(name);
-        sb.append((char) EQUALS);
-        sb.append(val);
-        sb.append((char) SEMICOLON);
-    }
-
-    private static void addQuoted(StringBuilder sb, String name, String val) {
-        if (val == null) {
-            val = "";
-        }
-
-        sb.append(name);
-        sb.append((char) EQUALS);
-        sb.append((char) DOUBLE_QUOTE);
-        sb.append(val.replace("\\", "\\\\").replace("\"", "\\\""));
-        sb.append((char) DOUBLE_QUOTE);
-        sb.append((char) SEMICOLON);
-    }
-
-    private static void add(StringBuilder sb, String name, int val) {
-        sb.append(name);
-        sb.append((char) EQUALS);
-        sb.append(val);
-        sb.append((char) SEMICOLON);
-    }
-
-    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider,
-                                            AsyncHttpClientConfig config) {
-        return new StringBuilder("AHC (")
-                .append(httpProvider.getSimpleName())
-                .append(" - ")
-                .append(System.getProperty("os.name"))
-                .append(" - ")
-                .append(System.getProperty("os.version"))
-                .append(" - ")
-                .append(System.getProperty("java.version"))
-                .append(" - ")
-                .append(Runtime.getRuntime().availableProcessors())
+    public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {
+        return new StringBuilder("AHC (").append(httpProvider.getSimpleName()).append(" - ").append(System.getProperty("os.name")).append(" - ")
+                .append(System.getProperty("os.version")).append(" - ").append(System.getProperty("java.version")).append(" - ").append(Runtime.getRuntime().availableProcessors())
                 .append(" core(s))").toString();
     }
 
@@ -470,9 +275,9 @@ public class AsyncHttpProviderUtils {
                 if (val.length > 1) {
                     String charset = val[1].trim();
                     // Quite a lot of sites have charset="CHARSET",
-                    // e.g. charset="utf-8". Note the quotes. This is 
+                    // e.g. charset="utf-8". Note the quotes. This is
                     // not correct, but client should be able to handle
-                    // it (all browsers do, Apache HTTP Client and Grizzly 
+                    // it (all browsers do, Apache HTTP Client and Grizzly
                     // strip it by default)
                     // This is a poor man's trim("\"").trim("'")
                     return charset.replaceAll("\"", "").replaceAll("'", "");
@@ -523,7 +328,8 @@ public class AsyncHttpProviderUtils {
         if (bodyParts == null || bodyParts.size() == 0) {
 
             // We allow empty body on 204
-            if (statusCode == 204) return;
+            if (statusCode == 204)
+                return;
 
             throw new IllegalStateException(BODY_NOT_COMPUTED);
         }
@@ -535,18 +341,5 @@ public class AsyncHttpProviderUtils {
 
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
         return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
-    }
-
-    public static ExecutorService createDefaultExecutorService() {
-        return Executors.newCachedThreadPool(new ThreadFactory() {
-            final AtomicInteger counter = new AtomicInteger();
-
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r,
-                                      "AsyncHttpClient-Callback-" + counter.incrementAndGet());
-                t.setDaemon(true);
-                return t;
-            }
-        });
     }
 }

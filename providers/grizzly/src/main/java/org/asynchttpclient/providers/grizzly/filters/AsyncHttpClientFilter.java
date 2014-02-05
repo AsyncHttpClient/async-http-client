@@ -457,7 +457,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             StringBuilder sb = new StringBuilder(128);
             org.glassfish.grizzly.http.Cookie[] gCookies = new org.glassfish.grizzly.http.Cookie[cookies.size()];
             convertCookies(cookies, gCookies);
-            CookieSerializerUtils.serializeClientCookies(sb, false, config.isRfc6265CookieEncoding(), gCookies);
+            CookieSerializerUtils.serializeClientCookies(sb, false, true, gCookies);
             requestPacket.addHeader(Header.Cookie, sb.toString());
         }
 

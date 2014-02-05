@@ -20,38 +20,24 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class Cookie implements Comparable<Cookie>{
-    private final String domain;
-    private final String name;
-    private final String value;
-    private final String rawValue;
-    private final String path;
-    private final int maxAge;
-    private final boolean secure;
-    private final int version;
-    private final boolean httpOnly;
-    private final boolean discard;
-    private final String comment;
-    private final String commentUrl;
+public class Cookie implements Comparable<Cookie> {
 
-    private Set<Integer> ports = Collections.emptySet();
-    private Set<Integer> unmodifiablePorts = ports;
-
-    public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure) {
-        this(domain, name, value, path, maxAge, secure, 1);
+    public static Cookie newValidCookie(String domain, String name, String value, String path, int maxAge, boolean secure) {
+        return newValidCookie(domain, name, value, path, maxAge, secure, 1);
     }
 
-    public Cookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version) {
-        this(domain, name, value, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
+    public static Cookie newValidCookie(String domain, String name, String value, String path, int maxAge, boolean secure, int version) {
+        return newValidCookie(domain, name, value, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
     }
 
-    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard, String comment, String commentUrl, Iterable<Integer> ports) {
+    public static Cookie newValidCookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly,
+            boolean discard, String comment, String commentUrl, Set<Integer> ports) {
 
         if (name == null) {
             throw new NullPointerException("name");
         }
         name = name.trim();
-        if (name.length() == 0) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("empty name");
         }
 
@@ -84,29 +70,88 @@ public class Cookie implements Comparable<Cookie>{
             throw new NullPointerException("value");
         }
 
+        domain = validateValue("domain", domain);
+        path = validateValue("path", path);
+
+        if (version > 0) {
+            comment = validateValue("comment", comment);
+        } else {
+            comment = null;
+        }
+        if (version > 1) {
+            commentUrl = validateValue("commentUrl", commentUrl);
+            Set<Integer> newPorts = new TreeSet<Integer>();
+            for (int p : ports) {
+                if (p <= 0 || p > 65535) {
+                    throw new IllegalArgumentException("port out of range: " + p);
+                }
+                newPorts.add(Integer.valueOf(p));
+            }
+            if (newPorts.isEmpty()) {
+                ports = Collections.emptySet();
+            } else {
+                ports = Collections.unmodifiableSet(newPorts);
+            }
+        } else {
+            discard = false;
+            commentUrl = null;
+        }
+
+        return new Cookie(domain, name, value, rawValue, path, maxAge, secure, version, httpOnly, discard, comment, commentUrl, ports);
+    }
+
+    private static String validateValue(String name, String value) {
+        if (value == null) {
+            return null;
+        }
+        value = value.trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+            case '\r':
+            case '\n':
+            case '\f':
+            case 0x0b:
+            case ';':
+                throw new IllegalArgumentException(name + " contains one of the following prohibited characters: " + ";\\r\\n\\f\\v (" + value + ')');
+            }
+        }
+        return value;
+    }
+
+    private final String domain;
+    private final String name;
+    private final String value;
+    private final String rawValue;
+    private final String path;
+    private final int maxAge;
+    private final boolean secure;
+    private final int version;
+    private final boolean httpOnly;
+    private final boolean discard;
+    private final String comment;
+    private final String commentUrl;
+    private final Set<Integer> ports;
+
+    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard,
+            String comment, String commentUrl, Set<Integer> ports) {
+        this.domain = domain;
         this.name = name;
         this.value = value;
         this.rawValue = rawValue;
-        this.domain = validateValue("domain", domain);
-        this.path = validateValue("path", path);
+        this.path = path;
         this.maxAge = maxAge;
         this.secure = secure;
         this.version = version;
         this.httpOnly = httpOnly;
-
-        if (version > 0) {
-            this.comment = validateValue("comment", comment);
-        } else {
-            this.comment = null;
-        }
-        if (version > 1) {
-            this.discard = discard;
-            this.commentUrl = validateValue("commentUrl", commentUrl);
-            setPorts(ports);
-        } else {
-            this.discard = false;
-            this.commentUrl = null;
-        }
+        this.discard = discard;
+        this.comment = comment;
+        this.commentUrl = commentUrl;
+        this.ports = ports;
     }
 
     public String getDomain() {
@@ -114,13 +159,13 @@ public class Cookie implements Comparable<Cookie>{
     }
 
     public String getName() {
-        return name == null ? "" : name;
+        return name;
     }
 
     public String getValue() {
-        return value == null ? "" : value;
+        return value;
     }
-    
+
     public String getRawValue() {
         return rawValue;
     }
@@ -158,80 +203,39 @@ public class Cookie implements Comparable<Cookie>{
     }
 
     public Set<Integer> getPorts() {
-        if (unmodifiablePorts == null) {
-            unmodifiablePorts = Collections.unmodifiableSet(ports);
-        }
-        return unmodifiablePorts;
-    }
-
-    private void setPorts(Iterable<Integer> ports) {
-        Set<Integer> newPorts = new TreeSet<Integer>();
-        for (int p : ports) {
-            if (p <= 0 || p > 65535) {
-                throw new IllegalArgumentException("port out of range: " + p);
-            }
-            newPorts.add(Integer.valueOf(p));
-        }
-        if (newPorts.isEmpty()) {
-            unmodifiablePorts = this.ports = Collections.emptySet();
-        } else {
-            this.ports = newPorts;
-            unmodifiablePorts = null;
-        }
+        return ports;
     }
 
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        buf.append(getName());
-        buf.append('=');
-        buf.append(getValue());
+        buf.append(name);
+        buf.append("=");
+        buf.append(rawValue);
         if (getDomain() != null) {
             buf.append("; domain=");
-            buf.append(getDomain());
+            buf.append(domain);
         }
         if (getPath() != null) {
             buf.append("; path=");
-            buf.append(getPath());
+            buf.append(path);
         }
         if (getComment() != null) {
             buf.append("; comment=");
-            buf.append(getComment());
+            buf.append(comment);
         }
         if (getMaxAge() >= 0) {
             buf.append("; maxAge=");
-            buf.append(getMaxAge());
-            buf.append('s');
+            buf.append(maxAge);
+            buf.append("s");
         }
-        if (isSecure()) {
+        if (secure) {
             buf.append("; secure");
         }
-        if (isHttpOnly()) {
+        if (httpOnly) {
             buf.append("; HTTPOnly");
         }
         return buf.toString();
-    }
-
-    private String validateValue(String name, String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.trim();
-        if (value.length() == 0) {
-            return null;
-        }
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            switch (c) {
-            case '\r':
-            case '\n':
-            case '\f':
-            case 0x0b:
-            case ';':
-                throw new IllegalArgumentException(name + " contains one of the following prohibited characters: " + ";\\r\\n\\f\\v (" + value + ')');
-            }
-        }
-        return value;
     }
 
     public int compareTo(Cookie c) {
@@ -266,5 +270,132 @@ public class Cookie implements Comparable<Cookie>{
         }
 
         return 0;
+    }
+
+    public static class CookieBuilder {
+
+        private final String name;
+        private final String value;
+        private final String rawValue;
+        private String domain;
+        private String path;
+        private int maxAge = -1;
+        private boolean secure;
+        private int version;
+        private boolean httpOnly;
+        private boolean discard;
+        private String comment;
+        private String commentUrl;
+        private Set<Integer> ports;
+        private boolean domainNotSet = true;
+        private boolean pathNotSet = true;
+        private boolean maxAgeNotSet = true;
+        private boolean secureNotSet = true;
+        private boolean versionNotSet = true;
+        private boolean httpOnlyNotSet = true;
+        private boolean discardNotSet = true;
+        private boolean commentNotSet = true;
+        private boolean commentUrlNotSet = true;
+        private boolean portsNotSet = true;
+
+        public CookieBuilder(String name, String value, String rawValue) {
+            this.name = name;
+            this.value = value;
+            this.rawValue = rawValue;
+        }
+
+        public Cookie build() {
+            return new Cookie(domain, name, value, rawValue, path, maxAge, secure, version, httpOnly, discard, comment, commentUrl, ports);
+        }
+
+        public void setDomain(String domain) {
+            this.domain = domain;
+            domainNotSet = false;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+            pathNotSet = false;
+        }
+
+        public void setMaxAge(int maxAge) {
+            this.maxAge = maxAge;
+            maxAgeNotSet = false;
+        }
+
+        public void setSecure(boolean secure) {
+            this.secure = secure;
+            secureNotSet = false;
+        }
+
+        public void setVersion(int version) {
+            this.version = version;
+            versionNotSet = false;
+        }
+
+        public void setHttpOnly(boolean httpOnly) {
+            this.httpOnly = httpOnly;
+            httpOnlyNotSet = false;
+        }
+
+        public void setDiscard(boolean discard) {
+            this.discard = discard;
+            discardNotSet = false;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+            commentNotSet = false;
+        }
+
+        public void setCommentUrl(String commentUrl) {
+            this.commentUrl = commentUrl;
+            commentNotSet = false;
+        }
+
+        public void setPorts(Set<Integer> ports) {
+            this.ports = ports;
+            portsNotSet = false;
+        }
+
+        public boolean isDomainNotSet() {
+            return domainNotSet;
+        }
+
+        public boolean isPathNotSet() {
+            return pathNotSet;
+        }
+
+        public boolean isMaxAgeNotSet() {
+            return maxAgeNotSet;
+        }
+
+        public boolean isSecureNotSet() {
+            return secureNotSet;
+        }
+
+        public boolean isVersionNotSet() {
+            return versionNotSet;
+        }
+
+        public boolean isHttpOnlyNotSet() {
+            return httpOnlyNotSet;
+        }
+
+        public boolean isDiscardNotSet() {
+            return discardNotSet;
+        }
+
+        public boolean isCommentNotSet() {
+            return commentNotSet;
+        }
+
+        public boolean isCommentUrlNotSet() {
+            return commentUrlNotSet;
+        }
+
+        public boolean isPortsNotSet() {
+            return portsNotSet;
+        }
     }
 }
