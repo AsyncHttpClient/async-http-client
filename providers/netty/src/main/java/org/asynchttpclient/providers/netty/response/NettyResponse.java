@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
+import io.netty.handler.codec.http.HttpHeaders;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +60,8 @@ public class NettyResponse extends ResponseBase {
     protected List<Cookie> buildCookies() {
     	List<Cookie> cookies = new ArrayList<Cookie>();
         for (Map.Entry<String, List<String>> header : headers.getHeaders().entrySet()) {
-            if (header.getKey().equalsIgnoreCase("Set-Cookie")) {
+            // FIXME what about SET_COOKIE2?
+            if (header.getKey().equalsIgnoreCase(HttpHeaders.Names.SET_COOKIE)) {
                 // TODO: ask for parsed header
                 List<String> v = header.getValue();
                 for (String value : v) {

@@ -64,8 +64,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new GrizzlyResponse(this,
                 headers,
-                bodyParts,
-                config.isRfc6265CookieEncoding());
+                bodyParts);
     }
     
     /**

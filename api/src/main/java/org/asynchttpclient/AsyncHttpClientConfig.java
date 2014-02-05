@@ -110,7 +110,6 @@ public class AsyncHttpClientConfig {
     protected boolean spdyEnabled;
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
-    protected boolean rfc6265CookieEncoding;
     protected boolean asyncConnectMode;
 
     protected AsyncHttpClientConfig() {
@@ -188,7 +187,6 @@ public class AsyncHttpClientConfig {
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
-        this.rfc6265CookieEncoding = rfc6265CookieEncoding;
         this.asyncConnectMode = asyncConnectMode;
     }
 
@@ -547,15 +545,6 @@ public class AsyncHttpClientConfig {
      */
     public int getMaxConnectionLifeTimeInMs() {
         return maxConnectionLifeTimeInMs;
-    }
-
-    /**
-     * @return<code>true</code> if AHC should use rfc6265 for encoding client side cookies, otherwise <code>false</code>.
-     * 
-     * @since 1.7.18
-     */
-    public boolean isRfc6265CookieEncoding() {
-        return rfc6265CookieEncoding;
     }
 
     /**
@@ -1178,7 +1167,6 @@ public class AsyncHttpClientConfig {
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
             useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
-            rfc6265CookieEncoding = prototype.isRfc6265CookieEncoding();
             asyncConnectMode = prototype.isAsyncConnectMode();
         }
 

@@ -47,8 +47,6 @@ import java.util.List;
  */
 public class GrizzlyResponse extends ResponseBase {
 
-    private final Boolean rfc6265Enabled;
-
     private Buffer responseBody;
     private boolean initialized;
 
@@ -58,10 +56,8 @@ public class GrizzlyResponse extends ResponseBase {
 
     public GrizzlyResponse(final HttpResponseStatus status,
                            final HttpResponseHeaders headers,
-                           final List<HttpResponseBodyPart> bodyParts,
-                           final boolean rfc6265Enabled) {
+                           final List<HttpResponseBodyPart> bodyParts) {
         super(status, headers, bodyParts);
-        this.rfc6265Enabled = rfc6265Enabled;
     }
 
 
@@ -150,7 +146,7 @@ public class GrizzlyResponse extends ResponseBase {
 
         List<String> values = headers.getHeaders().get(Header.SetCookie.toString());
         if (isNonEmpty(values)) {
-            ServerCookiesBuilder builder = new ServerCookiesBuilder(false, rfc6265Enabled);
+            ServerCookiesBuilder builder = new ServerCookiesBuilder(false, true);
             for (int i = 0, len = values.size(); i < len; i++) {
                 builder.parse(values.get(i));
             }
