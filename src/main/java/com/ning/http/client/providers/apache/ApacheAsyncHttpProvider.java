@@ -20,7 +20,6 @@ import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.Body;
 import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
@@ -45,6 +44,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
 
 import org.apache.commons.httpclient.CircularRedirectException;
 import org.apache.commons.httpclient.Credentials;
@@ -377,9 +377,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
         method.setFollowRedirects(false);
         if (isNonEmpty(request.getCookies())) {
-            for (Cookie cookie : request.getCookies()) {
-                method.setRequestHeader("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
-            }
+            method.setRequestHeader("Cookie", CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
         }
 
         if (request.getHeaders() != null) {

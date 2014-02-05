@@ -14,15 +14,6 @@ package com.ning.http.client.providers.jdk;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
-import com.ning.http.util.AsyncHttpProviderUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +24,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.ning.http.client.Cookie;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 
 public class JDKResponse implements Response {
@@ -186,7 +185,7 @@ public class JDKResponse implements Response {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
-                        Set<Cookie> cookies = CookieDecoder.decode(value);
+                        List<Cookie> cookies = CookieDecoder.decode(value);
                         localCookies.addAll(cookies);
                     }
                 }

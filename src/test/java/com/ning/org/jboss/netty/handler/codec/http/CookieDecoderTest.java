@@ -12,7 +12,7 @@
  */
 package com.ning.org.jboss.netty.handler.codec.http;
 
-import java.util.Set;
+import java.util.List;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -23,10 +23,10 @@ public class CookieDecoderTest {
     
     @Test(groups = "fast")
     public void testDecodeUnquoted() {
-        Set<Cookie> cookies = CookieDecoder.decode("foo=value; domain=/; path=/");
+        List<Cookie> cookies = CookieDecoder.decode("foo=value; domain=/; path=/");
         Assert.assertEquals(cookies.size(), 1);
 
-        Cookie first = cookies.iterator().next();
+        Cookie first = cookies.get(0);
         Assert.assertEquals(first.getValue(), "value");
         Assert.assertEquals(first.getDomain(), "/");
         Assert.assertEquals(first.getPath(), "/");
@@ -34,19 +34,19 @@ public class CookieDecoderTest {
 
     @Test(groups = "fast")
     public void testDecodeQuoted() {
-        Set<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 13-Jan-2021 22:23:01 GMT; Secure; HttpOnly");
+        List<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         Assert.assertEquals(cookies.size(), 1);
 
-        Cookie first = cookies.iterator().next();
+        Cookie first = cookies.get(0);
         Assert.assertEquals(first.getValue(), "VALUE1");
     }
 
     @Test(groups = "fast")
     public void testDecodeQuotedContainingEscapedQuote() {
-        Set<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\\\"\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 13-Jan-2021 22:23:01 GMT; Secure; HttpOnly");
+        List<Cookie> cookies = CookieDecoder.decode("ALPHA=\"VALUE1\\\"\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         Assert.assertEquals(cookies.size(), 1);
 
-        Cookie first = cookies.iterator().next();
+        Cookie first = cookies.get(0);
         Assert.assertEquals(first.getValue(), "VALUE1\"");
     }
 }

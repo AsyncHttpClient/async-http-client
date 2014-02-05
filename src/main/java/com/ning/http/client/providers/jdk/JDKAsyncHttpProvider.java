@@ -43,6 +43,7 @@ import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 import com.ning.http.util.UTF8UrlEncoder;
+import com.ning.org.jboss.netty.handler.codec.http.CookieEncoder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ import javax.naming.AuthenticationException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -547,7 +549,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
 
             if (isNonEmpty(request.getCookies())) {
-                urlConnection.setRequestProperty("Cookie", AsyncHttpProviderUtils.encodeCookies(request.getCookies()));
+                urlConnection.setRequestProperty("Cookie", CookieEncoder.encodeClientSide(request.getCookies(), config.isRfc6265CookieEncoding()));
             }
 
             String reqType = request.getMethod();

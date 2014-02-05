@@ -14,15 +14,6 @@ package com.ning.http.client.providers.apache;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
-import com.ning.http.client.Response;
-import com.ning.http.util.AsyncHttpProviderUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -32,7 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import com.ning.http.client.Cookie;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.Response;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 public class ApacheResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
@@ -171,7 +170,7 @@ public class ApacheResponse implements Response {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
-                        Set<Cookie> cookies = CookieDecoder.decode(value);
+                        List<Cookie> cookies = CookieDecoder.decode(value);
                         localCookies.addAll(cookies);
                     }
                 }

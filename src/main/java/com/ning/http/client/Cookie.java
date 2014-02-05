@@ -45,7 +45,8 @@ public class Cookie implements Comparable<Cookie> {
         this(domain, name, value, value, path, maxAge, secure, version, false, false, null, null, Collections.<Integer> emptySet());
     }
 
-    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard, String comment, String commentUrl, Iterable<Integer> ports) {
+    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, int version, boolean httpOnly, boolean discard,
+            String comment, String commentUrl, Iterable<Integer> ports) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -207,8 +208,7 @@ public class Cookie implements Comparable<Cookie> {
 
     @Override
     public String toString() {
-        return String.format("Cookie: domain=%s, name=%s, value=%s, path=%s, maxAge=%d, secure=%s",
-                domain, name, value, path, maxAge, secure);
+        return String.format("Cookie: domain=%s, name=%s, value=%s, path=%s, maxAge=%d, secure=%s", domain, name, value, path, maxAge, secure);
     }
 
     private String validateValue(String name, String value) {
@@ -265,5 +265,132 @@ public class Cookie implements Comparable<Cookie> {
         }
 
         return 0;
+    }
+
+    public static class CookieBuilder {
+
+        private final String name;
+        private final String value;
+        private final String rawValue;
+        private String domain;
+        private String path;
+        private int maxAge = -1;
+        private boolean secure;
+        private int version;
+        private boolean httpOnly;
+        private boolean discard;
+        private String comment;
+        private String commentUrl;
+        private Set<Integer> ports;
+        private boolean domainNotSet = true;
+        private boolean pathNotSet = true;
+        private boolean maxAgeNotSet = true;
+        private boolean secureNotSet = true;
+        private boolean versionNotSet = true;
+        private boolean httpOnlyNotSet = true;
+        private boolean discardNotSet = true;
+        private boolean commentNotSet = true;
+        private boolean commentUrlNotSet = true;
+        private boolean portsNotSet = true;
+
+        public CookieBuilder(String name, String value, String rawValue) {
+            this.name = name;
+            this.value = value;
+            this.rawValue = rawValue;
+        }
+
+        public Cookie build() {
+            return new Cookie(domain, name, value, rawValue, path, maxAge, secure, version, httpOnly, discard, comment, commentUrl, ports);
+        }
+
+        public void setDomain(String domain) {
+            this.domain = domain;
+            domainNotSet = false;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+            pathNotSet = false;
+        }
+
+        public void setMaxAge(int maxAge) {
+            this.maxAge = maxAge;
+            maxAgeNotSet = false;
+        }
+
+        public void setSecure(boolean secure) {
+            this.secure = secure;
+            secureNotSet = false;
+        }
+
+        public void setVersion(int version) {
+            this.version = version;
+            versionNotSet = false;
+        }
+
+        public void setHttpOnly(boolean httpOnly) {
+            this.httpOnly = httpOnly;
+            httpOnlyNotSet = false;
+        }
+
+        public void setDiscard(boolean discard) {
+            this.discard = discard;
+            discardNotSet = false;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+            commentNotSet = false;
+        }
+
+        public void setCommentUrl(String commentUrl) {
+            this.commentUrl = commentUrl;
+            commentNotSet = false;
+        }
+
+        public void setPorts(Set<Integer> ports) {
+            this.ports = ports;
+            portsNotSet = false;
+        }
+
+        public boolean isDomainNotSet() {
+            return domainNotSet;
+        }
+
+        public boolean isPathNotSet() {
+            return pathNotSet;
+        }
+
+        public boolean isMaxAgeNotSet() {
+            return maxAgeNotSet;
+        }
+
+        public boolean isSecureNotSet() {
+            return secureNotSet;
+        }
+
+        public boolean isVersionNotSet() {
+            return versionNotSet;
+        }
+
+        public boolean isHttpOnlyNotSet() {
+            return httpOnlyNotSet;
+        }
+
+        public boolean isDiscardNotSet() {
+            return discardNotSet;
+        }
+
+        public boolean isCommentNotSet() {
+            return commentNotSet;
+        }
+
+        public boolean isCommentUrlNotSet() {
+            return commentUrlNotSet;
+        }
+
+        public boolean isPortsNotSet() {
+            return portsNotSet;
+        }
     }
 }
