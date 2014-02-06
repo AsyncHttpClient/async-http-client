@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.webdav;
 
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.cookie.Cookie;
 import org.w3c.dom.Document;
 
 import java.io.IOException;

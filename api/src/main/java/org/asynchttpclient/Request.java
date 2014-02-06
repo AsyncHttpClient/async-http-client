@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 
 /**

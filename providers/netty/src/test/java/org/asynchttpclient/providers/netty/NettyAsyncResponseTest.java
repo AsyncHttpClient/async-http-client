@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.providers.netty.response.NettyResponse;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.testng.annotations.Test;
@@ -87,7 +87,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getMaxAge(), 60);
+        assertEquals(cookie.getMaxAge(), -1);
     }
 
 }

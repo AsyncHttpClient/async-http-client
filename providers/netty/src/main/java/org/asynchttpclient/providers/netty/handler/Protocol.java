@@ -28,16 +28,16 @@ import java.net.URI;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.MaxRedirectException;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
@@ -117,13 +117,15 @@ public abstract class Protocol {
                     logger.debug("Redirecting to {}", newUrl);
 
                     for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE)) {
-                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                        Cookie c = CookieDecoder.decode(cookieStr);
+                        if (c != null) {
                             requestBuilder.addOrReplaceCookie(c);
                         }
                     }
 
                     for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE2)) {
-                        for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                        Cookie c = CookieDecoder.decode(cookieStr);
+                        if (c != null) {
                             requestBuilder.addOrReplaceCookie(c);
                         }
                     }

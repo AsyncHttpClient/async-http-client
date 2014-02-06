@@ -16,14 +16,14 @@ package org.asynchttpclient.providers.grizzly;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.MaxRedirectException;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.listener.TransferCompletionHandler;
-import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.statushandler.AuthorizationHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.ProxyAuthorizationHandler;
@@ -484,7 +484,8 @@ public final class EventHandler {
         }
         if (response.getHeader(Header.Cookie) != null) {
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
-                for (Cookie c : CookieDecoder.decode(cookieStr)) {
+                Cookie c = CookieDecoder.decode(cookieStr);
+                if (c != null) {
                     builder.addOrReplaceCookie(c);
                 }
             }

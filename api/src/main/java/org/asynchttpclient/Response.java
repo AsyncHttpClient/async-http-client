@@ -24,6 +24,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.asynchttpclient.cookie.Cookie;
+
 /**
  * Represents the asynchronous HTTP response callback for an {@link AsyncCompletionHandler}
  */

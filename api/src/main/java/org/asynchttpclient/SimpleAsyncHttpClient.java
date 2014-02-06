@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
