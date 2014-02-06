@@ -38,8 +38,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
         this.timeoutsHolder = timeoutsHolder;
     }
 
-    protected void expire(String message) {
-        LOGGER.debug("{} for {}", message, nettyResponseFuture);
+    protected void expire(String message, long time) {
+        LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, time);
         provider.abort(nettyResponseFuture, new TimeoutException(message));
     }
 }

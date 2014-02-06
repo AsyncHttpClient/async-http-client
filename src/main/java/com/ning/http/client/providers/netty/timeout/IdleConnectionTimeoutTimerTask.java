@@ -50,7 +50,7 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
             if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
                 // idleConnectionTimeout reached
                 long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-                expire("Connection reached idle timeout of " + idleConnectionTimeout + " ms after " + durationSinceLastTouch + " ms");
+                expire("Idle connection timeout of " + idleConnectionTimeout + " ms", durationSinceLastTouch);
                 nettyResponseFuture.setIdleConnectionTimeoutReached();
 
             } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {
