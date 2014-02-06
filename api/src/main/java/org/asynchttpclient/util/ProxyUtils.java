@@ -119,6 +119,7 @@ public class ProxyUtils {
 
             if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
+                    // FIXME use regionMatches instead
                     if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
                             && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase(Locale.ENGLISH))) {
                         return true;
