@@ -17,6 +17,7 @@ package org.asynchttpclient;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.StandardCharsets;

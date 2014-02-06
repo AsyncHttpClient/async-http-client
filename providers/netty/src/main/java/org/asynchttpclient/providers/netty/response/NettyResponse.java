@@ -26,11 +26,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.org.jboss.netty.handler.codec.http.CookieDecoder;
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
@@ -65,7 +65,9 @@ public class NettyResponse extends ResponseBase {
                 // TODO: ask for parsed header
                 List<String> v = header.getValue();
                 for (String value : v) {
-                    cookies.addAll(CookieDecoder.decode(value));
+                    Cookie c = CookieDecoder.decode(value);
+                    if (c != null)
+                        cookies.add(c);
                 }
             }
         }

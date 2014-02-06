@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.multipart.Part;
 
 /**

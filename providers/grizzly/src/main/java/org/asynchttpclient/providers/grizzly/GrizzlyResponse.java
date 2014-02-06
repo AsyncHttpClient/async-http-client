@@ -16,13 +16,12 @@ package org.asynchttpclient.providers.grizzly;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import static org.glassfish.grizzly.http.CookiesBuilder.ServerCookiesBuilder;
 
-import org.asynchttpclient.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.Cookies;
 import org.glassfish.grizzly.http.util.Header;
@@ -173,12 +172,7 @@ public class GrizzlyResponse extends ResponseBase {
                                    gCookie.getPath(),
                                    gCookie.getMaxAge(),
                                    gCookie.isSecure(),
-                                   gCookie.getVersion(),
-                                   gCookie.isHttpOnly(),
-                                   false,
-                                   gCookie.getComment(),
-                                   null,
-                                   Collections.<Integer> emptySet()));
+                                   gCookie.isHttpOnly()));
         }
         return Collections.unmodifiableList(convertedCookies);
 

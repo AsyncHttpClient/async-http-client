@@ -287,8 +287,8 @@ public class AsyncHttpProviderUtils {
         return null;
     }
 
-    public static int convertExpireField(String timestring) {
-        String trimmedTimeString = removeQuotes(timestring.trim());
+    public static Integer convertExpireField(String timestring) {
+        String trimmedTimeString = timestring.trim();
 
         for (SimpleDateFormat sdf : simpleDateFormat.get()) {
             Date date = sdf.parse(trimmedTimeString, new ParsePosition(0));
@@ -299,7 +299,7 @@ public class AsyncHttpProviderUtils {
             }
         }
 
-        throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
+        return null;
     }
 
     public final static String removeQuotes(String s) {
