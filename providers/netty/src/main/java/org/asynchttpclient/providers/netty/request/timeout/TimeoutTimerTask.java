@@ -41,8 +41,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
         this.clientClosed = clientClosed;
     }
 
-    protected void expire(String message) {
-        LOGGER.debug("{} for {}", message, nettyResponseFuture);
+    protected void expire(String message, long ms) {
+        LOGGER.debug("{} for {} after {} ms", message, nettyResponseFuture, ms);
         channels.abort(nettyResponseFuture, new TimeoutException(message));
     }
 }
