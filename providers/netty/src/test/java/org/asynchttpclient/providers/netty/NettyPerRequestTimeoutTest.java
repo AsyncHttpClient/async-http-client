@@ -22,7 +22,7 @@ public class NettyPerRequestTimeoutTest extends PerRequestTimeoutTest {
 
     @Override
     protected void checkTimeoutMessage(String message) {
-        assertTrue(message.startsWith("Request reached timeout of 100 ms after "));
+        assertTrue(message.equals("Request timeout of 100 ms"));
     }
 
     @Override
