@@ -2,10 +2,7 @@ package org.asynchttpclient.providers;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 
@@ -90,29 +87,6 @@ public abstract class ResponseBase implements Response {
         default:
             return false;
         }
-    }
-
-    @Override
-    public byte[] getResponseBodyAsBytes() throws IOException {
-        return AsyncHttpProviderUtils.contentToBytes(bodyParts);
-    }
-
-    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
-        return ByteBuffer.wrap(getResponseBodyAsBytes());
-    }
-
-    @Override
-    public String getResponseBody() throws IOException {
-        return getResponseBody(DEFAULT_CHARSET);
-    }
-
-    public String getResponseBody(String charset) throws IOException {
-        return AsyncHttpProviderUtils.contentToString(bodyParts, calculateCharset(charset));
-    }
-
-    @Override
-    public InputStream getResponseBodyAsStream() throws IOException {
-        return AsyncHttpProviderUtils.contentAsStream(bodyParts);
     }
 
     @Override

@@ -32,6 +32,7 @@ import org.glassfish.grizzly.utils.BufferInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -110,6 +111,10 @@ public class GrizzlyResponse extends ResponseBase {
         return responseBodyBytes;
     }
 
+    @Override
+    public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+        return ByteBuffer.wrap(getResponseBodyAsBytes());
+    }
 
     /**
      * {@inheritDoc}

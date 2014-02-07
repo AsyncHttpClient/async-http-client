@@ -12,20 +12,12 @@
  */
 package org.asynchttpclient.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
-import java.util.Vector;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
@@ -46,24 +38,6 @@ public class AsyncHttpProviderUtils {
     private final static byte[] NO_BYTES = new byte[0];
 
     public final static Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
-
-    private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
-
-    protected final static ThreadLocal<SimpleDateFormat[]> simpleDateFormat = new ThreadLocal<SimpleDateFormat[]>() {
-        protected SimpleDateFormat[] initialValue() {
-
-            return new SimpleDateFormat[] {
-                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
-                    new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), // RFC1036
-                    new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US), // ASCTIME
-                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US), new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
-                    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US), new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US) };
-        }
-    };
-
-    public final static SimpleDateFormat[] get() {
-        return simpleDateFormat.get();
-    }
 
     public static final void validateSupportedScheme(URI uri) {
         final String scheme = uri.getScheme();
@@ -112,39 +86,6 @@ public class AsyncHttpProviderUtils {
         return url;
     }
 
-    public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
-        return new String(contentToBytes(bodyParts), charset);
-    }
-
-    /**
-     * @param bodyParts NON EMPTY body part
-     * @return
-     * @throws UnsupportedEncodingException
-     */
-    public final static byte[] contentToBytes(List<HttpResponseBodyPart> bodyParts) throws UnsupportedEncodingException {
-        final int partCount = bodyParts.size();
-        if (partCount == 0) {
-            return NO_BYTES;
-        }
-        if (partCount == 1) {
-            return bodyParts.get(0).getBodyPartBytes();
-        }
-        int size = 0;
-        ArrayList<byte[]> chunks = new ArrayList<byte[]>(partCount);
-        for (HttpResponseBodyPart part : bodyParts) {
-            byte[] chunk = part.getBodyPartBytes();
-            size += chunk.length;
-            chunks.add(chunk);
-        }
-        byte[] bytes = new byte[size];
-        int offset = 0;
-        for (byte[] chunk : chunks) {
-            System.arraycopy(chunk, 0, bytes, offset, chunk.length);
-            offset += chunk.length;
-        }
-        return bytes;
-    }
-
     /**
      * @param bodyParts NON EMPTY body part
      * @param maxLen
@@ -182,24 +123,6 @@ public class AsyncHttpProviderUtils {
             System.arraycopy(old, 0, result, 0, old.length);
         }
         return result;
-    }
-
-    /**
-     * @param bodyParts NON EMPTY body part
-     * @return
-     */
-    public final static InputStream contentAsStream(List<HttpResponseBodyPart> bodyParts) {
-        switch (bodyParts.size()) {
-        case 0:
-            return new ByteArrayInputStream(NO_BYTES);
-        case 1:
-            return bodyParts.get(0).readBodyPartBytes();
-        }
-        Vector<InputStream> streams = new Vector<InputStream>(bodyParts.size());
-        for (HttpResponseBodyPart part : bodyParts) {
-            streams.add(part.readBodyPartBytes());
-        }
-        return new SequenceInputStream(streams.elements());
     }
 
     public final static String getHost(URI uri) {
@@ -289,7 +212,7 @@ public class AsyncHttpProviderUtils {
         long maxAgeMillis = timeMillis - System.currentTimeMillis();
         return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0 ? 1 : 0);
     }
-    
+
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
         return config.getAllowPoolingConnection() ? "keep-alive" : "close";
     }
