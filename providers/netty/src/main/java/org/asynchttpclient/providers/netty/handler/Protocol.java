@@ -35,6 +35,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.cookie.CookieDecoder;
+import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -58,6 +59,7 @@ public abstract class Protocol {
 
     private final boolean hasResponseFilters;
     protected final boolean hasIOExceptionFilters;
+    private final TimeConverter timeConverter;
 
     public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
         this.channels = channels;
@@ -67,6 +69,7 @@ public abstract class Protocol {
 
         hasResponseFilters = !config.getResponseFilters().isEmpty();
         hasIOExceptionFilters = !config.getIOExceptionFilters().isEmpty();
+        timeConverter = config.getTimeConverter();
     }
 
     public abstract void handle(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
@@ -116,17 +119,19 @@ public abstract class Protocol {
 
                     logger.debug("Redirecting to {}", newUrl);
 
-                    for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE)) {
-                        Cookie c = CookieDecoder.decode(cookieStr);
-                        if (c != null) {
-                            requestBuilder.addOrReplaceCookie(c);
+                    if (future.getHttpHeaders().contains(HttpHeaders.Names.SET_COOKIE2)) {
+                        for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE2)) {
+                            Cookie c = CookieDecoder.decode(cookieStr, timeConverter);
+                            if (c != null) {
+                                requestBuilder.addOrReplaceCookie(c);
+                            }
                         }
-                    }
-
-                    for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE2)) {
-                        Cookie c = CookieDecoder.decode(cookieStr);
-                        if (c != null) {
-                            requestBuilder.addOrReplaceCookie(c);
+                    } else if (future.getHttpHeaders().contains(HttpHeaders.Names.SET_COOKIE)) {
+                        for (String cookieStr : future.getHttpHeaders().getAll(HttpHeaders.Names.SET_COOKIE)) {
+                            Cookie c = CookieDecoder.decode(cookieStr, timeConverter);
+                            if (c != null) {
+                                requestBuilder.addOrReplaceCookie(c);
+                            }
                         }
                     }
 

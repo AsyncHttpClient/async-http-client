@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -25,7 +25,6 @@ public class CookieDecoderTest {
     public void testDecodeUnquoted() {
         Cookie cookie = CookieDecoder.decode("foo=value; domain=/; path=/");
         assertNotNull(cookie);
-
         assertEquals(cookie.getValue(), "value");
         assertEquals(cookie.getRawValue(), "value");
         assertEquals(cookie.getDomain(), "/");
@@ -36,7 +35,6 @@ public class CookieDecoderTest {
     public void testDecodeQuoted() {
         Cookie cookie = CookieDecoder.decode("ALPHA=\"VALUE1\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         assertNotNull(cookie);
-
         assertEquals(cookie.getValue(), "VALUE1");
         assertEquals(cookie.getRawValue(), "\"VALUE1\"");
     }
@@ -45,7 +43,6 @@ public class CookieDecoderTest {
     public void testDecodeQuotedContainingEscapedQuote() {
         Cookie cookie = CookieDecoder.decode("ALPHA=\"VALUE1\\\"\"; Domain=docs.foo.com; Path=/accounts; Expires=Wed, 05 Feb 2014 07:37:38 GMT; Secure; HttpOnly");
         assertNotNull(cookie);
-
         assertEquals(cookie.getValue(), "VALUE1\"");
         assertEquals(cookie.getRawValue(), "\"VALUE1\\\"\"");
     }

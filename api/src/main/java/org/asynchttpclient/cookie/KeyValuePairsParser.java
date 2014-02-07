@@ -12,33 +12,76 @@
  */
 package org.asynchttpclient.cookie;
 
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.date.RFC2616Date;
+import org.asynchttpclient.date.RFC2616DateParser;
+import org.asynchttpclient.date.TimeConverter;
 
-class CookieBuilder {
+/**
+ * A companion for CookieDecoder that parses key-value pairs (cookie name/value
+ * and attributes).
+ * 
+ * @author slandelle
+ */
+class KeyValuePairsParser {
 
+    private final TimeConverter timeBuilder;
     private String name;
     private String value;
     private String rawValue;
     private String domain;
     private String path;
+    private long expires = -1L;
     private int maxAge = -1;
     private boolean secure;
     private boolean httpOnly;
 
-    public void addKeyValuePair(String header, int nameStart, int nameEnd, String value, String rawValue) {
-
-        if (name == null) {
-            name = header.substring(nameStart, nameEnd);
-            this.value = value;
-            this.rawValue = rawValue;
-
-        } else {
-            setCookieAttribute(header, nameStart, nameEnd, value);
-        }
+    /**
+     * @param timeBuilder used for parsing expires attribute
+     */
+    public KeyValuePairsParser(TimeConverter timeBuilder) {
+        this.timeBuilder = timeBuilder;
     }
 
-    public Cookie build() {
-        return name != null ? new Cookie(domain, name, value, rawValue, path, maxAge, secure, httpOnly) : null;
+    public Cookie cookie() {
+        return name != null ? new Cookie(domain, name, value, rawValue, path, expires, maxAge, secure, httpOnly) : null;
+    }
+
+    /**
+     * Parse and store a key-value pair. First one is considered to be the
+     * cookie name/value. Unknown attribute names are silently discarded.
+     * 
+     * @param header the HTTP header
+     * @param keyStart where the key starts in the header
+     * @param keyEnd where the key ends in the header
+     * @param value the decoded value
+     * @param rawValue the raw value (only non null for cookie value)
+     */
+    public void parseKeyValuePair(String header, int keyStart, int keyEnd, String value, String rawValue) {
+
+        if (name == null)
+            setCookieNameValue(header, keyStart, keyEnd, value, rawValue);
+        else
+            setCookieAttribute(header, keyStart, keyEnd, value);
+    }
+
+    private void setCookieNameValue(String header, int keyStart, int keyEnd, String value, String rawValue) {
+        name = header.substring(keyStart, keyEnd);
+        this.value = value;
+        this.rawValue = rawValue;
+    }
+
+    private void setCookieAttribute(String header, int keyStart, int keyEnd, String value) {
+
+        int length = keyEnd - keyStart;
+
+        if (length == 4)
+            parse4(header, keyStart, value);
+        else if (length == 6)
+            parse6(header, keyStart, value);
+        else if (length == 7)
+            parse7(header, keyStart, value);
+        else if (length == 8)
+            parse8(header, keyStart, value);
     }
 
     private boolean isPath(char c0, char c1, char c2, char c3) {
@@ -48,16 +91,15 @@ class CookieBuilder {
                 (c3 == 'h' || c3 == 'H');
     }
 
-    private void parse4(String header, int nameStart, int length, String value) {
+    private void parse4(String header, int nameStart, String value) {
 
         char c0 = header.charAt(nameStart);
         char c1 = header.charAt(nameStart + 1);
         char c2 = header.charAt(nameStart + 2);
         char c3 = header.charAt(nameStart + 3);
 
-        if (isPath(c0, c1, c2, c3)) {
+        if (isPath(c0, c1, c2, c3))
             path = value;
-        }
     }
 
     private boolean isDomain(char c0, char c1, char c2, char c3, char c4, char c5) {
@@ -78,7 +120,7 @@ class CookieBuilder {
                 (c5 == 'e' || c5 == 'E');
     }
 
-    private void parse6(String header, int nameStart, int length, String value) {
+    private void parse6(String header, int nameStart, String value) {
 
         char c0 = header.charAt(nameStart);
         char c1 = header.charAt(nameStart + 1);
@@ -87,11 +129,10 @@ class CookieBuilder {
         char c4 = header.charAt(nameStart + 4);
         char c5 = header.charAt(nameStart + 5);
 
-        if (isDomain(c0, c1, c2, c3, c4, c5)) {
+        if (isDomain(c0, c1, c2, c3, c4, c5))
             domain = value;
-        } else if (isSecure(c0, c1, c2, c3, c4, c5)) {
+        else if (isSecure(c0, c1, c2, c3, c4, c5))
             secure = true;
-        }
     }
 
     private boolean isExpires(char c0, char c1, char c2, char c3, char c4, char c5, char c6) {
@@ -115,10 +156,14 @@ class CookieBuilder {
     }
 
     private void setExpire(String value) {
-        Integer expireAsMaxAge = AsyncHttpProviderUtils.convertExpireField(value);
-        if (expireAsMaxAge != null) {
-            // ignore failure to parse -> treat as session cookie
-            maxAge = expireAsMaxAge.intValue();
+
+        RFC2616Date dateElements = new RFC2616DateParser(value).parse();
+        if (dateElements != null) {
+            try {
+                expires = timeBuilder.toTime(dateElements);
+            } catch (Exception e1) {
+                // ignore failure to parse -> treat as session cookie
+            }
         }
     }
 
@@ -130,7 +175,7 @@ class CookieBuilder {
         }
     }
 
-    private void parse7(String header, int nameStart, int length, String value) {
+    private void parse7(String header, int nameStart, String value) {
 
         char c0 = header.charAt(nameStart);
         char c1 = header.charAt(nameStart + 1);
@@ -140,12 +185,11 @@ class CookieBuilder {
         char c5 = header.charAt(nameStart + 5);
         char c6 = header.charAt(nameStart + 6);
 
-        if (isExpires(c0, c1, c2, c3, c4, c5, c6)) {
+        if (isExpires(c0, c1, c2, c3, c4, c5, c6))
             setExpire(value);
 
-        } else if (isMaxAge(c0, c1, c2, c3, c4, c5, c6)) {
+        else if (isMaxAge(c0, c1, c2, c3, c4, c5, c6))
             setMaxAge(value);
-        }
     }
 
     private boolean isHttpOnly(char c0, char c1, char c2, char c3, char c4, char c5, char c6, char c7) {
@@ -159,7 +203,7 @@ class CookieBuilder {
                 (c7 == 'y' || c7 == 'Y');
     }
 
-    private void parse8(String header, int nameStart, int length, String value) {
+    private void parse8(String header, int nameStart, String value) {
 
         char c0 = header.charAt(nameStart);
         char c1 = header.charAt(nameStart + 1);
@@ -170,33 +214,7 @@ class CookieBuilder {
         char c6 = header.charAt(nameStart + 6);
         char c7 = header.charAt(nameStart + 7);
 
-        if (isHttpOnly(c0, c1, c2, c3, c4, c5, c6, c7)) {
+        if (isHttpOnly(c0, c1, c2, c3, c4, c5, c6, c7))
             httpOnly = true;
-        }
-    }
-
-    private void setCookieAttribute(String header, int nameStart, int nameEnd, String value) {
-
-        int length = nameEnd - nameStart;
-
-        switch (length) {
-        case 4:
-            parse4(header, nameStart, length, value);
-            break;
-
-        case 6:
-            parse6(header, nameStart, length, value);
-            break;
-
-        case 7:
-            parse7(header, nameStart, length, value);
-            break;
-
-        case 8:
-            parse8(header, nameStart, length, value);
-            break;
-
-        default:
-        }
     }
 }

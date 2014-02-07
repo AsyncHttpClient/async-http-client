@@ -287,7 +287,7 @@ public final class NettyRequestFactory {
             }
 
             if (isNonEmpty(request.getCookies()))
-                httpRequest.headers().set(HttpHeaders.Names.COOKIE, CookieEncoder.encodeClientSide(request.getCookies()));
+                httpRequest.headers().set(HttpHeaders.Names.COOKIE, CookieEncoder.encode(request.getCookies()));
 
             if (config.isCompressionEnabled())
                 httpRequest.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_DEFLATE);
