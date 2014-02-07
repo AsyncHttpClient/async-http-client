@@ -39,11 +39,10 @@ public class NettyAsyncResponseTest {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        Date date = new Date(System.currentTimeMillis() + 60000); // sdf.parse( dateString );
+        Date date = new Date(System.currentTimeMillis() + 60000);
         final String cookieDef = String.format("efmembercheck=true; expires=%s; path=/; domain=.eclipse.org", sdf.format(date));
 
-        NettyResponse
-                response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders() {
+        NettyResponse response = new NettyResponse(new ResponseStatus(null, null, null), new HttpResponseHeaders() {
             @Override
             public FluentCaseInsensitiveStringsMap getHeaders() {
                 return new FluentCaseInsensitiveStringsMap().add("Set-Cookie", cookieDef);
@@ -54,7 +53,8 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertTrue(cookie.getMaxAge() > 55 && cookie.getMaxAge() < 61, "");
+        long originalDateWith1SecPrecision = date.getTime() / 1000 * 1000;
+        assertEquals(cookie.getExpires(), originalDateWith1SecPrecision);
     }
 
     @Test(groups = "standalone")
