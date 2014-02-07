@@ -1254,7 +1254,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final AsyncHandler handler = context.handler;
             final List<ResponseFilter> filters = context.provider.clientConfig.getResponseFilters();
             final GrizzlyResponseHeaders responseHeaders = new GrizzlyResponseHeaders((HttpResponsePacket) httpHeader,
-                    null,
+                    context.request.getURI(),
                     provider);
             if (!filters.isEmpty()) {
                 FilterContext fc = new FilterContext.FilterContextBuilder()
