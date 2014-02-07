@@ -14,7 +14,7 @@ package com.ning.http.client.cookie;
 
 public class Cookie {
 
-    public static Cookie newValidCookie(String domain, String name, String value, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public static Cookie newValidCookie(String name, String value, String domain, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -56,7 +56,7 @@ public class Cookie {
         domain = validateValue("domain", domain);
         path = validateValue("path", path);
 
-        return new Cookie(domain, name, value, rawValue, path, expires, maxAge, secure, httpOnly);
+        return new Cookie(name, value, rawValue, domain, path, expires, maxAge, secure, httpOnly);
     }
 
     private static String validateValue(String name, String value) {
@@ -82,21 +82,21 @@ public class Cookie {
         return value;
     }
 
-    private final String domain;
     private final String name;
     private final String value;
     private final String rawValue;
+    private final String domain;
     private final String path;
     private long expires;
     private final int maxAge;
     private final boolean secure;
     private final boolean httpOnly;
 
-    public Cookie(String domain, String name, String value, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
-        this.domain = domain;
+    public Cookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
         this.name = name;
         this.value = value;
         this.rawValue = rawValue;
+        this.domain = domain;
         this.path = path;
         this.expires = expires;
         this.maxAge = maxAge;

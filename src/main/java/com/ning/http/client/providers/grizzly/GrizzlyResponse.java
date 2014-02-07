@@ -321,10 +321,10 @@ public class GrizzlyResponse implements Response {
         final org.glassfish.grizzly.http.Cookie[] grizzlyCookies = cookies.get();
         List<Cookie> convertedCookies = new ArrayList<Cookie>(grizzlyCookies.length);
         for (org.glassfish.grizzly.http.Cookie gCookie : grizzlyCookies) {
-            convertedCookies.add(new Cookie(gCookie.getDomain(),
-                                   gCookie.getName(),
+            convertedCookies.add(new Cookie(gCookie.getName(),
                                    gCookie.getValue(),
                                    gCookie.getValue(),
+                                   gCookie.getDomain(),
                                    gCookie.getPath(),
                                    -1L,
                                    gCookie.getMaxAge(),

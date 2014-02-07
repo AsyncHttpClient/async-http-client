@@ -249,7 +249,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             builder2.setFollowRedirects(true);
             builder2.setUrl("http://www.google.com/");
             builder2.addHeader("Content-Type", "text/plain");
-            builder2.addCookie(new Cookie(".google.com", "evilcookie", "test", "test", "/", -1L, 10, false, false));
+            builder2.addCookie(new Cookie("evilcookie", "test", "test", ".google.com", "/", -1L, 10, false, false));
             com.ning.http.client.Request request2 = builder2.build();
             Response response = c.executeRequest(request2).get();
 
