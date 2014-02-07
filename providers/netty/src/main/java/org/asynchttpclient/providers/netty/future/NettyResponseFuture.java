@@ -157,7 +157,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public boolean cancel(boolean force) {
         cancelTimeouts();
 
-        if (isCancelled.compareAndSet(true, true))
+        if (isCancelled.getAndSet(true))
             return false;
 
         try {
@@ -319,7 +319,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public final void abort(final Throwable t) {
         cancelTimeouts();
 
-        if (isDone.get() || isCancelled.compareAndSet(true, true))
+        if (isDone.get() || isCancelled.getAndSet(true))
             return;
 
         exEx.compareAndSet(null, new ExecutionException(t));
