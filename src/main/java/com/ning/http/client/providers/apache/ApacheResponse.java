@@ -24,14 +24,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 public class ApacheResponse implements Response {
     private final static String DEFAULT_CHARSET = "ISO-8859-1";
@@ -170,8 +170,8 @@ public class ApacheResponse implements Response {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
-                        List<Cookie> cookies = CookieDecoder.decode(value);
-                        localCookies.addAll(cookies);
+                        Cookie cookie = CookieDecoder.decode(value);
+                        localCookies.add(cookie);
                     }
                 }
             }

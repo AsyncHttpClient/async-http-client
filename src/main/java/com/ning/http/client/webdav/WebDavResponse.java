@@ -12,17 +12,18 @@
  */
 package com.ning.http.client.webdav;
 
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Response;
-import org.w3c.dom.Document;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import org.w3c.dom.Document;
+
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
 
 /**
  * Customized {@link Response} which add support for getting the response's body as an XML document (@link WebDavResponse#getBodyAsXML}

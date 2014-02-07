@@ -15,6 +15,7 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.date.TimeConverter;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
@@ -24,6 +25,7 @@ import com.ning.http.util.ProxyUtils;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -84,7 +86,7 @@ public class AsyncHttpClientConfig {
     protected boolean strict302Handling;
     protected boolean useRelativeURIsWithSSLProxies;
     protected int maxConnectionLifeTimeInMs;
-    protected boolean rfc6265CookieEncoding;
+    protected TimeConverter timeConverter;
 
     protected AsyncHttpClientConfig() {
     }
@@ -120,7 +122,7 @@ public class AsyncHttpClientConfig {
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
                                   boolean useRelativeURIsWithSSLProxies,
-                                  boolean rfc6265CookieEncoding) {
+                                  TimeConverter timeConverter) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -151,7 +153,6 @@ public class AsyncHttpClientConfig {
         this.ioThreadMultiplier = ioThreadMultiplier;
         this.strict302Handling = strict302Handling;
         this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
-        this.rfc6265CookieEncoding = rfc6265CookieEncoding;
 
         if (applicationThreadPool == null) {
             this.applicationThreadPool = Executors.newCachedThreadPool();
@@ -160,6 +161,7 @@ public class AsyncHttpClientConfig {
         }
         this.proxyServerSelector = proxyServerSelector;
         this.useRawUrl = useRawUrl;
+        this.timeConverter = timeConverter;
     }
 
     /**
@@ -512,13 +514,10 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return<code>true</code> if AHC should use rfc6265 for encoding client side cookies,
-     *  otherwise <code>false</code>.
-     *  
-     *  @since 1.7.18
+     * @return 1.8.2
      */
-    public boolean isRfc6265CookieEncoding() {
-        return rfc6265CookieEncoding;
+    public TimeConverter getTimeConverter() {
+        return timeConverter;
     }
 
     /**
@@ -559,7 +558,7 @@ public class AsyncHttpClientConfig {
         private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
         private int ioThreadMultiplier = 2;
         private boolean strict302Handling;
-        private boolean rfc6265CookieEncoding;
+        private TimeConverter timeConverter;
 
         public Builder() {
         }
@@ -1029,17 +1028,8 @@ public class AsyncHttpClientConfig {
            return this;
         }
 
-        /**
-         * Configures this AHC instance to use RFC 6265 cookie encoding style
-         *
-         * @param rfc6265CookieEncoding
-         * @return this
-         *
-         * @since 1.7.18
-         */
-        public Builder setRfc6265CookieEncoding(boolean rfc6265CookieEncoding) {
-            this.rfc6265CookieEncoding = rfc6265CookieEncoding;
-            return this;
+        public void setTimeConverter(TimeConverter timeConverter) {
+            this.timeConverter = timeConverter;
         }
 
         /**
@@ -1084,7 +1074,7 @@ public class AsyncHttpClientConfig {
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
-            rfc6265CookieEncoding = prototype.isRfc6265CookieEncoding();
+            timeConverter = prototype.timeConverter;
         }
 
         /**
@@ -1149,7 +1139,7 @@ public class AsyncHttpClientConfig {
                     ioThreadMultiplier,
                     strict302Handling,
                     useRelativeURIsWithSSLProxies,
-                    rfc6265CookieEncoding);
+                    timeConverter);
         }
     }
 }

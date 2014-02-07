@@ -53,7 +53,6 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.AsyncHttpClientConfigBean;
 import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
@@ -62,6 +61,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.StringPart;
+import com.ning.http.client.cookie.Cookie;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     private static final String UTF_8 = "text/html;charset=UTF-8";
@@ -478,7 +478,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             h.add("Test4", "Test4");
             h.add("Test5", "Test5");
 
-            final Cookie coo = new Cookie("/", "foo", "value", "/", -1, false);
+            final Cookie coo = new Cookie("/", "foo", "value", "value", "/", -1L, -1, false, false);
             client.prepareGet(getTargetUrl()).setHeaders(h).addCookie(coo).execute(new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -487,7 +487,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                         assertEquals(response.getStatusCode(), 200);
                         List<Cookie> cookies = response.getCookies();
                         assertEquals(cookies.size(), 1);
-                        assertEquals(cookies.get(0).toString(), coo.toString());
+                        assertEquals(cookies.get(0).toString(), "foo=value");
                     } finally {
                         l.countDown();
                     }

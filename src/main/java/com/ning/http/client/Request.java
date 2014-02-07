@@ -25,6 +25,8 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
+import com.ning.http.client.cookie.Cookie;
+
 /**
  * The Request class can be used to construct HTTP request:
  * <blockquote><pre>

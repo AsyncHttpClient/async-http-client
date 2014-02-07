@@ -12,6 +12,8 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.MiscUtil.isNonEmpty;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,17 +21,11 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
-import com.ning.http.client.Cookie;
 import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
@@ -40,9 +36,6 @@ import com.ning.http.client.StringPart;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
-
-import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -52,29 +45,6 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 public class AsyncHttpProviderUtils {
 
     public final static String DEFAULT_CHARSET = "ISO-8859-1";
-
-    private final static String BODY_NOT_COMPUTED = "Response's body hasn't been computed by your AsyncHandler.";
-
-
-    protected final static ThreadLocal<SimpleDateFormat[]> simpleDateFormat = new ThreadLocal<SimpleDateFormat[]>() {
-        protected SimpleDateFormat[] initialValue() {
-
-            return new SimpleDateFormat[]
-                    {
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US), // RFC1123
-                            new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US), //RFC1036
-                            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy", Locale.US),  //ASCTIME
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US),
-                            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US),
-                            new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss Z", Locale.US)
-                    };
-        }
-    };
-
-    public final static SimpleDateFormat[] get() {
-        return simpleDateFormat.get();
-    }
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
     
@@ -322,61 +292,6 @@ public class AsyncHttpProviderUtils {
             }
         }
         return null;
-    }
-
-    @Deprecated
-    public static Cookie parseCookie(String value) {
-        return CookieDecoder.decode(value).iterator().next();
-    }
-
-    public static int convertExpireField(String timestring) {
-        String trimmedTimeString = removeQuotes(timestring.trim());
-        long now = System.currentTimeMillis();
-        Date date = null;
-
-        for (SimpleDateFormat sdf : simpleDateFormat.get()) {
-            date = sdf.parse(trimmedTimeString, new ParsePosition(0));
-            if (date != null)
-                break;
-        }
-
-        if (date != null) {
-            long maxAgeMillis = date.getTime() - now;
-            return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0? 1 : 0);
-        } else
-            throw new IllegalArgumentException("Not a valid expire field " + trimmedTimeString);
-    }
-
-    public final static String removeQuotes(String s) {
-        if (MiscUtil.isNonEmpty(s)) {
-            int start = 0;
-            int end = s.length();
-            boolean changed = false;
-
-            if (s.charAt(0) == '"') {
-                changed = true;
-                start++;
-            }
-
-            if (s.charAt(s.length() - 1) == '"') {
-                changed = true;
-                end--;
-            }
-
-            if (changed)
-                s = s.substring(start, end);
-        }
-        return s;
-    }
-
-    public static void checkBodyParts(int statusCode, Collection<HttpResponseBodyPart> bodyParts) {
-        if (bodyParts == null || bodyParts.size() == 0) {
-
-            // We allow empty body on 204
-            if (statusCode == 204) return;
-
-            throw new IllegalStateException(BODY_NOT_COMPUTED);
-        }
     }
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {

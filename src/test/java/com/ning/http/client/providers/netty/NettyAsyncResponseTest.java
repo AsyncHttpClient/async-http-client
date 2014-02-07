@@ -13,10 +13,7 @@
 
 package com.ning.http.client.providers.netty;
 
-import com.ning.http.client.Cookie;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseHeaders;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,8 +21,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.testng.annotations.Test;
+
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.cookie.Cookie;
 
 /**
  * @author Benjamin Hanzelmann
@@ -52,7 +52,8 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertTrue(cookie.getMaxAge() > 55 && cookie.getMaxAge() < 61, "");
+        long originalDateWith1SecPrecision = date.getTime() / 1000 * 1000;
+        assertEquals(cookie.getExpires(), originalDateWith1SecPrecision);
     }
 
     @Test(groups = "standalone")
@@ -85,7 +86,7 @@ public class NettyAsyncResponseTest {
         assertEquals(cookies.size(), 1);
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.getMaxAge(), 60);
+        assertEquals(cookie.getExpires(), -1L);
     }
 
 }

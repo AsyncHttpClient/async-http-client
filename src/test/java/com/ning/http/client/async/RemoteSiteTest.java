@@ -15,6 +15,18 @@
  */
 package com.ning.http.client.async;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.AssertJUnit.assertTrue;
+
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -24,18 +36,8 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.AssertJUnit.assertTrue;
 
 /**
  * Unit tests for remote site.
@@ -247,7 +249,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
             builder2.setFollowRedirects(true);
             builder2.setUrl("http://www.google.com/");
             builder2.addHeader("Content-Type", "text/plain");
-            builder2.addCookie(new com.ning.http.client.Cookie(".google.com", "evilcookie", "test", "/", 10, false));
+            builder2.addCookie(new Cookie(".google.com", "evilcookie", "test", "test", "/", -1L, 10, false, false));
             com.ning.http.client.Request request2 = builder2.build();
             Response response = c.executeRequest(request2).get();
 

@@ -26,14 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.ning.http.client.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.org.jboss.netty.handler.codec.http.CookieDecoder;
 
 
 public class JDKResponse implements Response {
@@ -185,8 +185,7 @@ public class JDKResponse implements Response {
                     // TODO: ask for parsed header
                     List<String> v = header.getValue();
                     for (String value : v) {
-                        List<Cookie> cookies = CookieDecoder.decode(value);
-                        localCookies.addAll(cookies);
+                        localCookies.add(CookieDecoder.decode(value));
                     }
                 }
             }

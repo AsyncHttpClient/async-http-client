@@ -16,15 +16,6 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.client.filter.FilterContext;
-import com.ning.http.client.filter.FilterException;
-import com.ning.http.client.filter.RequestFilter;
-import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
-import com.ning.http.client.resumable.ResumableAsyncHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +26,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.providers.jdk.JDKAsyncHttpProvider;
+import com.ning.http.client.resumable.ResumableAsyncHandler;
 
 /**
  * This class support asynchronous and synchronous HTTP request.

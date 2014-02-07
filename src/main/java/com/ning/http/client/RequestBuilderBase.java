@@ -17,13 +17,6 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import com.ning.http.client.Request.EntityWriter;
-import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.UTF8UrlEncoder;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -37,6 +30,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.UTF8UrlEncoder;
 
 /**
  * Builder for {@link Request}

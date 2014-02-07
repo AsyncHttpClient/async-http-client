@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.ning.http.client.cookie.Cookie;
+
 /**
  * Represents the asynchronous HTTP response callback for an {@link com.ning.http.client.AsyncCompletionHandler}
  */

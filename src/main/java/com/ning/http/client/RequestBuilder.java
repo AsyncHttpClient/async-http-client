@@ -15,11 +15,12 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.client.Request.EntityWriter;
-
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
+
+import com.ning.http.client.Request.EntityWriter;
+import com.ning.http.client.cookie.Cookie;
 
 /**
  * Builder for a {@link Request}.
