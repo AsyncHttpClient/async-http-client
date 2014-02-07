@@ -102,6 +102,22 @@ public class GrizzlyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<G
     
     private final Map<Property,Object> attributes = new HashMap<Property,Object>();
     
+    /**
+     * @return <code>true</code> if the underlying provider should make new connections asynchronously or not.  By default
+     *  new connections are made synchronously.
+     *
+     * @since 2.0.0
+     */
+    private boolean asyncConnectMode;
+
+    public boolean isAsyncConnectMode() {
+        return asyncConnectMode;
+    }
+
+    public void setAsyncConnectMode(boolean asyncConnectMode) {
+        this.asyncConnectMode = asyncConnectMode;
+    }
+
     // ------------------------------------ Methods from AsyncHttpProviderConfig
 
     /**

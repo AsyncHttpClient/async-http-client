@@ -14,6 +14,7 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
@@ -88,8 +89,8 @@ public class ConnectionManager {
         }
         this.secureBuilder = secureBuilder;
         this.nonSecureBuilder = nonSecureBuilder;
-        asyncConnect = config.isAsyncConnectMode();
-
+        AsyncHttpProviderConfig<?,  ?> providerConfig = config.getAsyncHttpProviderConfig();
+        asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig).isAsyncConnectMode() : true;
     }
 
 

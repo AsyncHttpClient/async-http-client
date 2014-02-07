@@ -552,16 +552,6 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return <code>true</code> if the underlying provider should make new connections asynchronously or not.  By default
-     *  new connections are made synchronously.
-     *
-     * @since 2.0.0
-     */
-    public boolean isAsyncConnectMode() {
-        return asyncConnectMode;
-    }
-
-    /**
      * @return the TimeConverter used for converting RFC2616Dates into time
      *
      * @since 2.0.0
@@ -1186,7 +1176,6 @@ public class AsyncHttpClientConfig {
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
             useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
-            asyncConnectMode = prototype.isAsyncConnectMode();
             timeConverter = prototype.getTimeConverter();
         }
 
