@@ -105,7 +105,11 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
                                     @Override
                                     public void onThrowable(Throwable t) {
-                                        t.printStackTrace();
+                                        logger.error("onThrowable got an error", t);
+                                        try {
+                                            Thread.sleep(100);
+                                        } catch (InterruptedException e) {
+                                        }
                                         requestThrottle.release();
                                     }
                                 });
