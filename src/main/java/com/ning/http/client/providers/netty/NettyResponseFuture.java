@@ -163,7 +163,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public boolean cancel(boolean force) {
         cancelTimeouts();
 
-        if (isCancelled.get())
+        if (isCancelled.getAndSet(true))
             return false;
 
         try {
@@ -180,7 +180,6 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             }
         }
         latch.countDown();
-        isCancelled.set(true);
         runListeners();
         return true;
     }
@@ -335,17 +334,16 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     public final void abort(final Throwable t) {
         cancelTimeouts();
 
-        if (isDone.get() || isCancelled.get())
+        if (isDone.get() || isCancelled.getAndSet(true))
             return;
 
+        isCancelled.set(true);
         exEx.compareAndSet(null, new ExecutionException(t));
         if (onThrowableCalled.compareAndSet(false, true)) {
             try {
                 asyncHandler.onThrowable(t);
             } catch (Throwable te) {
                 logger.debug("asyncHandler.onThrowable", te);
-            } finally {
-                isCancelled.set(true);
             }
         }
         latch.countDown();
