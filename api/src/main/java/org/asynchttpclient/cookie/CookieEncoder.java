@@ -19,7 +19,7 @@ public final class CookieEncoder {
     private CookieEncoder() {
     }
 
-    public static String encodeClientSide(Collection<Cookie> cookies) {
+    public static String encode(Collection<Cookie> cookies) {
         StringBuilder sb = new StringBuilder();
 
         for (Cookie cookie : cookies) {

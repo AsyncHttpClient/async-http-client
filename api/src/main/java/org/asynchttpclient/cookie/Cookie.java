@@ -14,11 +14,7 @@ package org.asynchttpclient.cookie;
 
 public class Cookie {
 
-    public static Cookie newValidCookie(String domain, String name, String value, String path, int maxAge, boolean secure) {
-        return newValidCookie(domain, name, value, value, path, maxAge, secure, false);
-    }
-
-    public static Cookie newValidCookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, boolean httpOnly) {
+    public static Cookie newValidCookie(String domain, String name, String value, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -60,7 +56,7 @@ public class Cookie {
         domain = validateValue("domain", domain);
         path = validateValue("path", path);
 
-        return new Cookie(domain, name, value, rawValue, path, maxAge, secure, httpOnly);
+        return new Cookie(domain, name, value, rawValue, path, expires, maxAge, secure, httpOnly);
     }
 
     private static String validateValue(String name, String value) {
@@ -91,16 +87,18 @@ public class Cookie {
     private final String value;
     private final String rawValue;
     private final String path;
+    private long expires;
     private final int maxAge;
     private final boolean secure;
     private final boolean httpOnly;
 
-    public Cookie(String domain, String name, String value, String rawValue, String path, int maxAge, boolean secure, boolean httpOnly) {
+    public Cookie(String domain, String name, String value, String rawValue, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
         this.domain = domain;
         this.name = name;
         this.value = value;
         this.rawValue = rawValue;
         this.path = path;
+        this.expires = expires;
         this.maxAge = maxAge;
         this.secure = secure;
         this.httpOnly = httpOnly;
@@ -126,6 +124,10 @@ public class Cookie {
         return path;
     }
 
+    public long getExpires() {
+        return expires;
+    }
+    
     public int getMaxAge() {
         return maxAge;
     }
@@ -144,15 +146,19 @@ public class Cookie {
         buf.append(name);
         buf.append("=");
         buf.append(rawValue);
-        if (getDomain() != null) {
+        if (domain != null) {
             buf.append("; domain=");
             buf.append(domain);
         }
-        if (getPath() != null) {
+        if (path != null) {
             buf.append("; path=");
             buf.append(path);
         }
-        if (getMaxAge() >= 0) {
+        if (expires >= 0) {
+            buf.append("; expires=");
+            buf.append(expires);
+        }
+        if (maxAge >= 0) {
             buf.append("; maxAge=");
             buf.append(maxAge);
             buf.append("s");

@@ -170,6 +170,7 @@ public class GrizzlyResponse extends ResponseBase {
                                    gCookie.getValue(),
                                    gCookie.getValue(),
                                    gCookie.getPath(),
+                                   -1L,
                                    gCookie.getMaxAge(),
                                    gCookie.isSecure(),
                                    gCookie.isHttpOnly()));

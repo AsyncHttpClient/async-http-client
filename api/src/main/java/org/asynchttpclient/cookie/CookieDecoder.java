@@ -12,20 +12,31 @@
  */
 package org.asynchttpclient.cookie;
 
+import org.asynchttpclient.date.CalendarTimeConverter;
+import org.asynchttpclient.date.TimeConverter;
 
 public class CookieDecoder {
+
+    public static final TimeConverter DEFAULT_TIME_CONVERTER = new CalendarTimeConverter();
+
+    public static Cookie decode(String header) {
+        return decode(header, DEFAULT_TIME_CONVERTER);
+    }
 
     /**
      * Decodes the specified HTTP header value into {@link Cookie}.
      * 
      * @return the decoded {@link Cookie}
      */
-    public static Cookie decode(String header) {
+    public static Cookie decode(String header, TimeConverter timeConverter) {
+
+        if (timeConverter == null)
+            timeConverter = DEFAULT_TIME_CONVERTER;
 
         if (header.isEmpty())
             return null;
 
-        CookieBuilder cookieBuilder = new CookieBuilder();
+        KeyValuePairsParser pairsParser = new KeyValuePairsParser(timeConverter);
 
         final int headerLen = header.length();
         loop: for (int i = 0;;) {
@@ -35,31 +46,13 @@ public class CookieDecoder {
                 if (i == headerLen) {
                     break loop;
                 }
-                switch (header.charAt(i)) {
-                case ',':
+                char c = header.charAt(i);
+                if (c == ',') {
                     // Having multiple cookies in a single Set-Cookie header is
                     // deprecated, modern browsers only parse the first one
                     break loop;
 
-                case '\t':
-                case '\n':
-                case 0x0b:
-                case '\f':
-                case '\r':
-                case ' ':
-                case ';':
-                    i++;
-                    continue;
-                }
-                break;
-            }
-
-            // Skip '$'.
-            for (;;) {
-                if (i == headerLen) {
-                    break loop;
-                }
-                if (header.charAt(i) == '$') {
+                } else if (c == '\t' || c == '\n' || c == 0x0b || c == '\f' || c == '\r' || c == ' ' || c == ';') {
                     i++;
                     continue;
                 }
@@ -76,14 +69,15 @@ public class CookieDecoder {
                 value = rawValue = null;
             } else {
                 keyValLoop: for (;;) {
-                    switch (header.charAt(i)) {
-                    case ';':
+
+                    char curChar = header.charAt(i);
+                    if (curChar == ';') {
                         // NAME; (no value till ';')
                         newNameEnd = i;
                         value = rawValue = null;
                         first = false;
                         break keyValLoop;
-                    case '=':
+                    } else if (curChar == '=') {
                         // NAME=VALUE
                         newNameEnd = i;
                         i++;
@@ -160,7 +154,7 @@ public class CookieDecoder {
                             }
                         }
                         break keyValLoop;
-                    default:
+                    } else {
                         i++;
                     }
 
@@ -174,8 +168,8 @@ public class CookieDecoder {
                 }
             }
 
-            cookieBuilder.addKeyValuePair(header, newNameStart, newNameEnd, value, rawValue);
+            pairsParser.parseKeyValuePair(header, newNameStart, newNameEnd, value, rawValue);
         }
-        return cookieBuilder.build();
+        return pairsParser.cookie();
     }
 }

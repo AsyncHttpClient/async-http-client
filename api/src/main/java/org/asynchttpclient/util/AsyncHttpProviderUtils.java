@@ -20,11 +20,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
@@ -287,54 +285,11 @@ public class AsyncHttpProviderUtils {
         return null;
     }
 
-    public static Integer convertExpireField(String timestring) {
-        String trimmedTimeString = timestring.trim();
-
-        for (SimpleDateFormat sdf : simpleDateFormat.get()) {
-            Date date = sdf.parse(trimmedTimeString, new ParsePosition(0));
-            if (date != null) {
-                long now = System.currentTimeMillis();
-                long maxAgeMillis = date.getTime() - now;
-                return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0 ? 1 : 0);
-            }
-        }
-
-        return null;
+    public static int secondsFromNow(long timeMillis) {
+        long maxAgeMillis = timeMillis - System.currentTimeMillis();
+        return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0 ? 1 : 0);
     }
-
-    public final static String removeQuotes(String s) {
-        if (MiscUtil.isNonEmpty(s)) {
-            int start = 0;
-            int end = s.length();
-            boolean changed = false;
-
-            if (s.charAt(0) == '"') {
-                changed = true;
-                start++;
-            }
-
-            if (s.charAt(s.length() - 1) == '"') {
-                changed = true;
-                end--;
-            }
-
-            if (changed)
-                s = s.substring(start, end);
-        }
-        return s;
-    }
-
-    public static void checkBodyParts(int statusCode, Collection<HttpResponseBodyPart> bodyParts) {
-        if (bodyParts == null || bodyParts.size() == 0) {
-
-            // We allow empty body on 204
-            if (statusCode == 204)
-                return;
-
-            throw new IllegalStateException(BODY_NOT_COMPUTED);
-        }
-    }
-
+    
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
         return config.getAllowPoolingConnection() ? "keep-alive" : "close";
     }
