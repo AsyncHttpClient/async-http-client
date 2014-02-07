@@ -1028,8 +1028,9 @@ public class AsyncHttpClientConfig {
            return this;
         }
 
-        public void setTimeConverter(TimeConverter timeConverter) {
+        public Builder setTimeConverter(TimeConverter timeConverter) {
             this.timeConverter = timeConverter;
+            return this;
         }
 
         /**
