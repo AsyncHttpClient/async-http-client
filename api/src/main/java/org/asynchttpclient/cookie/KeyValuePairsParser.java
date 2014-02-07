@@ -43,7 +43,7 @@ class KeyValuePairsParser {
     }
 
     public Cookie cookie() {
-        return name != null ? new Cookie(domain, name, value, rawValue, path, expires, maxAge, secure, httpOnly) : null;
+        return name != null ? new Cookie(name, value, rawValue, domain, path, expires, maxAge, secure, httpOnly) : null;
     }
 
     /**
