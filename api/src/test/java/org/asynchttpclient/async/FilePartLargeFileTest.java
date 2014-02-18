@@ -38,7 +38,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
-            public void handle(String arg0, Request arg1, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+            public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 
                 ServletInputStream in = req.getInputStream();
                 byte[] b = new byte[8192];
@@ -54,7 +54,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
                 resp.getOutputStream().flush();
                 resp.getOutputStream().close();
 
-                arg1.setHandled(true);
+                baseRequest.setHandled(true);
             }
         };
     }
