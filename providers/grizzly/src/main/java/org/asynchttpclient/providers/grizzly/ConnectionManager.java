@@ -90,7 +90,7 @@ public class ConnectionManager {
         this.secureBuilder = secureBuilder;
         this.nonSecureBuilder = nonSecureBuilder;
         AsyncHttpProviderConfig<?,  ?> providerConfig = config.getAsyncHttpProviderConfig();
-        asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig).isAsyncConnectMode() : true;
+        asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig).isAsyncConnectMode() : false;
     }
 
 

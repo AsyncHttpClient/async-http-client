@@ -112,7 +112,6 @@ public class AsyncHttpClientConfig {
     protected boolean spdyEnabled;
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
-    protected boolean asyncConnectMode;
     protected TimeConverter timeConverter;
 
     protected AsyncHttpClientConfig() {
@@ -191,7 +190,6 @@ public class AsyncHttpClientConfig {
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
-        this.asyncConnectMode = asyncConnectMode;
         this.timeConverter = timeConverter;
     }
 
