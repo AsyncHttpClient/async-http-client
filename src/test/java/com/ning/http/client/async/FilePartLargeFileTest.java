@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import com.ning.http.client.AsyncHttpClient;
@@ -39,11 +38,9 @@ import com.ning.http.client.Response;
 
 public abstract class FilePartLargeFileTest extends AbstractBasicTest {
 
-    private File largeFile;
-
     @Test(groups = { "standalone", "default_provider" }, enabled = true)
     public void testPutImageFile() throws Exception {
-        largeFile = getTestFile();
+        File largeFile = getTestFile();
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(100 * 6000).build();
         AsyncHttpClient client = getAsyncHttpClient(config);
         try {
@@ -62,7 +59,7 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutLargeTextFile() throws Exception {
         byte[] bytes = "RatherLargeFileRatherLargeFileRatherLargeFileRatherLargeFile".getBytes("UTF-16");
         long repeats = (1024 * 1024 / bytes.length) + 1;
-        largeFile = createTempFile(bytes, (int) repeats);
+        File largeFile = createTempFile(bytes, (int) repeats);
 
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
@@ -91,11 +88,6 @@ public abstract class FilePartLargeFileTest extends AbstractBasicTest {
         }
 
         return testResource1File;
-    }
-
-    @AfterMethod
-    public void after() {
-        largeFile.delete();
     }
 
     @Override
