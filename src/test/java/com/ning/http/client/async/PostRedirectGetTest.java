@@ -73,7 +73,6 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestNegative(final int status, boolean strict) throws Exception {
         AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setStrict302Handling(strict).addResponseFilter(new ResponseFilter() {
-            @Override
             public FilterContext filter(FilterContext ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
                 // headers if found in the response
@@ -108,7 +107,6 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
 
     private void doTestPositive(final int status) throws Exception {
         AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).addResponseFilter(new ResponseFilter() {
-            @Override
             public FilterContext filter(FilterContext ctx) throws FilterException {
                 // pass on the x-expect-get and remove the x-redirect
                 // headers if found in the response
