@@ -109,6 +109,7 @@ public class Channels {
 
     private final boolean allowStopHashedWheelTimer;
     private final HashedWheelTimer hashedWheelTimer;
+    private final long handshakeTimeoutInMillis;
 
     private Processor wsProcessor;
 
@@ -130,6 +131,7 @@ public class Channels {
         allowStopHashedWheelTimer = nettyProviderConfig.getHashedWheelTimer() == null;
         hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : nettyProviderConfig.getHashedWheelTimer();
         hashedWheelTimer.start();
+        handshakeTimeoutInMillis = nettyProviderConfig.getHandshakeTimeoutInMillis();
 
         if (!(eventLoopGroup instanceof NioEventLoopGroup))
             throw new IllegalArgumentException("Only Nio is supported");
@@ -237,8 +239,14 @@ public class Channels {
 
             @Override
             protected void initChannel(Channel ch) throws Exception {
+
+                SSLEngine sslEngine = createSSLEngine();
+                SslHandler sslHandler = new SslHandler(sslEngine);
+                if (handshakeTimeoutInMillis > 0)
+                    sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
+
                 ChannelPipeline pipeline = ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
+                        .addLast(SSL_HANDLER, sslHandler)//
                         .addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.isCompressionEnabled()) {

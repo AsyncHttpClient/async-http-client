@@ -91,6 +91,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private HashedWheelTimer hashedWheelTimer;
 
+    private long handshakeTimeoutInMillis;
+
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
     }
@@ -238,6 +240,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
         this.hashedWheelTimer = hashedWheelTimer;
+    }
+
+    public long getHandshakeTimeoutInMillis() {
+        return handshakeTimeoutInMillis;
+    }
+
+    public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
+        this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
     }
 
     public static interface AdditionalChannelInitializer {
