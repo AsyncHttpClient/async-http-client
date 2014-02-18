@@ -30,6 +30,7 @@ import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
+import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -97,6 +98,7 @@ import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
+import org.jboss.netty.handler.ssl.ImmediateExecutor;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
@@ -129,7 +131,6 @@ import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
-import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.cookie.CookieEncoder;
 import com.ning.http.client.filter.FilterContext;
@@ -215,6 +216,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final Protocol webSocketProtocol = new WebSocketProtocol();
     private final boolean allowStopHashedWheelTimer;
     private final HashedWheelTimer hashedWheelTimer;
+    private final long handshakeTimeoutInMillis;
 
     private static boolean isNTLM(List<String> auth) {
         return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");
@@ -261,6 +263,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         allowStopHashedWheelTimer = providerConfig.getHashedWheelTimer() == null;
         hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : providerConfig.getHashedWheelTimer();
         hashedWheelTimer.start();
+
+        handshakeTimeoutInMillis = providerConfig.getHandshakeTimeoutInMillis();
 
         plainBootstrap = new ClientBootstrap(socketChannelFactory);
         secureBootstrap = new ClientBootstrap(socketChannelFactory);
@@ -367,7 +371,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelPipeline pipeline = pipeline();
 
                 try {
-                    pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                    SSLEngine sslEngine = createSSLEngine();
+                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, hashedWheelTimer,
+                            handshakeTimeoutInMillis) : new SslHandler(sslEngine);
+                    pipeline.addLast(SSL_HANDLER, sslHandler);
                 } catch (Throwable ex) {
                     abort(cl.future(), ex);
                 }
@@ -1060,8 +1067,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         ChannelFuture channelFuture;
-        ClientBootstrap bootstrap = (request.getUrl().startsWith(WEBSOCKET) && !useProxy) ?
-                (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
+        ClientBootstrap bootstrap = (request.getUrl().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap
+                : plainBootstrap);
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
         // Do no enable this with win.

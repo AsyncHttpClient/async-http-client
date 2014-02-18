@@ -86,6 +86,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private boolean disableZeroCopy;
 
     private HashedWheelTimer hashedWheelTimer;
+    
+    private long handshakeTimeoutInMillis;
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, "false");
@@ -162,5 +164,13 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
         this.hashedWheelTimer = hashedWheelTimer;
+    }
+
+    public long getHandshakeTimeoutInMillis() {
+        return handshakeTimeoutInMillis;
+    }
+
+    public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
+        this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
     }
 }
