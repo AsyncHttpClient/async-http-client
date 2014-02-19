@@ -87,7 +87,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private HashedWheelTimer hashedWheelTimer;
     
-    private long handshakeTimeoutInMillis;
+    private long handshakeTimeoutInMillis = 10000L;
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, "false");
