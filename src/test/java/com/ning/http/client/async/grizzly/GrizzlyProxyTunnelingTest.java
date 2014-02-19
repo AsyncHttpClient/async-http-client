@@ -16,9 +16,9 @@ package com.ning.http.client.async.grizzly;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
-import com.ning.http.client.async.ProxyyTunnellingTest;
+import com.ning.http.client.async.ProxyTunnellingTest;
 
-public class GrizzlyProxyTunnelingTest extends ProxyyTunnellingTest {
+public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

@@ -43,7 +43,7 @@ import static org.testng.Assert.assertNotNull;
 /**
  * Proxy usage tests.
  */
-public abstract class ProxyyTunnellingTest extends AbstractBasicTest {
+public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     private Server server2;
 
