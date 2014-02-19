@@ -23,8 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.ProxyHandler;
+import org.eclipse.jetty.server.handler.ConnectHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.testng.annotations.AfterClass;
@@ -43,11 +42,6 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
     int port2;
     private Server server2;
-
-    public AbstractHandler configureHandler() throws Exception {
-        ProxyHandler proxy = new ProxyHandler();
-        return proxy;
-    }
 
     @BeforeClass(alwaysRun = true)
     public void setUpGlobal() throws Exception {
@@ -76,7 +70,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
 
         server2.addConnector(connector);
 
-        setHandler(configureHandler());
+        setHandler(new ConnectHandler());
         start();
 
         server2.setHandler(getWebSocketHandler());
