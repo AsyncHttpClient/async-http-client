@@ -18,12 +18,11 @@ package com.ning.http.client;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import com.ning.http.util.MiscUtil;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.
@@ -260,8 +259,6 @@ public class Realm {
      */
     public static class RealmBuilder {
 
-        private static final Logger logger = LoggerFactory.getLogger(RealmBuilder.class);
-
         //
         //  Portions of code (newCnonce, newResponse) are highly inspired be Jetty 6 BasicAuthentication.java class.
         //  This code is already Apache licenced.
@@ -439,7 +436,7 @@ public class Realm {
             setAlgorithm(match(headerLine, "algorithm"));
             setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
-            if (getNonce() != null && !getNonce().equalsIgnoreCase("")) {
+            if (isNonEmpty(getNonce())) {
                 setScheme(AuthScheme.DIGEST);
             } else {
                 setScheme(AuthScheme.BASIC);
