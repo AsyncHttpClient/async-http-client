@@ -102,7 +102,7 @@ final class HttpProtocol extends Protocol {
     private void addNTLMAuthorizationHeader(FluentCaseInsensitiveStringsMap headers, String challengeHeader) {
         headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
     }
-    
+
     private Realm ntlmChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future)
             throws NTLMEngineException {
 
@@ -278,7 +278,13 @@ final class HttpProtocol extends Protocol {
                     if (newRealm == null)
                         return true;
                 } else {
-                    newRealm = future.getRequest().getRealm();
+                    newRealm = new Realm.RealmBuilder().clone(realm)//
+                            .setScheme(realm.getAuthScheme())//
+                            .setUri("/")//
+                            .setMethodName(HttpMethod.CONNECT.name())//
+                            .setUsePreemptiveAuth(true)//
+                            .parseProxyAuthenticateHeader(proxyAuthenticateHeaders.get(0))//
+                            .build();
                 }
 
                 future.setReuseChannel(true);
@@ -315,8 +321,8 @@ final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean handleHanderAndExit(Channel channel, NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseStatus status,
-            HttpResponseHeaders responseHeaders, HttpResponse response) throws Exception {
+    private boolean handleHanderAndExit(Channel channel, NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponseStatus status, HttpResponseHeaders responseHeaders,
+            HttpResponse response) throws Exception {
         if (!future.getAndSetStatusReceived(true) && (handler.onStatusReceived(status) != STATE.CONTINUE || handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE)) {
             finishUpdate(future, channel, HttpHeaders.isTransferEncodingChunked(response));
             return true;
@@ -324,8 +330,8 @@ final class HttpProtocol extends Protocol {
         return false;
     }
 
-    private boolean handleResponseAndExit(final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest httpRequest,
-            ProxyServer proxyServer, HttpResponse response) throws Exception {
+    private boolean handleResponseAndExit(final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpRequest httpRequest, ProxyServer proxyServer,
+            HttpResponse response) throws Exception {
 
         // store the original headers so we can re-send all them to
         // the handler in case of trailing headers
@@ -406,8 +412,7 @@ final class HttpProtocol extends Protocol {
                 }
             }
         } catch (Exception t) {
-            if (hasIOExceptionFilters && t instanceof IOException
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {
+            if (hasIOExceptionFilters && t instanceof IOException && requestSender.applyIoExceptionFiltersAndReplayRequest(future, IOException.class.cast(t), channel)) {
                 return;
             }
 

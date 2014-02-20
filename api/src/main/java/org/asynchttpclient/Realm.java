@@ -55,10 +55,8 @@ public class Realm {
         DIGEST, BASIC, NTLM, SPNEGO, KERBEROS, NONE
     }
 
-    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce,
-            String algorithm, String response, String qop, String nc, String cnonce, String uri, String method,
-            boolean usePreemptiveAuth, String domain, String enc, String host, boolean messageType2Received,
-            String opaque) {
+    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
+            String uri, String method, boolean usePreemptiveAuth, String domain, String enc, String host, boolean messageType2Received, String opaque) {
 
         this.principal = principal;
         this.password = password;
@@ -214,10 +212,9 @@ public class Realm {
 
     @Override
     public String toString() {
-        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme
-                + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm + '\''
-                + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='"
-                + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + '}';
+        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm
+                + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
+                + ", methodName='" + methodName + '\'' + '}';
     }
 
     @Override
@@ -413,6 +410,19 @@ public class Realm {
             return this;
         }
 
+        public RealmBuilder parseProxyAuthenticateHeader(String headerLine) {
+            setRealmName(match(headerLine, "realm"));
+            setNonce(match(headerLine, "nonce"));
+            setOpaque(match(headerLine, "opaque"));
+            setQop(match(headerLine, "qop"));
+            if (isNonEmpty(getNonce())) {
+                setScheme(AuthScheme.DIGEST);
+            } else {
+                setScheme(AuthScheme.BASIC);
+            }
+            return this;
+        }
+
         public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
             this.messageType2Received = messageType2Received;
             return this;
@@ -464,8 +474,8 @@ public class Realm {
             match += token.length() + 1;
             int traillingComa = headerLine.indexOf(",", match);
             String value = headerLine.substring(match, traillingComa > 0 ? traillingComa : headerLine.length());
-            value = value.endsWith("\"") ? value.substring(0, value.length() - 1) : value;
-            return value.startsWith("\"") ? value.substring(1) : value;
+            value = value.length() > 0 && value.charAt(value.length() - 1) == '"' ? value.substring(0, value.length() - 1) : value;
+            return value.charAt(0) == '"' ? value.substring(1) : value;
         }
 
         public String getEncoding() {
@@ -484,24 +494,34 @@ public class Realm {
             } catch (NoSuchAlgorithmException e) {
                 throw new SecurityException(e);
             }
-            md.update(new StringBuilder(principal).append(":").append(realmName).append(":").append(password)
-                    .toString().getBytes(StandardCharsets.ISO_8859_1));
+            md.update(new StringBuilder(principal).append(":")//
+                    .append(realmName).append(":")//
+                    .append(password).toString()//
+                    .getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha1 = md.digest();
 
             md.reset();
 
             // HA2 if qop is auth-int is methodName:url:md5(entityBody)
-            md.update(new StringBuilder(methodName).append(':').append(uri).toString().getBytes(StandardCharsets.ISO_8859_1));
+            md.update(new StringBuilder(methodName).append(':')//
+                    .append(uri).toString()//
+                    .getBytes(StandardCharsets.ISO_8859_1));
             byte[] ha2 = md.digest();
 
             if (qop == null || qop.length() == 0) {
-                md.update(new StringBuilder(toBase16(ha1)).append(':').append(nonce).append(':').append(toBase16(ha2))
-                        .toString().getBytes(StandardCharsets.ISO_8859_1));
+                md.update(new StringBuilder(toBase16(ha1)).append(':')//
+                        .append(nonce).append(':')//
+                        .append(toBase16(ha2)).toString()//
+                        .getBytes(StandardCharsets.ISO_8859_1));
 
             } else {
                 // qop ="auth" or "auth-int"
-                md.update(new StringBuilder(toBase16(ha1)).append(':').append(nonce).append(':').append(NC).append(':')
-                        .append(cnonce).append(':').append(qop).append(':').append(toBase16(ha2)).toString()
+                md.update(new StringBuilder(toBase16(ha1)).append(':')//
+                        .append(nonce).append(':')//
+                        .append(NC).append(':')//
+                        .append(cnonce).append(':')//
+                        .append(qop).append(':')//
+                        .append(toBase16(ha2)).toString()//
                         .getBytes(StandardCharsets.ISO_8859_1));
             }
 
@@ -549,8 +569,8 @@ public class Realm {
                 newResponse();
             }
 
-            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri,
-                    methodName, usePreemptive, domain, enc, host, messageType2Received, opaque);
+            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName, usePreemptive, domain, enc, host,
+                    messageType2Received, opaque);
         }
     }
 }
