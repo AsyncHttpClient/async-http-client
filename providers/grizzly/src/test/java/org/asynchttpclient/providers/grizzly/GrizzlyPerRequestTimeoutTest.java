@@ -15,8 +15,8 @@ package org.asynchttpclient.providers.grizzly;
 
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.PerRequestTimeoutTest;
 
 public class GrizzlyPerRequestTimeoutTest extends PerRequestTimeoutTest {

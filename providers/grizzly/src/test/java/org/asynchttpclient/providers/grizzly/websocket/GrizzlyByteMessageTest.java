@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.providers.grizzly.websocket;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
 import org.asynchttpclient.websocket.ByteMessageTest;
 import org.testng.annotations.Test;

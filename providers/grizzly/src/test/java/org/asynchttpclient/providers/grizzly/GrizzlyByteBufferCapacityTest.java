@@ -13,8 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.ByteBufferCapacityTest;
 import org.testng.annotations.Test;
 

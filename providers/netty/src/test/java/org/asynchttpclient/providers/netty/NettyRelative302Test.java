@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.Relative302Test;
 
 public class NettyRelative302Test extends Relative302Test {

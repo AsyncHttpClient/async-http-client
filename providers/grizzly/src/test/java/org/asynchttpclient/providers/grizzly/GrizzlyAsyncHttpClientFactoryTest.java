@@ -6,15 +6,14 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.testng.annotations.Test;
 
 @Test
-public class GrizzlyAsyncHttpClientFactoryTest extends
-		AbstractAsyncHttpClientFactoryTest {
+public class GrizzlyAsyncHttpClientFactoryTest extends AbstractAsyncHttpClientFactoryTest {
 
-	@Override
-	public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
-		if (config == null) {
+    @Override
+    public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
+        if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
-		return new GrizzlyAsyncHttpProvider(config);
-	}
+        return new GrizzlyAsyncHttpProvider(config);
+    }
 
 }

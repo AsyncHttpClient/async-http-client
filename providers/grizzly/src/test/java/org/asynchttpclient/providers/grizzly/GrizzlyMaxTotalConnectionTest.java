@@ -13,8 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.MaxTotalConnectionTest;
 
 public class GrizzlyMaxTotalConnectionTest extends MaxTotalConnectionTest {

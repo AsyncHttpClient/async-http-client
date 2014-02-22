@@ -1,7 +1,6 @@
 package org.asynchttpclient.util;
 
 
-	
 /*
  * Copyright 2004-2012 Sebastian Dietrich (Sebastian.Dietrich@e-movimento.com)
  *

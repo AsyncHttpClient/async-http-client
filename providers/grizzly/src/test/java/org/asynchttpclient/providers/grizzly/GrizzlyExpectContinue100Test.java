@@ -13,8 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.Expect100ContinueTest;
 
 public class GrizzlyExpectContinue100Test extends Expect100ContinueTest{

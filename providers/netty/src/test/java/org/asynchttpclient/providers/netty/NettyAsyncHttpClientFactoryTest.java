@@ -8,12 +8,12 @@ import org.testng.annotations.Test;
 @Test
 public class NettyAsyncHttpClientFactoryTest extends AbstractAsyncHttpClientFactoryTest {
 
-	@Override
-	public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
-		if (config == null) {
+    @Override
+    public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
+        if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
-		return new NettyAsyncHttpProvider(config);
-	}
+        return new NettyAsyncHttpProvider(config);
+    }
 
 }

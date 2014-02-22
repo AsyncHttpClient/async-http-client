@@ -14,8 +14,8 @@ package org.asynchttpclient.providers.netty;
 
 import static org.testng.Assert.*;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.PerRequestTimeoutTest;
 
 public class NettyPerRequestTimeoutTest extends PerRequestTimeoutTest {

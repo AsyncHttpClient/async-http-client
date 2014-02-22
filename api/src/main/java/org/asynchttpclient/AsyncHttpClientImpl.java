@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
@@ -38,16 +38,22 @@ import org.slf4j.LoggerFactory;
 /**
  * This class support asynchronous and synchronous HTTP request.
  * <p/>
- * To execute synchronous HTTP request, you just need to do
- * <blockquote><pre>
- *    AsyncHttpClient c = new AsyncHttpClient();
- *    Future<Response> f = c.prepareGet("http://www.ning.com/").execute();
- * </pre></blockquote
+ * To execute synchronous HTTP request, you just need to do <blockquote>
+ * 
+ * <pre>
+ * AsyncHttpClient c = new AsyncHttpClient();
+ * Future&lt;Response&gt; f = c.prepareGet(&quot;http://www.ning.com/&quot;).execute();
+ * </pre>
+ * 
+ * </blockquote
  * <p/>
- * The code above will block until the response is fully received. To execute asynchronous HTTP request, you
- * create an {@link AsyncHandler} or its abstract implementation, {@link AsyncCompletionHandler}
+ * The code above will block until the response is fully received. To execute
+ * asynchronous HTTP request, you create an {@link AsyncHandler} or its abstract
+ * implementation, {@link AsyncCompletionHandler}
  * <p/>
- * <blockquote><pre>
+ * <blockquote>
+ * 
+ * <pre>
  *       AsyncHttpClient c = new AsyncHttpClient();
  *       Future<Response> f = c.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>() &#123;
  * <p/>
@@ -77,12 +83,17 @@ import org.slf4j.LoggerFactory;
  *          &#125;
  *      &#125;);
  *      Integer statusCode = f.get();
- * </pre></blockquote
- * The {@link AsyncCompletionHandler#onCompleted(Response)} will be invoked once the http response has been fully read, which include
- * the http headers and the response body. Note that the entire response will be buffered in memory.
+ * </pre>
+ * 
+ * </blockquote The {@link AsyncCompletionHandler#onCompleted(Response)} will be
+ * invoked once the http response has been fully read, which include the http
+ * headers and the response body. Note that the entire response will be buffered
+ * in memory.
  * <p/>
- * You can also have more control about the how the response is asynchronously processed by using a {@link AsyncHandler}
- * <blockquote><pre>
+ * You can also have more control about the how the response is asynchronously
+ * processed by using a {@link AsyncHandler} <blockquote>
+ * 
+ * <pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() &#123;
  *          private StringBuilder builder = new StringBuilder();
@@ -120,25 +131,40 @@ import org.slf4j.LoggerFactory;
  *      &#125;);
  * <p/>
  *      String bodyResponse = f.get();
- * </pre></blockquote
- * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
- * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
+ * </pre>
+ * 
+ * </blockquote From any {@link HttpContent} sub classes, you can asynchronously
+ * process the response status,headers and body and decide when to stop the
+ * processing the response by throwing a new {link ResponseComplete} at any
+ * moment.
  * <p/>
- * This class can also be used without the need of {@link AsyncHandler}</p>
- * <blockquote><pre>
- *      AsyncHttpClient c = new AsyncHttpClient();
- *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
- *      Response r = f.get();
- * </pre></blockquote>
+ * This class can also be used without the need of {@link AsyncHandler}
+ * </p>
+ * <blockquote>
+ * 
+ * <pre>
+ * AsyncHttpClient c = new AsyncHttpClient();
+ * Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
+ * Response r = f.get();
+ * </pre>
+ * 
+ * </blockquote>
  * <p/>
- * Finally, you can configure the AsyncHttpClient using an {@link AsyncHttpClientConfig} instance</p>
- * <blockquote><pre>
+ * Finally, you can configure the AsyncHttpClient using an
+ * {@link AsyncHttpClientConfig} instance
+ * </p>
+ * <blockquote>
+ * 
+ * <pre>
  *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
  *      Future<Response> f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
- * </pre></blockquote>
+ * </pre>
+ * 
+ * </blockquote>
  * <p/>
- * An instance of this class will cache every HTTP 1.1 connections and close them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
+ * An instance of this class will cache every HTTP 1.1 connections and close
+ * them when the {@link AsyncHttpClientConfig#getIdleConnectionTimeoutInMs()}
  * expires. This object can hold many persistent connections to different host.
  */
 public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
@@ -147,10 +173,8 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
      * Providers that will be searched for, on the classpath, in order when no
      * provider is explicitly specified by the developer.
      */
-    private static final String[] DEFAULT_PROVIDERS = {
-        "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",
-        "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"
-    };
+    private static final String[] DEFAULT_PROVIDERS = { "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",
+            "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider" };
 
     private final AsyncHttpProvider httpProvider;
     private final AsyncHttpClientConfig config;
@@ -158,75 +182,90 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     /**
-     * Default signature calculator to use for all requests constructed by this client instance.
-     *
+     * Default signature calculator to use for all requests constructed by this
+     * client instance.
+     * 
      * @since 1.1
      */
     protected SignatureCalculator signatureCalculator;
 
     /**
-     * Create a new HTTP Asynchronous Client using the default {@link AsyncHttpClientConfig} configuration. The
-     * default {@link AsyncHttpProvider} that will be used will be based on the classpath configuration.
-     *
+     * Create a new HTTP Asynchronous Client using the default
+     * {@link AsyncHttpClientConfig} configuration. The default
+     * {@link AsyncHttpProvider} that will be used will be based on the
+     * classpath configuration.
+     * 
      * The default providers will be searched for in this order:
      * <ul>
-     *     <li>netty</li>
-     *     <li>grizzly</li>
-     *     <li>JDK</li>
+     * <li>netty</li>
+     * <li>grizzly</li>
+     * <li>JDK</li>
      * </ul>
-     *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
+     * 
+     * If none of those providers are found, then the engine will throw an
+     * IllegalStateException.
      */
     public AsyncHttpClientImpl() {
         this(new AsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using an implementation of {@link AsyncHttpProvider} and
-     * the default {@link AsyncHttpClientConfig} configuration.
-     *
-     * @param provider a {@link AsyncHttpProvider}
+     * Create a new HTTP Asynchronous Client using an implementation of
+     * {@link AsyncHttpProvider} and the default {@link AsyncHttpClientConfig}
+     * configuration.
+     * 
+     * @param provider
+     *            a {@link AsyncHttpProvider}
      */
     public AsyncHttpClientImpl(AsyncHttpProvider provider) {
         this(provider, new AsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using the specified {@link AsyncHttpClientConfig} configuration.
-     * This configuration will be passed to the default {@link AsyncHttpProvider} that will be selected based on
-     * the classpath configuration.
-     *
+     * Create a new HTTP Asynchronous Client using the specified
+     * {@link AsyncHttpClientConfig} configuration. This configuration will be
+     * passed to the default {@link AsyncHttpProvider} that will be selected
+     * based on the classpath configuration.
+     * 
      * The default providers will be searched for in this order:
      * <ul>
-     *     <li>netty</li>
-     *     <li>grizzly</li>
+     * <li>netty</li>
+     * <li>grizzly</li>
      * </ul>
-     *
-     * If none of those providers are found, then the engine will throw an IllegalStateException.
-     *
-     * @param config a {@link AsyncHttpClientConfig}
+     * 
+     * If none of those providers are found, then the engine will throw an
+     * IllegalStateException.
+     * 
+     * @param config
+     *            a {@link AsyncHttpClientConfig}
      */
     public AsyncHttpClientImpl(AsyncHttpClientConfig config) {
         this(loadDefaultProvider(DEFAULT_PROVIDERS, config), config);
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a AsyncHttpProvider class' name.
-     *
-     * @param config        a {@link AsyncHttpClientConfig}
-     * @param providerClass a {@link AsyncHttpProvider}
+     * Create a new HTTP Asynchronous Client using a
+     * {@link AsyncHttpClientConfig} configuration and and a AsyncHttpProvider
+     * class' name.
+     * 
+     * @param config
+     *            a {@link AsyncHttpClientConfig}
+     * @param providerClass
+     *            a {@link AsyncHttpProvider}
      */
     public AsyncHttpClientImpl(String providerClass, AsyncHttpClientConfig config) {
         this(loadProvider(providerClass, config), new AsyncHttpClientConfig.Builder().build());
     }
 
     /**
-     * Create a new HTTP Asynchronous Client using a {@link AsyncHttpClientConfig} configuration and
-     * and a {@link AsyncHttpProvider}.
-     *
-     * @param config       a {@link AsyncHttpClientConfig}
-     * @param httpProvider a {@link AsyncHttpProvider}
+     * Create a new HTTP Asynchronous Client using a
+     * {@link AsyncHttpClientConfig} configuration and and a
+     * {@link AsyncHttpProvider}.
+     * 
+     * @param config
+     *            a {@link AsyncHttpClientConfig}
+     * @param httpProvider
+     *            a {@link AsyncHttpProvider}
      */
     public AsyncHttpClientImpl(AsyncHttpProvider httpProvider, AsyncHttpClientConfig config) {
         this.config = config;
@@ -235,14 +274,14 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
         /**
-         * Calculator used for calculating request signature for the request being
-         * built, if any.
+         * Calculator used for calculating request signature for the request
+         * being built, if any.
          */
         protected SignatureCalculator signatureCalculator;
 
         /**
-         * URL used as the base, not including possibly query parameters. Needed for
-         * signature calculation
+         * URL used as the base, not including possibly query parameters. Needed
+         * for signature calculation
          */
         protected String baseURL;
 
@@ -262,9 +301,10 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
             return AsyncHttpClientImpl.this.executeRequest(build(), new AsyncCompletionHandlerBase());
         }
 
-        // Note: For now we keep the delegates in place even though they are not needed
-        //       since otherwise Clojure (and maybe other languages) won't be able to
-        //       access these methods - see Clojure tickets 126 and 259
+        // Note: For now we keep the delegates in place even though they are not
+        // needed
+        // since otherwise Clojure (and maybe other languages) won't be able to
+        // access these methods - see Clojure tickets 126 and 259
 
         @Override
         public BoundRequestBuilder addBodyPart(Part part) {
@@ -293,8 +333,10 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
 
         @Override
         public Request build() {
-            /* Let's first calculate and inject signature, before finalizing actual build
-             * (order does not matter with current implementation but may in future)
+            /*
+             * Let's first calculate and inject signature, before finalizing
+             * actual build (order does not matter with current implementation
+             * but may in future)
              */
             if (signatureCalculator != null) {
                 String url = baseURL;
@@ -365,29 +407,34 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
         }
     }
 
-
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#getProvider()
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#getProvider()
+     */
     @Override
-	public AsyncHttpProvider getProvider() {
+    public AsyncHttpProvider getProvider() {
         return httpProvider;
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#close()
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#close()
+     */
     @Override
-	public void close() {
+    public void close() {
         if (isClosed.compareAndSet(false, true))
             httpProvider.close();
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#closeAsynchronously()
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#closeAsynchronously()
+     */
     @Override
-	public void closeAsynchronously() {
+    public void closeAsynchronously() {
         final ExecutorService e = Executors.newSingleThreadExecutor();
         e.submit(new Runnable() {
             public void run() {
@@ -413,141 +460,184 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
         }
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#isClosed()
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#isClosed()
+     */
     @Override
-	public boolean isClosed() {
+    public boolean isClosed() {
         return isClosed.get();
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#getConfig()
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#getConfig()
+     */
     @Override
-	public AsyncHttpClientConfig getConfig() {
+    public AsyncHttpClientConfig getConfig() {
         return config;
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#setSignatureCalculator(org.asynchttpclient.SignatureCalculator)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#setSignatureCalculator(org.
+     * asynchttpclient.SignatureCalculator)
+     */
     @Override
-	public AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator) {
+    public AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator) {
         this.signatureCalculator = signatureCalculator;
         return this;
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareGet(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#prepareGet(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareGet(String url) {
+    public BoundRequestBuilder prepareGet(String url) {
         return requestBuilder("GET", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareConnect(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.asynchttpclient.IAsyncHttpClient#prepareConnect(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareConnect(String url) {
+    public BoundRequestBuilder prepareConnect(String url) {
         return requestBuilder("CONNECT", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareOptions(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.asynchttpclient.IAsyncHttpClient#prepareOptions(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareOptions(String url) {
+    public BoundRequestBuilder prepareOptions(String url) {
         return requestBuilder("OPTIONS", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareHead(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#prepareHead(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareHead(String url) {
+    public BoundRequestBuilder prepareHead(String url) {
         return requestBuilder("HEAD", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#preparePost(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#preparePost(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder preparePost(String url) {
+    public BoundRequestBuilder preparePost(String url) {
         return requestBuilder("POST", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#preparePut(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#preparePut(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder preparePut(String url) {
+    public BoundRequestBuilder preparePut(String url) {
         return requestBuilder("PUT", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareDelete(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#prepareDelete(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareDelete(String url) {
+    public BoundRequestBuilder prepareDelete(String url) {
         return requestBuilder("DELETE", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#preparePatch(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#preparePatch(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder preparePatch(String url) {
+    public BoundRequestBuilder preparePatch(String url) {
         return requestBuilder("PATCH", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareTrace(java.lang.String)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.asynchttpclient.IAsyncHttpClient#prepareTrace(java.lang.String)
+     */
     @Override
-	public BoundRequestBuilder prepareTrace(String url) {
+    public BoundRequestBuilder prepareTrace(String url) {
         return requestBuilder("TRACE", url);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#prepareRequest(org.asynchttpclient.Request)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.asynchttpclient.IAsyncHttpClient#prepareRequest(org.asynchttpclient
+     * .Request)
+     */
     @Override
-	public BoundRequestBuilder prepareRequest(Request request) {
+    public BoundRequestBuilder prepareRequest(Request request) {
         return requestBuilder(request);
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#executeRequest(org.asynchttpclient.Request, org.asynchttpclient.AsyncHandler)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.asynchttpclient.IAsyncHttpClient#executeRequest(org.asynchttpclient
+     * .Request, org.asynchttpclient.AsyncHandler)
+     */
     @Override
-	public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
+    public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) throws IOException {
 
-        FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
+        FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request)
+                .build();
         fc = preProcessRequest(fc);
 
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
 
-    /* (non-Javadoc)
-	 * @see org.asynchttpclient.IAsyncHttpClient#executeRequest(org.asynchttpclient.Request)
-	 */
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.asynchttpclient.IAsyncHttpClient#executeRequest(org.asynchttpclient
+     * .Request)
+     */
     @Override
-	public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
+    public ListenableFuture<Response> executeRequest(Request request) throws IOException {
+        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>()
+                .asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
         fc = preProcessRequest(fc);
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
 
     /**
-     * Configure and execute the associated {@link RequestFilter}. This class may decorate the {@link Request} and {@link AsyncHandler}
-     *
-     * @param fc {@link FilterContext}
+     * Configure and execute the associated {@link RequestFilter}. This class
+     * may decorate the {@link Request} and {@link AsyncHandler}
+     * 
+     * @param fc
+     *            {@link FilterContext}
      * @return {@link FilterContext}
      */
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
-        for (RequestFilter asyncFilter: config.getRequestFilters()) {
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
                 if (fc == null) {
@@ -575,38 +665,36 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
     }
 
     @SuppressWarnings("unchecked")
-    private static AsyncHttpProvider loadProvider(final String className,
-                                                  final AsyncHttpClientConfig config) {
+    private static AsyncHttpProvider loadProvider(final String className, final AsyncHttpClientConfig config) {
         try {
             Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread()
                     .getContextClassLoader().loadClass(className);
-            
-            return providerClass.getDeclaredConstructor(
-                    new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
-        }  catch (Throwable t) {
-        	System.out.println("ClassPath : " + ((java.net.URLClassLoader)Thread.currentThread().getContextClassLoader()).getURLs());
+
+            return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class })
+                    .newInstance(config);
+        } catch (Throwable t) {
+            System.out.println("ClassPath : "
+                    + ((java.net.URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs());
             if (t instanceof InvocationTargetException) {
                 final InvocationTargetException ite = (InvocationTargetException) t;
                 if (logger.isErrorEnabled()) {
-                    logger.error("Unable to instantiate provider {}.  Trying other providers.",
-                                 className);
+                    logger.error("Unable to instantiate provider {}.  Trying other providers.", className);
                     logger.error(ite.getCause().toString(), ite.getCause());
                 }
             }
             // Let's try with another classloader
             try {
-                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>)
-                        AsyncHttpClientImpl.class.getClassLoader().loadClass(className);
-                return providerClass.getDeclaredConstructor(
-                        new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
+                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) AsyncHttpClientImpl.class
+                        .getClassLoader().loadClass(className);
+                return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class }).newInstance(
+                        config);
             } catch (Throwable ignored) {
             }
         }
         return null;
     }
 
-    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames,
-                                                               AsyncHttpClientConfig config) {
+    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames, AsyncHttpClientConfig config) {
         AsyncHttpProvider provider;
         for (final String className : providerClassNames) {
             provider = loadProvider(className, config);
@@ -618,7 +706,8 @@ public class AsyncHttpClientImpl implements Closeable, AsyncHttpClient {
     }
 
     protected BoundRequestBuilder requestBuilder(String reqType, String url) {
-        return new BoundRequestBuilder(reqType, config.isUseRawUrl()).setUrl(url).setSignatureCalculator(signatureCalculator);
+        return new BoundRequestBuilder(reqType, config.isUseRawUrl()).setUrl(url).setSignatureCalculator(
+                signatureCalculator);
     }
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {

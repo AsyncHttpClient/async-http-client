@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.Expect100ContinueTest;
 
 public class NettyExpect100ContinueTest extends Expect100ContinueTest {

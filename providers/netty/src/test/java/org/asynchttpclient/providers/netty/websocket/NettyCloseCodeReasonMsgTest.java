@@ -13,8 +13,8 @@
 
 package org.asynchttpclient.providers.netty.websocket;
 
-import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.providers.netty.NettyProviderUtil;
 import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
 
