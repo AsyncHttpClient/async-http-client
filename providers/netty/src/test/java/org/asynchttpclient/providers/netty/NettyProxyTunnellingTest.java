@@ -12,17 +12,17 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.ProxyTunnellingTest;
 
 public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 
     public String getProviderClass() {
-    	return NettyAsyncHttpProvider.class.getName();
+        return NettyAsyncHttpProvider.class.getName();
     }
 }

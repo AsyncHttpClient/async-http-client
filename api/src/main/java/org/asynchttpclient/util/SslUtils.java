@@ -31,14 +31,15 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 /**
- * This class is a copy of http://github.com/sonatype/wagon-ning/raw/master/src/main/java/org/apache/maven/wagon/providers/http/SslUtils.java
+ * This class is a copy of
+ * http://github.com/sonatype/wagon-ning/raw/master/src/main
+ * /java/org/apache/maven/wagon/providers/http/SslUtils.java
  */
 public class SslUtils {
 
-	private static SSLContext context = null;
+    private static SSLContext context = null;
 
-    public static SSLEngine getSSLEngine()
-            throws GeneralSecurityException, IOException {
+    public static SSLEngine getSSLEngine() throws GeneralSecurityException, IOException {
         SSLEngine engine = null;
 
         SSLContext context = getSSLContext();
@@ -50,34 +51,31 @@ public class SslUtils {
         return engine;
     }
 
-    public static SSLContext getSSLContext()
-            throws GeneralSecurityException, IOException {
-    	if (context == null) {
+    public static SSLContext getSSLContext() throws GeneralSecurityException, IOException {
+        if (context == null) {
             SSLConfig config = new SSLConfig();
-            if (config.keyStoreLocation == null
-                    || config.trustStoreLocation == null) {
+            if (config.keyStoreLocation == null || config.trustStoreLocation == null) {
                 context = getLooseSSLContext();
             } else {
                 context = getStrictSSLContext(config);
             }
-    	}
-    	return context;
+        }
+        return context;
     }
 
-    static SSLContext getStrictSSLContext(SSLConfig config)
-            throws GeneralSecurityException, IOException {
+    static SSLContext getStrictSSLContext(SSLConfig config) throws GeneralSecurityException, IOException {
         KeyStore keyStore = KeyStore.getInstance(config.keyStoreType);
         InputStream keystoreInputStream = new FileInputStream(config.keyStoreLocation);
         try {
-            keyStore.load(keystoreInputStream, (config.keyStorePassword == null) ? null
-                    : config.keyStorePassword.toCharArray());
+            keyStore.load(keystoreInputStream,
+                    (config.keyStorePassword == null) ? null : config.keyStorePassword.toCharArray());
         } finally {
             keystoreInputStream.close();
         }
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(config.keyManagerAlgorithm);
-        keyManagerFactory.init(keyStore, (config.keyManagerPassword == null) ? null
-                : config.keyManagerPassword.toCharArray());
+        keyManagerFactory.init(keyStore,
+                (config.keyManagerPassword == null) ? null : config.keyManagerPassword.toCharArray());
         KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
 
         KeyStore trustStore = KeyStore.getInstance(config.trustStoreType);
@@ -99,15 +97,13 @@ public class SslUtils {
         return context;
     }
 
-    static SSLContext getLooseSSLContext()
-            throws GeneralSecurityException {
+    static SSLContext getLooseSSLContext() throws GeneralSecurityException {
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, new TrustManager[]{LooseTrustManager.INSTANCE}, new SecureRandom());
+        sslContext.init(null, new TrustManager[] { LooseTrustManager.INSTANCE }, new SecureRandom());
         return sslContext;
     }
 
-    static class LooseTrustManager
-            implements X509TrustManager {
+    static class LooseTrustManager implements X509TrustManager {
 
         public static final LooseTrustManager INSTANCE = new LooseTrustManager();
 

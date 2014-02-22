@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -40,7 +40,7 @@ public abstract class BodyChunkTest extends AbstractBasicTest {
         confbuilder = confbuilder.setRequestTimeoutInMs(5 * 60 * 1000); // 5 minutes
 
         // Create client
-        AsyncHttpClient client = getAsyncHttpClient(confbuilder.build());
+        AsyncHttpClientImpl client = getAsyncHttpClient(confbuilder.build());
         try {
 
             RequestBuilder requestBuilder = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeader("Content-Type", "message/rfc822");

@@ -15,15 +15,15 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class NettyProviderUtil {
 
-    public static AsyncHttpClient nettyProvider(AsyncHttpClientConfig config) {
+    public static AsyncHttpClientImpl nettyProvider(AsyncHttpClientConfig config) {
         if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
-        return new AsyncHttpClient(new NettyAsyncHttpProvider(config), config);
+        return new AsyncHttpClientImpl(new NettyAsyncHttpProvider(config), config);
     }
 }

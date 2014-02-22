@@ -19,7 +19,7 @@ import static org.testng.FileAssert.fail;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -50,7 +50,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
         bc.setRequestTimeoutInMs(1000);
         bc.setFollowRedirects(true);
 
-        AsyncHttpClient c = getAsyncHttpClient(bc.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(bc.build());
         try {
 
             RequestBuilder builder = new RequestBuilder("POST");

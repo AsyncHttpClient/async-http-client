@@ -24,8 +24,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
@@ -84,7 +85,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server, false);
             f.get();
@@ -98,7 +99,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicPreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server, true);
             f.get();
@@ -112,7 +113,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server2, false);
             f.get();
@@ -126,7 +127,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestPreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server2, true);
             f.get();
@@ -140,7 +141,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFutureAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server, false);
             f.get(1, TimeUnit.SECONDS);
@@ -154,7 +155,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void basicFuturePreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server, true);
             f.get(1, TimeUnit.SECONDS);
@@ -168,7 +169,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFutureAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server2, false);
             f.get(1, TimeUnit.SECONDS);
@@ -182,7 +183,7 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" }, enabled = false)
     public void digestFuturePreemptiveAuthTimeoutTest() throws Exception {
-        AsyncHttpClient client = newClient();
+        AsyncHttpClientImpl client = newClient();
         try {
             Future<Response> f = execute(client, server2, true);
             f.get(1, TimeUnit.SECONDS);
@@ -202,12 +203,12 @@ public abstract class AuthTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    private AsyncHttpClient newClient() {
+    private AsyncHttpClientImpl newClient() {
         return getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(2000).setConnectionTimeoutInMs(20000).setRequestTimeoutInMs(2000).build());
     }
 
     protected Future<Response> execute(AsyncHttpClient client, Server server, boolean preemptive) throws IOException {
-        AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test");
+        AsyncHttpClientImpl.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(realm(preemptive)).setHeader("X-Content", "Test");
         Future<Response> f = r.execute();
         return f;
     }

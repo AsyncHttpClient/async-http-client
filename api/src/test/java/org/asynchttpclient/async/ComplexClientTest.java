@@ -19,7 +19,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.util.concurrent.TimeUnit;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
 
@@ -27,7 +27,7 @@ public abstract class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleRequestsTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             String body = "hello there";
 
@@ -47,7 +47,7 @@ public abstract class ComplexClientTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void urlWithoutSlashTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             String body = "hello there";
 

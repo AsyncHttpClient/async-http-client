@@ -15,16 +15,16 @@
  */
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 
 public class GrizzlyProviderUtil {
 
-    public static AsyncHttpClient grizzlyProvider(AsyncHttpClientConfig config) {
+    public static AsyncHttpClientImpl grizzlyProvider(AsyncHttpClientConfig config) {
         if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
-    }
+        return new AsyncHttpClientImpl(new GrizzlyAsyncHttpProvider(config), config);
+    }    
 }

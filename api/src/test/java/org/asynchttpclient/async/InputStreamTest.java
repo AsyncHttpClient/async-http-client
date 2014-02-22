@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -67,7 +67,7 @@ public abstract class InputStreamTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testInvalidInputStream() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");

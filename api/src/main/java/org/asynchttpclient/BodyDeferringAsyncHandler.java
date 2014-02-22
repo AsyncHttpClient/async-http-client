@@ -44,7 +44,7 @@ import java.util.concurrent.Semaphore;
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(fos);
  *     // client executes async
  *     Future&lt;Response&gt; fr = client.prepareGet(&quot;http://foo.com/aresource&quot;).execute(
- * 	bdah);
+ *  bdah);
  *     // main thread will block here until headers are available
  *     Response response = bdah.getResponse();
  *     // you can continue examine headers while actual body download happens

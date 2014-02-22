@@ -16,8 +16,8 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.AsyncHttpClientImpl;
+import org.asynchttpclient.AsyncHttpClientImpl.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import static org.testng.Assert.*;
@@ -35,7 +35,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
 
     @Test(invocationCount = 4, groups = { "online", "default_provider" })
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
-        final AsyncHttpClient client = create();
+        final AsyncHttpClientImpl client = create();
         try {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
@@ -53,7 +53,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
         }
     }
 
-    private AsyncHttpClient create() throws GeneralSecurityException {
+    private AsyncHttpClientImpl create() throws GeneralSecurityException {
         final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirects(true).setSSLContext(getSSLContext()).setAllowPoolingConnection(true).setConnectionTimeoutInMs(10000)
                 .setIdleConnectionInPoolTimeoutInMs(60000).setRequestTimeoutInMs(10000).setMaximumConnectionsPerHost(-1).setMaximumConnectionsTotal(-1);
         return getAsyncHttpClient(configBuilder.build());

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -71,7 +71,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(100));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
         try {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
@@ -86,7 +86,7 @@ public abstract class FilterTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(10));
 
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
         try {
             List<Future<Response>> futures = new ArrayList<Future<Response>>();
             for (int i = 0; i < 200; i++) {
@@ -107,7 +107,7 @@ public abstract class FilterTest extends AbstractBasicTest {
     public void maxConnectionsText() throws Exception {
         AsyncHttpClientConfig.Builder b = new AsyncHttpClientConfig.Builder();
         b.addRequestFilter(new ThrottleRequestFilter(0, 1000));
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
 
         try {
             /* Response response = */c.preparePost(getTargetUrl()).execute().get();
@@ -131,7 +131,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -162,7 +162,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -194,7 +194,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -227,7 +227,7 @@ public abstract class FilterTest extends AbstractBasicTest {
             }
 
         });
-        AsyncHttpClient c = getAsyncHttpClient(b.build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(b.build());
 
         try {
             Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();

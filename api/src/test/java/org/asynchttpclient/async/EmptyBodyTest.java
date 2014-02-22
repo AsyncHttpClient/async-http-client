@@ -16,7 +16,7 @@
 package org.asynchttpclient.async;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -68,7 +68,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testEmptyBody() throws IOException {
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClientImpl ahc = getAsyncHttpClient(null);
         try {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();
@@ -126,7 +126,7 @@ public abstract class EmptyBodyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testPutEmptyBody() throws Exception {
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClientImpl ahc = getAsyncHttpClient(null);
         try {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
 

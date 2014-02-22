@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.websocket;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
@@ -38,7 +38,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
     
     @Test(timeOut = 60000)
     public void onCloseWithCode() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -56,7 +56,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -104,7 +104,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void wrongStatusCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
@@ -144,7 +144,7 @@ public abstract class CloseCodeReasonMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void wrongProtocolCode() throws Throwable {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();

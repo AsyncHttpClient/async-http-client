@@ -13,19 +13,19 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.ProxyTunnellingTest;
 
 public class GrizzlyProxyTunnelingTest extends ProxyTunnellingTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
     @Override
     public String getProviderClass() {
-    	return GrizzlyAsyncHttpProvider.class.getName();
+        return GrizzlyAsyncHttpProvider.class.getName();
     }
 }

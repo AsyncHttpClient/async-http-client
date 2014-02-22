@@ -60,7 +60,7 @@ public class ProxyServer {
     private Charset charset = StandardCharsets.UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
-	public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
+    public ProxyServer(final Protocol protocol, final String host, final int port, String principal, String password) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
@@ -151,4 +151,3 @@ public class ProxyServer {
         return protocol + "://" + host + ":" + port;
     }
 }
-

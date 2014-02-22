@@ -38,7 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this
+ * Configuration class to use with a {@link AsyncHttpClientImpl}. System property can be also used to configure this
  * object default behavior by doing:
  * <p/>
  * -Dorg.asynchttpclient.AsyncHttpClientConfig.nameOfTheProperty
@@ -194,27 +194,27 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum number of connections an {@link AsyncHttpClient} can handle.
+     * Return the maximum number of connections an {@link AsyncHttpClientImpl} can handle.
      *
-     * @return the maximum number of connections an {@link AsyncHttpClient} can handle.
+     * @return the maximum number of connections an {@link AsyncHttpClientImpl} can handle.
      */
     public int getMaxTotalConnections() {
         return maxTotalConnections;
     }
 
     /**
-     * Return the maximum number of connections per hosts an {@link AsyncHttpClient} can handle.
+     * Return the maximum number of connections per hosts an {@link AsyncHttpClientImpl} can handle.
      *
-     * @return the maximum number of connections per host an {@link AsyncHttpClient} can handle.
+     * @return the maximum number of connections per host an {@link AsyncHttpClientImpl} can handle.
      */
     public int getMaxConnectionPerHost() {
         return maxConnectionPerHost;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * Return the maximum time in millisecond an {@link AsyncHttpClientImpl} can wait when connecting to a remote host
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * @return the maximum time in millisecond an {@link AsyncHttpClientImpl} can wait when connecting to a remote host
      */
     public int getConnectionTimeoutInMs() {
         return connectionTimeOutInMs;
@@ -229,19 +229,19 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * Return the maximum time in millisecond an {@link AsyncHttpClientImpl} can stay idle.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * @return the maximum time in millisecond an {@link AsyncHttpClientImpl} can stay idle.
      */
     public int getIdleConnectionTimeoutInMs() {
         return idleConnectionTimeoutInMs;
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
+     * Return the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection
      * in pool.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
+     * @return the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection
      *         in pool.
      */
     public int getIdleConnectionInPoolTimeoutInMs() {
@@ -249,9 +249,9 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+     * Return the maximum time in millisecond an {@link AsyncHttpClientImpl} wait for a response
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+     * @return the maximum time in millisecond an {@link AsyncHttpClientImpl} wait for a response
      */
     public int getRequestTimeoutInMs() {
         return requestTimeoutInMs;
@@ -303,10 +303,10 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
+     * Return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClientImpl} use for handling
      * asynchronous response.
      *
-     * @return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
+     * @return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClientImpl} use for handling
      *         asynchronous response.  If no {@link ExecutorService} has been explicitly provided,
      *         this method will return <code>null</code>
      */
@@ -315,7 +315,7 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * An instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
+     * An instance of {@link ProxyServer} used by an {@link AsyncHttpClientImpl}
      *
      * @return instance of {@link ProxyServer}
      */
@@ -541,9 +541,9 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
+     * Return the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection in the pool, or -1 to keep connection while possible.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
+     * @return the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection in the pool, or -1 to keep connection while possible.
      */
     public int getMaxConnectionLifeTimeInMs() {
         return maxConnectionLifeTimeInMs;
@@ -559,7 +559,7 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Builder for an {@link AsyncHttpClient}
+     * Builder for an {@link AsyncHttpClientImpl}
      */
     public static class Builder {
         private int defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
@@ -607,9 +607,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum number of connections an {@link AsyncHttpClient} can handle.
+         * Set the maximum number of connections an {@link AsyncHttpClientImpl} can handle.
          *
-         * @param defaultMaxTotalConnections the maximum number of connections an {@link AsyncHttpClient} can handle.
+         * @param defaultMaxTotalConnections the maximum number of connections an {@link AsyncHttpClientImpl} can handle.
          * @return a {@link Builder}
          */
         public Builder setMaximumConnectionsTotal(int defaultMaxTotalConnections) {
@@ -618,9 +618,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum number of connections per hosts an {@link AsyncHttpClient} can handle.
+         * Set the maximum number of connections per hosts an {@link AsyncHttpClientImpl} can handle.
          *
-         * @param defaultMaxConnectionPerHost the maximum number of connections per host an {@link AsyncHttpClient} can handle.
+         * @param defaultMaxConnectionPerHost the maximum number of connections per host an {@link AsyncHttpClientImpl} can handle.
          * @return a {@link Builder}
          */
         public Builder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
@@ -629,9 +629,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * Set the maximum time in millisecond an {@link AsyncHttpClientImpl} can wait when connecting to a remote host
          *
-         * @param defaultConnectionTimeOutInMs the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+         * @param defaultConnectionTimeOutInMs the maximum time in millisecond an {@link AsyncHttpClientImpl} can wait when connecting to a remote host
          * @return a {@link Builder}
          */
         public Builder setConnectionTimeoutInMs(int defaultConnectionTimeOutInMs) {
@@ -652,10 +652,10 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+         * Set the maximum time in millisecond an {@link AsyncHttpClientImpl} can stay idle.
          *
          * @param defaultIdleConnectionTimeoutInMs
-         *         the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+         *         the maximum time in millisecond an {@link AsyncHttpClientImpl} can stay idle.
          * @return a {@link Builder}
          */
         public Builder setIdleConnectionTimeoutInMs(int defaultIdleConnectionTimeoutInMs) {
@@ -664,11 +664,11 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
+         * Set the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection
          * idle in pool.
          *
          * @param defaultIdleConnectionInPoolTimeoutInMs
-         *         the maximum time in millisecond an {@link AsyncHttpClient} will keep connection
+         *         the maximum time in millisecond an {@link AsyncHttpClientImpl} will keep connection
          *         idle in pool.
          * @return a {@link Builder}
          */
@@ -678,9 +678,9 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+         * Set the maximum time in millisecond an {@link AsyncHttpClientImpl} wait for a response
          *
-         * @param defaultRequestTimeoutInMs the maximum time in millisecond an {@link AsyncHttpClient} wait for a response
+         * @param defaultRequestTimeoutInMs the maximum time in millisecond an {@link AsyncHttpClientImpl} wait for a response
          * @return a {@link Builder}
          */
         public Builder setRequestTimeoutInMs(int defaultRequestTimeoutInMs) {
@@ -755,10 +755,10 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
+         * Set the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClientImpl} use for handling
          * asynchronous response.
          *
-         * @param applicationThreadPool the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling
+         * @param applicationThreadPool the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClientImpl} use for handling
          *                              asynchronous response.
          * @return a {@link Builder}
          */
@@ -768,7 +768,7 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set an instance of {@link ProxyServerSelector} used by an {@link AsyncHttpClient}
+         * Set an instance of {@link ProxyServerSelector} used by an {@link AsyncHttpClientImpl}
          *
          * @param proxyServerSelector instance of {@link ProxyServerSelector}
          * @return a {@link Builder}
@@ -779,7 +779,7 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set an instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
+         * Set an instance of {@link ProxyServer} used by an {@link AsyncHttpClientImpl}
          *
          * @param proxyServer instance of {@link ProxyServer}
          * @return a {@link Builder}
@@ -836,7 +836,7 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Add an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClient#executeRequest(Request)}
+         * Add an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClientImpl#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
          * @return this
@@ -847,7 +847,7 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Remove an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClient#executeRequest(Request)}
+         * Remove an {@link org.asynchttpclient.filter.RequestFilter} that will be invoked before {@link AsyncHttpClientImpl#executeRequest(Request)}
          *
          * @param requestFilter {@link org.asynchttpclient.filter.RequestFilter}
          * @return this

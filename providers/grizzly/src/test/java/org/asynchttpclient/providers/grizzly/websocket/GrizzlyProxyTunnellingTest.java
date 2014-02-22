@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.providers.grizzly.websocket;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.providers.grizzly.GrizzlyProviderUtil;
 import org.asynchttpclient.websocket.ProxyTunnellingTest;
 import org.testng.annotations.Test;
@@ -22,7 +22,7 @@ import org.testng.annotations.Test;
 public class GrizzlyProxyTunnellingTest extends ProxyTunnellingTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 

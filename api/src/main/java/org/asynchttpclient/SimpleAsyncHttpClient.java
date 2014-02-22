@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link AsyncHttpClientConfig},
+ * Simple implementation of {@link AsyncHttpClientImpl} and it's related builders ({@link AsyncHttpClientConfig},
  * {@link Realm}, {@link ProxyServer} and {@link AsyncHandler}. You can
  * build powerful application by just using this class.
  * <p/>
@@ -66,7 +66,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SimpleAsyncHttpClient.class);
     private final AsyncHttpClientConfig config;
     private final RequestBuilder requestBuilder;
-    private AsyncHttpClient asyncHttpClient;
+    private AsyncHttpClientImpl asyncHttpClient;
     private final ThrowableHandler defaultThrowableHandler;
     private final boolean resumeEnabled;
     private final ErrorDocumentBehaviour errorDocumentBehaviour;
@@ -74,7 +74,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     private final boolean derived;
     private final String providerClass;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener, String providerClass) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClientImpl ahc, SimpleAHCTransferListener listener, String providerClass) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -290,13 +290,13 @@ public class SimpleAsyncHttpClient implements Closeable {
         return asyncHttpClient().executeRequest(request, handler);
     }
 
-    private AsyncHttpClient asyncHttpClient() {
+    private AsyncHttpClientImpl asyncHttpClient() {
         synchronized (config) {
             if (asyncHttpClient == null) {
                 if (providerClass == null)
-                    asyncHttpClient = new AsyncHttpClient(config);
+                    asyncHttpClient = new AsyncHttpClientImpl(config);
                 else
-                    asyncHttpClient = new AsyncHttpClient(providerClass, config);
+                    asyncHttpClient = new AsyncHttpClientImpl(providerClass, config);
             }
         }
         return asyncHttpClient;
@@ -310,7 +310,7 @@ public class SimpleAsyncHttpClient implements Closeable {
      * SimpleAsyncHttpClient.
      *
      * @see #derive()
-     * @see AsyncHttpClient#close()
+     * @see AsyncHttpClientImpl#close()
      */
     public void close() {
         if (!derived && asyncHttpClient != null) {
@@ -320,7 +320,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
     /**
      * Returns a Builder for a derived SimpleAsyncHttpClient that uses the same
-     * instance of {@link AsyncHttpClient} to execute requests.
+     * instance of {@link AsyncHttpClientImpl} to execute requests.
      * <p/>
      * <p/>
      * <p/>
@@ -330,7 +330,7 @@ public class SimpleAsyncHttpClient implements Closeable {
      * instances become invalid.
      *
      * @return a Builder for a derived SimpleAsyncHttpClient that uses the same
-     *         instance of {@link AsyncHttpClient} to execute requests, never
+     *         instance of {@link AsyncHttpClientImpl} to execute requests, never
      *         {@code null}.
      */
     public DerivedBuilder derive() {
@@ -407,7 +407,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private ThrowableHandler defaultThrowableHandler = null;
         private boolean enableResumableDownload = false;
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
-        private AsyncHttpClient ahc = null;
+        private AsyncHttpClientImpl ahc = null;
         private SimpleAHCTransferListener listener = null;
         private String providerClass = null;
 

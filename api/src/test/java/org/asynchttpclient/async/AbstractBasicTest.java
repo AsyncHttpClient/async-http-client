@@ -20,8 +20,8 @@ import static org.testng.Assert.fail;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -120,5 +120,5 @@ public abstract class AbstractBasicTest {
         }
     }
 
-    public abstract AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config);
+    public abstract AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config);
 }

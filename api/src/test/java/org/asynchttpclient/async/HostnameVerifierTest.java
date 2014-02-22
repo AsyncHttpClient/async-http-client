@@ -28,7 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -127,7 +127,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void positiveHostnameVerifierTest() throws Exception {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
+        final AsyncHttpClientImpl client = getAsyncHttpClient(new Builder().setHostnameVerifier(new PositiveHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             Future<Response> f = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute();
             Response resp = f.get();
@@ -142,7 +142,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void negativeHostnameVerifierTest() throws Exception {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
+        final AsyncHttpClientImpl client = getAsyncHttpClient(new Builder().setHostnameVerifier(new NegativeHostVerifier()).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             try {
                 client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
@@ -158,7 +158,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void remoteIDHostnameVerifierTest() throws Exception {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
+        final AsyncHttpClientImpl client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("bouette")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             fail("ConnectException expected");
@@ -172,7 +172,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void remoteNegHostnameVerifierTest() throws Exception {
         // request is made to 127.0.0.1, but cert presented for localhost - this should fail
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
+        final AsyncHttpClientImpl client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("localhost")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             fail("ConnectException expected");
@@ -186,7 +186,7 @@ public abstract class HostnameVerifierTest extends AbstractBasicHttpsTest {
     @Test(groups = { "standalone", "default_provider" })
     public void remotePosHostnameVerifierTest() throws Exception {
 
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("127.0.0.1")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
+        final AsyncHttpClientImpl client = getAsyncHttpClient(new Builder().setHostnameVerifier(new CheckHost("127.0.0.1")).setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             Response resp = client.preparePost(getTargetUrl()).setBody(SIMPLE_TEXT_FILE).setHeader("Content-Type", "text/html").execute().get();
             assertNotNull(resp);

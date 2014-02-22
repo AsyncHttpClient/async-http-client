@@ -25,8 +25,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.AsyncHttpClientImpl;
+import org.asynchttpclient.AsyncHttpClientImpl.BoundRequestBuilder;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
@@ -77,7 +77,7 @@ public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setBodyEncoding(StandardCharsets.UTF_8.name());
             Future<Response> f = r.execute();

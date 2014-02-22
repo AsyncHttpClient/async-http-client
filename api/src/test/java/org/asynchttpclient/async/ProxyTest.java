@@ -36,7 +36,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Response;
@@ -70,7 +70,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testRequestLevelProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1)).execute();
@@ -86,7 +86,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testGlobalProxy() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1)).build();
-        AsyncHttpClient client = getAsyncHttpClient(cfg);
+        AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
         try {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).execute();
@@ -102,7 +102,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testBothProxies() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
-        AsyncHttpClient client = getAsyncHttpClient(cfg);
+        AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
         try {
             String target = "http://127.0.0.1:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1)).execute();
@@ -118,7 +118,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testNonProxyHosts() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setProxyServer(new ProxyServer("127.0.0.1", port1 - 1)).build();
-        AsyncHttpClient client = getAsyncHttpClient(cfg);
+        AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
         try {
 
             String target = "http://127.0.0.1:1234/";
@@ -134,7 +134,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testNonProxyHostIssue202() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             String target = "http://127.0.0.1:" + port1 + "/";
             Future<Response> f = client.prepareGet(target).setProxyServer(new ProxyServer("127.0.0.1", port1 - 1).addNonProxyHost("127.0.0.1")).execute();
@@ -171,7 +171,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.nonProxyHosts", "localhost");
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
+            AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();
@@ -210,7 +210,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.proxyPort", String.valueOf(port1));
             System.setProperty("http.nonProxyHosts", "localhost");
 
-            AsyncHttpClient client = getAsyncHttpClient(null);
+            AsyncHttpClientImpl client = getAsyncHttpClient(null);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();
@@ -243,7 +243,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.nonProxyHosts", "localhost");
             System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.useProxyProperties", "true");
 
-            AsyncHttpClient client = getAsyncHttpClient(null);
+            AsyncHttpClientImpl client = getAsyncHttpClient(null);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();
@@ -283,7 +283,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             System.setProperty("http.nonProxyHosts", "127.*");
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxyProperties(true).build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
+            AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();
@@ -319,7 +319,7 @@ public abstract class ProxyTest extends AbstractBasicTest {
             });
 
             AsyncHttpClientConfig cfg = new AsyncHttpClientConfig.Builder().setUseProxySelector(true).build();
-            AsyncHttpClient client = getAsyncHttpClient(cfg);
+            AsyncHttpClientImpl client = getAsyncHttpClient(cfg);
             try {
                 String target = "http://127.0.0.1:1234/";
                 Future<Response> f = client.prepareGet(target).execute();

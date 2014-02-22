@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -46,7 +46,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void asyncStreamGETTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -88,7 +88,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
 
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
@@ -137,7 +137,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         m.put("param_1", Arrays.asList("value_1"));
 
         final AtomicBoolean a = new AtomicBoolean(true);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
 
@@ -177,7 +177,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamFutureTest() throws Exception {
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             Future<String> f = c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
@@ -225,7 +225,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     public void asyncStreamThrowableRefusedTest() throws Exception {
 
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.prepareGet(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
@@ -262,7 +262,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
         Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
         m.put("param_1", Arrays.asList("value_1"));
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.preparePost(getTargetUrl()).setParameters(m).execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
@@ -339,7 +339,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void asyncStream301WithBody() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
@@ -379,7 +379,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void asyncStream301RedirectWithBody() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+        AsyncHttpClientImpl c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
         try {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
@@ -426,7 +426,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         final int OTHER = 2;
         final boolean[] whatCalled = new boolean[] { false, false, false };
         final CountDownLatch latch = new CountDownLatch(1);
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             Future<Integer> statusCode = client.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
                 private int status = -1;
@@ -491,7 +491,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void asyncOptionsTest() throws Exception {
         final CountDownLatch l = new CountDownLatch(1);
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final String[] expected = { "GET", "HEAD", "OPTIONS", "POST", "TRACE" };
             c.prepareOptions("http://www.apache.org/").execute(new AsyncHandlerAdapter() {
@@ -528,7 +528,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void closeConnectionTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             Response r = c.prepareGet(getTargetUrl()).execute(new AsyncHandler<Response>() {
 

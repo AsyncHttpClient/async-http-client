@@ -21,7 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.RequestBuilder;
@@ -78,7 +78,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
 
         AsyncHttpClientConfig config = b.build();
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        AsyncHttpClientImpl asyncHttpClient = getAsyncHttpClient(config);
         try {
             RequestBuilder rb = new RequestBuilder("GET").setProxyServer(ps).setUrl(getTargetUrl2());
             Future<Response> responseFuture = asyncHttpClient.executeRequest(rb.build(), new AsyncCompletionHandlerBase() {
@@ -107,7 +107,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setFollowRedirects(true)//
                 .setProxyServer(new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1))//
                 .build();
-        AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
+        AsyncHttpClientImpl asyncHttpClient = getAsyncHttpClient(config);
         try {
             Future<Response> responseFuture = asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(getTargetUrl2()).build(), new AsyncCompletionHandlerBase() {
 
