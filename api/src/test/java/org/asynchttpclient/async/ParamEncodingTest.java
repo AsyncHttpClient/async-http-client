@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -58,7 +58,7 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
     public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addParameter("test", value).execute();
             Response resp = f.get(10, TimeUnit.SECONDS);

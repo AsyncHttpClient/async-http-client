@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.SimpleAsyncHttpClientTest;
 
@@ -24,7 +24,7 @@ public class NettySimpleAsyncHttpClientTest extends SimpleAsyncHttpClientTest {
      * @return
      */
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return null;
     }
 

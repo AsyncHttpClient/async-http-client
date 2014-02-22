@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.eclipse.jetty.server.Request;
@@ -71,7 +71,7 @@ public abstract class RetryRequestTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxRetry() throws Exception {
-        AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
+        AsyncHttpClientImpl ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setMaxRequestRetry(0).build());
         try {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
             fail();

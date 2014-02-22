@@ -17,7 +17,7 @@ import static org.testng.Assert.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
@@ -36,7 +36,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onOpen() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -69,7 +69,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onEmptyListenerTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             WebSocket websocket = null;
             try {
@@ -85,7 +85,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onFailureTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             Throwable t = null;
             try {
@@ -101,7 +101,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onTimeoutCloseTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -134,7 +134,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void onClose() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -169,7 +169,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoText() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -213,7 +213,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void echoDoubleListenerText() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -283,7 +283,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<String>("");
@@ -325,7 +325,7 @@ public abstract class TextMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");

@@ -17,7 +17,7 @@ import static org.testng.Assert.assertEquals;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.Test;
@@ -36,7 +36,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoByte() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(new byte[0]);
@@ -80,7 +80,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
@@ -131,7 +131,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
 
     @Test
     public void echoOnOpenMessagesTest() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);
@@ -180,7 +180,7 @@ public abstract class ByteMessageTest extends AbstractBasicTest {
     }
 
     public void echoFragments() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(null);
+        AsyncHttpClientImpl c = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<byte[]> text = new AtomicReference<byte[]>(null);

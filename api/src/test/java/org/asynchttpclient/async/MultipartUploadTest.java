@@ -42,7 +42,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -163,7 +163,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         bc.setFollowRedirects(true);
 
-        AsyncHttpClient c = new AsyncHttpClient(bc.build());
+        AsyncHttpClientImpl c = new AsyncHttpClientImpl(bc.build());
 
         try {
 

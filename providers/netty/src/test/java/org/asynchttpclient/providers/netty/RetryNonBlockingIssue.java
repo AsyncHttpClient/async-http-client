@@ -28,8 +28,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -44,7 +45,7 @@ import org.testng.annotations.Test;
 public class RetryNonBlockingIssue extends AbstractBasicTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 
@@ -92,7 +93,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setRequestTimeoutInMs(30000)//
                 .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
+        AsyncHttpClientImpl client = getAsyncHttpClient(config);
         try {
             List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();
             for (int i = 0; i < 32; i++) {
@@ -129,7 +130,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
                 .setAsyncConnectMode(true) //
                 .build();
 
-        AsyncHttpClient client = getAsyncHttpClient(config);
+        AsyncHttpClientImpl client = getAsyncHttpClient(config);
 
         try {
             List<ListenableFuture<Response>> res = new ArrayList<ListenableFuture<Response>>();

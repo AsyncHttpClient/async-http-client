@@ -13,7 +13,7 @@
 
 package org.asynchttpclient.providers.netty.websocket;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.NettyProviderUtil;
 import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
@@ -21,7 +21,7 @@ import org.asynchttpclient.websocket.CloseCodeReasonMessageTest;
 public class NettyCloseCodeReasonMsgTest extends CloseCodeReasonMessageTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 }

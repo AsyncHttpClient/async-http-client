@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
@@ -30,7 +30,7 @@ public abstract class ListenableFutureTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClientImpl ahc = getAsyncHttpClient(null);
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();

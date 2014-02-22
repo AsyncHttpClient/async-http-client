@@ -12,14 +12,16 @@
  */
 package org.asynchttpclient.providers.netty;
 
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.async.EmptyBodyTest;
+import org.testng.annotations.Test;
 
+@Test
 public class NettyEmptyBodyTest extends EmptyBodyTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 }

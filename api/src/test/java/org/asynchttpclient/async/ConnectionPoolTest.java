@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnections() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        AsyncHttpClientImpl client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
         try {
             String url = getTargetUrl();
             int i;
@@ -61,7 +61,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testMaxTotalConnectionsException() {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
+        AsyncHttpClientImpl client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setMaximumConnectionsTotal(1).build());
         try {
             String url = getTargetUrl();
             int i;
@@ -90,7 +90,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider", "async" }, enabled = true, invocationCount = 10, alwaysRun = true)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(2);
@@ -130,7 +130,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClientImpl c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
 
@@ -158,7 +158,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     @Test(groups = { "standalone", "default_provider" })
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClientImpl c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
 
@@ -193,7 +193,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
     public void win7DisconnectTest() throws Exception {
         final AtomicInteger count = new AtomicInteger(0);
 
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
@@ -224,7 +224,7 @@ public abstract class ConnectionPoolTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void asyncHandlerOnThrowableTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             final AtomicInteger count = new AtomicInteger();
             final String THIS_IS_NOT_FOR_YOU = "This is not for you";

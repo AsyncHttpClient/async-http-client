@@ -19,7 +19,7 @@ import io.netty.channel.Channel;
 
 import java.util.concurrent.TimeUnit;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.ConnectionPoolTest;
 import org.asynchttpclient.providers.netty.channel.ChannelPool;
@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 
@@ -59,7 +59,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
+        AsyncHttpClientImpl client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
         try {
             Exception exception = null;
             try {
@@ -102,7 +102,7 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
+        AsyncHttpClientImpl client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig).build());
         try {
             Exception exception = null;
             try {

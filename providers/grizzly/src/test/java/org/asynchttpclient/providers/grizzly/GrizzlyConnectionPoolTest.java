@@ -13,7 +13,7 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
@@ -26,7 +26,7 @@ import static org.testng.Assert.*;
 public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
 
@@ -39,7 +39,7 @@ public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
     @Test
     public void multipleMaxConnectionOpenTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setAllowPoolingConnection(true).setConnectionTimeoutInMs(5000).setMaximumConnectionsTotal(1).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClientImpl c = getAsyncHttpClient(cg);
         try {
             String body = "hello there";
 

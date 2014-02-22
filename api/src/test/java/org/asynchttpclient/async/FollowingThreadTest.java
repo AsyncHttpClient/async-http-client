@@ -16,7 +16,7 @@
 package org.asynchttpclient.async;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -50,7 +50,7 @@ public abstract class FollowingThreadTest extends AbstractBasicTest {
 
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
-                        final AsyncHttpClient ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+                        final AsyncHttpClientImpl ahc = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
                         try {
                             ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
 

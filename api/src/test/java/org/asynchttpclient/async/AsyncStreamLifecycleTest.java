@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -101,7 +101,7 @@ public abstract class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testStream() throws IOException {
-        AsyncHttpClient ahc = getAsyncHttpClient(null);
+        AsyncHttpClientImpl ahc = getAsyncHttpClient(null);
         try {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<String>();

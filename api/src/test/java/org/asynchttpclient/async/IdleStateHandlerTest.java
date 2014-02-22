@@ -25,7 +25,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -61,7 +61,7 @@ public abstract class IdleStateHandlerTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void idleStateTest() throws Exception {
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setIdleConnectionInPoolTimeoutInMs(10 * 1000).build();
-        AsyncHttpClient c = getAsyncHttpClient(cg);
+        AsyncHttpClientImpl c = getAsyncHttpClient(cg);
 
         try {
             c.prepareGet(getTargetUrl()).execute().get();

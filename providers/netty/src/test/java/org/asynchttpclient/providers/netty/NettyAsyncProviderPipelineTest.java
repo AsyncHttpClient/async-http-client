@@ -22,7 +22,7 @@ import io.netty.handler.codec.http.HttpMessage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
 public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
 
     @Override
-    public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
+    public AsyncHttpClientImpl getAsyncHttpClient(AsyncHttpClientConfig config) {
         return NettyProviderUtil.nettyProvider(config);
     }
 
@@ -48,7 +48,7 @@ public class NettyAsyncProviderPipelineTest extends AbstractBasicTest {
                 ch.pipeline().addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
             }
         });
-        AsyncHttpClient p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAsyncHttpClientProviderConfig(nettyConfig).build());
+        AsyncHttpClientImpl p = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setAsyncHttpClientProviderConfig(nettyConfig).build());
 
         try {
             final CountDownLatch l = new CountDownLatch(1);

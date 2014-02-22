@@ -21,23 +21,25 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.Response;
 import org.jdeferred.DoneCallback;
 import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DefaultDeferredManager;
 import org.jdeferred.multiple.MultipleResults;
+import org.testng.annotations.Test;
 
 public class AsyncHttpTest {
     protected DefaultDeferredManager deferredManager = new DefaultDeferredManager();
 
+    @Test
     public void testPromiseAdapter() throws IOException {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger successCount = new AtomicInteger();
         final AtomicInteger progressCount = new AtomicInteger();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClientImpl client = new AsyncHttpClientImpl();
 
         try {
             Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));
@@ -72,7 +74,7 @@ public class AsyncHttpTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger successCount = new AtomicInteger();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClientImpl client = new AsyncHttpClientImpl();
 
         try {
             Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));

@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -80,7 +80,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .setFollowRedirects(true)//
                 .build();
 
-        AsyncHttpClient c = getAsyncHttpClient(config);
+        AsyncHttpClientImpl c = getAsyncHttpClient(config);
         try {
             Request r = new RequestBuilder("GET").setUrl(servletEndpointRedirectUrl).build();
 

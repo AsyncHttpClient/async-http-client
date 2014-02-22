@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient.async;
 
-import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientImpl;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
@@ -64,7 +64,7 @@ public abstract class ErrorResponseTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void testQueryParameters() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(null);
+        AsyncHttpClientImpl client = getAsyncHttpClient(null);
         try {
             Future<Response> f = client.prepareGet("http://127.0.0.1:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
