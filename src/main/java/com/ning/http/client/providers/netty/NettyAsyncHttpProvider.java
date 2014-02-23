@@ -1136,6 +1136,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (!c.future().isCancelled() || !c.future().isDone()) {
             openChannels.add(channelFuture.getChannel());
             c.future().attachChannel(channelFuture.getChannel(), false);
+        } else {
+            if (acquiredConnection) {
+                freeConnections.release();
+            }
         }
         return c.future();
     }
