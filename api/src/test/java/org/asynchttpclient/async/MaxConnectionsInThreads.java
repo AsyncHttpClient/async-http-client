@@ -66,10 +66,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                             // assert that 2nd request fails, because maxTotalConnections=1
                             // logger.debug(i);
                             caughtError[0] = true;
-                            System.err.println("============");
-                            e.printStackTrace();
-                            System.err.println("============");
-
+                            logger.error("Exception ", e);
                         }
                     }
                 };
@@ -81,8 +78,7 @@ abstract public class MaxConnectionsInThreads extends AbstractBasicTest {
                 try {
                     t.join();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    logger.error("Exception ", e);
                 }
             }
 
