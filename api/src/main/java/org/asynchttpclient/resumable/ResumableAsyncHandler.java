@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private final AtomicLong byteTransferred;
-    private Integer contentLength;
+    private Long contentLength;
     private String url;
     private final ResumableProcessor resumableProcessor;
     private final AsyncHandler<Response> decoratedAsyncHandler;
@@ -180,8 +180,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         responseBuilder.accumulate(headers);
         String contentLengthHeader = headers.getHeaders().getFirstValue("Content-Length");
         if (contentLengthHeader != null) {
-            contentLength = Integer.valueOf(contentLengthHeader);
-            if (contentLength == null || contentLength == -1) {
+            contentLength = Long.valueOf(contentLengthHeader);
+            if (contentLength == null || contentLength == -1L) {
                 return AsyncHandler.STATE.ABORT;
             }
         }
