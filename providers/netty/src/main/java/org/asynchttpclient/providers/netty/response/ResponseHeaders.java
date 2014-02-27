@@ -37,7 +37,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
         this(uri, responseHeaders, null);
     }
 
-    public ResponseHeaders(URI uri,HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
+    public ResponseHeaders(URI uri, HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
         super(traillingHeaders != null);
         this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;
@@ -46,12 +46,12 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     private FluentCaseInsensitiveStringsMap computerHeaders() {
         FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-        for (Map.Entry<String, String> header: responseHeaders) {
+        for (Map.Entry<String, String> header : responseHeaders) {
             h.add(header.getKey(), header.getValue());
         }
 
         if (trailingHeaders != null) {
-            for (Map.Entry<String, String> header:  trailingHeaders) {
+            for (Map.Entry<String, String> header : trailingHeaders) {
                 h.add(header.getKey(), header.getValue());
             }
         }
@@ -61,7 +61,7 @@ public class ResponseHeaders extends HttpResponseHeaders {
 
     /**
      * Return the HTTP header
-     *
+     * 
      * @return an {@link org.asynchttpclient.FluentCaseInsensitiveStringsMap}
      */
     @Override

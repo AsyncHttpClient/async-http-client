@@ -51,11 +51,20 @@ public class DefaultChannelPool implements ChannelPool {
     private final long maxIdleTime;
 
     public DefaultChannelPool(AsyncHttpClientConfig config, HashedWheelTimer hashedWheelTimer) {
-        this(config.getMaxTotalConnections(), config.getMaxConnectionPerHost(), config.getIdleConnectionInPoolTimeoutInMs(), config.isSslConnectionPoolEnabled(), config
-                .getMaxConnectionLifeTimeInMs(), hashedWheelTimer);
+        this(config.getMaxTotalConnections(),//
+                config.getMaxConnectionPerHost(),//
+                config.getIdleConnectionInPoolTimeoutInMs(),//
+                config.isSslConnectionPoolEnabled(),//
+                config.getMaxConnectionLifeTimeInMs(),//
+                hashedWheelTimer);
     }
 
-    public DefaultChannelPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, boolean sslConnectionPoolEnabled, int maxConnectionLifeTimeInMs,
+    public DefaultChannelPool(//
+            int maxTotalConnections,//
+            int maxConnectionPerHost,//
+            long maxIdleTime,//
+            boolean sslConnectionPoolEnabled,//
+            int maxConnectionLifeTimeInMs,//
             HashedWheelTimer hashedWheelTimer) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -157,8 +166,8 @@ public class DefaultChannelPool implements ChannelPool {
                     for (ConcurrentLinkedQueue<IdleChannel> hostChannels : connectionsPool.values()) {
                         openChannels += hostChannels.size();
                     }
-                    log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels, channelsInTimeout.size(),
-                            endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
+                    log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels,
+                            channelsInTimeout.size(), endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
                 }
             } catch (Throwable t) {
                 log.error("uncaught exception!", t);
@@ -275,11 +284,7 @@ public class DefaultChannelPool implements ChannelPool {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (!closed.get() && maxTotalConnections != -1 && channel2IdleChannel.size() >= maxTotalConnections) {
-            return false;
-        } else {
-            return true;
-        }
+        return !closed.get() && (maxTotalConnections == -1 || channel2IdleChannel.size() < maxTotalConnections);
     }
 
     /**

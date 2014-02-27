@@ -63,7 +63,8 @@ public abstract class AbstractFilePart extends PartBase {
      * @param contentId
      */
     public AbstractFilePart(String name, String contentType, String charset, String contentId) {
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
+        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? DEFAULT_CHARSET : charset,
+                DEFAULT_TRANSFER_ENCODING, contentId);
     }
 
     public abstract String getFileName();

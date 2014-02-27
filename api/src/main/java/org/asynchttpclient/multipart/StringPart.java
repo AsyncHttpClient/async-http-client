@@ -92,7 +92,7 @@ public class StringPart extends PartBase {
     protected long getDataLength() {
         return content.length;
     }
-    
+
     public byte[] getBytes(byte[] boundary) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         write(outputStream, boundary);

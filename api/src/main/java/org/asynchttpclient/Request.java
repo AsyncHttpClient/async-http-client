@@ -54,7 +54,9 @@ public interface Request {
     public String getUrl();
 
     public URI getOriginalURI();
+
     public URI getURI();
+
     public URI getRawURI();
 
     /**

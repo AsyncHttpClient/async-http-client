@@ -53,7 +53,10 @@ final class WebSocketProtocol extends Protocol {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketProtocol.class);
 
-    public WebSocketProtocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
+    public WebSocketProtocol(Channels channels,//
+            AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            NettyRequestSender requestSender) {
         super(channels, config, nettyConfig, requestSender);
     }
 
@@ -99,14 +102,14 @@ final class WebSocketProtocol extends Protocol {
             status = new ResponseStatus(future.getURI(), response, config);
             final boolean statusReceived = h.onStatusReceived(status) == STATE.UPGRADE;
 
-             if (!statusReceived) {
-                 try {
-                     h.onCompleted();
-                 } finally {
-                     future.done();
-                 }
-                 return;
-             }
+            if (!statusReceived) {
+                try {
+                    h.onCompleted();
+                } finally {
+                    future.done();
+                }
+                return;
+            }
 
             final boolean headerOK = h.onHeadersReceived(responseHeaders) == STATE.CONTINUE;
             if (!headerOK || !validStatus || !validUpgrade || !validConnection) {
@@ -115,7 +118,8 @@ final class WebSocketProtocol extends Protocol {
             }
 
             String accept = response.headers().get(HttpHeaders.Names.SEC_WEBSOCKET_ACCEPT);
-            String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
+            String key = WebSocketUtil.getAcceptKey(future.getNettyRequest().getHttpRequest().headers()
+                    .get(HttpHeaders.Names.SEC_WEBSOCKET_KEY));
             if (accept == null || !accept.equals(key)) {
                 channels.abort(future, new IOException(String.format("Invalid challenge. Actual: %s. Expected: %s", accept, key)));
             }

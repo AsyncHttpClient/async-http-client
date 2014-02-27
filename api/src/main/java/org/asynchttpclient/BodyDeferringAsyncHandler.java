@@ -72,8 +72,7 @@ import java.util.concurrent.Semaphore;
  * </pre>
  */
 public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
-    private final Response.ResponseBuilder
-            responseBuilder = new Response.ResponseBuilder();
+    private final Response.ResponseBuilder responseBuilder = new Response.ResponseBuilder();
 
     private final CountDownLatch headersArrived = new CountDownLatch(1);
 
@@ -115,21 +114,18 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
     }
 
-    public STATE onStatusReceived(HttpResponseStatus responseStatus)
-            throws Exception {
+    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         responseBuilder.reset();
         responseBuilder.accumulate(responseStatus);
         return STATE.CONTINUE;
     }
 
-    public STATE onHeadersReceived(HttpResponseHeaders headers)
-            throws Exception {
+    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
         responseBuilder.accumulate(headers);
         return STATE.CONTINUE;
     }
 
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart)
-            throws Exception {
+    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         // body arrived, flush headers
         if (!responseSet) {
             response = responseBuilder.build();
@@ -230,8 +226,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
         private final BodyDeferringAsyncHandler bdah;
 
-        public BodyDeferringInputStream(final Future<Response> future,
-                                        final BodyDeferringAsyncHandler bdah, final InputStream in) {
+        public BodyDeferringInputStream(final Future<Response> future, final BodyDeferringAsyncHandler bdah, final InputStream in) {
             super(in);
             this.future = future;
             this.bdah = bdah;
@@ -263,8 +258,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @return a {@link Response}
          * @throws InterruptedException
          */
-        public Response getAsapResponse() throws InterruptedException,
-                IOException {
+        public Response getAsapResponse() throws InterruptedException, IOException {
             return bdah.getResponse();
         }
 
@@ -276,8 +270,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @throws InterruptedException
          * @throws ExecutionException
          */
-        public Response getLastResponse() throws InterruptedException,
-                ExecutionException {
+        public Response getLastResponse() throws InterruptedException, ExecutionException {
             return future.get();
         }
     }

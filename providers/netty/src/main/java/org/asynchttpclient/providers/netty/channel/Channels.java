@@ -18,6 +18,8 @@ package org.asynchttpclient.providers.netty.channel;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
+import static org.asynchttpclient.providers.netty.handler.Processor.newHttpProcessor;
+import static org.asynchttpclient.providers.netty.handler.Processor.newWsProcessor;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -203,8 +205,8 @@ public class Channels {
 
     public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
 
-        final Processor httpProcessor = Processor.newHttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
-        wsProcessor = Processor.newWsProcessor(config, nettyProviderConfig, requestSender, this, closed);
+        final Processor httpProcessor = newHttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
+        wsProcessor = newWsProcessor(config, nettyProviderConfig, requestSender, this, closed);
 
         plainBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -279,7 +281,8 @@ public class Channels {
     }
 
     public Bootstrap getBootstrap(String url, boolean useSSl, boolean useProxy) {
-        return (url.startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap : plainBootstrap);
+        return (url.startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap)
+                : (useSSl ? secureBootstrap : plainBootstrap);
     }
 
     public void close() {
@@ -301,9 +304,8 @@ public class Channels {
     }
 
     /**
-     * Always make sure the channel who got cached support the proper protocol.
-     * It could only occurs when a HttpMethod.CONNECT is used against a proxy
-     * that requires upgrading from http to https.
+     * Always make sure the channel who got cached support the proper protocol. It could only occurs when a HttpMethod.
+     * CONNECT is used against a proxy that requires upgrading from http to https.
      */
     public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
 
@@ -318,7 +320,11 @@ public class Channels {
 
     protected HttpClientCodec newHttpClientCodec() {
         if (nettyProviderConfig != null) {
-            return new HttpClientCodec(nettyProviderConfig.getMaxInitialLineLength(), nettyProviderConfig.getMaxHeaderSize(), nettyProviderConfig.getMaxChunkSize(), false);
+            return new HttpClientCodec(//
+                    nettyProviderConfig.getMaxInitialLineLength(),//
+                    nettyProviderConfig.getMaxHeaderSize(),//
+                    nettyProviderConfig.getMaxChunkSize(),//
+                    false);
 
         } else {
             return new HttpClientCodec();

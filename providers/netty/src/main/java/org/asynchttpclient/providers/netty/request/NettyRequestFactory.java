@@ -243,7 +243,8 @@ public final class NettyRequestFactory {
 
             } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
                 FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
-                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), nettyConfig);
+                nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(),
+                        fileBodyGenerator.getRegionLength(), nettyConfig);
 
             } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
                 nettyBody = new NettyInputStreamBody(InputStreamBodyGenerator.class.cast(request.getBodyGenerator()).getInputStream());
@@ -309,7 +310,8 @@ public final class NettyRequestFactory {
         if (method != HttpMethod.CONNECT && webSocket) {
             httpRequest.headers().set(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             httpRequest.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
-            httpRequest.headers().set(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
+            httpRequest.headers().set(HttpHeaders.Names.ORIGIN,
+                    "http://" + uri.getHost() + ":" + (uri.getPort() == -1 ? isSecure(uri.getScheme()) ? 443 : 80 : uri.getPort()));
             httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_KEY, WebSocketUtil.getKey());
             httpRequest.headers().set(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
 
@@ -338,7 +340,8 @@ public final class NettyRequestFactory {
 
         // Add default user agent
         if (!httpRequest.headers().contains(HttpHeaders.Names.USER_AGENT)) {
-            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : AsyncHttpProviderUtils.constructUserAgent(NettyAsyncHttpProvider.class, config);
+            String userAgent = config.getUserAgent() != null ? config.getUserAgent() : AsyncHttpProviderUtils.constructUserAgent(
+                    NettyAsyncHttpProvider.class, config);
             httpRequest.headers().set(HttpHeaders.Names.USER_AGENT, userAgent);
         }
 

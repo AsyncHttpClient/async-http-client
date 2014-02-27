@@ -408,7 +408,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                         if (useRawUrl) {
                             addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
                         } else {
-                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), StandardCharsets.UTF_8.name()), URLDecoder.decode(query.substring(pos + 1), StandardCharsets.UTF_8.name()));
+                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), StandardCharsets.UTF_8.name()),
+                                    URLDecoder.decode(query.substring(pos + 1), StandardCharsets.UTF_8.name()));
                         }
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);

@@ -49,8 +49,7 @@ import java.util.List;
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
     private final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerBase.class);
 
-    private final List<HttpResponseBodyPart> bodies =
-            Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
+    private final List<HttpResponseBodyPart> bodies = Collections.synchronizedList(new ArrayList<HttpResponseBodyPart>());
     private HttpResponseStatus status;
     private HttpResponseHeaders headers;
 
@@ -114,7 +113,6 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
      */
     abstract public T onCompleted(WebDavResponse response) throws Exception;
 
-
     private class HttpStatusWrapper extends HttpResponseStatus {
 
         private final HttpResponseStatus wrapped;
@@ -129,11 +127,11 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
             this.statusText = statusText;
             this.statusCode = statusCode;
         }
-        
+
         @Override
         public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
             final Response wrappedResponse = wrapped.prepareResponse(headers, bodyParts);
-            
+
             return new Response() {
 
                 @Override

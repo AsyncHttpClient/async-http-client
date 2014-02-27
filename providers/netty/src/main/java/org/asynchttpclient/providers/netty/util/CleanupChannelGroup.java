@@ -38,11 +38,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Extension of {@link DefaultChannelGroup} that's used mainly as a cleanup container, where {@link #close()} is only
  * supposed to be called once.
- *
+ * 
  * @author <a href="http://bruno.biasedbit.com/">Bruno de Carvalho</a>
  */
 public class CleanupChannelGroup extends DefaultChannelGroup {
-
 
     // internal vars --------------------------------------------------------------------------------------------------
 
@@ -69,10 +68,11 @@ public class CleanupChannelGroup extends DefaultChannelGroup {
                 // First time close() is called.
                 return super.close();
             } else {
-                  // FIXME DefaultChannelGroupFuture is package protected
-//                Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
-//                logger.debug("CleanupChannelGroup already closed");
-//                return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures, GlobalEventExecutor.INSTANCE);
+                // FIXME DefaultChannelGroupFuture is package protected
+                // Collection<ChannelFuture> futures = new ArrayList<ChannelFuture>();
+                // logger.debug("CleanupChannelGroup already closed");
+                // return new DefaultChannelGroupFuture(ChannelGroup.class.cast(this), futures,
+                // GlobalEventExecutor.INSTANCE);
                 throw new UnsupportedOperationException("CleanupChannelGroup already closed");
             }
         } finally {

@@ -74,7 +74,9 @@ public class SimpleAsyncHttpClient implements Closeable {
     private final boolean derived;
     private final String providerClass;
 
-    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler, ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener, String providerClass) {
+    private SimpleAsyncHttpClient(AsyncHttpClientConfig config, RequestBuilder requestBuilder, ThrowableHandler defaultThrowableHandler,
+            ErrorDocumentBehaviour errorDocumentBehaviour, boolean resumeEnabled, AsyncHttpClient ahc, SimpleAHCTransferListener listener,
+            String providerClass) {
         this.config = config;
         this.requestBuilder = requestBuilder;
         this.defaultThrowableHandler = defaultThrowableHandler;
@@ -130,7 +132,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         return execute(r, bodyConsumer, null);
     }
 
-    public Future<Response> post(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+    public Future<Response> post(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler)
+            throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("POST");
         r.setBody(bodyGenerator);
@@ -166,7 +169,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         return execute(r, bodyConsumer, null);
     }
 
-    public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler) throws IOException {
+    public Future<Response> put(BodyGenerator bodyGenerator, BodyConsumer bodyConsumer, ThrowableHandler throwableHandler)
+            throws IOException {
         RequestBuilder r = rebuildRequest(requestBuilder.build());
         r.setMethod("PUT");
         r.setBody(bodyGenerator);
@@ -277,10 +281,10 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         Request request = rb.build();
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener);
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
+                request.getUrl(), listener);
 
-        if (resumeEnabled && request.getMethod().equals("GET") &&
-                bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
+        if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
             long length = fileBodyConsumer.getTransferredBytes();
             fileBodyConsumer.resume();
@@ -686,15 +690,14 @@ public class SimpleAsyncHttpClient implements Closeable {
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
 
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener, providerClass);
+            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler,
+                    errorDocumentBehaviour, enableResumableDownload, ahc, listener, providerClass);
 
             return sc;
         }
     }
 
-    private final static class ResumableBodyConsumerAsyncHandler
-            extends ResumableAsyncHandler
-            implements ProgressAsyncHandler<Response> {
+    private final static class ResumableBodyConsumerAsyncHandler extends ResumableAsyncHandler implements ProgressAsyncHandler<Response> {
 
         private final ProgressAsyncHandler<Response> delegate;
 
@@ -729,7 +732,8 @@ public class SimpleAsyncHttpClient implements Closeable {
         private int amount = 0;
         private long total = -1;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, String url, SimpleAHCTransferListener listener) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
+                ErrorDocumentBehaviour errorDocumentBehaviour, String url, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
@@ -767,7 +771,6 @@ public class SimpleAsyncHttpClient implements Closeable {
             return STATE.CONTINUE;
         }
 
-
         /**
          * {@inheritDoc}
          */
@@ -789,20 +792,19 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onStatusReceived(HttpResponseStatus status)
-                throws Exception {
+        public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
             fireStatus(status);
 
             if (isErrorStatus(status)) {
                 switch (errorDocumentBehaviour) {
-                    case ACCUMULATE:
-                        accumulateBody = true;
-                        break;
-                    case OMIT:
-                        omitBody = true;
-                        break;
-                    default:
-                        break;
+                case ACCUMULATE:
+                    accumulateBody = true;
+                    break;
+                case OMIT:
+                    omitBody = true;
+                    break;
+                default:
+                    break;
                 }
             }
             return super.onStatusReceived(status);
@@ -813,8 +815,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         @Override
-        public STATE onHeadersReceived(HttpResponseHeaders headers)
-                throws Exception {
+        public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
             calculateTotal(headers);
 
             fireHeaders(headers);

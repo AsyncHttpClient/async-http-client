@@ -23,9 +23,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * {@link BodyGenerator} which may return just part of the payload at the time
- * handler is requesting it. If it happens - PartialBodyGenerator becomes responsible
- * for finishing payload transferring asynchronously.
+ * {@link BodyGenerator} which may return just part of the payload at the time handler is requesting it.
+ * If it happens, PartialBodyGenerator becomes responsible for finishing payload transferring asynchronously.
  */
 public class FeedableBodyGenerator implements BodyGenerator {
     private final static byte[] END_PADDING = "\r\n".getBytes(StandardCharsets.US_ASCII);
@@ -89,8 +88,8 @@ public class FeedableBodyGenerator implements BodyGenerator {
             int size = Math.min(nextPart.buffer.remaining(), capacity);
             buffer.put(Integer.toHexString(size).getBytes(StandardCharsets.US_ASCII));
             buffer.put(END_PADDING);
-            for (int i=0; i < size; i++) {
-              buffer.put(nextPart.buffer.get());
+            for (int i = 0; i < size; i++) {
+                buffer.put(nextPart.buffer.get());
             }
             buffer.put(END_PADDING);
             if (!nextPart.buffer.hasRemaining()) {

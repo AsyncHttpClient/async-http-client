@@ -78,8 +78,8 @@ public class DateUtil {
      */
     public static final String PATTERN_ASCTIME = "EEE MMM d HH:mm:ss yyyy";
 
-    private static final Collection<String> DEFAULT_PATTERNS = Arrays.asList(
-            new String[]{PATTERN_ASCTIME, PATTERN_RFC1036, PATTERN_RFC1123});
+    private static final Collection<String> DEFAULT_PATTERNS = Arrays.asList(new String[] { PATTERN_ASCTIME, PATTERN_RFC1036,
+            PATTERN_RFC1123 });
 
     private static final Date DEFAULT_TWO_DIGIT_YEAR_START;
 
@@ -112,8 +112,7 @@ public class DateUtil {
      * @return the parsed date
      * @throws DateParseException if none of the dataFormats could parse the dateValue
      */
-    public static Date parseDate(String dateValue, Collection<String> dateFormats)
-            throws DateParseException {
+    public static Date parseDate(String dateValue, Collection<String> dateFormats) throws DateParseException {
         return parseDate(dateValue, dateFormats, null);
     }
 
@@ -129,11 +128,7 @@ public class DateUtil {
      * @return the parsed date
      * @throws DateParseException if none of the dataFormats could parse the dateValue
      */
-    public static Date parseDate(
-            String dateValue,
-            Collection<String> dateFormats,
-            Date startDate
-    ) throws DateParseException {
+    public static Date parseDate(String dateValue, Collection<String> dateFormats, Date startDate) throws DateParseException {
 
         if (dateValue == null) {
             throw new IllegalArgumentException("dateValue is null");
@@ -146,10 +141,7 @@ public class DateUtil {
         }
         // trim single quotes around date if present
         // see issue #5279
-        if (dateValue.length() > 1
-                && dateValue.startsWith("'")
-                && dateValue.endsWith("'")
-                ) {
+        if (dateValue.length() > 1 && dateValue.startsWith("'") && dateValue.endsWith("'")) {
             dateValue = dateValue.substring(1, dateValue.length() - 1);
         }
 
@@ -199,8 +191,10 @@ public class DateUtil {
      * @see java.text.SimpleDateFormat
      */
     public static String formatDate(Date date, String pattern) {
-        if (date == null) throw new IllegalArgumentException("date is null");
-        if (pattern == null) throw new IllegalArgumentException("pattern is null");
+        if (date == null)
+            throw new IllegalArgumentException("date is null");
+        if (pattern == null)
+            throw new IllegalArgumentException("pattern is null");
 
         SimpleDateFormat formatter = new SimpleDateFormat(pattern, Locale.US);
         formatter.setTimeZone(GMT);

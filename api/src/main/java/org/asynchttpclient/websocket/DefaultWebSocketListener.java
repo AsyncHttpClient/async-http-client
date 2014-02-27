@@ -20,10 +20,10 @@ package org.asynchttpclient.websocket;
  * 
  * @since 1.7.0
  */
-public class DefaultWebSocketListener implements  WebSocketByteListener, WebSocketTextListener, WebSocketPingListener, WebSocketPongListener {
+public class DefaultWebSocketListener implements WebSocketByteListener, WebSocketTextListener, WebSocketPingListener, WebSocketPongListener {
 
     protected WebSocket webSocket;
-    
+
     // -------------------------------------- Methods from WebSocketByteListener
 
     /**
@@ -40,9 +40,8 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     public void onFragment(byte[] fragment, boolean last) {
     }
 
-    
     // -------------------------------------- Methods from WebSocketPingListener
-    
+
     /**
      * {@inheritDoc}
      */
@@ -50,19 +49,16 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     public void onPing(byte[] message) {
     }
 
-    
     // -------------------------------------- Methods from WebSocketPongListener
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void onPong(byte[] message) {
     }
-    
-    
-    // -------------------------------------- Methods from WebSocketTextListener
 
+    // -------------------------------------- Methods from WebSocketTextListener
 
     /**
      * {@inheritDoc}
@@ -77,8 +73,7 @@ public class DefaultWebSocketListener implements  WebSocketByteListener, WebSock
     @Override
     public void onFragment(String fragment, boolean last) {
     }
-    
-    
+
     // ------------------------------------------ Methods from WebSocketListener
 
     /**

@@ -14,7 +14,8 @@ package org.asynchttpclient.cookie;
 
 public class Cookie {
 
-    public static Cookie newValidCookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public static Cookie newValidCookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge,
+            boolean secure, boolean httpOnly) {
 
         if (name == null) {
             throw new NullPointerException("name");
@@ -41,7 +42,8 @@ public class Cookie {
             case ',':
             case ';':
             case '=':
-                throw new IllegalArgumentException("name contains one of the following prohibited characters: " + "=,; \\t\\r\\n\\v\\f: " + name);
+                throw new IllegalArgumentException("name contains one of the following prohibited characters: " + "=,; \\t\\r\\n\\v\\f: "
+                        + name);
             }
         }
 
@@ -76,7 +78,8 @@ public class Cookie {
             case '\f':
             case 0x0b:
             case ';':
-                throw new IllegalArgumentException(name + " contains one of the following prohibited characters: " + ";\\r\\n\\f\\v (" + value + ')');
+                throw new IllegalArgumentException(name + " contains one of the following prohibited characters: " + ";\\r\\n\\f\\v ("
+                        + value + ')');
             }
         }
         return value;
@@ -92,7 +95,8 @@ public class Cookie {
     private final boolean secure;
     private final boolean httpOnly;
 
-    public Cookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge, boolean secure, boolean httpOnly) {
+    public Cookie(String name, String value, String rawValue, String domain, String path, long expires, int maxAge, boolean secure,
+            boolean httpOnly) {
         this.name = name;
         this.value = value;
         this.rawValue = rawValue;
@@ -127,7 +131,7 @@ public class Cookie {
     public long getExpires() {
         return expires;
     }
-    
+
     public int getMaxAge() {
         return maxAge;
     }

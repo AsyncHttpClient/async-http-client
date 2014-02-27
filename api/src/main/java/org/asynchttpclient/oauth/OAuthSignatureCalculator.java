@@ -40,8 +40,7 @@ import java.util.Random;
  *
  * @author tatu (tatu.saloranta@iki.fi)
  */
-public class OAuthSignatureCalculator
-        implements SignatureCalculator {
+public class OAuthSignatureCalculator implements SignatureCalculator {
     public final static String HEADER_AUTHORIZATION = "Authorization";
 
     private static final String KEY_OAUTH_CONSUMER_KEY = "oauth_consumer_key";
@@ -94,8 +93,8 @@ public class OAuthSignatureCalculator
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
-    public String calculateSignature(String method, String baseURL, long oauthTimestamp, String nonce,
-                                     FluentStringsMap formParams, FluentStringsMap queryParams) {
+    public String calculateSignature(String method, String baseURL, long oauthTimestamp, String nonce, FluentStringsMap formParams,
+            FluentStringsMap queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
@@ -186,7 +185,7 @@ public class OAuthSignatureCalculator
         random.nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
-//      return String.valueOf(Math.abs(random.nextLong()));
+        //      return String.valueOf(Math.abs(random.nextLong()));
     }
 
     /**
@@ -262,13 +261,17 @@ public class OAuthSignatureCalculator
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             Parameter parameter = (Parameter) o;
 
-            if (!key.equals(parameter.key)) return false;
-            if (!value.equals(parameter.value)) return false;
+            if (!key.equals(parameter.key))
+                return false;
+            if (!value.equals(parameter.value))
+                return false;
 
             return true;
         }

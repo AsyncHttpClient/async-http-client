@@ -86,7 +86,7 @@ public class ProxyUtils {
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
     }
-    
+
     /**
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
@@ -204,18 +204,18 @@ public class ProxyUtils {
                     // Loop through them until we find one that we know how to use
                     for (Proxy proxy : proxies) {
                         switch (proxy.type()) {
-                            case HTTP:
-                                if (!(proxy.address() instanceof InetSocketAddress)) {
-                                    log.warn("Don't know how to connect to address " + proxy.address());
-                                } else {
-                                    InetSocketAddress address = (InetSocketAddress) proxy.address();
-                                    return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());
-                                }
-                            case DIRECT:
-                                return null;
-                            default:
-                                log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
-                                break;
+                        case HTTP:
+                            if (!(proxy.address() instanceof InetSocketAddress)) {
+                                log.warn("Don't know how to connect to address " + proxy.address());
+                            } else {
+                                InetSocketAddress address = (InetSocketAddress) proxy.address();
+                                return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());
+                            }
+                        case DIRECT:
+                            return null;
+                        default:
+                            log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
+                            break;
                         }
                     }
                 }

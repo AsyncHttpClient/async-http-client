@@ -51,10 +51,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private final boolean accumulateBody;
     private ResumableListener resumableListener = new NULLResumableListener();
 
-    private ResumableAsyncHandler(long byteTransferred,
-                                  ResumableProcessor resumableProcessor,
-                                  AsyncHandler<Response> decoratedAsyncHandler,
-                                  boolean accumulateBody) {
+    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor,
+            AsyncHandler<Response> decoratedAsyncHandler, boolean accumulateBody) {
 
         this.byteTransferred = new AtomicLong(byteTransferred);
 

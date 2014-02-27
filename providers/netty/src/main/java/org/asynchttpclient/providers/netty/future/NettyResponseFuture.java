@@ -117,11 +117,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         this.connectionPoolKeyStrategy = connectionPoolKeyStrategy;
         this.proxyServer = proxyServer;
 
-        if (System.getProperty(MAX_RETRY) != null) {
-            maxRetry = Integer.valueOf(System.getProperty(MAX_RETRY));
-        } else {
-            maxRetry = config.getMaxRequestRetry();
-        }
+        maxRetry = Integer.getInteger(MAX_RETRY, config.getMaxRequestRetry());
     }
 
     public URI getURI() {
@@ -477,13 +473,14 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     }
 
     /**
-     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an unexpected IOException, and in some situation we can
-     * recover from that exception.
+     * Return true if the {@link Future} can be recovered. There is some scenario where a connection can be closed by an
+     * unexpected IOException, and in some situation we can recover from that exception.
      * 
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean canBeReplayed() {
-        return !isDone() && canRetry() && !isCancelled() && !(channel != null && channel.isOpen() && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
+        return !isDone() && canRetry() && !isCancelled()
+                && !(channel != null && channel.isOpen() && !uri.getScheme().equalsIgnoreCase("https")) && !isInAuth();
     }
 
     public long getStart() {

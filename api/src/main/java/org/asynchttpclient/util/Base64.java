@@ -80,10 +80,8 @@ public final class Base64 {
 
         // first, handle complete chunks (fast loop)
         int i = 0;
-        for (int end = bytes.length - 2; i < end; ) {
-            int chunk = ((bytes[i++] & 0xFF) << 16)
-                    | ((bytes[i++] & 0xFF) << 8)
-                    | (bytes[i++] & 0xFF);
+        for (int end = bytes.length - 2; i < end;) {
+            int chunk = ((bytes[i++] & 0xFF) << 16) | ((bytes[i++] & 0xFF) << 8) | (bytes[i++] & 0xFF);
             buf.append(lookup[chunk >> 18]);
             buf.append(lookup[(chunk >> 12) & 0x3F]);
             buf.append(lookup[(chunk >> 6) & 0x3F]);

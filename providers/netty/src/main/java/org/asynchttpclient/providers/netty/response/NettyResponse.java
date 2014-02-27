@@ -42,7 +42,10 @@ public class NettyResponse extends ResponseBase {
 
     private final TimeConverter timeConverter;
 
-    public NettyResponse(HttpResponseStatus status, HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts, TimeConverter timeConverter) {
+    public NettyResponse(HttpResponseStatus status,//
+            HttpResponseHeaders headers,//
+            List<HttpResponseBodyPart> bodyParts,//
+            TimeConverter timeConverter) {
         super(status, headers, bodyParts);
         this.timeConverter = timeConverter;
     }

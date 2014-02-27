@@ -47,7 +47,8 @@ public class MultipartUtils {
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.
      */
-    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            .getBytes(StandardCharsets.US_ASCII);
 
     private MultipartUtils() {
     }
@@ -72,7 +73,8 @@ public class MultipartUtils {
             if (boundaryLocation != -1) {
                 // boundary defined in existing Content-Type
                 contentType = contentTypeHeader;
-                multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(StandardCharsets.US_ASCII);
+                multipartBoundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim())
+                        .getBytes(StandardCharsets.US_ASCII);
             } else {
                 // generate boundary and append it to existing Content-Type
                 multipartBoundary = generateMultipartBoundary();

@@ -149,9 +149,9 @@ public class AsyncHttpClient implements Closeable {
      * Providers that will be searched for, on the classpath, in order when no
      * provider is explicitly specified by the developer.
      */
-    private static final String[] DEFAULT_PROVIDERS = {
-        "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",
-        "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"
+    private static final String[] DEFAULT_PROVIDERS = {//
+    "org.asynchttpclient.providers.netty.NettyAsyncHttpProvider",/**/
+    "org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider"//
     };
 
     private final AsyncHttpProvider httpProvider;
@@ -174,7 +174,6 @@ public class AsyncHttpClient implements Closeable {
      * <ul>
      *     <li>netty</li>
      *     <li>grizzly</li>
-     *     <li>JDK</li>
      * </ul>
      *
      * If none of those providers are found, then the engine will throw an IllegalStateException.
@@ -366,7 +365,6 @@ public class AsyncHttpClient implements Closeable {
             return this;
         }
     }
-
 
     /**
      * Return the asynchronous {@link AsyncHttpProvider}
@@ -565,7 +563,8 @@ public class AsyncHttpClient implements Closeable {
      * @throws IOException
      */
     public ListenableFuture<Response> executeRequest(Request request) throws IOException {
-        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase()).request(request).build();
+        FilterContext<Response> fc = new FilterContext.FilterContextBuilder<Response>().asyncHandler(new AsyncCompletionHandlerBase())
+                .request(request).build();
         fc = preProcessRequest(fc);
         return httpProvider.execute(fc.getRequest(), fc.getAsyncHandler());
     }
@@ -577,7 +576,7 @@ public class AsyncHttpClient implements Closeable {
      * @return {@link FilterContext}
      */
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws IOException {
-        for (RequestFilter asyncFilter: config.getRequestFilters()) {
+        for (RequestFilter asyncFilter : config.getRequestFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
                 if (fc == null) {
@@ -605,36 +604,31 @@ public class AsyncHttpClient implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    private static AsyncHttpProvider loadProvider(final String className,
-                                                  final AsyncHttpClientConfig config) {
+    private static AsyncHttpProvider loadProvider(final String className, final AsyncHttpClientConfig config) {
         try {
-            Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread()
-                    .getContextClassLoader().loadClass(className);
-            return providerClass.getDeclaredConstructor(
-                    new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
-        }  catch (Throwable t) {
+            Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) Thread.currentThread().getContextClassLoader()
+                    .loadClass(className);
+            return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class }).newInstance(config);
+        } catch (Throwable t) {
             if (t instanceof InvocationTargetException) {
                 final InvocationTargetException ite = (InvocationTargetException) t;
                 if (logger.isErrorEnabled()) {
-                    logger.error("Unable to instantiate provider {}.  Trying other providers.",
-                                 className);
+                    logger.error("Unable to instantiate provider {}.  Trying other providers.", className);
                     logger.error(ite.getCause().toString(), ite.getCause());
                 }
             }
             // Let's try with another classloader
             try {
-                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>)
-                        AsyncHttpClient.class.getClassLoader().loadClass(className);
-                return providerClass.getDeclaredConstructor(
-                        new Class[]{AsyncHttpClientConfig.class}).newInstance(config);
+                Class<AsyncHttpProvider> providerClass = (Class<AsyncHttpProvider>) AsyncHttpClient.class.getClassLoader().loadClass(
+                        className);
+                return providerClass.getDeclaredConstructor(new Class[] { AsyncHttpClientConfig.class }).newInstance(config);
             } catch (Throwable ignored) {
             }
         }
         return null;
     }
 
-    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames,
-                                                               AsyncHttpClientConfig config) {
+    private static AsyncHttpProvider loadDefaultProvider(String[] providerClassNames, AsyncHttpClientConfig config) {
         AsyncHttpProvider provider;
         for (final String className : providerClassNames) {
             provider = loadProvider(className, config);

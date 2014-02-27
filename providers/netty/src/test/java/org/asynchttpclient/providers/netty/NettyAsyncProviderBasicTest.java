@@ -30,7 +30,7 @@ public class NettyAsyncProviderBasicTest extends AsyncProvidersBasicTest {
         config.addProperty("TCP_NODELAY", true);
         return config;
     }
-    
+
     @Override
     protected String acceptEncodingHeader() {
         return "gzip,deflate";

@@ -17,15 +17,15 @@ import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 import java.net.URI;
 import java.util.List;
 
-public class HttpUtil {
-
-    private HttpUtil() {
-    }
+public final class HttpUtil {
 
     public static final String HTTPS = "https";
     public static final String HTTP = "http";
     public static final String WEBSOCKET = "ws";
     public static final String WEBSOCKET_SSL = "wss";
+
+    private HttpUtil() {
+    }
 
     public static boolean isNTLM(List<String> auth) {
         return isNonEmpty(auth) && auth.get(0).startsWith("NTLM");

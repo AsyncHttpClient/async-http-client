@@ -26,40 +26,38 @@ import java.util.concurrent.TimeUnit;
  * the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
-	private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
-	private final Semaphore available;
-	private final int maxWait;
+    private final static Logger logger = LoggerFactory.getLogger(ThrottleRequestFilter.class);
+    private final Semaphore available;
+    private final int maxWait;
 
-	public ThrottleRequestFilter(int maxConnections) {
-		this(maxConnections, Integer.MAX_VALUE);
-	}
+    public ThrottleRequestFilter(int maxConnections) {
+        this(maxConnections, Integer.MAX_VALUE);
+    }
 
-	public ThrottleRequestFilter(int maxConnections, int maxWait) {
-		this.maxWait = maxWait;
-		available = new Semaphore(maxConnections, true);
-	}
+    public ThrottleRequestFilter(int maxConnections, int maxWait) {
+        this.maxWait = maxWait;
+        available = new Semaphore(maxConnections, true);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
 
-		try {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Current Throttling Status {}", available.availablePermits());
-			}
-			if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
-				throw new FilterException(String.format(
-						"No slot available for processing Request %s with AsyncHandler %s", ctx.getRequest(),
-						ctx.getAsyncHandler()));
-			}
-		} catch (InterruptedException e) {
-			throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(),
-					ctx.getAsyncHandler()));
-		}
+        try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Current Throttling Status {}", available.availablePermits());
+            }
+            if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
+                throw new FilterException(String.format("No slot available for processing Request %s with AsyncHandler %s",
+                        ctx.getRequest(), ctx.getAsyncHandler()));
+            }
+        } catch (InterruptedException e) {
+            throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
+        }
 
-		return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(
-				new AsyncHandlerWrapper<T>(ctx.getAsyncHandler(), available)).build();
-	}
+        return new FilterContext.FilterContextBuilder<T>(ctx).asyncHandler(new AsyncHandlerWrapper<T>(ctx.getAsyncHandler(), available))
+                .build();
+    }
 }

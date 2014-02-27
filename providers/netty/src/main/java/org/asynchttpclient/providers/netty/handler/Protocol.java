@@ -62,7 +62,8 @@ public abstract class Protocol {
     protected final boolean hasIOExceptionFilters;
     private final TimeConverter timeConverter;
 
-    public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender) {
+    public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
+            NettyRequestSender requestSender) {
         this.channels = channels;
         this.config = config;
         this.requestSender = requestSender;
@@ -79,11 +80,13 @@ public abstract class Protocol {
 
     public abstract void onClose(Channel channel);
 
-    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final Channel channel) throws Exception {
+    protected boolean handleRedirectAndExit(Request request, NettyResponseFuture<?> future, HttpResponse response, final Channel channel)
+            throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
         boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-        boolean isRedirectStatus = status.equals(MOVED_PERMANENTLY) || status.equals(FOUND) || status.equals(SEE_OTHER) || status.equals(TEMPORARY_REDIRECT);
+        boolean isRedirectStatus = status.equals(MOVED_PERMANENTLY) || status.equals(FOUND) || status.equals(SEE_OTHER)
+                || status.equals(TEMPORARY_REDIRECT);
 
         if (redirectEnabled && isRedirectStatus) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
@@ -150,7 +153,8 @@ public abstract class Protocol {
                         // FIXME investigate this
                         Channels.setDefaultAttribute(channel, callback);
                     } else {
-                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the request has not been sent, right?
+                        // FIXME don't understand: this offers the connection to the pool, or even closes it, while the
+                        // request has not been sent, right?
                         callback.call();
                     }
 
@@ -164,13 +168,16 @@ public abstract class Protocol {
         return false;
     }
 
-    protected boolean handleResponseFiltersReplayRequestAndExit(Channel channel, NettyResponseFuture<?> future, HttpResponseStatus status, HttpResponseHeaders responseHeaders)
-            throws IOException {
+    protected boolean handleResponseFiltersReplayRequestAndExit(//
+            Channel channel,//
+            NettyResponseFuture<?> future,//
+            HttpResponseStatus status,//
+            HttpResponseHeaders responseHeaders) throws IOException {
 
         if (hasResponseFilters) {
             AsyncHandler<?> handler = future.getAsyncHandler();
-            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest()).responseStatus(status).responseHeaders(responseHeaders)
-                    .build();
+            FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getRequest())
+                    .responseStatus(status).responseHeaders(responseHeaders).build();
 
             for (ResponseFilter asyncFilter : config.getResponseFilters()) {
                 try {

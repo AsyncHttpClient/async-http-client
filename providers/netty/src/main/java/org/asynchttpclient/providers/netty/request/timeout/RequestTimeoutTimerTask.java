@@ -26,7 +26,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
-    public RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, Channels channels, TimeoutsHolder timeoutsHolder, AtomicBoolean clientClosed) {
+    public RequestTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            Channels channels,//
+            TimeoutsHolder timeoutsHolder,//
+            AtomicBoolean clientClosed) {
         super(nettyResponseFuture, channels, timeoutsHolder, clientClosed);
     }
 
@@ -41,7 +45,8 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         }
 
         if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
-            expire("Request timeout of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms", millisTime() - nettyResponseFuture.getStart());
+            expire("Request timeout of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms",
+                    millisTime() - nettyResponseFuture.getStart());
             nettyResponseFuture.setRequestTimeoutReached();
         }
     }

@@ -34,7 +34,11 @@ public abstract class TimeoutTimerTask implements TimerTask {
     protected final TimeoutsHolder timeoutsHolder;
     protected final AtomicBoolean clientClosed;
 
-    public TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, Channels channels, TimeoutsHolder timeoutsHolder, AtomicBoolean clientClosed) {
+    public TimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            Channels channels,//
+            TimeoutsHolder timeoutsHolder,//
+            AtomicBoolean clientClosed) {
         this.nettyResponseFuture = nettyResponseFuture;
         this.channels = channels;
         this.timeoutsHolder = timeoutsHolder;

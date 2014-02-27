@@ -41,7 +41,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
     private final long expectedTotal;
     private long lastProgress = 0L;
 
-    public ProgressListener(AsyncHttpClientConfig config, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future, boolean notifyHeaders, long expectedTotal) {
+    public ProgressListener(AsyncHttpClientConfig config, AsyncHandler<?> asyncHandler, NettyResponseFuture<?> future,
+            boolean notifyHeaders, long expectedTotal) {
         this.config = config;
         this.asyncHandler = asyncHandler;
         this.future = future;
@@ -60,7 +61,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
                 } catch (RuntimeException ex) {
                     LOGGER.debug(ex.getMessage(), ex);
                 }
-            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadCloseException(cause) || StackTraceInspector.abortOnWriteCloseException(cause)) {
+            } else if (cause instanceof ClosedChannelException || StackTraceInspector.abortOnReadCloseException(cause)
+                    || StackTraceInspector.abortOnWriteCloseException(cause)) {
 
                 if (LOGGER.isDebugEnabled())
                     LOGGER.debug(cause.getMessage(), cause);
@@ -90,7 +92,8 @@ public class ProgressListener implements ChannelProgressiveFutureListener {
             future.touch();
 
             /**
-             * We need to make sure we aren't in the middle of an authorization process before publishing events as we will re-publish again the same event after the authorization,
+             * We need to make sure we aren't in the middle of an authorization process before publishing events as we
+             * will re-publish again the same event after the authorization,
              * causing unpredictable behavior.
              */
             Realm realm = future.getRequest().getRealm() != null ? future.getRequest().getRealm() : config.getRealm();

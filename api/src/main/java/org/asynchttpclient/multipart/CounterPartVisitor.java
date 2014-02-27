@@ -20,12 +20,12 @@ import java.io.IOException;
 public class CounterPartVisitor implements PartVisitor {
 
     private long count = 0L;
-    
+
     @Override
     public void withBytes(byte[] bytes) throws IOException {
         count += bytes.length;
     }
-    
+
     public long getCount() {
         return count;
     }

@@ -23,10 +23,8 @@ public interface ChannelPool {
     /**
      * Add a connection to the pool
      * 
-     * @param uri
-     *            a uri used to retrieve the cached connection
-     * @param connection
-     *            an I/O connection
+     * @param uri a uri used to retrieve the cached connection
+     * @param connection an I/O connection
      * @return true if added.
      */
     public boolean offer(String uri, Channel connection);
@@ -34,8 +32,7 @@ public interface ChannelPool {
     /**
      * Remove the connection associated with the uri.
      * 
-     * @param uri
-     *            the uri used when invoking addConnection
+     * @param uri the uri used when invoking addConnection
      * @return the connection associated with the uri
      */
     public Channel poll(String uri);
@@ -43,15 +40,14 @@ public interface ChannelPool {
     /**
      * Remove all connections from the cache. A connection might have been associated with several uri.
      * 
-     * @param connection
-     *            a connection
+     * @param connection a connection
      * @return the true if the connection has been removed
      */
     public boolean removeAll(Channel connection);
 
     /**
-     * Return true if a connection can be cached. A implementation can decide based on some rules to allow caching Calling this method is equivalent of checking the returned value
-     * of {@link ChannelPool#offer(Object, Object)}
+     * Return true if a connection can be cached. A implementation can decide based on some rules to allow caching
+     * Calling this method is equivalent of checking the returned value of {@link ChannelPool#offer(Object, Object)}
      * 
      * @return true if a connection can be cached.
      */

@@ -29,8 +29,13 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
     private final long idleConnectionTimeout;
     private final long requestTimeoutInstant;
 
-    public IdleConnectionTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, Channels channels, TimeoutsHolder timeoutsHolder, AtomicBoolean clientClosed,
-            long requestTimeout, long idleConnectionTimeout) {
+    public IdleConnectionTimeoutTimerTask(//
+            NettyResponseFuture<?> nettyResponseFuture,//
+            Channels channels,//
+            TimeoutsHolder timeoutsHolder,//
+            AtomicBoolean clientClosed,//
+            long requestTimeout,//
+            long idleConnectionTimeout) {
         super(nettyResponseFuture, channels, timeoutsHolder, clientClosed);
         this.idleConnectionTimeout = idleConnectionTimeout;
         requestTimeoutInstant = requestTimeout >= 0 ? nettyResponseFuture.getStart() + requestTimeout : Long.MAX_VALUE;

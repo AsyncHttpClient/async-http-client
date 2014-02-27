@@ -31,14 +31,14 @@ import java.util.List;
  * A class that represent the HTTP response' status line (code + text)
  */
 public class ResponseStatus extends HttpResponseStatus {
-    
+
     private final HttpResponse response;
 
     public ResponseStatus(URI uri, HttpResponse response, AsyncHttpClientConfig config) {
         super(uri, config);
         this.response = response;
     }
-    
+
     @Override
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
         return new NettyResponse(this, headers, bodyParts, config.getTimeConverter());
@@ -46,7 +46,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     /**
      * Return the response status code
-     *
+     * 
      * @return the response status code
      */
     public int getStatusCode() {
@@ -55,7 +55,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     /**
      * Return the response status text
-     *
+     * 
      * @return the response status text
      */
     public String getStatusText() {

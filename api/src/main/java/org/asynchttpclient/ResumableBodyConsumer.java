@@ -34,5 +34,4 @@ public interface ResumableBodyConsumer extends BodyConsumer {
      */
     long getTransferredBytes() throws IOException;
 
-
 }

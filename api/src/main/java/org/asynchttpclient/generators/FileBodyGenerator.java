@@ -85,8 +85,7 @@ public class FileBodyGenerator implements BodyGenerator {
             return length;
         }
 
-        public long read(ByteBuffer buffer)
-                throws IOException {
+        public long read(ByteBuffer buffer) throws IOException {
             return channel.read(buffer);
         }
 

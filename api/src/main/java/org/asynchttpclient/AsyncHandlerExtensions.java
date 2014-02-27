@@ -34,7 +34,7 @@ public interface AsyncHandlerExtensions {
      * Currently only supported by the Netty provider.
      */
     void onRequestSent();
-    
+
     /**
      * Notify the callback every time a request is being retried.
      */

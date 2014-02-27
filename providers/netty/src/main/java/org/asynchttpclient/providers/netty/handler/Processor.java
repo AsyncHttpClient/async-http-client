@@ -49,17 +49,26 @@ public class Processor extends ChannelInboundHandlerAdapter {
     private final AtomicBoolean closed;
     private final Protocol protocol;
 
-    public static Processor newHttpProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels,
+    public static Processor newHttpProcessor(AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            NettyRequestSender requestSender,//
+            Channels channels,//
             AtomicBoolean isClose) {
-        return new Processor(config, nettyConfig, requestSender, channels, isClose, new HttpProtocol(channels, config, nettyConfig, requestSender));
+        HttpProtocol protocol = new HttpProtocol(channels, config, nettyConfig, requestSender);
+        return new Processor(config, nettyConfig, requestSender, channels, isClose, protocol);
     }
 
-    public static Processor newWsProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels,
-            AtomicBoolean isClose) {
-        return new Processor(config, nettyConfig, requestSender, channels, isClose, new WebSocketProtocol(channels, config, nettyConfig, requestSender));
+    public static Processor newWsProcessor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
+            NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose) {
+        WebSocketProtocol protocol = new WebSocketProtocol(channels, config, nettyConfig, requestSender);
+        return new Processor(config, nettyConfig, requestSender, channels, isClose, protocol);
     }
 
-    private Processor(AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig, NettyRequestSender requestSender, Channels channels, AtomicBoolean isClose,
+    private Processor(AsyncHttpClientConfig config,//
+            NettyAsyncHttpProviderConfig nettyConfig,//
+            NettyRequestSender requestSender,//
+            Channels channels,//
+            AtomicBoolean isClose,//
             Protocol protocol) {
         this.config = config;
         this.requestSender = requestSender;
@@ -119,7 +128,8 @@ public class Processor extends ChannelInboundHandlerAdapter {
             NettyResponseFuture<?> future = NettyResponseFuture.class.cast(attachment);
             future.touch();
 
-            if (!config.getIOExceptionFilters().isEmpty() && requestSender.applyIoExceptionFiltersAndReplayRequest(future, new IOException("Channel Closed"), channel)) {
+            if (!config.getIOExceptionFilters().isEmpty()
+                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, new IOException("Channel Closed"), channel)) {
                 return;
             }
 

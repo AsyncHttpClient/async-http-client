@@ -40,7 +40,7 @@ public abstract class HttpResponseStatus {
     public final URI getUri() {
         return uri;
     }
-    
+
     /**
      * Prepare a {@link Response}
      *

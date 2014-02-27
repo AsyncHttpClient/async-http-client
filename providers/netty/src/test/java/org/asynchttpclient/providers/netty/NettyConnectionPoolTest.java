@@ -61,8 +61,8 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAsyncHttpClientProviderConfig(providerConfig).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig)
+                .build());
         try {
             Exception exception = null;
             try {
@@ -105,8 +105,8 @@ public class NettyConnectionPoolTest extends ConnectionPoolTest {
 
         NettyAsyncHttpProviderConfig providerConfig = new NettyAsyncHttpProviderConfig();
         providerConfig.setChannelPool(cp);
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder()
-                .setAsyncHttpClientProviderConfig(providerConfig).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setAsyncHttpClientProviderConfig(providerConfig)
+                .build());
         try {
             Exception exception = null;
             try {

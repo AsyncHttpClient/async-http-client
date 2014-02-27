@@ -23,6 +23,6 @@ public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     }
 
     public String getProviderClass() {
-    	return NettyAsyncHttpProvider.class.getName();
+        return NettyAsyncHttpProvider.class.getName();
     }
 }

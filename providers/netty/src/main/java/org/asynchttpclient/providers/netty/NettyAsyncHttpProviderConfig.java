@@ -98,17 +98,18 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     }
 
     /**
-     * Add a property that will be used when the AsyncHttpClient initialize its {@link org.asynchttpclient.AsyncHttpProvider}
+     * Add a property that will be used when the AsyncHttpClient initialize its
+     * {@link org.asynchttpclient.AsyncHttpProvider}
      * 
-     * @param name
-     *            the name of the property
-     * @param value
-     *            the value of the property
+     * @param name the name of the property
+     * @param value the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
     public NettyAsyncHttpProviderConfig addProperty(String name, Object value) {
 
-        if (name.equals(REUSE_ADDRESS) && value == Boolean.TRUE && System.getProperty("os.name").toLowerCase().contains("win")) {
+        if (name.equals(REUSE_ADDRESS)//
+                && value == Boolean.TRUE//
+                && System.getProperty("os.name").toLowerCase().contains("win")) {
             LOGGER.warn("Can't enable {} on Windows", REUSE_ADDRESS);
         } else {
             properties.put(name, value);

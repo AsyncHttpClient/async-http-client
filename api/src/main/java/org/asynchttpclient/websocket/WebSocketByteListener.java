@@ -23,7 +23,6 @@ public interface WebSocketByteListener extends WebSocketListener {
      */
     void onMessage(byte[] message);
 
-
     /**
      * Invoked when bytes of a fragmented message are available.
      *

@@ -21,16 +21,16 @@ import java.io.OutputStream;
 public class OutputStreamPartVisitor implements PartVisitor {
 
     private final OutputStream out;
-    
+
     public OutputStreamPartVisitor(OutputStream out) {
         this.out = out;
     }
-    
+
     @Override
-    public void withBytes(byte[] bytes) throws IOException{
+    public void withBytes(byte[] bytes) throws IOException {
         out.write(bytes);
     }
-    
+
     public OutputStream getOutputStream() {
         return out;
     }

@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Simple JavaBean version of  {@link AsyncHttpClientConfig}
+ * Simple JavaBean version of {@link AsyncHttpClientConfig}
  */
 public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
@@ -55,7 +55,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
         userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "AsyncHttpClient/" + AHC_VERSION);
         ioThreadMultiplier = Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
-        
+
         boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         if (useProxySelector) {

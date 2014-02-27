@@ -20,8 +20,7 @@ package org.asynchttpclient.util;
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
 public class UTF8UrlEncoder {
-    private static final boolean encodeSpaceUsingPlus =
-            System.getProperty("com.UTF8UrlEncoder.encodeSpaceUsingPlus") != null;
+    private static final boolean encodeSpaceUsingPlus = System.getProperty("com.UTF8UrlEncoder.encodeSpaceUsingPlus") != null;
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
@@ -59,7 +58,7 @@ public class UTF8UrlEncoder {
     public static StringBuilder appendEncoded(StringBuilder sb, String input) {
         final int[] safe = SAFE_ASCII;
 
-        for (int c, i = 0, len = input.length(); i < len; i+= Character.charCount(c)) {
+        for (int c, i = 0, len = input.length(); i < len; i += Character.charCount(c)) {
             c = input.codePointAt(i);
             if (c <= 127) {
                 if (safe[c] != 0) {

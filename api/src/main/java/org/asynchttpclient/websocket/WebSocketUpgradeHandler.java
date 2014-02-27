@@ -133,7 +133,8 @@ public class WebSocketUpgradeHandler implements UpgradeHandler<WebSocket>, Async
 
     public final void onClose(WebSocket webSocket, int status, String reasonPhrase) {
         // Connect failure
-        if (this.webSocket == null) this.webSocket = webSocket;
+        if (this.webSocket == null)
+            this.webSocket = webSocket;
 
         for (WebSocketListener w : l) {
             if (webSocket != null) {

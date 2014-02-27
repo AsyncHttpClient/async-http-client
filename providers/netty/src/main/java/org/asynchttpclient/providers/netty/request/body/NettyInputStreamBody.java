@@ -68,16 +68,17 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamWasAlreadyConsumed(true);
         }
 
-        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
-            public void operationComplete(ChannelProgressiveFuture cf) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
-                }
-                super.operationComplete(cf);
-            }
-        });
+        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
+                new ProgressListener(config, future.getAsyncHandler(), future, false, getContentLength()) {
+                    public void operationComplete(ChannelProgressiveFuture cf) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            LOGGER.warn("Failed to close request body: {}", e.getMessage(), e);
+                        }
+                        super.operationComplete(cf);
+                    }
+                });
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 }

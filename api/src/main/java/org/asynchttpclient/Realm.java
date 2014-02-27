@@ -55,8 +55,9 @@ public class Realm {
         DIGEST, BASIC, NTLM, SPNEGO, KERBEROS, NONE
     }
 
-    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response, String qop, String nc, String cnonce,
-            String uri, String method, boolean usePreemptiveAuth, String domain, String enc, String host, boolean messageType2Received, String opaque) {
+    private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
+            String qop, String nc, String cnonce, String uri, String method, boolean usePreemptiveAuth, String domain, String enc,
+            String host, boolean messageType2Received, String opaque) {
 
         this.principal = principal;
         this.password = password;
@@ -212,9 +213,9 @@ public class Realm {
 
     @Override
     public String toString() {
-        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='" + nonce + '\'' + ", algorithm='" + algorithm
-                + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='" + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\''
-                + ", methodName='" + methodName + '\'' + '}';
+        return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='"
+                + nonce + '\'' + ", algorithm='" + algorithm + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='"
+                + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + '}';
     }
 
     @Override
@@ -569,8 +570,8 @@ public class Realm {
                 newResponse();
             }
 
-            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName, usePreemptive, domain, enc, host,
-                    messageType2Received, opaque);
+            return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
+                    usePreemptive, domain, enc, host, messageType2Received, opaque);
         }
     }
 }

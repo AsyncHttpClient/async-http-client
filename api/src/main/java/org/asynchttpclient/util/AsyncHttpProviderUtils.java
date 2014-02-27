@@ -41,8 +41,10 @@ public class AsyncHttpProviderUtils {
 
     public static final void validateSupportedScheme(URI uri) {
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws") && !scheme.equalsIgnoreCase("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
+                && !scheme.equalsIgnoreCase("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
+                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 
@@ -169,8 +171,10 @@ public class AsyncHttpProviderUtils {
 
         String scheme = redirectUri.getScheme();
 
-        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equals("ws") && !scheme.equals("wss")) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
+        if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equals("ws")
+                && !scheme.equals("wss")) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri
+                    + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
         }
 
         return redirectUri.normalize();
@@ -184,9 +188,9 @@ public class AsyncHttpProviderUtils {
     }
 
     public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {
-        return new StringBuilder("AHC (").append(httpProvider.getSimpleName()).append(" - ").append(System.getProperty("os.name")).append(" - ")
-                .append(System.getProperty("os.version")).append(" - ").append(System.getProperty("java.version")).append(" - ").append(Runtime.getRuntime().availableProcessors())
-                .append(" core(s))").toString();
+        return new StringBuilder("AHC (").append(httpProvider.getSimpleName()).append(" - ").append(System.getProperty("os.name"))
+                .append(" - ").append(System.getProperty("os.version")).append(" - ").append(System.getProperty("java.version"))
+                .append(" - ").append(Runtime.getRuntime().availableProcessors()).append(" core(s))").toString();
     }
 
     public static String parseCharset(String contentType) {
