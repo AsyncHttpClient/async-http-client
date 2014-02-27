@@ -39,5 +39,5 @@ public class NettyMultipartBody extends NettyBodyBody {
     @Override
     public String getContentType() {
         return contentType;
-    };
+    }
 }
