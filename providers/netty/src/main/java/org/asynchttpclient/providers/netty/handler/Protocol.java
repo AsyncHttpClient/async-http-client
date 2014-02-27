@@ -18,13 +18,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.HTTP;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-
-import java.io.IOException;
-import java.net.URI;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -47,6 +40,14 @@ import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
+
+import java.io.IOException;
+import java.net.URI;
 
 public abstract class Protocol {
 

@@ -15,10 +15,10 @@
  */
 package org.asynchttpclient.multipart;
 
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
-import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * This class is an adaptation of the Apache HttpClient implementation

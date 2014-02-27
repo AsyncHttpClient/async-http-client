@@ -16,13 +16,13 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 import org.asynchttpclient.util.StandardCharsets;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.

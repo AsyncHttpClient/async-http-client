@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient.multipart;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -23,9 +26,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FilePart extends AbstractFilePart {
 

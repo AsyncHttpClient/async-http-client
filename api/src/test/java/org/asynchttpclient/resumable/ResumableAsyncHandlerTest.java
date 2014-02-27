@@ -13,13 +13,12 @@ package org.asynchttpclient.resumable;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.resumable.ResumableAsyncHandler;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.testng.annotations.Test;
 
 /**
  * @author Benjamin Hanzelmann

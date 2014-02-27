@@ -16,15 +16,15 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
-
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.multipart.Part;
 
 /**
  * The Request class can be used to construct HTTP request:

@@ -12,6 +12,12 @@
  */
 package org.asynchttpclient.multipart;
 
+import org.asynchttpclient.Body;
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.util.StandardCharsets;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -19,12 +25,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.asynchttpclient.Body;
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.util.StandardCharsets;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 public class MultipartBodyTest {
 

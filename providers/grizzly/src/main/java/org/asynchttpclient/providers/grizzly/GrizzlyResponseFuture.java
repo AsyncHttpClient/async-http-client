@@ -17,7 +17,6 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.listenable.AbstractListenableFuture;
-
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.impl.FutureImpl;
 

@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient.providers.grizzly;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
+import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.glassfish.grizzly.utils.Exceptions.makeIOException;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.BodyGenerator;
@@ -29,14 +29,12 @@ import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
-import org.glassfish.grizzly.nio.NIOConnection;
-import org.glassfish.grizzly.nio.SelectorRunner;
 import org.glassfish.grizzly.threadpool.Threads;
 import org.glassfish.grizzly.utils.Futures;
 
-import static java.lang.Boolean.TRUE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.glassfish.grizzly.utils.Exceptions.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time

@@ -15,16 +15,15 @@
  */
 package org.asynchttpclient.extra;
 
-import java.io.IOException;
-
+import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Response;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DeferredObject;
 
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
-import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Response;
+import java.io.IOException;
 
 public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable, HttpProgress> {
 	public AsyncHttpDeferredObject(BoundRequestBuilder builder) throws IOException {

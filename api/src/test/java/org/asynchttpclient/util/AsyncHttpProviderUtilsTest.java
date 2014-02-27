@@ -14,9 +14,9 @@ package org.asynchttpclient.util;
 
 import static org.testng.Assert.assertEquals;
 
-import java.net.URI;
-
 import org.testng.annotations.Test;
+
+import java.net.URI;
 
 public class AsyncHttpProviderUtilsTest {
 

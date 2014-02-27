@@ -12,24 +12,25 @@
  */
 package org.asynchttpclient.providers.netty.ws;
 
+import static io.netty.buffer.Unpooled.wrappedBuffer;
+
 import org.asynchttpclient.websocket.WebSocket;
 import org.asynchttpclient.websocket.WebSocketByteListener;
 import org.asynchttpclient.websocket.WebSocketCloseCodeReasonListener;
 import org.asynchttpclient.websocket.WebSocketListener;
 import org.asynchttpclient.websocket.WebSocketTextListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import static io.netty.buffer.Unpooled.wrappedBuffer;
 
 public class NettyWebSocket implements WebSocket {
     private final static Logger logger = LoggerFactory.getLogger(NettyWebSocket.class);

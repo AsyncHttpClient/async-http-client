@@ -14,10 +14,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import io.netty.channel.Channel;
-
-import java.net.ConnectException;
-import java.util.concurrent.TimeUnit;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -25,6 +21,11 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.async.ConnectionPoolTest;
 import org.asynchttpclient.providers.netty.channel.ChannelPool;
 import org.testng.annotations.Test;
+
+import io.netty.channel.Channel;
+
+import java.net.ConnectException;
+import java.util.concurrent.TimeUnit;
 
 public class NettyConnectionPoolTest extends ConnectionPoolTest {
 

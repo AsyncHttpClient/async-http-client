@@ -13,13 +13,7 @@
 
 package org.asynchttpclient.providers.netty;
 
-import static org.testng.Assert.*;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
+import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -27,6 +21,12 @@ import org.asynchttpclient.cookie.Cookie;
 import org.asynchttpclient.providers.netty.response.NettyResponse;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.testng.annotations.Test;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * @author Benjamin Hanzelmann

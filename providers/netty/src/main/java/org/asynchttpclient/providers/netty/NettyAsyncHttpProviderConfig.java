@@ -16,6 +16,14 @@
  */
 package org.asynchttpclient.providers.netty;
 
+import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.ChannelPool;
+import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
+import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -25,14 +33,6 @@ import io.netty.util.HashedWheelTimer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.asynchttpclient.AsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.channel.ChannelPool;
-import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
-import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class can be used to pass Netty's internal configuration options. See Netty documentation for more information.

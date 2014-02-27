@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.statushandler;
 
+import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.CONTINUE;
+
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
 import org.asynchttpclient.providers.grizzly.EventHandler;
@@ -24,8 +26,6 @@ import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
 
 import java.net.URI;
-
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.CONTINUE;
 
 public final class RedirectHandler implements StatusHandler {
 

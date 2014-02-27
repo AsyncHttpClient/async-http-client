@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
@@ -20,8 +24,6 @@ import org.asynchttpclient.async.ConnectionPoolTest;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.testng.Assert.*;
 
 public class GrizzlyConnectionPoolTest extends ConnectionPoolTest {
 

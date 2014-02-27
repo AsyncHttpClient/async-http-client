@@ -16,11 +16,11 @@
  */
 package org.asynchttpclient.oauth;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Since cloning (of MAC instances)  is not necessarily supported on all platforms

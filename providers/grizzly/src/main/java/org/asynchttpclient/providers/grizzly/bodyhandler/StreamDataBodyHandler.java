@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
+
 import org.asynchttpclient.Request;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -22,8 +24,6 @@ import org.glassfish.grizzly.memory.MemoryManager;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.LOGGER;
 
 public final class StreamDataBodyHandler implements BodyHandler {
 

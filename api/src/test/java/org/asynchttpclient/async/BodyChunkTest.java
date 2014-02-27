@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
@@ -24,8 +26,6 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
-
-import static org.testng.Assert.assertEquals;
 
 public abstract class BodyChunkTest extends AbstractBasicTest {
 

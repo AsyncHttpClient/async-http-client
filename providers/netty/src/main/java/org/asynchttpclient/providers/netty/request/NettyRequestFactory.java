@@ -20,20 +20,6 @@ import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentStringsMap;
@@ -58,6 +44,21 @@ import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
+
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map.Entry;
 
 public final class NettyRequestFactory {
 

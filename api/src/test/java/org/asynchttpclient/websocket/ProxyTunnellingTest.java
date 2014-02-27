@@ -17,9 +17,6 @@ import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 import static org.asynchttpclient.async.util.TestUtils.newJettyHttpsServer;
 import static org.testng.Assert.assertEquals;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
@@ -30,6 +27,9 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Proxy usage tests.

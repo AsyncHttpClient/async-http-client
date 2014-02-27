@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.CONNECTION_POOL;
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
+import static org.glassfish.grizzly.asyncqueue.AsyncQueueWriter.AUTO_SIZE;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
@@ -20,6 +24,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.ntlm.NTLMEngine;
+import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
 import org.asynchttpclient.providers.grizzly.filters.AsyncHttpClientEventFilter;
 import org.asynchttpclient.providers.grizzly.filters.AsyncHttpClientFilter;
 import org.asynchttpclient.providers.grizzly.filters.AsyncSpdyClientEventFilter;
@@ -28,7 +33,6 @@ import org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.ProxyUtils;
 import org.asynchttpclient.util.SslUtils;
-
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.WriteResult;
@@ -40,6 +44,9 @@ import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.http.ContentEncoding;
 import org.glassfish.grizzly.http.GZipContentEncoding;
 import org.glassfish.grizzly.http.HttpClientFilter;
+import org.glassfish.grizzly.impl.SafeFutureImpl;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.npn.ClientSideNegotiator;
 import org.glassfish.grizzly.spdy.NextProtoNegSupport;
 import org.glassfish.grizzly.spdy.SpdyFramingFilter;
@@ -48,12 +55,9 @@ import org.glassfish.grizzly.spdy.SpdyMode;
 import org.glassfish.grizzly.spdy.SpdySession;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLConnectionContext;
-import org.glassfish.grizzly.ssl.SSLUtils;
-import org.glassfish.grizzly.impl.SafeFutureImpl;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.ssl.SSLFilter;
+import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.utils.DelayedExecutor;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
@@ -63,16 +67,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property;
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.CONNECTION_POOL;
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
-import static org.glassfish.grizzly.asyncqueue.AsyncQueueWriter.AUTO_SIZE;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.

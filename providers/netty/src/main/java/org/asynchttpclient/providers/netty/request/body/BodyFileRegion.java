@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import org.asynchttpclient.RandomAccessBody;
+
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-
-import org.asynchttpclient.RandomAccessBody;
 
 /**
  * Adapts a {@link RandomAccessBody} to Netty's {@link FileRegion}.

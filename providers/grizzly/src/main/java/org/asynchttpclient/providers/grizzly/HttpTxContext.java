@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
+import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.websocket.WebSocket;
 import org.glassfish.grizzly.CloseListener;
@@ -32,8 +33,6 @@ import org.glassfish.grizzly.websockets.ProtocolHandler;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
 
 public final class HttpTxContext {
 

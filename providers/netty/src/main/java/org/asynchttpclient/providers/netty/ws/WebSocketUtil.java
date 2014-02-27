@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient.providers.netty.ws;
 
+import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.StandardCharsets;
 
 public final class WebSocketUtil {
     public static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";

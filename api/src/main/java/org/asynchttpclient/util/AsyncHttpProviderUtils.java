@@ -12,17 +12,17 @@
  */
 package org.asynchttpclient.util;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Request;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.List;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.Request;
 
 /**
  * {@link org.asynchttpclient.AsyncHttpProvider} common utilities.

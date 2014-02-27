@@ -13,11 +13,11 @@
 
 package org.asynchttpclient.providers.grizzly.websocket;
 
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 import org.asynchttpclient.websocket.WebSocket;
 import org.asynchttpclient.websocket.WebSocketListener;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class GrizzlyWebSocketAdapter implements WebSocket {
 

@@ -21,19 +21,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATIO
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.util.List;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.STATE;
@@ -60,6 +47,20 @@ import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.List;
 
 final class HttpProtocol extends Protocol {
 

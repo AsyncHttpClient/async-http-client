@@ -1,13 +1,13 @@
 package org.asynchttpclient.extra;
 
-import java.util.concurrent.Semaphore;
-
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Semaphore;
 
 public class AsyncHandlerWrapper<T> implements AsyncHandler<T> {
 

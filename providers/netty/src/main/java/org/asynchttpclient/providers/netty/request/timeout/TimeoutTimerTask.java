@@ -15,15 +15,15 @@
  */
 package org.asynchttpclient.providers.netty.request.timeout;
 
-import io.netty.util.TimerTask;
-
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.util.TimerTask;
+
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class TimeoutTimerTask implements TimerTask {
 

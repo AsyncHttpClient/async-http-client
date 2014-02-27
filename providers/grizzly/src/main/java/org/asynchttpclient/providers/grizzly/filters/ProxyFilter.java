@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
@@ -25,10 +29,6 @@ import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.util.Header;
 
 import java.io.IOException;
-
-import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
-import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 
 /**
  * This Filter will be placed in the FilterChain when a request is being

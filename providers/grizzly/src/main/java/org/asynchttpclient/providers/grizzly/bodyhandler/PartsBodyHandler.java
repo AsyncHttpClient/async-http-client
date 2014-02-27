@@ -13,10 +13,7 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
-import static org.asynchttpclient.util.MiscUtil.*;
-
-import java.io.IOException;
-import java.util.List;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.Request;
@@ -30,6 +27,9 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
+
+import java.io.IOException;
+import java.util.List;
 
 public final class PartsBodyHandler implements BodyHandler {
 

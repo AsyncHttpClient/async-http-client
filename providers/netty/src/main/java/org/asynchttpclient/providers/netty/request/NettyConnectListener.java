@@ -16,6 +16,13 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.future.StackTraceInspector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -23,13 +30,6 @@ import io.netty.handler.ssl.SslHandler;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.future.StackTraceInspector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Non Blocking connect.

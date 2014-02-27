@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
@@ -46,8 +48,6 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ConnectionManager {
 

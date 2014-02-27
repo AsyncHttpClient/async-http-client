@@ -18,6 +18,22 @@ package org.asynchttpclient.providers.netty.channel;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.providers.netty.Callback;
+import org.asynchttpclient.providers.netty.DiscardEvent;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.handler.Processor;
+import org.asynchttpclient.providers.netty.request.NettyRequestSender;
+import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
+import org.asynchttpclient.util.SslUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -39,6 +55,8 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
+import javax.net.ssl.SSLEngine;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -49,23 +67,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.SSLEngine;
-
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.providers.netty.Callback;
-import org.asynchttpclient.providers.netty.DiscardEvent;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.handler.Processor;
-import org.asynchttpclient.providers.netty.request.NettyRequestSender;
-import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
-import org.asynchttpclient.util.SslUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Channels {
 

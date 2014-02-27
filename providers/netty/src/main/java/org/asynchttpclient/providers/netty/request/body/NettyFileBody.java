@@ -15,6 +15,14 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import org.asynchttpclient.providers.netty.request.ProgressListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressiveFuture;
@@ -26,14 +34,6 @@ import io.netty.handler.stream.ChunkedFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
-import org.asynchttpclient.providers.netty.request.ProgressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyFileBody implements NettyBody {
 

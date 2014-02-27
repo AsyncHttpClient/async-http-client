@@ -15,16 +15,6 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
-import io.netty.handler.codec.http.HttpHeaders;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
@@ -34,6 +24,16 @@ import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.MiscUtil;
+
+import io.netty.handler.codec.http.HttpHeaders;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Wrapper around the {@link org.asynchttpclient.Response} API.

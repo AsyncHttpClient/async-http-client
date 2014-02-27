@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.async;
 
+import static org.testng.Assert.assertEquals;
+
 import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -23,8 +25,6 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutionException;
-
-import static org.testng.Assert.assertEquals;
 
 public class RequestBuilderTest {
 

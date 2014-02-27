@@ -13,15 +13,15 @@
 
 package org.asynchttpclient.providers.grizzly;
 
-import java.net.URI;
-import java.util.List;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.glassfish.grizzly.http.HttpResponsePacket;
+
+import java.net.URI;
+import java.util.List;
 
 /**
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client

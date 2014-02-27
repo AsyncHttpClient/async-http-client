@@ -12,15 +12,15 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
+import org.asynchttpclient.Body;
+import org.asynchttpclient.BodyGenerator;
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.asynchttpclient.Body;
-import org.asynchttpclient.BodyGenerator;
-import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time

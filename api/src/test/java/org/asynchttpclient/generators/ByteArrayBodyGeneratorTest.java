@@ -13,16 +13,14 @@
 
 package org.asynchttpclient.generators;
 
-import org.asynchttpclient.Body;
+import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.generators.ByteArrayBodyGenerator;
+import org.asynchttpclient.Body;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
-
-import static org.testng.Assert.assertEquals;
 
 /**
  * @author Bryan Davis bpd@keynetics.com

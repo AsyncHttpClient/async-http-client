@@ -15,11 +15,11 @@
  */
 package org.asynchttpclient.multipart;
 
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
-
-import org.asynchttpclient.util.StandardCharsets;
 
 public abstract class Part {
 

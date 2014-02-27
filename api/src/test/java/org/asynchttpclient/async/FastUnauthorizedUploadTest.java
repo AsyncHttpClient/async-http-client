@@ -15,13 +15,6 @@ package org.asynchttpclient.async;
 import static org.asynchttpclient.async.util.TestUtils.createTempFile;
 import static org.testng.Assert.assertEquals;
 
-import java.io.File;
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.multipart.FilePart;
@@ -29,6 +22,13 @@ import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.testng.annotations.Test;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.File;
+import java.io.IOException;
 
 public abstract class FastUnauthorizedUploadTest extends AbstractBasicTest {
 

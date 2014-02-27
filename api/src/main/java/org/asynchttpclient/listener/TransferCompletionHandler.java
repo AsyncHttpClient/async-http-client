@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.listener;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -21,6 +19,8 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A {@link org.asynchttpclient.AsyncHandler} that can be used to notify a set of {@link TransferListener}

@@ -15,11 +15,8 @@
  */
 package org.asynchttpclient.extra;
 
-import static org.testng.Assert.*;
-
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -28,6 +25,10 @@ import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DefaultDeferredManager;
 import org.jdeferred.multiple.MultipleResults;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AsyncHttpTest {
     protected DefaultDeferredManager deferredManager = new DefaultDeferredManager();

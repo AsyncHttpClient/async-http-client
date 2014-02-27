@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
-import java.util.List;
-
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.multipart.MultipartBody;
 import org.asynchttpclient.multipart.MultipartUtils;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
+
+import java.util.List;
 
 public class NettyMultipartBody extends NettyBodyBody {
 

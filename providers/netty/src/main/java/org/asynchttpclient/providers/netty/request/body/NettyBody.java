@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient.providers.netty.request.body;
 
-import java.io.IOException;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 
 import io.netty.channel.Channel;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+import java.io.IOException;
 
 public interface NettyBody {
 

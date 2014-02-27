@@ -15,17 +15,6 @@
  */
 package org.asynchttpclient.providers.netty.handler;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.PrematureChannelClosureException;
-import io.netty.handler.codec.http.LastHttpContent;
-
-import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.Callback;
 import org.asynchttpclient.providers.netty.DiscardEvent;
@@ -37,6 +26,17 @@ import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.PrematureChannelClosureException;
+import io.netty.handler.codec.http.LastHttpContent;
+
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Sharable
 public class Processor extends ChannelInboundHandlerAdapter {

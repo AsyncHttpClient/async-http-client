@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import static org.asynchttpclient.AsyncHandler.STATE.ABORT;
+import static org.asynchttpclient.AsyncHandler.STATE.UPGRADE;
+import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.CONTINUE;
+
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProviderConfig;
@@ -51,10 +55,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static org.asynchttpclient.AsyncHandler.STATE.ABORT;
-import static org.asynchttpclient.AsyncHandler.STATE.UPGRADE;
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.CONTINUE;
 
 public final class EventHandler {
 

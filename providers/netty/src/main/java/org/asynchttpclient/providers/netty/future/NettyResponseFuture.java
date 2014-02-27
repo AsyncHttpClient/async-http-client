@@ -16,6 +16,20 @@
 package org.asynchttpclient.providers.netty.future;
 
 import static org.asynchttpclient.util.DateUtil.millisTime;
+
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ConnectionPoolKeyStrategy;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.listenable.AbstractListenableFuture;
+import org.asynchttpclient.providers.netty.DiscardEvent;
+import org.asynchttpclient.providers.netty.channel.Channels;
+import org.asynchttpclient.providers.netty.request.NettyRequest;
+import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
@@ -31,19 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ConnectionPoolKeyStrategy;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.listenable.AbstractListenableFuture;
-import org.asynchttpclient.providers.netty.DiscardEvent;
-import org.asynchttpclient.providers.netty.channel.Channels;
-import org.asynchttpclient.providers.netty.request.NettyRequest;
-import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.

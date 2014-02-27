@@ -16,14 +16,14 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.util.StandardCharsets;
+
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * Represents a proxy server.

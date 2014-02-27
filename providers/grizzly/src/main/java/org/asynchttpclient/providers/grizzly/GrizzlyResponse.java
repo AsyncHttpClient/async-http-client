@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.grizzly;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
-import static org.glassfish.grizzly.http.CookiesBuilder.ServerCookiesBuilder;
 
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
@@ -24,11 +23,12 @@ import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.Cookies;
+import org.glassfish.grizzly.http.CookiesBuilder.ServerCookiesBuilder;
 import org.glassfish.grizzly.http.util.Header;
-import org.glassfish.grizzly.utils.Charsets;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
 import org.glassfish.grizzly.utils.BufferInputStream;
+import org.glassfish.grizzly.utils.Charsets;
 
 import java.io.IOException;
 import java.io.InputStream;

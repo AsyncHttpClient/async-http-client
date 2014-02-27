@@ -13,11 +13,9 @@
 package org.asynchttpclient.async;
 
 import static org.asynchttpclient.async.util.TestUtils.findFreePort;
-import static org.testng.Assert.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
@@ -36,6 +34,10 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 public abstract class WebDavBasicTest extends AbstractBasicTest {
 

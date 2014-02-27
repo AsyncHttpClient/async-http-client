@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient.util;
 
-import static org.asynchttpclient.util.MiscUtil.*;
-
-import java.security.NoSuchAlgorithmException;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
+
+import java.security.NoSuchAlgorithmException;
 
 public final class AuthenticatorUtils {
 

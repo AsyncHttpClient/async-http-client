@@ -16,12 +16,13 @@
 package org.asynchttpclient.providers.netty.request.timeout;
 
 import static org.asynchttpclient.util.DateUtil.millisTime;
-import io.netty.util.Timeout;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
+
+import io.netty.util.Timeout;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 

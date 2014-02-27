@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient.extra;
 
+import org.asynchttpclient.ListenableFuture;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.asynchttpclient.ListenableFuture;
 
 public final class ListenableFutureAdapter {
 

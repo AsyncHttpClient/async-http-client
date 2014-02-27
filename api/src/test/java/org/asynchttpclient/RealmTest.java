@@ -14,13 +14,13 @@ package org.asynchttpclient;
 
 import static org.testng.Assert.assertEquals;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Realm.RealmBuilder;
 import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
 
 public class RealmTest {
     @Test(groups = "fast")

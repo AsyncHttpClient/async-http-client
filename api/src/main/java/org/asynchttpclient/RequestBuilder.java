@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
-
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.multipart.Part;
 
 /**
  * Builder for a {@link Request}.

@@ -15,8 +15,14 @@
  */
 package org.asynchttpclient.multipart;
 
-import static org.asynchttpclient.multipart.Part.*;
-import static org.asynchttpclient.util.MiscUtil.*;
+import static org.asynchttpclient.multipart.Part.CRLF_BYTES;
+import static org.asynchttpclient.multipart.Part.EXTRA_BYTES;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.util.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,11 +34,6 @@ import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.util.StandardCharsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MultipartUtils {
 

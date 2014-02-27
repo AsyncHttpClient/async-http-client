@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
@@ -28,8 +30,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
-
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 public final class ParamsBodyHandler implements BodyHandler {
 

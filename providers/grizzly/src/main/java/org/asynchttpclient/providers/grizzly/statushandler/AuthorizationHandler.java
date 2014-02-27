@@ -13,6 +13,8 @@
 
 package org.asynchttpclient.providers.grizzly.statushandler;
 
+import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
+
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
@@ -26,8 +28,6 @@ import org.glassfish.grizzly.http.util.HttpStatus;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
-
-import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
 
 public final class AuthorizationHandler implements StatusHandler {
 

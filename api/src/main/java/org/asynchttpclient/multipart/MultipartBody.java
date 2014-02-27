@@ -12,6 +12,10 @@
  */
 package org.asynchttpclient.multipart;
 
+import org.asynchttpclient.RandomAccessBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -19,10 +23,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.asynchttpclient.RandomAccessBody;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MultipartBody implements RandomAccessBody {
 

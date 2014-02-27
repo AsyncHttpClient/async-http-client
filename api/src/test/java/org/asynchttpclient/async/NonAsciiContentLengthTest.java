@@ -12,12 +12,18 @@
  */
 package org.asynchttpclient.async;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.assertEquals;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.util.StandardCharsets;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -25,14 +31,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
-import org.asynchttpclient.util.StandardCharsets;
-import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public abstract class NonAsciiContentLengthTest extends AbstractBasicTest {
 

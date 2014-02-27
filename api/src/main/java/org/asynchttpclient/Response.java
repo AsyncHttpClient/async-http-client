@@ -16,6 +16,8 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.cookie.Cookie;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -23,8 +25,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.asynchttpclient.cookie.Cookie;
 
 /**
  * Represents the asynchronous HTTP response callback for an {@link AsyncCompletionHandler}

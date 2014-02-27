@@ -13,6 +13,10 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -38,6 +42,7 @@ import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
 import org.asynchttpclient.util.StandardCharsets;
 import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.BaseFilter;
@@ -45,8 +50,10 @@ import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
+import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.ProcessingState;
 import org.glassfish.grizzly.http.Protocol;
@@ -59,6 +66,7 @@ import org.glassfish.grizzly.spdy.SpdyStream;
 import org.glassfish.grizzly.ssl.SSLConnectionContext;
 import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.websockets.Version;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,15 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Lock;
-
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.http.HttpContent;
-import org.glassfish.grizzly.http.HttpResponsePacket;
-import org.slf4j.Logger;
-
-import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
 /**
  * This {@link org.glassfish.grizzly.filterchain.Filter} is typically the last in the {@FilterChain}. Its primary responsibility is converting the async-http-client

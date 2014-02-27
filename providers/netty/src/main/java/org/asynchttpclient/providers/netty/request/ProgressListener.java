@@ -15,12 +15,6 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelProgressiveFuture;
-import io.netty.channel.ChannelProgressiveFutureListener;
-
-import java.nio.channels.ClosedChannelException;
-
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ProgressAsyncHandler;
@@ -29,6 +23,12 @@ import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.StackTraceInspector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.channel.ChannelProgressiveFutureListener;
+
+import java.nio.channels.ClosedChannelException;
 
 public class ProgressListener implements ChannelProgressiveFutureListener {
 

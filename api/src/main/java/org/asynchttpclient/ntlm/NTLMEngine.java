@@ -26,17 +26,17 @@
 
 package org.asynchttpclient.ntlm;
 
+import org.asynchttpclient.util.Base64;
+import org.asynchttpclient.util.StandardCharsets;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Locale;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.asynchttpclient.util.Base64;
-import org.asynchttpclient.util.StandardCharsets;
 
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM

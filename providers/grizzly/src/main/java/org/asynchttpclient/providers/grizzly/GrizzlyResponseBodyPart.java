@@ -14,7 +14,6 @@
 package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.HttpResponseBodyPart;
-
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.http.HttpContent;

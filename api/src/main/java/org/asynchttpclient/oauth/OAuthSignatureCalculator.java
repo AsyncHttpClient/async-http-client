@@ -16,12 +16,6 @@
  */
 package org.asynchttpclient.oauth;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
 import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
@@ -29,6 +23,12 @@ import org.asynchttpclient.SignatureCalculator;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Simple OAuth signature calculator that can used for constructing client signatures

@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient;
 
-import java.net.URI;
-
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
+
+import java.net.URI;
 
 public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 

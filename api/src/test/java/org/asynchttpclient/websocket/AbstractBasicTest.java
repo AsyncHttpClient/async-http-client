@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.websocket;
 
-import static org.asynchttpclient.async.util.TestUtils.*;
+import static org.asynchttpclient.async.util.TestUtils.findFreePort;
+import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.testng.annotations.AfterClass;

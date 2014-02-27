@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
+
 import io.netty.handler.codec.http.HttpHeaders;
 
 import java.net.URI;
 import java.util.Map;
-
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseHeaders;
 
 /**
  * A class that represent the HTTP headers.
