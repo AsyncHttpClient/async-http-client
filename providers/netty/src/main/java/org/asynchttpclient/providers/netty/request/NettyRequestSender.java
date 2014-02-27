@@ -230,6 +230,8 @@ public class NettyRequestSender {
         if (!connectListener.future().isCancelled() || !connectListener.future().isDone()) {
             channels.registerChannel(channelFuture.channel());
             connectListener.future().attachChannel(channelFuture.channel(), false);
+        } else if (acquiredConnection) {
+            channels.releaseFreeConnections();
         }
         return connectListener.future();
     }
