@@ -27,22 +27,17 @@ public final class ExpectHandler implements BodyHandler {
 
     // -------------------------------------------------------- Constructors
 
-
     public ExpectHandler(final BodyHandler delegate) {
-
         this.delegate = delegate;
-
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(Request request) {
         return delegate.handlesBodyType(request);
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     public boolean doHandle(FilterChainContext ctx, Request request, HttpRequestPacket requestPacket) throws IOException {
         this.request = request;
         this.requestPacket = requestPacket;

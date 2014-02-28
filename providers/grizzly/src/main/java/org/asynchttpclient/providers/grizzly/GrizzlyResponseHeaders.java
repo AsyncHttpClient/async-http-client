@@ -18,7 +18,6 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;
 
-
 /**
  * {@link HttpResponseHeaders} implementation using the Grizzly 2.0 HTTP client
  * codec.
@@ -31,20 +30,15 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
     private FluentCaseInsensitiveStringsMap headers;
     private MimeHeaders grizzlyHeaders;
 
-
     // ------------------------------------------------------------ Constructors
-
 
     public GrizzlyResponseHeaders(final HttpResponsePacket response) {
 
         grizzlyHeaders = new MimeHeaders();
         grizzlyHeaders.copyFrom(response.getHeaders());
-
     }
 
-
     // ---------------------------------------- Methods from HttpResponseHeaders
-
 
     /**
      * {@inheritDoc}
@@ -61,7 +55,6 @@ class GrizzlyResponseHeaders extends HttpResponseHeaders {
         }
         return headers;
     }
-
 
     @Override
     public String toString() {

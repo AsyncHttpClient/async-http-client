@@ -23,5 +23,4 @@ public class GrizzlyComplexClientTest extends ComplexClientTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

@@ -39,20 +39,15 @@ public final class ParamsBodyHandler implements BodyHandler {
         compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(final Request request) {
         final FluentStringsMap params = request.getParams();
         return isNonEmpty(params);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         if (requestPacket.getContentType() == null) {
             requestPacket.setContentType("application/x-www-form-urlencoded");
@@ -76,8 +71,7 @@ public final class ParamsBodyHandler implements BodyHandler {
                         if (sb.length() > 0) {
                             sb.append('&');
                         }
-                        sb.append(URLEncoder.encode(name, charset))
-                                .append('=').append(URLEncoder.encode(value, charset));
+                        sb.append(URLEncoder.encode(name, charset)).append('=').append(URLEncoder.encode(value, charset));
                     }
                 }
             }
@@ -97,5 +91,4 @@ public final class ParamsBodyHandler implements BodyHandler {
         }
         return true;
     }
-
 } // END ParamsBodyHandler

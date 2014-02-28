@@ -31,18 +31,13 @@ import java.util.concurrent.ExecutorService;
  * @since 2.0
  * @author The Grizzly Team
  */
-public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
-        implements GrizzlyAsyncHttpProvider.Cleanup {
-
+public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter implements GrizzlyAsyncHttpProvider.Cleanup {
 
     private final EventHandler eventHandler;
 
     // -------------------------------------------------------- Constructors
 
-
-    public AsyncSpdyClientEventFilter(final EventHandler eventHandler,
-                                      SpdyMode mode,
-                                      ExecutorService threadPool) {
+    public AsyncSpdyClientEventFilter(final EventHandler eventHandler, SpdyMode mode, ExecutorService threadPool) {
         super(mode, threadPool);
         this.eventHandler = eventHandler;
     }
@@ -91,5 +86,4 @@ public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter
     public void cleanup(FilterChainContext ctx) {
 
     }
-
 }

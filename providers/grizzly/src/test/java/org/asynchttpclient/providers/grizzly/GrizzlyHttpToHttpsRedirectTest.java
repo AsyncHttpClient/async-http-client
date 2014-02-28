@@ -23,5 +23,4 @@ public class GrizzlyHttpToHttpsRedirectTest extends HttpToHttpsRedirectTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

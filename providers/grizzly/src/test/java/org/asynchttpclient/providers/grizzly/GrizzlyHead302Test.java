@@ -23,5 +23,4 @@ public class GrizzlyHead302Test extends Head302Test {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

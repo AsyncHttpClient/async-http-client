@@ -69,9 +69,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
     private int configuredMaxPendingBytes = DEFAULT;
     private boolean asyncTransferInitiated;
 
-
     // ---------------------------------------------- Methods from BodyGenerator
-
 
     /**
      * {@inheritDoc}
@@ -81,9 +79,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         return EMPTY_BODY;
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     /**
      * Configured the maximum number of bytes that may be pending to be written
@@ -103,16 +99,13 @@ public class FeedableBodyGenerator implements BodyGenerator {
     @SuppressWarnings("UnusedDeclaration")
     public synchronized void setMaxPendingBytes(final int maxPendingBytes) {
         if (maxPendingBytes < DEFAULT) {
-            throw new IllegalArgumentException(
-                    "Invalid maxPendingBytes value: " + maxPendingBytes);
+            throw new IllegalArgumentException("Invalid maxPendingBytes value: " + maxPendingBytes);
         }
         if (asyncTransferInitiated) {
-            throw new IllegalStateException(
-                    "Unable to set max pending bytes after async data transfer has been initiated.");
+            throw new IllegalStateException("Unable to set max pending bytes after async data transfer has been initiated.");
         }
         configuredMaxPendingBytes = maxPendingBytes;
     }
-
 
     /**
      * Add a {@link Feeder} implementation that will be invoked when writing
@@ -127,35 +120,28 @@ public class FeedableBodyGenerator implements BodyGenerator {
     @SuppressWarnings("UnusedDeclaration")
     public synchronized void setFeeder(final Feeder feeder) {
         if (asyncTransferInitiated) {
-            throw new IllegalStateException(
-                    "Unable to set Feeder after async data transfer has been initiated.");
+            throw new IllegalStateException("Unable to set Feeder after async data transfer has been initiated.");
         }
         if (feeder == null) {
-            throw new IllegalArgumentException(
-                    "Feeder argument cannot be null.");
+            throw new IllegalArgumentException("Feeder argument cannot be null.");
         }
         this.feeder = feeder;
     }
 
-
     // ------------------------------------------------- Package Private Methods
-
 
     /**
      * Even though this method is public, it's not intended to be called by
      * Developers directly.  Please avoid doing so.
      */
-    public synchronized void initializeAsynchronousTransfer(final FilterChainContext context,
-                                                            final HttpRequestPacket requestPacket)
-    throws IOException {
+    public synchronized void initializeAsynchronousTransfer(final FilterChainContext context, final HttpRequestPacket requestPacket)
+            throws IOException {
 
         if (asyncTransferInitiated) {
-            throw new IllegalStateException(
-                    "Async transfer has already been initiated.");
+            throw new IllegalStateException("Async transfer has already been initiated.");
         }
         if (feeder == null) {
-            throw new IllegalStateException(
-                    "No feeder available to perform the transfer.");
+            throw new IllegalStateException("No feeder available to perform the transfer.");
         }
         assert (context != null);
         assert (requestPacket != null);
@@ -191,17 +177,13 @@ public class FeedableBodyGenerator implements BodyGenerator {
         }
     }
 
-
     // --------------------------------------------------------- Private Methods
-
 
     private boolean isServiceThread() {
         return Threads.isService();
     }
 
-
     // ----------------------------------------------------------- Inner Classes
-
 
     private final class EmptyBody implements Body {
 
@@ -225,9 +207,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     } // END EmptyBody
 
-
     // ---------------------------------------------------------- Nested Classes
-
 
     /**
      * Specifies the functionality all Feeders must implement.  Typically,
@@ -268,7 +248,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     } // END Feeder
 
-
     /**
      * Base class for {@link Feeder} implementations.  This class provides
      * an implementation for the contract defined by the {@link #feed} method.
@@ -277,40 +256,28 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         protected final FeedableBodyGenerator feedableBodyGenerator;
 
-
         // -------------------------------------------------------- Constructors
-
 
         protected BaseFeeder(FeedableBodyGenerator feedableBodyGenerator) {
             this.feedableBodyGenerator = feedableBodyGenerator;
         }
 
-
         // --------------------------------------------- Package Private Methods
-
 
         /**
          * {@inheritDoc}
          */
         @SuppressWarnings("UnusedDeclaration")
-        public final synchronized void feed(final Buffer buffer, final boolean last)
-                throws IOException {
+        public final synchronized void feed(final Buffer buffer, final boolean last) throws IOException {
             if (buffer == null) {
-                throw new IllegalArgumentException(
-                        "Buffer argument cannot be null.");
+                throw new IllegalArgumentException("Buffer argument cannot be null.");
             }
             if (!feedableBodyGenerator.asyncTransferInitiated) {
-                throw new IllegalStateException(
-                        "Asynchronous transfer has not been initiated.");
+                throw new IllegalStateException("Asynchronous transfer has not been initiated.");
             }
             blockUntilQueueFree(feedableBodyGenerator.context);
-            final HttpContent content =
-                    feedableBodyGenerator.contentBuilder
-                            .content(buffer)
-                            .last(last)
-                            .build();
-            final CompletionHandler<WriteResult> handler =
-                    ((last) ? new LastPacketCompletionHandler() : null);
+            final HttpContent content = feedableBodyGenerator.contentBuilder.content(buffer).last(last).build();
+            final CompletionHandler<WriteResult> handler = ((last) ? new LastPacketCompletionHandler() : null);
             feedableBodyGenerator.context.write(content, handler);
         }
 
@@ -324,8 +291,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             HttpContext httpContext = HttpContext.get(ctx);
             final OutputSink outputSink = httpContext.getOutputSink();
             if (!outputSink.canWrite()) {
-                final FutureImpl<Boolean> future =
-                        Futures.createSafeFuture();
+                final FutureImpl<Boolean> future = Futures.createSafeFuture();
                 outputSink.notifyCanWrite(new WriteHandler() {
 
                     @Override
@@ -343,11 +309,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
         }
 
-        private static void block(final FilterChainContext ctx,
-                                  final FutureImpl<Boolean> future) {
+        private static void block(final FilterChainContext ctx, final FutureImpl<Boolean> future) {
             try {
-                final long writeTimeout =
-                        ctx.getConnection().getTransport().getWriteTimeout(MILLISECONDS);
+                final long writeTimeout = ctx.getConnection().getTransport().getWriteTimeout(MILLISECONDS);
                 if (writeTimeout != -1) {
                     future.get(writeTimeout, MILLISECONDS);
                 } else {
@@ -362,12 +326,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
         }
 
-
         // ------------------------------------------------------- Inner Classes
 
-
-        private final class LastPacketCompletionHandler
-                implements CompletionHandler<WriteResult> {
+        private final class LastPacketCompletionHandler implements CompletionHandler<WriteResult> {
 
             private final CompletionHandler<WriteResult> delegate;
             private final Connection c;
@@ -375,21 +336,15 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             // -------------------------------------------------------- Constructors
 
-
             @SuppressWarnings("unchecked")
             private LastPacketCompletionHandler() {
-                delegate = ((!feedableBodyGenerator.requestPacket.isCommitted())
-                        ? feedableBodyGenerator.context
-                        .getTransportContext()
-                        .getCompletionHandler()
-                        : null);
+                delegate = ((!feedableBodyGenerator.requestPacket.isCommitted()) ? feedableBodyGenerator.context.getTransportContext()
+                        .getCompletionHandler() : null);
                 c = feedableBodyGenerator.context.getConnection();
                 origMaxPendingBytes = feedableBodyGenerator.origMaxPendingBytes;
             }
 
-
             // -------------------------------------- Methods from CompletionHandler
-
 
             @Override
             public void cancelled() {
@@ -428,7 +383,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     } // END Feeder
 
-
     /**
      * Implementations of this class provide the framework to read data from
      * some source and feed data to the {@link FeedableBodyGenerator}
@@ -437,9 +391,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
     @SuppressWarnings("UnusedDeclaration")
     public static abstract class NonBlockingFeeder extends BaseFeeder {
 
-
         // -------------------------------------------------------- Constructors
-
 
         /**
          * Constructs the <code>NonBlockingFeeder</code> with the associated
@@ -449,9 +401,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             super(feedableBodyGenerator);
         }
 
-
         // ------------------------------------------------------ Public Methods
-
 
         /**
          * Notification that it's possible to send another block of data via
@@ -485,17 +435,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
          */
         public abstract void notifyReadyToFeed(final ReadyToFeedListener listener);
 
-
         // ------------------------------------------------- Methods from Feeder
-
 
         /**
          * {@inheritDoc}
          */
         @Override
         public synchronized void flush() {
-            final HttpContext httpContext =
-                    HttpContext.get(feedableBodyGenerator.context);
+            final HttpContext httpContext = HttpContext.get(feedableBodyGenerator.context);
             final OutputSink outputSink = httpContext.getOutputSink();
             if (isReady()) {
                 writeUntilFullOrDone(outputSink);
@@ -514,9 +461,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
         }
 
-
         // ----------------------------------------------------- Private Methods
-
 
         private void writeUntilFullOrDone(final OutputSink outputSink) {
             while (outputSink.canWrite()) {
@@ -529,9 +474,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             }
         }
 
-
         // ------------------------------------------------------- Inner Classes
-
 
         /**
          * Listener to signal that data is available to be fed.
@@ -546,22 +489,17 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         } // END ReadyToFeedListener
 
-
         private final class WriteHandlerImpl implements WriteHandler {
-
 
             private final Connection c;
             private final FilterChainContext ctx;
 
-
             // -------------------------------------------------------- Constructors
-
 
             private WriteHandlerImpl() {
                 this.c = feedableBodyGenerator.context.getConnection();
                 this.ctx = feedableBodyGenerator.context;
             }
-
 
             // ------------------------------------------ Methods from WriteListener
 
@@ -583,8 +521,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void onError(Throwable t) {
                 if (!Utils.isSpdyConnection(c)) {
-                    c.setMaxAsyncWriteQueueSize(
-                            feedableBodyGenerator.origMaxPendingBytes);
+                    c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
                 }
                 HttpTxContext httpTxContext = HttpTxContext.get(ctx);
                 httpTxContext.abort(t);
@@ -592,13 +529,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         } // END WriteHandlerImpl
 
-
-        private final class ReadyToFeedListenerImpl
-                implements NonBlockingFeeder.ReadyToFeedListener {
-
+        private final class ReadyToFeedListenerImpl implements NonBlockingFeeder.ReadyToFeedListener {
 
             // ------------------------------------ Methods from ReadyToFeedListener
-
 
             @Override
             public void ready() {
@@ -609,7 +542,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     } // END NonBlockingFeeder
 
-
     /**
      * This simple {@link Feeder} implementation allows the implementation to
      * feed data in whatever fashion is deemed appropriate.
@@ -617,9 +549,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
     @SuppressWarnings("UnusedDeclaration")
     public abstract static class SimpleFeeder extends BaseFeeder {
 
-
         // -------------------------------------------------------- Constructors
-
 
         /**
          * Constructs the <code>SimpleFeeder</code> with the associated
@@ -628,7 +558,6 @@ public class FeedableBodyGenerator implements BodyGenerator {
         public SimpleFeeder(FeedableBodyGenerator feedableBodyGenerator) {
             super(feedableBodyGenerator);
         }
-
 
     } // END SimpleFeeder
 }

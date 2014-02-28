@@ -58,7 +58,8 @@ public class GrizzlyUnexpectingTimeoutTest extends AbstractBasicTest {
     }
 
     private class ExpectExceptionHandler extends AbstractHandler {
-        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
+        public void handle(String target, Request baseRequest, HttpServletRequest request, final HttpServletResponse response)
+                throws IOException, ServletException {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             final Continuation continuation = ContinuationSupport.getContinuation(request);
             continuation.suspend();

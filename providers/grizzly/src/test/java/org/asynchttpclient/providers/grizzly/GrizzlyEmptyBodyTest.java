@@ -23,5 +23,4 @@ public class GrizzlyEmptyBodyTest extends EmptyBodyTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

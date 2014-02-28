@@ -26,7 +26,6 @@ import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 
 import java.net.URI;
 
-
 final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     private FilterChainBuilder nonSecureTemplate;
@@ -37,38 +36,27 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
     // ------------------------------------------------------------ Constructors
 
-
     private ProxyAwareConnectorHandler(final TCPNIOTransport transport) {
         super(transport);
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public static Builder builder(final TCPNIOTransport transport) {
         return new ProxyAwareConnectorHandler.Builder(transport);
     }
 
-
     // ------------------------------------------- Methods from ConnectorHandler
-
 
     @Override
     public Processor getProcessor() {
-        return ((proxyServer != null)
-                    ? createProxyFilterChain()
-                    : createFilterChain());
+        return ((proxyServer != null) ? createProxyFilterChain() : createFilterChain());
     }
-
 
     // --------------------------------------------------------- Private Methods
 
-
     private FilterChain createFilterChain() {
-        return Utils.isSecure(uri)
-                   ? secureTemplate.build()
-                   : nonSecureTemplate.build();
+        return Utils.isSecure(uri) ? secureTemplate.build() : nonSecureTemplate.build();
     }
 
     private FilterChain createProxyFilterChain() {
@@ -96,25 +84,19 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
         builder.add(idx + 1, new ProxyFilter(proxyServer, clientConfig, false));
     }
 
-
     // ---------------------------------------------------------- Nested Classes
-
 
     public static final class Builder extends TCPNIOConnectorHandler.Builder {
 
         final ProxyAwareConnectorHandler connectorHandler;
 
-
         // -------------------------------------------------------- Constructors
-
 
         private Builder(final TCPNIOTransport transport) {
             connectorHandler = new ProxyAwareConnectorHandler(transport);
         }
 
-
         // ----------------------------------------------------- Builder Methods
-
 
         public Builder secureFilterChainTemplate(final FilterChainBuilder secureTemplate) {
             connectorHandler.secureTemplate = secureTemplate;
@@ -143,12 +125,11 @@ final class ProxyAwareConnectorHandler extends TCPNIOConnectorHandler {
 
         @Override
         public ProxyAwareConnectorHandler build() {
-            assert(connectorHandler.secureTemplate != null);
-            assert(connectorHandler.nonSecureTemplate != null);
-            assert(connectorHandler.clientConfig != null);
-            assert(connectorHandler.uri != null);
+            assert (connectorHandler.secureTemplate != null);
+            assert (connectorHandler.nonSecureTemplate != null);
+            assert (connectorHandler.clientConfig != null);
+            assert (connectorHandler.uri != null);
             return connectorHandler;
         }
-
     } // END Builder
 }

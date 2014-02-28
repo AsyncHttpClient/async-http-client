@@ -23,5 +23,4 @@ public class GrizzlyBodyChunkTest extends BodyChunkTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

@@ -23,5 +23,4 @@ public class GrizzlyPerRequestRelative302Test extends PerRequestRelative302Test 
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

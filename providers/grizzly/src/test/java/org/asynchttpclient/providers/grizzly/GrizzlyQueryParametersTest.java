@@ -17,11 +17,10 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.async.QueryParametersTest;
 
-public class GrizzlyQueryParametersTest extends QueryParametersTest{
+public class GrizzlyQueryParametersTest extends QueryParametersTest {
 
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

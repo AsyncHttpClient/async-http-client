@@ -21,14 +21,14 @@ public final class BodyHandlerFactory {
     private final BodyHandler[] handlers;
 
     public BodyHandlerFactory(GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
-        handlers = new BodyHandler[]{
-                new StringBodyHandler(grizzlyAsyncHttpProvider),
-                new ByteArrayBodyHandler(grizzlyAsyncHttpProvider),
-                new ParamsBodyHandler(grizzlyAsyncHttpProvider),
-                new StreamDataBodyHandler(),
-                new PartsBodyHandler(),
-                new FileBodyHandler(),
-                new BodyGeneratorBodyHandler()
+        handlers = new BodyHandler[] {//
+        new StringBodyHandler(grizzlyAsyncHttpProvider),//
+                new ByteArrayBodyHandler(grizzlyAsyncHttpProvider),//
+                new ParamsBodyHandler(grizzlyAsyncHttpProvider),//
+                new StreamDataBodyHandler(),//
+                new PartsBodyHandler(),//
+                new FileBodyHandler(),//
+                new BodyGeneratorBodyHandler() //
         };
     }
 

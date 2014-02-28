@@ -23,5 +23,4 @@ public class GrizzlyFollowingThreadTest extends FollowingThreadTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

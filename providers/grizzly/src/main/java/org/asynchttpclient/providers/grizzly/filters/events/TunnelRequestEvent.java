@@ -26,34 +26,26 @@ import java.net.URI;
  */
 public final class TunnelRequestEvent implements FilterChainEvent {
 
-
     private final FilterChainContext suspendedContext;
     private final ProxyServer proxyServer;
     private final URI uri;
 
-
     // ------------------------------------------------------------ Constructors
 
-    public TunnelRequestEvent(final FilterChainContext suspendedContext,
-                              final ProxyServer proxyServer,
-                              final URI uri) {
+    public TunnelRequestEvent(final FilterChainContext suspendedContext, final ProxyServer proxyServer, final URI uri) {
         this.suspendedContext = suspendedContext;
         this.proxyServer = proxyServer;
         this.uri = uri;
     }
 
-
     // ------------------------------------------- Methods from FilterChainEvent
-
 
     @Override
     public Object type() {
         return TunnelRequestEvent.class;
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public FilterChainContext getSuspendedContext() {
         return suspendedContext;

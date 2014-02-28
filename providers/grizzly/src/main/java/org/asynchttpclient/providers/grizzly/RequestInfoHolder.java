@@ -24,15 +24,10 @@ public class RequestInfoHolder {
     private final GrizzlyResponseFuture future;
     private final HttpTxContext httpTxContext;
 
-
     // ------------------------------------------------------------ Constructors
 
-
-    public RequestInfoHolder(final GrizzlyAsyncHttpProvider provider,
-                             final Request request,
-                             final AsyncHandler handler,
-                             final GrizzlyResponseFuture future,
-                             final HttpTxContext httpTxContext) {
+    public RequestInfoHolder(final GrizzlyAsyncHttpProvider provider, final Request request, final AsyncHandler handler,
+            final GrizzlyResponseFuture future, final HttpTxContext httpTxContext) {
         this.provider = provider;
         this.request = request;
         this.handler = handler;
@@ -40,9 +35,7 @@ public class RequestInfoHolder {
         this.httpTxContext = httpTxContext;
     }
 
-
     // ---------------------------------------------------------- Public Methods
-
 
     public GrizzlyAsyncHttpProvider getProvider() {
         return provider;

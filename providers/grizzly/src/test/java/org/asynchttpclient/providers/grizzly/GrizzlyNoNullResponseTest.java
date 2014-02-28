@@ -23,5 +23,4 @@ public class GrizzlyNoNullResponseTest extends NoNullResponseTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

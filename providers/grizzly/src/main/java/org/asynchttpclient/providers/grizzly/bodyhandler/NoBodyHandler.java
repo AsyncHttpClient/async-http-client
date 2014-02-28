@@ -23,22 +23,16 @@ import java.io.IOException;
 
 public final class NoBodyHandler implements BodyHandler {
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(final Request request) {
         return false;
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
-        final HttpContent content = requestPacket.httpContentBuilder().content(
-                Buffers.EMPTY_BUFFER).build();
+        final HttpContent content = requestPacket.httpContentBuilder().content(Buffers.EMPTY_BUFFER).build();
         content.setLast(true);
         ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         return true;

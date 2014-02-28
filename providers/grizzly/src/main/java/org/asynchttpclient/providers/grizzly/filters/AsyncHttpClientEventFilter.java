@@ -29,22 +29,17 @@ import java.io.IOException;
  * @since 2.0
  * @author The Grizzly Team
  */
-public final class AsyncHttpClientEventFilter extends HttpClientFilter
-        implements GrizzlyAsyncHttpProvider.Cleanup {
-
+public final class AsyncHttpClientEventFilter extends HttpClientFilter implements GrizzlyAsyncHttpProvider.Cleanup {
 
     private final EventHandler eventHandler;
 
     // -------------------------------------------------------- Constructors
 
-
     public AsyncHttpClientEventFilter(final EventHandler eventHandler) {
         this(eventHandler, DEFAULT_MAX_HTTP_PACKET_HEADER_SIZE);
     }
 
-
-    public AsyncHttpClientEventFilter(final EventHandler eventHandler,
-                                      final int maxHeaderSize) {
+    public AsyncHttpClientEventFilter(final EventHandler eventHandler, final int maxHeaderSize) {
 
         super(maxHeaderSize);
         this.eventHandler = eventHandler;
@@ -94,5 +89,4 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter
     public void cleanup(final FilterChainContext ctx) {
         clearResponse(ctx.getConnection());
     }
-
 }

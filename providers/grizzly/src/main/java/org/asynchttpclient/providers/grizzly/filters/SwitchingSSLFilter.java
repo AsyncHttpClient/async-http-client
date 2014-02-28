@@ -31,7 +31,6 @@ import javax.net.ssl.SSLHandshakeException;
 
 import java.io.IOException;
 
-
 /**
  * SSL Filter that may be present within the FilterChain and may be
  * enabled/disabled by sending the appropriate {@link SSLSwitchingEvent}.
@@ -41,24 +40,18 @@ import java.io.IOException;
  */
 public final class SwitchingSSLFilter extends SSLFilter {
 
-    private static final Attribute<Boolean> CONNECTION_IS_SECURE =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName());
-    private static final Attribute<Throwable> HANDSHAKE_ERROR =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class.getName() + "-HANDSHAKE-ERROR");
-
+    private static final Attribute<Boolean> CONNECTION_IS_SECURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(SwitchingSSLFilter.class.getName());
+    private static final Attribute<Throwable> HANDSHAKE_ERROR = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(SwitchingSSLFilter.class
+            .getName() + "-HANDSHAKE-ERROR");
 
     // ------------------------------------------------------------ Constructors
 
-
     public SwitchingSSLFilter(final SSLEngineConfigurator clientConfig) {
-
         super(null, clientConfig);
-
     }
 
-
     // -------------------------------------------------- Methods from SSLFilter
-
 
     @Override
     protected void notifyHandshakeFailed(Connection connection, Throwable t) {
@@ -73,35 +66,33 @@ public final class SwitchingSSLFilter extends SSLFilter {
         // to determine if a connection is SPDY or HTTP as early as possible.
         ctx.suspend();
         final Connection c = ctx.getConnection();
-        handshake(ctx.getConnection(),
-                  new EmptyCompletionHandler<SSLEngine>() {
-                      @Override
-                      public void completed(SSLEngine result) {
-                          // Handshake was successful.  Resume the handleConnect
-                          // processing.  We pass in Invoke Action so the filter
-                          // chain will call handleConnect on the next filter.
-                          ctx.resume(ctx.getInvokeAction());
-                      }
+        handshake(ctx.getConnection(), new EmptyCompletionHandler<SSLEngine>() {
+            @Override
+            public void completed(SSLEngine result) {
+                // Handshake was successful.  Resume the handleConnect
+                // processing.  We pass in Invoke Action so the filter
+                // chain will call handleConnect on the next filter.
+                ctx.resume(ctx.getInvokeAction());
+            }
 
-                      @Override
-                      public void cancelled() {
-                          // Handshake was cancelled.  Stop the handleConnect
-                          // processing.  The exception will be checked and
-                          // passed to the user later.
-                          setError(c, new SSLHandshakeException(
-                                  "Handshake canceled."));
-                          ctx.resume(ctx.getStopAction());
-                      }
+            @Override
+            public void cancelled() {
+                // Handshake was cancelled.  Stop the handleConnect
+                // processing.  The exception will be checked and
+                // passed to the user later.
+                setError(c, new SSLHandshakeException("Handshake canceled."));
+                ctx.resume(ctx.getStopAction());
+            }
 
-                      @Override
-                      public void failed(Throwable throwable) {
-                          // Handshake failed.  Stop the handleConnect
-                          // processing.  The exception will be checked and
-                          // passed to the user later.
-                          setError(c, throwable);
-                          ctx.resume(ctx.getStopAction());
-                      }
-                  });
+            @Override
+            public void failed(Throwable throwable) {
+                // Handshake failed.  Stop the handleConnect
+                // processing.  The exception will be checked and
+                // passed to the user later.
+                setError(c, throwable);
+                ctx.resume(ctx.getStopAction());
+            }
+        });
 
         // This typically isn't advised, however, we need to be able to
         // read the response from the proxy and OP_READ isn't typically
@@ -115,8 +106,7 @@ public final class SwitchingSSLFilter extends SSLFilter {
     }
 
     @Override
-    public NextAction handleEvent(final FilterChainContext ctx,
-                                  final FilterChainEvent event) throws IOException {
+    public NextAction handleEvent(final FilterChainContext ctx, final FilterChainEvent event) throws IOException {
 
         if (event.type() == SSLSwitchingEvent.class) {
             final SSLSwitchingEvent se = (SSLSwitchingEvent) event;
@@ -124,7 +114,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return ctx.getStopAction();
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -134,7 +123,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return super.handleRead(ctx);
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -144,7 +132,6 @@ public final class SwitchingSSLFilter extends SSLFilter {
             return super.handleWrite(ctx);
         }
         return ctx.getInvokeAction();
-
     }
 
     @Override
@@ -152,14 +139,11 @@ public final class SwitchingSSLFilter extends SSLFilter {
         // no-op
     }
 
-
     public static Throwable getHandshakeError(final Connection c) {
         return HANDSHAKE_ERROR.remove(c);
     }
 
-
     // --------------------------------------------------------- Private Methods
-
 
     private static boolean isSecure(final Connection c) {
         Boolean secStatus = CONNECTION_IS_SECURE.get(c);
@@ -177,5 +161,4 @@ public final class SwitchingSSLFilter extends SSLFilter {
     private static void enableRead(final Connection c) throws IOException {
         c.enableIOEvent(IOEvent.READ);
     }
-
 }

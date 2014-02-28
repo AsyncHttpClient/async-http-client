@@ -27,19 +27,14 @@ import java.io.InputStream;
 
 public final class StreamDataBodyHandler implements BodyHandler {
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(final Request request) {
         return (request.getStreamData() != null);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final MemoryManager mm = ctx.getMemoryManager();
         Buffer buffer = mm.allocate(512);
@@ -70,8 +65,6 @@ public final class StreamDataBodyHandler implements BodyHandler {
             content.setLast(true);
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         }
-
         return true;
     }
-
 } // END StreamDataBodyHandler

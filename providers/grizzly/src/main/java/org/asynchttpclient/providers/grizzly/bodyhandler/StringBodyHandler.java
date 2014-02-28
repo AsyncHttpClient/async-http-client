@@ -32,19 +32,14 @@ public final class StringBodyHandler implements BodyHandler {
         this.grizzlyAsyncHttpProvider = grizzlyAsyncHttpProvider;
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
-
 
     public boolean handlesBodyType(final Request request) {
         return (request.getStringData() != null);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         String charset = request.getBodyEncoding();
         if (charset == null) {
@@ -63,5 +58,4 @@ public final class StringBodyHandler implements BodyHandler {
         ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         return true;
     }
-
 } // END StringBodyHandler

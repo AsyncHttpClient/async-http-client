@@ -39,14 +39,9 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     private final int minorVersion;
     private final String protocolText;
 
-
-
     // ------------------------------------------------------------ Constructors
 
-
-    public GrizzlyResponseStatus(final HttpResponsePacket response,
-                                 final URI uri,
-                                 AsyncHttpClientConfig config) {
+    public GrizzlyResponseStatus(final HttpResponsePacket response, final URI uri, AsyncHttpClientConfig config) {
 
         super(uri, config);
         statusCode = response.getStatus();
@@ -54,82 +49,60 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
         majorVersion = response.getProtocol().getMajorVersion();
         minorVersion = response.getProtocol().getMinorVersion();
         protocolText = response.getProtocolString();
-
     }
-
 
     // ----------------------------------------- Methods from HttpResponseStatus
 
     @Override
     public Response prepareResponse(HttpResponseHeaders headers, List<HttpResponseBodyPart> bodyParts) {
-        return new GrizzlyResponse(this,
-                headers,
-                bodyParts);
+        return new GrizzlyResponse(this, headers, bodyParts);
     }
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
     public int getStatusCode() {
-
         return statusCode;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getStatusText() {
-
         return statusText;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getProtocolName() {
-
         return PROTOCOL_NAME;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public int getProtocolMajorVersion() {
-
         return majorVersion;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public int getProtocolMinorVersion() {
-
         return minorVersion;
-
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String getProtocolText() {
-
         return protocolText;
-
     }
-
 }

@@ -32,27 +32,23 @@ public final class ByteArrayBodyHandler implements BodyHandler {
         compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
     }
 
-
     // -------------------------------------------- Methods from BodyHandler
 
     public boolean handlesBodyType(final Request request) {
         return (request.getByteData() != null);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final byte[] data = request.getByteData();
         final MemoryManager mm = ctx.getMemoryManager();
         final Buffer gBuffer = Buffers.wrap(mm, data);
         if (requestPacket.getContentLength() == -1) {
-                if (!compressionEnabled) {
-                    requestPacket.setContentLengthLong(data.length);
-                }
+            if (!compressionEnabled) {
+                requestPacket.setContentLengthLong(data.length);
             }
+        }
         final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
         content.setLast(true);
         ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));

@@ -23,5 +23,4 @@ public class GrizzlyDigestAuthTest extends DigestAuthTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

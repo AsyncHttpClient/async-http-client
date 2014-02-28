@@ -38,7 +38,5 @@ public interface TransportCustomizer {
      *   These filters should generally be left alone.  But this does allow
      *   adding additional filters to the chain to add additional features.
      */
-    void customize(final TCPNIOTransport transport,
-                   final FilterChainBuilder filterChainBuilder);
-    
+    void customize(final TCPNIOTransport transport, final FilterChainBuilder filterChainBuilder);
 }

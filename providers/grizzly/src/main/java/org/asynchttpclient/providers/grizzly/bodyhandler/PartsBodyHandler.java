@@ -35,27 +35,19 @@ public final class PartsBodyHandler implements BodyHandler {
 
     // -------------------------------------------- Methods from BodyHandler
 
-
     public boolean handlesBodyType(final Request request) {
         return isNonEmpty(request.getParts());
     }
 
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final List<Part> parts = request.getParts();
         final MultipartBody multipartBody = MultipartUtils.newMultipartBody(parts, request.getHeaders());
         requestPacket.setContentLengthLong(multipartBody.getContentLength());
         requestPacket.setContentType(multipartBody.getContentType());
         if (GrizzlyAsyncHttpProvider.LOGGER.isDebugEnabled()) {
-            GrizzlyAsyncHttpProvider.LOGGER.debug(
-                    "REQUEST(modified): contentLength={}, contentType={}",
-                         new Object[]{
-                                 requestPacket.getContentLength(),
-                                 requestPacket.getContentType()
-                         });
+            GrizzlyAsyncHttpProvider.LOGGER.debug("REQUEST(modified): contentLength={}, contentType={}",
+                    new Object[] { requestPacket.getContentLength(), requestPacket.getContentType() });
         }
 
         final FeedableBodyGenerator generator = new FeedableBodyGenerator() {
@@ -74,8 +66,7 @@ public final class PartsBodyHandler implements BodyHandler {
                     while (!last) {
                         Buffer buffer = mm.allocate(BodyHandler.MAX_CHUNK_SIZE);
                         buffer.allowBufferDispose(true);
-                        final long readBytes =
-                                bodyLocal.read(buffer.toByteBuffer());
+                        final long readBytes = bodyLocal.read(buffer.toByteBuffer());
                         if (readBytes > 0) {
                             buffer.position((int) readBytes);
                             buffer.trim();
@@ -85,8 +76,7 @@ public final class PartsBodyHandler implements BodyHandler {
                                 last = true;
                                 buffer = Buffers.EMPTY_BUFFER;
                             } else {
-                                throw new IllegalStateException(
-                                        "MultipartBody unexpectedly returned 0 bytes available");
+                                throw new IllegalStateException("MultipartBody unexpectedly returned 0 bytes available");
                             }
                         }
                         feed(buffer, last);
@@ -103,7 +93,5 @@ public final class PartsBodyHandler implements BodyHandler {
         });
         generator.initializeAsynchronousTransfer(ctx, requestPacket);
         return false;
-
     }
-
 } // END PartsBodyHandler

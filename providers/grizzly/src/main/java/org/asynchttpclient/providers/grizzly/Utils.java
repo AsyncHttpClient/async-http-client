@@ -25,22 +25,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Utils {
 
-    private static final Attribute<Boolean> IGNORE =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IGNORE");
-    private static final Attribute<AtomicInteger> REQUEST_IN_FLIGHT =
-                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IN-FLIGHT");
-    private static final Attribute<Boolean> SPDY =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-SPDY-CONNECTION");
-
+    private static final Attribute<Boolean> IGNORE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName() + "-IGNORE");
+    private static final Attribute<AtomicInteger> REQUEST_IN_FLIGHT = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class
+            .getName() + "-IN-FLIGHT");
+    private static final Attribute<Boolean> SPDY = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(Utils.class.getName()
+            + "-SPDY-CONNECTION");
 
     // ------------------------------------------------------------ Constructors
 
-
-    private Utils() {}
-
+    private Utils() {
+    }
 
     // ---------------------------------------------------------- Public Methods
-
 
     public static boolean isSecure(final URI uri) {
         final String scheme = uri.getScheme();
@@ -79,7 +75,7 @@ public final class Utils {
 
     public static int getRequestInFlightCount(final AttributeStorage storage) {
         AtomicInteger counter = REQUEST_IN_FLIGHT.get(storage);
-        return ((counter != null) ? counter.get() : 0);
+        return counter != null ? counter.get() : 0;
     }
 
     public static void setSpdyConnection(final Connection c) {
@@ -88,16 +84,15 @@ public final class Utils {
 
     public static boolean isSpdyConnection(final Connection c) {
         Boolean result = SPDY.get(c);
-        return (result != null ? result : false);
+        return result != null ? result : false;
     }
 
     public static boolean requestHasEntityBody(final Request request) {
 
         final String method = request.getMethod();
-        return (Method.POST.matchesMethod(method)
-                || Method.PUT.matchesMethod(method)
-                || Method.PATCH.matchesMethod(method)
-                || Method.DELETE.matchesMethod(method));
-
+        return Method.POST.matchesMethod(method)//
+                || Method.PUT.matchesMethod(method)//
+                || Method.PATCH.matchesMethod(method)//
+                || Method.DELETE.matchesMethod(method);
     }
 }

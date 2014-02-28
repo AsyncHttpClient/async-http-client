@@ -39,19 +39,14 @@ public final class FileBodyHandler implements BodyHandler {
         SEND_FILE_SUPPORT = configSendFileSupport();
     }
 
-
     // ------------------------------------------------ Methods from BodyHandler
 
-
     public boolean handlesBodyType(final Request request) {
-        return (request.getFile() != null);
+        return request.getFile() != null;
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                            final Request request,
-                            final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final File f = request.getFile();
         requestPacket.setContentLengthLong(f.length());
@@ -62,7 +57,7 @@ public final class FileBodyHandler implements BodyHandler {
             AtomicInteger written = new AtomicInteger();
             boolean last = false;
             try {
-                for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last; ) {
+                for (byte[] buf = new byte[MAX_CHUNK_SIZE]; !last;) {
                     Buffer b = null;
                     int read;
                     if ((read = fis.read(buf)) < 0) {
@@ -74,9 +69,7 @@ public final class FileBodyHandler implements BodyHandler {
                         b = Buffers.wrap(mm, buf, 0, read);
                     }
 
-                    final HttpContent content =
-                            requestPacket.httpContentBuilder().content(b).
-                                    last(last).build();
+                    final HttpContent content = requestPacket.httpContentBuilder().content(b).last(last).build();
                     ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
                 }
             } finally {
@@ -105,37 +98,27 @@ public final class FileBodyHandler implements BodyHandler {
         return true;
     }
 
-
     // --------------------------------------------------------- Private Methods
 
-
-    private static void notifyHandlerIfNeeded(final HttpTxContext context,
-                                              final HttpRequestPacket requestPacket,
-                                              final WriteResult writeResult) {
+    private static void notifyHandlerIfNeeded(final HttpTxContext context, final HttpRequestPacket requestPacket,
+            final WriteResult writeResult) {
         final AsyncHandler handler = context.getHandler();
         if (handler != null) {
             if (handler instanceof TransferCompletionHandler) {
                 // WriteResult keeps a track of the total amount written,
                 // so we need to calculate the delta ourselves.
                 final long resultTotal = writeResult.getWrittenSize();
-                final long written =
-                        (resultTotal - context.getTotalBodyWritten().get());
+                final long written = (resultTotal - context.getTotalBodyWritten().get());
                 final long total = context.getTotalBodyWritten().addAndGet(written);
-                ((TransferCompletionHandler) handler).onContentWriteProgress(
-                        written,
-                        total,
-                        requestPacket.getContentLength());
+                ((TransferCompletionHandler) handler).onContentWriteProgress(written, total, requestPacket.getContentLength());
             }
         }
     }
 
-
     private static boolean configSendFileSupport() {
-        return !((System.getProperty("os.name").equalsIgnoreCase("linux")
-                && !linuxSendFileSupported())
-                || System.getProperty("os.name").equalsIgnoreCase("HP-UX"));
+        return !((System.getProperty("os.name").equalsIgnoreCase("linux") && !linuxSendFileSupported()) || System.getProperty("os.name")
+                .equalsIgnoreCase("HP-UX"));
     }
-
 
     private static boolean linuxSendFileSupported() {
         final String version = System.getProperty("java.version");

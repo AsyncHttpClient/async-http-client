@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class HttpTxContext {
 
-    private static final Attribute<HttpTxContext> REQUEST_STATE_ATTR =
-                Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTxContext.class.getName());
+    private static final Attribute<HttpTxContext> REQUEST_STATE_ATTR = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(HttpTxContext.class.getName());
 
     private final AtomicInteger redirectCount = new AtomicInteger(0);
 
@@ -62,24 +62,19 @@ public final class HttpTxContext {
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
     private WebSocket webSocket;
-    private CloseListener listener = new CloseListener< Closeable,CloseType>() {
+    private CloseListener listener = new CloseListener<Closeable, CloseType>() {
         @Override
-        public void onClosed(Closeable closeable, CloseType type)
-        throws IOException {
+        public void onClosed(Closeable closeable, CloseType type) throws IOException {
             if (CloseType.REMOTELY.equals(type)) {
                 abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
             }
         }
     };
 
-
     // -------------------------------------------------------- Constructors
 
-
-    private HttpTxContext(final GrizzlyAsyncHttpProvider provider,
-                          final GrizzlyResponseFuture future,
-                          final Request request,
-                          final AsyncHandler handler) {
+    private HttpTxContext(final GrizzlyAsyncHttpProvider provider, final GrizzlyResponseFuture future, final Request request,
+            final AsyncHandler handler) {
         this.provider = provider;
         this.future = future;
         this.request = request;
@@ -87,22 +82,17 @@ public final class HttpTxContext {
         redirectsAllowed = this.provider.getClientConfig().isRedirectEnabled();
         maxRedirectCount = this.provider.getClientConfig().getMaxRedirects();
         this.requestUrl = request.getUrl();
-
     }
-
 
     // ---------------------------------------------------------- Public Methods
 
-
-    public static void set(final FilterChainContext ctx,
-                           final HttpTxContext httpTxContext) {
+    public static void set(final FilterChainContext ctx, final HttpTxContext httpTxContext) {
         HttpContext httpContext = HttpContext.get(ctx);
         httpContext.getCloseable().addCloseListener(httpTxContext.listener);
         REQUEST_STATE_ATTR.set(httpContext, httpTxContext);
     }
 
-    public static void remove(final FilterChainContext ctx,
-                              final HttpTxContext httpTxContext) {
+    public static void remove(final FilterChainContext ctx, final HttpTxContext httpTxContext) {
         HttpContext httpContext = HttpContext.get(ctx);
         httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
         REQUEST_STATE_ATTR.remove(ctx);
@@ -110,16 +100,14 @@ public final class HttpTxContext {
 
     public static HttpTxContext get(FilterChainContext ctx) {
         HttpContext httpContext = HttpContext.get(ctx);
-        return ((httpContext != null)
-                    ? REQUEST_STATE_ATTR.get(httpContext)
-                    : null);
+        return ((httpContext != null) ? REQUEST_STATE_ATTR.get(httpContext) : null);
     }
 
     public static HttpTxContext create(final RequestInfoHolder requestInfoHolder) {
-        return new HttpTxContext(requestInfoHolder.getProvider(),
-                                  requestInfoHolder.getFuture(),
-                                  requestInfoHolder.getRequest(),
-                                  requestInfoHolder.getHandler());
+        return new HttpTxContext(requestInfoHolder.getProvider(),//
+                requestInfoHolder.getFuture(),//
+                requestInfoHolder.getRequest(),//
+                requestInfoHolder.getHandler());
     }
 
     public void abort(final Throwable t) {
@@ -266,13 +254,8 @@ public final class HttpTxContext {
 
     // ------------------------------------------------- Package Private Methods
 
-
     public HttpTxContext copy() {
-        final HttpTxContext newContext =
-                new HttpTxContext(provider,
-                                           future,
-                                           request,
-                                           handler);
+        final HttpTxContext newContext = new HttpTxContext(provider, future, request, handler);
         newContext.invocationStatus = invocationStatus;
         newContext.bodyHandler = bodyHandler;
         newContext.currentState = currentState;
@@ -280,7 +263,6 @@ public final class HttpTxContext {
         newContext.lastRedirectURI = lastRedirectURI;
         newContext.redirectCount.set(redirectCount.get());
         return newContext;
-
     }
 
     void done() {
@@ -289,12 +271,11 @@ public final class HttpTxContext {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     void result(Object result) {
         if (future != null) {
             future.delegate.result(result);
             future.done();
         }
     }
-
 }

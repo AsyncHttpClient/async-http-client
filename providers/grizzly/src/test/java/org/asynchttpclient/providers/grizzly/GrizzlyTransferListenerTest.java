@@ -23,5 +23,4 @@ public class GrizzlyTransferListenerTest extends TransferListenerTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

@@ -31,18 +31,15 @@ public final class RedirectHandler implements StatusHandler {
 
     public static final RedirectHandler INSTANCE = new RedirectHandler();
 
-
     // ------------------------------------------ Methods from StatusHandler
-
 
     public boolean handlesStatus(int statusCode) {
         return (EventHandler.isRedirect(statusCode));
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean handleStatus(final HttpResponsePacket responsePacket,
-                                final HttpTxContext httpTransactionContext,
-                                final FilterChainContext ctx) {
+    @SuppressWarnings({ "unchecked" })
+    public boolean handleStatus(final HttpResponsePacket responsePacket, final HttpTxContext httpTransactionContext,
+            final FilterChainContext ctx) {
 
         final String redirectURL = responsePacket.getHeader(Header.Location);
         if (redirectURL == null) {
@@ -53,48 +50,36 @@ public final class RedirectHandler implements StatusHandler {
         if (httpTransactionContext.getLastRedirectURI() == null) {
             orig = httpTransactionContext.getRequest().getURI();
         } else {
-            orig = AsyncHttpProviderUtils.getRedirectUri(
-                    httpTransactionContext.getRequest().getURI(),
+            orig = AsyncHttpProviderUtils.getRedirectUri(httpTransactionContext.getRequest().getURI(),
                     httpTransactionContext.getLastRedirectURI());
         }
         httpTransactionContext.setLastRedirectURI(redirectURL);
         Request requestToSend;
         URI uri = AsyncHttpProviderUtils.getRedirectUri(orig, redirectURL);
         if (!uri.toString().equalsIgnoreCase(orig.toString())) {
-            requestToSend = EventHandler
-                    .newRequest(uri,
-                                responsePacket,
-                                httpTransactionContext,
-                                sendAsGet(
-                                        responsePacket,
-                                        httpTransactionContext));
+            requestToSend = EventHandler.newRequest(uri, responsePacket, httpTransactionContext,
+                    sendAsGet(responsePacket, httpTransactionContext));
         } else {
             httpTransactionContext.setStatusHandler(null);
             httpTransactionContext.setInvocationStatus(CONTINUE);
-                try {
-                    httpTransactionContext.getHandler().onStatusReceived(httpTransactionContext.getResponseStatus());
-                } catch (Exception e) {
-                    httpTransactionContext.abort(e);
-                }
+            try {
+                httpTransactionContext.getHandler().onStatusReceived(httpTransactionContext.getResponseStatus());
+            } catch (Exception e) {
+                httpTransactionContext.abort(e);
+            }
             return true;
         }
 
         final ConnectionManager m = httpTransactionContext.getProvider().getConnectionManager();
         try {
-            final Connection c = m.obtainConnection(requestToSend,
-                                                    httpTransactionContext.getFuture());
-            final HttpTxContext newContext =
-                    httpTransactionContext.copy();
+            final Connection c = m.obtainConnection(requestToSend, httpTransactionContext.getFuture());
+            final HttpTxContext newContext = httpTransactionContext.copy();
             httpTransactionContext.setFuture(null);
             newContext.setInvocationStatus(CONTINUE);
             newContext.setRequest(requestToSend);
             newContext.setRequestUrl(requestToSend.getUrl());
             HttpTxContext.set(ctx, newContext);
-            httpTransactionContext.getProvider().execute(c,
-                                                         requestToSend,
-                                                         newContext.getHandler(),
-                                                         newContext.getFuture(),
-                                                         newContext);
+            httpTransactionContext.getProvider().execute(c, requestToSend, newContext.getHandler(), newContext.getFuture(), newContext);
             return false;
         } catch (Exception e) {
             httpTransactionContext.abort(e);
@@ -105,15 +90,11 @@ public final class RedirectHandler implements StatusHandler {
 
     }
 
-
     // ------------------------------------------------- Private Methods
 
-    private boolean sendAsGet(final HttpResponsePacket response,
-                              final HttpTxContext ctx) {
+    private boolean sendAsGet(final HttpResponsePacket response, final HttpTxContext ctx) {
         final int statusCode = response.getStatus();
-        return !(statusCode < 302 || statusCode > 303)
-                  && !(statusCode == 302
-                     && ctx.getProvider().getClientConfig().isStrict302Handling());
+        return !(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && ctx.getProvider().getClientConfig().isStrict302Handling());
     }
 
 } // END RedirectHandler

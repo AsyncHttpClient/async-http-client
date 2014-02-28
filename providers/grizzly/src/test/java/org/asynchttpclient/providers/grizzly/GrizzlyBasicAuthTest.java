@@ -28,5 +28,4 @@ public class GrizzlyBasicAuthTest extends BasicAuthTest {
     public String getProviderClass() {
         return GrizzlyAsyncHttpProvider.class.getName();
     }
-
 }

@@ -51,26 +51,22 @@ import java.util.concurrent.TimeoutException;
 
 public class ConnectionManager {
 
-    private static final Attribute<Boolean> DO_NOT_CACHE =
-        Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class.getName());
+    private static final Attribute<Boolean> DO_NOT_CACHE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class
+            .getName());
     private final ConnectionPool connectionPool;
     private final GrizzlyAsyncHttpProvider provider;
     private final boolean canDestroyPool;
-    private final Map<String,EndpointKey<SocketAddress>> endpointKeyMap = new HashMap<String,EndpointKey<SocketAddress>>();
+    private final Map<String, EndpointKey<SocketAddress>> endpointKeyMap = new HashMap<String, EndpointKey<SocketAddress>>();
     private final FilterChainBuilder secureBuilder;
     private final FilterChainBuilder nonSecureBuilder;
     private final boolean asyncConnect;
 
-
     // ------------------------------------------------------------ Constructors
 
-
-    @SuppressWarnings("unchecked")
-    ConnectionManager(final GrizzlyAsyncHttpProvider provider,
-                      final ConnectionPool connectionPool,
-                      final FilterChainBuilder secureBuilder,
-                      final FilterChainBuilder nonSecureBuilder) {
-
+    ConnectionManager(final GrizzlyAsyncHttpProvider provider,//
+            final ConnectionPool connectionPool,//
+            final FilterChainBuilder secureBuilder,//
+            final FilterChainBuilder nonSecureBuilder) {
 
         this.provider = provider;
         final AsyncHttpClientConfig config = provider.getClientConfig();
@@ -78,33 +74,28 @@ public class ConnectionManager {
             this.connectionPool = connectionPool;
             canDestroyPool = false;
         } else {
-            this.connectionPool =
-                    new ConnectionPool(config.getMaxConnectionPerHost(),
-                                       config.getMaxTotalConnections(),
-                                       null,
-                                       config.getConnectionTimeoutInMs(),
-                                       config.getIdleConnectionInPoolTimeoutInMs(),
-                                       2000);
+            this.connectionPool = new ConnectionPool(config.getMaxConnectionPerHost(),//
+                    config.getMaxTotalConnections(),//
+                    null,//
+                    config.getConnectionTimeoutInMs(),//
+                    config.getIdleConnectionInPoolTimeoutInMs(),//
+                    2000);
             canDestroyPool = true;
         }
         this.secureBuilder = secureBuilder;
         this.nonSecureBuilder = nonSecureBuilder;
-        AsyncHttpProviderConfig<?,  ?> providerConfig = config.getAsyncHttpProviderConfig();
-        asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig).isAsyncConnectMode() : false;
+        AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
+        asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig ? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig)
+                .isAsyncConnectMode() : false;
     }
-
 
     // ---------------------------------------------------------- Public Methods
 
-
-    public void doTrackedConnection(final Request request,
-                                    final GrizzlyResponseFuture requestFuture,
-                                    final CompletionHandler<Connection> connectHandler)
-    throws IOException {
-        final EndpointKey<SocketAddress> key =
-                getEndPointKey(request, requestFuture.getProxyServer());
-        CompletionHandler<Connection> handler =
-                wrapHandler(request, getVerifier(), connectHandler);
+    public void doTrackedConnection(final Request request,//
+            final GrizzlyResponseFuture requestFuture,//
+            final CompletionHandler<Connection> connectHandler) throws IOException {
+        final EndpointKey<SocketAddress> key = getEndPointKey(request, requestFuture.getProxyServer());
+        CompletionHandler<Connection> handler = wrapHandler(request, getVerifier(), connectHandler);
         if (asyncConnect) {
             connectionPool.take(key, handler);
         } else {
@@ -133,9 +124,8 @@ public class ConnectionManager {
         }
     }
 
-    public Connection obtainConnection(final Request request,
-                                       final GrizzlyResponseFuture requestFuture)
-    throws ExecutionException, InterruptedException, TimeoutException {
+    public Connection obtainConnection(final Request request, final GrizzlyResponseFuture requestFuture) throws ExecutionException,
+            InterruptedException, TimeoutException {
 
         final Connection c = obtainConnection0(request, requestFuture);
         markConnectionAsDoNotCache(c);
@@ -145,9 +135,8 @@ public class ConnectionManager {
 
     // --------------------------------------------------Package Private Methods
 
-    static CompletionHandler<Connection> wrapHandler(final Request request,
-                                                     final HostnameVerifier verifier,
-                                                     final CompletionHandler<Connection> delegate) {
+    static CompletionHandler<Connection> wrapHandler(final Request request, final HostnameVerifier verifier,
+            final CompletionHandler<Connection> delegate) {
         final URI uri = request.getURI();
         if (Utils.isSecure(uri) && verifier != null) {
             return new EmptyCompletionHandler<Connection>() {
@@ -182,16 +171,14 @@ public class ConnectionManager {
         return delegate;
     }
 
-
     static void markConnectionAsDoNotCache(final Connection c) {
         DO_NOT_CACHE.set(c, Boolean.TRUE);
     }
 
     static boolean isConnectionCacheable(final Connection c) {
-        final Boolean canCache =  DO_NOT_CACHE.get(c);
+        final Boolean canCache = DO_NOT_CACHE.get(c);
         return ((canCache != null) ? canCache : false);
     }
-
 
     // --------------------------------------------------------- Private Methods
 
@@ -199,37 +186,23 @@ public class ConnectionManager {
         return provider.getClientConfig().getHostnameVerifier();
     }
 
-    private EndpointKey<SocketAddress> getEndPointKey(final Request request,
-                                                      final ProxyServer proxyServer) {
+    private EndpointKey<SocketAddress> getEndPointKey(final Request request, final ProxyServer proxyServer) {
         final String stringKey = getPoolKey(request, proxyServer);
         EndpointKey<SocketAddress> key = endpointKeyMap.get(stringKey);
         if (key == null) {
             synchronized (endpointKeyMap) {
                 key = endpointKeyMap.get(stringKey);
                 if (key == null) {
-                    SocketAddress address =
-                            getRemoteAddress(request, proxyServer);
+                    SocketAddress address = getRemoteAddress(request, proxyServer);
                     InetAddress localAddress = request.getLocalAddress();
                     InetSocketAddress localSocketAddress = null;
                     if (localAddress != null) {
                         localSocketAddress = new InetSocketAddress(localAddress.getHostName(), 0);
                     }
-                    ProxyAwareConnectorHandler handler =
-                            ProxyAwareConnectorHandler
-                                    .builder(provider.clientTransport)
-                                    .nonSecureFilterChainTemplate(
-                                            nonSecureBuilder)
-                                    .secureFilterChainTemplate(secureBuilder)
-                                    .asyncHttpClientConfig(
-                                            provider.getClientConfig())
-                                    .uri(request.getURI())
-                                    .proxyServer(proxyServer)
-                                    .build();
-                    EndpointKey<SocketAddress> localKey =
-                            new EndpointKey<SocketAddress>(stringKey,
-                                               address,
-                                               localSocketAddress,
-                                               handler);
+                    ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler.builder(provider.clientTransport)
+                            .nonSecureFilterChainTemplate(nonSecureBuilder).secureFilterChainTemplate(secureBuilder)
+                            .asyncHttpClientConfig(provider.getClientConfig()).uri(request.getURI()).proxyServer(proxyServer).build();
+                    EndpointKey<SocketAddress> localKey = new EndpointKey<SocketAddress>(stringKey, address, localSocketAddress, handler);
                     endpointKeyMap.put(stringKey, localKey);
                     key = localKey;
                 }
@@ -238,15 +211,10 @@ public class ConnectionManager {
         return key;
     }
 
-    private SocketAddress getRemoteAddress(final Request request,
-                                           final ProxyServer proxyServer) {
+    private SocketAddress getRemoteAddress(final Request request, final ProxyServer proxyServer) {
         final URI requestUri = request.getURI();
-        final String host = ((proxyServer != null)
-                ? proxyServer.getHost()
-                : requestUri.getHost());
-        final int port = ((proxyServer != null)
-                ? proxyServer.getPort()
-                : requestUri.getPort());
+        final String host = ((proxyServer != null) ? proxyServer.getHost() : requestUri.getHost());
+        final int port = ((proxyServer != null) ? proxyServer.getPort() : requestUri.getPort());
         return new InetSocketAddress(host, getPort(request.getURI(), port));
     }
 
@@ -259,16 +227,14 @@ public class ConnectionManager {
             } else if ("https".equals(protocol) || "wss".equals(protocol)) {
                 port = 443;
             } else {
-                throw new IllegalArgumentException(
-                        "Unknown protocol: " + protocol);
+                throw new IllegalArgumentException("Unknown protocol: " + protocol);
             }
         }
         return port;
     }
 
-    private Connection obtainConnection0(final Request request,
-                                         final GrizzlyResponseFuture requestFuture)
-    throws ExecutionException, InterruptedException, TimeoutException {
+    private Connection obtainConnection0(final Request request, final GrizzlyResponseFuture requestFuture) throws ExecutionException,
+            InterruptedException, TimeoutException {
 
         final int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
         final FutureImpl<Connection> future = Futures.createSafeFuture();
@@ -276,14 +242,13 @@ public class ConnectionManager {
                 createConnectionCompletionHandler(request, requestFuture, null));
         final ProxyServer proxyServer = requestFuture.getProxyServer();
         final SocketAddress address = getRemoteAddress(request, proxyServer);
-        ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler
-                            .builder(provider.clientTransport)
-                            .nonSecureFilterChainTemplate(nonSecureBuilder)
-                            .secureFilterChainTemplate(secureBuilder)
-                            .asyncHttpClientConfig(provider.getClientConfig())
-                            .uri(request.getURI())
-                            .proxyServer(proxyServer)
-                            .build();
+        ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler.builder(provider.clientTransport)
+                .nonSecureFilterChainTemplate(nonSecureBuilder)//
+                .secureFilterChainTemplate(secureBuilder)//
+                .asyncHttpClientConfig(provider.getClientConfig())//
+                .uri(request.getURI())//
+                .proxyServer(proxyServer)//
+                .build();
         if (cTimeout > 0) {
             handler.connect(address, ch);
             return future.get(cTimeout, MILLISECONDS);
@@ -294,29 +259,26 @@ public class ConnectionManager {
     }
 
     boolean returnConnection(final Connection c) {
-        final boolean result = (DO_NOT_CACHE.get(c) == null
-                                   && connectionPool.release(c));
+        final boolean result = (DO_NOT_CACHE.get(c) == null && connectionPool.release(c));
         if (result) {
             if (provider.getResolver() != null) {
                 provider.getResolver().setTimeoutMillis(c, IdleTimeoutFilter.FOREVER);
             }
         }
         return result;
-
     }
 
-
     void destroy() {
-
         if (canDestroyPool) {
             connectionPool.close();
         }
-
     }
 
-    CompletionHandler<Connection> createConnectionCompletionHandler(final Request request,
-                                                                    final GrizzlyResponseFuture future,
-                                                                    final CompletionHandler<Connection> wrappedHandler) {
+    CompletionHandler<Connection> createConnectionCompletionHandler(//
+            final Request request,//
+            final GrizzlyResponseFuture future,//
+            final CompletionHandler<Connection> wrappedHandler) {
+
         return new CompletionHandler<Connection>() {
             public void cancelled() {
                 if (wrappedHandler != null) {
@@ -355,5 +317,4 @@ public class ConnectionManager {
         final ConnectionPoolKeyStrategy keyStrategy = request.getConnectionPoolKeyStrategy();
         return keyStrategy.getKey(request.getURI(), proxyServer);
     }
-
 }

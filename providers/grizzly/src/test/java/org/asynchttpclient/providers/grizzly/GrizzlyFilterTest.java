@@ -23,5 +23,4 @@ public class GrizzlyFilterTest extends FilterTest {
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         return GrizzlyProviderUtil.grizzlyProvider(config);
     }
-
 }

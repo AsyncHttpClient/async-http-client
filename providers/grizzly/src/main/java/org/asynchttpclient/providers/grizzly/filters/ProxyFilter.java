@@ -44,29 +44,22 @@ public final class ProxyFilter extends BaseFilter {
     private final AsyncHttpClientConfig config;
     private final Boolean secure;
 
-
     // ------------------------------------------------------------ Constructors
 
-
-    public ProxyFilter(final ProxyServer proxyServer,
-                       final AsyncHttpClientConfig config,
-                       boolean secure) {
+    public ProxyFilter(final ProxyServer proxyServer, final AsyncHttpClientConfig config, boolean secure) {
         this.proxyServer = proxyServer;
         this.config = config;
         this.secure = secure;
     }
 
-
     // ----------------------------------------------------- Methods from Filter
 
-
     @Override
-    public NextAction handleWrite(FilterChainContext ctx)
-    throws IOException {
+    public NextAction handleWrite(FilterChainContext ctx) throws IOException {
         org.glassfish.grizzly.http.HttpContent content = ctx.getMessage();
         HttpRequestPacket request = (HttpRequestPacket) content.getHttpHeader();
         HttpTxContext context = HttpTxContext.get(ctx);
-        assert(context != null);
+        assert (context != null);
         Request req = context.getRequest();
         if (!secure) {
             request.setRequestURI(req.getURI().toString());
@@ -75,12 +68,9 @@ public final class ProxyFilter extends BaseFilter {
         return ctx.getInvokeAction();
     }
 
-
     // --------------------------------------------------------- Private Methods
 
-
-    private void addProxyHeaders(final Realm realm,
-                                 final HttpRequestPacket request) {
+    private void addProxyHeaders(final Realm realm, final HttpRequestPacket request) {
         if (realm != null && realm.getUsePreemptiveAuth()) {
             final String authHeaderValue = generateAuthHeader(realm);
             if (authHeaderValue != null) {
@@ -100,18 +90,17 @@ public final class ProxyFilter extends BaseFilter {
     private String generateAuthHeader(final Realm realm) {
         try {
             switch (realm.getAuthScheme()) {
-                case BASIC:
-                    return computeBasicAuthentication(realm);
-                case DIGEST:
-                    return computeDigestAuthentication(proxyServer);
-                case NTLM:
-                     return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
-                default:
-                    return null;
+            case BASIC:
+                return computeBasicAuthentication(realm);
+            case DIGEST:
+                return computeDigestAuthentication(proxyServer);
+            case NTLM:
+                return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+            default:
+                return null;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 }

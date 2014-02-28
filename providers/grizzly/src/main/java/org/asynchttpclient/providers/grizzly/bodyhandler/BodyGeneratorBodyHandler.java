@@ -30,16 +30,12 @@ public final class BodyGeneratorBodyHandler implements BodyHandler {
 
     // -------------------------------------------- Methods from BodyHandler
 
-
     public boolean handlesBodyType(final Request request) {
         return (request.getBodyGenerator() != null);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public boolean doHandle(final FilterChainContext ctx,
-                         final Request request,
-                         final HttpRequestPacket requestPacket)
-    throws IOException {
+    @SuppressWarnings({ "unchecked" })
+    public boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
 
         final BodyGenerator generator = request.getBodyGenerator();
         final Body bodyLocal = generator.createBody();
@@ -79,9 +75,7 @@ public final class BodyGeneratorBodyHandler implements BodyHandler {
                 }
             }
 
-            final HttpContent content =
-                    requestPacket.httpContentBuilder().content(buffer).
-                            last(last).build();
+            final HttpContent content = requestPacket.httpContentBuilder().content(buffer).last(last).build();
             ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
         }
 

@@ -25,8 +25,5 @@ public interface BodyHandler {
 
     boolean handlesBodyType(final Request request);
 
-    boolean doHandle(final FilterChainContext ctx,
-                     final Request request,
-                     final HttpRequestPacket requestPacket) throws IOException;
-
+    boolean doHandle(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException;
 }

@@ -96,7 +96,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
     private final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider;
     private final BodyHandlerFactory bodyHandlerFactory;
 
-    private static final Attribute<Boolean> PROXY_AUTH_FAILURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
+    private static final Attribute<Boolean> PROXY_AUTH_FAILURE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(AsyncHttpClientFilter.class.getName() + "-PROXY-AUTH_FAILURE");
 
     // -------------------------------------------------------- Constructors
 
@@ -179,7 +180,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
 
         return ctx.getStopAction();
-
     }
 
     // ----------------------------------------------------- Private Methods
@@ -282,27 +282,28 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final Lock lock = session.getNewClientStreamLock();
             try {
                 lock.lock();
-                SpdyStream stream = session.openStream(requestPacketLocal, session.getNextLocalStreamId(), 0, 0, 0, false, !requestPacketLocal.isExpectContent());
+                SpdyStream stream = session.openStream(requestPacketLocal, session.getNextLocalStreamId(), 0, 0, 0, false,
+                        !requestPacketLocal.isExpectContent());
                 HttpContext.newInstance(ctx, stream, stream, stream);
             } finally {
                 lock.unlock();
             }
-
         }
         HttpTxContext.set(ctx, httpTxContext);
         return sendRequest(sendingCtx, request, requestPacketLocal);
-
     }
 
     @SuppressWarnings("unchecked")
-    public boolean sendRequest(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket) throws IOException {
+    public boolean sendRequest(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket)
+            throws IOException {
 
         boolean isWriteComplete = true;
 
         if (Utils.requestHasEntityBody(request)) {
             final HttpTxContext context = HttpTxContext.get(ctx);
             BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
-            if (requestPacket.getHeaders().contains(Header.Expect) && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
+            if (requestPacket.getHeaders().contains(Header.Expect)
+                    && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
                 // We have to set the content-length now as the headers will be flushed
                 // before the FileBodyHandler is invoked. If we don't do it here, and
                 // the user didn't explicitly set the length, then the transfer-encoding
@@ -374,8 +375,8 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private static FilterChainContext obtainProtocolChainContext(final FilterChainContext ctx, final FilterChain completeProtocolFilterChain) {
 
-        final FilterChainContext newFilterChainContext = completeProtocolFilterChain.obtainFilterChainContext(ctx.getConnection(), ctx.getStartIdx() + 1,
-                completeProtocolFilterChain.size(), ctx.getFilterIdx() + 1);
+        final FilterChainContext newFilterChainContext = completeProtocolFilterChain.obtainFilterChainContext(ctx.getConnection(),
+                ctx.getStartIdx() + 1, completeProtocolFilterChain.size(), ctx.getFilterIdx() + 1);
 
         newFilterChainContext.setAddressHolder(ctx.getAddressHolder());
         newFilterChainContext.setMessage(ctx.getMessage());
@@ -446,7 +447,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (!headers.contains(Header.UserAgent)) {
             requestPacket.addHeader(Header.UserAgent, config.getUserAgent());
         }
-
     }
 
     private void addCookies(final Request request, final HttpRequestPacket requestPacket) {
@@ -459,7 +459,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             CookieSerializerUtils.serializeClientCookies(sb, false, true, gCookies);
             requestPacket.addHeader(Header.Cookie, sb.toString());
         }
-
     }
 
     private static void convertCookies(final Collection<Cookie> cookies, final org.glassfish.grizzly.http.Cookie[] gCookies) {
@@ -475,7 +474,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 idx++;
             }
         }
-
     }
 
     private static void addQueryString(final Request request, final HttpRequestPacket requestPacket) {
@@ -506,7 +504,6 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
             requestPacket.setQueryString(queryString);
         }
-
     }
 
     class HttpRequestPacketImpl extends HttpRequestPacket {
