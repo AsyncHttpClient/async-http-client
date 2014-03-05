@@ -22,7 +22,6 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.multipart.Part;
 import org.asynchttpclient.resumable.ResumableAsyncHandler;
-import org.eclipse.jetty.http.HttpContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
