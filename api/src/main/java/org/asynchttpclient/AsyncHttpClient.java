@@ -122,8 +122,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p/>
  *      String bodyResponse = f.get();
  * </pre></blockquote
- * From any {@link HttpContent} sub classes, you can asynchronously process the response status,headers and body and decide when to
- * stop the processing the response by throwing a new {link ResponseComplete} at any moment.
+ * You can asynchronously process the response status,headers and body and decide when to
+ * stop the processing the response by returning STATE.ABORT at any moment.
  * <p/>
  * This class can also be used without the need of {@link AsyncHandler}</p>
  * <blockquote><pre>
