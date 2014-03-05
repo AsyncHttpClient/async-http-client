@@ -298,9 +298,9 @@ public class SimpleAsyncHttpClient implements Closeable {
         synchronized (config) {
             if (asyncHttpClient == null) {
                 if (providerClass == null)
-                    asyncHttpClient = new AsyncHttpClient(config);
+                    asyncHttpClient = new DefaultAsyncHttpClient(config);
                 else
-                    asyncHttpClient = new AsyncHttpClient(providerClass, config);
+                    asyncHttpClient = new DefaultAsyncHttpClient(providerClass, config);
             }
         }
         return asyncHttpClient;

@@ -19,6 +19,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.jdeferred.DoneCallback;
 import org.jdeferred.ProgressCallback;
@@ -38,7 +39,7 @@ public class AsyncHttpTest {
         final AtomicInteger successCount = new AtomicInteger();
         final AtomicInteger progressCount = new AtomicInteger();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new DefaultAsyncHttpClient();
 
         try {
             Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));
@@ -73,7 +74,7 @@ public class AsyncHttpTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger successCount = new AtomicInteger();
 
-        AsyncHttpClient client = new AsyncHttpClient();
+        AsyncHttpClient client = new DefaultAsyncHttpClient();
 
         try {
             Promise<Response, Throwable, HttpProgress> p1 = AsyncHttpDeferredObject.promise(client.prepareGet("http://www.ning.com"));

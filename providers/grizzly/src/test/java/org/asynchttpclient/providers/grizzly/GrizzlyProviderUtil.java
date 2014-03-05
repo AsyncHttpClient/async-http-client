@@ -17,6 +17,7 @@ package org.asynchttpclient.providers.grizzly;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 
 public class GrizzlyProviderUtil {
 
@@ -24,6 +25,6 @@ public class GrizzlyProviderUtil {
         if (config == null) {
             config = new AsyncHttpClientConfig.Builder().build();
         }
-        return new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        return new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
     }
 }

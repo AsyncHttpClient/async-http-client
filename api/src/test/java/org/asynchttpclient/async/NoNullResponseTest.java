@@ -19,8 +19,8 @@ package org.asynchttpclient.async;
 import static org.testng.Assert.assertNotNull;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.testng.annotations.Test;
 

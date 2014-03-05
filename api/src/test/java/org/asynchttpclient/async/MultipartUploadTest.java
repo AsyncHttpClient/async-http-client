@@ -168,7 +168,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         bc.setFollowRedirects(true);
 
-        AsyncHttpClient c = new AsyncHttpClient(bc.build());
+        AsyncHttpClient c = getAsyncHttpClient(bc.build());
 
         try {
 

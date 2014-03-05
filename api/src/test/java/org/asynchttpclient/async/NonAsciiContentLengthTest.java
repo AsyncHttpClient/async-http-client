@@ -17,7 +17,7 @@ import static org.asynchttpclient.async.util.TestUtils.newJettyHttpServer;
 import static org.testng.Assert.assertEquals;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClient.BoundRequestBuilder;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.util.StandardCharsets;
 import org.eclipse.jetty.server.Request;
