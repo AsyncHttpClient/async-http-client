@@ -74,7 +74,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testMicrosoftCom() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         try {
@@ -86,7 +86,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testWwwMicrosoftCom() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         try {
@@ -98,7 +98,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider" })
+    @Test(groups = { "online", "default_provider" }, enabled = false)
     public void testUpdateMicrosoftCom() throws Throwable {
         AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).build());
         try {
