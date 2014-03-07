@@ -62,15 +62,6 @@ public class SpnegoEngine {
 
     private final SpnegoTokenGenerator spnegoGenerator;
 
-    private GSSContext gssContext = null;
-
-    /**
-     * base64 decoded challenge *
-     */
-    private byte[] token;
-
-    private Oid negotiationOid = null;
-
     public SpnegoEngine(final SpnegoTokenGenerator spnegoGenerator) {
         this.spnegoGenerator = spnegoGenerator;
     }
@@ -96,6 +87,10 @@ public class SpnegoEngine {
              *
              * Unfortunately SPNEGO is JRE >=1.6.
              */
+
+            GSSContext gssContext = null;
+            byte[] token = null; // base64 decoded challenge
+            Oid negotiationOid = null;
 
             /** Try SPNEGO by default, fall back to Kerberos later if error */
             negotiationOid = new Oid(SPNEGO_OID);
