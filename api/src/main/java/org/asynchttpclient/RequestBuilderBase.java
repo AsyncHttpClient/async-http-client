@@ -618,7 +618,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 try {
                     request.length = Long.parseLong(contentLength);
                 } catch (NumberFormatException e) {
-                    // NoOp -- we wdn't specify length so it will be chunked?
+                    // NoOp -- we won't specify length so it will be chunked?
                 }
             }
         }
