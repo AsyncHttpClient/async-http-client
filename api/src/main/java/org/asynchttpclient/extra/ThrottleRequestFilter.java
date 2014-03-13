@@ -35,8 +35,12 @@ public class ThrottleRequestFilter implements RequestFilter {
     }
 
     public ThrottleRequestFilter(int maxConnections, int maxWait) {
-        this.maxWait = maxWait;
-        available = new Semaphore(maxConnections, true);
+      this(maxConnections, maxWait, true);
+    }
+
+    public ThrottleRequestFilter(int maxConnections, int maxWait, boolean fair) {
+      this.maxWait = maxWait;
+      available = new Semaphore(maxConnections, fair);
     }
 
     /**
