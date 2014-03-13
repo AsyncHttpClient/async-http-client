@@ -35,7 +35,7 @@ public class ThrottleRequestFilter implements RequestFilter {
     }
 
     public ThrottleRequestFilter(int maxConnections, int maxWait) {
-      this(maxConnections, maxWait, true);
+      this(maxConnections, maxWait, false);
     }
 
     public ThrottleRequestFilter(int maxConnections, int maxWait, boolean fair) {
