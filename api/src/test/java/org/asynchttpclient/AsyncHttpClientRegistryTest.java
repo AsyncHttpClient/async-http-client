@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient;
 
 import org.asynchttpclient.util.AsyncImplHelper;
@@ -22,8 +34,7 @@ public class AsyncHttpClientRegistryTest {
 
     @BeforeClass
     public void setUpBeforeTest() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY,
-                "org.asynchttpclient.TestAsyncHttpClient");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, "org.asynchttpclient.TestAsyncHttpClient");
     }
 
     @AfterClass
@@ -79,23 +90,20 @@ public class AsyncHttpClientRegistryTest {
 
     @Test(groups = "fast")
     public void testCustomAsyncHttpClientRegistry() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY,
-                TestAsyncHttpClientRegistry.class.getName());
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, TestAsyncHttpClientRegistry.class.getName());
         Assert.assertTrue(AsyncHttpClientRegistryImpl.getInstance() instanceof TestAsyncHttpClientRegistry);
     }
 
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testNonExistentAsyncHttpClientRegistry() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY,
-                "org.asynchttpclient.NonExistentAsyncRegistry");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, "org.asynchttpclient.NonExistentAsyncRegistry");
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }
 
     @Test(groups = "fast", expectedExceptions = AsyncHttpClientImplException.class)
     public void testBadAsyncHttpClientRegistry() {
-        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY,
-                "org.asynchttpclient.BadAsyncHttpClientRegistry");
+        System.setProperty(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY, "org.asynchttpclient.BadAsyncHttpClientRegistry");
         AsyncHttpClientRegistryImpl.getInstance();
         Assert.fail("Should never have reached here");
     }

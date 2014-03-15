@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient;
 
 import org.asynchttpclient.util.AsyncImplHelper;
@@ -23,7 +35,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
             lock.lock();
             try {
                 if (_instance == null) {
-                    Class asyncHttpClientRegistryImplClass = AsyncImplHelper
+                    Class<?> asyncHttpClientRegistryImplClass = AsyncImplHelper
                             .getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY);
                     if (asyncHttpClientRegistryImplClass != null)
                         _instance = (AsyncHttpClientRegistry) asyncHttpClientRegistryImplClass.newInstance();
@@ -31,11 +43,9 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
                         _instance = new AsyncHttpClientRegistryImpl();
                 }
             } catch (InstantiationException e) {
-                throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : "
-                        + e.getMessage(), e);
+                throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : " + e.getMessage(), e);
             } catch (IllegalAccessException e) {
-                throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : "
-                        + e.getMessage(), e);
+                throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : " + e.getMessage(), e);
             } finally {
                 lock.unlock();
             }
@@ -74,7 +84,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
      */
     @Override
     public boolean registerIfNew(String name, AsyncHttpClient ahc) {
-        return asyncHttpClientMap.putIfAbsent(name, ahc)==null;
+        return asyncHttpClientMap.putIfAbsent(name, ahc) == null;
     }
 
     /*
@@ -107,5 +117,4 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
     public void clearAllInstances() {
         asyncHttpClientMap.clear();
     }
-
 }
