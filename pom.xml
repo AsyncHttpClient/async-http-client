@@ -513,6 +513,12 @@
             <version>${commons-fileupload.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+		  <groupId>com.e-movimento.tinytools</groupId>
+		  <artifactId>privilegedaccessor</artifactId>
+		  <version>1.2.2</version>
+		  <scope>test</scope>
+		</dependency>
     </dependencies>
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
