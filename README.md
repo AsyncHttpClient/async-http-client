@@ -24,7 +24,7 @@ Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-
 import com.ning.http.client.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
 Future<Response> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute();
 Response r = f.get();
 ```
@@ -37,7 +37,7 @@ You can also accomplish asynchronous (non-blocking) operation without using a Fu
 import com.ning.http.client.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
 asyncHttpClient.prepareGet("http://www.ning.com/").execute(new AsyncCompletionHandler<Response>(){
     
     @Override
@@ -62,7 +62,7 @@ You can also mix Future with AsyncHandler to only retrieve part of the asynchron
 import com.ning.http.client.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient asyncHttpClient = AsyncHttpClientFactory.getAsyncHttpClient();
+AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
 Future<Integer> f = asyncHttpClient.prepareGet("http://www.ning.com/").execute(
    new AsyncCompletionHandler<Integer>(){
     
@@ -89,7 +89,7 @@ which is something you want to do for large responses: this way you can process 
 import com.ning.http.client.*;
 import java.util.concurrent.Future;
 
-AsyncHttpClient c = AsyncHttpClientFactory.getAsyncHttpClient();
+AsyncHttpClient c = new AsyncHttpClient();
 Future<String> f = c.prepareGet("http://www.ning.com/").execute(new AsyncHandler<String>() {
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
@@ -140,7 +140,7 @@ Finally, you can also configure the AsyncHttpClient via its AsyncHttpClientConfi
 ```java
 AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
     S.setProxyServer(new ProxyServer("127.0.0.1", 38080)).build();
-AsyncHttpClient c = AsyncHttpClientFactory.getAsyncHttpClient(cf);
+AsyncHttpClient c = new AsyncHttpClient(cf);
 ```
 
 ## WebSocket
@@ -176,7 +176,7 @@ The library uses Java non blocking I/O for supporting asynchronous operations. T
 
 ```java
 AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().build();
-AsyncHttpClient client = AsyncHttpClientFactory.getAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+AsyncHttpClient client = new AsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
 ```
 
 ## User Group
