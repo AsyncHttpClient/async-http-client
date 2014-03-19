@@ -127,7 +127,9 @@ public class OAuthSignatureCalculator
         allParameters.add(KEY_OAUTH_NONCE, nonce);
         allParameters.add(KEY_OAUTH_SIGNATURE_METHOD, OAUTH_SIGNATURE_METHOD);
         allParameters.add(KEY_OAUTH_TIMESTAMP, String.valueOf(oauthTimestamp));
-        allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
+        if (userAuth.getKey() != null) {
+            allParameters.add(KEY_OAUTH_TOKEN, userAuth.getKey());
+        }
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
@@ -165,7 +167,9 @@ public class OAuthSignatureCalculator
         StringBuilder sb = new StringBuilder(200);
         sb.append("OAuth ");
         sb.append(KEY_OAUTH_CONSUMER_KEY).append("=\"").append(consumerAuth.getKey()).append("\", ");
-        sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getKey()).append("\", ");
+        if (userAuth.getKey() != null) {
+            sb.append(KEY_OAUTH_TOKEN).append("=\"").append(userAuth.getKey()).append("\", ");
+        }
         sb.append(KEY_OAUTH_SIGNATURE_METHOD).append("=\"").append(OAUTH_SIGNATURE_METHOD).append("\", ");
 
         // careful: base64 has chars that need URL encoding:
