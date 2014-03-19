@@ -14,14 +14,6 @@ package org.asynchttpclient.util;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.ProxyServer;
-import org.asynchttpclient.ProxyServer.Protocol;
-import org.asynchttpclient.ProxyServerSelector;
-import org.asynchttpclient.Request;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -29,6 +21,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.ProxyServer.Protocol;
+import org.asynchttpclient.ProxyServerSelector;
+import org.asynchttpclient.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utilities for Proxy handling.
@@ -207,6 +207,7 @@ public class ProxyUtils {
                         case HTTP:
                             if (!(proxy.address() instanceof InetSocketAddress)) {
                                 log.warn("Don't know how to connect to address " + proxy.address());
+                                return null;
                             } else {
                                 InetSocketAddress address = (InetSocketAddress) proxy.address();
                                 return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());
