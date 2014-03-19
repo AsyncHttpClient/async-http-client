@@ -417,8 +417,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        final Channel channel = connectionsPool.poll(connectionPoolKeyStrategy.getKey(uri));
+    private Channel lookupInCache(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+        final Channel channel = connectionsPool.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
             log.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -942,8 +942,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (f != null && f.reuseChannel() && f.channel() != null) {
                 channel = f.channel();
             } else {
-                URI connectionKeyUri = proxyServer != null ? proxyServer.getURI() : uri;
-                channel = lookupInCache(connectionKeyUri, request.getConnectionPoolKeyStrategy());
+                channel = lookupInCache(uri, proxyServer, request.getConnectionPoolKeyStrategy());
             }
 
             if (channel == null)
@@ -1318,10 +1317,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private String getPoolKey(NettyResponseFuture<?> future) {
-
-        String serverPart = future.getConnectionPoolKeyStrategy().getKey(future.getURI());
-
-        ProxyServer proxy = future.getProxyServer();
+        return getPoolKey(future.getURI(), future.getProxyServer(), future.getConnectionPoolKeyStrategy());
+    }
+    
+    private String getPoolKey(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+        String serverPart = strategy.getKey(uri);
         return proxy != null ? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
     }
 
