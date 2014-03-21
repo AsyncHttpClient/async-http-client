@@ -15,6 +15,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.util.MiscUtil.getBoolean;
+
 import com.ning.http.client.date.TimeConverter;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
@@ -539,7 +541,7 @@ public class AsyncHttpClientConfig {
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         private boolean allowPoolingConnection = true;
-        private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
+        private boolean useRelativeURIsWithSSLProxies = getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
         private ExecutorService applicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
