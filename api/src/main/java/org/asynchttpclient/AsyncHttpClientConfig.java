@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient;
 
+import static org.asynchttpclient.util.MiscUtil.getBoolean;
+
 import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -578,7 +580,7 @@ public class AsyncHttpClientConfig {
         private boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
         private boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
         private boolean allowPoolingConnection = true;
-        private boolean useRelativeURIsWithSSLProxies = Boolean.getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies");
+        private boolean useRelativeURIsWithSSLProxies = getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
