@@ -21,7 +21,7 @@ import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
-import org.asynchttpclient.util.AllowAllHostnameVerifier;
+import org.asynchttpclient.util.DefaultHostnameVerifier;
 import org.asynchttpclient.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -596,7 +596,7 @@ public class AsyncHttpClientConfig {
         private boolean allowSslConnectionPool = true;
         private boolean useRawUrl = false;
         private boolean removeQueryParamOnRedirect = true;
-        private HostnameVerifier hostnameVerifier = new AllowAllHostnameVerifier();
+        private HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
         private int ioThreadMultiplier = 2;
         private boolean strict302Handling;
         private boolean spdyEnabled;
