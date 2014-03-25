@@ -6,12 +6,12 @@
  */
 package org.asynchttpclient.util;
 
-import sun.security.util.HostnameChecker;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -28,7 +28,6 @@ import java.security.cert.X509Certificate;
  * <p/>
  * This code is based on Kevin Locke's <a href="http://kevinlocke.name/bits/2012/10/03/ssl-certificate-verification-in-dispatch-and-asynchttpclient/">guide</a> .
  * <p/>
-
  */
 public class DefaultHostnameVerifier implements HostnameVerifier {
 
@@ -41,13 +40,68 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
         this.extraHostnameVerifier = extraHostnameVerifier;
     }
 
-    private boolean hostnameMatches(String hostname, SSLSession session) {
-        HostnameChecker checker =
-                HostnameChecker.getInstance(HostnameChecker.TYPE_TLS);
+    public final static byte TYPE_TLS = 1;
 
-        boolean validCertificate = false, validPrincipal = false;
+    private Object getHostnameChecker() {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Certificate[] peerCertificates = session.getPeerCertificates();
+            final Class<Object> hostnameCheckerClass = (Class<Object>) classLoader.loadClass("sun.security.util.HostnameChecker");
+            final Method instanceMethod = hostnameCheckerClass.getMethod("getInstance", Byte.TYPE);
+            final Object hostnameChecker = instanceMethod.invoke(null, TYPE_TLS);
+            return hostnameChecker;
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException(e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void match(Object checker, String hostname, X509Certificate peerCertificate) throws CertificateException {
+        try {
+            final Class<?> hostnameCheckerClass = checker.getClass();
+            final Method checkMethod = hostnameCheckerClass.getMethod("match", String.class, X509Certificate.class);
+            checkMethod.invoke(checker, hostname, peerCertificate);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getCause();
+            if (t instanceof CertificateException) {
+                throw (CertificateException) t;
+            } else {
+                throw new IllegalStateException(e);
+            }
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private boolean match(Object checker, String hostname, Principal principal) {
+        try {
+            final Class<?> hostnameCheckerClass = checker.getClass();
+            final Method checkMethod = hostnameCheckerClass.getMethod("match", String.class, Principal.class);
+            final boolean result = (Boolean) checkMethod.invoke(null, hostname, principal);
+            return result;
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException(e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private boolean hostnameMatches(String hostname, SSLSession session) {
+        boolean validCertificate = false;
+        boolean validPrincipal = false;
+
+        final Object checker = getHostnameChecker();
+        try {
+
+            final Certificate[] peerCertificates = session.getPeerCertificates();
 
             if (peerCertificates.length > 0 &&
                     peerCertificates[0] instanceof X509Certificate) {
@@ -55,7 +109,7 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
                         (X509Certificate) peerCertificates[0];
 
                 try {
-                    checker.match(hostname, peerCertificate);
+                    match(checker, hostname, peerCertificate);
                     // Certificate matches hostname
                     validCertificate = true;
                 } catch (CertificateException ex) {
@@ -69,7 +123,7 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
             try {
                 Principal peerPrincipal = session.getPeerPrincipal();
                 if (peerPrincipal instanceof KerberosPrincipal) {
-                    validPrincipal = HostnameChecker.match(hostname,
+                    validPrincipal = match(checker, hostname,
                             (KerberosPrincipal) peerPrincipal);
                 } else {
                     // Can't verify principal, not Kerberos
@@ -78,7 +132,6 @@ public class DefaultHostnameVerifier implements HostnameVerifier {
                 // Can't verify principal, no principal
             }
         }
-
         return validCertificate || validPrincipal;
     }
 
