@@ -10,12 +10,12 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Uses the internal HostnameChecker to verify the server's hostname matches with the
@@ -31,119 +31,112 @@ import java.security.cert.X509Certificate;
  */
 public class DefaultHostnameVerifier implements HostnameVerifier {
 
+    private HostnameChecker checker;
+
     private HostnameVerifier extraHostnameVerifier;
 
+    // Logger to log exceptions.
+    private static final Logger log = Logger.getLogger(DefaultHostnameVerifier.class.getName());
+
+    /**
+     * A hostname verifier that uses the {{sun.security.util.HostnameChecker}} under the hood.
+     */
     public DefaultHostnameVerifier() {
+        this.checker = new ProxyHostnameChecker();
     }
 
+    /**
+     * A hostname verifier that takes an external hostname checker.  Useful for testing.
+     *
+     * @param checker a hostnamechecker.
+     */
+    public DefaultHostnameVerifier(HostnameChecker checker) {
+        this.checker = checker;
+    }
+
+    /**
+     * A hostname verifier that falls back to another hostname verifier if not found.
+     *
+     * @param extraHostnameVerifier another hostname verifier.
+     */
     public DefaultHostnameVerifier(HostnameVerifier extraHostnameVerifier) {
+        this.checker = new ProxyHostnameChecker();
         this.extraHostnameVerifier = extraHostnameVerifier;
     }
 
-    public final static byte TYPE_TLS = 1;
-
-    private Object getHostnameChecker() {
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            final Class<Object> hostnameCheckerClass = (Class<Object>) classLoader.loadClass("sun.security.util.HostnameChecker");
-            final Method instanceMethod = hostnameCheckerClass.getMethod("getInstance", Byte.TYPE);
-            final Object hostnameChecker = instanceMethod.invoke(null, TYPE_TLS);
-            return hostnameChecker;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalStateException(e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
+    /**
+     * A hostname verifier with a hostname checker, that falls back to another hostname verifier if not found.
+     *
+     * @param checker a custom HostnameChecker.
+     * @param extraHostnameVerifier another hostname verifier.
+     */
+    public DefaultHostnameVerifier(HostnameChecker checker, HostnameVerifier extraHostnameVerifier) {
+        this.checker = checker;
+        this.extraHostnameVerifier = extraHostnameVerifier;
     }
 
-    private void match(Object checker, String hostname, X509Certificate peerCertificate) throws CertificateException {
-        try {
-            final Class<?> hostnameCheckerClass = checker.getClass();
-            final Method checkMethod = hostnameCheckerClass.getMethod("match", String.class, X509Certificate.class);
-            checkMethod.invoke(checker, hostname, peerCertificate);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        } catch (InvocationTargetException e) {
-            Throwable t = e.getCause();
-            if (t instanceof CertificateException) {
-                throw (CertificateException) t;
-            } else {
-                throw new IllegalStateException(e);
-            }
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private boolean match(Object checker, String hostname, Principal principal) {
-        try {
-            final Class<?> hostnameCheckerClass = checker.getClass();
-            final Method checkMethod = hostnameCheckerClass.getMethod("match", String.class, Principal.class);
-            final boolean result = (Boolean) checkMethod.invoke(null, hostname, principal);
-            return result;
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalStateException(e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
+    /**
+     * Matches the hostname against the peer certificate in the session.
+     *
+     * @param hostname the IP address or hostname of the expected server.
+     * @param session  the SSL session containing the certificates with the ACTUAL hostname/ipaddress.
+     * @return true if the hostname matches, false otherwise.
+     */
     private boolean hostnameMatches(String hostname, SSLSession session) {
-        boolean validCertificate = false;
-        boolean validPrincipal = false;
+        log.log(Level.FINE, "hostname = {0}, session = {1}", new Object[] { hostname, Base64.encode(session.getId()) });
 
-        final Object checker = getHostnameChecker();
         try {
-
             final Certificate[] peerCertificates = session.getPeerCertificates();
+            if (peerCertificates.length == 0) {
+                log.log(Level.FINE, "No peer certificates");
+                return false;
+            }
 
-            if (peerCertificates.length > 0 &&
-                    peerCertificates[0] instanceof X509Certificate) {
-                X509Certificate peerCertificate =
-                        (X509Certificate) peerCertificates[0];
-
+            if (peerCertificates[0] instanceof X509Certificate) {
+                X509Certificate peerCertificate = (X509Certificate) peerCertificates[0];
+                log.log(Level.FINE, "peerCertificate = {0}", peerCertificate);
                 try {
-                    match(checker, hostname, peerCertificate);
-                    // Certificate matches hostname
-                    validCertificate = true;
+                    checker.match(hostname, peerCertificate);
+                    // Certificate matches hostname if no exception is thrown.
+                    return true;
                 } catch (CertificateException ex) {
-                    // Certificate does not match hostname
+                    log.log(Level.FINE, "Certificate does not match hostname", ex);
                 }
             } else {
-                // Peer does not have any certificates or they aren't X.509
+                log.log(Level.FINE, "Peer does not have any certificates or they aren't X.509");
             }
+            return false;
         } catch (SSLPeerUnverifiedException ex) {
-            // Not using certificates for peers, try verifying the principal
+            log.log(Level.FINE, "Not using certificates for peers, try verifying the principal");
             try {
                 Principal peerPrincipal = session.getPeerPrincipal();
+                log.log(Level.FINE, "peerPrincipal = {0}", peerPrincipal);
                 if (peerPrincipal instanceof KerberosPrincipal) {
-                    validPrincipal = match(checker, hostname,
-                            (KerberosPrincipal) peerPrincipal);
+                    return checker.match(hostname, (KerberosPrincipal) peerPrincipal);
                 } else {
-                    // Can't verify principal, not Kerberos
+                    log.log(Level.FINE, "Can't verify principal, not Kerberos");
                 }
             } catch (SSLPeerUnverifiedException ex2) {
                 // Can't verify principal, no principal
+                log.log(Level.FINE, "Can't verify principal, no principal", ex2);
             }
+            return false;
         }
-        return validCertificate || validPrincipal;
     }
 
+    /**
+     * Verifies the hostname against the peer certificates in a session.  Falls back to extraHostnameVerifier if
+     * there is no match.
+     *
+     * @param hostname the IP address or hostname of the expected server.
+     * @param session  the SSL session containing the certificates with the ACTUAL hostname/ipaddress.
+     * @return true if the hostname matches, false otherwise.
+     */
     public boolean verify(String hostname, SSLSession session) {
         if (hostnameMatches(hostname, session)) {
             return true;
         } else {
-            if (extraHostnameVerifier != null) {
-                return extraHostnameVerifier.verify(hostname, session);
-            } else {
-                return false;
-            }
+            return extraHostnameVerifier != null && extraHostnameVerifier.verify(hostname, session);
         }
     }
 }
