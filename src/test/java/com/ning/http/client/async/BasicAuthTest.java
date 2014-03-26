@@ -22,6 +22,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Realm;
+import com.ning.http.client.Realm.AuthScheme;
 import com.ning.http.client.Response;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 
@@ -72,6 +73,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     protected final static String admin = "admin";
 
     private Server server2;
+    private Server serverNoAuth;
+    private int portNoAuth;
     
     @BeforeClass(alwaysRun = true)
     @Override
@@ -201,6 +204,24 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         server2.stop();
     }
 
+    private void setUpServerNoAuth() throws Exception {
+        serverNoAuth = new Server();
+        portNoAuth = findFreePort();
+
+        Connector listener = new SelectChannelConnector();
+        listener.setHost("127.0.0.1");
+        listener.setPort(portNoAuth);
+
+        serverNoAuth.addConnector(listener);
+
+        serverNoAuth.setHandler(new SimpleHandler());
+        serverNoAuth.start();
+    }
+    
+    private void stopServerNoAuth() throws Exception {
+        serverNoAuth.stop();
+    }
+
     private class RedirectHandler extends AbstractHandler {
 
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -231,7 +252,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     private class SimpleHandler extends AbstractHandler {
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-
+        	
             if (request.getHeader("X-401") != null) {
                 response.setStatus(401);
                 response.getOutputStream().flush();
@@ -307,6 +328,10 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         return "http://127.0.0.1:" + port2 + "/uff";
     }
 
+    protected String getTargetUrlNoAuth() {
+        return "http://127.0.0.1:" + portNoAuth + "/";
+    }
+
     @Test(groups = { "standalone", "default_provider" })
     public void basic401Test() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
@@ -351,10 +376,13 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void basicAuthTestPreemtiveTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(true).build());
+            setUpServerNoAuth();
+
+            AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrlNoAuth())
+            		.setRealm((new Realm.RealmBuilder()).setScheme(AuthScheme.BASIC).setPrincipal(user).setPassword(admin).setUsePreemptiveAuth(true).build());
 
             Future<Response> f = r.execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -363,6 +391,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
         } finally {
             client.close();
+            stopServerNoAuth();
         }
     }
 
