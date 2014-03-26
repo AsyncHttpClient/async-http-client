@@ -134,6 +134,7 @@ import com.ning.http.client.cookie.CookieDecoder;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.ntlm.NTLMEngine;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
@@ -164,6 +165,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     }
     private static final Attribute<HttpTransactionContext> REQUEST_STATE_ATTR =
             Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(HttpTransactionContext.class.getName());
+    private final static NTLMEngine ntlmEngine = new NTLMEngine();
 
     private final BodyHandlerFactory bodyHandlerFactory = new BodyHandlerFactory();
 
@@ -905,6 +907,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             addHeaders(request, requestPacket);
             addCookies(request, requestPacket);
+            addAuthorizationHeader(request, requestPacket);
 
             if (useProxy) {
                 if (!requestPacket.getHeaders().contains(Header.ProxyConnection)) {
@@ -924,6 +927,36 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             return sendRequest(ctx, request, requestPacket);
 
+        }
+
+        private void addAuthorizationHeader(final Request request, final HttpRequestPacket requestPacket) {
+            Realm realm = request.getRealm();
+            if (realm == null) {
+                realm = config.getRealm();
+            }
+            if (realm != null && realm.getUsePreemptiveAuth()) {
+                final String authHeaderValue = generateAuthHeader(realm);
+                if (authHeaderValue != null) {
+                    requestPacket.addHeader(Header.Authorization, authHeaderValue);
+                }
+            }
+        }
+
+        private String generateAuthHeader(final Realm realm) {
+            try {
+                switch (realm.getAuthScheme()) {
+                case BASIC:
+                    return AuthenticatorUtils.computeBasicAuthentication(realm);
+                case DIGEST:
+                    return AuthenticatorUtils.computeDigestAuthentication(realm);
+                case NTLM:
+                    return ntlmEngine.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+                default:
+                    return null;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
 
