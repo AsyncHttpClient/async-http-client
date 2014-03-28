@@ -39,4 +39,9 @@ public class MiscUtil {
     public static boolean isNonEmpty(Map<?, ?> map) {
         return map != null && !map.isEmpty();
     }
+
+    public static boolean getBoolean(String systemPropName, boolean defaultValue) {
+        String systemPropValue = System.getProperty(systemPropName);
+        return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
+    }
 }

@@ -34,6 +34,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.SimpleAsyncHttpClient;
 import org.asynchttpclient.consumers.AppendableBodyConsumer;
@@ -64,6 +65,8 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     protected static final String MY_MESSAGE = "my message";
 
     private Server server2;
+    private Server serverNoAuth;
+    private int portNoAuth;
 
     public abstract String getProviderClass();
 
@@ -72,6 +75,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         port1 = findFreePort();
         port2 = findFreePort();
+        portNoAuth = findFreePort();
 
         server = newJettyHttpServer(port1);
         addBasicAuthHandler(server, false, configureHandler());
@@ -81,6 +85,11 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         addDigestAuthHandler(server2, true, new RedirectHandler());
         server2.start();
 
+        // need noAuth server to verify the preemptive auth mode (see basicAuthTetPreemtiveTest) 
+        serverNoAuth = newJettyHttpServer(portNoAuth);
+        serverNoAuth.setHandler(new SimpleHandler());
+        serverNoAuth.start();
+
         logger.info("Local HTTP server started successfully");
     }
 
@@ -88,6 +97,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void tearDownGlobal() throws Exception {
         super.tearDownGlobal();
         server2.stop();
+        serverNoAuth.stop();
     }
 
     @Override
@@ -98,6 +108,10 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     @Override
     protected String getTargetUrl2() {
         return "http://127.0.0.1:" + port2 + "/uff";
+    }
+
+    protected String getTargetUrlNoAuth() {
+        return "http://127.0.0.1:" + portNoAuth + "/";
     }
 
     @Override
@@ -247,8 +261,10 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
     public void basicAuthTestPreemtiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Future<Response> f = client.prepareGet(getTargetUrl())//
-                    .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).setUsePreemptiveAuth(true).build())//
+        	// send the request to the no-auth endpoint to be able to verify the auth header is
+        	// really sent preemptively for the initial call.
+            Future<Response> f = client.prepareGet(getTargetUrlNoAuth())//
+                    .setRealm((new Realm.RealmBuilder()).setScheme(AuthScheme.BASIC).setPrincipal(USER).setPassword(ADMIN).setUsePreemptiveAuth(true).build())//
                     .execute();
 
             Response resp = f.get(3, TimeUnit.SECONDS);

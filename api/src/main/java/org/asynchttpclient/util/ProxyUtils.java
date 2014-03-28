@@ -207,6 +207,7 @@ public class ProxyUtils {
                         case HTTP:
                             if (!(proxy.address() instanceof InetSocketAddress)) {
                                 log.warn("Don't know how to connect to address " + proxy.address());
+                                return null;
                             } else {
                                 InetSocketAddress address = (InetSocketAddress) proxy.address();
                                 return new ProxyServer(Protocol.HTTP, address.getHostName(), address.getPort());

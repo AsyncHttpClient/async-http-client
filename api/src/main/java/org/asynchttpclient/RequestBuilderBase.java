@@ -466,18 +466,26 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private void resetParameters() {
+    public void resetQueryParameters() {
+        request.queryParams = null;
+    }
+
+    public void resetCookies() {
+        request.cookies.clear();
+    }
+
+    public void resetParameters() {
         request.params = null;
     }
 
-    private void resetNonMultipartData() {
+    public void resetNonMultipartData() {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
         request.length = -1;
     }
 
-    private void resetMultipartData() {
+    public void resetMultipartData() {
         request.parts = null;
     }
 
@@ -618,7 +626,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 try {
                     request.length = Long.parseLong(contentLength);
                 } catch (NumberFormatException e) {
-                    // NoOp -- we wdn't specify length so it will be chunked?
+                    // NoOp -- we won't specify length so it will be chunked?
                 }
             }
         }

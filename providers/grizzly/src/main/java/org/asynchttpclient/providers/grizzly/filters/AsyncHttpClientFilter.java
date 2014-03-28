@@ -14,8 +14,12 @@
 package org.asynchttpclient.providers.grizzly.filters;
 
 import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
+import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
+import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
 
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
@@ -23,6 +27,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -262,6 +267,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         addHostHeader(request, uri, requestPacket);
         addGeneralHeaders(request, requestPacket);
         addCookies(request, requestPacket);
+        addAuthorizationHeader(request, requestPacket);
 
         initTransferCompletionHandler(request, httpTxContext.getHandler());
 
@@ -395,6 +401,36 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             } else {
                 requestPacket.addHeader(Header.Host, uri.getHost() + ':' + uri.getPort());
             }
+        }
+    }
+
+    private void addAuthorizationHeader(final Request request, final HttpRequestPacket requestPacket) {
+        Realm realm = request.getRealm();
+        if (realm == null) {
+            realm = config.getRealm();
+        }
+        if (realm != null && realm.getUsePreemptiveAuth()) {
+            final String authHeaderValue = generateAuthHeader(realm);
+            if (authHeaderValue != null) {
+                requestPacket.addHeader(Header.Authorization, authHeaderValue);
+            }
+        }
+    }
+
+    private String generateAuthHeader(final Realm realm) {
+        try {
+            switch (realm.getAuthScheme()) {
+            case BASIC:
+                return computeBasicAuthentication(realm);
+            case DIGEST:
+                return computeDigestAuthentication(realm);
+            case NTLM:
+                return NTLM_ENGINE.generateType1Msg("NTLM " + realm.getNtlmDomain(), realm.getNtlmHost());
+            default:
+                return null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

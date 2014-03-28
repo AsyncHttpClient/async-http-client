@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2010-2014 Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package org.asynchttpclient;
 
 import org.asynchttpclient.util.AsyncImplHelper;
@@ -38,10 +50,10 @@ public class AsyncHttpClientFactory {
                 return (AsyncHttpClient) asyncHttpClientImplClass.newInstance();
         } catch (InstantiationException e) {
             throw new AsyncHttpClientImplException("Unable to create the class specified by system property : "
-                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY,e);
+                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
         } catch (IllegalAccessException e) {
             throw new AsyncHttpClientImplException("Unable to find the class specified by system property : "
-                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY,e);
+                    + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);
         }
         return new DefaultAsyncHttpClient();
     }
@@ -49,14 +61,11 @@ public class AsyncHttpClientFactory {
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpProvider provider) {
         if (attemptInstantiation()) {
             try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass
-                        .getConstructor(AsyncHttpProvider.class);
+                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpProvider.class);
                 return constructor.newInstance(provider);
-            }catch (Exception e) {
-                throw new AsyncHttpClientImplException(
-                        "Unable to find the instantiate the class specified by system property : "
-                                + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY
-                                + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
+            } catch (Exception e) {
+                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
+                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
         return new DefaultAsyncHttpClient(provider);
@@ -65,14 +74,11 @@ public class AsyncHttpClientFactory {
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {
         if (attemptInstantiation()) {
             try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass
-                        .getConstructor(AsyncHttpClientConfig.class);
+                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpClientConfig.class);
                 return constructor.newInstance(config);
             } catch (Exception e) {
-                throw new AsyncHttpClientImplException(
-                        "Unable to find the instantiate the class specified by system property : "
-                                + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY
-                                + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
+                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
+                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
         return new DefaultAsyncHttpClient(config);
@@ -81,14 +87,12 @@ public class AsyncHttpClientFactory {
     public static AsyncHttpClient getAsyncHttpClient(AsyncHttpProvider provider, AsyncHttpClientConfig config) {
         if (attemptInstantiation()) {
             try {
-                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(
-                        AsyncHttpProvider.class, AsyncHttpClientConfig.class);
+                Constructor<AsyncHttpClient> constructor = asyncHttpClientImplClass.getConstructor(AsyncHttpProvider.class,
+                        AsyncHttpClientConfig.class);
                 return constructor.newInstance(provider, config);
             } catch (Exception e) {
-                throw new AsyncHttpClientImplException(
-                        "Unable to find the instantiate the class specified by system property : "
-                                + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY
-                                + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
+                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
+                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
         return new DefaultAsyncHttpClient(provider, config);
@@ -101,10 +105,8 @@ public class AsyncHttpClientFactory {
                         AsyncHttpClientConfig.class);
                 return constructor.newInstance(providerClass, config);
             } catch (Exception e) {
-                throw new AsyncHttpClientImplException(
-                        "Unable to find the instantiate the class specified by system property : "
-                                + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY
-                                + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
+                throw new AsyncHttpClientImplException("Unable to find the instantiate the class specified by system property : "
+                        + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY + "(AsyncHttpProvider) due to : " + e.getMessage(), e);
             }
         }
         return new DefaultAsyncHttpClient(providerClass, config);
@@ -115,8 +117,7 @@ public class AsyncHttpClientFactory {
             lock.lock();
             try {
                 if (!instantiated) {
-                    asyncHttpClientImplClass = AsyncImplHelper
-                            .getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
+                    asyncHttpClientImplClass = AsyncImplHelper.getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY);
                     instantiated = true;
                 }
             } finally {
