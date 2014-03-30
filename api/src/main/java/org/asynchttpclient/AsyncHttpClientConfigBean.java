@@ -15,6 +15,7 @@ package org.asynchttpclient;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.util.DefaultHostnameVerifier;
 import org.asynchttpclient.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -70,12 +71,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         allowSslConnectionPool = true;
         useRawUrl = false;
         removeQueryParamOnRedirect = true;
-        hostnameVerifier = new HostnameVerifier() {
-
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        hostnameVerifier = new DefaultHostnameVerifier();
     }
 
     void configureExecutors() {
