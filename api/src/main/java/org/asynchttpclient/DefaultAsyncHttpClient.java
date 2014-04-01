@@ -105,7 +105,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * @param providerClass a {@link AsyncHttpProvider}
      */
     public DefaultAsyncHttpClient(String providerClass, AsyncHttpClientConfig config) {
-        this(loadProvider(providerClass, config), new AsyncHttpClientConfig.Builder().build());
+        this(loadProvider(providerClass, config), config);
     }
 
     /**
