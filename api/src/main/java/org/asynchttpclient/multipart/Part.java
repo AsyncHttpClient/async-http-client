@@ -41,7 +41,17 @@ public abstract class Part {
     /**
      * Content dispostion as a byte array
      */
-    public static final byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: form-data; name=".getBytes(StandardCharsets.US_ASCII);
+    public static final byte[] CONTENT_DISPOSITION_BYTES = "Content-Disposition: ".getBytes(StandardCharsets.US_ASCII);
+
+    /**
+     * form-data as a byte array
+     */
+    public static final byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = "form-data".getBytes(StandardCharsets.US_ASCII);
+    
+    /**
+     * name as a byte array
+     */
+    public static final byte[] NAME_BYTES = "; name=".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Content type header as a byte array
@@ -108,6 +118,20 @@ public abstract class Part {
         return true;
     }
 
+    private String dispositionType;
+    /**
+     * Gets the disposition-type to be used in Content-Disposition header
+     * 
+     * @return the disposition-type
+     */
+    public String getDispositionType() {
+        return dispositionType;
+    }
+
+    public void setDispositionType(String dispositionType) {
+        this.dispositionType = dispositionType;
+    }
+
     protected void visitStart(PartVisitor visitor, byte[] boundary) throws IOException {
         visitor.withBytes(EXTRA_BYTES);
         visitor.withBytes(boundary);
@@ -117,6 +141,8 @@ public abstract class Part {
         if (getName() != null) {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_DISPOSITION_BYTES);
+            visitor.withBytes(dispositionType != null? dispositionType.getBytes(StandardCharsets.US_ASCII): FORM_DATA_DISPOSITION_TYPE_BYTES);
+            visitor.withBytes(NAME_BYTES);
             visitor.withBytes(QUOTE_BYTES);
             visitor.withBytes(getName().getBytes(StandardCharsets.US_ASCII));
             visitor.withBytes(QUOTE_BYTES);
