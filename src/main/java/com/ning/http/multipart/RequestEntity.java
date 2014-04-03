@@ -26,14 +26,6 @@ import java.io.OutputStream;
 public interface RequestEntity {
 
     /**
-     * Tests if {@link #writeRequest(java.io.OutputStream)} can be called more than once.
-     *
-     * @return <tt>true</tt> if the entity can be written to {@link java.io.OutputStream} more than once,
-     *         <tt>false</tt> otherwise.
-     */
-    boolean isRepeatable();
-
-    /**
      * Writes the request entity to the given stream.
      *
      * @param out

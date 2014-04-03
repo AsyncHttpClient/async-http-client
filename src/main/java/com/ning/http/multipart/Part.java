@@ -69,7 +69,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * Content disposition as a byte array
      */
     public static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
-    
+
     /**
      * form-data characters
      */
@@ -79,7 +79,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * form-data as a byte array
      */
     public static final byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(FORM_DATA_DISPOSITION_TYPE);
-    
+
     /**
      * name characters
      */
@@ -165,17 +165,8 @@ public abstract class Part implements com.ning.http.client.Part {
      */
     public abstract String getContentId();
 
-    /**
-     * Tests if this part can be sent more than once.
-     * 
-     * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
-     * @since 3.0
-     */
-    public boolean isRepeatable() {
-        return true;
-    }
-
     private String dispositionType;
+
     /**
      * Gets the disposition-type to be used in Content-Disposition header
      * 
@@ -212,13 +203,14 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs.
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
+        out.write(CRLF_BYTES);
+        out.write(CONTENT_DISPOSITION_BYTES);
+        if (dispositionType != null)
+            out.write(MultipartEncodingUtil.getAsciiBytes(dispositionType));
+        else
+            out.write(FORM_DATA_DISPOSITION_TYPE_BYTES);
+
         if (getName() != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_DISPOSITION_BYTES);
-            if (dispositionType != null)
-                out.write(MultipartEncodingUtil.getAsciiBytes(dispositionType));
-            else
-                out.write(FORM_DATA_DISPOSITION_TYPE_BYTES);
             out.write(NAME_BYTES);
             out.write(QUOTE_BYTES);
             out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
@@ -228,13 +220,15 @@ public abstract class Part implements com.ning.http.client.Part {
 
     protected long dispositionHeaderLength() {
         long length = 0L;
+
+        length += CRLF_BYTES.length;
+        length += CONTENT_DISPOSITION_BYTES.length;
+        if (dispositionType != null)
+            length += MultipartEncodingUtil.getAsciiBytes(dispositionType).length;
+        else
+            length += FORM_DATA_DISPOSITION_TYPE_BYTES.length;
+
         if (getName() != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_DISPOSITION_BYTES.length;
-            if (dispositionType != null)
-                length += MultipartEncodingUtil.getAsciiBytes(dispositionType).length;
-            else
-                length += FORM_DATA_DISPOSITION_TYPE_BYTES.length;
             length += NAME_BYTES.length;
             length += QUOTE_BYTES.length;
             length += MultipartEncodingUtil.getAsciiBytes(getName()).length;
@@ -345,7 +339,7 @@ public abstract class Part implements com.ning.http.client.Part {
     protected long endOfHeaderLength() {
         return CRLF_BYTES.length * 2;
     }
-    
+
     /**
      * Write the data to the specified output stream
      * 
@@ -400,9 +394,9 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs
      */
     public long length(byte[] boundary) {
-        
+
         long lengthOfData = lengthOfData();
-        
+
         if (lengthOfData < 0L) {
             return -1L;
         } else {
@@ -424,7 +418,14 @@ public abstract class Part implements com.ning.http.client.Part {
      * @see java.lang.Object#toString()
      */
     public String toString() {
-        return this.getName();
+        return new StringBuilder()//
+                .append("name=").append(getName())//
+                .append(" contentType=").append(getContentType())//
+                .append(" charset=").append(getCharSet())//
+                .append(" tranferEncoding=").append(getTransferEncoding())//
+                .append(" contentId=").append(getContentId())//
+                .append(" dispositionType=").append(getDispositionType())//
+                .toString();
     }
 
     /**
@@ -492,7 +493,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @since 3.0
      */
     public static long getLengthOfParts(Part[] parts, byte[] partBoundary) {
-        
+
         try {
             if (parts == null) {
                 throw new IllegalArgumentException("Parts may not be null");
