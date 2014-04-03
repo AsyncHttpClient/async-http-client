@@ -170,7 +170,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
             StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
+            builder.append(originalUri.getScheme()).append("://").append(originalUri.getRawAuthority());
             if (isNonEmpty(originalUri.getRawPath())) {
                 builder.append(originalUri.getRawPath());
             } else {
