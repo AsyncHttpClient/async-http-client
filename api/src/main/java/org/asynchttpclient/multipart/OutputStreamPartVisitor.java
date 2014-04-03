@@ -31,6 +31,11 @@ public class OutputStreamPartVisitor implements PartVisitor {
         out.write(bytes);
     }
 
+    @Override
+    public void withByte(byte b) throws IOException {
+        out.write(b);
+    }
+
     public OutputStream getOutputStream() {
         return out;
     }

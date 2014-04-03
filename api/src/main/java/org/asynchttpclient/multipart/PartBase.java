@@ -12,7 +12,12 @@
  */
 package org.asynchttpclient.multipart;
 
-public abstract class PartBase extends Part {
+import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+public abstract class PartBase implements Part {
 
     /**
      * The name of the form field, part of the Content-Disposition header
@@ -59,6 +64,133 @@ public abstract class PartBase extends Part {
         this.charSet = charSet;
         this.transferEncoding = transferEncoding;
         this.contentId = contentId;
+    }
+
+    protected void visitStart(PartVisitor visitor, byte[] boundary) throws IOException {
+        visitor.withBytes(EXTRA_BYTES);
+        visitor.withBytes(boundary);
+    }
+
+    protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
+        visitor.withBytes(CRLF_BYTES);
+        visitor.withBytes(CONTENT_DISPOSITION_BYTES);
+        visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(US_ASCII) : FORM_DATA_DISPOSITION_TYPE_BYTES);
+        if (getName() != null) {
+            visitor.withBytes(NAME_BYTES);
+            visitor.withByte(QUOTE_BYTE);
+            visitor.withBytes(getName().getBytes(US_ASCII));
+            visitor.withByte(QUOTE_BYTE);
+        }
+    }
+
+    protected void visitContentTypeHeader(PartVisitor visitor) throws IOException {
+        String contentType = getContentType();
+        if (contentType != null) {
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_TYPE_BYTES);
+            visitor.withBytes(contentType.getBytes(US_ASCII));
+            String charSet = getCharSet();
+            if (charSet != null) {
+                visitor.withBytes(CHARSET_BYTES);
+                visitor.withBytes(charSet.getBytes(US_ASCII));
+            }
+        }
+    }
+
+    protected void visitTransferEncodingHeader(PartVisitor visitor) throws IOException {
+        String transferEncoding = getTransferEncoding();
+        if (transferEncoding != null) {
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_TRANSFER_ENCODING_BYTES);
+            visitor.withBytes(transferEncoding.getBytes(US_ASCII));
+        }
+    }
+
+    protected void visitContentIdHeader(PartVisitor visitor) throws IOException {
+        String contentId = getContentId();
+        if (contentId != null) {
+            visitor.withBytes(CRLF_BYTES);
+            visitor.withBytes(CONTENT_ID_BYTES);
+            visitor.withBytes(contentId.getBytes(US_ASCII));
+        }
+    }
+
+    protected void visitEndOfHeader(PartVisitor visitor) throws IOException {
+        visitor.withBytes(CRLF_BYTES);
+        visitor.withBytes(CRLF_BYTES);
+    }
+
+    protected void visitEnd(PartVisitor visitor) throws IOException {
+        visitor.withBytes(CRLF_BYTES);
+    }
+
+    protected abstract long getDataLength();
+
+    protected abstract void sendData(OutputStream out) throws IOException;
+
+    /**
+     * Write all the data to the output stream. If you override this method make sure to override #length() as well
+     * 
+     * @param out
+     *            The output stream
+     * @param boundary
+     *            the boundary
+     * @throws IOException
+     *             If an IO problem occurs.
+     */
+    public void write(OutputStream out, byte[] boundary) throws IOException {
+
+        OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
+
+        visitStart(visitor, boundary);
+        visitDispositionHeader(visitor);
+        visitContentTypeHeader(visitor);
+        visitTransferEncodingHeader(visitor);
+        visitContentIdHeader(visitor);
+        visitEndOfHeader(visitor);
+        sendData(visitor.getOutputStream());
+        visitEnd(visitor);
+    }
+
+    /**
+     * Return the full length of all the data. If you override this method make sure to override #send(OutputStream) as well
+     * 
+     * @return long The length.
+     */
+    public long length(byte[] boundary) {
+
+        long dataLength = getDataLength();
+        try {
+
+            if (dataLength < 0L) {
+                return -1L;
+            } else {
+                CounterPartVisitor visitor = new CounterPartVisitor();
+                visitStart(visitor, boundary);
+                visitDispositionHeader(visitor);
+                visitContentTypeHeader(visitor);
+                visitTransferEncodingHeader(visitor);
+                visitContentIdHeader(visitor);
+                visitEndOfHeader(visitor);
+                visitEnd(visitor);
+                return dataLength + visitor.getCount();
+            }
+        } catch (IOException e) {
+            // can't happen
+            throw new RuntimeException("IOException while computing length, WTF", e);
+        }
+    }
+
+    public String toString() {
+        return new StringBuilder()//
+                .append(getClass().getSimpleName())//
+                .append(" name=").append(getName())//
+                .append(" contentType=").append(getContentType())//
+                .append(" charset=").append(getCharSet())//
+                .append(" tranferEncoding=").append(getTransferEncoding())//
+                .append(" contentId=").append(getContentId())//
+                .append(" dispositionType=").append(getDispositionType())//
+                .toString();
     }
 
     @Override

@@ -12,7 +12,8 @@
  */
 package org.asynchttpclient.multipart;
 
-import org.asynchttpclient.util.StandardCharsets;
+import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
+import static org.asynchttpclient.util.StandardCharsets.ISO_8859_1;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,7 +33,7 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * Default charset of file attachments.
      */
-    public static final String DEFAULT_CHARSET = StandardCharsets.ISO_8859_1.name();
+    public static final String DEFAULT_CHARSET = ISO_8859_1.name();
 
     /**
      * Default transfer encoding of file attachments.
@@ -42,9 +43,11 @@ public abstract class AbstractFilePart extends PartBase {
     /**
      * Attachment's file name as a byte array
      */
-    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] FILE_NAME_BYTES = "; filename=".getBytes(US_ASCII);
 
     private long stalledTime = -1L;
+
+    private String fileName;
 
     /**
      * FilePart Constructor.
@@ -64,25 +67,14 @@ public abstract class AbstractFilePart extends PartBase {
                 DEFAULT_TRANSFER_ENCODING, contentId);
     }
 
-    public abstract String getFileName();
-
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
         super.visitDispositionHeader(visitor);
-        String filename = getFileName();
-        if (filename != null) {
+        if (fileName != null) {
             visitor.withBytes(FILE_NAME_BYTES);
-            visitor.withBytes(QUOTE_BYTES);
-            visitor.withBytes(filename.getBytes(StandardCharsets.US_ASCII));
-            visitor.withBytes(QUOTE_BYTES);
+            visitor.withByte(QUOTE_BYTE);
+            visitor.withBytes(fileName.getBytes(US_ASCII));
+            visitor.withByte(QUOTE_BYTE);
         }
-    }
-
-    public void setStalledTime(long ms) {
-        stalledTime = ms;
-    }
-
-    public long getStalledTime() {
-        return stalledTime;
     }
 
     protected byte[] generateFileStart(byte[] boundary) throws IOException {
@@ -103,5 +95,29 @@ public abstract class AbstractFilePart extends PartBase {
         OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
         visitEnd(visitor);
         return out.toByteArray();
+    }
+
+    public void setStalledTime(long ms) {
+        stalledTime = ms;
+    }
+
+    public long getStalledTime() {
+        return stalledTime;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()//
+                .append(super.toString())//
+                .append(" filename=").append(fileName)//
+                .toString();
     }
 }

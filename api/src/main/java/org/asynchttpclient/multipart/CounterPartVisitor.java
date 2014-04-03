@@ -23,6 +23,11 @@ public class CounterPartVisitor implements PartVisitor {
         count += bytes.length;
     }
 
+    @Override
+    public void withByte(byte b) throws IOException {
+        count++;
+    }
+
     public long getCount() {
         return count;
     }

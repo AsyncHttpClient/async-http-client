@@ -16,5 +16,6 @@ import java.io.IOException;
 
 public interface PartVisitor {
 
-    public void withBytes(byte[] bytes) throws IOException;
+    void withBytes(byte[] bytes) throws IOException;
+    void withByte(byte b) throws IOException;
 }

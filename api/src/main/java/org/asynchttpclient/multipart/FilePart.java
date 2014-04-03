@@ -29,7 +29,6 @@ public class FilePart extends AbstractFilePart {
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePart.class);
 
     private final File file;
-    private final String fileName;
 
     public FilePart(String name, File file) {
         this(name, file, null, null);
@@ -59,12 +58,7 @@ public class FilePart extends AbstractFilePart {
         if (!file.canRead()) {
             throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
         }
-        this.fileName = fileName != null ? fileName : file.getName();
-    }
-
-    @Override
-    public String getFileName() {
-        return fileName;
+        setFileName(fileName != null ? fileName : file.getName());
     }
 
     @Override

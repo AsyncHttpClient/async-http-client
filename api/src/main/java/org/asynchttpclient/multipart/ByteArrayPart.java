@@ -19,7 +19,6 @@ import java.nio.channels.WritableByteChannel;
 public class ByteArrayPart extends AbstractFilePart {
 
     private final byte[] bytes;
-    private final String fileName;
 
     public ByteArrayPart(String name, byte[] bytes) {
         this(name, bytes, null);
@@ -43,12 +42,7 @@ public class ByteArrayPart extends AbstractFilePart {
             throw new NullPointerException("bytes");
         }
         this.bytes = bytes;
-        this.fileName = fileName;
-    }
-
-    @Override
-    public String getFileName() {
-        return fileName;
+        setFileName(fileName);
     }
 
     @Override
