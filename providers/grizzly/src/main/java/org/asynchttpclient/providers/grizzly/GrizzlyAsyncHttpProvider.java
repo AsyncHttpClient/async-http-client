@@ -253,7 +253,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         SSLContext context = clientConfig.getSSLContext();
         if (context == null) {
             try {
-                context = SslUtils.getSSLContext();
+                context = SslUtils.getInstance().getSSLContext();
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
