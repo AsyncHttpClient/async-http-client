@@ -13,7 +13,6 @@
 package org.asynchttpclient.multipart;
 
 import static org.asynchttpclient.util.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.util.StandardCharsets.ISO_8859_1;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,11 +28,6 @@ public abstract class AbstractFilePart extends PartBase {
      * Default content encoding of file attachments.
      */
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-
-    /**
-     * Default charset of file attachments.
-     */
-    public static final String DEFAULT_CHARSET = ISO_8859_1.name();
 
     /**
      * Default transfer encoding of file attachments.
@@ -59,11 +53,10 @@ public abstract class AbstractFilePart extends PartBase {
      * @param contentType
      *            the content type for this part, if <code>null</code> the {@link #DEFAULT_CONTENT_TYPE default} is used
      * @param charset
-     *            the charset encoding for this part, if <code>null</code> the {@link #DEFAULT_CHARSET default} is used
-     * @param contentId
+     *            the charset encoding for this part
      */
     public AbstractFilePart(String name, String contentType, String charset, String contentId) {
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? DEFAULT_CHARSET : charset,
+        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset,
                 DEFAULT_TRANSFER_ENCODING, contentId);
     }
 
