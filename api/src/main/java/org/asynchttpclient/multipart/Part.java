@@ -128,12 +128,11 @@ public abstract class Part {
     }
 
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
-
+        visitor.withBytes(CRLF_BYTES);
+        visitor.withBytes(CONTENT_DISPOSITION_BYTES);
+        visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(StandardCharsets.US_ASCII)
+                : FORM_DATA_DISPOSITION_TYPE_BYTES);
         if (getName() != null) {
-            visitor.withBytes(CRLF_BYTES);
-            visitor.withBytes(CONTENT_DISPOSITION_BYTES);
-            visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(StandardCharsets.US_ASCII)
-                    : FORM_DATA_DISPOSITION_TYPE_BYTES);
             visitor.withBytes(NAME_BYTES);
             visitor.withBytes(QUOTE_BYTES);
             visitor.withBytes(getName().getBytes(StandardCharsets.US_ASCII));
@@ -239,14 +238,15 @@ public abstract class Part {
         }
     }
 
-    /**
-     * Return a string representation of this object.
-     * 
-     * @return A string representation of this object.
-     * @see java.lang.Object#toString()
-     */
     public String toString() {
-        return this.getName();
+        return new StringBuilder()//
+                .append("name=").append(getName())//
+                .append(" contentType=").append(getContentType())//
+                .append(" charset=").append(getCharSet())//
+                .append(" tranferEncoding=").append(getTransferEncoding())//
+                .append(" contentId=").append(getContentId())//
+                .append(" dispositionType=").append(getDispositionType())//
+                .toString();
     }
 
     public abstract long write(WritableByteChannel target, byte[] boundary) throws IOException;
