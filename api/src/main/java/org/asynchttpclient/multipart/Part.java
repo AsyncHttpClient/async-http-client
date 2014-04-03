@@ -44,7 +44,7 @@ public abstract class Part {
      * form-data as a byte array
      */
     public static final byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = "form-data".getBytes(StandardCharsets.US_ASCII);
-    
+
     /**
      * name as a byte array
      */
@@ -106,6 +106,13 @@ public abstract class Part {
     public abstract String getContentId();
 
     /**
+     * Gets the disposition-type to be used in Content-Disposition header
+     * 
+     * @return the disposition-type
+     */
+    public abstract String getDispositionType();
+
+    /**
      * Tests if this part can be sent more than once.
      * 
      * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
@@ -115,30 +122,18 @@ public abstract class Part {
         return true;
     }
 
-    private String dispositionType;
-    /**
-     * Gets the disposition-type to be used in Content-Disposition header
-     * 
-     * @return the disposition-type
-     */
-    public String getDispositionType() {
-        return dispositionType;
-    }
-
-    public void setDispositionType(String dispositionType) {
-        this.dispositionType = dispositionType;
-    }
-
     protected void visitStart(PartVisitor visitor, byte[] boundary) throws IOException {
         visitor.withBytes(EXTRA_BYTES);
         visitor.withBytes(boundary);
     }
 
     protected void visitDispositionHeader(PartVisitor visitor) throws IOException {
+
         if (getName() != null) {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_DISPOSITION_BYTES);
-            visitor.withBytes(dispositionType != null? dispositionType.getBytes(StandardCharsets.US_ASCII): FORM_DATA_DISPOSITION_TYPE_BYTES);
+            visitor.withBytes(getDispositionType() != null ? getDispositionType().getBytes(StandardCharsets.US_ASCII)
+                    : FORM_DATA_DISPOSITION_TYPE_BYTES);
             visitor.withBytes(NAME_BYTES);
             visitor.withBytes(QUOTE_BYTES);
             visitor.withBytes(getName().getBytes(StandardCharsets.US_ASCII));

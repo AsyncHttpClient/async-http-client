@@ -15,26 +15,34 @@ package org.asynchttpclient.multipart;
 public abstract class PartBase extends Part {
 
     /**
-     * Name of the file part.
+     * The name of the form field, part of the Content-Disposition header
      */
     private final String name;
 
     /**
-     * Content type of the file part.
+     * The main part of the Content-Type header
      */
     private final String contentType;
 
     /**
-     * Content encoding of the file part.
+     * The charset (part of Content-Type header)
      */
     private final String charSet;
 
     /**
-     * The transfer encoding.
+     * The Content-Transfer-Encoding header value.
      */
     private final String transferEncoding;
 
+    /**
+     * The Content-Id
+     */
     private final String contentId;
+
+    /**
+     * The disposition type (part of Content-Disposition)
+     */
+    private String dispositionType;
 
     /**
      * Constructor.
@@ -57,43 +65,37 @@ public abstract class PartBase extends Part {
         this.contentId = contentId;
     }
 
-    /**
-     * Returns the name.
-     * 
-     * @return The name.
-     */
+    @Override
     public String getName() {
         return this.name;
     }
 
-    /**
-     * Returns the content type of this part.
-     * 
-     * @return String The name.
-     */
+    @Override
     public String getContentType() {
         return this.contentType;
     }
 
-    /**
-     * Return the character encoding of this part.
-     * 
-     * @return String The name.
-     */
+    @Override
     public String getCharSet() {
         return this.charSet;
     }
 
-    /**
-     * Returns the transfer encoding of this part.
-     * 
-     * @return String The name.
-     */
+    @Override
     public String getTransferEncoding() {
         return transferEncoding;
     }
 
+    @Override
     public String getContentId() {
         return contentId;
+    }
+
+    @Override
+    public String getDispositionType() {
+        return dispositionType;
+    }
+
+    public void setDispositionType(String dispositionType) {
+        this.dispositionType = dispositionType;
     }
 }
