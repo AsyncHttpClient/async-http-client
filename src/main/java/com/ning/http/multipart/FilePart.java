@@ -204,8 +204,8 @@ public class FilePart extends PartBase {
      * 
      * @return The source.
      */
-    protected PartSource getSource() {
-        return this.source;
+    public PartSource getSource() {
+        return source;
     }
 
     /**

@@ -115,6 +115,4 @@ public class FilePartSource implements PartSource {
     public File getFile() {
         return file;
     }
-
-
 }
