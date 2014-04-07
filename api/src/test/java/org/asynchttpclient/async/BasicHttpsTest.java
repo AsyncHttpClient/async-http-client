@@ -30,6 +30,7 @@ import org.testng.annotations.Test;
 import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -100,17 +101,19 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             String body = "hello there";
 
             // first request fails because server certificate is rejected
+            Throwable cause = null;
             try {
                 c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
             } catch (final ExecutionException e) {
-                Throwable cause = e.getCause();
+                cause = e.getCause();
                 if (cause instanceof ConnectException) {
-                    assertNotNull(cause.getCause());
+                    //assertNotNull(cause.getCause());
                     assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
                 } else {
-                    assertTrue(cause instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause);
+                   assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
                 }
             }
+            assertNotNull(cause);
 
             trusted.set(true);
 

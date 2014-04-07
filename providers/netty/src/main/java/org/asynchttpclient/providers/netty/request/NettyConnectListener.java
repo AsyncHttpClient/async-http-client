@@ -16,10 +16,13 @@
  */
 package org.asynchttpclient.providers.netty.request;
 
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.future.StackTraceInspector;
+import org.asynchttpclient.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLSession;
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 
@@ -54,15 +61,32 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
 
     public void onFutureSuccess(final Channel channel) throws ConnectException {
         Channels.setDefaultAttribute(channel, future);
-        SslHandler sslHandler = Channels.getSslHandler(channel);
+        final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
+        final SslHandler sslHandler = Channels.getSslHandler(channel);
+        if (hostnameVerifier != null && sslHandler != null) {
+            final String host = future.getURI().getHost();
+            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<? super Channel>>() {
+                @Override
+                public void operationComplete(Future<? super Channel> handshakeFuture) throws Exception {
+                    if (handshakeFuture.isSuccess()) {
+                        Channel channel = (Channel) handshakeFuture.getNow();
+                        SSLEngine engine = sslHandler.engine();
+                        SSLSession session = engine.getSession();
 
-        if (sslHandler != null && !config.getHostnameVerifier().verify(future.getURI().getHost(), sslHandler.engine().getSession())) {
-            ConnectException exception = new ConnectException("HostnameVerifier exception");
-            future.abort(exception);
-            throw exception;
+                        LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(), Base64.encode(session.getId()), session.isValid(), host);
+                        if (!hostnameVerifier.verify(host, session)) {
+                            ConnectException exception = new ConnectException("HostnameVerifier exception");
+                            future.abort(exception);
+                            throw exception;
+                        } else {
+                            requestSender.writeRequest(future, channel);
+                        }
+                    }
+                }
+            });
+        } else {
+            requestSender.writeRequest(future, channel);
         }
-
-        requestSender.writeRequest(future, channel);
     }
 
     public void onFutureFailure(Channel channel, Throwable cause) {

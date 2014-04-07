@@ -20,18 +20,22 @@ import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.util.Base64;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.EmptyCompletionHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.connectionpool.EndpointKey;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.ssl.SSLBaseFilter;
+import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.utils.Futures;
 import org.glassfish.grizzly.utils.IdleTimeoutFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -51,6 +55,8 @@ import java.util.concurrent.TimeoutException;
 
 public class ConnectionManager {
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
+
     private static final Attribute<Boolean> DO_NOT_CACHE = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(ConnectionManager.class
             .getName());
     private final ConnectionPool connectionPool;
@@ -60,13 +66,15 @@ public class ConnectionManager {
     private final FilterChainBuilder secureBuilder;
     private final FilterChainBuilder nonSecureBuilder;
     private final boolean asyncConnect;
+    private final SSLFilter sslFilter;
 
     // ------------------------------------------------------------ Constructors
 
     ConnectionManager(final GrizzlyAsyncHttpProvider provider,//
             final ConnectionPool connectionPool,//
             final FilterChainBuilder secureBuilder,//
-            final FilterChainBuilder nonSecureBuilder) {
+            final FilterChainBuilder nonSecureBuilder,//
+            final SSLFilter sslFilter) {
 
         this.provider = provider;
         final AsyncHttpClientConfig config = provider.getClientConfig();
@@ -87,6 +95,7 @@ public class ConnectionManager {
         AsyncHttpProviderConfig<?, ?> providerConfig = config.getAsyncHttpProviderConfig();
         asyncConnect = providerConfig instanceof GrizzlyAsyncHttpProviderConfig ? GrizzlyAsyncHttpProviderConfig.class.cast(providerConfig)
                 .isAsyncConnectMode() : false;
+        this.sslFilter = sslFilter;
     }
 
     // ---------------------------------------------------------- Public Methods
@@ -95,7 +104,7 @@ public class ConnectionManager {
             final GrizzlyResponseFuture requestFuture,//
             final CompletionHandler<Connection> connectHandler) throws IOException {
         final EndpointKey<SocketAddress> key = getEndPointKey(request, requestFuture.getProxyServer());
-        CompletionHandler<Connection> handler = wrapHandler(request, getVerifier(), connectHandler);
+        CompletionHandler<Connection> handler = wrapHandler(request, getVerifier(), connectHandler, sslFilter);
         if (asyncConnect) {
             connectionPool.take(key, handler);
         } else {
@@ -136,37 +145,32 @@ public class ConnectionManager {
     // --------------------------------------------------Package Private Methods
 
     static CompletionHandler<Connection> wrapHandler(final Request request, final HostnameVerifier verifier,
-            final CompletionHandler<Connection> delegate) {
+            final CompletionHandler<Connection> delegate, final SSLFilter sslFilter) {
         final URI uri = request.getURI();
         if (Utils.isSecure(uri) && verifier != null) {
-            return new EmptyCompletionHandler<Connection>() {
+            SSLBaseFilter.HandshakeListener handshakeListener = new SSLBaseFilter.HandshakeListener() {
                 @Override
-                public void completed(Connection result) {
+                public void onStart(Connection connection) {
+                    // do nothing
+                    LOGGER.debug("SSL Handshake onStart: ");
+                }
+
+                @Override
+                public void onComplete(Connection connection) {
+                    sslFilter.removeHandshakeListener(this);
+
                     final String host = uri.getHost();
-                    final SSLSession session = SSLUtils.getSSLEngine(result).getSession();
+                    final SSLSession session = SSLUtils.getSSLEngine(connection).getSession();
+                    LOGGER.debug("SSL Handshake onComplete: session = {}, id = {}, isValid = {}, host = {}", session.toString(), Base64.encode(session.getId()), session.isValid(), host);
+
                     if (!verifier.verify(host, session)) {
-                        failed(new ConnectException("Host name verification failed for host " + host));
-                    } else {
-                        delegate.completed(result);
+                        connection.close(); // XXX what's the correct way to kill a connection?
+                        IOException e = new ConnectException("Host name verification failed for host " + host);
+                        delegate.failed(e);
                     }
-
-                }
-
-                @Override
-                public void cancelled() {
-                    delegate.cancelled();
-                }
-
-                @Override
-                public void failed(Throwable throwable) {
-                    delegate.failed(throwable);
-                }
-
-                @Override
-                public void updated(Connection result) {
-                    delegate.updated(result);
                 }
             };
+            sslFilter.addHandshakeListener(handshakeListener);
         }
         return delegate;
     }
