@@ -30,6 +30,7 @@ import javax.net.ssl.SSLEngine;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -345,6 +346,16 @@ public class AsyncHttpClientConfig {
                 public SSLEngine newSSLEngine() {
                     if (sslContext != null) {
                         SSLEngine sslEngine = sslContext.createSSLEngine();
+                        sslEngine.setUseClientMode(true);
+                        return sslEngine;
+                    } else {
+                        return null;
+                    }
+                }
+
+                public SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException {
+                    if (sslContext != null) {
+                        SSLEngine sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
                         sslEngine.setUseClientMode(true);
                         return sslEngine;
                     } else {

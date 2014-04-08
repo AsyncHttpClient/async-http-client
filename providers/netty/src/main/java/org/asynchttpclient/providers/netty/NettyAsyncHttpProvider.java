@@ -22,10 +22,12 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NettyAsyncHttpProvider implements AsyncHttpProvider {
@@ -47,7 +49,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
         channels = new Channels(config, nettyConfig);
         requestSender = new NettyRequestSender(closed, config, nettyConfig, channels);
-        channels.configureProcessor(requestSender, closed);
     }
 
     @Override
@@ -72,6 +73,11 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+        final URI uri = request.getURI();
+        final String host = AsyncHttpProviderUtils.getHost(uri);
+        final int port = AsyncHttpProviderUtils.getPort(uri);
+        channels.configureProcessor(requestSender, closed, host, port);
+
         return requestSender.sendRequest(request, asyncHandler, null, false);
     }
 }

@@ -30,4 +30,14 @@ public interface SSLEngineFactory {
      * @throws GeneralSecurityException if the SSLEngine cannot be created
      */
     SSLEngine newSSLEngine() throws GeneralSecurityException;
+
+    /**
+     * Creates new {@link SSLEngine}.
+     *
+     * @param peerHost the hostname of the peer the engine is connecting to.
+     * @param peerPort the port of the peer the engine is connecting to.
+     * @return new engine
+     * @throws GeneralSecurityException if the SSLEngine cannot be created
+     */
+    SSLEngine newSSLEngine(String peerHost, int peerPort) throws GeneralSecurityException;
 }

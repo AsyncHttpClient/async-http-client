@@ -32,6 +32,7 @@ import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,15 +196,18 @@ public class Channels {
         secureWebSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
     }
 
-    private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
-        SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine();
+    private SSLEngine createSSLEngine(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
+        SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine(peerHost, peerPort);
         if (sslEngine == null) {
-            sslEngine = SslUtils.getSSLEngine();
+            sslEngine = SslUtils.getSSLEngine(peerHost, peerPort);
         }
         return sslEngine;
     }
 
-    public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
+    public void configureProcessor(final NettyRequestSender requestSender,//
+                                   final AtomicBoolean closed,//
+                                   final String peerHost,//
+                                   final int peerPort) {
 
         final Processor httpProcessor = newHttpProcessor(config, nettyProviderConfig, requestSender, this, closed);
         wsProcessor = newWsProcessor(config, nettyProviderConfig, requestSender, this, closed);
@@ -243,7 +247,7 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
 
-                SSLEngine sslEngine = createSSLEngine();
+                SSLEngine sslEngine = createSSLEngine(peerHost, peerPort);
                 SslHandler sslHandler = new SslHandler(sslEngine);
                 if (handshakeTimeoutInMillis > 0)
                     sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
@@ -269,7 +273,7 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
+                        .addLast(SSL_HANDLER, new SslHandler(createSSLEngine(peerHost, peerPort)))//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
@@ -307,7 +311,7 @@ public class Channels {
      * Always make sure the channel who got cached support the proper protocol. It could only occurs when a HttpMethod.
      * CONNECT is used against a proxy that requires upgrading from http to https.
      */
-    public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme) throws IOException, GeneralSecurityException {
+    public void verifyChannelPipeline(ChannelPipeline pipeline, String scheme, String peerHost, int peerPort) throws IOException, GeneralSecurityException {
 
         boolean isSecure = isSecure(scheme);
         if (pipeline.get(SSL_HANDLER) != null) {
@@ -315,7 +319,7 @@ public class Channels {
                 pipeline.remove(SSL_HANDLER);
 
         } else if (isSecure)
-            pipeline.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+            pipeline.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine(peerHost, peerPort)));
     }
 
     protected HttpClientCodec newHttpClientCodec() {
@@ -331,7 +335,7 @@ public class Channels {
         }
     }
 
-    public void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline p, String scheme, String peerHost, int peerPort) throws IOException, GeneralSecurityException {
         if (p.get(HTTP_HANDLER) != null) {
             p.remove(HTTP_HANDLER);
         }
@@ -339,7 +343,7 @@ public class Channels {
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, newHttpClientCodec());
-                p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine(peerHost, peerPort)));
             } else {
                 p.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             }
@@ -365,7 +369,9 @@ public class Channels {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
 
             try {
-                verifyChannelPipeline(channel.pipeline(), uri.getScheme());
+                final String host = AsyncHttpProviderUtils.getHost(uri);
+                final int port = AsyncHttpProviderUtils.getPort(uri);
+                verifyChannelPipeline(channel.pipeline(), uri.getScheme(), host, port);
             } catch (Exception ex) {
                 LOGGER.debug(ex.getMessage(), ex);
             }
