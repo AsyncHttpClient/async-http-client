@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NettyAsyncHttpProvider implements AsyncHttpProvider {
@@ -47,7 +48,6 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
         channels = new Channels(config, nettyConfig);
         requestSender = new NettyRequestSender(closed, config, nettyConfig, channels);
-        channels.configureProcessor(requestSender, closed);
     }
 
     @Override
@@ -72,6 +72,9 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
 
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
+        final URI uri = request.getURI();
+        channels.configureProcessor(requestSender, closed, uri.getHost(), uri.getPort());
+
         return requestSender.sendRequest(request, asyncHandler, null, false);
     }
 }
