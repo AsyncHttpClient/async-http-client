@@ -22,6 +22,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,9 @@ public class NettyAsyncHttpProvider implements AsyncHttpProvider {
     @Override
     public <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) throws IOException {
         final URI uri = request.getURI();
-        channels.configureProcessor(requestSender, closed, uri.getHost(), uri.getPort());
+        final String host = AsyncHttpProviderUtils.getHost(uri);
+        final int port = AsyncHttpProviderUtils.getPort(uri);
+        channels.configureProcessor(requestSender, closed, host, port);
 
         return requestSender.sendRequest(request, asyncHandler, null, false);
     }

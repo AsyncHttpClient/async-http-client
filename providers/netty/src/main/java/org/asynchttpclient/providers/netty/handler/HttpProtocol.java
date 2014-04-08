@@ -320,8 +320,10 @@ final class HttpProtocol extends Protocol {
 
             try {
                 LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                URI uri = request.getURI();
-                channels.upgradeProtocol(channel.pipeline(), uri.getScheme(), uri.getHost(), uri.getPort());
+                final URI uri = request.getURI();
+                final String host = AsyncHttpProviderUtils.getHost(uri);
+                final int port = AsyncHttpProviderUtils.getPort(uri);
+                channels.upgradeProtocol(channel.pipeline(), uri.getScheme(), host, port);
             } catch (Throwable ex) {
                 channels.abort(future, ex);
             }

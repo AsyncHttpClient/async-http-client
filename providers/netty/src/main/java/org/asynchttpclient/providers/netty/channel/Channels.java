@@ -32,6 +32,7 @@ import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.handler.Processor;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
 import org.asynchttpclient.providers.netty.util.CleanupChannelGroup;
+import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.SslUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -368,7 +369,9 @@ public class Channels {
             LOGGER.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
 
             try {
-                verifyChannelPipeline(channel.pipeline(), uri.getScheme(), uri.getHost(), uri.getPort());
+                final String host = AsyncHttpProviderUtils.getHost(uri);
+                final int port = AsyncHttpProviderUtils.getPort(uri);
+                verifyChannelPipeline(channel.pipeline(), uri.getScheme(), host, port);
             } catch (Exception ex) {
                 LOGGER.debug(ex.getMessage(), ex);
             }
