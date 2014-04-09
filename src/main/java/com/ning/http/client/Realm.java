@@ -22,8 +22,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import com.ning.http.util.MiscUtil;
-
 /**
  * This class is required when authentication is needed. The class support DIGEST and BASIC.
  */
@@ -433,7 +431,10 @@ public class Realm {
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
-            setAlgorithm(match(headerLine, "algorithm"));
+            String algorithm = match(headerLine, "algorithm");
+            if (isNonEmpty(algorithm)) {
+                setAlgorithm(algorithm);
+            }
             setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
             if (isNonEmpty(getNonce())) {
