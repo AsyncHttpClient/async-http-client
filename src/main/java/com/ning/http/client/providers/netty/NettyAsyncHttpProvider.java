@@ -104,6 +104,7 @@ import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,8 +215,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
-    private final boolean allowStopHashedWheelTimer;
-    private final HashedWheelTimer hashedWheelTimer;
+    private final boolean allowStopNettyTimer;
+    private final Timer nettyTimer;
     private final long handshakeTimeoutInMillis;
 
     private static boolean isNTLM(List<String> auth) {
@@ -260,9 +261,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        allowStopHashedWheelTimer = providerConfig.getHashedWheelTimer() == null;
-        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : providerConfig.getHashedWheelTimer();
-        hashedWheelTimer.start();
+        allowStopNettyTimer = providerConfig.getNettyTimer() == null;
+        nettyTimer = allowStopNettyTimer ? newNettyTimer() : providerConfig.getNettyTimer();
 
         handshakeTimeoutInMillis = providerConfig.getHandshakeTimeoutInMillis();
 
@@ -277,7 +277,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
         if (cp == null && config.getAllowPoolingConnection()) {
-            cp = new NettyConnectionsPool(this, hashedWheelTimer);
+            cp = new NettyConnectionsPool(this, nettyTimer);
         } else if (cp == null) {
             cp = new NonConnectionsPool();
         }
@@ -294,6 +294,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         disableZeroCopy = providerConfig.isDisableZeroCopy();
     }
 
+    private Timer newNettyTimer() {
+        HashedWheelTimer timer = new HashedWheelTimer();
+        timer.start();
+        return timer;
+    }
+    
     @Override
     public String toString() {
         int availablePermits = freeConnections != null ? freeConnections.availablePermits() : 0;
@@ -372,7 +378,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 try {
                     SSLEngine sslEngine = createSSLEngine();
-                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, hashedWheelTimer,
+                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
                             handshakeTimeoutInMillis) : new SslHandler(sslEngine);
                     pipeline.addLast(SSL_HANDLER, sslHandler);
                 } catch (Throwable ex) {
@@ -906,8 +912,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     secureWebSocketBootstrap.releaseExternalResources();
                 }
 
-                if (allowStopHashedWheelTimer)
-                    hashedWheelTimer.stop();
+                if (allowStopNettyTimer)
+                    nettyTimer.stop();
 
             } catch (Throwable t) {
                 log.warn("Unexpected error on close", t);
@@ -2448,7 +2454,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
-        return hashedWheelTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
+        return nettyTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
     }
 
     private static boolean isWebSocket(String scheme) {

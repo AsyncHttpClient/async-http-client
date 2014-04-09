@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,14 +41,14 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private final HashedWheelTimer hashedWheelTimer;
+    private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
     private final int maxTotalConnections;
     private final int maxConnectionPerHost;
     private final int maxConnectionLifeTimeInMs;
     private final long maxIdleTime;
 
-    public NettyConnectionsPool(NettyAsyncHttpProvider provider, HashedWheelTimer hashedWheelTimer) {
+    public NettyConnectionsPool(NettyAsyncHttpProvider provider, Timer hashedWheelTimer) {
         this(provider.getConfig().getMaxTotalConnections(),//
                 provider.getConfig().getMaxConnectionPerHost(),//
                 provider.getConfig().getIdleConnectionInPoolTimeoutInMs(),//
@@ -58,18 +58,18 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     }
 
     public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, int maxConnectionLifeTimeInMs, boolean sslConnectionPoolEnabled,
-            HashedWheelTimer hashedWheelTimer) {
+            Timer nettyTimer) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
-        this.hashedWheelTimer = hashedWheelTimer;
+        this.nettyTimer = nettyTimer;
         scheduleNewIdleChannelDetector(new IdleChannelDetector());
     }
 
     private void scheduleNewIdleChannelDetector(TimerTask task) {
-        this.hashedWheelTimer.newTimeout(task, maxIdleTime, TimeUnit.MILLISECONDS);
+        this.nettyTimer.newTimeout(task, maxIdleTime, TimeUnit.MILLISECONDS);
     }
 
     private static class IdleChannel {
