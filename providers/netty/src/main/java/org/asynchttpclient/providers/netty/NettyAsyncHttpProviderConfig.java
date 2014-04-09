@@ -28,7 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +89,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     private boolean disableZeroCopy;
 
-    private HashedWheelTimer hashedWheelTimer;
+    private Timer nettyTimer;
 
     private long handshakeTimeoutInMillis;
 
@@ -235,12 +235,12 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         this.disableZeroCopy = disableZeroCopy;
     }
 
-    public HashedWheelTimer getHashedWheelTimer() {
-        return hashedWheelTimer;
+    public Timer getNettyTimer() {
+        return nettyTimer;
     }
 
-    public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
-        this.hashedWheelTimer = hashedWheelTimer;
+    public void setNettyTimer(Timer nettyTimer) {
+        this.nettyTimer = nettyTimer;
     }
 
     public long getHandshakeTimeoutInMillis() {
