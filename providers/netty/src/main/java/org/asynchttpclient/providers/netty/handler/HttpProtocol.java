@@ -227,7 +227,7 @@ final class HttpProtocol extends Protocol {
                             .parseWWWAuthenticateHeader(authenticateHeaders.get(0)).build();
                 }
 
-                Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(URI.create(request.getUrl()).getPath()).build();
+                Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(request.getURI().getPath()).build();
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
 
                 LOGGER.debug("Sending authentication to {}", request.getUrl());

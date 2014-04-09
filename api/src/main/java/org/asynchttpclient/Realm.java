@@ -400,7 +400,10 @@ public class Realm {
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
-            setAlgorithm(match(headerLine, "algorithm"));
+            String algorithm = match(headerLine, "algorithm");
+            if (isNonEmpty(algorithm)) {
+                setAlgorithm(algorithm);
+            }
             setOpaque(match(headerLine, "opaque"));
             setQop(match(headerLine, "qop"));
             if (isNonEmpty(getNonce())) {
