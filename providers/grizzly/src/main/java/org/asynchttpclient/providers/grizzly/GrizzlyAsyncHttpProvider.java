@@ -334,7 +334,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         } else {
             pool = null;
         }
-        connectionManager = new ConnectionManager(this, pool, secure, nonSecure);
+        connectionManager = new ConnectionManager(this, pool, secure, nonSecure, filter);
 
     }
 
