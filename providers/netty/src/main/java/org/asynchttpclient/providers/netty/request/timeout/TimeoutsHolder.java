@@ -17,18 +17,19 @@ package org.asynchttpclient.providers.netty.request.timeout;
 
 import io.netty.util.Timeout;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class TimeoutsHolder {
 
+    private AtomicBoolean cancelled = new AtomicBoolean();
     public volatile Timeout requestTimeout;
     public volatile Timeout idleConnectionTimeout;
 
     public void cancel() {
-        if (requestTimeout != null) {
+        if (cancelled.compareAndSet(false, true)) {
             requestTimeout.cancel();
-            requestTimeout = null;
-        }
-        if (idleConnectionTimeout != null) {
             idleConnectionTimeout.cancel();
+            requestTimeout = null;
             idleConnectionTimeout = null;
         }
     }
