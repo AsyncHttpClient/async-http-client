@@ -34,6 +34,7 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -468,6 +469,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         return true;
     }
 
+    public SocketAddress getChannelRemoteAddress() {
+        return channel() != null? channel().remoteAddress(): null;
+    }
+    
     public void setRequest(Request request) {
         this.request = request;
     }
