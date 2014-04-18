@@ -21,16 +21,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TimeoutsHolder {
 
-    private AtomicBoolean cancelled = new AtomicBoolean();
+    private final AtomicBoolean cancelled = new AtomicBoolean();
     public volatile Timeout requestTimeout;
     public volatile Timeout idleConnectionTimeout;
 
     public void cancel() {
         if (cancelled.compareAndSet(false, true)) {
-            requestTimeout.cancel();
-            idleConnectionTimeout.cancel();
-            requestTimeout = null;
-            idleConnectionTimeout = null;
+            if (requestTimeout != null) {
+                requestTimeout.cancel();
+                requestTimeout = null;
+            }
+            if (idleConnectionTimeout != null) {
+                idleConnectionTimeout.cancel();
+                idleConnectionTimeout = null;
+            }
         }
     }
 }
