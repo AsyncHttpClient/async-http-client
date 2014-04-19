@@ -124,6 +124,10 @@ public class UTF8UrlEncoder {
         USERINFO[':'] = true;
     }
 
+    /**
+     * host        = IP-literal / IPv4address / reg-name
+     * reg-name    = *( unreserved / pct-encoded / sub-delims )
+     */
     private final static boolean[] HOSTPORT = new boolean[128];
     static {
         for(int i=0; i < 128; i++)
@@ -131,6 +135,9 @@ public class UTF8UrlEncoder {
             HOSTPORT[':'] = true;
     }
 
+    /**
+     * pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+     */
     private final static boolean[] PCHAR = new boolean[128];
     static {
         for(int i=0; i < 128; i++)
@@ -139,6 +146,9 @@ public class UTF8UrlEncoder {
         PCHAR['@'] = true;
     }
 
+    /**
+     * query       = *( pchar / "/" / "?" )
+     */
     private final static boolean[] QUERY = new boolean[128];
     static {
         System.arraycopy(PCHAR, 0, QUERY, 0, 128);
@@ -146,6 +156,11 @@ public class UTF8UrlEncoder {
         QUERY['?'] = true;
     }
 
+    /**
+     * used to encode individual name and value parts of query
+     * =& are characters used to separate name and value pairs
+     * + needs to be encoded to differentiate from encoded spaces
+     */
     private final static boolean[] QUERY_PARAM = new boolean[128];
     static {
         System.arraycopy(QUERY, 0, QUERY_PARAM, 0, 128);
@@ -154,6 +169,26 @@ public class UTF8UrlEncoder {
         QUERY_PARAM['&'] = false;
     }
 
+    /**
+     * path          = path-abempty    ; begins with "/" or is empty
+     / path-absolute   ; begins with "/" but not "//"
+     / path-noscheme   ; begins with a non-colon segment
+     / path-rootless   ; begins with a segment
+     / path-empty      ; zero characters
+
+     path-abempty  = *( "/" segment )
+     path-absolute = "/" [ segment-nz *( "/" segment ) ]
+     path-noscheme = segment-nz-nc *( "/" segment )
+     path-rootless = segment-nz *( "/" segment )
+     path-empty    = 0<pchar>
+
+     segment       = *pchar
+     segment-nz    = 1*pchar
+     segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
+     ; non-zero-length segment without any colon ":"
+
+     pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+     */
     private final static boolean[] PATH = new boolean[128];
     static {
         System.arraycopy(PCHAR, 0, PATH, 0, 128);
