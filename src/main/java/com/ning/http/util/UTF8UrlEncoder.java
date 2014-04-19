@@ -23,25 +23,141 @@ public class UTF8UrlEncoder {
     private static final boolean encodeSpaceUsingPlus = System.getProperty("com.com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus") == null ? false : true;
 
     /**
-     * Encoding table used for figuring out ascii characters that must be escaped
-     * (all non-Ascii characters need to be encoded anyway)
+     * gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
      */
-    private final static int[] SAFE_ASCII = new int[128];
+    private final static boolean[] GEN_DELIMS = new boolean[128];
 
     static {
+        GEN_DELIMS[':'] = true;
+        GEN_DELIMS['/'] = true;
+        GEN_DELIMS['?'] = true;
+        GEN_DELIMS['#'] = true;
+        GEN_DELIMS['['] = true;
+        GEN_DELIMS[']'] = true;
+        GEN_DELIMS['@'] = true;
+    }
+
+    /**
+     * sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+     / "*" / "+" / "," / ";" / "="
+     */
+    private final static boolean[] SUB_DELIMS = new boolean[128];
+
+    static {
+        SUB_DELIMS['!'] = true;
+        SUB_DELIMS['$'] = true;
+        SUB_DELIMS['&'] = true;
+        SUB_DELIMS['\''] = true;
+        SUB_DELIMS['('] = true;
+        SUB_DELIMS[')'] = true;
+        SUB_DELIMS['*'] = true;
+        SUB_DELIMS['+'] = true;
+        SUB_DELIMS[','] = true;
+        SUB_DELIMS[';'] = true;
+        SUB_DELIMS['='] = true;
+    }
+
+    /**
+     * reserved      = gen-delims / sub-delims
+     */
+    private final static boolean[] RESERVED = new boolean[128];
+
+    static {
+        for (int i = 0; i < 128; i++) {
+            RESERVED[i] = GEN_DELIMS[i] || SUB_DELIMS[i];
+        }
+    }
+
+    private final static boolean[] ALPHA = new boolean[128];
+    static {
         for (int i = 'a'; i <= 'z'; ++i) {
-            SAFE_ASCII[i] = 1;
+            ALPHA[i] = true;
         }
         for (int i = 'A'; i <= 'Z'; ++i) {
-            SAFE_ASCII[i] = 1;
+            ALPHA[i] = true;
         }
+    }
+
+    private final static boolean[] DIGIT = new boolean[128];
+
+    static {
         for (int i = '0'; i <= '9'; ++i) {
-            SAFE_ASCII[i] = 1;
+            DIGIT[i] = true;
         }
-        SAFE_ASCII['-'] = 1;
-        SAFE_ASCII['.'] = 1;
-        SAFE_ASCII['_'] = 1;
-        SAFE_ASCII['~'] = 1;
+    }
+
+    /**
+     * unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+     */
+    private final static boolean[] UNRESERVED = new boolean[128];
+    static {
+        for (int i = 0; i < 128; i++) {
+            UNRESERVED[i] = ALPHA[i] || DIGIT[i];
+        }
+        UNRESERVED['-'] = true;
+        UNRESERVED['.'] = true;
+        UNRESERVED['_'] = true;
+        UNRESERVED['~'] = true;
+    }
+
+    /**
+     *  scheme      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+     */
+    private final static boolean[] SCHEME = new boolean[128];
+    static {
+        for(int i=0; i < 128; i++) {
+            SCHEME[i] = ALPHA[i] || DIGIT[i];
+        }
+        SCHEME['+'] = true;
+        SCHEME['-'] = true;
+        SCHEME['.'] = true;
+    }
+
+    /**
+     *  userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
+     */
+    private final static boolean[] USERINFO = new boolean[128];
+    static {
+        for(int i=0; i < 128; i++) {
+            USERINFO[i] = UNRESERVED[i] || SUB_DELIMS[i];
+        }
+        USERINFO[':'] = true;
+    }
+
+    private final static boolean[] HOSTPORT = new boolean[128];
+    static {
+        for(int i=0; i < 128; i++)
+            HOSTPORT[i] = UNRESERVED[i] || SUB_DELIMS[i];
+            HOSTPORT[':'] = true;
+    }
+
+    private final static boolean[] PCHAR = new boolean[128];
+    static {
+        for(int i=0; i < 128; i++)
+            PCHAR[i] = UNRESERVED[i] || SUB_DELIMS[i];
+        PCHAR[':'] = true;
+        PCHAR['@'] = true;
+    }
+
+    private final static boolean[] QUERY = new boolean[128];
+    static {
+        System.arraycopy(PCHAR, 0, QUERY, 0, 128);
+        QUERY['/'] = true;
+        QUERY['?'] = true;
+    }
+
+    private final static boolean[] QUERY_PARAM = new boolean[128];
+    static {
+        System.arraycopy(QUERY, 0, QUERY_PARAM, 0, 128);
+        QUERY_PARAM['='] = false;
+        QUERY_PARAM['+'] = false;
+        QUERY_PARAM['&'] = false;
+    }
+
+    private final static boolean[] PATH = new boolean[128];
+    static {
+        System.arraycopy(PCHAR, 0, PATH, 0, 128);
+        PATH['/'] = true;
     }
 
     private final static char[] HEX = "0123456789ABCDEF".toCharArray();
@@ -55,25 +171,57 @@ public class UTF8UrlEncoder {
         return sb.toString();
     }
 
+    public static StringBuilder encodeAppendScheme(StringBuilder sb, String scheme) {
+        return appendEncoded(sb, scheme, SCHEME, false);
+    }
+
+    public static StringBuilder encodeAppendAuthority(StringBuilder sb, String authority) {
+        final int atIndex = authority.lastIndexOf('@');
+        if (atIndex <= 0) {
+            return appendEncoded(sb, authority, HOSTPORT, false);
+        }
+
+        appendEncoded(sb, authority.substring(0, atIndex), USERINFO, false);
+        sb.append('@');
+        return appendEncoded(sb, authority.substring(atIndex+1, authority.length()), HOSTPORT, false);
+    }
+
+    public static StringBuilder encodeAppendQueryPart(StringBuilder sb, String queryPart) {
+        return appendEncoded(sb, queryPart, QUERY, true);
+    }
+
+    public static StringBuilder encodeAppendQueryParamPart(StringBuilder sb, String queryPart) {
+        return appendEncoded(sb, queryPart, QUERY_PARAM, true);
+    }
+
+    public static StringBuilder encodeAppendPath(StringBuilder sb, String path) {
+        return appendEncoded(sb, path, PATH, false);
+    }
+
     public static StringBuilder appendEncoded(StringBuilder sb, String input) {
-        final int[] safe = SAFE_ASCII;
+        return appendEncoded(sb, input, UNRESERVED, UTF8UrlEncoder.encodeSpaceUsingPlus);
+    }
+
+
+    private static StringBuilder appendEncoded(StringBuilder sb, String input, final boolean[] safe, boolean encodeSpaceUsingPlus) {
 
         for (int c, i = 0, len = input.length(); i < len; i+= Character.charCount(c)) {
             c = input.codePointAt(i);
             if (c <= 127) {
-                if (safe[c] != 0) {
+                if (safe[c]) {
                     sb.append((char) c);
                 } else {
-                    appendSingleByteEncoded(sb, c);
+                    appendSingleByteEncoded(sb, c, encodeSpaceUsingPlus);
                 }
             } else {
-                appendMultiByteEncoded(sb, c);
+                appendMultiByteEncoded(sb, c, encodeSpaceUsingPlus);
             }
         }
         return sb;
     }
 
-    private final static void appendSingleByteEncoded(StringBuilder sb, int value) {
+
+    private static void appendSingleByteEncoded(StringBuilder sb, int value, boolean encodeSpaceUsingPlus) {
 
         if (encodeSpaceUsingPlus && value == 32) {
             sb.append('+');
@@ -85,19 +233,19 @@ public class UTF8UrlEncoder {
         sb.append(HEX[value & 0xF]);
     }
 
-    private final static void appendMultiByteEncoded(StringBuilder sb, int value) {
+    private static void appendMultiByteEncoded(StringBuilder sb, int value, boolean encodeSpaceUsingPlus) {
         if (value < 0x800) {
-            appendSingleByteEncoded(sb, (0xc0 | (value >> 6)));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xc0 | (value >> 6)), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), encodeSpaceUsingPlus);
         } else if (value < 0x10000) {
-            appendSingleByteEncoded(sb, (0xe0 | (value >> 12)));
-            appendSingleByteEncoded(sb, (0x80 | ((value >> 6) & 0x3f)));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xe0 | (value >> 12)), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | ((value >> 6) & 0x3f)), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), encodeSpaceUsingPlus);
         } else {
-            appendSingleByteEncoded(sb, (0xf0 | (value >> 18)));
-            appendSingleByteEncoded(sb, (0x80 | (value >> 12) & 0x3f));
-            appendSingleByteEncoded(sb, (0x80 | (value >> 6) & 0x3f));
-            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
+            appendSingleByteEncoded(sb, (0xf0 | (value >> 18)), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | (value >> 12) & 0x3f), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | (value >> 6) & 0x3f), encodeSpaceUsingPlus);
+            appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)), encodeSpaceUsingPlus);
         }
     }
 

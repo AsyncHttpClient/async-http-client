@@ -174,9 +174,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
             StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
-            if (isNonEmpty(originalUri.getRawPath())) {
-                builder.append(originalUri.getRawPath());
+            UTF8UrlEncoder.encodeAppendScheme(builder, originalUri.getScheme()).append("://");
+            UTF8UrlEncoder.encodeAppendAuthority(builder, originalUri.getAuthority());
+
+            if (isNonEmpty(originalUri.getPath())) {
+                UTF8UrlEncoder.encodeAppendPath(builder, originalUri.getPath());
             } else {
                 builder.append("/");
             }
@@ -191,14 +193,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
                         if (encode) {
-                            UTF8UrlEncoder.appendEncoded(builder, name);
+                            UTF8UrlEncoder.encodeAppendQueryParamPart(builder, name);
                         } else {
                             builder.append(name);
                         }
                         if (value != null) {
                             builder.append('=');
                             if (encode) {
-                                UTF8UrlEncoder.appendEncoded(builder, value);
+                                UTF8UrlEncoder.encodeAppendQueryParamPart(builder, value);
                             } else {
                                 builder.append(value);
                             }
