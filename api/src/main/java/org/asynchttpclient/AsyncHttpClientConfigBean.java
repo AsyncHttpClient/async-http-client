@@ -130,6 +130,11 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
+    public AsyncHttpClientConfigBean setStrict302Handling(boolean strict302Handling) {
+        this.strict302Handling = strict302Handling;
+        return this;
+    }
+
     public AsyncHttpClientConfigBean setCompressionEnabled(boolean compressionEnabled) {
         this.compressionEnabled = compressionEnabled;
         return this;
