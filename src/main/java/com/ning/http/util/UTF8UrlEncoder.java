@@ -130,9 +130,10 @@ public class UTF8UrlEncoder {
      */
     private final static boolean[] HOSTPORT = new boolean[128];
     static {
-        for(int i=0; i < 128; i++)
+        for(int i=0; i < 128; i++) {
             HOSTPORT[i] = UNRESERVED[i] || SUB_DELIMS[i];
-            HOSTPORT[':'] = true;
+        }
+        HOSTPORT[':'] = true;
     }
 
     /**
@@ -140,8 +141,9 @@ public class UTF8UrlEncoder {
      */
     private final static boolean[] PCHAR = new boolean[128];
     static {
-        for(int i=0; i < 128; i++)
+        for(int i=0; i < 128; i++) {
             PCHAR[i] = UNRESERVED[i] || SUB_DELIMS[i];
+        }
         PCHAR[':'] = true;
         PCHAR['@'] = true;
     }
