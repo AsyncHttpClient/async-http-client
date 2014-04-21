@@ -51,6 +51,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         idleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
         idleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
         requestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
+        maxConnectionLifeTimeInMs = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionLifeTimeInMs", -1);
         redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
         maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
         compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
@@ -96,6 +97,11 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setConnectionTimeOutInMs(int connectionTimeOutInMs) {
         this.connectionTimeOutInMs = connectionTimeOutInMs;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setMaxConnectionLifeTimeInMs(int maxConnectionLifeTimeInMs) {
+        this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
         return this;
     }
 
