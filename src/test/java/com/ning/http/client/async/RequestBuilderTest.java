@@ -29,7 +29,7 @@ import static org.testng.Assert.assertEquals;
 public class RequestBuilderTest {
 
     private final static String SAFE_CHARS =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.";
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_~.!@()$*,/?;:'";
     private final static String HEX_CHARS = "0123456789ABCDEF";
 
     @Test(groups = {"standalone", "default_provider"})
@@ -61,6 +61,8 @@ public class RequestBuilderTest {
                 char c = value.charAt(i);
                 if (SAFE_CHARS.indexOf(c) >= 0) {
                     sb.append(c);
+                } else if(c == ' ') {
+                   sb.append('+');
                 } else {
                     int hi = (c >> 4);
                     int lo = c & 0xF;
@@ -104,5 +106,19 @@ public class RequestBuilderTest {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");
         assertEquals(req.getUrl(), "http://foo.com");
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testPercentageEncodedUserInfo() {
+        final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com").build();
+        assertEquals(req.getMethod(), "GET");
+        assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
+    }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testPercentageEncodedUserInfoWithPortAndPath() {
+        final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com:8080/hello").build();
+        assertEquals(req.getMethod(), "GET");
+        assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com:8080/hello");
     }
 }
