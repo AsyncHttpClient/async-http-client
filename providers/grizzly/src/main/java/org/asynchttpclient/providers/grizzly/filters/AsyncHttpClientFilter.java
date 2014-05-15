@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -281,8 +281,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
         final Connection c = ctx.getConnection();
+        final HttpContext httpCtx;
         if (!Utils.isSpdyConnection(c)) {
-            HttpContext.newInstance(ctx, c, c, c);
+            httpCtx = HttpContext.newInstance(c, c, c, requestPacketLocal);
         } else {
             SpdySession session = SpdySession.get(c);
             final Lock lock = session.getNewClientStreamLock();
@@ -290,12 +291,16 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 lock.lock();
                 SpdyStream stream = session.openStream(requestPacketLocal, session.getNextLocalStreamId(), 0, 0, 0, false,
                         !requestPacketLocal.isExpectContent());
-                HttpContext.newInstance(ctx, stream, stream, stream);
+                httpCtx = HttpContext.newInstance(stream, stream, stream, requestPacketLocal);
             } finally {
                 lock.unlock();
             }
         }
+        httpCtx.attach(ctx);
         HttpTxContext.set(ctx, httpTxContext);
+        requestPacketLocal.getProcessingState().setHttpContext(httpCtx);
+        requestPacketLocal.setConnection(c);
+        
         return sendRequest(sendingCtx, request, requestPacketLocal);
     }
 

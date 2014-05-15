@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -163,8 +163,9 @@ public final class EventHandler {
                 }
             }
         }
-        final GrizzlyResponseStatus responseStatus = new GrizzlyResponseStatus((HttpResponsePacket) httpHeader, context.getRequest()
-                .getURI(), config);
+        final GrizzlyResponseStatus responseStatus =
+                new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
+                        context.getRequest().getURI(), config);
         context.setResponseStatus(responseStatus);
         if (context.getStatusHandler() != null) {
             return;
