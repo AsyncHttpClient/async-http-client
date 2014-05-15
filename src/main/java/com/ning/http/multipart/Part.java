@@ -33,82 +33,102 @@ public abstract class Part implements com.ning.http.client.Part {
     /**
      * Carriage return/linefeed
      */
-    protected static final String CRLF = "\r\n";
+    public static final String CRLF = "\r\n";
 
     /**
      * Carriage return/linefeed as a byte array
      */
-    static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
+    public static final byte[] CRLF_BYTES = MultipartEncodingUtil.getAsciiBytes(CRLF);
 
     /**
      * Content dispostion characters
      */
-    protected static final String QUOTE = "\"";
+    public static final String QUOTE = "\"";
 
     /**
      * Content dispostion as a byte array
      */
-    static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
+    public static final byte[] QUOTE_BYTES = MultipartEncodingUtil.getAsciiBytes(QUOTE);
 
     /**
      * Extra characters
      */
-    protected static final String EXTRA = "--";
+    public static final String EXTRA = "--";
 
     /**
      * Extra characters as a byte array
      */
-    static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
+    public static final byte[] EXTRA_BYTES = MultipartEncodingUtil.getAsciiBytes(EXTRA);
 
     /**
-     * Content dispostion characters
+     * Content disposition characters
      */
-    protected static final String CONTENT_DISPOSITION = "Content-Disposition: form-data; name=";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition: ";
 
     /**
-     * Content dispostion as a byte array
+     * Content disposition as a byte array
      */
-    static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+    public static final byte[] CONTENT_DISPOSITION_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_DISPOSITION);
+
+    /**
+     * form-data characters
+     */
+    public static final String FORM_DATA_DISPOSITION_TYPE = "form-data";
+
+    /**
+     * form-data as a byte array
+     */
+    public static final byte[] FORM_DATA_DISPOSITION_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(FORM_DATA_DISPOSITION_TYPE);
+
+    /**
+     * name characters
+     */
+    public static final String NAME = "; name=";
+
+    /**
+     * name as a byte array
+     */
+    public static final byte[] NAME_BYTES = MultipartEncodingUtil.getAsciiBytes(NAME);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_TYPE = "Content-Type: ";
+    public static final String CONTENT_TYPE = "Content-Type: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
+    public static final byte[] CONTENT_TYPE_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TYPE);
 
     /**
      * Content charset
      */
-    protected static final String CHARSET = "; charset=";
+    public static final String CHARSET = "; charset=";
 
     /**
      * Content charset as a byte array
      */
-    static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
+    public static final byte[] CHARSET_BYTES = MultipartEncodingUtil.getAsciiBytes(CHARSET);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
+    public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
+    public static final byte[] CONTENT_TRANSFER_ENCODING_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_TRANSFER_ENCODING);
 
     /**
      * Content type header
      */
-    protected static final String CONTENT_ID = "Content-ID: ";
+    public static final String CONTENT_ID = "Content-ID: ";
 
     /**
      * Content type header as a byte array
      */
-    static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
+    public static final byte[] CONTENT_ID_BYTES = MultipartEncodingUtil.getAsciiBytes(CONTENT_ID);
 
     /**
      * Return the name of this part.
@@ -145,14 +165,19 @@ public abstract class Part implements com.ning.http.client.Part {
      */
     public abstract String getContentId();
 
+    private String dispositionType;
+
     /**
-     * Tests if this part can be sent more than once.
+     * Gets the disposition-type to be used in Content-Disposition header
      * 
-     * @return <code>true</code> if {@link #sendData(java.io.OutputStream)} can be successfully called more than once.
-     * @since 3.0
+     * @return the disposition-type
      */
-    public boolean isRepeatable() {
-        return true;
+    public String getDispositionType() {
+        return dispositionType;
+    }
+
+    public void setDispositionType(String dispositionType) {
+        this.dispositionType = dispositionType;
     }
 
     /**
@@ -178,9 +203,15 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs.
      */
     protected void sendDispositionHeader(OutputStream out) throws IOException {
+        out.write(CRLF_BYTES);
+        out.write(CONTENT_DISPOSITION_BYTES);
+        if (dispositionType != null)
+            out.write(MultipartEncodingUtil.getAsciiBytes(dispositionType));
+        else
+            out.write(FORM_DATA_DISPOSITION_TYPE_BYTES);
+
         if (getName() != null) {
-            out.write(CRLF_BYTES);
-            out.write(CONTENT_DISPOSITION_BYTES);
+            out.write(NAME_BYTES);
             out.write(QUOTE_BYTES);
             out.write(MultipartEncodingUtil.getAsciiBytes(getName()));
             out.write(QUOTE_BYTES);
@@ -189,9 +220,16 @@ public abstract class Part implements com.ning.http.client.Part {
 
     protected long dispositionHeaderLength() {
         long length = 0L;
+
+        length += CRLF_BYTES.length;
+        length += CONTENT_DISPOSITION_BYTES.length;
+        if (dispositionType != null)
+            length += MultipartEncodingUtil.getAsciiBytes(dispositionType).length;
+        else
+            length += FORM_DATA_DISPOSITION_TYPE_BYTES.length;
+
         if (getName() != null) {
-            length += CRLF_BYTES.length;
-            length += CONTENT_DISPOSITION_BYTES.length;
+            length += NAME_BYTES.length;
             length += QUOTE_BYTES.length;
             length += MultipartEncodingUtil.getAsciiBytes(getName()).length;
             length += QUOTE_BYTES.length;
@@ -301,7 +339,7 @@ public abstract class Part implements com.ning.http.client.Part {
     protected long endOfHeaderLength() {
         return CRLF_BYTES.length * 2;
     }
-    
+
     /**
      * Write the data to the specified output stream
      * 
@@ -356,9 +394,9 @@ public abstract class Part implements com.ning.http.client.Part {
      * @throws IOException If an IO problem occurs
      */
     public long length(byte[] boundary) {
-        
+
         long lengthOfData = lengthOfData();
-        
+
         if (lengthOfData < 0L) {
             return -1L;
         } else {
@@ -380,7 +418,14 @@ public abstract class Part implements com.ning.http.client.Part {
      * @see java.lang.Object#toString()
      */
     public String toString() {
-        return this.getName();
+        return new StringBuilder()//
+                .append("name=").append(getName())//
+                .append(" contentType=").append(getContentType())//
+                .append(" charset=").append(getCharSet())//
+                .append(" tranferEncoding=").append(getTransferEncoding())//
+                .append(" contentId=").append(getContentId())//
+                .append(" dispositionType=").append(getDispositionType())//
+                .toString();
     }
 
     /**
@@ -448,7 +493,7 @@ public abstract class Part implements com.ning.http.client.Part {
      * @since 3.0
      */
     public static long getLengthOfParts(Part[] parts, byte[] partBoundary) {
-        
+
         try {
             if (parts == null) {
                 throw new IllegalArgumentException("Parts may not be null");

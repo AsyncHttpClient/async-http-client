@@ -34,11 +34,6 @@ public class FilePart extends PartBase {
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     /**
-     * Default charset of file attachments.
-     */
-    public static final String DEFAULT_CHARSET = "ISO-8859-1";
-
-    /**
      * Default transfer encoding of file attachments.
      */
     public static final String DEFAULT_TRANSFER_ENCODING = "binary";
@@ -68,7 +63,7 @@ public class FilePart extends PartBase {
      */
     public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
 
-        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset == null ? "ISO-8859-1" : charset, DEFAULT_TRANSFER_ENCODING, contentId);
+        super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset, DEFAULT_TRANSFER_ENCODING, contentId);
         if (partSource == null) {
             throw new IllegalArgumentException("Source may not be null");
         }
@@ -209,8 +204,8 @@ public class FilePart extends PartBase {
      * 
      * @return The source.
      */
-    protected PartSource getSource() {
-        return this.source;
+    public PartSource getSource() {
+        return source;
     }
 
     /**

@@ -17,6 +17,7 @@ package com.ning.http.client.providers.netty;
 
 import static com.ning.http.util.DateUtil.millisTime;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -477,6 +478,10 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
             return false;
         }
         return true;
+    }
+
+    public SocketAddress getChannelRemoteAddress() {
+        return channel() != null? channel().getRemoteAddress(): null;
     }
 
     public void setRequest(Request request) {

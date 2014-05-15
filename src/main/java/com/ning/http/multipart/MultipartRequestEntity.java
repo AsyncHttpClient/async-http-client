@@ -110,18 +110,6 @@ public class MultipartRequestEntity implements RequestEntity {
         return multipartBoundary;
     }
 
-    /**
-     * Returns <code>true</code> if all parts are repeatable, <code>false</code> otherwise.
-     */
-    public boolean isRepeatable() {
-        for (Part part : parts) {
-            if (!part.isRepeatable()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public void writeRequest(OutputStream out) throws IOException {
         Part.sendParts(out, parts, multipartBoundary);
     }

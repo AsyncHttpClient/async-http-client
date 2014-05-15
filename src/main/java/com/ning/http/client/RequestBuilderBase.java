@@ -175,7 +175,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
             StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
+            builder.append(originalUri.getScheme()).append("://").append(originalUri.getRawAuthority());
             if (isNonEmpty(originalUri.getRawPath())) {
                 builder.append(originalUri.getRawPath());
             } else {
@@ -458,11 +458,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private void resetParameters() {
+    public void resetQueryParameters() {
+        request.queryParams = null;
+    }
+    
+    public void resetCookies() {
+        request.cookies.clear();;
+    }
+    
+    public void resetParameters() {
         request.params = null;
     }
 
-    private void resetNonMultipartData() {
+    public void resetNonMultipartData() {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
@@ -470,7 +478,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.length = -1;
     }
 
-    private void resetMultipartData() {
+    public void resetMultipartData() {
         request.parts = null;
     }
 
@@ -613,9 +621,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
+        try {
+            final String contentType = request.headers.getFirstValue("Content-Type");
+            if (contentType != null) {
+                final String charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                if (charset != null) {
+                    // ensure that if charset is provided with the Content-Type header,
+                    // we propagate that down to the charset of the Request object
+                    request.charset = charset;
+                }
+            }
+        } catch (Throwable e) {
+            // NoOp -- we can't fix the Content-Type or charset from here
+        }
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
-            String contentLength = request.headers.getFirstValue("Content-Length");
+            final String contentLength = request.headers.getFirstValue("Content-Length");
 
             if (contentLength != null) {
                 try {

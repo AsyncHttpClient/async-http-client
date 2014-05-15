@@ -9,7 +9,7 @@
     <groupId>com.ning</groupId>
     <artifactId>async-http-client</artifactId>
     <name>Asynchronous Http Client</name>
-    <version>1.8.4-SNAPSHOT</version>
+    <version>1.8.9-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         Async Http Client library purpose is to allow Java applications to easily execute HTTP requests and
@@ -81,7 +81,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.9.0.Final</version>
+            <version>3.9.1.Final</version>
         </dependency>
 
         <dependency>
@@ -394,38 +394,38 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>shaded</shadedClassifierName>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>commons-codec:commons-codec</exclude>
-                                    <exclude>commons-lang:commons-lang</exclude>
-                                    <exclude>commons-logging:commons-logging</exclude>
-                                    <exclude>junit:junit</exclude>
-                                    <exclude>log4j:log4j</exclude>
-                                    <exclude>commons-httpclient:commons-httpclient</exclude>
-                                </excludes>
-                            </artifactSet>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" />
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--             <plugin> -->
+<!--                 <groupId>org.apache.maven.plugins</groupId> -->
+<!--                 <artifactId>maven-shade-plugin</artifactId> -->
+<!--                 <version>1.2.1</version> -->
+<!--                 <executions> -->
+<!--                     <execution> -->
+<!--                         <phase>package</phase> -->
+<!--                         <goals> -->
+<!--                             <goal>shade</goal> -->
+<!--                         </goals> -->
+<!--                         <configuration> -->
+<!--                             <shadedArtifactAttached>true</shadedArtifactAttached> -->
+<!--                             <shadedClassifierName>shaded</shadedClassifierName> -->
+<!--                             <artifactSet> -->
+<!--                                 <excludes> -->
+<!--                                     <exclude>commons-codec:commons-codec</exclude> -->
+<!--                                     <exclude>commons-lang:commons-lang</exclude> -->
+<!--                                     <exclude>commons-logging:commons-logging</exclude> -->
+<!--                                     <exclude>junit:junit</exclude> -->
+<!--                                     <exclude>log4j:log4j</exclude> -->
+<!--                                     <exclude>commons-httpclient:commons-httpclient</exclude> -->
+<!--                                 </excludes> -->
+<!--                             </artifactSet> -->
+<!--                             <transformers> -->
+<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" /> -->
+<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer" /> -->
+<!--                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer" /> -->
+<!--                             </transformers> -->
+<!--                         </configuration> -->
+<!--                     </execution> -->
+<!--                 </executions> -->
+<!--             </plugin> -->
         </plugins>
     </build>
     <reporting>
@@ -489,13 +489,13 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-websockets</artifactId>
-                    <version>2.3.11</version>
+                    <version>${grizzly.version}</version>
                     <optional>true</optional>
                 </dependency>
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-http-server</artifactId>
-                    <version>2.3.11</version>
+                    <version>${grizzly.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -591,6 +591,7 @@
         <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
         <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
         <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
+        <grizzly.version>2.3.12</grizzly.version>
         <source.property>1.5</source.property>
         <target.property>1.5</target.property>
         <surefire.version>2.12</surefire.version>

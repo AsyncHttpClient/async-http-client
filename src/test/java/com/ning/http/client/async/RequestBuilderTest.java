@@ -105,4 +105,18 @@ public class RequestBuilderTest {
         assertEquals(req.getMethod(), "ABC");
         assertEquals(req.getUrl(), "http://foo.com");
     }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testPercentageEncodedUserInfo() {
+        final Request req = new RequestBuilder("GET").setUrl("http://hello:wor%20ld@foo.com").build();
+        assertEquals(req.getMethod(), "GET");
+        assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
+    }
+
+    public void testContentTypeCharsetToBodyEncoding() {
+        final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=utf-8").build();
+        assertEquals(req.getBodyEncoding(), "utf-8");
+        final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"utf-8\"").build();
+        assertEquals(req2.getBodyEncoding(), "utf-8");
+    }
 }

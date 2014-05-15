@@ -104,6 +104,7 @@ import org.jboss.netty.handler.stream.ChunkedFile;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,8 +215,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static SpnegoEngine spnegoEngine = null;
     private final Protocol httpProtocol = new HttpProtocol();
     private final Protocol webSocketProtocol = new WebSocketProtocol();
-    private final boolean allowStopHashedWheelTimer;
-    private final HashedWheelTimer hashedWheelTimer;
+    private final boolean allowStopNettyTimer;
+    private final Timer nettyTimer;
     private final long handshakeTimeoutInMillis;
 
     private static boolean isNTLM(List<String> auth) {
@@ -260,9 +261,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             }
         }
 
-        allowStopHashedWheelTimer = providerConfig.getHashedWheelTimer() == null;
-        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : providerConfig.getHashedWheelTimer();
-        hashedWheelTimer.start();
+        allowStopNettyTimer = providerConfig.getNettyTimer() == null;
+        nettyTimer = allowStopNettyTimer ? newNettyTimer() : providerConfig.getNettyTimer();
 
         handshakeTimeoutInMillis = providerConfig.getHandshakeTimeoutInMillis();
 
@@ -277,7 +277,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
         if (cp == null && config.getAllowPoolingConnection()) {
-            cp = new NettyConnectionsPool(this, hashedWheelTimer);
+            cp = new NettyConnectionsPool(this, nettyTimer);
         } else if (cp == null) {
             cp = new NonConnectionsPool();
         }
@@ -294,6 +294,12 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         disableZeroCopy = providerConfig.isDisableZeroCopy();
     }
 
+    private Timer newNettyTimer() {
+        HashedWheelTimer timer = new HashedWheelTimer();
+        timer.start();
+        return timer;
+    }
+    
     @Override
     public String toString() {
         int availablePermits = freeConnections != null ? freeConnections.availablePermits() : 0;
@@ -372,7 +378,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
                 try {
                     SSLEngine sslEngine = createSSLEngine();
-                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, hashedWheelTimer,
+                    SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
                             handshakeTimeoutInMillis) : new SslHandler(sslEngine);
                     pipeline.addLast(SSL_HANDLER, sslHandler);
                 } catch (Throwable ex) {
@@ -417,8 +423,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private Channel lookupInCache(URI uri, ConnectionPoolKeyStrategy connectionPoolKeyStrategy) {
-        final Channel channel = connectionsPool.poll(connectionPoolKeyStrategy.getKey(uri));
+    private Channel lookupInCache(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+        final Channel channel = connectionsPool.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
             log.debug("Using cached Channel {}\n for uri {}\n", channel, uri);
@@ -906,8 +912,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     secureWebSocketBootstrap.releaseExternalResources();
                 }
 
-                if (allowStopHashedWheelTimer)
-                    hashedWheelTimer.stop();
+                if (allowStopNettyTimer)
+                    nettyTimer.stop();
 
             } catch (Throwable t) {
                 log.warn("Unexpected error on close", t);
@@ -942,8 +948,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (f != null && f.reuseChannel() && f.channel() != null) {
                 channel = f.channel();
             } else {
-                URI connectionKeyUri = proxyServer != null ? proxyServer.getURI() : uri;
-                channel = lookupInCache(connectionKeyUri, request.getConnectionPoolKeyStrategy());
+                channel = lookupInCache(uri, proxyServer, request.getConnectionPoolKeyStrategy());
             }
 
             if (channel == null)
@@ -1318,10 +1323,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private String getPoolKey(NettyResponseFuture<?> future) {
-
-        String serverPart = future.getConnectionPoolKeyStrategy().getKey(future.getURI());
-
-        ProxyServer proxy = future.getProxyServer();
+        return getPoolKey(future.getURI(), future.getProxyServer(), future.getConnectionPoolKeyStrategy());
+    }
+    
+    private String getPoolKey(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+        String serverPart = strategy.getKey(uri);
         return proxy != null ? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
     }
 
@@ -2101,7 +2107,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                                     .parseWWWAuthenticateHeader(wwwAuth.get(0)).build();
                         }
 
-                        final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(request.getUrl()).build();
+                        final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(request.getURI().getPath()).build();
 
                         log.debug("Sending authentication to {}", request.getUrl());
                         AsyncCallable ac = new AsyncCallable(future) {
@@ -2448,7 +2454,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
-        return hashedWheelTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
+        return nettyTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
     }
 
     private static boolean isWebSocket(String scheme) {

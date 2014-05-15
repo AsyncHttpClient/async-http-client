@@ -47,16 +47,12 @@ public abstract class PartBase extends Part {
     /**
      * Constructor.
      * 
-     * @param name The name of the part
+     * @param name The name of the part, or <code>null</code>
      * @param contentType The content type, or <code>null</code>
      * @param charSet The character encoding, or <code>null</code>
      * @param transferEncoding The transfer encoding, or <code>null</code>
      */
     public PartBase(String name, String contentType, String charSet, String transferEncoding, String contentId) {
-
-        if (name == null) {
-            throw new IllegalArgumentException("Name must not be null");
-        }
         this.name = name;
         this.contentType = contentType;
         this.charSet = charSet;

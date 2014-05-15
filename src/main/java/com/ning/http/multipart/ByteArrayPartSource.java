@@ -68,4 +68,7 @@ public class ByteArrayPartSource implements PartSource {
         return new ByteArrayInputStream(bytes);
     }
 
+    public byte[] getBytes() {
+        return bytes;
+    }
 }

@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 
 import com.ning.http.client.AsyncHttpProviderConfig;
 
@@ -85,7 +85,7 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
      */
     private boolean disableZeroCopy;
 
-    private HashedWheelTimer hashedWheelTimer;
+    private Timer nettyTimer;
     
     private long handshakeTimeoutInMillis = 10000L;
 
@@ -158,12 +158,12 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
         return disableZeroCopy;
     }
 
-    public HashedWheelTimer getHashedWheelTimer() {
-        return hashedWheelTimer;
+    public Timer getNettyTimer() {
+        return nettyTimer;
     }
 
-    public void setHashedWheelTimer(HashedWheelTimer hashedWheelTimer) {
-        this.hashedWheelTimer = hashedWheelTimer;
+    public void setNettyTimer(Timer nettyTimer) {
+        this.nettyTimer = nettyTimer;
     }
 
     public long getHandshakeTimeoutInMillis() {

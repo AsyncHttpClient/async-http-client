@@ -23,7 +23,7 @@ public class MiscUtil {
     public static boolean isNonEmpty(String string) {
         return string != null && string.length() != 0;
     }
-    
+
     public static boolean isNonEmpty(Object[] array) {
         return array != null && array.length != 0;
     }
@@ -38,5 +38,10 @@ public class MiscUtil {
 
     public static boolean isNonEmpty(Map<?, ?> map) {
         return map != null && !map.isEmpty();
+    }
+
+    public static boolean getBoolean(String systemPropName, boolean defaultValue) {
+        String systemPropValue = System.getProperty(systemPropName);
+        return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
     }
 }
