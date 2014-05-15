@@ -38,7 +38,9 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         }
 
         if (!nettyResponseFuture.isDone() && !nettyResponseFuture.isCancelled()) {
-            expire("Request timeout of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms", millisTime() - nettyResponseFuture.getStart());
+            String message = "Request timed out to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + nettyResponseFuture.getRequestTimeoutInMs() + " ms";
+            long age = millisTime() - nettyResponseFuture.getStart();
+            expire(message, age);
             nettyResponseFuture.setRequestTimeoutReached();
         }
     }

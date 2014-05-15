@@ -17,19 +17,24 @@ package com.ning.http.client.providers.netty.timeout;
 
 import org.jboss.netty.util.Timeout;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class TimeoutsHolder {
 
+    private final AtomicBoolean cancelled = new AtomicBoolean();
     public volatile Timeout requestTimeout;
     public volatile Timeout idleConnectionTimeout;
 
     public void cancel() {
-        if (requestTimeout != null) {
-            requestTimeout.cancel();
-            requestTimeout = null;
-        }
-        if (idleConnectionTimeout != null) {
-            idleConnectionTimeout.cancel();
-            idleConnectionTimeout = null;
+        if (cancelled.compareAndSet(false, true)) {
+            if (requestTimeout != null) {
+                requestTimeout.cancel();
+                requestTimeout = null;
+            }
+            if (idleConnectionTimeout != null) {
+                idleConnectionTimeout.cancel();
+                idleConnectionTimeout = null;
+            }
         }
     }
 }

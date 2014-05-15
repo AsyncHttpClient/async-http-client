@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -149,6 +149,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
+import org.glassfish.grizzly.http.HttpPacket;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -679,6 +680,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        boolean isGracefullyFinishResponseOnClose() {
+            final HttpResponsePacket response = responseStatus.getResponse();
+            return !response.getProcessingState().isKeepAlive() &&
+                    !response.isChunked() && response.getContentLength() == -1;
+        }
 
         void abort(final Throwable t) {
             if (future != null) {
@@ -740,38 +746,63 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     } // END ContinueEvent
 
+    /**
+     * {@link FilterChainEvent} to gracefully complete the request-response processing
+     * when {@link Connection} is getting closed by the remote host.
+     *
+     * @since 1.8.7
+     * @author The Grizzly Team
+     */
+    public static class GracefulCloseEvent implements FilterChainEvent {
+        private final HttpTransactionContext httpTxContext;
 
+        public GracefulCloseEvent(HttpTransactionContext httpTxContext) {
+            this.httpTxContext = httpTxContext;
+        }
+
+        public HttpTransactionContext getHttpTxContext() {
+            return httpTxContext;
+        }
+
+        @Override
+        public Object type() {
+            return GracefulCloseEvent.class;
+        }
+    }  // END GracefulCloseEvent
+    
     private final class AsyncHttpClientTransportFilter extends TransportFilter {
-
         @Override
         public NextAction handleRead(FilterChainContext ctx) throws IOException {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             if (context == null) {
                 return super.handleRead(ctx);
             }
-            ctx.getTransportContext().setCompletionHandler(new CompletionHandler() {
-                @Override
-                public void cancelled() {
+            
+            IOException error = null;
+            NextAction nextAction = null;
+            
+            try {
+                nextAction = super.handleRead(ctx);
+                ctx.getConnection().assertOpen();
+            } catch (IOException e) {
+                error = e instanceof EOFException ?
+                        new IOException("Remotely Closed") :
+                        e;
+            }
 
+            if (error != null) {
+                if (context.isGracefullyFinishResponseOnClose()) {
+                    ctx.notifyUpstream(new GracefulCloseEvent(context));
+                } else {
+                    context.abort(error);
                 }
+                
+                throw error;
+            }
 
-                @Override
-                public void failed(Throwable throwable) {
-                    if (throwable instanceof EOFException) {
-                        context.abort(new IOException("Remotely Closed"));
-                    }
-                    context.abort(throwable);
-                }
-
-                @Override
-                public void completed(Object result) {
-                }
-
-                @Override
-                public void updated(Object result) {
-                }
-            });
-            return super.handleRead(ctx);
+            assert nextAction != null;
+            
+            return nextAction;
         }
 
     } // END AsyncHttpClientTransportFilter
@@ -1114,6 +1145,26 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
+        public NextAction handleEvent(final FilterChainContext ctx,
+                final FilterChainEvent event) throws IOException {
+            if (event.type() == GracefulCloseEvent.class) {
+                // Connection was closed.
+                // This event is fired only for responses, which don't have
+                // associated transfer-encoding or content-length.
+                // We have to complete such a request-response processing gracefully.
+                final GracefulCloseEvent closeEvent = (GracefulCloseEvent) event;
+                final HttpResponsePacket response = closeEvent.getHttpTxContext()
+                        .responseStatus.getResponse();
+                response.getProcessingState().getHttpContext().attach(ctx);
+                onHttpPacketParsed(response, ctx);
+
+                return ctx.getStopAction();
+            }
+
+            return ctx.getInvokeAction();
+        }
+        
+        @Override
         public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
             provider.getHttpTransactionContext(ctx.getConnection()).abort(error);
@@ -1273,13 +1324,14 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             super.onHttpHeadersParsed(httpHeader, ctx);
             LOGGER.debug("RESPONSE: {}", httpHeader);
+            final HttpTransactionContext context =
+                    provider.getHttpTransactionContext(ctx.getConnection());
+            
             if (httpHeader.containsHeader(Header.Connection)) {
                 if ("close".equals(httpHeader.getHeader(Header.Connection))) {
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
                 }
             }
-            final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
             if (httpHeader.isSkipRemainder() || context.establishingTunnel) {
                 return;
             }

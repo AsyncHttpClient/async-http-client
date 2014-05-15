@@ -49,8 +49,9 @@ public class IdleConnectionTimeoutTimerTask extends TimeoutTimerTask {
 
             if (durationBeforeCurrentIdleConnectionTimeout <= 0L) {
                 // idleConnectionTimeout reached
+                String message = "Idle connection timeout to " + nettyResponseFuture.getChannelRemoteAddress() + " of " + idleConnectionTimeout + " ms";
                 long durationSinceLastTouch = now - nettyResponseFuture.getLastTouch();
-                expire("Idle connection timeout of " + idleConnectionTimeout + " ms", durationSinceLastTouch);
+                expire(message, durationSinceLastTouch);
                 nettyResponseFuture.setIdleConnectionTimeoutReached();
 
             } else if (currentIdleConnectionTimeoutInstant < requestTimeoutInstant) {

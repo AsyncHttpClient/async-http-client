@@ -639,9 +639,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
+        try {
+            final String contentType = request.headers.getFirstValue("Content-Type");
+            if (contentType != null) {
+                final String charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                if (charset != null) {
+                    // ensure that if charset is provided with the Content-Type header,
+                    // we propagate that down to the charset of the Request object
+                    request.charset = charset;
+                }
+            }
+        } catch (Throwable e) {
+            // NoOp -- we can't fix the Content-Type or charset from here
+        }
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
-            String contentLength = request.headers.getFirstValue("Content-Length");
+            final String contentLength = request.headers.getFirstValue("Content-Length");
 
             if (contentLength != null) {
                 try {
