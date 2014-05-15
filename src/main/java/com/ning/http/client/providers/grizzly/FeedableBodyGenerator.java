@@ -493,13 +493,13 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * It's important to only invoke {@link #feed(Buffer, boolean)}
          * once per invocation of {@link #canFeed()}.
          */
-        public abstract void canFeed();
+        public abstract void canFeed() throws IOException;
 
         /**
          * @return <code>true</code> if all data has been fed by this feeder,
          *  otherwise returns <code>false</code>.
          */
-        public abstract boolean isDone();
+        public abstract boolean isDone() throws IOException;
 
         /**
          * @return <code>true</code> if data is available to be fed, otherwise
@@ -508,7 +508,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          *  by which this {@link NonBlockingFeeder} implementation may signal data is once
          *  again available to be fed.
          */
-        public abstract boolean isReady();
+        public abstract boolean isReady() throws IOException;
 
         /**
          * Callback registration to signal the {@link FeedableBodyGenerator} that
@@ -516,7 +516,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * has been invoked, the NonBlockingFeeder implementation should no longer maintain
          * a reference to the listener.
          */
-        public abstract void notifyReadyToFeed(final ReadyToFeedListener listener);
+        public abstract void notifyReadyToFeed(final ReadyToFeedListener listener) throws IOException;
 
 
         // ------------------------------------------------- Methods from Feeder
@@ -526,15 +526,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * {@inheritDoc}
          */
         @Override
-        public synchronized void flush() {
+        public synchronized void flush()  throws IOException {
             final Connection c = feedableBodyGenerator.context.getConnection();
             if (isReady()) {
-                writeUntilFullOrDone(c);
+                boolean notReady = writeUntilFullOrDone(c);
                 if (!isDone()) {
-                    if (!isReady()) {
+                    if (notReady) {
                         notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                    }
-                    if (!c.canWrite()) {
+                    } else {
                         // write queue is full, leverage WriteListener to let us know
                         // when it is safe to write again.
                         c.notifyCanWrite(new WriteHandlerImpl());
@@ -549,15 +548,16 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // ----------------------------------------------------- Private Methods
 
 
-        private void writeUntilFullOrDone(final Connection c) {
+        private boolean writeUntilFullOrDone(final Connection c) throws IOException {
             while (c.canWrite()) {
                 if (isReady()) {
                     canFeed();
                 }
                 if (!isReady()) {
-                    break;
+                    return true;
                 }
             }
+            return false;
         }
 
 
@@ -595,18 +595,21 @@ public class FeedableBodyGenerator implements BodyGenerator {
             // ------------------------------------------ Methods from WriteListener
 
             @Override
-            public void onWritePossible() throws Exception {
-                writeUntilFullOrDone(c);
-                if (!isDone()) {
-                    if (!isReady()) {
-                        notifyReadyToFeed(new ReadyToFeedListenerImpl());
+            public void onWritePossible() throws IOException {
+                final Runnable r = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            flush();
+                        } catch (IOException ex) {
+                            c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
+                            GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                                    GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
+                            ctx.abort(ex);
+                        }
                     }
-                    if (!c.canWrite()) {
-                        // write queue is full, leverage WriteListener to let us know
-                        // when it is safe to write again.
-                        c.notifyCanWrite(this);
-                    }
-                }
+                };
+                c.getTransport().getWorkerThreadPool().execute(r);
             }
 
             @Override
@@ -623,13 +626,36 @@ public class FeedableBodyGenerator implements BodyGenerator {
         private final class ReadyToFeedListenerImpl
                 implements NonBlockingFeeder.ReadyToFeedListener {
 
+            private final Connection c;
+
+
+            // -------------------------------------------------------- Constructors
+
+
+            private ReadyToFeedListenerImpl() {
+                this.c = feedableBodyGenerator.context.getConnection();
+            }
+
 
             // ------------------------------------ Methods from ReadyToFeedListener
 
 
             @Override
             public void ready() {
-                flush();
+                final Runnable r = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            flush();
+                        } catch (IOException ex) {
+                            c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
+                            GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                                    GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
+                            ctx.abort(ex);
+                        }
+                    }
+                };
+                c.getTransport().getWorkerThreadPool().execute(r);
             }
 
         } // END ReadToFeedListenerImpl
