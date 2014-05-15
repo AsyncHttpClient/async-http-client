@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -73,6 +73,7 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.glassfish.grizzly.spdy.SpdyVersion;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -441,8 +442,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     // ---------------------------------------------------------- Nested Classes
 
     private static final class ProtocolNegotiator implements ClientSideNegotiator {
+        private static final SpdyVersion[] SUPPORTED_SPDY_VERSIONS =
+                {SpdyVersion.SPDY_3_1, SpdyVersion.SPDY_3};
 
-        private static final String SPDY = "spdy/3";
         private static final String HTTP = "HTTP/1.1";
 
         private final FilterChain spdyFilterChain;
@@ -465,23 +467,31 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         @Override
-        public String selectProtocol(SSLEngine engine, LinkedHashSet<String> strings) {
-            GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selectProtocol: " + strings);
+        public String selectProtocol(SSLEngine engine, LinkedHashSet<String> protocols) {
+            GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selectProtocol: " + protocols);
             final Connection connection = NextProtoNegSupport.getConnection(engine);
 
-            // Give preference to SPDY/3.  If not available, check for HTTP as a
-            // fallback
-            if (strings.contains(SPDY)) {
-                GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting: " + SPDY);
-                SSLConnectionContext sslCtx = SSLUtils.getSslConnectionContext(connection);
-                sslCtx.setNewConnectionFilterChain(spdyFilterChain);
-                final SpdySession spdySession = new SpdySession(connection, false, spdyHandlerFilter);
-                spdySession.setLocalInitialWindowSize(spdyHandlerFilter.getInitialWindowSize());
-                spdySession.setLocalMaxConcurrentStreams(spdyHandlerFilter.getMaxConcurrentStreams());
-                Utils.setSpdyConnection(connection);
-                SpdySession.bind(connection, spdySession);
-                return SPDY;
-            } else if (strings.contains(HTTP)) {
+            // Give preference to SPDY/3.1 or SPDY/3.  If not available, check for HTTP as a
+            // fallback            
+            for (SpdyVersion version : SUPPORTED_SPDY_VERSIONS) {
+                final String versionDef = version.toString();
+                if (protocols.contains(versionDef)) {
+                    GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting: " + versionDef);
+                    SSLConnectionContext sslCtx = SSLUtils.getSslConnectionContext(connection);
+                    sslCtx.setNewConnectionFilterChain(spdyFilterChain);
+                    final SpdySession spdySession =
+                            version.newSession(connection, false, spdyHandlerFilter);
+
+                    spdySession.setLocalStreamWindowSize(spdyHandlerFilter.getInitialWindowSize());
+                    spdySession.setLocalMaxConcurrentStreams(spdyHandlerFilter.getMaxConcurrentStreams());
+                    Utils.setSpdyConnection(connection);
+                    SpdySession.bind(connection, spdySession);
+
+                    return versionDef;
+                }
+            }
+            
+            if (protocols.contains(HTTP)) {
                 GrizzlyAsyncHttpProvider.LOGGER.info("ProtocolSelector::selecting: " + HTTP);
                 // Use the default HTTP FilterChain.
                 return HTTP;
