@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -149,6 +149,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
+import org.glassfish.grizzly.http.HttpPacket;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -642,6 +643,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         ProtocolHandler protocolHandler;
         WebSocket webSocket;
         boolean establishingTunnel;
+        boolean endOfResponseOnClose;
 
 
         // -------------------------------------------------------- Constructors
@@ -679,6 +681,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
+        boolean isGracefullyFinishResponseOnClose() {
+            return endOfResponseOnClose && !responseStatus.getResponse().isChunked()
+                    && responseStatus.getResponse().getContentLength() == -1;
+        }
 
         void abort(final Throwable t) {
             if (future != null) {
@@ -742,36 +748,39 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
     private final class AsyncHttpClientTransportFilter extends TransportFilter {
-
         @Override
         public NextAction handleRead(FilterChainContext ctx) throws IOException {
             final HttpTransactionContext context = getHttpTransactionContext(ctx.getConnection());
             if (context == null) {
                 return super.handleRead(ctx);
             }
-            ctx.getTransportContext().setCompletionHandler(new CompletionHandler() {
-                @Override
-                public void cancelled() {
+            
+            IOException error = null;
+            NextAction nextAction = null;
+            
+            try {
+                nextAction = super.handleRead(ctx);
+                ctx.getConnection().assertOpen();
+            } catch (IOException e) {
+                error = e instanceof EOFException ?
+                        new IOException("Remotely Closed") :
+                        e;
+            }
 
+            if (error != null) {
+                if (context.isGracefullyFinishResponseOnClose()) {
+                    ctx.setMessage(HttpContent.create(
+                            context.responseStatus.getResponse(), true));
+                    return ctx.getInvokeAction();
+                } else {
+                    context.abort(error);
+                    throw error;
                 }
+            }
 
-                @Override
-                public void failed(Throwable throwable) {
-                    if (throwable instanceof EOFException) {
-                        context.abort(new IOException("Remotely Closed"));
-                    }
-                    context.abort(throwable);
-                }
-
-                @Override
-                public void completed(Object result) {
-                }
-
-                @Override
-                public void updated(Object result) {
-                }
-            });
-            return super.handleRead(ctx);
+            assert nextAction != null;
+            
+            return nextAction;
         }
 
     } // END AsyncHttpClientTransportFilter
@@ -1114,6 +1123,22 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
+        public NextAction handleRead(final FilterChainContext ctx) throws IOException {
+            final Object message = ctx.getMessage();
+            if (HttpPacket.isHttp(message)) {
+                // TransportFilter tries to finish the request processing gracefully
+                final HttpPacket httpPacket = (HttpPacket) message;
+                onHttpPacketParsed(httpPacket.getHttpHeader(), ctx);
+                
+                return ctx.getInvokeAction();
+            }
+            
+            // otherwise the message is a Buffer
+            return super.handleRead(ctx);
+        }
+
+
+        @Override
         public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
             provider.getHttpTransactionContext(ctx.getConnection()).abort(error);
@@ -1273,13 +1298,15 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             super.onHttpHeadersParsed(httpHeader, ctx);
             LOGGER.debug("RESPONSE: {}", httpHeader);
+            final HttpTransactionContext context =
+                    provider.getHttpTransactionContext(ctx.getConnection());
+            
             if (httpHeader.containsHeader(Header.Connection)) {
                 if ("close".equals(httpHeader.getHeader(Header.Connection))) {
+                    context.endOfResponseOnClose = true;
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
                 }
             }
-            final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
             if (httpHeader.isSkipRemainder() || context.establishingTunnel) {
                 return;
             }

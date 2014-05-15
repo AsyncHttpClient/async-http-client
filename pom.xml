@@ -489,13 +489,13 @@
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-websockets</artifactId>
-                    <version>2.3.11</version>
+                    <version>${grizzly.version}</version>
                     <optional>true</optional>
                 </dependency>
                 <dependency>
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-http-server</artifactId>
-                    <version>2.3.11</version>
+                    <version>${grizzly.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -591,6 +591,7 @@
         <compiler.exclude>com/ning/http/client/providers/grizzly/*.java</compiler.exclude>
         <test.compiler.exclude>com/ning/http/client/async/grizzly/*.java</test.compiler.exclude>
         <javadoc.package.exclude>com.ning.http.client.providers.grizzly</javadoc.package.exclude>
+        <grizzly.version>2.3.12</grizzly.version>
         <source.property>1.5</source.property>
         <target.property>1.5</target.property>
         <surefire.version>2.12</surefire.version>
