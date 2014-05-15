@@ -643,7 +643,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         ProtocolHandler protocolHandler;
         WebSocket webSocket;
         boolean establishingTunnel;
-        boolean endOfResponseOnClose;
 
 
         // -------------------------------------------------------- Constructors
@@ -682,8 +681,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         boolean isGracefullyFinishResponseOnClose() {
-            return endOfResponseOnClose && !responseStatus.getResponse().isChunked()
-                    && responseStatus.getResponse().getContentLength() == -1;
+            final HttpResponsePacket response = responseStatus.getResponse();
+            return !response.getProcessingState().isKeepAlive() &&
+                    !response.isChunked() && response.getContentLength() == -1;
         }
 
         void abort(final Throwable t) {
@@ -746,7 +746,30 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     } // END ContinueEvent
 
+    /**
+     * {@link FilterChainEvent} to gracefully complete the request-response processing
+     * when {@link Connection} is getting closed by the remote host.
+     *
+     * @since 1.8.7
+     * @author The Grizzly Team
+     */
+    public static class GracefulCloseEvent implements FilterChainEvent {
+        private final HttpTransactionContext httpTxContext;
 
+        public GracefulCloseEvent(HttpTransactionContext httpTxContext) {
+            this.httpTxContext = httpTxContext;
+        }
+
+        public HttpTransactionContext getHttpTxContext() {
+            return httpTxContext;
+        }
+
+        @Override
+        public Object type() {
+            return GracefulCloseEvent.class;
+        }
+    }  // END GracefulCloseEvent
+    
     private final class AsyncHttpClientTransportFilter extends TransportFilter {
         @Override
         public NextAction handleRead(FilterChainContext ctx) throws IOException {
@@ -769,13 +792,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             if (error != null) {
                 if (context.isGracefullyFinishResponseOnClose()) {
-                    ctx.setMessage(HttpContent.create(
-                            context.responseStatus.getResponse(), true));
-                    return ctx.getInvokeAction();
+                    ctx.notifyUpstream(new GracefulCloseEvent(context));
                 } else {
                     context.abort(error);
-                    throw error;
                 }
+                
+                throw error;
             }
 
             assert nextAction != null;
@@ -1123,21 +1145,25 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         @Override
-        public NextAction handleRead(final FilterChainContext ctx) throws IOException {
-            final Object message = ctx.getMessage();
-            if (HttpPacket.isHttp(message)) {
-                // TransportFilter tries to finish the request processing gracefully
-                final HttpPacket httpPacket = (HttpPacket) message;
-                onHttpPacketParsed(httpPacket.getHttpHeader(), ctx);
-                
-                return ctx.getInvokeAction();
+        public NextAction handleEvent(final FilterChainContext ctx,
+                final FilterChainEvent event) throws IOException {
+            if (event.type() == GracefulCloseEvent.class) {
+                // Connection was closed.
+                // This event is fired only for responses, which don't have
+                // associated transfer-encoding or content-length.
+                // We have to complete such a request-response processing gracefully.
+                final GracefulCloseEvent closeEvent = (GracefulCloseEvent) event;
+                final HttpResponsePacket response = closeEvent.getHttpTxContext()
+                        .responseStatus.getResponse();
+                response.getProcessingState().getHttpContext().attach(ctx);
+                onHttpPacketParsed(response, ctx);
+
+                return ctx.getStopAction();
             }
-            
-            // otherwise the message is a Buffer
-            return super.handleRead(ctx);
+
+            return ctx.getInvokeAction();
         }
-
-
+        
         @Override
         public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
@@ -1303,7 +1329,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             
             if (httpHeader.containsHeader(Header.Connection)) {
                 if ("close".equals(httpHeader.getHeader(Header.Connection))) {
-                    context.endOfResponseOnClose = true;
                     ConnectionManager.markConnectionAsDoNotCache(ctx.getConnection());
                 }
             }
