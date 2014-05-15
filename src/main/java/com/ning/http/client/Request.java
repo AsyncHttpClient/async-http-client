@@ -69,8 +69,11 @@ public interface Request {
      */
     public String getUrl();
 
+    public String getEscapedUrl();
+
     public URI getOriginalURI();
     public URI getURI();
+    public URI getEscapedURI();
     public URI getRawURI();
 
     /**
