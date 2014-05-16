@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -29,8 +29,6 @@ import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
-import org.glassfish.grizzly.nio.NIOConnection;
-import org.glassfish.grizzly.nio.SelectorRunner;
 import org.glassfish.grizzly.ssl.SSLBaseFilter;
 import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.threadpool.Threads;
@@ -493,7 +491,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * It's important to only invoke {@link #feed(Buffer, boolean)}
          * once per invocation of {@link #canFeed()}.
          */
-        public abstract void canFeed();
+        public abstract void canFeed() throws IOException;
 
         /**
          * @return <code>true</code> if all data has been fed by this feeder,
@@ -526,15 +524,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * {@inheritDoc}
          */
         @Override
-        public synchronized void flush() {
+        public synchronized void flush() throws IOException {
             final Connection c = feedableBodyGenerator.context.getConnection();
             if (isReady()) {
-                writeUntilFullOrDone(c);
+                boolean notReady = writeUntilFullOrDone(c);
                 if (!isDone()) {
-                    if (!isReady()) {
+                    if (notReady) {
                         notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                    }
-                    if (!c.canWrite()) {
+                    } else {
                         // write queue is full, leverage WriteListener to let us know
                         // when it is safe to write again.
                         c.notifyCanWrite(new WriteHandlerImpl());
@@ -549,15 +546,16 @@ public class FeedableBodyGenerator implements BodyGenerator {
         // ----------------------------------------------------- Private Methods
 
 
-        private void writeUntilFullOrDone(final Connection c) {
+        private boolean writeUntilFullOrDone(final Connection c) throws IOException {
             while (c.canWrite()) {
                 if (isReady()) {
                     canFeed();
-                }
-                if (!isReady()) {
-                    break;
+                } else {
+                    return true;
                 }
             }
+            
+            return false;
         }
 
 
@@ -596,17 +594,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void onWritePossible() throws Exception {
-                writeUntilFullOrDone(c);
-                if (!isDone()) {
-                    if (!isReady()) {
-                        notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                    }
-                    if (!c.canWrite()) {
-                        // write queue is full, leverage WriteListener to let us know
-                        // when it is safe to write again.
-                        c.notifyCanWrite(this);
-                    }
-                }
+                flush();
             }
 
             @Override
@@ -629,7 +617,15 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void ready() {
-                flush();
+                try {
+                    flush();
+                } catch (IOException e) {
+                    final Connection c = feedableBodyGenerator.context.getConnection();
+                    c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
+                    GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
+                            GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
+                    ctx.abort(e);
+                }
             }
 
         } // END ReadToFeedListenerImpl
