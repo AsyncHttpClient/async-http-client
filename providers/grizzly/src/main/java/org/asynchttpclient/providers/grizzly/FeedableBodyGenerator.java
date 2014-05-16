@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2012-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -24,17 +24,22 @@ import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.OutputSink;
 import org.glassfish.grizzly.WriteHandler;
 import org.glassfish.grizzly.WriteResult;
+import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.impl.FutureImpl;
+import org.glassfish.grizzly.ssl.SSLBaseFilter;
+import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.threadpool.Threads;
 import org.glassfish.grizzly.utils.Futures;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
+
+import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
 
 /**
  * {@link BodyGenerator} which may return just part of the payload at the time
@@ -159,10 +164,14 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void run() {
                 try {
-                    feeder.flush();
+                    if (requestPacket.isSecure() &&
+                            (getSSLEngine(context.getConnection()) == null)) {
+                        flushOnSSLHandshakeComplete();
+                    } else {
+                        feeder.flush();
+                    }
                 } catch (IOException ioe) {
-                    HttpTxContext ctx = HttpTxContext.get(context);
-                    ctx.abort(ioe);
+                    throwError(ioe);
                 }
             }
         };
@@ -181,6 +190,36 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
     private boolean isServiceThread() {
         return Threads.isService();
+    }
+
+
+    private void flushOnSSLHandshakeComplete() throws IOException {
+        final FilterChain filterChain = context.getFilterChain();
+        final int idx = filterChain.indexOfType(SSLFilter.class);
+        assert (idx != -1);
+        final SSLFilter filter = (SSLFilter) filterChain.get(idx);
+        final Connection c = context.getConnection();
+        filter.addHandshakeListener(new SSLBaseFilter.HandshakeListener() {
+            public void onStart(Connection connection) {
+            }
+
+            public void onComplete(Connection connection) {
+                if (c.equals(connection)) {
+                    filter.removeHandshakeListener(this);
+                    try {
+                        feeder.flush();
+                    } catch (IOException ioe) {
+                        throwError(ioe);
+                    }
+                }
+            }
+        });
+        filter.handshake(context.getConnection(),  null);
+    }
+
+    private void throwError(final Throwable t) {
+        HttpTxContext httpTxContext = HttpTxContext.get(context);
+        httpTxContext.abort(t);
     }
 
     // ----------------------------------------------------------- Inner Classes
@@ -410,7 +449,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * It's important to only invoke {@link #feed(Buffer, boolean)}
          * once per invocation of {@link #canFeed()}.
          */
-        public abstract void canFeed();
+        public abstract void canFeed() throws IOException;
 
         /**
          * @return <code>true</code> if all data has been fed by this feeder,
@@ -441,16 +480,15 @@ public class FeedableBodyGenerator implements BodyGenerator {
          * {@inheritDoc}
          */
         @Override
-        public synchronized void flush() {
+        public synchronized void flush() throws IOException {
             final HttpContext httpContext = HttpContext.get(feedableBodyGenerator.context);
             final OutputSink outputSink = httpContext.getOutputSink();
             if (isReady()) {
-                writeUntilFullOrDone(outputSink);
+                final boolean notReady = writeUntilFullOrDone(outputSink);
                 if (!isDone()) {
-                    if (!isReady()) {
+                    if (notReady) {
                         notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                    }
-                    if (!outputSink.canWrite()) {
+                    } else {
                         // write queue is full, leverage WriteListener to let us know
                         // when it is safe to write again.
                         outputSink.notifyCanWrite(new WriteHandlerImpl());
@@ -463,15 +501,17 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
         // ----------------------------------------------------- Private Methods
 
-        private void writeUntilFullOrDone(final OutputSink outputSink) {
+        private boolean writeUntilFullOrDone(final OutputSink outputSink)
+                throws IOException {
             while (outputSink.canWrite()) {
                 if (isReady()) {
                     canFeed();
-                }
-                if (!isReady()) {
-                    break;
+                } else {
+                    return true;
                 }
             }
+            
+            return false;
         }
 
         // ------------------------------------------------------- Inner Classes
@@ -505,17 +545,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void onWritePossible() throws Exception {
-                writeUntilFullOrDone(c);
-                if (!isDone()) {
-                    if (!isReady()) {
-                        notifyReadyToFeed(new ReadyToFeedListenerImpl());
-                    }
-                    if (!c.canWrite()) {
-                        // write queue is full, leverage WriteListener to let us know
-                        // when it is safe to write again.
-                        c.notifyCanWrite(this);
-                    }
-                }
+                flush();
             }
 
             @Override
@@ -523,8 +553,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 if (!Utils.isSpdyConnection(c)) {
                     c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
                 }
-                HttpTxContext httpTxContext = HttpTxContext.get(ctx);
-                httpTxContext.abort(t);
+                feedableBodyGenerator.throwError(t);
             }
 
         } // END WriteHandlerImpl
@@ -535,7 +564,15 @@ public class FeedableBodyGenerator implements BodyGenerator {
 
             @Override
             public void ready() {
-                flush();
+                try {
+                    flush();
+                } catch (IOException e) {
+                    final Connection c = feedableBodyGenerator.context.getConnection();
+                    if (!Utils.isSpdyConnection(c)) {
+                        c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
+                    }
+                    feedableBodyGenerator.throwError(e);
+                }
             }
 
         } // END ReadToFeedListenerImpl

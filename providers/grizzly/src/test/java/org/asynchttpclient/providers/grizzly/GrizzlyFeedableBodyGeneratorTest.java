@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.providers.grizzly.FeedableBodyGenerator.NonBlockingFeeder;
 
 import static org.glassfish.grizzly.http.server.NetworkListener.DEFAULT_NETWORK_HOST;
 import static org.glassfish.grizzly.memory.MemoryManager.DEFAULT_MEMORY_MANAGER;
@@ -114,6 +115,15 @@ public class GrizzlyFeedableBodyGeneratorTest {
         doSimpleFeeder(true);
     }
 
+    @Test
+    public void testNonBlockingFeederMultipleThreads() throws Exception {
+        doNonBlockingFeeder(false);
+    }
+
+    @Test
+    public void testNonBlockingFeederOverSSLMultipleThreads() throws Exception {
+        doNonBlockingFeeder(true);
+    }
 
     // --------------------------------------------------------- Private Methods
 
@@ -220,7 +230,142 @@ public class GrizzlyFeedableBodyGeneratorTest {
         }
     }
 
+    private void doNonBlockingFeeder(final boolean secure) {
+        final int threadCount = 10;
+        final CountDownLatch latch = new CountDownLatch(threadCount);
+        final int port = (secure ? SECURE_PORT : NON_SECURE_PORT);
+        final String scheme = (secure ? "https" : "http");
+        final ExecutorService service = Executors.newCachedThreadPool();
 
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+                .setMaximumConnectionsPerHost(60)
+                .setMaximumConnectionsTotal(60)
+                .build();
+        final AsyncHttpClient client =
+                new DefaultAsyncHttpClient(new GrizzlyAsyncHttpProvider(config), config);
+        final int[] statusCodes = new int[threadCount];
+        final int[] totalsReceived = new int[threadCount];
+        final Throwable[] errors = new Throwable[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            final int idx = i;
+            service.execute(new Runnable() {
+                @Override
+                public void run() {
+                    FeedableBodyGenerator generator =
+                            new FeedableBodyGenerator();
+                    FeedableBodyGenerator.NonBlockingFeeder nonBlockingFeeder =
+                            new FeedableBodyGenerator.NonBlockingFeeder(generator) {
+                                private final Random r = new Random();
+                                private final InputStream in;
+                                private final byte[] bytesIn = new byte[2048];
+                                private boolean isDone;
+                                
+                                {
+                                    try {
+                                        in = new FileInputStream(tempFile);
+                                    } catch (IOException e) {
+                                        throw new IllegalStateException(e);
+                                    }
+                                }
+
+                                @Override
+                                public void canFeed() throws IOException {
+                                    final int read = in.read(bytesIn);
+                                    if (read == -1) {
+                                        isDone = true;
+                                        feed(Buffers.EMPTY_BUFFER, true);
+                                        return;
+                                    }
+
+                                    final Buffer b =
+                                            Buffers.wrap(
+                                                    DEFAULT_MEMORY_MANAGER,
+                                                    bytesIn,
+                                                    0,
+                                                    read);
+                                    feed(b, false);
+                                }
+
+                                @Override
+                                public boolean isDone() {
+                                    return isDone;
+                                }
+
+                                @Override
+                                public boolean isReady() {
+                                    // simulate real-life usecase, where data could not be ready
+                                    return r.nextInt(100) < 80;
+                                }
+
+                                @Override
+                                public void notifyReadyToFeed(
+                                        final NonBlockingFeeder.ReadyToFeedListener listener) {
+                                    service.execute(new Runnable() {
+
+                                        public void run() {
+                                            try {
+                                                Thread.sleep(2);
+                                            } catch (InterruptedException e) {
+                                            }
+                                            
+                                            listener.ready();
+                                        }
+                                        
+                                    });
+                                }
+                            };
+                    generator.setFeeder(nonBlockingFeeder);
+                    generator.setMaxPendingBytes(10000);
+
+                    RequestBuilder builder = new RequestBuilder("POST");
+                    builder.setUrl(scheme + "://localhost:" + port + "/test");
+                    builder.setBody(generator);
+                    try {
+                        client.executeRequest(builder.build(),
+                                new AsyncCompletionHandler<org.asynchttpclient.Response>() {
+                                    @Override
+                                    public org.asynchttpclient.Response onCompleted(org.asynchttpclient.Response response)
+                                    throws Exception {
+                                        try {
+                                            totalsReceived[idx] = Integer.parseInt(response.getHeader("x-total"));
+                                        } catch (Exception e) {
+                                            errors[idx] = e;
+                                        }
+                                        statusCodes[idx] = response.getStatusCode();
+                                        latch.countDown();
+                                        return response;
+                                    }
+
+                                    @Override
+                                    public void onThrowable(Throwable t) {
+                                        errors[idx] = t;
+                                        t.printStackTrace();
+                                        latch.countDown();
+                                    }
+                               });
+                    } catch (IOException e) {
+                        errors[idx] = e;
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+
+        try {
+            latch.await(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            fail("Latch interrupted");
+        } finally {
+            service.shutdownNow();
+        }
+
+        for (int i = 0; i < threadCount; i++) {
+            assertEquals(200, statusCodes[i]);
+            assertNull(errors[i]);
+            assertEquals(tempFile.length(), totalsReceived[i]);
+        }
+    }
+    
     private static SSLEngineConfigurator createSSLConfig()
     throws Exception {
         final SSLContextConfigurator sslContextConfigurator =
