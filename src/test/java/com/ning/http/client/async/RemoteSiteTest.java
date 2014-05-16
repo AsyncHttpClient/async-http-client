@@ -116,7 +116,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         try {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 301);
+            assertEquals(response.getStatusCode(), 302);
         } finally {
             c.close();
         }
