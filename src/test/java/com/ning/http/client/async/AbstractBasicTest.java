@@ -23,6 +23,7 @@ import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -37,11 +38,15 @@ import org.testng.annotations.BeforeClass;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Enumeration;
 
 public abstract class AbstractBasicTest {
+    
+    public final static String TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET = "text/html; charset=UTF-8";
+    
     protected final Logger log = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected Server server;
     protected int port1;
@@ -64,7 +69,7 @@ public abstract class AbstractBasicTest {
             if (httpRequest.getHeader("X-ISO") != null) {
                 httpResponse.setContentType("text/html; charset=ISO-8859-1");
             } else {
-                httpResponse.setContentType("text/html; charset=utf-8");
+                httpResponse.setContentType(TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
             }
 
             if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
