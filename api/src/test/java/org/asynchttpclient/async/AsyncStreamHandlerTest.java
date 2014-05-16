@@ -347,7 +347,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
             c.prepareGet("http://google.com/").execute(new AsyncHandlerAdapter() {
 
                 public STATE onStatusReceived(HttpResponseStatus status) throws Exception {
-                    assertEquals(301, status.getStatusCode());
+                    assertEquals(302, status.getStatusCode());
                     return STATE.CONTINUE;
                 }
 
