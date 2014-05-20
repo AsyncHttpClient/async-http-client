@@ -61,6 +61,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 final class HttpProtocol extends Protocol {
@@ -202,6 +203,27 @@ final class HttpProtocol extends Protocol {
         }
     }
 
+    private final String computeRealmURI(Realm realm, URI requestURI) throws URISyntaxException {
+        if (realm.isUseAbsoluteURI()) {
+            if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
+                return new URI(
+                        requestURI.getScheme(),
+                        requestURI.getAuthority(),
+                        requestURI.getPath(),
+                        null,
+                        null).toString();
+            } else {
+                return requestURI.toString();
+            }
+        } else {
+            if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
+                return requestURI.getPath();
+            } else {
+                return requestURI.getPath() + "?" + requestURI.getQuery();
+            }
+        }
+    }
+
     private boolean handleUnauthorizedAndExit(int statusCode, Realm realm, final Request request, HttpResponse response,
             final NettyResponseFuture<?> future, ProxyServer proxyServer, final Channel channel) throws Exception {
         if (statusCode == UNAUTHORIZED.code() && realm != null) {
@@ -227,7 +249,8 @@ final class HttpProtocol extends Protocol {
                             .parseWWWAuthenticateHeader(authenticateHeaders.get(0)).build();
                 }
 
-                Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(request.getURI().getPath()).build();
+                String realmURI = computeRealmURI(newRealm, request.getURI());
+                Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(realmURI).build();
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
 
                 LOGGER.debug("Sending authentication to {}", request.getUrl());

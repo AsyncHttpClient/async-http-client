@@ -50,6 +50,8 @@ public class Realm {
     private final boolean messageType2Received;
     private final String domain;
     private final Charset charset;
+    private final boolean useAbsoluteURI;
+    private final boolean omitQuery;
 
     public enum AuthScheme {
         DIGEST, BASIC, NTLM, SPNEGO, KERBEROS, NONE
@@ -57,7 +59,7 @@ public class Realm {
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
             String qop, String nc, String cnonce, String uri, String method, boolean usePreemptiveAuth, String domain, String enc,
-            String host, boolean messageType2Received, String opaque) {
+            String host, boolean messageType2Received, String opaque, boolean useAbsoluteURI, boolean omitQuery) {
 
         this.principal = principal;
         this.password = password;
@@ -78,6 +80,8 @@ public class Realm {
         this.host = host;
         this.messageType2Received = messageType2Received;
         this.charset = enc != null ? Charset.forName(enc) : null;
+        this.useAbsoluteURI = useAbsoluteURI;
+        this.omitQuery = omitQuery;
     }
 
     public String getPrincipal() {
@@ -176,6 +180,14 @@ public class Realm {
         return messageType2Received;
     }
 
+    public boolean isUseAbsoluteURI() {
+        return useAbsoluteURI;
+    }
+
+    public boolean isOmitQuery() {
+        return omitQuery;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -207,7 +219,8 @@ public class Realm {
             return false;
         if (uri != null ? !uri.equals(realm.uri) : realm.uri != null)
             return false;
-
+        if (useAbsoluteURI != !realm.useAbsoluteURI) return false;
+        if (omitQuery != !realm.omitQuery) return false;
         return true;
     }
 
@@ -215,7 +228,8 @@ public class Realm {
     public String toString() {
         return "Realm{" + "principal='" + principal + '\'' + ", scheme=" + scheme + ", realmName='" + realmName + '\'' + ", nonce='"
                 + nonce + '\'' + ", algorithm='" + algorithm + '\'' + ", response='" + response + '\'' + ", qop='" + qop + '\'' + ", nc='"
-                + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + '}';
+                + nc + '\'' + ", cnonce='" + cnonce + '\'' + ", uri='" + uri + '\'' + ", methodName='" + methodName + '\'' + ", useAbsoluteURI='" + useAbsoluteURI + '\''
+                + ", omitQuery='" + omitQuery + '\'' +'}';
     }
 
     @Override
@@ -261,6 +275,8 @@ public class Realm {
         private String enc = StandardCharsets.UTF_8.name();
         private String host = "localhost";
         private boolean messageType2Received = false;
+        private boolean useAbsoluteURI = true;
+        private boolean omitQuery = false;
 
         public String getNtlmDomain() {
             return domain;
@@ -397,6 +413,29 @@ public class Realm {
             return this;
         }
 
+        public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
+            this.messageType2Received = messageType2Received;
+            return this;
+        }
+
+        public boolean isUseAbsoluteURI() {
+            return useAbsoluteURI;
+        }
+        
+        public RealmBuilder setUseAbsoluteURI(boolean useAbsoluteURI) {
+            this.useAbsoluteURI = useAbsoluteURI;
+            return this;
+        }
+        
+        public boolean isOmitQuery() {
+            return omitQuery;
+        }
+        
+        public RealmBuilder setOmitQuery(boolean omitQuery) {
+            this.omitQuery = omitQuery;
+            return this;
+        }
+            
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
@@ -424,11 +463,6 @@ public class Realm {
             } else {
                 setScheme(AuthScheme.BASIC);
             }
-            return this;
-        }
-
-        public RealmBuilder setNtlmMessageType2Received(boolean messageType2Received) {
-            this.messageType2Received = messageType2Received;
             return this;
         }
 
@@ -574,7 +608,7 @@ public class Realm {
             }
 
             return new Realm(scheme, principal, password, realmName, nonce, algorithm, response, qop, nc, cnonce, uri, methodName,
-                    usePreemptive, domain, enc, host, messageType2Received, opaque);
+                    usePreemptive, domain, enc, host, messageType2Received, opaque, useAbsoluteURI, omitQuery);
         }
     }
 }
