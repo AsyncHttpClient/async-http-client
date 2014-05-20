@@ -375,6 +375,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     protected final RequestImpl request;
     protected boolean useRawUrl = false;
+    protected String baseURL;
+    protected SignatureCalculator signatureCalculator;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean rawUrls) {
         this.derived = derived;
@@ -390,6 +392,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setUrl(String url) {
+        this.baseURL = url;
         return setURI(URI.create(url));
     }
 
@@ -638,7 +641,26 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
+        this.signatureCalculator = signatureCalculator;
+        return derived.cast(this);
+    }
+
     public Request build() {
+
+        /* Let's first calculate and inject signature, before finalizing actual build
+         * (order does not matter with current implementation but may in future)
+         */
+        if (signatureCalculator != null) {
+            String url = baseURL != null ? baseURL : request.originalUri.toString();
+            // Should not include query parameters, ensure:
+            int i = url.indexOf('?');
+            if (i != -1) {
+                url = url.substring(0, i);
+            }
+            signatureCalculator.calculateAndAddSignature(url, request, this);
+        }
+
         try {
             final String contentType = request.headers.getFirstValue("Content-Type");
             if (contentType != null) {
