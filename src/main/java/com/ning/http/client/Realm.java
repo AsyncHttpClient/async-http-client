@@ -46,6 +46,8 @@ public class Realm {
     private final String enc;
     private final String host;
     private final boolean messageType2Received;
+    private final boolean useAbsoluteURI;
+    private final boolean omitQuery;
 
     private final String domain;
 
@@ -71,8 +73,13 @@ public class Realm {
                   String uri,
                   String method,
                   boolean usePreemptiveAuth,
-                  String domain, String enc, String host, boolean messageType2Received,
-                  String opaque) {
+                  String domain,
+                  String enc,
+                  String host,
+                  boolean messageType2Received,
+                  String opaque,
+                  boolean useAbsoluteURI,
+                  boolean omitQuery) {
 
         this.principal = principal;
         this.password = password;
@@ -92,6 +99,8 @@ public class Realm {
         this.enc = enc;
         this.host = host;
         this.messageType2Received = messageType2Received;
+        this.useAbsoluteURI = useAbsoluteURI;
+        this.omitQuery = omitQuery;
     }
 
     public String getPrincipal() {
@@ -196,6 +205,14 @@ public class Realm {
         return messageType2Received;
     }
 
+    public boolean isUseAbsoluteURI() {
+        return useAbsoluteURI;
+    }
+
+    public boolean isOmitQuery() {
+        return omitQuery;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -214,6 +231,8 @@ public class Realm {
         if (response != null ? !response.equals(realm.response) : realm.response != null) return false;
         if (scheme != realm.scheme) return false;
         if (uri != null ? !uri.equals(realm.uri) : realm.uri != null) return false;
+        if (useAbsoluteURI != !realm.useAbsoluteURI) return false;
+        if (omitQuery != !realm.omitQuery) return false;
 
         return true;
     }
@@ -233,6 +252,8 @@ public class Realm {
                 ", cnonce='" + cnonce + '\'' +
                 ", uri='" + uri + '\'' +
                 ", methodName='" + methodName + '\'' +
+                ", useAbsoluteURI='" + useAbsoluteURI + '\'' +
+                ", omitQuery='" + omitQuery + '\'' +
                 '}';
     }
 
@@ -280,6 +301,8 @@ public class Realm {
         private String enc = "UTF-8";
         private String host = "localhost";
         private boolean messageType2Received = false;
+        private boolean useAbsoluteURI = true;
+        private boolean omitQuery = false;
 
         @Deprecated
         public String getDomain() {
@@ -428,6 +451,24 @@ public class Realm {
             return this;
         }
 
+        public boolean isUseAbsoluteURI() {
+            return useAbsoluteURI;
+        }
+        
+        public RealmBuilder setUseAbsoluteURI(boolean useAbsoluteURI) {
+            this.useAbsoluteURI = useAbsoluteURI;
+            return this;
+        }
+        
+        public boolean isOmitQuery() {
+            return omitQuery;
+        }
+        
+        public RealmBuilder setOmitQuery(boolean omitQuery) {
+            this.omitQuery = omitQuery;
+            return this;
+        }
+        
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
             setRealmName(match(headerLine, "realm"));
             setNonce(match(headerLine, "nonce"));
@@ -467,6 +508,8 @@ public class Realm {
             setNtlmDomain(clone.getNtlmDomain());
             setNtlmHost(clone.getNtlmHost());
             setNtlmMessageType2Received(clone.isNtlmMessageType2Received());
+            setUseAbsoluteURI(clone.isUseAbsoluteURI());
+            setOmitQuery(clone.isOmitQuery());
             return this;
         }
 
@@ -618,7 +661,9 @@ public class Realm {
                     enc,
                     host,
                     messageType2Received,
-                    opaque);
+                    opaque,
+                    useAbsoluteURI,
+                    omitQuery);
         }
     }
 
