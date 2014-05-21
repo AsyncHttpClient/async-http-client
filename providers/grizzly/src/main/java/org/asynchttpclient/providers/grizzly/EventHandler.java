@@ -196,10 +196,14 @@ public final class EventHandler {
 
     public void onHttpHeaderError(final HttpHeader httpHeader, final FilterChainContext ctx, final Throwable t) {
 
-        t.printStackTrace();
         httpHeader.setSkipRemainder(true);
-        final HttpTxContext context = HttpTxContext.get(ctx);
-        context.abort(t);
+        HttpTxContext.get(ctx).abort(t);
+    }
+
+    public void onHttpContentError(final HttpHeader httpHeader, final FilterChainContext ctx, final Throwable t) {
+
+        httpHeader.setSkipRemainder(true);
+        HttpTxContext.get(ctx).abort(t);
     }
 
     @SuppressWarnings({ "unchecked" })

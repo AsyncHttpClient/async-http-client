@@ -102,6 +102,11 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter implement
     }
 
     @Override
+    protected void onHttpContentError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
+        eventHandler.onHttpContentError(httpHeader, ctx, t);
+    }
+
+    @Override
     protected void onHttpHeadersParsed(HttpHeader httpHeader, FilterChainContext ctx) {
         eventHandler.onHttpHeadersParsed(httpHeader, ctx);
     }
