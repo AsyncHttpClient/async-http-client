@@ -149,7 +149,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
-import org.glassfish.grizzly.http.HttpPacket;
 
 /**
  * A Grizzly 2.0-based implementation of {@link AsyncHttpProvider}.
@@ -807,7 +806,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     } // END AsyncHttpClientTransportFilter
 
-
+    
     private final class AsyncHttpClientFilter extends BaseFilter {
 
 
@@ -1167,7 +1166,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         @Override
         public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
 
-            provider.getHttpTransactionContext(ctx.getConnection()).abort(error);
+            getHttpTransactionContext(ctx.getConnection()).abort(error);
 
         }
 
@@ -1177,7 +1176,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                            FilterChainContext ctx) {
 
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
+                    getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
             if (handler != null && context.currentState != AsyncHandler.STATE.ABORT) {
                 try {
@@ -1195,7 +1194,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         protected void onHttpHeadersEncoded(HttpHeader httpHeader, FilterChainContext ctx) {
-            final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
+            final HttpTransactionContext context =
+                    getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
             if (handler instanceof TransferCompletionHandler) {
                 ((TransferCompletionHandler) handler).onHeaderWriteCompleted();
@@ -1207,7 +1207,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         @Override
         protected void onHttpContentEncoded(HttpContent content, FilterChainContext ctx) {
-            final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
+            final HttpTransactionContext context =
+                    getHttpTransactionContext(ctx.getConnection());
             final AsyncHandler handler = context.handler;
             if (handler instanceof TransferCompletionHandler) {
                 final int written = content.getContent().remaining();
@@ -1229,7 +1230,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final Connection connection = ctx.getConnection();
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(connection);
+                    getHttpTransactionContext(connection);
             final int status = ((HttpResponsePacket) httpHeader).getStatus();
             if (context.establishingTunnel && HttpStatus.OK_200.statusMatches(status)) {
                 return;
@@ -1304,19 +1305,24 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
         }
 
-
         @Override
         protected void onHttpHeaderError(final HttpHeader httpHeader,
                                          final FilterChainContext ctx,
                                          final Throwable t) throws IOException {
 
-            t.printStackTrace();
             httpHeader.setSkipRemainder(true);
-            final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
-            context.abort(t);
+            getHttpTransactionContext(ctx.getConnection()).abort(t);
         }
 
+        @Override
+        protected void onHttpContentError(final HttpHeader httpHeader,
+                                         final FilterChainContext ctx,
+                                         final Throwable t) throws IOException {
+
+            httpHeader.setSkipRemainder(true);
+            getHttpTransactionContext(ctx.getConnection()).abort(t);
+        }
+        
         @SuppressWarnings({"unchecked"})
         @Override
         protected void onHttpHeadersParsed(HttpHeader httpHeader,
@@ -1325,7 +1331,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             super.onHttpHeadersParsed(httpHeader, ctx);
             LOGGER.debug("RESPONSE: {}", httpHeader);
             final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(ctx.getConnection());
+                    getHttpTransactionContext(ctx.getConnection());
             
             if (httpHeader.containsHeader(Header.Connection)) {
                 if ("close".equals(httpHeader.getHeader(Header.Connection))) {
@@ -1450,7 +1456,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             result = super.onHttpPacketParsed(httpHeader, ctx);
 
-            final HttpTransactionContext context = provider.getHttpTransactionContext(ctx.getConnection());
+            final HttpTransactionContext context =
+                    getHttpTransactionContext(ctx.getConnection());
             if (context.establishingTunnel
                     && HttpStatus.OK_200.statusMatches(
                     ((HttpResponsePacket) httpHeader).getStatus())) {
@@ -1513,9 +1520,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                                       final GrizzlyAsyncHttpProvider provider) {
 
             final Connection c = ctx.getConnection();
-            final HttpTransactionContext context =
-                    provider.getHttpTransactionContext(c);
-            context.provider.setHttpTransactionContext(c, null);
+            final HttpTransactionContext context = getHttpTransactionContext(c);
+            setHttpTransactionContext(c, null);
             if (!context.provider.connectionManager.canReturnConnection(c)) {
                 context.abort(new IOException("Maximum pooled connections exceeded"));
             } else {
