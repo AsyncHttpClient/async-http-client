@@ -367,7 +367,7 @@ public class GrizzlyFeedableBodyGeneratorTest {
             assertNull(errors[i]);
             assertEquals(tempFile.length(), totalsReceived[i]);
         }
-    }    
+    }
 
     private static SSLEngineConfigurator createSSLConfig()
     throws Exception {
