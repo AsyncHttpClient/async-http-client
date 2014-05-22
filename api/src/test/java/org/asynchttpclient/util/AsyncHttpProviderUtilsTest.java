@@ -13,6 +13,7 @@
 package org.asynchttpclient.util;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 import org.testng.annotations.Test;
 
@@ -43,5 +44,15 @@ public class AsyncHttpProviderUtilsTest {
         String url = "/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC Lifebook E8310 Core2Duo T8100 2 1GHz 4GB DVD RW&_itemId=150731406505";
         URI uri = AsyncHttpProviderUtils.getRedirectUri(URI.create("http://www.ebay.de"), url);
         assertEquals(uri.toString(), "http://www.ebay.de/sch/sis.html;jsessionid=92D73F80262E3EBED7E115ED01035DDA?_nkw=FSC%20Lifebook%20E8310%20Core2Duo%20T8100%202%201GHz%204GB%20DVD%20RW&_itemId=150731406505");
+    }
+    
+    @Test(groups = "fast")
+    public void createUriFailsWithBadHost() throws Exception {
+        try {
+            final String BAD_HOST_URL = "http:///";
+            URI uri = AsyncHttpProviderUtils.createUri(BAD_HOST_URL);
+            fail("Expected IllegalArgumentException for url: " + BAD_HOST_URL);
+        } catch (IllegalArgumentException ex) {
+        }
     }
 }
