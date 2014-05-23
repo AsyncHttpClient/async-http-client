@@ -379,8 +379,7 @@ public final class EventHandler {
     private static HttpTxContext cleanup(final FilterChainContext ctx) {
 
         final Connection c = ctx.getConnection();
-        final HttpTxContext context = HttpTxContext.get(ctx);
-        HttpTxContext.remove(ctx, context);
+        final HttpTxContext context = HttpTxContext.remove(ctx);
         if (!Utils.isSpdyConnection(c) && !Utils.isIgnored(c)) {
             final ConnectionManager manager = context.getProvider().getConnectionManager();
             //if (!manager.canReturnConnection(c)) {

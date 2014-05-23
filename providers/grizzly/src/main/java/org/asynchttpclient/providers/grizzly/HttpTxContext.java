@@ -69,7 +69,8 @@ public final class HttpTxContext {
     private final CloseListener listener = new CloseListener<Closeable, CloseType>() {
         @Override
         public void onClosed(Closeable closeable, CloseType type) throws IOException {
-            if (isGracefullyFinishResponseOnClose()) {
+            if (responseStatus != null && // responseStatus==null if request wasn't even sent
+                    isGracefullyFinishResponseOnClose()) {
                 // Connection was closed.
                 // This event is fired only for responses, which don't have
                 // associated transfer-encoding or content-length.
@@ -107,10 +108,14 @@ public final class HttpTxContext {
         REQUEST_STATE_ATTR.set(httpContext, httpTxContext);
     }
 
-    public static void remove(final FilterChainContext ctx, final HttpTxContext httpTxContext) {
-        HttpContext httpContext = HttpContext.get(ctx);
-        httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
-        REQUEST_STATE_ATTR.remove(ctx);
+    public static HttpTxContext remove(final FilterChainContext ctx) {
+        final HttpContext httpContext = HttpContext.get(ctx);
+        final HttpTxContext httpTxContext = REQUEST_STATE_ATTR.remove(httpContext);
+        if (httpTxContext != null) {
+            httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
+        }
+        
+        return httpTxContext;
     }
 
     public static HttpTxContext get(FilterChainContext ctx) {
