@@ -634,7 +634,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         private final CloseListener listener = new CloseListener<Closeable, CloseType>() {
             @Override
             public void onClosed(Closeable closeable, CloseType type) throws IOException {
-                if (isGracefullyFinishResponseOnClose()) {
+                if (responseStatus != null && // responseStatus==null if request wasn't even sent
+                        isGracefullyFinishResponseOnClose()) {
                     // Connection was closed.
                     // This event is fired only for responses, which don't have
                     // associated transfer-encoding or content-length.
