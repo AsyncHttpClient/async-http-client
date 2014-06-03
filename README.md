@@ -18,7 +18,7 @@ You can also download the artifact
 
 [Maven Search](http://search.maven.org)
 
-Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-http-client/apidocs/index.html))
+Then in your code you can simply do [Javadoc](http://asynchttpclient.github.io/async-http-client/apidocs/reference/packages.html)
 
 ```java
 import com.ning.http.client.*;
