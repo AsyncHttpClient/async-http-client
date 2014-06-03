@@ -1,0 +1,1355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en_US" lang="en_US">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>NTLMEngine xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/com/ning/http/client/ntlm/NTLMEngine.html">View Javadoc</a></div><pre>
+
+<a class="jxr_linenumber" name="1" href="#1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="2" href="#2">2</a>   <em class="jxr_comment"> * ====================================================================</em>
+<a class="jxr_linenumber" name="3" href="#3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="4" href="#4">4</a>   <em class="jxr_comment"> *  Licensed to the Apache Software Foundation (ASF) under one or more</em>
+<a class="jxr_linenumber" name="5" href="#5">5</a>   <em class="jxr_comment"> *  contributor license agreements.  See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="6" href="#6">6</a>   <em class="jxr_comment"> *  this work for additional information regarding copyright ownership.</em>
+<a class="jxr_linenumber" name="7" href="#7">7</a>   <em class="jxr_comment"> *  The ASF licenses this file to You under the Apache License, Version 2.0</em>
+<a class="jxr_linenumber" name="8" href="#8">8</a>   <em class="jxr_comment"> *  (the "License"); you may not use this file except in compliance with</em>
+<a class="jxr_linenumber" name="9" href="#9">9</a>   <em class="jxr_comment"> *  the License.  You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="10" href="#10">10</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="11" href="#11">11</a>  <em class="jxr_comment"> *      <a href="http://www.apache.org/licenses/LICENSE-2.0" target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.0</a></em>
+<a class="jxr_linenumber" name="12" href="#12">12</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="13" href="#13">13</a>  <em class="jxr_comment"> *  Unless required by applicable law or agreed to in writing, software</em>
+<a class="jxr_linenumber" name="14" href="#14">14</a>  <em class="jxr_comment"> *  distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a class="jxr_linenumber" name="15" href="#15">15</a>  <em class="jxr_comment"> *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a class="jxr_linenumber" name="16" href="#16">16</a>  <em class="jxr_comment"> *  See the License for the specific language governing permissions and</em>
+<a class="jxr_linenumber" name="17" href="#17">17</a>  <em class="jxr_comment"> *  limitations under the License.</em>
+<a class="jxr_linenumber" name="18" href="#18">18</a>  <em class="jxr_comment"> * ====================================================================</em>
+<a class="jxr_linenumber" name="19" href="#19">19</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="20" href="#20">20</a>  <em class="jxr_comment"> * This software consists of voluntary contributions made by many</em>
+<a class="jxr_linenumber" name="21" href="#21">21</a>  <em class="jxr_comment"> * individuals on behalf of the Apache Software Foundation.  For more</em>
+<a class="jxr_linenumber" name="22" href="#22">22</a>  <em class="jxr_comment"> * information on the Apache Software Foundation, please see</em>
+<a class="jxr_linenumber" name="23" href="#23">23</a>  <em class="jxr_comment"> * &lt;<a href="http://www.apache.org/&gt;." target="alexandria_uri">http://www.apache.org/&gt;.</a></em>
+<a class="jxr_linenumber" name="24" href="#24">24</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="25" href="#25">25</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="26" href="#26">26</a>  
+<a class="jxr_linenumber" name="27" href="#27">27</a>  <strong class="jxr_keyword">package</strong> com.ning.http.client.ntlm;
+<a class="jxr_linenumber" name="28" href="#28">28</a>  
+<a class="jxr_linenumber" name="29" href="#29">29</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.ning.http.util.MiscUtil.isNonEmpty;
+<a class="jxr_linenumber" name="30" href="#30">30</a>  
+<a class="jxr_linenumber" name="31" href="#31">31</a>  <strong class="jxr_keyword">import</strong> java.io.UnsupportedEncodingException;
+<a class="jxr_linenumber" name="32" href="#32">32</a>  <strong class="jxr_keyword">import</strong> java.security.Key;
+<a class="jxr_linenumber" name="33" href="#33">33</a>  <strong class="jxr_keyword">import</strong> java.security.MessageDigest;
+<a class="jxr_linenumber" name="34" href="#34">34</a>  <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="35" href="#35">35</a>  <strong class="jxr_keyword">import</strong> java.util.Locale;
+<a class="jxr_linenumber" name="36" href="#36">36</a>  
+<a class="jxr_linenumber" name="37" href="#37">37</a>  <strong class="jxr_keyword">import</strong> javax.crypto.Cipher;
+<a class="jxr_linenumber" name="38" href="#38">38</a>  <strong class="jxr_keyword">import</strong> javax.crypto.spec.SecretKeySpec;
+<a class="jxr_linenumber" name="39" href="#39">39</a>  
+<a class="jxr_linenumber" name="40" href="#40">40</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.Base64;
+<a class="jxr_linenumber" name="41" href="#41">41</a>  
+<a class="jxr_linenumber" name="42" href="#42">42</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="43" href="#43">43</a>  <em class="jxr_javadoccomment"> * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM</em>
+<a class="jxr_linenumber" name="44" href="#44">44</a>  <em class="jxr_javadoccomment"> * authentication protocol.</em>
+<a class="jxr_linenumber" name="45" href="#45">45</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="46" href="#46">46</a>  <em class="jxr_javadoccomment"> * @since 4.1</em>
+<a class="jxr_linenumber" name="47" href="#47">47</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="48" href="#48">48</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMEngine</a> {
+<a class="jxr_linenumber" name="49" href="#49">49</a>  
+<a class="jxr_linenumber" name="50" href="#50">50</a>      <em class="jxr_comment">// Flags we use</em>
+<a class="jxr_linenumber" name="51" href="#51">51</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_UNICODE_ENCODING = 0x00000001;
+<a class="jxr_linenumber" name="52" href="#52">52</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_TARGET_DESIRED = 0x00000004;
+<a class="jxr_linenumber" name="53" href="#53">53</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_SIGN = 0x00000010;
+<a class="jxr_linenumber" name="54" href="#54">54</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_SEAL = 0x00000020;
+<a class="jxr_linenumber" name="55" href="#55">55</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_NTLM = 0x00000200;
+<a class="jxr_linenumber" name="56" href="#56">56</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_ALWAYS_SIGN = 0x00008000;
+<a class="jxr_linenumber" name="57" href="#57">57</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_NTLM2 = 0x00080000;
+<a class="jxr_linenumber" name="58" href="#58">58</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_128 = 0x20000000;
+<a class="jxr_linenumber" name="59" href="#59">59</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> FLAG_NEGOTIATE_KEY_EXCH = 0x40000000;
+<a class="jxr_linenumber" name="60" href="#60">60</a>  
+<a class="jxr_linenumber" name="61" href="#61">61</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="62" href="#62">62</a>  <em class="jxr_javadoccomment">     * Secure random generator</em>
+<a class="jxr_linenumber" name="63" href="#63">63</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="64" href="#64">64</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> java.security.SecureRandom RND_GEN;
+<a class="jxr_linenumber" name="65" href="#65">65</a>  
+<a class="jxr_linenumber" name="66" href="#66">66</a>      <strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="67" href="#67">67</a>          java.security.SecureRandom rnd = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="68" href="#68">68</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="69" href="#69">69</a>              rnd = java.security.SecureRandom.getInstance(<span class="jxr_string">"SHA1PRNG"</span>);
+<a class="jxr_linenumber" name="70" href="#70">70</a>          } <strong class="jxr_keyword">catch</strong> (Exception ignored) {
+<a class="jxr_linenumber" name="71" href="#71">71</a>          }
+<a class="jxr_linenumber" name="72" href="#72">72</a>          RND_GEN = rnd;
+<a class="jxr_linenumber" name="73" href="#73">73</a>      }
+<a class="jxr_linenumber" name="74" href="#74">74</a>  
+<a class="jxr_linenumber" name="75" href="#75">75</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="76" href="#76">76</a>  <em class="jxr_javadoccomment">     * Character encoding</em>
+<a class="jxr_linenumber" name="77" href="#77">77</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="78" href="#78">78</a>      <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String DEFAULT_CHARSET = <span class="jxr_string">"ASCII"</span>;
+<a class="jxr_linenumber" name="79" href="#79">79</a>  
+<a class="jxr_linenumber" name="80" href="#80">80</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="81" href="#81">81</a>  <em class="jxr_javadoccomment">     * The character set to use for encoding the credentials</em>
+<a class="jxr_linenumber" name="82" href="#82">82</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="83" href="#83">83</a>      <strong class="jxr_keyword">private</strong> String credentialCharset = DEFAULT_CHARSET;
+<a class="jxr_linenumber" name="84" href="#84">84</a>  
+<a class="jxr_linenumber" name="85" href="#85">85</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="86" href="#86">86</a>  <em class="jxr_javadoccomment">     * The signature string as bytes in the default encoding</em>
+<a class="jxr_linenumber" name="87" href="#87">87</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="88" href="#88">88</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] SIGNATURE;
+<a class="jxr_linenumber" name="89" href="#89">89</a>  
+<a class="jxr_linenumber" name="90" href="#90">90</a>      <strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="91" href="#91">91</a>          byte[] bytesWithoutNull = <strong class="jxr_keyword">new</strong> byte[0];
+<a class="jxr_linenumber" name="92" href="#92">92</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="93" href="#93">93</a>              bytesWithoutNull = <span class="jxr_string">"NTLMSSP"</span>.getBytes(<span class="jxr_string">"ASCII"</span>);
+<a class="jxr_linenumber" name="94" href="#94">94</a>          } <strong class="jxr_keyword">catch</strong> (UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="95" href="#95">95</a>              e.printStackTrace();
+<a class="jxr_linenumber" name="96" href="#96">96</a>          }
+<a class="jxr_linenumber" name="97" href="#97">97</a>          SIGNATURE = <strong class="jxr_keyword">new</strong> byte[bytesWithoutNull.length + 1];
+<a class="jxr_linenumber" name="98" href="#98">98</a>          System.arraycopy(bytesWithoutNull, 0, SIGNATURE, 0, bytesWithoutNull.length);
+<a class="jxr_linenumber" name="99" href="#99">99</a>          SIGNATURE[bytesWithoutNull.length] = (byte) 0x00;
+<a class="jxr_linenumber" name="100" href="#100">100</a>     }
+<a class="jxr_linenumber" name="101" href="#101">101</a> 
+<a class="jxr_linenumber" name="102" href="#102">102</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="103" href="#103">103</a> <em class="jxr_javadoccomment">     * Returns the response for the given message.</em>
+<a class="jxr_linenumber" name="104" href="#104">104</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="105" href="#105">105</a> <em class="jxr_javadoccomment">     * @param message  the message that was received from the server.</em>
+<a class="jxr_linenumber" name="106" href="#106">106</a> <em class="jxr_javadoccomment">     * @param username the username to authenticate with.</em>
+<a class="jxr_linenumber" name="107" href="#107">107</a> <em class="jxr_javadoccomment">     * @param password the password to authenticate with.</em>
+<a class="jxr_linenumber" name="108" href="#108">108</a> <em class="jxr_javadoccomment">     * @param host     The host.</em>
+<a class="jxr_linenumber" name="109" href="#109">109</a> <em class="jxr_javadoccomment">     * @param domain   the NT domain to authenticate in.</em>
+<a class="jxr_linenumber" name="110" href="#110">110</a> <em class="jxr_javadoccomment">     * @return The response.</em>
+<a class="jxr_linenumber" name="111" href="#111">111</a> <em class="jxr_javadoccomment">     * @throws NTLMEngineException If the messages cannot be retrieved.</em>
+<a class="jxr_linenumber" name="112" href="#112">112</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="113" href="#113">113</a>     <strong class="jxr_keyword">final</strong> String getResponseFor(String message, String username, String password,
+<a class="jxr_linenumber" name="114" href="#114">114</a>                                 String host, String domain) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="115" href="#115">115</a> 
+<a class="jxr_linenumber" name="116" href="#116">116</a>         <strong class="jxr_keyword">final</strong> String response;
+<a class="jxr_linenumber" name="117" href="#117">117</a>         <strong class="jxr_keyword">if</strong> (isNonEmpty(message)) {
+<a class="jxr_linenumber" name="118" href="#118">118</a>             <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a> t2m = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a>(message);
+<a class="jxr_linenumber" name="119" href="#119">119</a>             response = getType3Message(username, password, host, domain, t2m.getChallenge(), t2m
+<a class="jxr_linenumber" name="120" href="#120">120</a>                     .getFlags(), t2m.getTarget(), t2m.getTargetInfo());
+<a class="jxr_linenumber" name="121" href="#121">121</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="122" href="#122">122</a>             response = getType1Message(host, domain);
+<a class="jxr_linenumber" name="123" href="#123">123</a>         }
+<a class="jxr_linenumber" name="124" href="#124">124</a>         <strong class="jxr_keyword">return</strong> response;
+<a class="jxr_linenumber" name="125" href="#125">125</a>     }
+<a class="jxr_linenumber" name="126" href="#126">126</a> 
+<a class="jxr_linenumber" name="127" href="#127">127</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="128" href="#128">128</a> <em class="jxr_javadoccomment">     * Creates the first message (type 1 message) in the NTLM authentication</em>
+<a class="jxr_linenumber" name="129" href="#129">129</a> <em class="jxr_javadoccomment">     * sequence. This message includes the user name, domain and host for the</em>
+<a class="jxr_linenumber" name="130" href="#130">130</a> <em class="jxr_javadoccomment">     * authentication session.</em>
+<a class="jxr_linenumber" name="131" href="#131">131</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="132" href="#132">132</a> <em class="jxr_javadoccomment">     * @param host   the computer name of the host requesting authentication.</em>
+<a class="jxr_linenumber" name="133" href="#133">133</a> <em class="jxr_javadoccomment">     * @param domain The domain to authenticate with.</em>
+<a class="jxr_linenumber" name="134" href="#134">134</a> <em class="jxr_javadoccomment">     * @return String the message to add to the HTTP request header.</em>
+<a class="jxr_linenumber" name="135" href="#135">135</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="136" href="#136">136</a>     String getType1Message(String host, String domain) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="137" href="#137">137</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="138" href="#138">138</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type1Message</a>(domain, host).getResponse();
+<a class="jxr_linenumber" name="139" href="#139">139</a>         } <strong class="jxr_keyword">catch</strong> (UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="140" href="#140">140</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unsupported encoding"</span>, e);
+<a class="jxr_linenumber" name="141" href="#141">141</a>         }
+<a class="jxr_linenumber" name="142" href="#142">142</a>     }
+<a class="jxr_linenumber" name="143" href="#143">143</a> 
+<a class="jxr_linenumber" name="144" href="#144">144</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="145" href="#145">145</a> <em class="jxr_javadoccomment">     * Creates the type 3 message using the given server nonce. The type 3</em>
+<a class="jxr_linenumber" name="146" href="#146">146</a> <em class="jxr_javadoccomment">     * message includes all the information for authentication, host, domain,</em>
+<a class="jxr_linenumber" name="147" href="#147">147</a> <em class="jxr_javadoccomment">     * username and the result of encrypting the nonce sent by the server using</em>
+<a class="jxr_linenumber" name="148" href="#148">148</a> <em class="jxr_javadoccomment">     * the user's password as the key.</em>
+<a class="jxr_linenumber" name="149" href="#149">149</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="150" href="#150">150</a> <em class="jxr_javadoccomment">     * @param user     The user name. This should not include the domain name.</em>
+<a class="jxr_linenumber" name="151" href="#151">151</a> <em class="jxr_javadoccomment">     * @param password The password.</em>
+<a class="jxr_linenumber" name="152" href="#152">152</a> <em class="jxr_javadoccomment">     * @param host     The host that is originating the authentication request.</em>
+<a class="jxr_linenumber" name="153" href="#153">153</a> <em class="jxr_javadoccomment">     * @param domain   The domain to authenticate within.</em>
+<a class="jxr_linenumber" name="154" href="#154">154</a> <em class="jxr_javadoccomment">     * @param nonce    the 8 byte array the server sent.</em>
+<a class="jxr_linenumber" name="155" href="#155">155</a> <em class="jxr_javadoccomment">     * @return The type 3 message.</em>
+<a class="jxr_linenumber" name="156" href="#156">156</a> <em class="jxr_javadoccomment">     * @throws NTLMEngineException If {@encrypt(byte[],byte[])} fails.</em>
+<a class="jxr_linenumber" name="157" href="#157">157</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="158" href="#158">158</a>     String getType3Message(String user, String password, String host, String domain,
+<a class="jxr_linenumber" name="159" href="#159">159</a>                            byte[] nonce, <strong class="jxr_keyword">int</strong> type2Flags, String target, byte[] targetInformation)
+<a class="jxr_linenumber" name="160" href="#160">160</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="161" href="#161">161</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="162" href="#162">162</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type3Message</a>(domain, host, user, password, nonce, type2Flags, target,
+<a class="jxr_linenumber" name="163" href="#163">163</a>                     targetInformation).getResponse();
+<a class="jxr_linenumber" name="164" href="#164">164</a>         } <strong class="jxr_keyword">catch</strong> (UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="165" href="#165">165</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unsupported encoding"</span>, e);
+<a class="jxr_linenumber" name="166" href="#166">166</a>         }
+<a class="jxr_linenumber" name="167" href="#167">167</a>     }
+<a class="jxr_linenumber" name="168" href="#168">168</a> 
+<a class="jxr_linenumber" name="169" href="#169">169</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="170" href="#170">170</a> <em class="jxr_javadoccomment">     * @return Returns the credentialCharset.</em>
+<a class="jxr_linenumber" name="171" href="#171">171</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="172" href="#172">172</a>     String getCredentialCharset() {
+<a class="jxr_linenumber" name="173" href="#173">173</a>         <strong class="jxr_keyword">return</strong> credentialCharset;
+<a class="jxr_linenumber" name="174" href="#174">174</a>     }
+<a class="jxr_linenumber" name="175" href="#175">175</a> 
+<a class="jxr_linenumber" name="176" href="#176">176</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="177" href="#177">177</a> <em class="jxr_javadoccomment">     * @param credentialCharset The credentialCharset to set.</em>
+<a class="jxr_linenumber" name="178" href="#178">178</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="179" href="#179">179</a>     <strong class="jxr_keyword">void</strong> setCredentialCharset(String credentialCharset) {
+<a class="jxr_linenumber" name="180" href="#180">180</a>         <strong class="jxr_keyword">this</strong>.credentialCharset = credentialCharset;
+<a class="jxr_linenumber" name="181" href="#181">181</a>     }
+<a class="jxr_linenumber" name="182" href="#182">182</a> 
+<a class="jxr_linenumber" name="183" href="#183">183</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="184" href="#184">184</a> <em class="jxr_javadoccomment">     * Strip dot suffix from a name</em>
+<a class="jxr_linenumber" name="185" href="#185">185</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="186" href="#186">186</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String stripDotSuffix(String value) {
+<a class="jxr_linenumber" name="187" href="#187">187</a>         <strong class="jxr_keyword">int</strong> index = value.indexOf(<span class="jxr_string">"."</span>);
+<a class="jxr_linenumber" name="188" href="#188">188</a>         <strong class="jxr_keyword">if</strong> (index != -1)
+<a class="jxr_linenumber" name="189" href="#189">189</a>             <strong class="jxr_keyword">return</strong> value.substring(0, index);
+<a class="jxr_linenumber" name="190" href="#190">190</a>         <strong class="jxr_keyword">return</strong> value;
+<a class="jxr_linenumber" name="191" href="#191">191</a>     }
+<a class="jxr_linenumber" name="192" href="#192">192</a> 
+<a class="jxr_linenumber" name="193" href="#193">193</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="194" href="#194">194</a> <em class="jxr_javadoccomment">     * Convert host to standard form</em>
+<a class="jxr_linenumber" name="195" href="#195">195</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="196" href="#196">196</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String convertHost(String host) {
+<a class="jxr_linenumber" name="197" href="#197">197</a>         <strong class="jxr_keyword">return</strong> stripDotSuffix(host);
+<a class="jxr_linenumber" name="198" href="#198">198</a>     }
+<a class="jxr_linenumber" name="199" href="#199">199</a> 
+<a class="jxr_linenumber" name="200" href="#200">200</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="201" href="#201">201</a> <em class="jxr_javadoccomment">     * Convert domain to standard form</em>
+<a class="jxr_linenumber" name="202" href="#202">202</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="203" href="#203">203</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String convertDomain(String domain) {
+<a class="jxr_linenumber" name="204" href="#204">204</a>         <strong class="jxr_keyword">return</strong> stripDotSuffix(domain);
+<a class="jxr_linenumber" name="205" href="#205">205</a>     }
+<a class="jxr_linenumber" name="206" href="#206">206</a> 
+<a class="jxr_linenumber" name="207" href="#207">207</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> readULong(byte[] src, <strong class="jxr_keyword">int</strong> index) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="208" href="#208">208</a>         <strong class="jxr_keyword">if</strong> (src.length &lt; index + 4)
+<a class="jxr_linenumber" name="209" href="#209">209</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM authentication - buffer too small for DWORD"</span>);
+<a class="jxr_linenumber" name="210" href="#210">210</a>         <strong class="jxr_keyword">return</strong> (src[index] &amp; 0xff) | ((src[index + 1] &amp; 0xff) &lt;&lt; 8)
+<a class="jxr_linenumber" name="211" href="#211">211</a>                 | ((src[index + 2] &amp; 0xff) &lt;&lt; 16) | ((src[index + 3] &amp; 0xff) &lt;&lt; 24);
+<a class="jxr_linenumber" name="212" href="#212">212</a>     }
+<a class="jxr_linenumber" name="213" href="#213">213</a> 
+<a class="jxr_linenumber" name="214" href="#214">214</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> readUShort(byte[] src, <strong class="jxr_keyword">int</strong> index) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="215" href="#215">215</a>         <strong class="jxr_keyword">if</strong> (src.length &lt; index + 2)
+<a class="jxr_linenumber" name="216" href="#216">216</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM authentication - buffer too small for WORD"</span>);
+<a class="jxr_linenumber" name="217" href="#217">217</a>         <strong class="jxr_keyword">return</strong> (src[index] &amp; 0xff) | ((src[index + 1] &amp; 0xff) &lt;&lt; 8);
+<a class="jxr_linenumber" name="218" href="#218">218</a>     }
+<a class="jxr_linenumber" name="219" href="#219">219</a> 
+<a class="jxr_linenumber" name="220" href="#220">220</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] readSecurityBuffer(byte[] src, <strong class="jxr_keyword">int</strong> index) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="221" href="#221">221</a>         <strong class="jxr_keyword">int</strong> length = readUShort(src, index);
+<a class="jxr_linenumber" name="222" href="#222">222</a>         <strong class="jxr_keyword">int</strong> offset = readULong(src, index + 4);
+<a class="jxr_linenumber" name="223" href="#223">223</a>         <strong class="jxr_keyword">if</strong> (src.length &lt; offset + length)
+<a class="jxr_linenumber" name="224" href="#224">224</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(
+<a class="jxr_linenumber" name="225" href="#225">225</a>                     <span class="jxr_string">"NTLM authentication - buffer too small for data item"</span>);
+<a class="jxr_linenumber" name="226" href="#226">226</a>         byte[] buffer = <strong class="jxr_keyword">new</strong> byte[length];
+<a class="jxr_linenumber" name="227" href="#227">227</a>         System.arraycopy(src, offset, buffer, 0, length);
+<a class="jxr_linenumber" name="228" href="#228">228</a>         <strong class="jxr_keyword">return</strong> buffer;
+<a class="jxr_linenumber" name="229" href="#229">229</a>     }
+<a class="jxr_linenumber" name="230" href="#230">230</a> 
+<a class="jxr_linenumber" name="231" href="#231">231</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="232" href="#232">232</a> <em class="jxr_javadoccomment">     * Calculate a challenge block</em>
+<a class="jxr_linenumber" name="233" href="#233">233</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="234" href="#234">234</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] makeRandomChallenge() <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="235" href="#235">235</a>         <strong class="jxr_keyword">if</strong> (RND_GEN == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="236" href="#236">236</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Random generator not available"</span>);
+<a class="jxr_linenumber" name="237" href="#237">237</a>         }
+<a class="jxr_linenumber" name="238" href="#238">238</a>         byte[] rval = <strong class="jxr_keyword">new</strong> byte[8];
+<a class="jxr_linenumber" name="239" href="#239">239</a>         <strong class="jxr_keyword">synchronized</strong> (RND_GEN) {
+<a class="jxr_linenumber" name="240" href="#240">240</a>             RND_GEN.nextBytes(rval);
+<a class="jxr_linenumber" name="241" href="#241">241</a>         }
+<a class="jxr_linenumber" name="242" href="#242">242</a>         <strong class="jxr_keyword">return</strong> rval;
+<a class="jxr_linenumber" name="243" href="#243">243</a>     }
+<a class="jxr_linenumber" name="244" href="#244">244</a> 
+<a class="jxr_linenumber" name="245" href="#245">245</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="246" href="#246">246</a> <em class="jxr_javadoccomment">     * Calculate an NTLM2 challenge block</em>
+<a class="jxr_linenumber" name="247" href="#247">247</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="248" href="#248">248</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] makeNTLM2RandomChallenge() <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="249" href="#249">249</a>         <strong class="jxr_keyword">if</strong> (RND_GEN == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="250" href="#250">250</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Random generator not available"</span>);
+<a class="jxr_linenumber" name="251" href="#251">251</a>         }
+<a class="jxr_linenumber" name="252" href="#252">252</a>         byte[] rval = <strong class="jxr_keyword">new</strong> byte[24];
+<a class="jxr_linenumber" name="253" href="#253">253</a>         <strong class="jxr_keyword">synchronized</strong> (RND_GEN) {
+<a class="jxr_linenumber" name="254" href="#254">254</a>             RND_GEN.nextBytes(rval);
+<a class="jxr_linenumber" name="255" href="#255">255</a>         }
+<a class="jxr_linenumber" name="256" href="#256">256</a>         <em class="jxr_comment">// 8-byte challenge, padded with zeros to 24 bytes.</em>
+<a class="jxr_linenumber" name="257" href="#257">257</a>         Arrays.fill(rval, 8, 24, (byte) 0x00);
+<a class="jxr_linenumber" name="258" href="#258">258</a>         <strong class="jxr_keyword">return</strong> rval;
+<a class="jxr_linenumber" name="259" href="#259">259</a>     }
+<a class="jxr_linenumber" name="260" href="#260">260</a> 
+<a class="jxr_linenumber" name="261" href="#261">261</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="262" href="#262">262</a> <em class="jxr_javadoccomment">     * Calculates the LM Response for the given challenge, using the specified</em>
+<a class="jxr_linenumber" name="263" href="#263">263</a> <em class="jxr_javadoccomment">     * password.</em>
+<a class="jxr_linenumber" name="264" href="#264">264</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="265" href="#265">265</a> <em class="jxr_javadoccomment">     * @param password  The user's password.</em>
+<a class="jxr_linenumber" name="266" href="#266">266</a> <em class="jxr_javadoccomment">     * @param challenge The Type 2 challenge from the server.</em>
+<a class="jxr_linenumber" name="267" href="#267">267</a> <em class="jxr_javadoccomment">     * @return The LM Response.</em>
+<a class="jxr_linenumber" name="268" href="#268">268</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="269" href="#269">269</a>     <strong class="jxr_keyword">static</strong> byte[] getLMResponse(String password, byte[] challenge)
+<a class="jxr_linenumber" name="270" href="#270">270</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="271" href="#271">271</a>         byte[] lmHash = lmHash(password);
+<a class="jxr_linenumber" name="272" href="#272">272</a>         <strong class="jxr_keyword">return</strong> lmResponse(lmHash, challenge);
+<a class="jxr_linenumber" name="273" href="#273">273</a>     }
+<a class="jxr_linenumber" name="274" href="#274">274</a> 
+<a class="jxr_linenumber" name="275" href="#275">275</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="276" href="#276">276</a> <em class="jxr_javadoccomment">     * Calculates the NTLM Response for the given challenge, using the specified</em>
+<a class="jxr_linenumber" name="277" href="#277">277</a> <em class="jxr_javadoccomment">     * password.</em>
+<a class="jxr_linenumber" name="278" href="#278">278</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="279" href="#279">279</a> <em class="jxr_javadoccomment">     * @param password  The user's password.</em>
+<a class="jxr_linenumber" name="280" href="#280">280</a> <em class="jxr_javadoccomment">     * @param challenge The Type 2 challenge from the server.</em>
+<a class="jxr_linenumber" name="281" href="#281">281</a> <em class="jxr_javadoccomment">     * @return The NTLM Response.</em>
+<a class="jxr_linenumber" name="282" href="#282">282</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="283" href="#283">283</a>     <strong class="jxr_keyword">static</strong> byte[] getNTLMResponse(String password, byte[] challenge)
+<a class="jxr_linenumber" name="284" href="#284">284</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="285" href="#285">285</a>         byte[] ntlmHash = ntlmHash(password);
+<a class="jxr_linenumber" name="286" href="#286">286</a>         <strong class="jxr_keyword">return</strong> lmResponse(ntlmHash, challenge);
+<a class="jxr_linenumber" name="287" href="#287">287</a>     }
+<a class="jxr_linenumber" name="288" href="#288">288</a> 
+<a class="jxr_linenumber" name="289" href="#289">289</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="290" href="#290">290</a> <em class="jxr_javadoccomment">     * Calculates the NTLMv2 Response for the given challenge, using the</em>
+<a class="jxr_linenumber" name="291" href="#291">291</a> <em class="jxr_javadoccomment">     * specified authentication target, username, password, target information</em>
+<a class="jxr_linenumber" name="292" href="#292">292</a> <em class="jxr_javadoccomment">     * block, and client challenge.</em>
+<a class="jxr_linenumber" name="293" href="#293">293</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="294" href="#294">294</a> <em class="jxr_javadoccomment">     * @param target            The authentication target (i.e., domain).</em>
+<a class="jxr_linenumber" name="295" href="#295">295</a> <em class="jxr_javadoccomment">     * @param user              The username.</em>
+<a class="jxr_linenumber" name="296" href="#296">296</a> <em class="jxr_javadoccomment">     * @param password          The user's password.</em>
+<a class="jxr_linenumber" name="297" href="#297">297</a> <em class="jxr_javadoccomment">     * @param targetInformation The target information block from the Type 2 message.</em>
+<a class="jxr_linenumber" name="298" href="#298">298</a> <em class="jxr_javadoccomment">     * @param challenge         The Type 2 challenge from the server.</em>
+<a class="jxr_linenumber" name="299" href="#299">299</a> <em class="jxr_javadoccomment">     * @param clientChallenge   The random 8-byte client challenge.</em>
+<a class="jxr_linenumber" name="300" href="#300">300</a> <em class="jxr_javadoccomment">     * @return The NTLMv2 Response.</em>
+<a class="jxr_linenumber" name="301" href="#301">301</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="302" href="#302">302</a>     <strong class="jxr_keyword">static</strong> byte[] getNTLMv2Response(String target, String user, String password,
+<a class="jxr_linenumber" name="303" href="#303">303</a>                                     byte[] challenge, byte[] clientChallenge, byte[] targetInformation)
+<a class="jxr_linenumber" name="304" href="#304">304</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="305" href="#305">305</a>         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
+<a class="jxr_linenumber" name="306" href="#306">306</a>         byte[] blob = createBlob(clientChallenge, targetInformation);
+<a class="jxr_linenumber" name="307" href="#307">307</a>         <strong class="jxr_keyword">return</strong> lmv2Response(ntlmv2Hash, challenge, blob);
+<a class="jxr_linenumber" name="308" href="#308">308</a>     }
+<a class="jxr_linenumber" name="309" href="#309">309</a> 
+<a class="jxr_linenumber" name="310" href="#310">310</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="311" href="#311">311</a> <em class="jxr_javadoccomment">     * Calculates the LMv2 Response for the given challenge, using the specified</em>
+<a class="jxr_linenumber" name="312" href="#312">312</a> <em class="jxr_javadoccomment">     * authentication target, username, password, and client challenge.</em>
+<a class="jxr_linenumber" name="313" href="#313">313</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="314" href="#314">314</a> <em class="jxr_javadoccomment">     * @param target          The authentication target (i.e., domain).</em>
+<a class="jxr_linenumber" name="315" href="#315">315</a> <em class="jxr_javadoccomment">     * @param user            The username.</em>
+<a class="jxr_linenumber" name="316" href="#316">316</a> <em class="jxr_javadoccomment">     * @param password        The user's password.</em>
+<a class="jxr_linenumber" name="317" href="#317">317</a> <em class="jxr_javadoccomment">     * @param challenge       The Type 2 challenge from the server.</em>
+<a class="jxr_linenumber" name="318" href="#318">318</a> <em class="jxr_javadoccomment">     * @param clientChallenge The random 8-byte client challenge.</em>
+<a class="jxr_linenumber" name="319" href="#319">319</a> <em class="jxr_javadoccomment">     * @return The LMv2 Response.</em>
+<a class="jxr_linenumber" name="320" href="#320">320</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="321" href="#321">321</a>     <strong class="jxr_keyword">static</strong> byte[] getLMv2Response(String target, String user, String password,
+<a class="jxr_linenumber" name="322" href="#322">322</a>                                   byte[] challenge, byte[] clientChallenge) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="323" href="#323">323</a>         byte[] ntlmv2Hash = ntlmv2Hash(target, user, password);
+<a class="jxr_linenumber" name="324" href="#324">324</a>         <strong class="jxr_keyword">return</strong> lmv2Response(ntlmv2Hash, challenge, clientChallenge);
+<a class="jxr_linenumber" name="325" href="#325">325</a>     }
+<a class="jxr_linenumber" name="326" href="#326">326</a> 
+<a class="jxr_linenumber" name="327" href="#327">327</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="328" href="#328">328</a> <em class="jxr_javadoccomment">     * Calculates the NTLM2 Session Response for the given challenge, using the</em>
+<a class="jxr_linenumber" name="329" href="#329">329</a> <em class="jxr_javadoccomment">     * specified password and client challenge.</em>
+<a class="jxr_linenumber" name="330" href="#330">330</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="331" href="#331">331</a> <em class="jxr_javadoccomment">     * @param password        The user's password.</em>
+<a class="jxr_linenumber" name="332" href="#332">332</a> <em class="jxr_javadoccomment">     * @param challenge       The Type 2 challenge from the server.</em>
+<a class="jxr_linenumber" name="333" href="#333">333</a> <em class="jxr_javadoccomment">     * @param clientChallenge The random 8-byte client challenge.</em>
+<a class="jxr_linenumber" name="334" href="#334">334</a> <em class="jxr_javadoccomment">     * @return The NTLM2 Session Response. This is placed in the NTLM response</em>
+<a class="jxr_linenumber" name="335" href="#335">335</a> <em class="jxr_javadoccomment">     *         field of the Type 3 message; the LM response field contains the</em>
+<a class="jxr_linenumber" name="336" href="#336">336</a> <em class="jxr_javadoccomment">     *         client challenge, null-padded to 24 bytes.</em>
+<a class="jxr_linenumber" name="337" href="#337">337</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="338" href="#338">338</a>     <strong class="jxr_keyword">static</strong> byte[] getNTLM2SessionResponse(String password, byte[] challenge,
+<a class="jxr_linenumber" name="339" href="#339">339</a>                                           byte[] clientChallenge) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="340" href="#340">340</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="341" href="#341">341</a>             byte[] ntlmHash = ntlmHash(password);
+<a class="jxr_linenumber" name="342" href="#342">342</a> 
+<a class="jxr_linenumber" name="343" href="#343">343</a>             <em class="jxr_comment">// Look up MD5 algorithm (was necessary on jdk 1.4.2)</em>
+<a class="jxr_linenumber" name="344" href="#344">344</a>             <em class="jxr_comment">// This used to be needed, but java 1.5.0_07 includes the MD5</em>
+<a class="jxr_linenumber" name="345" href="#345">345</a>             <em class="jxr_comment">// algorithm (finally)</em>
+<a class="jxr_linenumber" name="346" href="#346">346</a>             <em class="jxr_comment">// Class x = Class.forName("gnu.crypto.hash.MD5");</em>
+<a class="jxr_linenumber" name="347" href="#347">347</a>             <em class="jxr_comment">// Method updateMethod = x.getMethod("update",new</em>
+<a class="jxr_linenumber" name="348" href="#348">348</a>             <em class="jxr_comment">// Class[]{byte[].class});</em>
+<a class="jxr_linenumber" name="349" href="#349">349</a>             <em class="jxr_comment">// Method digestMethod = x.getMethod("digest",new Class[0]);</em>
+<a class="jxr_linenumber" name="350" href="#350">350</a>             <em class="jxr_comment">// Object mdInstance = x.newInstance();</em>
+<a class="jxr_linenumber" name="351" href="#351">351</a>             <em class="jxr_comment">// updateMethod.invoke(mdInstance,new Object[]{challenge});</em>
+<a class="jxr_linenumber" name="352" href="#352">352</a>             <em class="jxr_comment">// updateMethod.invoke(mdInstance,new Object[]{clientChallenge});</em>
+<a class="jxr_linenumber" name="353" href="#353">353</a>             <em class="jxr_comment">// byte[] digest = (byte[])digestMethod.invoke(mdInstance,new</em>
+<a class="jxr_linenumber" name="354" href="#354">354</a>             <em class="jxr_comment">// Object[0]);</em>
+<a class="jxr_linenumber" name="355" href="#355">355</a> 
+<a class="jxr_linenumber" name="356" href="#356">356</a>             MessageDigest md5 = MessageDigest.getInstance(<span class="jxr_string">"MD5"</span>);
+<a class="jxr_linenumber" name="357" href="#357">357</a>             md5.update(challenge);
+<a class="jxr_linenumber" name="358" href="#358">358</a>             md5.update(clientChallenge);
+<a class="jxr_linenumber" name="359" href="#359">359</a>             byte[] digest = md5.digest();
+<a class="jxr_linenumber" name="360" href="#360">360</a> 
+<a class="jxr_linenumber" name="361" href="#361">361</a>             byte[] sessionHash = <strong class="jxr_keyword">new</strong> byte[8];
+<a class="jxr_linenumber" name="362" href="#362">362</a>             System.arraycopy(digest, 0, sessionHash, 0, 8);
+<a class="jxr_linenumber" name="363" href="#363">363</a>             <strong class="jxr_keyword">return</strong> lmResponse(ntlmHash, sessionHash);
+<a class="jxr_linenumber" name="364" href="#364">364</a>         } <strong class="jxr_keyword">catch</strong> (Exception e) {
+<a class="jxr_linenumber" name="365" href="#365">365</a>             <strong class="jxr_keyword">if</strong> (e instanceof NTLMEngineException)
+<a class="jxr_linenumber" name="366" href="#366">366</a>                 <strong class="jxr_keyword">throw</strong> (NTLMEngineException) e;
+<a class="jxr_linenumber" name="367" href="#367">367</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(e.getMessage(), e);
+<a class="jxr_linenumber" name="368" href="#368">368</a>         }
+<a class="jxr_linenumber" name="369" href="#369">369</a>     }
+<a class="jxr_linenumber" name="370" href="#370">370</a> 
+<a class="jxr_linenumber" name="371" href="#371">371</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="372" href="#372">372</a> <em class="jxr_javadoccomment">     * Creates the LM Hash of the user's password.</em>
+<a class="jxr_linenumber" name="373" href="#373">373</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="374" href="#374">374</a> <em class="jxr_javadoccomment">     * @param password The password.</em>
+<a class="jxr_linenumber" name="375" href="#375">375</a> <em class="jxr_javadoccomment">     * @return The LM Hash of the given password, used in the calculation of the</em>
+<a class="jxr_linenumber" name="376" href="#376">376</a> <em class="jxr_javadoccomment">     *         LM Response.</em>
+<a class="jxr_linenumber" name="377" href="#377">377</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="378" href="#378">378</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] lmHash(String password) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="379" href="#379">379</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="380" href="#380">380</a>             byte[] oemPassword = password.toUpperCase(Locale.ENGLISH).getBytes(<span class="jxr_string">"US-ASCII"</span>);
+<a class="jxr_linenumber" name="381" href="#381">381</a>             <strong class="jxr_keyword">int</strong> length = Math.min(oemPassword.length, 14);
+<a class="jxr_linenumber" name="382" href="#382">382</a>             byte[] keyBytes = <strong class="jxr_keyword">new</strong> byte[14];
+<a class="jxr_linenumber" name="383" href="#383">383</a>             System.arraycopy(oemPassword, 0, keyBytes, 0, length);
+<a class="jxr_linenumber" name="384" href="#384">384</a>             Key lowKey = createDESKey(keyBytes, 0);
+<a class="jxr_linenumber" name="385" href="#385">385</a>             Key highKey = createDESKey(keyBytes, 7);
+<a class="jxr_linenumber" name="386" href="#386">386</a>             byte[] magicConstant = <span class="jxr_string">"KGS!@#$%"</span>.getBytes(<span class="jxr_string">"US-ASCII"</span>);
+<a class="jxr_linenumber" name="387" href="#387">387</a>             Cipher des = Cipher.getInstance(<span class="jxr_string">"DES/ECB/NoPadding"</span>);
+<a class="jxr_linenumber" name="388" href="#388">388</a>             des.init(Cipher.ENCRYPT_MODE, lowKey);
+<a class="jxr_linenumber" name="389" href="#389">389</a>             byte[] lowHash = des.doFinal(magicConstant);
+<a class="jxr_linenumber" name="390" href="#390">390</a>             des.init(Cipher.ENCRYPT_MODE, highKey);
+<a class="jxr_linenumber" name="391" href="#391">391</a>             byte[] highHash = des.doFinal(magicConstant);
+<a class="jxr_linenumber" name="392" href="#392">392</a>             byte[] lmHash = <strong class="jxr_keyword">new</strong> byte[16];
+<a class="jxr_linenumber" name="393" href="#393">393</a>             System.arraycopy(lowHash, 0, lmHash, 0, 8);
+<a class="jxr_linenumber" name="394" href="#394">394</a>             System.arraycopy(highHash, 0, lmHash, 8, 8);
+<a class="jxr_linenumber" name="395" href="#395">395</a>             <strong class="jxr_keyword">return</strong> lmHash;
+<a class="jxr_linenumber" name="396" href="#396">396</a>         } <strong class="jxr_keyword">catch</strong> (Exception e) {
+<a class="jxr_linenumber" name="397" href="#397">397</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(e.getMessage(), e);
+<a class="jxr_linenumber" name="398" href="#398">398</a>         }
+<a class="jxr_linenumber" name="399" href="#399">399</a>     }
+<a class="jxr_linenumber" name="400" href="#400">400</a> 
+<a class="jxr_linenumber" name="401" href="#401">401</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="402" href="#402">402</a> <em class="jxr_javadoccomment">     * Creates the NTLM Hash of the user's password.</em>
+<a class="jxr_linenumber" name="403" href="#403">403</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="404" href="#404">404</a> <em class="jxr_javadoccomment">     * @param password The password.</em>
+<a class="jxr_linenumber" name="405" href="#405">405</a> <em class="jxr_javadoccomment">     * @return The NTLM Hash of the given password, used in the calculation of</em>
+<a class="jxr_linenumber" name="406" href="#406">406</a> <em class="jxr_javadoccomment">     *         the NTLM Response and the NTLMv2 and LMv2 Hashes.</em>
+<a class="jxr_linenumber" name="407" href="#407">407</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="408" href="#408">408</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] ntlmHash(String password) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="409" href="#409">409</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="410" href="#410">410</a>             byte[] unicodePassword = password.getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="411" href="#411">411</a>             <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">MD4</a> md4 = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">MD4</a>();
+<a class="jxr_linenumber" name="412" href="#412">412</a>             md4.update(unicodePassword);
+<a class="jxr_linenumber" name="413" href="#413">413</a>             <strong class="jxr_keyword">return</strong> md4.getOutput();
+<a class="jxr_linenumber" name="414" href="#414">414</a>         } <strong class="jxr_keyword">catch</strong> (java.io.UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="415" href="#415">415</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unicode not supported: "</span> + e.getMessage(), e);
+<a class="jxr_linenumber" name="416" href="#416">416</a>         }
+<a class="jxr_linenumber" name="417" href="#417">417</a>     }
+<a class="jxr_linenumber" name="418" href="#418">418</a> 
+<a class="jxr_linenumber" name="419" href="#419">419</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="420" href="#420">420</a> <em class="jxr_javadoccomment">     * Creates the NTLMv2 Hash of the user's password.</em>
+<a class="jxr_linenumber" name="421" href="#421">421</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="422" href="#422">422</a> <em class="jxr_javadoccomment">     * @param target   The authentication target (i.e., domain).</em>
+<a class="jxr_linenumber" name="423" href="#423">423</a> <em class="jxr_javadoccomment">     * @param user     The username.</em>
+<a class="jxr_linenumber" name="424" href="#424">424</a> <em class="jxr_javadoccomment">     * @param password The password.</em>
+<a class="jxr_linenumber" name="425" href="#425">425</a> <em class="jxr_javadoccomment">     * @return The NTLMv2 Hash, used in the calculation of the NTLMv2 and LMv2</em>
+<a class="jxr_linenumber" name="426" href="#426">426</a> <em class="jxr_javadoccomment">     *         Responses.</em>
+<a class="jxr_linenumber" name="427" href="#427">427</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="428" href="#428">428</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] ntlmv2Hash(String target, String user, String password)
+<a class="jxr_linenumber" name="429" href="#429">429</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="430" href="#430">430</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="431" href="#431">431</a>             byte[] ntlmHash = ntlmHash(password);
+<a class="jxr_linenumber" name="432" href="#432">432</a>             <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a> hmacMD5 = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a>(ntlmHash);
+<a class="jxr_linenumber" name="433" href="#433">433</a>             <em class="jxr_comment">// Upper case username, mixed case target!!</em>
+<a class="jxr_linenumber" name="434" href="#434">434</a>             hmacMD5.update(user.toUpperCase(Locale.ENGLISH).getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>));
+<a class="jxr_linenumber" name="435" href="#435">435</a>             hmacMD5.update(target.getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>));
+<a class="jxr_linenumber" name="436" href="#436">436</a>             <strong class="jxr_keyword">return</strong> hmacMD5.getOutput();
+<a class="jxr_linenumber" name="437" href="#437">437</a>         } <strong class="jxr_keyword">catch</strong> (java.io.UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="438" href="#438">438</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unicode not supported! "</span> + e.getMessage(), e);
+<a class="jxr_linenumber" name="439" href="#439">439</a>         }
+<a class="jxr_linenumber" name="440" href="#440">440</a>     }
+<a class="jxr_linenumber" name="441" href="#441">441</a> 
+<a class="jxr_linenumber" name="442" href="#442">442</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="443" href="#443">443</a> <em class="jxr_javadoccomment">     * Creates the LM Response from the given hash and Type 2 challenge.</em>
+<a class="jxr_linenumber" name="444" href="#444">444</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="445" href="#445">445</a> <em class="jxr_javadoccomment">     * @param hash      The LM or NTLM Hash.</em>
+<a class="jxr_linenumber" name="446" href="#446">446</a> <em class="jxr_javadoccomment">     * @param challenge The server challenge from the Type 2 message.</em>
+<a class="jxr_linenumber" name="447" href="#447">447</a> <em class="jxr_javadoccomment">     * @return The response (either LM or NTLM, depending on the provided hash).</em>
+<a class="jxr_linenumber" name="448" href="#448">448</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="449" href="#449">449</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] lmResponse(byte[] hash, byte[] challenge) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="450" href="#450">450</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="451" href="#451">451</a>             byte[] keyBytes = <strong class="jxr_keyword">new</strong> byte[21];
+<a class="jxr_linenumber" name="452" href="#452">452</a>             System.arraycopy(hash, 0, keyBytes, 0, 16);
+<a class="jxr_linenumber" name="453" href="#453">453</a>             Key lowKey = createDESKey(keyBytes, 0);
+<a class="jxr_linenumber" name="454" href="#454">454</a>             Key middleKey = createDESKey(keyBytes, 7);
+<a class="jxr_linenumber" name="455" href="#455">455</a>             Key highKey = createDESKey(keyBytes, 14);
+<a class="jxr_linenumber" name="456" href="#456">456</a>             Cipher des = Cipher.getInstance(<span class="jxr_string">"DES/ECB/NoPadding"</span>);
+<a class="jxr_linenumber" name="457" href="#457">457</a>             des.init(Cipher.ENCRYPT_MODE, lowKey);
+<a class="jxr_linenumber" name="458" href="#458">458</a>             byte[] lowResponse = des.doFinal(challenge);
+<a class="jxr_linenumber" name="459" href="#459">459</a>             des.init(Cipher.ENCRYPT_MODE, middleKey);
+<a class="jxr_linenumber" name="460" href="#460">460</a>             byte[] middleResponse = des.doFinal(challenge);
+<a class="jxr_linenumber" name="461" href="#461">461</a>             des.init(Cipher.ENCRYPT_MODE, highKey);
+<a class="jxr_linenumber" name="462" href="#462">462</a>             byte[] highResponse = des.doFinal(challenge);
+<a class="jxr_linenumber" name="463" href="#463">463</a>             byte[] lmResponse = <strong class="jxr_keyword">new</strong> byte[24];
+<a class="jxr_linenumber" name="464" href="#464">464</a>             System.arraycopy(lowResponse, 0, lmResponse, 0, 8);
+<a class="jxr_linenumber" name="465" href="#465">465</a>             System.arraycopy(middleResponse, 0, lmResponse, 8, 8);
+<a class="jxr_linenumber" name="466" href="#466">466</a>             System.arraycopy(highResponse, 0, lmResponse, 16, 8);
+<a class="jxr_linenumber" name="467" href="#467">467</a>             <strong class="jxr_keyword">return</strong> lmResponse;
+<a class="jxr_linenumber" name="468" href="#468">468</a>         } <strong class="jxr_keyword">catch</strong> (Exception e) {
+<a class="jxr_linenumber" name="469" href="#469">469</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(e.getMessage(), e);
+<a class="jxr_linenumber" name="470" href="#470">470</a>         }
+<a class="jxr_linenumber" name="471" href="#471">471</a>     }
+<a class="jxr_linenumber" name="472" href="#472">472</a> 
+<a class="jxr_linenumber" name="473" href="#473">473</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="474" href="#474">474</a> <em class="jxr_javadoccomment">     * Creates the LMv2 Response from the given hash, client data, and Type 2</em>
+<a class="jxr_linenumber" name="475" href="#475">475</a> <em class="jxr_javadoccomment">     * challenge.</em>
+<a class="jxr_linenumber" name="476" href="#476">476</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="477" href="#477">477</a> <em class="jxr_javadoccomment">     * @param hash       The NTLMv2 Hash.</em>
+<a class="jxr_linenumber" name="478" href="#478">478</a> <em class="jxr_javadoccomment">     * @param clientData The client data (blob or client challenge).</em>
+<a class="jxr_linenumber" name="479" href="#479">479</a> <em class="jxr_javadoccomment">     * @param challenge  The server challenge from the Type 2 message.</em>
+<a class="jxr_linenumber" name="480" href="#480">480</a> <em class="jxr_javadoccomment">     * @return The response (either NTLMv2 or LMv2, depending on the client</em>
+<a class="jxr_linenumber" name="481" href="#481">481</a> <em class="jxr_javadoccomment">     *         data).</em>
+<a class="jxr_linenumber" name="482" href="#482">482</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="483" href="#483">483</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] lmv2Response(byte[] hash, byte[] challenge, byte[] clientData)
+<a class="jxr_linenumber" name="484" href="#484">484</a>             <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="485" href="#485">485</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a> hmacMD5 = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a>(hash);
+<a class="jxr_linenumber" name="486" href="#486">486</a>         hmacMD5.update(challenge);
+<a class="jxr_linenumber" name="487" href="#487">487</a>         hmacMD5.update(clientData);
+<a class="jxr_linenumber" name="488" href="#488">488</a>         byte[] mac = hmacMD5.getOutput();
+<a class="jxr_linenumber" name="489" href="#489">489</a>         byte[] lmv2Response = <strong class="jxr_keyword">new</strong> byte[mac.length + clientData.length];
+<a class="jxr_linenumber" name="490" href="#490">490</a>         System.arraycopy(mac, 0, lmv2Response, 0, mac.length);
+<a class="jxr_linenumber" name="491" href="#491">491</a>         System.arraycopy(clientData, 0, lmv2Response, mac.length, clientData.length);
+<a class="jxr_linenumber" name="492" href="#492">492</a>         <strong class="jxr_keyword">return</strong> lmv2Response;
+<a class="jxr_linenumber" name="493" href="#493">493</a>     }
+<a class="jxr_linenumber" name="494" href="#494">494</a> 
+<a class="jxr_linenumber" name="495" href="#495">495</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="496" href="#496">496</a> <em class="jxr_javadoccomment">     * Creates the NTLMv2 blob from the given target information block and</em>
+<a class="jxr_linenumber" name="497" href="#497">497</a> <em class="jxr_javadoccomment">     * client challenge.</em>
+<a class="jxr_linenumber" name="498" href="#498">498</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="499" href="#499">499</a> <em class="jxr_javadoccomment">     * @param targetInformation The target information block from the Type 2 message.</em>
+<a class="jxr_linenumber" name="500" href="#500">500</a> <em class="jxr_javadoccomment">     * @param clientChallenge   The random 8-byte client challenge.</em>
+<a class="jxr_linenumber" name="501" href="#501">501</a> <em class="jxr_javadoccomment">     * @return The blob, used in the calculation of the NTLMv2 Response.</em>
+<a class="jxr_linenumber" name="502" href="#502">502</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="503" href="#503">503</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> byte[] createBlob(byte[] clientChallenge, byte[] targetInformation) {
+<a class="jxr_linenumber" name="504" href="#504">504</a>         byte[] blobSignature = <strong class="jxr_keyword">new</strong> byte[]{(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
+<a class="jxr_linenumber" name="505" href="#505">505</a>         byte[] reserved = <strong class="jxr_keyword">new</strong> byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+<a class="jxr_linenumber" name="506" href="#506">506</a>         byte[] unknown1 = <strong class="jxr_keyword">new</strong> byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+<a class="jxr_linenumber" name="507" href="#507">507</a>         <strong class="jxr_keyword">long</strong> time = System.currentTimeMillis();
+<a class="jxr_linenumber" name="508" href="#508">508</a>         time += 11644473600000l; <em class="jxr_comment">// milliseconds from January 1, 1601 -&gt; epoch.</em>
+<a class="jxr_linenumber" name="509" href="#509">509</a>         time *= 10000; <em class="jxr_comment">// tenths of a microsecond.</em>
+<a class="jxr_linenumber" name="510" href="#510">510</a>         <em class="jxr_comment">// convert to little-endian byte array.</em>
+<a class="jxr_linenumber" name="511" href="#511">511</a>         byte[] timestamp = <strong class="jxr_keyword">new</strong> byte[8];
+<a class="jxr_linenumber" name="512" href="#512">512</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 8; i++) {
+<a class="jxr_linenumber" name="513" href="#513">513</a>             timestamp[i] = (byte) time;
+<a class="jxr_linenumber" name="514" href="#514">514</a>             time &gt;&gt;&gt;= 8;
+<a class="jxr_linenumber" name="515" href="#515">515</a>         }
+<a class="jxr_linenumber" name="516" href="#516">516</a>         byte[] blob = <strong class="jxr_keyword">new</strong> byte[blobSignature.length + reserved.length + timestamp.length + 8
+<a class="jxr_linenumber" name="517" href="#517">517</a>                 + unknown1.length + targetInformation.length];
+<a class="jxr_linenumber" name="518" href="#518">518</a>         <strong class="jxr_keyword">int</strong> offset = 0;
+<a class="jxr_linenumber" name="519" href="#519">519</a>         System.arraycopy(blobSignature, 0, blob, offset, blobSignature.length);
+<a class="jxr_linenumber" name="520" href="#520">520</a>         offset += blobSignature.length;
+<a class="jxr_linenumber" name="521" href="#521">521</a>         System.arraycopy(reserved, 0, blob, offset, reserved.length);
+<a class="jxr_linenumber" name="522" href="#522">522</a>         offset += reserved.length;
+<a class="jxr_linenumber" name="523" href="#523">523</a>         System.arraycopy(timestamp, 0, blob, offset, timestamp.length);
+<a class="jxr_linenumber" name="524" href="#524">524</a>         offset += timestamp.length;
+<a class="jxr_linenumber" name="525" href="#525">525</a>         System.arraycopy(clientChallenge, 0, blob, offset, 8);
+<a class="jxr_linenumber" name="526" href="#526">526</a>         offset += 8;
+<a class="jxr_linenumber" name="527" href="#527">527</a>         System.arraycopy(unknown1, 0, blob, offset, unknown1.length);
+<a class="jxr_linenumber" name="528" href="#528">528</a>         offset += unknown1.length;
+<a class="jxr_linenumber" name="529" href="#529">529</a>         System.arraycopy(targetInformation, 0, blob, offset, targetInformation.length);
+<a class="jxr_linenumber" name="530" href="#530">530</a>         <strong class="jxr_keyword">return</strong> blob;
+<a class="jxr_linenumber" name="531" href="#531">531</a>     }
+<a class="jxr_linenumber" name="532" href="#532">532</a> 
+<a class="jxr_linenumber" name="533" href="#533">533</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="534" href="#534">534</a> <em class="jxr_javadoccomment">     * Creates a DES encryption key from the given key material.</em>
+<a class="jxr_linenumber" name="535" href="#535">535</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="536" href="#536">536</a> <em class="jxr_javadoccomment">     * @param bytes  A byte array containing the DES key material.</em>
+<a class="jxr_linenumber" name="537" href="#537">537</a> <em class="jxr_javadoccomment">     * @param offset The offset in the given byte array at which the 7-byte key</em>
+<a class="jxr_linenumber" name="538" href="#538">538</a> <em class="jxr_javadoccomment">     *               material starts.</em>
+<a class="jxr_linenumber" name="539" href="#539">539</a> <em class="jxr_javadoccomment">     * @return A DES encryption key created from the key material starting at</em>
+<a class="jxr_linenumber" name="540" href="#540">540</a> <em class="jxr_javadoccomment">     *         the specified offset in the given byte array.</em>
+<a class="jxr_linenumber" name="541" href="#541">541</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="542" href="#542">542</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Key createDESKey(byte[] bytes, <strong class="jxr_keyword">int</strong> offset) {
+<a class="jxr_linenumber" name="543" href="#543">543</a>         byte[] keyBytes = <strong class="jxr_keyword">new</strong> byte[7];
+<a class="jxr_linenumber" name="544" href="#544">544</a>         System.arraycopy(bytes, offset, keyBytes, 0, 7);
+<a class="jxr_linenumber" name="545" href="#545">545</a>         byte[] material = <strong class="jxr_keyword">new</strong> byte[8];
+<a class="jxr_linenumber" name="546" href="#546">546</a>         material[0] = keyBytes[0];
+<a class="jxr_linenumber" name="547" href="#547">547</a>         material[1] = (byte) (keyBytes[0] &lt;&lt; 7 | (keyBytes[1] &amp; 0xff) &gt;&gt;&gt; 1);
+<a class="jxr_linenumber" name="548" href="#548">548</a>         material[2] = (byte) (keyBytes[1] &lt;&lt; 6 | (keyBytes[2] &amp; 0xff) &gt;&gt;&gt; 2);
+<a class="jxr_linenumber" name="549" href="#549">549</a>         material[3] = (byte) (keyBytes[2] &lt;&lt; 5 | (keyBytes[3] &amp; 0xff) &gt;&gt;&gt; 3);
+<a class="jxr_linenumber" name="550" href="#550">550</a>         material[4] = (byte) (keyBytes[3] &lt;&lt; 4 | (keyBytes[4] &amp; 0xff) &gt;&gt;&gt; 4);
+<a class="jxr_linenumber" name="551" href="#551">551</a>         material[5] = (byte) (keyBytes[4] &lt;&lt; 3 | (keyBytes[5] &amp; 0xff) &gt;&gt;&gt; 5);
+<a class="jxr_linenumber" name="552" href="#552">552</a>         material[6] = (byte) (keyBytes[5] &lt;&lt; 2 | (keyBytes[6] &amp; 0xff) &gt;&gt;&gt; 6);
+<a class="jxr_linenumber" name="553" href="#553">553</a>         material[7] = (byte) (keyBytes[6] &lt;&lt; 1);
+<a class="jxr_linenumber" name="554" href="#554">554</a>         oddParity(material);
+<a class="jxr_linenumber" name="555" href="#555">555</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> SecretKeySpec(material, <span class="jxr_string">"DES"</span>);
+<a class="jxr_linenumber" name="556" href="#556">556</a>     }
+<a class="jxr_linenumber" name="557" href="#557">557</a> 
+<a class="jxr_linenumber" name="558" href="#558">558</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="559" href="#559">559</a> <em class="jxr_javadoccomment">     * Applies odd parity to the given byte array.</em>
+<a class="jxr_linenumber" name="560" href="#560">560</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="561" href="#561">561</a> <em class="jxr_javadoccomment">     * @param bytes The data whose parity bits are to be adjusted for odd parity.</em>
+<a class="jxr_linenumber" name="562" href="#562">562</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="563" href="#563">563</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> oddParity(byte[] bytes) {
+<a class="jxr_linenumber" name="564" href="#564">564</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; bytes.length; i++) {
+<a class="jxr_linenumber" name="565" href="#565">565</a>             byte b = bytes[i];
+<a class="jxr_linenumber" name="566" href="#566">566</a>             <strong class="jxr_keyword">boolean</strong> needsParity = (((b &gt;&gt;&gt; 7) ^ (b &gt;&gt;&gt; 6) ^ (b &gt;&gt;&gt; 5) ^ (b &gt;&gt;&gt; 4) ^ (b &gt;&gt;&gt; 3)
+<a class="jxr_linenumber" name="567" href="#567">567</a>                     ^ (b &gt;&gt;&gt; 2) ^ (b &gt;&gt;&gt; 1)) &amp; 0x01) == 0;
+<a class="jxr_linenumber" name="568" href="#568">568</a>             <strong class="jxr_keyword">if</strong> (needsParity) {
+<a class="jxr_linenumber" name="569" href="#569">569</a>                 bytes[i] |= (byte) 0x01;
+<a class="jxr_linenumber" name="570" href="#570">570</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="571" href="#571">571</a>                 bytes[i] &amp;= (byte) 0xfe;
+<a class="jxr_linenumber" name="572" href="#572">572</a>             }
+<a class="jxr_linenumber" name="573" href="#573">573</a>         }
+<a class="jxr_linenumber" name="574" href="#574">574</a>     }
+<a class="jxr_linenumber" name="575" href="#575">575</a> 
+<a class="jxr_linenumber" name="576" href="#576">576</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="577" href="#577">577</a> <em class="jxr_javadoccomment">     * NTLM message generation, base class</em>
+<a class="jxr_linenumber" name="578" href="#578">578</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="579" href="#579">579</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a> {
+<a class="jxr_linenumber" name="580" href="#580">580</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="581" href="#581">581</a> <em class="jxr_javadoccomment">         * The current response</em>
+<a class="jxr_linenumber" name="582" href="#582">582</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="583" href="#583">583</a>         <strong class="jxr_keyword">private</strong> byte[] messageContents = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="584" href="#584">584</a> 
+<a class="jxr_linenumber" name="585" href="#585">585</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="586" href="#586">586</a> <em class="jxr_javadoccomment">         * The current output position</em>
+<a class="jxr_linenumber" name="587" href="#587">587</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="588" href="#588">588</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> currentOutputPosition = 0;
+<a class="jxr_linenumber" name="589" href="#589">589</a> 
+<a class="jxr_linenumber" name="590" href="#590">590</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="591" href="#591">591</a> <em class="jxr_javadoccomment">         * Constructor to use when message contents are not yet known</em>
+<a class="jxr_linenumber" name="592" href="#592">592</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="593" href="#593">593</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a>() {
+<a class="jxr_linenumber" name="594" href="#594">594</a>         }
+<a class="jxr_linenumber" name="595" href="#595">595</a> 
+<a class="jxr_linenumber" name="596" href="#596">596</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="597" href="#597">597</a> <em class="jxr_javadoccomment">         * Constructor to use when message contents are known</em>
+<a class="jxr_linenumber" name="598" href="#598">598</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="599" href="#599">599</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a>(String messageBody, <strong class="jxr_keyword">int</strong> expectedType) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="600" href="#600">600</a>             messageContents = Base64.decode(messageBody);
+<a class="jxr_linenumber" name="601" href="#601">601</a> 
+<a class="jxr_linenumber" name="602" href="#602">602</a>             <em class="jxr_comment">// Look for NTLM message</em>
+<a class="jxr_linenumber" name="603" href="#603">603</a>             <strong class="jxr_keyword">if</strong> (messageContents.length &lt; SIGNATURE.length)
+<a class="jxr_linenumber" name="604" href="#604">604</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM message decoding error - packet too short"</span>);
+<a class="jxr_linenumber" name="605" href="#605">605</a>             <strong class="jxr_keyword">int</strong> i = 0;
+<a class="jxr_linenumber" name="606" href="#606">606</a>             <strong class="jxr_keyword">while</strong> (i &lt; SIGNATURE.length) {
+<a class="jxr_linenumber" name="607" href="#607">607</a>                 <strong class="jxr_keyword">if</strong> (messageContents[i] != SIGNATURE[i])
+<a class="jxr_linenumber" name="608" href="#608">608</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(
+<a class="jxr_linenumber" name="609" href="#609">609</a>                             <span class="jxr_string">"NTLM message expected - instead got unrecognized bytes"</span>);
+<a class="jxr_linenumber" name="610" href="#610">610</a>                 i++;
+<a class="jxr_linenumber" name="611" href="#611">611</a>             }
+<a class="jxr_linenumber" name="612" href="#612">612</a> 
+<a class="jxr_linenumber" name="613" href="#613">613</a>             <em class="jxr_comment">// Check to be sure there's a type 2 message indicator next</em>
+<a class="jxr_linenumber" name="614" href="#614">614</a>             <strong class="jxr_keyword">int</strong> type = readULong(SIGNATURE.length);
+<a class="jxr_linenumber" name="615" href="#615">615</a>             <strong class="jxr_keyword">if</strong> (type != expectedType)
+<a class="jxr_linenumber" name="616" href="#616">616</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM type "</span> + Integer.toString(expectedType)
+<a class="jxr_linenumber" name="617" href="#617">617</a>                         + <span class="jxr_string">" message expected - instead got type "</span> + Integer.toString(type));
+<a class="jxr_linenumber" name="618" href="#618">618</a> 
+<a class="jxr_linenumber" name="619" href="#619">619</a>             currentOutputPosition = messageContents.length;
+<a class="jxr_linenumber" name="620" href="#620">620</a>         }
+<a class="jxr_linenumber" name="621" href="#621">621</a> 
+<a class="jxr_linenumber" name="622" href="#622">622</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="623" href="#623">623</a> <em class="jxr_javadoccomment">         * Get the length of the signature and flags, so calculations can adjust</em>
+<a class="jxr_linenumber" name="624" href="#624">624</a> <em class="jxr_javadoccomment">         * offsets accordingly.</em>
+<a class="jxr_linenumber" name="625" href="#625">625</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="626" href="#626">626</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> getPreambleLength() {
+<a class="jxr_linenumber" name="627" href="#627">627</a>             <strong class="jxr_keyword">return</strong> SIGNATURE.length + 4;
+<a class="jxr_linenumber" name="628" href="#628">628</a>         }
+<a class="jxr_linenumber" name="629" href="#629">629</a> 
+<a class="jxr_linenumber" name="630" href="#630">630</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="631" href="#631">631</a> <em class="jxr_javadoccomment">         * Get the message length</em>
+<a class="jxr_linenumber" name="632" href="#632">632</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="633" href="#633">633</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> getMessageLength() {
+<a class="jxr_linenumber" name="634" href="#634">634</a>             <strong class="jxr_keyword">return</strong> currentOutputPosition;
+<a class="jxr_linenumber" name="635" href="#635">635</a>         }
+<a class="jxr_linenumber" name="636" href="#636">636</a> 
+<a class="jxr_linenumber" name="637" href="#637">637</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="638" href="#638">638</a> <em class="jxr_javadoccomment">         * Read a byte from a position within the message buffer</em>
+<a class="jxr_linenumber" name="639" href="#639">639</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="640" href="#640">640</a>         <strong class="jxr_keyword">protected</strong> byte readByte(<strong class="jxr_keyword">int</strong> position) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="641" href="#641">641</a>             <strong class="jxr_keyword">if</strong> (messageContents.length &lt; position + 1)
+<a class="jxr_linenumber" name="642" href="#642">642</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM: Message too short"</span>);
+<a class="jxr_linenumber" name="643" href="#643">643</a>             <strong class="jxr_keyword">return</strong> messageContents[position];
+<a class="jxr_linenumber" name="644" href="#644">644</a>         }
+<a class="jxr_linenumber" name="645" href="#645">645</a> 
+<a class="jxr_linenumber" name="646" href="#646">646</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="647" href="#647">647</a> <em class="jxr_javadoccomment">         * Read a bunch of bytes from a position in the message buffer</em>
+<a class="jxr_linenumber" name="648" href="#648">648</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="649" href="#649">649</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> readBytes(byte[] buffer, <strong class="jxr_keyword">int</strong> position) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="650" href="#650">650</a>             <strong class="jxr_keyword">if</strong> (messageContents.length &lt; position + buffer.length)
+<a class="jxr_linenumber" name="651" href="#651">651</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"NTLM: Message too short"</span>);
+<a class="jxr_linenumber" name="652" href="#652">652</a>             System.arraycopy(messageContents, position, buffer, 0, buffer.length);
+<a class="jxr_linenumber" name="653" href="#653">653</a>         }
+<a class="jxr_linenumber" name="654" href="#654">654</a> 
+<a class="jxr_linenumber" name="655" href="#655">655</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="656" href="#656">656</a> <em class="jxr_javadoccomment">         * Read a ushort from a position within the message buffer</em>
+<a class="jxr_linenumber" name="657" href="#657">657</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="658" href="#658">658</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> readUShort(<strong class="jxr_keyword">int</strong> position) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="659" href="#659">659</a>             <strong class="jxr_keyword">return</strong> NTLMEngine.readUShort(messageContents, position);
+<a class="jxr_linenumber" name="660" href="#660">660</a>         }
+<a class="jxr_linenumber" name="661" href="#661">661</a> 
+<a class="jxr_linenumber" name="662" href="#662">662</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="663" href="#663">663</a> <em class="jxr_javadoccomment">         * Read a ulong from a position within the message buffer</em>
+<a class="jxr_linenumber" name="664" href="#664">664</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="665" href="#665">665</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> readULong(<strong class="jxr_keyword">int</strong> position) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="666" href="#666">666</a>             <strong class="jxr_keyword">return</strong> NTLMEngine.readULong(messageContents, position);
+<a class="jxr_linenumber" name="667" href="#667">667</a>         }
+<a class="jxr_linenumber" name="668" href="#668">668</a> 
+<a class="jxr_linenumber" name="669" href="#669">669</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="670" href="#670">670</a> <em class="jxr_javadoccomment">         * Read a security buffer from a position within the message buffer</em>
+<a class="jxr_linenumber" name="671" href="#671">671</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="672" href="#672">672</a>         <strong class="jxr_keyword">protected</strong> byte[] readSecurityBuffer(<strong class="jxr_keyword">int</strong> position) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="673" href="#673">673</a>             <strong class="jxr_keyword">return</strong> NTLMEngine.readSecurityBuffer(messageContents, position);
+<a class="jxr_linenumber" name="674" href="#674">674</a>         }
+<a class="jxr_linenumber" name="675" href="#675">675</a> 
+<a class="jxr_linenumber" name="676" href="#676">676</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="677" href="#677">677</a> <em class="jxr_javadoccomment">         * Prepares the object to create a response of the given length.</em>
+<a class="jxr_linenumber" name="678" href="#678">678</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="679" href="#679">679</a> <em class="jxr_javadoccomment">         * @param maxlength the maximum length of the response to prepare, not</em>
+<a class="jxr_linenumber" name="680" href="#680">680</a> <em class="jxr_javadoccomment">         *                  including the type and the signature (which this method</em>
+<a class="jxr_linenumber" name="681" href="#681">681</a> <em class="jxr_javadoccomment">         *                  adds).</em>
+<a class="jxr_linenumber" name="682" href="#682">682</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="683" href="#683">683</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> prepareResponse(<strong class="jxr_keyword">int</strong> maxlength, <strong class="jxr_keyword">int</strong> messageType) {
+<a class="jxr_linenumber" name="684" href="#684">684</a>             messageContents = <strong class="jxr_keyword">new</strong> byte[maxlength];
+<a class="jxr_linenumber" name="685" href="#685">685</a>             currentOutputPosition = 0;
+<a class="jxr_linenumber" name="686" href="#686">686</a>             addBytes(SIGNATURE);
+<a class="jxr_linenumber" name="687" href="#687">687</a>             addULong(messageType);
+<a class="jxr_linenumber" name="688" href="#688">688</a>         }
+<a class="jxr_linenumber" name="689" href="#689">689</a> 
+<a class="jxr_linenumber" name="690" href="#690">690</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="691" href="#691">691</a> <em class="jxr_javadoccomment">         * Adds the given byte to the response.</em>
+<a class="jxr_linenumber" name="692" href="#692">692</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="693" href="#693">693</a> <em class="jxr_javadoccomment">         * @param b the byte to add.</em>
+<a class="jxr_linenumber" name="694" href="#694">694</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="695" href="#695">695</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> addByte(byte b) {
+<a class="jxr_linenumber" name="696" href="#696">696</a>             messageContents[currentOutputPosition] = b;
+<a class="jxr_linenumber" name="697" href="#697">697</a>             currentOutputPosition++;
+<a class="jxr_linenumber" name="698" href="#698">698</a>         }
+<a class="jxr_linenumber" name="699" href="#699">699</a> 
+<a class="jxr_linenumber" name="700" href="#700">700</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="701" href="#701">701</a> <em class="jxr_javadoccomment">         * Adds the given bytes to the response.</em>
+<a class="jxr_linenumber" name="702" href="#702">702</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="703" href="#703">703</a> <em class="jxr_javadoccomment">         * @param bytes the bytes to add.</em>
+<a class="jxr_linenumber" name="704" href="#704">704</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="705" href="#705">705</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> addBytes(byte[] bytes) {
+<a class="jxr_linenumber" name="706" href="#706">706</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; bytes.length; i++) {
+<a class="jxr_linenumber" name="707" href="#707">707</a>                 messageContents[currentOutputPosition] = bytes[i];
+<a class="jxr_linenumber" name="708" href="#708">708</a>                 currentOutputPosition++;
+<a class="jxr_linenumber" name="709" href="#709">709</a>             }
+<a class="jxr_linenumber" name="710" href="#710">710</a>         }
+<a class="jxr_linenumber" name="711" href="#711">711</a> 
+<a class="jxr_linenumber" name="712" href="#712">712</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="713" href="#713">713</a> <em class="jxr_javadoccomment">         * Adds a USHORT to the response</em>
+<a class="jxr_linenumber" name="714" href="#714">714</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="715" href="#715">715</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> addUShort(<strong class="jxr_keyword">int</strong> value) {
+<a class="jxr_linenumber" name="716" href="#716">716</a>             addByte((byte) (value &amp; 0xff));
+<a class="jxr_linenumber" name="717" href="#717">717</a>             addByte((byte) (value &gt;&gt; 8 &amp; 0xff));
+<a class="jxr_linenumber" name="718" href="#718">718</a>         }
+<a class="jxr_linenumber" name="719" href="#719">719</a> 
+<a class="jxr_linenumber" name="720" href="#720">720</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="721" href="#721">721</a> <em class="jxr_javadoccomment">         * Adds a ULong to the response</em>
+<a class="jxr_linenumber" name="722" href="#722">722</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="723" href="#723">723</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> addULong(<strong class="jxr_keyword">int</strong> value) {
+<a class="jxr_linenumber" name="724" href="#724">724</a>             addByte((byte) (value &amp; 0xff));
+<a class="jxr_linenumber" name="725" href="#725">725</a>             addByte((byte) (value &gt;&gt; 8 &amp; 0xff));
+<a class="jxr_linenumber" name="726" href="#726">726</a>             addByte((byte) (value &gt;&gt; 16 &amp; 0xff));
+<a class="jxr_linenumber" name="727" href="#727">727</a>             addByte((byte) (value &gt;&gt; 24 &amp; 0xff));
+<a class="jxr_linenumber" name="728" href="#728">728</a>         }
+<a class="jxr_linenumber" name="729" href="#729">729</a> 
+<a class="jxr_linenumber" name="730" href="#730">730</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="731" href="#731">731</a> <em class="jxr_javadoccomment">         * Returns the response that has been generated after shrinking the</em>
+<a class="jxr_linenumber" name="732" href="#732">732</a> <em class="jxr_javadoccomment">         * array if required and base64 encodes the response.</em>
+<a class="jxr_linenumber" name="733" href="#733">733</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="734" href="#734">734</a> <em class="jxr_javadoccomment">         * @return The response as above.</em>
+<a class="jxr_linenumber" name="735" href="#735">735</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="736" href="#736">736</a>         String getResponse() <strong class="jxr_keyword">throws</strong> UnsupportedEncodingException {
+<a class="jxr_linenumber" name="737" href="#737">737</a>             byte[] resp;
+<a class="jxr_linenumber" name="738" href="#738">738</a>             <strong class="jxr_keyword">if</strong> (messageContents.length &gt; currentOutputPosition) {
+<a class="jxr_linenumber" name="739" href="#739">739</a>                 byte[] tmp = <strong class="jxr_keyword">new</strong> byte[currentOutputPosition];
+<a class="jxr_linenumber" name="740" href="#740">740</a>                 <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; currentOutputPosition; i++) {
+<a class="jxr_linenumber" name="741" href="#741">741</a>                     tmp[i] = messageContents[i];
+<a class="jxr_linenumber" name="742" href="#742">742</a>                 }
+<a class="jxr_linenumber" name="743" href="#743">743</a>                 resp = tmp;
+<a class="jxr_linenumber" name="744" href="#744">744</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="745" href="#745">745</a>                 resp = messageContents;
+<a class="jxr_linenumber" name="746" href="#746">746</a>             }
+<a class="jxr_linenumber" name="747" href="#747">747</a>             <strong class="jxr_keyword">return</strong> Base64.encode(resp);
+<a class="jxr_linenumber" name="748" href="#748">748</a>         }
+<a class="jxr_linenumber" name="749" href="#749">749</a> 
+<a class="jxr_linenumber" name="750" href="#750">750</a>     }
+<a class="jxr_linenumber" name="751" href="#751">751</a> 
+<a class="jxr_linenumber" name="752" href="#752">752</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="753" href="#753">753</a> <em class="jxr_javadoccomment">     * Type 1 message assembly class</em>
+<a class="jxr_linenumber" name="754" href="#754">754</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="755" href="#755">755</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type1Message</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a> {
+<a class="jxr_linenumber" name="756" href="#756">756</a>         <strong class="jxr_keyword">protected</strong> byte[] hostBytes;
+<a class="jxr_linenumber" name="757" href="#757">757</a>         <strong class="jxr_keyword">protected</strong> byte[] domainBytes;
+<a class="jxr_linenumber" name="758" href="#758">758</a> 
+<a class="jxr_linenumber" name="759" href="#759">759</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="760" href="#760">760</a> <em class="jxr_javadoccomment">         * Constructor. Include the arguments the message will need</em>
+<a class="jxr_linenumber" name="761" href="#761">761</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="762" href="#762">762</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type1Message</a>(String domain, String host) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="763" href="#763">763</a>             <strong class="jxr_keyword">super</strong>();
+<a class="jxr_linenumber" name="764" href="#764">764</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="765" href="#765">765</a>                 <em class="jxr_comment">// Strip off domain name from the host!</em>
+<a class="jxr_linenumber" name="766" href="#766">766</a>                 host = convertHost(host);
+<a class="jxr_linenumber" name="767" href="#767">767</a>                 <em class="jxr_comment">// Use only the base domain name!</em>
+<a class="jxr_linenumber" name="768" href="#768">768</a>                 domain = convertDomain(domain);
+<a class="jxr_linenumber" name="769" href="#769">769</a> 
+<a class="jxr_linenumber" name="770" href="#770">770</a>                 hostBytes = host.getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="771" href="#771">771</a>                 domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="772" href="#772">772</a>             } <strong class="jxr_keyword">catch</strong> (java.io.UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="773" href="#773">773</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unicode unsupported: "</span> + e.getMessage(), e);
+<a class="jxr_linenumber" name="774" href="#774">774</a>             }
+<a class="jxr_linenumber" name="775" href="#775">775</a>         }
+<a class="jxr_linenumber" name="776" href="#776">776</a> 
+<a class="jxr_linenumber" name="777" href="#777">777</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="778" href="#778">778</a> <em class="jxr_javadoccomment">         * Getting the response involves building the message before returning</em>
+<a class="jxr_linenumber" name="779" href="#779">779</a> <em class="jxr_javadoccomment">         * it</em>
+<a class="jxr_linenumber" name="780" href="#780">780</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="781" href="#781">781</a>         @Override
+<a class="jxr_linenumber" name="782" href="#782">782</a>         String getResponse() <strong class="jxr_keyword">throws</strong> UnsupportedEncodingException {
+<a class="jxr_linenumber" name="783" href="#783">783</a>             <em class="jxr_comment">// Now, build the message. Calculate its length first, including</em>
+<a class="jxr_linenumber" name="784" href="#784">784</a>             <em class="jxr_comment">// signature or type.</em>
+<a class="jxr_linenumber" name="785" href="#785">785</a>             <strong class="jxr_keyword">int</strong> finalLength = 32 + hostBytes.length + domainBytes.length;
+<a class="jxr_linenumber" name="786" href="#786">786</a> 
+<a class="jxr_linenumber" name="787" href="#787">787</a>             <em class="jxr_comment">// Set up the response. This will initialize the signature, message</em>
+<a class="jxr_linenumber" name="788" href="#788">788</a>             <em class="jxr_comment">// type, and flags.</em>
+<a class="jxr_linenumber" name="789" href="#789">789</a>             prepareResponse(finalLength, 1);
+<a class="jxr_linenumber" name="790" href="#790">790</a> 
+<a class="jxr_linenumber" name="791" href="#791">791</a>             <em class="jxr_comment">// Flags. These are the complete set of flags we support.</em>
+<a class="jxr_linenumber" name="792" href="#792">792</a>             addULong(FLAG_NEGOTIATE_NTLM | FLAG_NEGOTIATE_NTLM2 | FLAG_NEGOTIATE_SIGN
+<a class="jxr_linenumber" name="793" href="#793">793</a>                     | FLAG_NEGOTIATE_SEAL |
+<a class="jxr_linenumber" name="794" href="#794">794</a>                     <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="795" href="#795">795</a> <em class="jxr_comment">                     * FLAG_NEGOTIATE_ALWAYS_SIGN | FLAG_NEGOTIATE_KEY_EXCH |</em>
+<a class="jxr_linenumber" name="796" href="#796">796</a> <em class="jxr_comment">                     */</em>
+<a class="jxr_linenumber" name="797" href="#797">797</a>                     FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED | FLAG_NEGOTIATE_128);
+<a class="jxr_linenumber" name="798" href="#798">798</a> 
+<a class="jxr_linenumber" name="799" href="#799">799</a>             <em class="jxr_comment">// Domain length (two times).</em>
+<a class="jxr_linenumber" name="800" href="#800">800</a>             addUShort(domainBytes.length);
+<a class="jxr_linenumber" name="801" href="#801">801</a>             addUShort(domainBytes.length);
+<a class="jxr_linenumber" name="802" href="#802">802</a> 
+<a class="jxr_linenumber" name="803" href="#803">803</a>             <em class="jxr_comment">// Domain offset.</em>
+<a class="jxr_linenumber" name="804" href="#804">804</a>             addULong(hostBytes.length + 32);
+<a class="jxr_linenumber" name="805" href="#805">805</a> 
+<a class="jxr_linenumber" name="806" href="#806">806</a>             <em class="jxr_comment">// Host length (two times).</em>
+<a class="jxr_linenumber" name="807" href="#807">807</a>             addUShort(hostBytes.length);
+<a class="jxr_linenumber" name="808" href="#808">808</a>             addUShort(hostBytes.length);
+<a class="jxr_linenumber" name="809" href="#809">809</a> 
+<a class="jxr_linenumber" name="810" href="#810">810</a>             <em class="jxr_comment">// Host offset (always 32).</em>
+<a class="jxr_linenumber" name="811" href="#811">811</a>             addULong(32);
+<a class="jxr_linenumber" name="812" href="#812">812</a> 
+<a class="jxr_linenumber" name="813" href="#813">813</a>             <em class="jxr_comment">// Host String.</em>
+<a class="jxr_linenumber" name="814" href="#814">814</a>             addBytes(hostBytes);
+<a class="jxr_linenumber" name="815" href="#815">815</a> 
+<a class="jxr_linenumber" name="816" href="#816">816</a>             <em class="jxr_comment">// Domain String.</em>
+<a class="jxr_linenumber" name="817" href="#817">817</a>             addBytes(domainBytes);
+<a class="jxr_linenumber" name="818" href="#818">818</a> 
+<a class="jxr_linenumber" name="819" href="#819">819</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">super</strong>.getResponse();
+<a class="jxr_linenumber" name="820" href="#820">820</a>         }
+<a class="jxr_linenumber" name="821" href="#821">821</a> 
+<a class="jxr_linenumber" name="822" href="#822">822</a>     }
+<a class="jxr_linenumber" name="823" href="#823">823</a> 
+<a class="jxr_linenumber" name="824" href="#824">824</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="825" href="#825">825</a> <em class="jxr_javadoccomment">     * Type 2 message class</em>
+<a class="jxr_linenumber" name="826" href="#826">826</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="827" href="#827">827</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a> {
+<a class="jxr_linenumber" name="828" href="#828">828</a>         <strong class="jxr_keyword">protected</strong> byte[] challenge;
+<a class="jxr_linenumber" name="829" href="#829">829</a>         <strong class="jxr_keyword">protected</strong> String target;
+<a class="jxr_linenumber" name="830" href="#830">830</a>         <strong class="jxr_keyword">protected</strong> byte[] targetInfo;
+<a class="jxr_linenumber" name="831" href="#831">831</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> flags;
+<a class="jxr_linenumber" name="832" href="#832">832</a> 
+<a class="jxr_linenumber" name="833" href="#833">833</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a>(String message) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="834" href="#834">834</a>             <strong class="jxr_keyword">super</strong>(message, 2);
+<a class="jxr_linenumber" name="835" href="#835">835</a> 
+<a class="jxr_linenumber" name="836" href="#836">836</a>             <em class="jxr_comment">// Parse out the rest of the info we need from the message</em>
+<a class="jxr_linenumber" name="837" href="#837">837</a>             <em class="jxr_comment">// The nonce is the 8 bytes starting from the byte in position 24.</em>
+<a class="jxr_linenumber" name="838" href="#838">838</a>             challenge = <strong class="jxr_keyword">new</strong> byte[8];
+<a class="jxr_linenumber" name="839" href="#839">839</a>             readBytes(challenge, 24);
+<a class="jxr_linenumber" name="840" href="#840">840</a> 
+<a class="jxr_linenumber" name="841" href="#841">841</a>             flags = readULong(20);
+<a class="jxr_linenumber" name="842" href="#842">842</a>             <strong class="jxr_keyword">if</strong> ((flags &amp; FLAG_UNICODE_ENCODING) == 0)
+<a class="jxr_linenumber" name="843" href="#843">843</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(
+<a class="jxr_linenumber" name="844" href="#844">844</a>                         <span class="jxr_string">"NTLM type 2 message has flags that make no sense: "</span>
+<a class="jxr_linenumber" name="845" href="#845">845</a>                                 + Integer.toString(flags));
+<a class="jxr_linenumber" name="846" href="#846">846</a>             <em class="jxr_comment">// Do the target!</em>
+<a class="jxr_linenumber" name="847" href="#847">847</a>             target = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="848" href="#848">848</a>             <em class="jxr_comment">// The TARGET_DESIRED flag is said to not have understood semantics</em>
+<a class="jxr_linenumber" name="849" href="#849">849</a>             <em class="jxr_comment">// in Type2 messages, so use the length of the packet to decide</em>
+<a class="jxr_linenumber" name="850" href="#850">850</a>             <em class="jxr_comment">// how to proceed instead</em>
+<a class="jxr_linenumber" name="851" href="#851">851</a>             <strong class="jxr_keyword">if</strong> (getMessageLength() &gt;= 12 + 8) {
+<a class="jxr_linenumber" name="852" href="#852">852</a>                 byte[] bytes = readSecurityBuffer(12);
+<a class="jxr_linenumber" name="853" href="#853">853</a>                 <strong class="jxr_keyword">if</strong> (bytes.length != 0) {
+<a class="jxr_linenumber" name="854" href="#854">854</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="855" href="#855">855</a>                         target = <strong class="jxr_keyword">new</strong> String(bytes, <span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="856" href="#856">856</a>                     } <strong class="jxr_keyword">catch</strong> (java.io.UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="857" href="#857">857</a>                         <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(e.getMessage(), e);
+<a class="jxr_linenumber" name="858" href="#858">858</a>                     }
+<a class="jxr_linenumber" name="859" href="#859">859</a>                 }
+<a class="jxr_linenumber" name="860" href="#860">860</a>             }
+<a class="jxr_linenumber" name="861" href="#861">861</a> 
+<a class="jxr_linenumber" name="862" href="#862">862</a>             <em class="jxr_comment">// Do the target info!</em>
+<a class="jxr_linenumber" name="863" href="#863">863</a>             targetInfo = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="864" href="#864">864</a>             <em class="jxr_comment">// TARGET_DESIRED flag cannot be relied on, so use packet length</em>
+<a class="jxr_linenumber" name="865" href="#865">865</a>             <strong class="jxr_keyword">if</strong> (getMessageLength() &gt;= 40 + 8) {
+<a class="jxr_linenumber" name="866" href="#866">866</a>                 byte[] bytes = readSecurityBuffer(40);
+<a class="jxr_linenumber" name="867" href="#867">867</a>                 <strong class="jxr_keyword">if</strong> (bytes.length != 0) {
+<a class="jxr_linenumber" name="868" href="#868">868</a>                     targetInfo = bytes;
+<a class="jxr_linenumber" name="869" href="#869">869</a>                 }
+<a class="jxr_linenumber" name="870" href="#870">870</a>             }
+<a class="jxr_linenumber" name="871" href="#871">871</a>         }
+<a class="jxr_linenumber" name="872" href="#872">872</a> 
+<a class="jxr_linenumber" name="873" href="#873">873</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="874" href="#874">874</a> <em class="jxr_javadoccomment">         * Retrieve the challenge</em>
+<a class="jxr_linenumber" name="875" href="#875">875</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="876" href="#876">876</a>         byte[] getChallenge() {
+<a class="jxr_linenumber" name="877" href="#877">877</a>             <strong class="jxr_keyword">return</strong> challenge;
+<a class="jxr_linenumber" name="878" href="#878">878</a>         }
+<a class="jxr_linenumber" name="879" href="#879">879</a> 
+<a class="jxr_linenumber" name="880" href="#880">880</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="881" href="#881">881</a> <em class="jxr_javadoccomment">         * Retrieve the target</em>
+<a class="jxr_linenumber" name="882" href="#882">882</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="883" href="#883">883</a>         String getTarget() {
+<a class="jxr_linenumber" name="884" href="#884">884</a>             <strong class="jxr_keyword">return</strong> target;
+<a class="jxr_linenumber" name="885" href="#885">885</a>         }
+<a class="jxr_linenumber" name="886" href="#886">886</a> 
+<a class="jxr_linenumber" name="887" href="#887">887</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="888" href="#888">888</a> <em class="jxr_javadoccomment">         * Retrieve the target info</em>
+<a class="jxr_linenumber" name="889" href="#889">889</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="890" href="#890">890</a>         byte[] getTargetInfo() {
+<a class="jxr_linenumber" name="891" href="#891">891</a>             <strong class="jxr_keyword">return</strong> targetInfo;
+<a class="jxr_linenumber" name="892" href="#892">892</a>         }
+<a class="jxr_linenumber" name="893" href="#893">893</a> 
+<a class="jxr_linenumber" name="894" href="#894">894</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="895" href="#895">895</a> <em class="jxr_javadoccomment">         * Retrieve the response flags</em>
+<a class="jxr_linenumber" name="896" href="#896">896</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="897" href="#897">897</a>         <strong class="jxr_keyword">int</strong> getFlags() {
+<a class="jxr_linenumber" name="898" href="#898">898</a>             <strong class="jxr_keyword">return</strong> flags;
+<a class="jxr_linenumber" name="899" href="#899">899</a>         }
+<a class="jxr_linenumber" name="900" href="#900">900</a> 
+<a class="jxr_linenumber" name="901" href="#901">901</a>     }
+<a class="jxr_linenumber" name="902" href="#902">902</a> 
+<a class="jxr_linenumber" name="903" href="#903">903</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="904" href="#904">904</a> <em class="jxr_javadoccomment">     * Type 3 message assembly class</em>
+<a class="jxr_linenumber" name="905" href="#905">905</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="906" href="#906">906</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type3Message</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">NTLMMessage</a> {
+<a class="jxr_linenumber" name="907" href="#907">907</a>         <em class="jxr_comment">// Response flags from the type2 message</em>
+<a class="jxr_linenumber" name="908" href="#908">908</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> type2Flags;
+<a class="jxr_linenumber" name="909" href="#909">909</a> 
+<a class="jxr_linenumber" name="910" href="#910">910</a>         <strong class="jxr_keyword">protected</strong> byte[] domainBytes;
+<a class="jxr_linenumber" name="911" href="#911">911</a>         <strong class="jxr_keyword">protected</strong> byte[] hostBytes;
+<a class="jxr_linenumber" name="912" href="#912">912</a>         <strong class="jxr_keyword">protected</strong> byte[] userBytes;
+<a class="jxr_linenumber" name="913" href="#913">913</a> 
+<a class="jxr_linenumber" name="914" href="#914">914</a>         <strong class="jxr_keyword">protected</strong> byte[] lmResp;
+<a class="jxr_linenumber" name="915" href="#915">915</a>         <strong class="jxr_keyword">protected</strong> byte[] ntResp;
+<a class="jxr_linenumber" name="916" href="#916">916</a> 
+<a class="jxr_linenumber" name="917" href="#917">917</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="918" href="#918">918</a> <em class="jxr_javadoccomment">         * Constructor. Pass the arguments we will need</em>
+<a class="jxr_linenumber" name="919" href="#919">919</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="920" href="#920">920</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type3Message</a>(String domain, String host, String user, String password, byte[] nonce,
+<a class="jxr_linenumber" name="921" href="#921">921</a>                      <strong class="jxr_keyword">int</strong> type2Flags, String target, byte[] targetInformation)
+<a class="jxr_linenumber" name="922" href="#922">922</a>                 <strong class="jxr_keyword">throws</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a> {
+<a class="jxr_linenumber" name="923" href="#923">923</a>             <em class="jxr_comment">// Save the flags</em>
+<a class="jxr_linenumber" name="924" href="#924">924</a>             <strong class="jxr_keyword">this</strong>.type2Flags = type2Flags;
+<a class="jxr_linenumber" name="925" href="#925">925</a> 
+<a class="jxr_linenumber" name="926" href="#926">926</a>             <em class="jxr_comment">// Strip off domain name from the host!</em>
+<a class="jxr_linenumber" name="927" href="#927">927</a>             host = convertHost(host);
+<a class="jxr_linenumber" name="928" href="#928">928</a>             <em class="jxr_comment">// Use only the base domain name!</em>
+<a class="jxr_linenumber" name="929" href="#929">929</a>             domain = convertDomain(domain);
+<a class="jxr_linenumber" name="930" href="#930">930</a> 
+<a class="jxr_linenumber" name="931" href="#931">931</a>             <em class="jxr_comment">// Use the new code to calculate the responses, including v2 if that</em>
+<a class="jxr_linenumber" name="932" href="#932">932</a>             <em class="jxr_comment">// seems warranted.</em>
+<a class="jxr_linenumber" name="933" href="#933">933</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="934" href="#934">934</a>                 <strong class="jxr_keyword">if</strong> (targetInformation != <strong class="jxr_keyword">null</strong> &amp;&amp; target != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="935" href="#935">935</a>                     byte[] clientChallenge = makeRandomChallenge();
+<a class="jxr_linenumber" name="936" href="#936">936</a>                     ntResp = getNTLMv2Response(target, user, password, nonce, clientChallenge,
+<a class="jxr_linenumber" name="937" href="#937">937</a>                             targetInformation);
+<a class="jxr_linenumber" name="938" href="#938">938</a>                     lmResp = getLMv2Response(target, user, password, nonce, clientChallenge);
+<a class="jxr_linenumber" name="939" href="#939">939</a>                 } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="940" href="#940">940</a>                     <strong class="jxr_keyword">if</strong> ((type2Flags &amp; FLAG_NEGOTIATE_NTLM2) != 0) {
+<a class="jxr_linenumber" name="941" href="#941">941</a>                         <em class="jxr_comment">// NTLM2 session stuff is requested</em>
+<a class="jxr_linenumber" name="942" href="#942">942</a>                         byte[] clientChallenge = makeNTLM2RandomChallenge();
+<a class="jxr_linenumber" name="943" href="#943">943</a> 
+<a class="jxr_linenumber" name="944" href="#944">944</a>                         ntResp = getNTLM2SessionResponse(password, nonce, clientChallenge);
+<a class="jxr_linenumber" name="945" href="#945">945</a>                         lmResp = clientChallenge;
+<a class="jxr_linenumber" name="946" href="#946">946</a> 
+<a class="jxr_linenumber" name="947" href="#947">947</a>                         <em class="jxr_comment">// All the other flags we send (signing, sealing, key</em>
+<a class="jxr_linenumber" name="948" href="#948">948</a>                         <em class="jxr_comment">// exchange) are supported, but they don't do anything</em>
+<a class="jxr_linenumber" name="949" href="#949">949</a>                         <em class="jxr_comment">// at all in an</em>
+<a class="jxr_linenumber" name="950" href="#950">950</a>                         <em class="jxr_comment">// NTLM2 context! So we're done at this point.</em>
+<a class="jxr_linenumber" name="951" href="#951">951</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="952" href="#952">952</a>                         ntResp = getNTLMResponse(password, nonce);
+<a class="jxr_linenumber" name="953" href="#953">953</a>                         lmResp = getLMResponse(password, nonce);
+<a class="jxr_linenumber" name="954" href="#954">954</a>                     }
+<a class="jxr_linenumber" name="955" href="#955">955</a>                 }
+<a class="jxr_linenumber" name="956" href="#956">956</a>             } <strong class="jxr_keyword">catch</strong> (NTLMEngineException e) {
+<a class="jxr_linenumber" name="957" href="#957">957</a>                 <em class="jxr_comment">// This likely means we couldn't find the MD4 hash algorithm -</em>
+<a class="jxr_linenumber" name="958" href="#958">958</a>                 <em class="jxr_comment">// fail back to just using LM</em>
+<a class="jxr_linenumber" name="959" href="#959">959</a>                 ntResp = <strong class="jxr_keyword">new</strong> byte[0];
+<a class="jxr_linenumber" name="960" href="#960">960</a>                 lmResp = getLMResponse(password, nonce);
+<a class="jxr_linenumber" name="961" href="#961">961</a>             }
+<a class="jxr_linenumber" name="962" href="#962">962</a> 
+<a class="jxr_linenumber" name="963" href="#963">963</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="964" href="#964">964</a>                 domainBytes = domain.toUpperCase(Locale.ENGLISH).getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="965" href="#965">965</a>                 hostBytes = host.getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="966" href="#966">966</a>                 userBytes = user.getBytes(<span class="jxr_string">"UnicodeLittleUnmarked"</span>);
+<a class="jxr_linenumber" name="967" href="#967">967</a>             } <strong class="jxr_keyword">catch</strong> (java.io.UnsupportedEncodingException e) {
+<a class="jxr_linenumber" name="968" href="#968">968</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(<span class="jxr_string">"Unicode not supported: "</span> + e.getMessage(), e);
+<a class="jxr_linenumber" name="969" href="#969">969</a>             }
+<a class="jxr_linenumber" name="970" href="#970">970</a>         }
+<a class="jxr_linenumber" name="971" href="#971">971</a> 
+<a class="jxr_linenumber" name="972" href="#972">972</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="973" href="#973">973</a> <em class="jxr_javadoccomment">         * Assemble the response</em>
+<a class="jxr_linenumber" name="974" href="#974">974</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="975" href="#975">975</a>         @Override
+<a class="jxr_linenumber" name="976" href="#976">976</a>         String getResponse() <strong class="jxr_keyword">throws</strong> UnsupportedEncodingException {
+<a class="jxr_linenumber" name="977" href="#977">977</a>             <strong class="jxr_keyword">int</strong> ntRespLen = ntResp.length;
+<a class="jxr_linenumber" name="978" href="#978">978</a>             <strong class="jxr_keyword">int</strong> lmRespLen = lmResp.length;
+<a class="jxr_linenumber" name="979" href="#979">979</a> 
+<a class="jxr_linenumber" name="980" href="#980">980</a>             <strong class="jxr_keyword">int</strong> domainLen = domainBytes.length;
+<a class="jxr_linenumber" name="981" href="#981">981</a>             <strong class="jxr_keyword">int</strong> hostLen = hostBytes.length;
+<a class="jxr_linenumber" name="982" href="#982">982</a>             <strong class="jxr_keyword">int</strong> userLen = userBytes.length;
+<a class="jxr_linenumber" name="983" href="#983">983</a> 
+<a class="jxr_linenumber" name="984" href="#984">984</a>             <em class="jxr_comment">// Calculate the layout within the packet</em>
+<a class="jxr_linenumber" name="985" href="#985">985</a>             <strong class="jxr_keyword">int</strong> lmRespOffset = 64;
+<a class="jxr_linenumber" name="986" href="#986">986</a>             <strong class="jxr_keyword">int</strong> ntRespOffset = lmRespOffset + lmRespLen;
+<a class="jxr_linenumber" name="987" href="#987">987</a>             <strong class="jxr_keyword">int</strong> domainOffset = ntRespOffset + ntRespLen;
+<a class="jxr_linenumber" name="988" href="#988">988</a>             <strong class="jxr_keyword">int</strong> userOffset = domainOffset + domainLen;
+<a class="jxr_linenumber" name="989" href="#989">989</a>             <strong class="jxr_keyword">int</strong> hostOffset = userOffset + userLen;
+<a class="jxr_linenumber" name="990" href="#990">990</a>             <strong class="jxr_keyword">int</strong> finalLength = hostOffset + hostLen;
+<a class="jxr_linenumber" name="991" href="#991">991</a> 
+<a class="jxr_linenumber" name="992" href="#992">992</a>             <em class="jxr_comment">// Start the response. Length includes signature and type</em>
+<a class="jxr_linenumber" name="993" href="#993">993</a>             prepareResponse(finalLength, 3);
+<a class="jxr_linenumber" name="994" href="#994">994</a> 
+<a class="jxr_linenumber" name="995" href="#995">995</a>             <em class="jxr_comment">// LM Resp Length (twice)</em>
+<a class="jxr_linenumber" name="996" href="#996">996</a>             addUShort(lmRespLen);
+<a class="jxr_linenumber" name="997" href="#997">997</a>             addUShort(lmRespLen);
+<a class="jxr_linenumber" name="998" href="#998">998</a> 
+<a class="jxr_linenumber" name="999" href="#999">999</a>             <em class="jxr_comment">// LM Resp Offset</em>
+<a class="jxr_linenumber" name="1000" href="#1000">1000</a>             addULong(lmRespOffset);
+<a class="jxr_linenumber" name="1001" href="#1001">1001</a> 
+<a class="jxr_linenumber" name="1002" href="#1002">1002</a>             <em class="jxr_comment">// NT Resp Length (twice)</em>
+<a class="jxr_linenumber" name="1003" href="#1003">1003</a>             addUShort(ntRespLen);
+<a class="jxr_linenumber" name="1004" href="#1004">1004</a>             addUShort(ntRespLen);
+<a class="jxr_linenumber" name="1005" href="#1005">1005</a> 
+<a class="jxr_linenumber" name="1006" href="#1006">1006</a>             <em class="jxr_comment">// NT Resp Offset</em>
+<a class="jxr_linenumber" name="1007" href="#1007">1007</a>             addULong(ntRespOffset);
+<a class="jxr_linenumber" name="1008" href="#1008">1008</a> 
+<a class="jxr_linenumber" name="1009" href="#1009">1009</a>             <em class="jxr_comment">// Domain length (twice)</em>
+<a class="jxr_linenumber" name="1010" href="#1010">1010</a>             addUShort(domainLen);
+<a class="jxr_linenumber" name="1011" href="#1011">1011</a>             addUShort(domainLen);
+<a class="jxr_linenumber" name="1012" href="#1012">1012</a> 
+<a class="jxr_linenumber" name="1013" href="#1013">1013</a>             <em class="jxr_comment">// Domain offset.</em>
+<a class="jxr_linenumber" name="1014" href="#1014">1014</a>             addULong(domainOffset);
+<a class="jxr_linenumber" name="1015" href="#1015">1015</a> 
+<a class="jxr_linenumber" name="1016" href="#1016">1016</a>             <em class="jxr_comment">// User Length (twice)</em>
+<a class="jxr_linenumber" name="1017" href="#1017">1017</a>             addUShort(userLen);
+<a class="jxr_linenumber" name="1018" href="#1018">1018</a>             addUShort(userLen);
+<a class="jxr_linenumber" name="1019" href="#1019">1019</a> 
+<a class="jxr_linenumber" name="1020" href="#1020">1020</a>             <em class="jxr_comment">// User offset</em>
+<a class="jxr_linenumber" name="1021" href="#1021">1021</a>             addULong(userOffset);
+<a class="jxr_linenumber" name="1022" href="#1022">1022</a> 
+<a class="jxr_linenumber" name="1023" href="#1023">1023</a>             <em class="jxr_comment">// Host length (twice)</em>
+<a class="jxr_linenumber" name="1024" href="#1024">1024</a>             addUShort(hostLen);
+<a class="jxr_linenumber" name="1025" href="#1025">1025</a>             addUShort(hostLen);
+<a class="jxr_linenumber" name="1026" href="#1026">1026</a> 
+<a class="jxr_linenumber" name="1027" href="#1027">1027</a>             <em class="jxr_comment">// Host offset</em>
+<a class="jxr_linenumber" name="1028" href="#1028">1028</a>             addULong(hostOffset);
+<a class="jxr_linenumber" name="1029" href="#1029">1029</a> 
+<a class="jxr_linenumber" name="1030" href="#1030">1030</a>             <em class="jxr_comment">// 4 bytes of zeros - not sure what this is</em>
+<a class="jxr_linenumber" name="1031" href="#1031">1031</a>             addULong(0);
+<a class="jxr_linenumber" name="1032" href="#1032">1032</a> 
+<a class="jxr_linenumber" name="1033" href="#1033">1033</a>             <em class="jxr_comment">// Message length</em>
+<a class="jxr_linenumber" name="1034" href="#1034">1034</a>             addULong(finalLength);
+<a class="jxr_linenumber" name="1035" href="#1035">1035</a> 
+<a class="jxr_linenumber" name="1036" href="#1036">1036</a>             <em class="jxr_comment">// Flags. Currently: NEGOTIATE_NTLM + UNICODE_ENCODING +</em>
+<a class="jxr_linenumber" name="1037" href="#1037">1037</a>             <em class="jxr_comment">// TARGET_DESIRED + NEGOTIATE_128</em>
+<a class="jxr_linenumber" name="1038" href="#1038">1038</a>             addULong(FLAG_NEGOTIATE_NTLM | FLAG_UNICODE_ENCODING | FLAG_TARGET_DESIRED
+<a class="jxr_linenumber" name="1039" href="#1039">1039</a>                     | FLAG_NEGOTIATE_128 | (type2Flags &amp; FLAG_NEGOTIATE_NTLM2)
+<a class="jxr_linenumber" name="1040" href="#1040">1040</a>                     | (type2Flags &amp; FLAG_NEGOTIATE_SIGN) | (type2Flags &amp; FLAG_NEGOTIATE_SEAL)
+<a class="jxr_linenumber" name="1041" href="#1041">1041</a>                     | (type2Flags &amp; FLAG_NEGOTIATE_KEY_EXCH)
+<a class="jxr_linenumber" name="1042" href="#1042">1042</a>                     | (type2Flags &amp; FLAG_NEGOTIATE_ALWAYS_SIGN));
+<a class="jxr_linenumber" name="1043" href="#1043">1043</a> 
+<a class="jxr_linenumber" name="1044" href="#1044">1044</a>             <em class="jxr_comment">// Add the actual data</em>
+<a class="jxr_linenumber" name="1045" href="#1045">1045</a>             addBytes(lmResp);
+<a class="jxr_linenumber" name="1046" href="#1046">1046</a>             addBytes(ntResp);
+<a class="jxr_linenumber" name="1047" href="#1047">1047</a>             addBytes(domainBytes);
+<a class="jxr_linenumber" name="1048" href="#1048">1048</a>             addBytes(userBytes);
+<a class="jxr_linenumber" name="1049" href="#1049">1049</a>             addBytes(hostBytes);
+<a class="jxr_linenumber" name="1050" href="#1050">1050</a> 
+<a class="jxr_linenumber" name="1051" href="#1051">1051</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">super</strong>.getResponse();
+<a class="jxr_linenumber" name="1052" href="#1052">1052</a>         }
+<a class="jxr_linenumber" name="1053" href="#1053">1053</a>     }
+<a class="jxr_linenumber" name="1054" href="#1054">1054</a> 
+<a class="jxr_linenumber" name="1055" href="#1055">1055</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> writeULong(byte[] buffer, <strong class="jxr_keyword">int</strong> value, <strong class="jxr_keyword">int</strong> offset) {
+<a class="jxr_linenumber" name="1056" href="#1056">1056</a>         buffer[offset] = (byte) (value &amp; 0xff);
+<a class="jxr_linenumber" name="1057" href="#1057">1057</a>         buffer[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);
+<a class="jxr_linenumber" name="1058" href="#1058">1058</a>         buffer[offset + 2] = (byte) (value &gt;&gt; 16 &amp; 0xff);
+<a class="jxr_linenumber" name="1059" href="#1059">1059</a>         buffer[offset + 3] = (byte) (value &gt;&gt; 24 &amp; 0xff);
+<a class="jxr_linenumber" name="1060" href="#1060">1060</a>     }
+<a class="jxr_linenumber" name="1061" href="#1061">1061</a> 
+<a class="jxr_linenumber" name="1062" href="#1062">1062</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> F(<strong class="jxr_keyword">int</strong> x, <strong class="jxr_keyword">int</strong> y, <strong class="jxr_keyword">int</strong> z) {
+<a class="jxr_linenumber" name="1063" href="#1063">1063</a>         <strong class="jxr_keyword">return</strong> ((x &amp; y) | (~x &amp; z));
+<a class="jxr_linenumber" name="1064" href="#1064">1064</a>     }
+<a class="jxr_linenumber" name="1065" href="#1065">1065</a> 
+<a class="jxr_linenumber" name="1066" href="#1066">1066</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> G(<strong class="jxr_keyword">int</strong> x, <strong class="jxr_keyword">int</strong> y, <strong class="jxr_keyword">int</strong> z) {
+<a class="jxr_linenumber" name="1067" href="#1067">1067</a>         <strong class="jxr_keyword">return</strong> ((x &amp; y) | (x &amp; z) | (y &amp; z));
+<a class="jxr_linenumber" name="1068" href="#1068">1068</a>     }
+<a class="jxr_linenumber" name="1069" href="#1069">1069</a> 
+<a class="jxr_linenumber" name="1070" href="#1070">1070</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> H(<strong class="jxr_keyword">int</strong> x, <strong class="jxr_keyword">int</strong> y, <strong class="jxr_keyword">int</strong> z) {
+<a class="jxr_linenumber" name="1071" href="#1071">1071</a>         <strong class="jxr_keyword">return</strong> (x ^ y ^ z);
+<a class="jxr_linenumber" name="1072" href="#1072">1072</a>     }
+<a class="jxr_linenumber" name="1073" href="#1073">1073</a> 
+<a class="jxr_linenumber" name="1074" href="#1074">1074</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> rotintlft(<strong class="jxr_keyword">int</strong> val, <strong class="jxr_keyword">int</strong> numbits) {
+<a class="jxr_linenumber" name="1075" href="#1075">1075</a>         <strong class="jxr_keyword">return</strong> ((val &lt;&lt; numbits) | (val &gt;&gt;&gt; (32 - numbits)));
+<a class="jxr_linenumber" name="1076" href="#1076">1076</a>     }
+<a class="jxr_linenumber" name="1077" href="#1077">1077</a> 
+<a class="jxr_linenumber" name="1078" href="#1078">1078</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1079" href="#1079">1079</a> <em class="jxr_javadoccomment">     * Cryptography support - MD4. The following class was based loosely on the</em>
+<a class="jxr_linenumber" name="1080" href="#1080">1080</a> <em class="jxr_javadoccomment">     * RFC and on code found at <a href="http://www.cs.umd.edu/~harry/jotp/src/md.java." target="alexandria_uri">http://www.cs.umd.edu/~harry/jotp/src/md.java.</a></em>
+<a class="jxr_linenumber" name="1081" href="#1081">1081</a> <em class="jxr_javadoccomment">     * Code correctness was verified by looking at MD4.java from the jcifs</em>
+<a class="jxr_linenumber" name="1082" href="#1082">1082</a> <em class="jxr_javadoccomment">     * library (<a href="http://jcifs.samba.org)." target="alexandria_uri">http://jcifs.samba.org).</a> It was massaged extensively to the</em>
+<a class="jxr_linenumber" name="1083" href="#1083">1083</a> <em class="jxr_javadoccomment">     * final form found here by Karl Wright (kwright@metacarta.com).</em>
+<a class="jxr_linenumber" name="1084" href="#1084">1084</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="1085" href="#1085">1085</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">MD4</a> {
+<a class="jxr_linenumber" name="1086" href="#1086">1086</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> A = 0x67452301;
+<a class="jxr_linenumber" name="1087" href="#1087">1087</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> B = 0xefcdab89;
+<a class="jxr_linenumber" name="1088" href="#1088">1088</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> C = 0x98badcfe;
+<a class="jxr_linenumber" name="1089" href="#1089">1089</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> D = 0x10325476;
+<a class="jxr_linenumber" name="1090" href="#1090">1090</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">long</strong> count = 0L;
+<a class="jxr_linenumber" name="1091" href="#1091">1091</a>         <strong class="jxr_keyword">protected</strong> byte[] dataBuffer = <strong class="jxr_keyword">new</strong> byte[64];
+<a class="jxr_linenumber" name="1092" href="#1092">1092</a> 
+<a class="jxr_linenumber" name="1093" href="#1093">1093</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">MD4</a>() {
+<a class="jxr_linenumber" name="1094" href="#1094">1094</a>         }
+<a class="jxr_linenumber" name="1095" href="#1095">1095</a> 
+<a class="jxr_linenumber" name="1096" href="#1096">1096</a>         <strong class="jxr_keyword">void</strong> update(byte[] input) {
+<a class="jxr_linenumber" name="1097" href="#1097">1097</a>             <em class="jxr_comment">// We always deal with 512 bits at a time. Correspondingly, there is</em>
+<a class="jxr_linenumber" name="1098" href="#1098">1098</a>             <em class="jxr_comment">// a buffer 64 bytes long that we write data into until it gets</em>
+<a class="jxr_linenumber" name="1099" href="#1099">1099</a>             <em class="jxr_comment">// full.</em>
+<a class="jxr_linenumber" name="1100" href="#1100">1100</a>             <strong class="jxr_keyword">int</strong> curBufferPos = (<strong class="jxr_keyword">int</strong>) (count &amp; 63L);
+<a class="jxr_linenumber" name="1101" href="#1101">1101</a>             <strong class="jxr_keyword">int</strong> inputIndex = 0;
+<a class="jxr_linenumber" name="1102" href="#1102">1102</a>             <strong class="jxr_keyword">while</strong> (input.length - inputIndex + curBufferPos &gt;= dataBuffer.length) {
+<a class="jxr_linenumber" name="1103" href="#1103">1103</a>                 <em class="jxr_comment">// We have enough data to do the next step. Do a partial copy</em>
+<a class="jxr_linenumber" name="1104" href="#1104">1104</a>                 <em class="jxr_comment">// and a transform, updating inputIndex and curBufferPos</em>
+<a class="jxr_linenumber" name="1105" href="#1105">1105</a>                 <em class="jxr_comment">// accordingly</em>
+<a class="jxr_linenumber" name="1106" href="#1106">1106</a>                 <strong class="jxr_keyword">int</strong> transferAmt = dataBuffer.length - curBufferPos;
+<a class="jxr_linenumber" name="1107" href="#1107">1107</a>                 System.arraycopy(input, inputIndex, dataBuffer, curBufferPos, transferAmt);
+<a class="jxr_linenumber" name="1108" href="#1108">1108</a>                 count += transferAmt;
+<a class="jxr_linenumber" name="1109" href="#1109">1109</a>                 curBufferPos = 0;
+<a class="jxr_linenumber" name="1110" href="#1110">1110</a>                 inputIndex += transferAmt;
+<a class="jxr_linenumber" name="1111" href="#1111">1111</a>                 processBuffer();
+<a class="jxr_linenumber" name="1112" href="#1112">1112</a>             }
+<a class="jxr_linenumber" name="1113" href="#1113">1113</a> 
+<a class="jxr_linenumber" name="1114" href="#1114">1114</a>             <em class="jxr_comment">// If there's anything left, copy it into the buffer and leave it.</em>
+<a class="jxr_linenumber" name="1115" href="#1115">1115</a>             <em class="jxr_comment">// We know there's not enough left to process.</em>
+<a class="jxr_linenumber" name="1116" href="#1116">1116</a>             <strong class="jxr_keyword">if</strong> (inputIndex &lt; input.length) {
+<a class="jxr_linenumber" name="1117" href="#1117">1117</a>                 <strong class="jxr_keyword">int</strong> transferAmt = input.length - inputIndex;
+<a class="jxr_linenumber" name="1118" href="#1118">1118</a>                 System.arraycopy(input, inputIndex, dataBuffer, curBufferPos, transferAmt);
+<a class="jxr_linenumber" name="1119" href="#1119">1119</a>                 count += transferAmt;
+<a class="jxr_linenumber" name="1120" href="#1120">1120</a>             }
+<a class="jxr_linenumber" name="1121" href="#1121">1121</a>         }
+<a class="jxr_linenumber" name="1122" href="#1122">1122</a> 
+<a class="jxr_linenumber" name="1123" href="#1123">1123</a>         byte[] getOutput() {
+<a class="jxr_linenumber" name="1124" href="#1124">1124</a>             <em class="jxr_comment">// Feed pad/length data into engine. This must round out the input</em>
+<a class="jxr_linenumber" name="1125" href="#1125">1125</a>             <em class="jxr_comment">// to a multiple of 512 bits.</em>
+<a class="jxr_linenumber" name="1126" href="#1126">1126</a>             <strong class="jxr_keyword">int</strong> bufferIndex = (<strong class="jxr_keyword">int</strong>) (count &amp; 63L);
+<a class="jxr_linenumber" name="1127" href="#1127">1127</a>             <strong class="jxr_keyword">int</strong> padLen = (bufferIndex &lt; 56) ? (56 - bufferIndex) : (120 - bufferIndex);
+<a class="jxr_linenumber" name="1128" href="#1128">1128</a>             byte[] postBytes = <strong class="jxr_keyword">new</strong> byte[padLen + 8];
+<a class="jxr_linenumber" name="1129" href="#1129">1129</a>             <em class="jxr_comment">// Leading 0x80, specified amount of zero padding, then length in</em>
+<a class="jxr_linenumber" name="1130" href="#1130">1130</a>             <em class="jxr_comment">// bits.</em>
+<a class="jxr_linenumber" name="1131" href="#1131">1131</a>             postBytes[0] = (byte) 0x80;
+<a class="jxr_linenumber" name="1132" href="#1132">1132</a>             <em class="jxr_comment">// Fill out the last 8 bytes with the length</em>
+<a class="jxr_linenumber" name="1133" href="#1133">1133</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 8; i++) {
+<a class="jxr_linenumber" name="1134" href="#1134">1134</a>                 postBytes[padLen + i] = (byte) ((count * 8) &gt;&gt;&gt; (8 * i));
+<a class="jxr_linenumber" name="1135" href="#1135">1135</a>             }
+<a class="jxr_linenumber" name="1136" href="#1136">1136</a> 
+<a class="jxr_linenumber" name="1137" href="#1137">1137</a>             <em class="jxr_comment">// Update the engine</em>
+<a class="jxr_linenumber" name="1138" href="#1138">1138</a>             update(postBytes);
+<a class="jxr_linenumber" name="1139" href="#1139">1139</a> 
+<a class="jxr_linenumber" name="1140" href="#1140">1140</a>             <em class="jxr_comment">// Calculate final result</em>
+<a class="jxr_linenumber" name="1141" href="#1141">1141</a>             byte[] result = <strong class="jxr_keyword">new</strong> byte[16];
+<a class="jxr_linenumber" name="1142" href="#1142">1142</a>             writeULong(result, A, 0);
+<a class="jxr_linenumber" name="1143" href="#1143">1143</a>             writeULong(result, B, 4);
+<a class="jxr_linenumber" name="1144" href="#1144">1144</a>             writeULong(result, C, 8);
+<a class="jxr_linenumber" name="1145" href="#1145">1145</a>             writeULong(result, D, 12);
+<a class="jxr_linenumber" name="1146" href="#1146">1146</a>             <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="1147" href="#1147">1147</a>         }
+<a class="jxr_linenumber" name="1148" href="#1148">1148</a> 
+<a class="jxr_linenumber" name="1149" href="#1149">1149</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> processBuffer() {
+<a class="jxr_linenumber" name="1150" href="#1150">1150</a>             <em class="jxr_comment">// Convert current buffer to 16 ulongs</em>
+<a class="jxr_linenumber" name="1151" href="#1151">1151</a>             <strong class="jxr_keyword">int</strong>[] d = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">int</strong>[16];
+<a class="jxr_linenumber" name="1152" href="#1152">1152</a> 
+<a class="jxr_linenumber" name="1153" href="#1153">1153</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 16; i++) {
+<a class="jxr_linenumber" name="1154" href="#1154">1154</a>                 d[i] = (dataBuffer[i * 4] &amp; 0xff) + ((dataBuffer[i * 4 + 1] &amp; 0xff) &lt;&lt; 8)
+<a class="jxr_linenumber" name="1155" href="#1155">1155</a>                         + ((dataBuffer[i * 4 + 2] &amp; 0xff) &lt;&lt; 16)
+<a class="jxr_linenumber" name="1156" href="#1156">1156</a>                         + ((dataBuffer[i * 4 + 3] &amp; 0xff) &lt;&lt; 24);
+<a class="jxr_linenumber" name="1157" href="#1157">1157</a>             }
+<a class="jxr_linenumber" name="1158" href="#1158">1158</a> 
+<a class="jxr_linenumber" name="1159" href="#1159">1159</a>             <em class="jxr_comment">// Do a round of processing</em>
+<a class="jxr_linenumber" name="1160" href="#1160">1160</a>             <strong class="jxr_keyword">int</strong> AA = A;
+<a class="jxr_linenumber" name="1161" href="#1161">1161</a>             <strong class="jxr_keyword">int</strong> BB = B;
+<a class="jxr_linenumber" name="1162" href="#1162">1162</a>             <strong class="jxr_keyword">int</strong> CC = C;
+<a class="jxr_linenumber" name="1163" href="#1163">1163</a>             <strong class="jxr_keyword">int</strong> DD = D;
+<a class="jxr_linenumber" name="1164" href="#1164">1164</a>             round1(d);
+<a class="jxr_linenumber" name="1165" href="#1165">1165</a>             round2(d);
+<a class="jxr_linenumber" name="1166" href="#1166">1166</a>             round3(d);
+<a class="jxr_linenumber" name="1167" href="#1167">1167</a>             A += AA;
+<a class="jxr_linenumber" name="1168" href="#1168">1168</a>             B += BB;
+<a class="jxr_linenumber" name="1169" href="#1169">1169</a>             C += CC;
+<a class="jxr_linenumber" name="1170" href="#1170">1170</a>             D += DD;
+<a class="jxr_linenumber" name="1171" href="#1171">1171</a> 
+<a class="jxr_linenumber" name="1172" href="#1172">1172</a>         }
+<a class="jxr_linenumber" name="1173" href="#1173">1173</a> 
+<a class="jxr_linenumber" name="1174" href="#1174">1174</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> round1(<strong class="jxr_keyword">int</strong>[] d) {
+<a class="jxr_linenumber" name="1175" href="#1175">1175</a>             A = rotintlft((A + F(B, C, D) + d[0]), 3);
+<a class="jxr_linenumber" name="1176" href="#1176">1176</a>             D = rotintlft((D + F(A, B, C) + d[1]), 7);
+<a class="jxr_linenumber" name="1177" href="#1177">1177</a>             C = rotintlft((C + F(D, A, B) + d[2]), 11);
+<a class="jxr_linenumber" name="1178" href="#1178">1178</a>             B = rotintlft((B + F(C, D, A) + d[3]), 19);
+<a class="jxr_linenumber" name="1179" href="#1179">1179</a> 
+<a class="jxr_linenumber" name="1180" href="#1180">1180</a>             A = rotintlft((A + F(B, C, D) + d[4]), 3);
+<a class="jxr_linenumber" name="1181" href="#1181">1181</a>             D = rotintlft((D + F(A, B, C) + d[5]), 7);
+<a class="jxr_linenumber" name="1182" href="#1182">1182</a>             C = rotintlft((C + F(D, A, B) + d[6]), 11);
+<a class="jxr_linenumber" name="1183" href="#1183">1183</a>             B = rotintlft((B + F(C, D, A) + d[7]), 19);
+<a class="jxr_linenumber" name="1184" href="#1184">1184</a> 
+<a class="jxr_linenumber" name="1185" href="#1185">1185</a>             A = rotintlft((A + F(B, C, D) + d[8]), 3);
+<a class="jxr_linenumber" name="1186" href="#1186">1186</a>             D = rotintlft((D + F(A, B, C) + d[9]), 7);
+<a class="jxr_linenumber" name="1187" href="#1187">1187</a>             C = rotintlft((C + F(D, A, B) + d[10]), 11);
+<a class="jxr_linenumber" name="1188" href="#1188">1188</a>             B = rotintlft((B + F(C, D, A) + d[11]), 19);
+<a class="jxr_linenumber" name="1189" href="#1189">1189</a> 
+<a class="jxr_linenumber" name="1190" href="#1190">1190</a>             A = rotintlft((A + F(B, C, D) + d[12]), 3);
+<a class="jxr_linenumber" name="1191" href="#1191">1191</a>             D = rotintlft((D + F(A, B, C) + d[13]), 7);
+<a class="jxr_linenumber" name="1192" href="#1192">1192</a>             C = rotintlft((C + F(D, A, B) + d[14]), 11);
+<a class="jxr_linenumber" name="1193" href="#1193">1193</a>             B = rotintlft((B + F(C, D, A) + d[15]), 19);
+<a class="jxr_linenumber" name="1194" href="#1194">1194</a>         }
+<a class="jxr_linenumber" name="1195" href="#1195">1195</a> 
+<a class="jxr_linenumber" name="1196" href="#1196">1196</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> round2(<strong class="jxr_keyword">int</strong>[] d) {
+<a class="jxr_linenumber" name="1197" href="#1197">1197</a>             A = rotintlft((A + G(B, C, D) + d[0] + 0x5a827999), 3);
+<a class="jxr_linenumber" name="1198" href="#1198">1198</a>             D = rotintlft((D + G(A, B, C) + d[4] + 0x5a827999), 5);
+<a class="jxr_linenumber" name="1199" href="#1199">1199</a>             C = rotintlft((C + G(D, A, B) + d[8] + 0x5a827999), 9);
+<a class="jxr_linenumber" name="1200" href="#1200">1200</a>             B = rotintlft((B + G(C, D, A) + d[12] + 0x5a827999), 13);
+<a class="jxr_linenumber" name="1201" href="#1201">1201</a> 
+<a class="jxr_linenumber" name="1202" href="#1202">1202</a>             A = rotintlft((A + G(B, C, D) + d[1] + 0x5a827999), 3);
+<a class="jxr_linenumber" name="1203" href="#1203">1203</a>             D = rotintlft((D + G(A, B, C) + d[5] + 0x5a827999), 5);
+<a class="jxr_linenumber" name="1204" href="#1204">1204</a>             C = rotintlft((C + G(D, A, B) + d[9] + 0x5a827999), 9);
+<a class="jxr_linenumber" name="1205" href="#1205">1205</a>             B = rotintlft((B + G(C, D, A) + d[13] + 0x5a827999), 13);
+<a class="jxr_linenumber" name="1206" href="#1206">1206</a> 
+<a class="jxr_linenumber" name="1207" href="#1207">1207</a>             A = rotintlft((A + G(B, C, D) + d[2] + 0x5a827999), 3);
+<a class="jxr_linenumber" name="1208" href="#1208">1208</a>             D = rotintlft((D + G(A, B, C) + d[6] + 0x5a827999), 5);
+<a class="jxr_linenumber" name="1209" href="#1209">1209</a>             C = rotintlft((C + G(D, A, B) + d[10] + 0x5a827999), 9);
+<a class="jxr_linenumber" name="1210" href="#1210">1210</a>             B = rotintlft((B + G(C, D, A) + d[14] + 0x5a827999), 13);
+<a class="jxr_linenumber" name="1211" href="#1211">1211</a> 
+<a class="jxr_linenumber" name="1212" href="#1212">1212</a>             A = rotintlft((A + G(B, C, D) + d[3] + 0x5a827999), 3);
+<a class="jxr_linenumber" name="1213" href="#1213">1213</a>             D = rotintlft((D + G(A, B, C) + d[7] + 0x5a827999), 5);
+<a class="jxr_linenumber" name="1214" href="#1214">1214</a>             C = rotintlft((C + G(D, A, B) + d[11] + 0x5a827999), 9);
+<a class="jxr_linenumber" name="1215" href="#1215">1215</a>             B = rotintlft((B + G(C, D, A) + d[15] + 0x5a827999), 13);
+<a class="jxr_linenumber" name="1216" href="#1216">1216</a> 
+<a class="jxr_linenumber" name="1217" href="#1217">1217</a>         }
+<a class="jxr_linenumber" name="1218" href="#1218">1218</a> 
+<a class="jxr_linenumber" name="1219" href="#1219">1219</a>         <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> round3(<strong class="jxr_keyword">int</strong>[] d) {
+<a class="jxr_linenumber" name="1220" href="#1220">1220</a>             A = rotintlft((A + H(B, C, D) + d[0] + 0x6ed9eba1), 3);
+<a class="jxr_linenumber" name="1221" href="#1221">1221</a>             D = rotintlft((D + H(A, B, C) + d[8] + 0x6ed9eba1), 9);
+<a class="jxr_linenumber" name="1222" href="#1222">1222</a>             C = rotintlft((C + H(D, A, B) + d[4] + 0x6ed9eba1), 11);
+<a class="jxr_linenumber" name="1223" href="#1223">1223</a>             B = rotintlft((B + H(C, D, A) + d[12] + 0x6ed9eba1), 15);
+<a class="jxr_linenumber" name="1224" href="#1224">1224</a> 
+<a class="jxr_linenumber" name="1225" href="#1225">1225</a>             A = rotintlft((A + H(B, C, D) + d[2] + 0x6ed9eba1), 3);
+<a class="jxr_linenumber" name="1226" href="#1226">1226</a>             D = rotintlft((D + H(A, B, C) + d[10] + 0x6ed9eba1), 9);
+<a class="jxr_linenumber" name="1227" href="#1227">1227</a>             C = rotintlft((C + H(D, A, B) + d[6] + 0x6ed9eba1), 11);
+<a class="jxr_linenumber" name="1228" href="#1228">1228</a>             B = rotintlft((B + H(C, D, A) + d[14] + 0x6ed9eba1), 15);
+<a class="jxr_linenumber" name="1229" href="#1229">1229</a> 
+<a class="jxr_linenumber" name="1230" href="#1230">1230</a>             A = rotintlft((A + H(B, C, D) + d[1] + 0x6ed9eba1), 3);
+<a class="jxr_linenumber" name="1231" href="#1231">1231</a>             D = rotintlft((D + H(A, B, C) + d[9] + 0x6ed9eba1), 9);
+<a class="jxr_linenumber" name="1232" href="#1232">1232</a>             C = rotintlft((C + H(D, A, B) + d[5] + 0x6ed9eba1), 11);
+<a class="jxr_linenumber" name="1233" href="#1233">1233</a>             B = rotintlft((B + H(C, D, A) + d[13] + 0x6ed9eba1), 15);
+<a class="jxr_linenumber" name="1234" href="#1234">1234</a> 
+<a class="jxr_linenumber" name="1235" href="#1235">1235</a>             A = rotintlft((A + H(B, C, D) + d[3] + 0x6ed9eba1), 3);
+<a class="jxr_linenumber" name="1236" href="#1236">1236</a>             D = rotintlft((D + H(A, B, C) + d[11] + 0x6ed9eba1), 9);
+<a class="jxr_linenumber" name="1237" href="#1237">1237</a>             C = rotintlft((C + H(D, A, B) + d[7] + 0x6ed9eba1), 11);
+<a class="jxr_linenumber" name="1238" href="#1238">1238</a>             B = rotintlft((B + H(C, D, A) + d[15] + 0x6ed9eba1), 15);
+<a class="jxr_linenumber" name="1239" href="#1239">1239</a> 
+<a class="jxr_linenumber" name="1240" href="#1240">1240</a>         }
+<a class="jxr_linenumber" name="1241" href="#1241">1241</a> 
+<a class="jxr_linenumber" name="1242" href="#1242">1242</a>     }
+<a class="jxr_linenumber" name="1243" href="#1243">1243</a> 
+<a class="jxr_linenumber" name="1244" href="#1244">1244</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1245" href="#1245">1245</a> <em class="jxr_javadoccomment">     * Cryptography support - HMACMD5 - algorithmically based on various web</em>
+<a class="jxr_linenumber" name="1246" href="#1246">1246</a> <em class="jxr_javadoccomment">     * resources by Karl Wright</em>
+<a class="jxr_linenumber" name="1247" href="#1247">1247</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="1248" href="#1248">1248</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a> {
+<a class="jxr_linenumber" name="1249" href="#1249">1249</a>         <strong class="jxr_keyword">protected</strong> byte[] ipad;
+<a class="jxr_linenumber" name="1250" href="#1250">1250</a>         <strong class="jxr_keyword">protected</strong> byte[] opad;
+<a class="jxr_linenumber" name="1251" href="#1251">1251</a>         <strong class="jxr_keyword">protected</strong> MessageDigest md5;
+<a class="jxr_linenumber" name="1252" href="#1252">1252</a> 
+<a class="jxr_linenumber" name="1253" href="#1253">1253</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">HMACMD5</a>(byte[] key) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="1254" href="#1254">1254</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="1255" href="#1255">1255</a>                 md5 = MessageDigest.getInstance(<span class="jxr_string">"MD5"</span>);
+<a class="jxr_linenumber" name="1256" href="#1256">1256</a>             } <strong class="jxr_keyword">catch</strong> (Exception ex) {
+<a class="jxr_linenumber" name="1257" href="#1257">1257</a>                 <em class="jxr_comment">// Umm, the algorithm doesn't exist - throw an</em>
+<a class="jxr_linenumber" name="1258" href="#1258">1258</a>                 <em class="jxr_comment">// NTLMEngineException!</em>
+<a class="jxr_linenumber" name="1259" href="#1259">1259</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngineException.html">NTLMEngineException</a>(
+<a class="jxr_linenumber" name="1260" href="#1260">1260</a>                         <span class="jxr_string">"Error getting md5 message digest implementation: "</span> + ex.getMessage(), ex);
+<a class="jxr_linenumber" name="1261" href="#1261">1261</a>             }
+<a class="jxr_linenumber" name="1262" href="#1262">1262</a> 
+<a class="jxr_linenumber" name="1263" href="#1263">1263</a>             <em class="jxr_comment">// Initialize the pad buffers with the key</em>
+<a class="jxr_linenumber" name="1264" href="#1264">1264</a>             ipad = <strong class="jxr_keyword">new</strong> byte[64];
+<a class="jxr_linenumber" name="1265" href="#1265">1265</a>             opad = <strong class="jxr_keyword">new</strong> byte[64];
+<a class="jxr_linenumber" name="1266" href="#1266">1266</a> 
+<a class="jxr_linenumber" name="1267" href="#1267">1267</a>             <strong class="jxr_keyword">int</strong> keyLength = key.length;
+<a class="jxr_linenumber" name="1268" href="#1268">1268</a>             <strong class="jxr_keyword">if</strong> (keyLength &gt; 64) {
+<a class="jxr_linenumber" name="1269" href="#1269">1269</a>                 <em class="jxr_comment">// Use MD5 of the key instead, as described in RFC 2104</em>
+<a class="jxr_linenumber" name="1270" href="#1270">1270</a>                 md5.update(key);
+<a class="jxr_linenumber" name="1271" href="#1271">1271</a>                 key = md5.digest();
+<a class="jxr_linenumber" name="1272" href="#1272">1272</a>                 keyLength = key.length;
+<a class="jxr_linenumber" name="1273" href="#1273">1273</a>             }
+<a class="jxr_linenumber" name="1274" href="#1274">1274</a>             <strong class="jxr_keyword">int</strong> i = 0;
+<a class="jxr_linenumber" name="1275" href="#1275">1275</a>             <strong class="jxr_keyword">while</strong> (i &lt; keyLength) {
+<a class="jxr_linenumber" name="1276" href="#1276">1276</a>                 ipad[i] = (byte) (key[i] ^ (byte) 0x36);
+<a class="jxr_linenumber" name="1277" href="#1277">1277</a>                 opad[i] = (byte) (key[i] ^ (byte) 0x5c);
+<a class="jxr_linenumber" name="1278" href="#1278">1278</a>                 i++;
+<a class="jxr_linenumber" name="1279" href="#1279">1279</a>             }
+<a class="jxr_linenumber" name="1280" href="#1280">1280</a>             <strong class="jxr_keyword">while</strong> (i &lt; 64) {
+<a class="jxr_linenumber" name="1281" href="#1281">1281</a>                 ipad[i] = (byte) 0x36;
+<a class="jxr_linenumber" name="1282" href="#1282">1282</a>                 opad[i] = (byte) 0x5c;
+<a class="jxr_linenumber" name="1283" href="#1283">1283</a>                 i++;
+<a class="jxr_linenumber" name="1284" href="#1284">1284</a>             }
+<a class="jxr_linenumber" name="1285" href="#1285">1285</a> 
+<a class="jxr_linenumber" name="1286" href="#1286">1286</a>             <em class="jxr_comment">// Very important: update the digest with the ipad buffer</em>
+<a class="jxr_linenumber" name="1287" href="#1287">1287</a>             md5.reset();
+<a class="jxr_linenumber" name="1288" href="#1288">1288</a>             md5.update(ipad);
+<a class="jxr_linenumber" name="1289" href="#1289">1289</a> 
+<a class="jxr_linenumber" name="1290" href="#1290">1290</a>         }
+<a class="jxr_linenumber" name="1291" href="#1291">1291</a> 
+<a class="jxr_linenumber" name="1292" href="#1292">1292</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1293" href="#1293">1293</a> <em class="jxr_javadoccomment">         * Grab the current digest. This is the "answer".</em>
+<a class="jxr_linenumber" name="1294" href="#1294">1294</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1295" href="#1295">1295</a>         byte[] getOutput() {
+<a class="jxr_linenumber" name="1296" href="#1296">1296</a>             byte[] digest = md5.digest();
+<a class="jxr_linenumber" name="1297" href="#1297">1297</a>             md5.update(opad);
+<a class="jxr_linenumber" name="1298" href="#1298">1298</a>             <strong class="jxr_keyword">return</strong> md5.digest(digest);
+<a class="jxr_linenumber" name="1299" href="#1299">1299</a>         }
+<a class="jxr_linenumber" name="1300" href="#1300">1300</a> 
+<a class="jxr_linenumber" name="1301" href="#1301">1301</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1302" href="#1302">1302</a> <em class="jxr_javadoccomment">         * Update by adding a complete array</em>
+<a class="jxr_linenumber" name="1303" href="#1303">1303</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1304" href="#1304">1304</a>         <strong class="jxr_keyword">void</strong> update(byte[] input) {
+<a class="jxr_linenumber" name="1305" href="#1305">1305</a>             md5.update(input);
+<a class="jxr_linenumber" name="1306" href="#1306">1306</a>         }
+<a class="jxr_linenumber" name="1307" href="#1307">1307</a> 
+<a class="jxr_linenumber" name="1308" href="#1308">1308</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1309" href="#1309">1309</a> <em class="jxr_javadoccomment">         * Update the algorithm</em>
+<a class="jxr_linenumber" name="1310" href="#1310">1310</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1311" href="#1311">1311</a>         <strong class="jxr_keyword">void</strong> update(byte[] input, <strong class="jxr_keyword">int</strong> offset, <strong class="jxr_keyword">int</strong> length) {
+<a class="jxr_linenumber" name="1312" href="#1312">1312</a>             md5.update(input, offset, length);
+<a class="jxr_linenumber" name="1313" href="#1313">1313</a>         }
+<a class="jxr_linenumber" name="1314" href="#1314">1314</a> 
+<a class="jxr_linenumber" name="1315" href="#1315">1315</a>     }
+<a class="jxr_linenumber" name="1316" href="#1316">1316</a> 
+<a class="jxr_linenumber" name="1317" href="#1317">1317</a>     <strong class="jxr_keyword">public</strong> String generateType1Msg(
+<a class="jxr_linenumber" name="1318" href="#1318">1318</a>             <strong class="jxr_keyword">final</strong> String domain,
+<a class="jxr_linenumber" name="1319" href="#1319">1319</a>             <strong class="jxr_keyword">final</strong> String workstation) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="1320" href="#1320">1320</a>         <strong class="jxr_keyword">return</strong> getType1Message(workstation, domain);
+<a class="jxr_linenumber" name="1321" href="#1321">1321</a>     }
+<a class="jxr_linenumber" name="1322" href="#1322">1322</a> 
+<a class="jxr_linenumber" name="1323" href="#1323">1323</a>     <strong class="jxr_keyword">public</strong> String generateType3Msg(
+<a class="jxr_linenumber" name="1324" href="#1324">1324</a>             <strong class="jxr_keyword">final</strong> String username,
+<a class="jxr_linenumber" name="1325" href="#1325">1325</a>             <strong class="jxr_keyword">final</strong> String password,
+<a class="jxr_linenumber" name="1326" href="#1326">1326</a>             <strong class="jxr_keyword">final</strong> String domain,
+<a class="jxr_linenumber" name="1327" href="#1327">1327</a>             <strong class="jxr_keyword">final</strong> String workstation,
+<a class="jxr_linenumber" name="1328" href="#1328">1328</a>             <strong class="jxr_keyword">final</strong> String challenge) <strong class="jxr_keyword">throws</strong> NTLMEngineException {
+<a class="jxr_linenumber" name="1329" href="#1329">1329</a>         <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a> t2m = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/ning/http/client/ntlm/NTLMEngine.html">Type2Message</a>(challenge);
+<a class="jxr_linenumber" name="1330" href="#1330">1330</a>         <strong class="jxr_keyword">return</strong> getType3Message(
+<a class="jxr_linenumber" name="1331" href="#1331">1331</a>                 username,
+<a class="jxr_linenumber" name="1332" href="#1332">1332</a>                 password,
+<a class="jxr_linenumber" name="1333" href="#1333">1333</a>                 workstation,
+<a class="jxr_linenumber" name="1334" href="#1334">1334</a>                 domain,
+<a class="jxr_linenumber" name="1335" href="#1335">1335</a>                 t2m.getChallenge(),
+<a class="jxr_linenumber" name="1336" href="#1336">1336</a>                 t2m.getFlags(),
+<a class="jxr_linenumber" name="1337" href="#1337">1337</a>                 t2m.getTarget(),
+<a class="jxr_linenumber" name="1338" href="#1338">1338</a>                 t2m.getTargetInfo());
+<a class="jxr_linenumber" name="1339" href="#1339">1339</a>     }
+<a class="jxr_linenumber" name="1340" href="#1340">1340</a> 
+<a class="jxr_linenumber" name="1341" href="#1341">1341</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

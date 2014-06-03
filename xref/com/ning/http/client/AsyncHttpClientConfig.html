@@ -1,0 +1,1163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en_US" lang="en_US">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AsyncHttpClientConfig xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../apidocs/com/ning/http/client/AsyncHttpClientConfig.html">View Javadoc</a></div><pre>
+
+<a class="jxr_linenumber" name="1" href="#1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="2" href="#2">2</a>   <em class="jxr_comment"> * Copyright 2010 Ning, Inc.</em>
+<a class="jxr_linenumber" name="3" href="#3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="4" href="#4">4</a>   <em class="jxr_comment"> * Ning licenses this file to you under the Apache License, version 2.0</em>
+<a class="jxr_linenumber" name="5" href="#5">5</a>   <em class="jxr_comment"> * (the "License"); you may not use this file except in compliance with the</em>
+<a class="jxr_linenumber" name="6" href="#6">6</a>   <em class="jxr_comment"> * License.  You may obtain a copy of the License at:</em>
+<a class="jxr_linenumber" name="7" href="#7">7</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="8" href="#8">8</a>   <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2.0" target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.0</a></em>
+<a class="jxr_linenumber" name="9" href="#9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="10" href="#10">10</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a class="jxr_linenumber" name="11" href="#11">11</a>  <em class="jxr_comment"> * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT</em>
+<a class="jxr_linenumber" name="12" href="#12">12</a>  <em class="jxr_comment"> * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the</em>
+<a class="jxr_linenumber" name="13" href="#13">13</a>  <em class="jxr_comment"> * License for the specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="14" href="#14">14</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="15" href="#15">15</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="16" href="#16">16</a>  <strong class="jxr_keyword">package</strong> com.ning.http.client;
+<a class="jxr_linenumber" name="17" href="#17">17</a>  
+<a class="jxr_linenumber" name="18" href="#18">18</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.ning.http.util.MiscUtil.getBoolean;
+<a class="jxr_linenumber" name="19" href="#19">19</a>  
+<a class="jxr_linenumber" name="20" href="#20">20</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.date.TimeConverter;
+<a class="jxr_linenumber" name="21" href="#21">21</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.IOExceptionFilter;
+<a class="jxr_linenumber" name="22" href="#22">22</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.RequestFilter;
+<a class="jxr_linenumber" name="23" href="#23">23</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.ResponseFilter;
+<a class="jxr_linenumber" name="24" href="#24">24</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.AllowAllHostnameVerifier;
+<a class="jxr_linenumber" name="25" href="#25">25</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.ProxyUtils;
+<a class="jxr_linenumber" name="26" href="#26">26</a>  
+<a class="jxr_linenumber" name="27" href="#27">27</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.HostnameVerifier;
+<a class="jxr_linenumber" name="28" href="#28">28</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.SSLContext;
+<a class="jxr_linenumber" name="29" href="#29">29</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.SSLEngine;
+<a class="jxr_linenumber" name="30" href="#30">30</a>  
+<a class="jxr_linenumber" name="31" href="#31">31</a>  <strong class="jxr_keyword">import</strong> java.security.GeneralSecurityException;
+<a class="jxr_linenumber" name="32" href="#32">32</a>  <strong class="jxr_keyword">import</strong> java.util.Collections;
+<a class="jxr_linenumber" name="33" href="#33">33</a>  <strong class="jxr_keyword">import</strong> java.util.LinkedList;
+<a class="jxr_linenumber" name="34" href="#34">34</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="35" href="#35">35</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.ExecutorService;
+<a class="jxr_linenumber" name="36" href="#36">36</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.Executors;
+<a class="jxr_linenumber" name="37" href="#37">37</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.ThreadFactory;
+<a class="jxr_linenumber" name="38" href="#38">38</a>  
+<a class="jxr_linenumber" name="39" href="#39">39</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="40" href="#40">40</a>  <em class="jxr_javadoccomment"> * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this</em>
+<a class="jxr_linenumber" name="41" href="#41">41</a>  <em class="jxr_javadoccomment"> * object default behavior by doing:</em>
+<a class="jxr_linenumber" name="42" href="#42">42</a>  <em class="jxr_javadoccomment"> * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="43" href="#43">43</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.nameOfTheProperty</em>
+<a class="jxr_linenumber" name="44" href="#44">44</a>  <em class="jxr_javadoccomment"> * ex:</em>
+<a class="jxr_linenumber" name="45" href="#45">45</a>  <em class="jxr_javadoccomment"> * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="46" href="#46">46</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxTotalConnections</em>
+<a class="jxr_linenumber" name="47" href="#47">47</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxTotalConnections</em>
+<a class="jxr_linenumber" name="48" href="#48">48</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxConnectionsPerHost</em>
+<a class="jxr_linenumber" name="49" href="#49">49</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultConnectionTimeoutInMS</em>
+<a class="jxr_linenumber" name="50" href="#50">50</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultIdleConnectionInPoolTimeoutInMS</em>
+<a class="jxr_linenumber" name="51" href="#51">51</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultRequestTimeoutInMS</em>
+<a class="jxr_linenumber" name="52" href="#52">52</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultRedirectsEnabled</em>
+<a class="jxr_linenumber" name="53" href="#53">53</a>  <em class="jxr_javadoccomment"> * -Dcom.ning.http.client.AsyncHttpClientConfig.defaultMaxRedirects</em>
+<a class="jxr_linenumber" name="54" href="#54">54</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="55" href="#55">55</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> {
+<a class="jxr_linenumber" name="56" href="#56">56</a>  
+<a class="jxr_linenumber" name="57" href="#57">57</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> String ASYNC_CLIENT = AsyncHttpClientConfig.<strong class="jxr_keyword">class</strong>.getName() + <span class="jxr_string">"."</span>;
+<a class="jxr_linenumber" name="58" href="#58">58</a>  
+<a class="jxr_linenumber" name="59" href="#59">59</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> maxTotalConnections;
+<a class="jxr_linenumber" name="60" href="#60">60</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> maxConnectionPerHost;
+<a class="jxr_linenumber" name="61" href="#61">61</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> connectionTimeOutInMs;
+<a class="jxr_linenumber" name="62" href="#62">62</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> webSocketIdleTimeoutInMs;
+<a class="jxr_linenumber" name="63" href="#63">63</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> idleConnectionInPoolTimeoutInMs;
+<a class="jxr_linenumber" name="64" href="#64">64</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> idleConnectionTimeoutInMs;
+<a class="jxr_linenumber" name="65" href="#65">65</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> requestTimeoutInMs;
+<a class="jxr_linenumber" name="66" href="#66">66</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> redirectEnabled;
+<a class="jxr_linenumber" name="67" href="#67">67</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> maxDefaultRedirects;
+<a class="jxr_linenumber" name="68" href="#68">68</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> compressionEnabled;
+<a class="jxr_linenumber" name="69" href="#69">69</a>      <strong class="jxr_keyword">protected</strong> String userAgent;
+<a class="jxr_linenumber" name="70" href="#70">70</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> allowPoolingConnection;
+<a class="jxr_linenumber" name="71" href="#71">71</a>      <strong class="jxr_keyword">protected</strong> ExecutorService applicationThreadPool;
+<a class="jxr_linenumber" name="72" href="#72">72</a>      <strong class="jxr_keyword">protected</strong> <a href="../../../../com/ning/http/client/ProxyServerSelector.html">ProxyServerSelector</a> proxyServerSelector;
+<a class="jxr_linenumber" name="73" href="#73">73</a>      <strong class="jxr_keyword">protected</strong> SSLContext sslContext;
+<a class="jxr_linenumber" name="74" href="#74">74</a>      <strong class="jxr_keyword">protected</strong> <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory;
+<a class="jxr_linenumber" name="75" href="#75">75</a>      <strong class="jxr_keyword">protected</strong> AsyncHttpProviderConfig&lt;?, ?&gt; providerConfig;
+<a class="jxr_linenumber" name="76" href="#76">76</a>      <strong class="jxr_keyword">protected</strong> ConnectionsPool&lt;?, ?&gt; connectionsPool;
+<a class="jxr_linenumber" name="77" href="#77">77</a>      <strong class="jxr_keyword">protected</strong> <a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm;
+<a class="jxr_linenumber" name="78" href="#78">78</a>      <strong class="jxr_keyword">protected</strong> List&lt;RequestFilter&gt; requestFilters;
+<a class="jxr_linenumber" name="79" href="#79">79</a>      <strong class="jxr_keyword">protected</strong> List&lt;ResponseFilter&gt; responseFilters;
+<a class="jxr_linenumber" name="80" href="#80">80</a>      <strong class="jxr_keyword">protected</strong> List&lt;IOExceptionFilter&gt; ioExceptionFilters;
+<a class="jxr_linenumber" name="81" href="#81">81</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> requestCompressionLevel;
+<a class="jxr_linenumber" name="82" href="#82">82</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> maxRequestRetry;
+<a class="jxr_linenumber" name="83" href="#83">83</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> allowSslConnectionPool;
+<a class="jxr_linenumber" name="84" href="#84">84</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> useRawUrl;
+<a class="jxr_linenumber" name="85" href="#85">85</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> removeQueryParamOnRedirect;
+<a class="jxr_linenumber" name="86" href="#86">86</a>      <strong class="jxr_keyword">protected</strong> HostnameVerifier hostnameVerifier;
+<a class="jxr_linenumber" name="87" href="#87">87</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> ioThreadMultiplier;
+<a class="jxr_linenumber" name="88" href="#88">88</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> strict302Handling;
+<a class="jxr_linenumber" name="89" href="#89">89</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> useRelativeURIsWithSSLProxies;
+<a class="jxr_linenumber" name="90" href="#90">90</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">int</strong> maxConnectionLifeTimeInMs;
+<a class="jxr_linenumber" name="91" href="#91">91</a>      <strong class="jxr_keyword">protected</strong> <a href="../../../../com/ning/http/client/date/TimeConverter.html">TimeConverter</a> timeConverter;
+<a class="jxr_linenumber" name="92" href="#92">92</a>  
+<a class="jxr_linenumber" name="93" href="#93">93</a>      <strong class="jxr_keyword">protected</strong> <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a>() {
+<a class="jxr_linenumber" name="94" href="#94">94</a>      }
+<a class="jxr_linenumber" name="95" href="#95">95</a>  
+<a class="jxr_linenumber" name="96" href="#96">96</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a>(<strong class="jxr_keyword">int</strong> maxTotalConnections,
+<a class="jxr_linenumber" name="97" href="#97">97</a>                                    <strong class="jxr_keyword">int</strong> maxConnectionPerHost,
+<a class="jxr_linenumber" name="98" href="#98">98</a>                                    <strong class="jxr_keyword">int</strong> connectionTimeOutInMs,
+<a class="jxr_linenumber" name="99" href="#99">99</a>                                    <strong class="jxr_keyword">int</strong> webSocketTimeoutInMs,
+<a class="jxr_linenumber" name="100" href="#100">100</a>                                   <strong class="jxr_keyword">int</strong> idleConnectionInPoolTimeoutInMs,
+<a class="jxr_linenumber" name="101" href="#101">101</a>                                   <strong class="jxr_keyword">int</strong> idleConnectionTimeoutInMs,
+<a class="jxr_linenumber" name="102" href="#102">102</a>                                   <strong class="jxr_keyword">int</strong> requestTimeoutInMs,
+<a class="jxr_linenumber" name="103" href="#103">103</a>                                   <strong class="jxr_keyword">int</strong> connectionMaxLifeTimeInMs,
+<a class="jxr_linenumber" name="104" href="#104">104</a>                                   <strong class="jxr_keyword">boolean</strong> redirectEnabled,
+<a class="jxr_linenumber" name="105" href="#105">105</a>                                   <strong class="jxr_keyword">int</strong> maxDefaultRedirects,
+<a class="jxr_linenumber" name="106" href="#106">106</a>                                   <strong class="jxr_keyword">boolean</strong> compressionEnabled,
+<a class="jxr_linenumber" name="107" href="#107">107</a>                                   String userAgent,
+<a class="jxr_linenumber" name="108" href="#108">108</a>                                   <strong class="jxr_keyword">boolean</strong> keepAlive,
+<a class="jxr_linenumber" name="109" href="#109">109</a>                                   ExecutorService applicationThreadPool,
+<a class="jxr_linenumber" name="110" href="#110">110</a>                                   <a href="../../../../com/ning/http/client/ProxyServerSelector.html">ProxyServerSelector</a> proxyServerSelector,
+<a class="jxr_linenumber" name="111" href="#111">111</a>                                   SSLContext sslContext,
+<a class="jxr_linenumber" name="112" href="#112">112</a>                                   <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory,
+<a class="jxr_linenumber" name="113" href="#113">113</a>                                   AsyncHttpProviderConfig&lt;?, ?&gt; providerConfig,
+<a class="jxr_linenumber" name="114" href="#114">114</a>                                   ConnectionsPool&lt;?, ?&gt; connectionsPool, <a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm,
+<a class="jxr_linenumber" name="115" href="#115">115</a>                                   List&lt;RequestFilter&gt; requestFilters,
+<a class="jxr_linenumber" name="116" href="#116">116</a>                                   List&lt;ResponseFilter&gt; responseFilters,
+<a class="jxr_linenumber" name="117" href="#117">117</a>                                   List&lt;IOExceptionFilter&gt; ioExceptionFilters,
+<a class="jxr_linenumber" name="118" href="#118">118</a>                                   <strong class="jxr_keyword">int</strong> requestCompressionLevel,
+<a class="jxr_linenumber" name="119" href="#119">119</a>                                   <strong class="jxr_keyword">int</strong> maxRequestRetry,
+<a class="jxr_linenumber" name="120" href="#120">120</a>                                   <strong class="jxr_keyword">boolean</strong> allowSslConnectionCaching,
+<a class="jxr_linenumber" name="121" href="#121">121</a>                                   <strong class="jxr_keyword">boolean</strong> useRawUrl,
+<a class="jxr_linenumber" name="122" href="#122">122</a>                                   <strong class="jxr_keyword">boolean</strong> removeQueryParamOnRedirect,
+<a class="jxr_linenumber" name="123" href="#123">123</a>                                   HostnameVerifier hostnameVerifier,
+<a class="jxr_linenumber" name="124" href="#124">124</a>                                   <strong class="jxr_keyword">int</strong> ioThreadMultiplier,
+<a class="jxr_linenumber" name="125" href="#125">125</a>                                   <strong class="jxr_keyword">boolean</strong> strict302Handling,
+<a class="jxr_linenumber" name="126" href="#126">126</a>                                   <strong class="jxr_keyword">boolean</strong> useRelativeURIsWithSSLProxies,
+<a class="jxr_linenumber" name="127" href="#127">127</a>                                   <a href="../../../../com/ning/http/client/date/TimeConverter.html">TimeConverter</a> timeConverter) {
+<a class="jxr_linenumber" name="128" href="#128">128</a> 
+<a class="jxr_linenumber" name="129" href="#129">129</a>         <strong class="jxr_keyword">this</strong>.maxTotalConnections = maxTotalConnections;
+<a class="jxr_linenumber" name="130" href="#130">130</a>         <strong class="jxr_keyword">this</strong>.maxConnectionPerHost = maxConnectionPerHost;
+<a class="jxr_linenumber" name="131" href="#131">131</a>         <strong class="jxr_keyword">this</strong>.connectionTimeOutInMs = connectionTimeOutInMs;
+<a class="jxr_linenumber" name="132" href="#132">132</a>         <strong class="jxr_keyword">this</strong>.webSocketIdleTimeoutInMs = webSocketTimeoutInMs;
+<a class="jxr_linenumber" name="133" href="#133">133</a>         <strong class="jxr_keyword">this</strong>.idleConnectionInPoolTimeoutInMs = idleConnectionInPoolTimeoutInMs;
+<a class="jxr_linenumber" name="134" href="#134">134</a>         <strong class="jxr_keyword">this</strong>.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+<a class="jxr_linenumber" name="135" href="#135">135</a>         <strong class="jxr_keyword">this</strong>.requestTimeoutInMs = requestTimeoutInMs;
+<a class="jxr_linenumber" name="136" href="#136">136</a>         <strong class="jxr_keyword">this</strong>.maxConnectionLifeTimeInMs = connectionMaxLifeTimeInMs;
+<a class="jxr_linenumber" name="137" href="#137">137</a>         <strong class="jxr_keyword">this</strong>.redirectEnabled = redirectEnabled;
+<a class="jxr_linenumber" name="138" href="#138">138</a>         <strong class="jxr_keyword">this</strong>.maxDefaultRedirects = maxDefaultRedirects;
+<a class="jxr_linenumber" name="139" href="#139">139</a>         <strong class="jxr_keyword">this</strong>.compressionEnabled = compressionEnabled;
+<a class="jxr_linenumber" name="140" href="#140">140</a>         <strong class="jxr_keyword">this</strong>.userAgent = userAgent;
+<a class="jxr_linenumber" name="141" href="#141">141</a>         <strong class="jxr_keyword">this</strong>.allowPoolingConnection = keepAlive;
+<a class="jxr_linenumber" name="142" href="#142">142</a>         <strong class="jxr_keyword">this</strong>.sslContext = sslContext;
+<a class="jxr_linenumber" name="143" href="#143">143</a>         <strong class="jxr_keyword">this</strong>.sslEngineFactory = sslEngineFactory;
+<a class="jxr_linenumber" name="144" href="#144">144</a>         <strong class="jxr_keyword">this</strong>.providerConfig = providerConfig;
+<a class="jxr_linenumber" name="145" href="#145">145</a>         <strong class="jxr_keyword">this</strong>.connectionsPool = connectionsPool;
+<a class="jxr_linenumber" name="146" href="#146">146</a>         <strong class="jxr_keyword">this</strong>.realm = realm;
+<a class="jxr_linenumber" name="147" href="#147">147</a>         <strong class="jxr_keyword">this</strong>.requestFilters = requestFilters;
+<a class="jxr_linenumber" name="148" href="#148">148</a>         <strong class="jxr_keyword">this</strong>.responseFilters = responseFilters;
+<a class="jxr_linenumber" name="149" href="#149">149</a>         <strong class="jxr_keyword">this</strong>.ioExceptionFilters = ioExceptionFilters;
+<a class="jxr_linenumber" name="150" href="#150">150</a>         <strong class="jxr_keyword">this</strong>.requestCompressionLevel = requestCompressionLevel;
+<a class="jxr_linenumber" name="151" href="#151">151</a>         <strong class="jxr_keyword">this</strong>.maxRequestRetry = maxRequestRetry;
+<a class="jxr_linenumber" name="152" href="#152">152</a>         <strong class="jxr_keyword">this</strong>.allowSslConnectionPool = allowSslConnectionCaching;
+<a class="jxr_linenumber" name="153" href="#153">153</a>         <strong class="jxr_keyword">this</strong>.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+<a class="jxr_linenumber" name="154" href="#154">154</a>         <strong class="jxr_keyword">this</strong>.hostnameVerifier = hostnameVerifier;
+<a class="jxr_linenumber" name="155" href="#155">155</a>         <strong class="jxr_keyword">this</strong>.ioThreadMultiplier = ioThreadMultiplier;
+<a class="jxr_linenumber" name="156" href="#156">156</a>         <strong class="jxr_keyword">this</strong>.strict302Handling = strict302Handling;
+<a class="jxr_linenumber" name="157" href="#157">157</a>         <strong class="jxr_keyword">this</strong>.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+<a class="jxr_linenumber" name="158" href="#158">158</a> 
+<a class="jxr_linenumber" name="159" href="#159">159</a>         <strong class="jxr_keyword">if</strong> (applicationThreadPool == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="160" href="#160">160</a>             <strong class="jxr_keyword">this</strong>.applicationThreadPool = Executors.newCachedThreadPool();
+<a class="jxr_linenumber" name="161" href="#161">161</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="162" href="#162">162</a>             <strong class="jxr_keyword">this</strong>.applicationThreadPool = applicationThreadPool;
+<a class="jxr_linenumber" name="163" href="#163">163</a>         }
+<a class="jxr_linenumber" name="164" href="#164">164</a>         <strong class="jxr_keyword">this</strong>.proxyServerSelector = proxyServerSelector;
+<a class="jxr_linenumber" name="165" href="#165">165</a>         <strong class="jxr_keyword">this</strong>.useRawUrl = useRawUrl;
+<a class="jxr_linenumber" name="166" href="#166">166</a>         <strong class="jxr_keyword">this</strong>.timeConverter = timeConverter;
+<a class="jxr_linenumber" name="167" href="#167">167</a>     }
+<a class="jxr_linenumber" name="168" href="#168">168</a> 
+<a class="jxr_linenumber" name="169" href="#169">169</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="170" href="#170">170</a> <em class="jxr_javadoccomment">     * Return the maximum number of connections an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="171" href="#171">171</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="172" href="#172">172</a> <em class="jxr_javadoccomment">     * @return the maximum number of connections an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="173" href="#173">173</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="174" href="#174">174</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getMaxTotalConnections() {
+<a class="jxr_linenumber" name="175" href="#175">175</a>         <strong class="jxr_keyword">return</strong> maxTotalConnections;
+<a class="jxr_linenumber" name="176" href="#176">176</a>     }
+<a class="jxr_linenumber" name="177" href="#177">177</a> 
+<a class="jxr_linenumber" name="178" href="#178">178</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="179" href="#179">179</a> <em class="jxr_javadoccomment">     * Return the maximum number of connections per hosts an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="180" href="#180">180</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="181" href="#181">181</a> <em class="jxr_javadoccomment">     * @return the maximum number of connections per host an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="182" href="#182">182</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="183" href="#183">183</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getMaxConnectionPerHost() {
+<a class="jxr_linenumber" name="184" href="#184">184</a>         <strong class="jxr_keyword">return</strong> maxConnectionPerHost;
+<a class="jxr_linenumber" name="185" href="#185">185</a>     }
+<a class="jxr_linenumber" name="186" href="#186">186</a> 
+<a class="jxr_linenumber" name="187" href="#187">187</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="188" href="#188">188</a> <em class="jxr_javadoccomment">     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host</em>
+<a class="jxr_linenumber" name="189" href="#189">189</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="190" href="#190">190</a> <em class="jxr_javadoccomment">     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host</em>
+<a class="jxr_linenumber" name="191" href="#191">191</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="192" href="#192">192</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getConnectionTimeoutInMs() {
+<a class="jxr_linenumber" name="193" href="#193">193</a>         <strong class="jxr_keyword">return</strong> connectionTimeOutInMs;
+<a class="jxr_linenumber" name="194" href="#194">194</a>     }
+<a class="jxr_linenumber" name="195" href="#195">195</a> 
+<a class="jxr_linenumber" name="196" href="#196">196</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="197" href="#197">197</a> <em class="jxr_javadoccomment">     * Return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.</em>
+<a class="jxr_linenumber" name="198" href="#198">198</a> <em class="jxr_javadoccomment">     * @return the maximum time, in milliseconds, a {@link com.ning.http.client.websocket.WebSocket} may be idle before being timed out.</em>
+<a class="jxr_linenumber" name="199" href="#199">199</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="200" href="#200">200</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getWebSocketIdleTimeoutInMs() {
+<a class="jxr_linenumber" name="201" href="#201">201</a>         <strong class="jxr_keyword">return</strong> webSocketIdleTimeoutInMs;
+<a class="jxr_linenumber" name="202" href="#202">202</a>     }
+<a class="jxr_linenumber" name="203" href="#203">203</a> 
+<a class="jxr_linenumber" name="204" href="#204">204</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="205" href="#205">205</a> <em class="jxr_javadoccomment">     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.</em>
+<a class="jxr_linenumber" name="206" href="#206">206</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="207" href="#207">207</a> <em class="jxr_javadoccomment">     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.</em>
+<a class="jxr_linenumber" name="208" href="#208">208</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="209" href="#209">209</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getIdleConnectionTimeoutInMs() {
+<a class="jxr_linenumber" name="210" href="#210">210</a>         <strong class="jxr_keyword">return</strong> idleConnectionTimeoutInMs;
+<a class="jxr_linenumber" name="211" href="#211">211</a>     }
+<a class="jxr_linenumber" name="212" href="#212">212</a> 
+<a class="jxr_linenumber" name="213" href="#213">213</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="214" href="#214">214</a> <em class="jxr_javadoccomment">     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection</em>
+<a class="jxr_linenumber" name="215" href="#215">215</a> <em class="jxr_javadoccomment">     * in pool.</em>
+<a class="jxr_linenumber" name="216" href="#216">216</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="217" href="#217">217</a> <em class="jxr_javadoccomment">     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection</em>
+<a class="jxr_linenumber" name="218" href="#218">218</a> <em class="jxr_javadoccomment">     *         in pool.</em>
+<a class="jxr_linenumber" name="219" href="#219">219</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="220" href="#220">220</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getIdleConnectionInPoolTimeoutInMs() {
+<a class="jxr_linenumber" name="221" href="#221">221</a>         <strong class="jxr_keyword">return</strong> idleConnectionInPoolTimeoutInMs;
+<a class="jxr_linenumber" name="222" href="#222">222</a>     }
+<a class="jxr_linenumber" name="223" href="#223">223</a> 
+<a class="jxr_linenumber" name="224" href="#224">224</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="225" href="#225">225</a> <em class="jxr_javadoccomment">     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response</em>
+<a class="jxr_linenumber" name="226" href="#226">226</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="227" href="#227">227</a> <em class="jxr_javadoccomment">     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response</em>
+<a class="jxr_linenumber" name="228" href="#228">228</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="229" href="#229">229</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getRequestTimeoutInMs() {
+<a class="jxr_linenumber" name="230" href="#230">230</a>         <strong class="jxr_keyword">return</strong> requestTimeoutInMs;
+<a class="jxr_linenumber" name="231" href="#231">231</a>     }
+<a class="jxr_linenumber" name="232" href="#232">232</a> 
+<a class="jxr_linenumber" name="233" href="#233">233</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="234" href="#234">234</a> <em class="jxr_javadoccomment">     * Is HTTP redirect enabled</em>
+<a class="jxr_linenumber" name="235" href="#235">235</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="236" href="#236">236</a> <em class="jxr_javadoccomment">     * @return true if enabled.</em>
+<a class="jxr_linenumber" name="237" href="#237">237</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="238" href="#238">238</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isRedirectEnabled() {
+<a class="jxr_linenumber" name="239" href="#239">239</a>         <strong class="jxr_keyword">return</strong> redirectEnabled;
+<a class="jxr_linenumber" name="240" href="#240">240</a>     }
+<a class="jxr_linenumber" name="241" href="#241">241</a> 
+<a class="jxr_linenumber" name="242" href="#242">242</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="243" href="#243">243</a> <em class="jxr_javadoccomment">     * Get the maximum number of HTTP redirect</em>
+<a class="jxr_linenumber" name="244" href="#244">244</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="245" href="#245">245</a> <em class="jxr_javadoccomment">     * @return the maximum number of HTTP redirect</em>
+<a class="jxr_linenumber" name="246" href="#246">246</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="247" href="#247">247</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getMaxRedirects() {
+<a class="jxr_linenumber" name="248" href="#248">248</a>         <strong class="jxr_keyword">return</strong> maxDefaultRedirects;
+<a class="jxr_linenumber" name="249" href="#249">249</a>     }
+<a class="jxr_linenumber" name="250" href="#250">250</a> 
+<a class="jxr_linenumber" name="251" href="#251">251</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="252" href="#252">252</a> <em class="jxr_javadoccomment">     * Is the {@link ConnectionsPool} support enabled.</em>
+<a class="jxr_linenumber" name="253" href="#253">253</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="254" href="#254">254</a> <em class="jxr_javadoccomment">     * @return true if keep-alive is enabled</em>
+<a class="jxr_linenumber" name="255" href="#255">255</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="256" href="#256">256</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> getAllowPoolingConnection() {
+<a class="jxr_linenumber" name="257" href="#257">257</a>         <strong class="jxr_keyword">return</strong> allowPoolingConnection;
+<a class="jxr_linenumber" name="258" href="#258">258</a>     }
+<a class="jxr_linenumber" name="259" href="#259">259</a> 
+<a class="jxr_linenumber" name="260" href="#260">260</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="261" href="#261">261</a> <em class="jxr_javadoccomment">     * Is the {@link ConnectionsPool} support enabled.</em>
+<a class="jxr_linenumber" name="262" href="#262">262</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="263" href="#263">263</a> <em class="jxr_javadoccomment">     * @return true if keep-alive is enabled</em>
+<a class="jxr_linenumber" name="264" href="#264">264</a> <em class="jxr_javadoccomment">     * @deprecated - Use {@link AsyncHttpClientConfig#getAllowPoolingConnection()}</em>
+<a class="jxr_linenumber" name="265" href="#265">265</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="266" href="#266">266</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> getKeepAlive() {
+<a class="jxr_linenumber" name="267" href="#267">267</a>         <strong class="jxr_keyword">return</strong> allowPoolingConnection;
+<a class="jxr_linenumber" name="268" href="#268">268</a>     }
+<a class="jxr_linenumber" name="269" href="#269">269</a> 
+<a class="jxr_linenumber" name="270" href="#270">270</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="271" href="#271">271</a> <em class="jxr_javadoccomment">     * Return the USER_AGENT header value</em>
+<a class="jxr_linenumber" name="272" href="#272">272</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="273" href="#273">273</a> <em class="jxr_javadoccomment">     * @return the USER_AGENT header value</em>
+<a class="jxr_linenumber" name="274" href="#274">274</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="275" href="#275">275</a>     <strong class="jxr_keyword">public</strong> String getUserAgent() {
+<a class="jxr_linenumber" name="276" href="#276">276</a>         <strong class="jxr_keyword">return</strong> userAgent;
+<a class="jxr_linenumber" name="277" href="#277">277</a>     }
+<a class="jxr_linenumber" name="278" href="#278">278</a> 
+<a class="jxr_linenumber" name="279" href="#279">279</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="280" href="#280">280</a> <em class="jxr_javadoccomment">     * Is HTTP compression enabled.</em>
+<a class="jxr_linenumber" name="281" href="#281">281</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="282" href="#282">282</a> <em class="jxr_javadoccomment">     * @return true if compression is enabled</em>
+<a class="jxr_linenumber" name="283" href="#283">283</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="284" href="#284">284</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isCompressionEnabled() {
+<a class="jxr_linenumber" name="285" href="#285">285</a>         <strong class="jxr_keyword">return</strong> compressionEnabled;
+<a class="jxr_linenumber" name="286" href="#286">286</a>     }
+<a class="jxr_linenumber" name="287" href="#287">287</a> 
+<a class="jxr_linenumber" name="288" href="#288">288</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="289" href="#289">289</a> <em class="jxr_javadoccomment">     * Return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling</em>
+<a class="jxr_linenumber" name="290" href="#290">290</a> <em class="jxr_javadoccomment">     * asynchronous response.</em>
+<a class="jxr_linenumber" name="291" href="#291">291</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="292" href="#292">292</a> <em class="jxr_javadoccomment">     * @return the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling</em>
+<a class="jxr_linenumber" name="293" href="#293">293</a> <em class="jxr_javadoccomment">     *         asynchronous response.</em>
+<a class="jxr_linenumber" name="294" href="#294">294</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="295" href="#295">295</a>     <strong class="jxr_keyword">public</strong> ExecutorService executorService() {
+<a class="jxr_linenumber" name="296" href="#296">296</a>         <strong class="jxr_keyword">return</strong> applicationThreadPool;
+<a class="jxr_linenumber" name="297" href="#297">297</a>     }
+<a class="jxr_linenumber" name="298" href="#298">298</a> 
+<a class="jxr_linenumber" name="299" href="#299">299</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="300" href="#300">300</a> <em class="jxr_javadoccomment">     * An instance of {@link com.ning.http.client.ProxyServer} used by an {@link AsyncHttpClient}</em>
+<a class="jxr_linenumber" name="301" href="#301">301</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="302" href="#302">302</a> <em class="jxr_javadoccomment">     * @return instance of {@link com.ning.http.client.ProxyServer}</em>
+<a class="jxr_linenumber" name="303" href="#303">303</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="304" href="#304">304</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/ProxyServerSelector.html">ProxyServerSelector</a> getProxyServerSelector() {
+<a class="jxr_linenumber" name="305" href="#305">305</a>         <strong class="jxr_keyword">return</strong> proxyServerSelector;
+<a class="jxr_linenumber" name="306" href="#306">306</a>     }
+<a class="jxr_linenumber" name="307" href="#307">307</a> 
+<a class="jxr_linenumber" name="308" href="#308">308</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="309" href="#309">309</a> <em class="jxr_javadoccomment">     * Return an instance of {@link SSLContext} used for SSL connection.</em>
+<a class="jxr_linenumber" name="310" href="#310">310</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="311" href="#311">311</a> <em class="jxr_javadoccomment">     * @return an instance of {@link SSLContext} used for SSL connection.</em>
+<a class="jxr_linenumber" name="312" href="#312">312</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="313" href="#313">313</a>     <strong class="jxr_keyword">public</strong> SSLContext getSSLContext() {
+<a class="jxr_linenumber" name="314" href="#314">314</a>         <strong class="jxr_keyword">return</strong> sslContext;
+<a class="jxr_linenumber" name="315" href="#315">315</a>     }
+<a class="jxr_linenumber" name="316" href="#316">316</a> 
+<a class="jxr_linenumber" name="317" href="#317">317</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="318" href="#318">318</a> <em class="jxr_javadoccomment">     * Return an instance of {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="319" href="#319">319</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="320" href="#320">320</a> <em class="jxr_javadoccomment">     * @return an instance of {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="321" href="#321">321</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="322" href="#322">322</a>     <strong class="jxr_keyword">public</strong> ConnectionsPool&lt;?, ?&gt; getConnectionsPool() {
+<a class="jxr_linenumber" name="323" href="#323">323</a>         <strong class="jxr_keyword">return</strong> connectionsPool;
+<a class="jxr_linenumber" name="324" href="#324">324</a>     }
+<a class="jxr_linenumber" name="325" href="#325">325</a> 
+<a class="jxr_linenumber" name="326" href="#326">326</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="327" href="#327">327</a> <em class="jxr_javadoccomment">     * Return an instance of {@link SSLEngineFactory} used for SSL connection.</em>
+<a class="jxr_linenumber" name="328" href="#328">328</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="329" href="#329">329</a> <em class="jxr_javadoccomment">     * @return an instance of {@link SSLEngineFactory} used for SSL connection.</em>
+<a class="jxr_linenumber" name="330" href="#330">330</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="331" href="#331">331</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> getSSLEngineFactory() {
+<a class="jxr_linenumber" name="332" href="#332">332</a>         <strong class="jxr_keyword">if</strong> (sslEngineFactory == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="333" href="#333">333</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a>() {
+<a class="jxr_linenumber" name="334" href="#334">334</a>                 <strong class="jxr_keyword">public</strong> SSLEngine newSSLEngine() {
+<a class="jxr_linenumber" name="335" href="#335">335</a>                     <strong class="jxr_keyword">if</strong> (sslContext != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="336" href="#336">336</a>                         SSLEngine sslEngine = sslContext.createSSLEngine();
+<a class="jxr_linenumber" name="337" href="#337">337</a>                         sslEngine.setUseClientMode(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="338" href="#338">338</a>                         <strong class="jxr_keyword">return</strong> sslEngine;
+<a class="jxr_linenumber" name="339" href="#339">339</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="340" href="#340">340</a>                         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="341" href="#341">341</a>                     }
+<a class="jxr_linenumber" name="342" href="#342">342</a>                 }
+<a class="jxr_linenumber" name="343" href="#343">343</a>             };
+<a class="jxr_linenumber" name="344" href="#344">344</a>         }
+<a class="jxr_linenumber" name="345" href="#345">345</a>         <strong class="jxr_keyword">return</strong> sslEngineFactory;
+<a class="jxr_linenumber" name="346" href="#346">346</a>     }
+<a class="jxr_linenumber" name="347" href="#347">347</a> 
+<a class="jxr_linenumber" name="348" href="#348">348</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="349" href="#349">349</a> <em class="jxr_javadoccomment">     * Return the {@link com.ning.http.client.AsyncHttpProviderConfig}</em>
+<a class="jxr_linenumber" name="350" href="#350">350</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="351" href="#351">351</a> <em class="jxr_javadoccomment">     * @return the {@link com.ning.http.client.AsyncHttpProviderConfig}</em>
+<a class="jxr_linenumber" name="352" href="#352">352</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="353" href="#353">353</a>     <strong class="jxr_keyword">public</strong> AsyncHttpProviderConfig&lt;?, ?&gt; getAsyncHttpProviderConfig() {
+<a class="jxr_linenumber" name="354" href="#354">354</a>         <strong class="jxr_keyword">return</strong> providerConfig;
+<a class="jxr_linenumber" name="355" href="#355">355</a>     }
+<a class="jxr_linenumber" name="356" href="#356">356</a> 
+<a class="jxr_linenumber" name="357" href="#357">357</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="358" href="#358">358</a> <em class="jxr_javadoccomment">     * Return the current {@link Realm}}</em>
+<a class="jxr_linenumber" name="359" href="#359">359</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="360" href="#360">360</a> <em class="jxr_javadoccomment">     * @return the current {@link Realm}}</em>
+<a class="jxr_linenumber" name="361" href="#361">361</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="362" href="#362">362</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/Realm.html">Realm</a> getRealm() {
+<a class="jxr_linenumber" name="363" href="#363">363</a>         <strong class="jxr_keyword">return</strong> realm;
+<a class="jxr_linenumber" name="364" href="#364">364</a>     }
+<a class="jxr_linenumber" name="365" href="#365">365</a> 
+<a class="jxr_linenumber" name="366" href="#366">366</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="367" href="#367">367</a> <em class="jxr_javadoccomment">     * Return the list of {@link RequestFilter}</em>
+<a class="jxr_linenumber" name="368" href="#368">368</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="369" href="#369">369</a> <em class="jxr_javadoccomment">     * @return Unmodifiable list of {@link ResponseFilter}</em>
+<a class="jxr_linenumber" name="370" href="#370">370</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="371" href="#371">371</a>     <strong class="jxr_keyword">public</strong> List&lt;RequestFilter&gt; getRequestFilters() {
+<a class="jxr_linenumber" name="372" href="#372">372</a>         <strong class="jxr_keyword">return</strong> Collections.unmodifiableList(requestFilters);
+<a class="jxr_linenumber" name="373" href="#373">373</a>     }
+<a class="jxr_linenumber" name="374" href="#374">374</a> 
+<a class="jxr_linenumber" name="375" href="#375">375</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="376" href="#376">376</a> <em class="jxr_javadoccomment">     * Return the list of {@link ResponseFilter}</em>
+<a class="jxr_linenumber" name="377" href="#377">377</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="378" href="#378">378</a> <em class="jxr_javadoccomment">     * @return Unmodifiable list of {@link ResponseFilter}</em>
+<a class="jxr_linenumber" name="379" href="#379">379</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="380" href="#380">380</a>     <strong class="jxr_keyword">public</strong> List&lt;ResponseFilter&gt; getResponseFilters() {
+<a class="jxr_linenumber" name="381" href="#381">381</a>         <strong class="jxr_keyword">return</strong> Collections.unmodifiableList(responseFilters);
+<a class="jxr_linenumber" name="382" href="#382">382</a>     }
+<a class="jxr_linenumber" name="383" href="#383">383</a> 
+<a class="jxr_linenumber" name="384" href="#384">384</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="385" href="#385">385</a> <em class="jxr_javadoccomment">     * Return the list of {@link java.io.IOException}</em>
+<a class="jxr_linenumber" name="386" href="#386">386</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="387" href="#387">387</a> <em class="jxr_javadoccomment">     * @return Unmodifiable list of {@link java.io.IOException}</em>
+<a class="jxr_linenumber" name="388" href="#388">388</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="389" href="#389">389</a>     <strong class="jxr_keyword">public</strong> List&lt;IOExceptionFilter&gt; getIOExceptionFilters() {
+<a class="jxr_linenumber" name="390" href="#390">390</a>         <strong class="jxr_keyword">return</strong> Collections.unmodifiableList(ioExceptionFilters);
+<a class="jxr_linenumber" name="391" href="#391">391</a>     }
+<a class="jxr_linenumber" name="392" href="#392">392</a> 
+<a class="jxr_linenumber" name="393" href="#393">393</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="394" href="#394">394</a> <em class="jxr_javadoccomment">     * Return the compression level, or -1 if no compression is used.</em>
+<a class="jxr_linenumber" name="395" href="#395">395</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="396" href="#396">396</a> <em class="jxr_javadoccomment">     * @return the compression level, or -1 if no compression is use</em>
+<a class="jxr_linenumber" name="397" href="#397">397</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="398" href="#398">398</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getRequestCompressionLevel() {
+<a class="jxr_linenumber" name="399" href="#399">399</a>         <strong class="jxr_keyword">return</strong> requestCompressionLevel;
+<a class="jxr_linenumber" name="400" href="#400">400</a>     }
+<a class="jxr_linenumber" name="401" href="#401">401</a> 
+<a class="jxr_linenumber" name="402" href="#402">402</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="403" href="#403">403</a> <em class="jxr_javadoccomment">     * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server</em>
+<a class="jxr_linenumber" name="404" href="#404">404</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="405" href="#405">405</a> <em class="jxr_javadoccomment">     * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server</em>
+<a class="jxr_linenumber" name="406" href="#406">406</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="407" href="#407">407</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getMaxRequestRetry() {
+<a class="jxr_linenumber" name="408" href="#408">408</a>         <strong class="jxr_keyword">return</strong> maxRequestRetry;
+<a class="jxr_linenumber" name="409" href="#409">409</a>     }
+<a class="jxr_linenumber" name="410" href="#410">410</a> 
+<a class="jxr_linenumber" name="411" href="#411">411</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="412" href="#412">412</a> <em class="jxr_javadoccomment">     * Return true is SSL connection polling is enabled. Default is true.</em>
+<a class="jxr_linenumber" name="413" href="#413">413</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="414" href="#414">414</a> <em class="jxr_javadoccomment">     * @return true is enabled.</em>
+<a class="jxr_linenumber" name="415" href="#415">415</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="416" href="#416">416</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isSslConnectionPoolEnabled() {
+<a class="jxr_linenumber" name="417" href="#417">417</a>         <strong class="jxr_keyword">return</strong> allowSslConnectionPool;
+<a class="jxr_linenumber" name="418" href="#418">418</a>     }
+<a class="jxr_linenumber" name="419" href="#419">419</a> 
+<a class="jxr_linenumber" name="420" href="#420">420</a> 
+<a class="jxr_linenumber" name="421" href="#421">421</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="422" href="#422">422</a> <em class="jxr_javadoccomment">     * @return the useRawUrl</em>
+<a class="jxr_linenumber" name="423" href="#423">423</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="424" href="#424">424</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isUseRawUrl() {
+<a class="jxr_linenumber" name="425" href="#425">425</a>         <strong class="jxr_keyword">return</strong> useRawUrl;
+<a class="jxr_linenumber" name="426" href="#426">426</a>     }
+<a class="jxr_linenumber" name="427" href="#427">427</a> 
+<a class="jxr_linenumber" name="428" href="#428">428</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="429" href="#429">429</a> <em class="jxr_javadoccomment">     * Return true if the query parameters will be stripped from the request when a redirect is requested.</em>
+<a class="jxr_linenumber" name="430" href="#430">430</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="431" href="#431">431</a> <em class="jxr_javadoccomment">     * @return true if the query parameters will be stripped from the request when a redirect is requested.</em>
+<a class="jxr_linenumber" name="432" href="#432">432</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="433" href="#433">433</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isRemoveQueryParamOnRedirect() {
+<a class="jxr_linenumber" name="434" href="#434">434</a>         <strong class="jxr_keyword">return</strong> removeQueryParamOnRedirect;
+<a class="jxr_linenumber" name="435" href="#435">435</a>     }
+<a class="jxr_linenumber" name="436" href="#436">436</a> 
+<a class="jxr_linenumber" name="437" href="#437">437</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="438" href="#438">438</a> <em class="jxr_javadoccomment">     * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.</em>
+<a class="jxr_linenumber" name="439" href="#439">439</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="440" href="#440">440</a> <em class="jxr_javadoccomment">     * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.</em>
+<a class="jxr_linenumber" name="441" href="#441">441</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="442" href="#442">442</a> <em class="jxr_javadoccomment">     * @deprecated use #isValid</em>
+<a class="jxr_linenumber" name="443" href="#443">443</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="444" href="#444">444</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isClosed() {
+<a class="jxr_linenumber" name="445" href="#445">445</a>         <strong class="jxr_keyword">return</strong> !isValid();
+<a class="jxr_linenumber" name="446" href="#446">446</a>     }
+<a class="jxr_linenumber" name="447" href="#447">447</a> 
+<a class="jxr_linenumber" name="448" href="#448">448</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="449" href="#449">449</a> <em class="jxr_javadoccomment">     * @return &lt;code&gt;true&lt;/code&gt; if both the application and reaper thread pools</em>
+<a class="jxr_linenumber" name="450" href="#450">450</a> <em class="jxr_javadoccomment">     *  haven't yet been shutdown.</em>
+<a class="jxr_linenumber" name="451" href="#451">451</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="452" href="#452">452</a> <em class="jxr_javadoccomment">     * @since 1.7.21</em>
+<a class="jxr_linenumber" name="453" href="#453">453</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="454" href="#454">454</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isValid() {
+<a class="jxr_linenumber" name="455" href="#455">455</a>         <strong class="jxr_keyword">boolean</strong> atpRunning = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="456" href="#456">456</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="457" href="#457">457</a>             atpRunning = applicationThreadPool.isShutdown();
+<a class="jxr_linenumber" name="458" href="#458">458</a>         } <strong class="jxr_keyword">catch</strong> (Exception ignore) {
+<a class="jxr_linenumber" name="459" href="#459">459</a>             <em class="jxr_comment">// isShutdown() will thrown an exception in an EE7 environment</em>
+<a class="jxr_linenumber" name="460" href="#460">460</a>             <em class="jxr_comment">// when using a ManagedExecutorService.</em>
+<a class="jxr_linenumber" name="461" href="#461">461</a>             <em class="jxr_comment">// When this is the case, we assume it's running.</em>
+<a class="jxr_linenumber" name="462" href="#462">462</a>         }
+<a class="jxr_linenumber" name="463" href="#463">463</a>         <strong class="jxr_keyword">return</strong> atpRunning;
+<a class="jxr_linenumber" name="464" href="#464">464</a>     }
+<a class="jxr_linenumber" name="465" href="#465">465</a> 
+<a class="jxr_linenumber" name="466" href="#466">466</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="467" href="#467">467</a> <em class="jxr_javadoccomment">     * Return the {@link HostnameVerifier}</em>
+<a class="jxr_linenumber" name="468" href="#468">468</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="469" href="#469">469</a> <em class="jxr_javadoccomment">     * @return the {@link HostnameVerifier}</em>
+<a class="jxr_linenumber" name="470" href="#470">470</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="471" href="#471">471</a>     <strong class="jxr_keyword">public</strong> HostnameVerifier getHostnameVerifier() {
+<a class="jxr_linenumber" name="472" href="#472">472</a>         <strong class="jxr_keyword">return</strong> hostnameVerifier;
+<a class="jxr_linenumber" name="473" href="#473">473</a>     }
+<a class="jxr_linenumber" name="474" href="#474">474</a> 
+<a class="jxr_linenumber" name="475" href="#475">475</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="476" href="#476">476</a> <em class="jxr_javadoccomment">     * @return number to multiply by availableProcessors() that will determine # of NioWorkers to use</em>
+<a class="jxr_linenumber" name="477" href="#477">477</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="478" href="#478">478</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getIoThreadMultiplier() {
+<a class="jxr_linenumber" name="479" href="#479">479</a>         <strong class="jxr_keyword">return</strong> ioThreadMultiplier;
+<a class="jxr_linenumber" name="480" href="#480">480</a>     }
+<a class="jxr_linenumber" name="481" href="#481">481</a> 
+<a class="jxr_linenumber" name="482" href="#482">482</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="483" href="#483">483</a> <em class="jxr_javadoccomment">     * &lt;p&gt;</em>
+<a class="jxr_linenumber" name="484" href="#484">484</a> <em class="jxr_javadoccomment">     * In the case of a POST/Redirect/Get scenario where the server uses a 302</em>
+<a class="jxr_linenumber" name="485" href="#485">485</a> <em class="jxr_javadoccomment">     * for the redirect, should AHC respond to the redirect with a GET or</em>
+<a class="jxr_linenumber" name="486" href="#486">486</a> <em class="jxr_javadoccomment">     * whatever the original method was.  Unless configured otherwise,</em>
+<a class="jxr_linenumber" name="487" href="#487">487</a> <em class="jxr_javadoccomment">     * for a 302, AHC, will use a GET for this case.</em>
+<a class="jxr_linenumber" name="488" href="#488">488</a> <em class="jxr_javadoccomment">     * &lt;/p&gt;</em>
+<a class="jxr_linenumber" name="489" href="#489">489</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="490" href="#490">490</a> <em class="jxr_javadoccomment">     * @return &lt;code&gt;true&lt;/code&gt; if string 302 handling is to be used,</em>
+<a class="jxr_linenumber" name="491" href="#491">491</a> <em class="jxr_javadoccomment">     *  otherwise &lt;code&gt;false&lt;/code&gt;.</em>
+<a class="jxr_linenumber" name="492" href="#492">492</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="493" href="#493">493</a> <em class="jxr_javadoccomment">     * @since 1.7.2</em>
+<a class="jxr_linenumber" name="494" href="#494">494</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="495" href="#495">495</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isStrict302Handling() {
+<a class="jxr_linenumber" name="496" href="#496">496</a>         <strong class="jxr_keyword">return</strong> strict302Handling;
+<a class="jxr_linenumber" name="497" href="#497">497</a>     }
+<a class="jxr_linenumber" name="498" href="#498">498</a> 
+<a class="jxr_linenumber" name="499" href="#499">499</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="500" href="#500">500</a> <em class="jxr_javadoccomment">     * @return&lt;code&gt;true&lt;/code&gt; if AHC should use relative URIs instead of absolute ones when talking with a SSL proxy,</em>
+<a class="jxr_linenumber" name="501" href="#501">501</a> <em class="jxr_javadoccomment">     *  otherwise &lt;code&gt;false&lt;/code&gt;.</em>
+<a class="jxr_linenumber" name="502" href="#502">502</a> <em class="jxr_javadoccomment">     *  </em>
+<a class="jxr_linenumber" name="503" href="#503">503</a> <em class="jxr_javadoccomment">     *  @since 1.7.12</em>
+<a class="jxr_linenumber" name="504" href="#504">504</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="505" href="#505">505</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isUseRelativeURIsWithSSLProxies() {
+<a class="jxr_linenumber" name="506" href="#506">506</a>         <strong class="jxr_keyword">return</strong> useRelativeURIsWithSSLProxies;
+<a class="jxr_linenumber" name="507" href="#507">507</a>     }
+<a class="jxr_linenumber" name="508" href="#508">508</a>     
+<a class="jxr_linenumber" name="509" href="#509">509</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="510" href="#510">510</a> <em class="jxr_javadoccomment">     * Return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.</em>
+<a class="jxr_linenumber" name="511" href="#511">511</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="512" href="#512">512</a> <em class="jxr_javadoccomment">     * @return the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.</em>
+<a class="jxr_linenumber" name="513" href="#513">513</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="514" href="#514">514</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getMaxConnectionLifeTimeInMs() {
+<a class="jxr_linenumber" name="515" href="#515">515</a>         <strong class="jxr_keyword">return</strong> maxConnectionLifeTimeInMs;
+<a class="jxr_linenumber" name="516" href="#516">516</a>     }
+<a class="jxr_linenumber" name="517" href="#517">517</a> 
+<a class="jxr_linenumber" name="518" href="#518">518</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="519" href="#519">519</a> <em class="jxr_javadoccomment">     * @return 1.8.2</em>
+<a class="jxr_linenumber" name="520" href="#520">520</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="521" href="#521">521</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/TimeConverter.html">TimeConverter</a> getTimeConverter() {
+<a class="jxr_linenumber" name="522" href="#522">522</a>         <strong class="jxr_keyword">return</strong> timeConverter;
+<a class="jxr_linenumber" name="523" href="#523">523</a>     }
+<a class="jxr_linenumber" name="524" href="#524">524</a> 
+<a class="jxr_linenumber" name="525" href="#525">525</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="526" href="#526">526</a> <em class="jxr_javadoccomment">     * Builder for an {@link AsyncHttpClient}</em>
+<a class="jxr_linenumber" name="527" href="#527">527</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="528" href="#528">528</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> {
+<a class="jxr_linenumber" name="529" href="#529">529</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultMaxTotalConnections = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultMaxTotalConnections"</span>, -1);
+<a class="jxr_linenumber" name="530" href="#530">530</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultMaxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultMaxConnectionsPerHost"</span>, -1);
+<a class="jxr_linenumber" name="531" href="#531">531</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultConnectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultConnectionTimeoutInMS"</span>, 60 * 1000);
+<a class="jxr_linenumber" name="532" href="#532">532</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultWebsocketIdleTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultWebsocketTimoutInMS"</span>, 15 * 60 * 1000);
+<a class="jxr_linenumber" name="533" href="#533">533</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultIdleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultIdleConnectionInPoolTimeoutInMS"</span>, 60 * 1000);
+<a class="jxr_linenumber" name="534" href="#534">534</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultIdleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultIdleConnectionTimeoutInMS"</span>, 60 * 1000);
+<a class="jxr_linenumber" name="535" href="#535">535</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultRequestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultRequestTimeoutInMS"</span>, 60 * 1000);
+<a class="jxr_linenumber" name="536" href="#536">536</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> defaultMaxConnectionLifeTimeInMs = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultMaxConnectionLifeTimeInMs"</span>, -1);
+<a class="jxr_linenumber" name="537" href="#537">537</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + <span class="jxr_string">"defaultRedirectsEnabled"</span>);
+<a class="jxr_linenumber" name="538" href="#538">538</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + <span class="jxr_string">"defaultMaxRedirects"</span>, 5);
+<a class="jxr_linenumber" name="539" href="#539">539</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + <span class="jxr_string">"compressionEnabled"</span>);
+<a class="jxr_linenumber" name="540" href="#540">540</a>         <strong class="jxr_keyword">private</strong> String userAgent = System.getProperty(ASYNC_CLIENT + <span class="jxr_string">"userAgent"</span>, <span class="jxr_string">"NING/1.0"</span>);
+<a class="jxr_linenumber" name="541" href="#541">541</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + <span class="jxr_string">"useProxyProperties"</span>);
+<a class="jxr_linenumber" name="542" href="#542">542</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + <span class="jxr_string">"useProxySelector"</span>);
+<a class="jxr_linenumber" name="543" href="#543">543</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> allowPoolingConnection = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="544" href="#544">544</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> useRelativeURIsWithSSLProxies = getBoolean(ASYNC_CLIENT + <span class="jxr_string">"useRelativeURIsWithSSLProxies"</span>, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="545" href="#545">545</a>         <strong class="jxr_keyword">private</strong> ExecutorService applicationThreadPool;
+<a class="jxr_linenumber" name="546" href="#546">546</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../com/ning/http/client/ProxyServerSelector.html">ProxyServerSelector</a> proxyServerSelector = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="547" href="#547">547</a>         <strong class="jxr_keyword">private</strong> SSLContext sslContext;
+<a class="jxr_linenumber" name="548" href="#548">548</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory;
+<a class="jxr_linenumber" name="549" href="#549">549</a>         <strong class="jxr_keyword">private</strong> AsyncHttpProviderConfig&lt;?, ?&gt; providerConfig;
+<a class="jxr_linenumber" name="550" href="#550">550</a>         <strong class="jxr_keyword">private</strong> ConnectionsPool&lt;?, ?&gt; connectionsPool;
+<a class="jxr_linenumber" name="551" href="#551">551</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm;
+<a class="jxr_linenumber" name="552" href="#552">552</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> requestCompressionLevel = -1;
+<a class="jxr_linenumber" name="553" href="#553">553</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> maxRequestRetry = 5;
+<a class="jxr_linenumber" name="554" href="#554">554</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> List&lt;RequestFilter&gt; requestFilters = <strong class="jxr_keyword">new</strong> LinkedList&lt;RequestFilter&gt;();
+<a class="jxr_linenumber" name="555" href="#555">555</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> List&lt;ResponseFilter&gt; responseFilters = <strong class="jxr_keyword">new</strong> LinkedList&lt;ResponseFilter&gt;();
+<a class="jxr_linenumber" name="556" href="#556">556</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> List&lt;IOExceptionFilter&gt; ioExceptionFilters = <strong class="jxr_keyword">new</strong> LinkedList&lt;IOExceptionFilter&gt;();
+<a class="jxr_linenumber" name="557" href="#557">557</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> allowSslConnectionPool = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="558" href="#558">558</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> useRawUrl = false;
+<a class="jxr_linenumber" name="559" href="#559">559</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> removeQueryParamOnRedirect = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="560" href="#560">560</a>         <strong class="jxr_keyword">private</strong> HostnameVerifier hostnameVerifier = <strong class="jxr_keyword">new</strong> <a href="../../../../com/ning/http/util/AllowAllHostnameVerifier.html">AllowAllHostnameVerifier</a>();
+<a class="jxr_linenumber" name="561" href="#561">561</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> ioThreadMultiplier = 2;
+<a class="jxr_linenumber" name="562" href="#562">562</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> strict302Handling;
+<a class="jxr_linenumber" name="563" href="#563">563</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../com/ning/http/client/date/TimeConverter.html">TimeConverter</a> timeConverter;
+<a class="jxr_linenumber" name="564" href="#564">564</a> 
+<a class="jxr_linenumber" name="565" href="#565">565</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a>() {
+<a class="jxr_linenumber" name="566" href="#566">566</a>         }
+<a class="jxr_linenumber" name="567" href="#567">567</a> 
+<a class="jxr_linenumber" name="568" href="#568">568</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="569" href="#569">569</a> <em class="jxr_javadoccomment">         * Set the maximum number of connections an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="570" href="#570">570</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="571" href="#571">571</a> <em class="jxr_javadoccomment">         * @param defaultMaxTotalConnections the maximum number of connections an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="572" href="#572">572</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="573" href="#573">573</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="574" href="#574">574</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setMaximumConnectionsTotal(<strong class="jxr_keyword">int</strong> defaultMaxTotalConnections) {
+<a class="jxr_linenumber" name="575" href="#575">575</a>             <strong class="jxr_keyword">this</strong>.defaultMaxTotalConnections = defaultMaxTotalConnections;
+<a class="jxr_linenumber" name="576" href="#576">576</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="577" href="#577">577</a>         }
+<a class="jxr_linenumber" name="578" href="#578">578</a> 
+<a class="jxr_linenumber" name="579" href="#579">579</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="580" href="#580">580</a> <em class="jxr_javadoccomment">         * Set the maximum number of connections per hosts an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="581" href="#581">581</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="582" href="#582">582</a> <em class="jxr_javadoccomment">         * @param defaultMaxConnectionPerHost the maximum number of connections per host an {@link com.ning.http.client.AsyncHttpClient} can handle.</em>
+<a class="jxr_linenumber" name="583" href="#583">583</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="584" href="#584">584</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="585" href="#585">585</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setMaximumConnectionsPerHost(<strong class="jxr_keyword">int</strong> defaultMaxConnectionPerHost) {
+<a class="jxr_linenumber" name="586" href="#586">586</a>             <strong class="jxr_keyword">this</strong>.defaultMaxConnectionPerHost = defaultMaxConnectionPerHost;
+<a class="jxr_linenumber" name="587" href="#587">587</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="588" href="#588">588</a>         }
+<a class="jxr_linenumber" name="589" href="#589">589</a> 
+<a class="jxr_linenumber" name="590" href="#590">590</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="591" href="#591">591</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host</em>
+<a class="jxr_linenumber" name="592" href="#592">592</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="593" href="#593">593</a> <em class="jxr_javadoccomment">         * @param defaultConnectionTimeOutInMs the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can wait when connecting to a remote host</em>
+<a class="jxr_linenumber" name="594" href="#594">594</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="595" href="#595">595</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="596" href="#596">596</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setConnectionTimeoutInMs(<strong class="jxr_keyword">int</strong> defaultConnectionTimeOutInMs) {
+<a class="jxr_linenumber" name="597" href="#597">597</a>             <strong class="jxr_keyword">this</strong>.defaultConnectionTimeOutInMs = defaultConnectionTimeOutInMs;
+<a class="jxr_linenumber" name="598" href="#598">598</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="599" href="#599">599</a>         }
+<a class="jxr_linenumber" name="600" href="#600">600</a> 
+<a class="jxr_linenumber" name="601" href="#601">601</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="602" href="#602">602</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.</em>
+<a class="jxr_linenumber" name="603" href="#603">603</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="604" href="#604">604</a> <em class="jxr_javadoccomment">         * @param defaultWebSocketIdleTimeoutInMs</em>
+<a class="jxr_linenumber" name="605" href="#605">605</a> <em class="jxr_javadoccomment">         *         the maximum time in millisecond an {@link com.ning.http.client.websocket.WebSocket} can stay idle.</em>
+<a class="jxr_linenumber" name="606" href="#606">606</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="607" href="#607">607</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="608" href="#608">608</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setWebSocketIdleTimeoutInMs(<strong class="jxr_keyword">int</strong> defaultWebSocketIdleTimeoutInMs) {
+<a class="jxr_linenumber" name="609" href="#609">609</a>             <strong class="jxr_keyword">this</strong>.defaultWebsocketIdleTimeoutInMs = defaultWebSocketIdleTimeoutInMs;
+<a class="jxr_linenumber" name="610" href="#610">610</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="611" href="#611">611</a>         }
+<a class="jxr_linenumber" name="612" href="#612">612</a> 
+<a class="jxr_linenumber" name="613" href="#613">613</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="614" href="#614">614</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.</em>
+<a class="jxr_linenumber" name="615" href="#615">615</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="616" href="#616">616</a> <em class="jxr_javadoccomment">         * @param defaultIdleConnectionTimeoutInMs</em>
+<a class="jxr_linenumber" name="617" href="#617">617</a> <em class="jxr_javadoccomment">         *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} can stay idle.</em>
+<a class="jxr_linenumber" name="618" href="#618">618</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="619" href="#619">619</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="620" href="#620">620</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setIdleConnectionTimeoutInMs(<strong class="jxr_keyword">int</strong> defaultIdleConnectionTimeoutInMs) {
+<a class="jxr_linenumber" name="621" href="#621">621</a>             <strong class="jxr_keyword">this</strong>.defaultIdleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs;
+<a class="jxr_linenumber" name="622" href="#622">622</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="623" href="#623">623</a>         }
+<a class="jxr_linenumber" name="624" href="#624">624</a> 
+<a class="jxr_linenumber" name="625" href="#625">625</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="626" href="#626">626</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection</em>
+<a class="jxr_linenumber" name="627" href="#627">627</a> <em class="jxr_javadoccomment">         * idle in pool.</em>
+<a class="jxr_linenumber" name="628" href="#628">628</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="629" href="#629">629</a> <em class="jxr_javadoccomment">         * @param defaultIdleConnectionInPoolTimeoutInMs</em>
+<a class="jxr_linenumber" name="630" href="#630">630</a> <em class="jxr_javadoccomment">         *         the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} will keep connection</em>
+<a class="jxr_linenumber" name="631" href="#631">631</a> <em class="jxr_javadoccomment">         *         idle in pool.</em>
+<a class="jxr_linenumber" name="632" href="#632">632</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="633" href="#633">633</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="634" href="#634">634</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setIdleConnectionInPoolTimeoutInMs(<strong class="jxr_keyword">int</strong> defaultIdleConnectionInPoolTimeoutInMs) {
+<a class="jxr_linenumber" name="635" href="#635">635</a>             <strong class="jxr_keyword">this</strong>.defaultIdleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs;
+<a class="jxr_linenumber" name="636" href="#636">636</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="637" href="#637">637</a>         }
+<a class="jxr_linenumber" name="638" href="#638">638</a> 
+<a class="jxr_linenumber" name="639" href="#639">639</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="640" href="#640">640</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response</em>
+<a class="jxr_linenumber" name="641" href="#641">641</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="642" href="#642">642</a> <em class="jxr_javadoccomment">         * @param defaultRequestTimeoutInMs the maximum time in millisecond an {@link com.ning.http.client.AsyncHttpClient} wait for a response</em>
+<a class="jxr_linenumber" name="643" href="#643">643</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="644" href="#644">644</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="645" href="#645">645</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setRequestTimeoutInMs(<strong class="jxr_keyword">int</strong> defaultRequestTimeoutInMs) {
+<a class="jxr_linenumber" name="646" href="#646">646</a>             <strong class="jxr_keyword">this</strong>.defaultRequestTimeoutInMs = defaultRequestTimeoutInMs;
+<a class="jxr_linenumber" name="647" href="#647">647</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="648" href="#648">648</a>         }
+<a class="jxr_linenumber" name="649" href="#649">649</a> 
+<a class="jxr_linenumber" name="650" href="#650">650</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="651" href="#651">651</a> <em class="jxr_javadoccomment">         * Set to true to enable HTTP redirect</em>
+<a class="jxr_linenumber" name="652" href="#652">652</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="653" href="#653">653</a> <em class="jxr_javadoccomment">         * @param redirectEnabled true if enabled.</em>
+<a class="jxr_linenumber" name="654" href="#654">654</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="655" href="#655">655</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="656" href="#656">656</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setFollowRedirects(<strong class="jxr_keyword">boolean</strong> redirectEnabled) {
+<a class="jxr_linenumber" name="657" href="#657">657</a>             <strong class="jxr_keyword">this</strong>.redirectEnabled = redirectEnabled;
+<a class="jxr_linenumber" name="658" href="#658">658</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="659" href="#659">659</a>         }
+<a class="jxr_linenumber" name="660" href="#660">660</a> 
+<a class="jxr_linenumber" name="661" href="#661">661</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="662" href="#662">662</a> <em class="jxr_javadoccomment">         * Set the maximum number of HTTP redirect</em>
+<a class="jxr_linenumber" name="663" href="#663">663</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="664" href="#664">664</a> <em class="jxr_javadoccomment">         * @param maxDefaultRedirects the maximum number of HTTP redirect</em>
+<a class="jxr_linenumber" name="665" href="#665">665</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="666" href="#666">666</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="667" href="#667">667</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setMaximumNumberOfRedirects(<strong class="jxr_keyword">int</strong> maxDefaultRedirects) {
+<a class="jxr_linenumber" name="668" href="#668">668</a>             <strong class="jxr_keyword">this</strong>.maxDefaultRedirects = maxDefaultRedirects;
+<a class="jxr_linenumber" name="669" href="#669">669</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="670" href="#670">670</a>         }
+<a class="jxr_linenumber" name="671" href="#671">671</a> 
+<a class="jxr_linenumber" name="672" href="#672">672</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="673" href="#673">673</a> <em class="jxr_javadoccomment">         * Enable HTTP compression.</em>
+<a class="jxr_linenumber" name="674" href="#674">674</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="675" href="#675">675</a> <em class="jxr_javadoccomment">         * @param compressionEnabled true if compression is enabled</em>
+<a class="jxr_linenumber" name="676" href="#676">676</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="677" href="#677">677</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="678" href="#678">678</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setCompressionEnabled(<strong class="jxr_keyword">boolean</strong> compressionEnabled) {
+<a class="jxr_linenumber" name="679" href="#679">679</a>             <strong class="jxr_keyword">this</strong>.compressionEnabled = compressionEnabled;
+<a class="jxr_linenumber" name="680" href="#680">680</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="681" href="#681">681</a>         }
+<a class="jxr_linenumber" name="682" href="#682">682</a> 
+<a class="jxr_linenumber" name="683" href="#683">683</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="684" href="#684">684</a> <em class="jxr_javadoccomment">         * Set the USER_AGENT header value</em>
+<a class="jxr_linenumber" name="685" href="#685">685</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="686" href="#686">686</a> <em class="jxr_javadoccomment">         * @param userAgent the USER_AGENT header value</em>
+<a class="jxr_linenumber" name="687" href="#687">687</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="688" href="#688">688</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="689" href="#689">689</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setUserAgent(String userAgent) {
+<a class="jxr_linenumber" name="690" href="#690">690</a>             <strong class="jxr_keyword">this</strong>.userAgent = userAgent;
+<a class="jxr_linenumber" name="691" href="#691">691</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="692" href="#692">692</a>         }
+<a class="jxr_linenumber" name="693" href="#693">693</a> 
+<a class="jxr_linenumber" name="694" href="#694">694</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="695" href="#695">695</a> <em class="jxr_javadoccomment">         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.</em>
+<a class="jxr_linenumber" name="696" href="#696">696</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="697" href="#697">697</a> <em class="jxr_javadoccomment">         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="698" href="#698">698</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="699" href="#699">699</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="700" href="#700">700</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setAllowPoolingConnection(<strong class="jxr_keyword">boolean</strong> allowPoolingConnection) {
+<a class="jxr_linenumber" name="701" href="#701">701</a>             <strong class="jxr_keyword">this</strong>.allowPoolingConnection = allowPoolingConnection;
+<a class="jxr_linenumber" name="702" href="#702">702</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="703" href="#703">703</a>         }
+<a class="jxr_linenumber" name="704" href="#704">704</a> 
+<a class="jxr_linenumber" name="705" href="#705">705</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="706" href="#706">706</a> <em class="jxr_javadoccomment">         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.</em>
+<a class="jxr_linenumber" name="707" href="#707">707</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="708" href="#708">708</a> <em class="jxr_javadoccomment">         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="709" href="#709">709</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="710" href="#710">710</a> <em class="jxr_javadoccomment">         * @deprecated - Use {@link com.ning.http.client.AsyncHttpClientConfig.Builder#setAllowPoolingConnection(boolean)}</em>
+<a class="jxr_linenumber" name="711" href="#711">711</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="712" href="#712">712</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setKeepAlive(<strong class="jxr_keyword">boolean</strong> allowPoolingConnection) {
+<a class="jxr_linenumber" name="713" href="#713">713</a>             <strong class="jxr_keyword">this</strong>.allowPoolingConnection = allowPoolingConnection;
+<a class="jxr_linenumber" name="714" href="#714">714</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="715" href="#715">715</a>         }
+<a class="jxr_linenumber" name="716" href="#716">716</a> 
+<a class="jxr_linenumber" name="717" href="#717">717</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="718" href="#718">718</a> <em class="jxr_javadoccomment">         * Set the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling</em>
+<a class="jxr_linenumber" name="719" href="#719">719</a> <em class="jxr_javadoccomment">         * asynchronous response.</em>
+<a class="jxr_linenumber" name="720" href="#720">720</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="721" href="#721">721</a> <em class="jxr_javadoccomment">         * @param applicationThreadPool the {@link java.util.concurrent.ExecutorService} an {@link AsyncHttpClient} use for handling</em>
+<a class="jxr_linenumber" name="722" href="#722">722</a> <em class="jxr_javadoccomment">         *                              asynchronous response.</em>
+<a class="jxr_linenumber" name="723" href="#723">723</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="724" href="#724">724</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="725" href="#725">725</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setExecutorService(ExecutorService applicationThreadPool) {
+<a class="jxr_linenumber" name="726" href="#726">726</a>             <strong class="jxr_keyword">this</strong>.applicationThreadPool = applicationThreadPool;
+<a class="jxr_linenumber" name="727" href="#727">727</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="728" href="#728">728</a>         }
+<a class="jxr_linenumber" name="729" href="#729">729</a> 
+<a class="jxr_linenumber" name="730" href="#730">730</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="731" href="#731">731</a> <em class="jxr_javadoccomment">         * Set an instance of {@link ProxyServerSelector} used by an {@link AsyncHttpClient}</em>
+<a class="jxr_linenumber" name="732" href="#732">732</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="733" href="#733">733</a> <em class="jxr_javadoccomment">         * @param proxyServerSelector instance of {@link ProxyServerSelector}</em>
+<a class="jxr_linenumber" name="734" href="#734">734</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="735" href="#735">735</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="736" href="#736">736</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setProxyServerSelector(<a href="../../../../com/ning/http/client/ProxyServerSelector.html">ProxyServerSelector</a> proxyServerSelector) {
+<a class="jxr_linenumber" name="737" href="#737">737</a>             <strong class="jxr_keyword">this</strong>.proxyServerSelector = proxyServerSelector;
+<a class="jxr_linenumber" name="738" href="#738">738</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="739" href="#739">739</a>         }
+<a class="jxr_linenumber" name="740" href="#740">740</a> 
+<a class="jxr_linenumber" name="741" href="#741">741</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="742" href="#742">742</a> <em class="jxr_javadoccomment">         * Set an instance of {@link ProxyServer} used by an {@link AsyncHttpClient}</em>
+<a class="jxr_linenumber" name="743" href="#743">743</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="744" href="#744">744</a> <em class="jxr_javadoccomment">         * @param proxyServer instance of {@link com.ning.http.client.ProxyServer}</em>
+<a class="jxr_linenumber" name="745" href="#745">745</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="746" href="#746">746</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="747" href="#747">747</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setProxyServer(<a href="../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer) {
+<a class="jxr_linenumber" name="748" href="#748">748</a>             <strong class="jxr_keyword">this</strong>.proxyServerSelector = ProxyUtils.createProxyServerSelector(proxyServer);
+<a class="jxr_linenumber" name="749" href="#749">749</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="750" href="#750">750</a>         }
+<a class="jxr_linenumber" name="751" href="#751">751</a> 
+<a class="jxr_linenumber" name="752" href="#752">752</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="753" href="#753">753</a> <em class="jxr_javadoccomment">         * Set the {@link SSLEngineFactory} for secure connection.</em>
+<a class="jxr_linenumber" name="754" href="#754">754</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="755" href="#755">755</a> <em class="jxr_javadoccomment">         * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection</em>
+<a class="jxr_linenumber" name="756" href="#756">756</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="757" href="#757">757</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="758" href="#758">758</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setSSLEngineFactory(<a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a> sslEngineFactory) {
+<a class="jxr_linenumber" name="759" href="#759">759</a>             <strong class="jxr_keyword">this</strong>.sslEngineFactory = sslEngineFactory;
+<a class="jxr_linenumber" name="760" href="#760">760</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="761" href="#761">761</a>         }
+<a class="jxr_linenumber" name="762" href="#762">762</a> 
+<a class="jxr_linenumber" name="763" href="#763">763</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="764" href="#764">764</a> <em class="jxr_javadoccomment">         * Set the {@link SSLContext} for secure connection.</em>
+<a class="jxr_linenumber" name="765" href="#765">765</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="766" href="#766">766</a> <em class="jxr_javadoccomment">         * @param sslContext the {@link SSLContext} for secure connection</em>
+<a class="jxr_linenumber" name="767" href="#767">767</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="768" href="#768">768</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="769" href="#769">769</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setSSLContext(<strong class="jxr_keyword">final</strong> SSLContext sslContext) {
+<a class="jxr_linenumber" name="770" href="#770">770</a>             <strong class="jxr_keyword">this</strong>.sslEngineFactory = <strong class="jxr_keyword">new</strong> <a href="../../../../com/ning/http/client/SSLEngineFactory.html">SSLEngineFactory</a>() {
+<a class="jxr_linenumber" name="771" href="#771">771</a>                 <strong class="jxr_keyword">public</strong> SSLEngine newSSLEngine() <strong class="jxr_keyword">throws</strong> GeneralSecurityException {
+<a class="jxr_linenumber" name="772" href="#772">772</a>                     SSLEngine sslEngine = sslContext.createSSLEngine();
+<a class="jxr_linenumber" name="773" href="#773">773</a>                     sslEngine.setUseClientMode(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="774" href="#774">774</a>                     <strong class="jxr_keyword">return</strong> sslEngine;
+<a class="jxr_linenumber" name="775" href="#775">775</a>                 }
+<a class="jxr_linenumber" name="776" href="#776">776</a>             };
+<a class="jxr_linenumber" name="777" href="#777">777</a>             <strong class="jxr_keyword">this</strong>.sslContext = sslContext;
+<a class="jxr_linenumber" name="778" href="#778">778</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="779" href="#779">779</a>         }
+<a class="jxr_linenumber" name="780" href="#780">780</a> 
+<a class="jxr_linenumber" name="781" href="#781">781</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="782" href="#782">782</a> <em class="jxr_javadoccomment">         * Set the {@link com.ning.http.client.AsyncHttpProviderConfig}</em>
+<a class="jxr_linenumber" name="783" href="#783">783</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="784" href="#784">784</a> <em class="jxr_javadoccomment">         * @param providerConfig the {@link com.ning.http.client.AsyncHttpProviderConfig}</em>
+<a class="jxr_linenumber" name="785" href="#785">785</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="786" href="#786">786</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="787" href="#787">787</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setAsyncHttpClientProviderConfig(AsyncHttpProviderConfig&lt;?, ?&gt; providerConfig) {
+<a class="jxr_linenumber" name="788" href="#788">788</a>             <strong class="jxr_keyword">this</strong>.providerConfig = providerConfig;
+<a class="jxr_linenumber" name="789" href="#789">789</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="790" href="#790">790</a>         }
+<a class="jxr_linenumber" name="791" href="#791">791</a> 
+<a class="jxr_linenumber" name="792" href="#792">792</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="793" href="#793">793</a> <em class="jxr_javadoccomment">         * Set the {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="794" href="#794">794</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="795" href="#795">795</a> <em class="jxr_javadoccomment">         * @param connectionsPool the {@link ConnectionsPool}</em>
+<a class="jxr_linenumber" name="796" href="#796">796</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="797" href="#797">797</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="798" href="#798">798</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setConnectionsPool(ConnectionsPool&lt;?, ?&gt; connectionsPool) {
+<a class="jxr_linenumber" name="799" href="#799">799</a>             <strong class="jxr_keyword">this</strong>.connectionsPool = connectionsPool;
+<a class="jxr_linenumber" name="800" href="#800">800</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="801" href="#801">801</a>         }
+<a class="jxr_linenumber" name="802" href="#802">802</a> 
+<a class="jxr_linenumber" name="803" href="#803">803</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="804" href="#804">804</a> <em class="jxr_javadoccomment">         * Set the {@link Realm}  that will be used for all requests.</em>
+<a class="jxr_linenumber" name="805" href="#805">805</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="806" href="#806">806</a> <em class="jxr_javadoccomment">         * @param realm the {@link Realm}</em>
+<a class="jxr_linenumber" name="807" href="#807">807</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="808" href="#808">808</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="809" href="#809">809</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setRealm(<a href="../../../../com/ning/http/client/Realm.html">Realm</a> realm) {
+<a class="jxr_linenumber" name="810" href="#810">810</a>             <strong class="jxr_keyword">this</strong>.realm = realm;
+<a class="jxr_linenumber" name="811" href="#811">811</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="812" href="#812">812</a>         }
+<a class="jxr_linenumber" name="813" href="#813">813</a> 
+<a class="jxr_linenumber" name="814" href="#814">814</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="815" href="#815">815</a> <em class="jxr_javadoccomment">         * Add an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}</em>
+<a class="jxr_linenumber" name="816" href="#816">816</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="817" href="#817">817</a> <em class="jxr_javadoccomment">         * @param requestFilter {@link com.ning.http.client.filter.RequestFilter}</em>
+<a class="jxr_linenumber" name="818" href="#818">818</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="819" href="#819">819</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="820" href="#820">820</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> addRequestFilter(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter) {
+<a class="jxr_linenumber" name="821" href="#821">821</a>             requestFilters.add(requestFilter);
+<a class="jxr_linenumber" name="822" href="#822">822</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="823" href="#823">823</a>         }
+<a class="jxr_linenumber" name="824" href="#824">824</a> 
+<a class="jxr_linenumber" name="825" href="#825">825</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="826" href="#826">826</a> <em class="jxr_javadoccomment">         * Remove an {@link com.ning.http.client.filter.RequestFilter} that will be invoked before {@link com.ning.http.client.AsyncHttpClient#executeRequest(Request)}</em>
+<a class="jxr_linenumber" name="827" href="#827">827</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="828" href="#828">828</a> <em class="jxr_javadoccomment">         * @param requestFilter {@link com.ning.http.client.filter.RequestFilter}</em>
+<a class="jxr_linenumber" name="829" href="#829">829</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="830" href="#830">830</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="831" href="#831">831</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> removeRequestFilter(<a href="../../../../com/ning/http/client/filter/RequestFilter.html">RequestFilter</a> requestFilter) {
+<a class="jxr_linenumber" name="832" href="#832">832</a>             requestFilters.remove(requestFilter);
+<a class="jxr_linenumber" name="833" href="#833">833</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="834" href="#834">834</a>         }
+<a class="jxr_linenumber" name="835" href="#835">835</a> 
+<a class="jxr_linenumber" name="836" href="#836">836</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="837" href="#837">837</a> <em class="jxr_javadoccomment">         * Add an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is</em>
+<a class="jxr_linenumber" name="838" href="#838">838</a> <em class="jxr_javadoccomment">         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.</em>
+<a class="jxr_linenumber" name="839" href="#839">839</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="840" href="#840">840</a> <em class="jxr_javadoccomment">         * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}</em>
+<a class="jxr_linenumber" name="841" href="#841">841</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="842" href="#842">842</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="843" href="#843">843</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> addResponseFilter(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter) {
+<a class="jxr_linenumber" name="844" href="#844">844</a>             responseFilters.add(responseFilter);
+<a class="jxr_linenumber" name="845" href="#845">845</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="846" href="#846">846</a>         }
+<a class="jxr_linenumber" name="847" href="#847">847</a> 
+<a class="jxr_linenumber" name="848" href="#848">848</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="849" href="#849">849</a> <em class="jxr_javadoccomment">         * Remove an {@link com.ning.http.client.filter.ResponseFilter} that will be invoked as soon as the response is</em>
+<a class="jxr_linenumber" name="850" href="#850">850</a> <em class="jxr_javadoccomment">         * received, and before {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}.</em>
+<a class="jxr_linenumber" name="851" href="#851">851</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="852" href="#852">852</a> <em class="jxr_javadoccomment">         * @param responseFilter an {@link com.ning.http.client.filter.ResponseFilter}</em>
+<a class="jxr_linenumber" name="853" href="#853">853</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="854" href="#854">854</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="855" href="#855">855</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> removeResponseFilter(<a href="../../../../com/ning/http/client/filter/ResponseFilter.html">ResponseFilter</a> responseFilter) {
+<a class="jxr_linenumber" name="856" href="#856">856</a>             responseFilters.remove(responseFilter);
+<a class="jxr_linenumber" name="857" href="#857">857</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="858" href="#858">858</a>         }
+<a class="jxr_linenumber" name="859" href="#859">859</a> 
+<a class="jxr_linenumber" name="860" href="#860">860</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="861" href="#861">861</a> <em class="jxr_javadoccomment">         * Add an {@link com.ning.http.client.filter.IOExceptionFilter} that will be invoked when an {@link java.io.IOException}</em>
+<a class="jxr_linenumber" name="862" href="#862">862</a> <em class="jxr_javadoccomment">         * occurs during the download/upload operations.</em>
+<a class="jxr_linenumber" name="863" href="#863">863</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="864" href="#864">864</a> <em class="jxr_javadoccomment">         * @param ioExceptionFilter an {@link com.ning.http.client.filter.ResponseFilter}</em>
+<a class="jxr_linenumber" name="865" href="#865">865</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="866" href="#866">866</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="867" href="#867">867</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> addIOExceptionFilter(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter) {
+<a class="jxr_linenumber" name="868" href="#868">868</a>             ioExceptionFilters.add(ioExceptionFilter);
+<a class="jxr_linenumber" name="869" href="#869">869</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="870" href="#870">870</a>         }
+<a class="jxr_linenumber" name="871" href="#871">871</a> 
+<a class="jxr_linenumber" name="872" href="#872">872</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="873" href="#873">873</a> <em class="jxr_javadoccomment">         * Remove an {@link com.ning.http.client.filter.IOExceptionFilter} tthat will be invoked when an {@link java.io.IOException}</em>
+<a class="jxr_linenumber" name="874" href="#874">874</a> <em class="jxr_javadoccomment">         * occurs during the download/upload operations.</em>
+<a class="jxr_linenumber" name="875" href="#875">875</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="876" href="#876">876</a> <em class="jxr_javadoccomment">         * @param ioExceptionFilter an {@link com.ning.http.client.filter.ResponseFilter}</em>
+<a class="jxr_linenumber" name="877" href="#877">877</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="878" href="#878">878</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="879" href="#879">879</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> removeIOExceptionFilter(<a href="../../../../com/ning/http/client/filter/IOExceptionFilter.html">IOExceptionFilter</a> ioExceptionFilter) {
+<a class="jxr_linenumber" name="880" href="#880">880</a>             ioExceptionFilters.remove(ioExceptionFilter);
+<a class="jxr_linenumber" name="881" href="#881">881</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="882" href="#882">882</a>         }
+<a class="jxr_linenumber" name="883" href="#883">883</a> 
+<a class="jxr_linenumber" name="884" href="#884">884</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="885" href="#885">885</a> <em class="jxr_javadoccomment">         * Return the compression level, or -1 if no compression is used.</em>
+<a class="jxr_linenumber" name="886" href="#886">886</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="887" href="#887">887</a> <em class="jxr_javadoccomment">         * @return the compression level, or -1 if no compression is use</em>
+<a class="jxr_linenumber" name="888" href="#888">888</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="889" href="#889">889</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> getRequestCompressionLevel() {
+<a class="jxr_linenumber" name="890" href="#890">890</a>             <strong class="jxr_keyword">return</strong> requestCompressionLevel;
+<a class="jxr_linenumber" name="891" href="#891">891</a>         }
+<a class="jxr_linenumber" name="892" href="#892">892</a> 
+<a class="jxr_linenumber" name="893" href="#893">893</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="894" href="#894">894</a> <em class="jxr_javadoccomment">         * Set the compression level, or -1 if no compression is used.</em>
+<a class="jxr_linenumber" name="895" href="#895">895</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="896" href="#896">896</a> <em class="jxr_javadoccomment">         * @param requestCompressionLevel compression level, or -1 if no compression is use</em>
+<a class="jxr_linenumber" name="897" href="#897">897</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="898" href="#898">898</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="899" href="#899">899</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setRequestCompressionLevel(<strong class="jxr_keyword">int</strong> requestCompressionLevel) {
+<a class="jxr_linenumber" name="900" href="#900">900</a>             <strong class="jxr_keyword">this</strong>.requestCompressionLevel = requestCompressionLevel;
+<a class="jxr_linenumber" name="901" href="#901">901</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="902" href="#902">902</a>         }
+<a class="jxr_linenumber" name="903" href="#903">903</a> 
+<a class="jxr_linenumber" name="904" href="#904">904</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="905" href="#905">905</a> <em class="jxr_javadoccomment">         * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.</em>
+<a class="jxr_linenumber" name="906" href="#906">906</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="907" href="#907">907</a> <em class="jxr_javadoccomment">         * @param maxRequestRetry the number of time a request will be retried</em>
+<a class="jxr_linenumber" name="908" href="#908">908</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="909" href="#909">909</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="910" href="#910">910</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setMaxRequestRetry(<strong class="jxr_keyword">int</strong> maxRequestRetry) {
+<a class="jxr_linenumber" name="911" href="#911">911</a>             <strong class="jxr_keyword">this</strong>.maxRequestRetry = maxRequestRetry;
+<a class="jxr_linenumber" name="912" href="#912">912</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="913" href="#913">913</a>         }
+<a class="jxr_linenumber" name="914" href="#914">914</a> 
+<a class="jxr_linenumber" name="915" href="#915">915</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="916" href="#916">916</a> <em class="jxr_javadoccomment">         * Return true is if connections pooling is enabled.</em>
+<a class="jxr_linenumber" name="917" href="#917">917</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="918" href="#918">918</a> <em class="jxr_javadoccomment">         * @param allowSslConnectionPool true if enabled</em>
+<a class="jxr_linenumber" name="919" href="#919">919</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="920" href="#920">920</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="921" href="#921">921</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setAllowSslConnectionPool(<strong class="jxr_keyword">boolean</strong> allowSslConnectionPool) {
+<a class="jxr_linenumber" name="922" href="#922">922</a>             <strong class="jxr_keyword">this</strong>.allowSslConnectionPool = allowSslConnectionPool;
+<a class="jxr_linenumber" name="923" href="#923">923</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="924" href="#924">924</a>         }
+<a class="jxr_linenumber" name="925" href="#925">925</a> 
+<a class="jxr_linenumber" name="926" href="#926">926</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="927" href="#927">927</a> <em class="jxr_javadoccomment">         * Allows use unescaped URLs in requests</em>
+<a class="jxr_linenumber" name="928" href="#928">928</a> <em class="jxr_javadoccomment">         * useful for retrieving data from broken sites</em>
+<a class="jxr_linenumber" name="929" href="#929">929</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="930" href="#930">930</a> <em class="jxr_javadoccomment">         * @param useRawUrl</em>
+<a class="jxr_linenumber" name="931" href="#931">931</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="932" href="#932">932</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="933" href="#933">933</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setUseRawUrl(<strong class="jxr_keyword">boolean</strong> useRawUrl) {
+<a class="jxr_linenumber" name="934" href="#934">934</a>             <strong class="jxr_keyword">this</strong>.useRawUrl = useRawUrl;
+<a class="jxr_linenumber" name="935" href="#935">935</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="936" href="#936">936</a>         }
+<a class="jxr_linenumber" name="937" href="#937">937</a> 
+<a class="jxr_linenumber" name="938" href="#938">938</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="939" href="#939">939</a> <em class="jxr_javadoccomment">         * Set to false if you don't want the query parameters removed when a redirect occurs.</em>
+<a class="jxr_linenumber" name="940" href="#940">940</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="941" href="#941">941</a> <em class="jxr_javadoccomment">         * @param removeQueryParamOnRedirect</em>
+<a class="jxr_linenumber" name="942" href="#942">942</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="943" href="#943">943</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="944" href="#944">944</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setRemoveQueryParamsOnRedirect(<strong class="jxr_keyword">boolean</strong> removeQueryParamOnRedirect) {
+<a class="jxr_linenumber" name="945" href="#945">945</a>             <strong class="jxr_keyword">this</strong>.removeQueryParamOnRedirect = removeQueryParamOnRedirect;
+<a class="jxr_linenumber" name="946" href="#946">946</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="947" href="#947">947</a>         }
+<a class="jxr_linenumber" name="948" href="#948">948</a> 
+<a class="jxr_linenumber" name="949" href="#949">949</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="950" href="#950">950</a> <em class="jxr_javadoccomment">         * Sets whether AHC should use the default JDK ProxySelector to select a proxy server.</em>
+<a class="jxr_linenumber" name="951" href="#951">951</a> <em class="jxr_javadoccomment">         * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="952" href="#952">952</a> <em class="jxr_javadoccomment">         * If useProxySelector is set to &lt;code&gt;true&lt;/code&gt; but {@link #setProxyServer(ProxyServer)}</em>
+<a class="jxr_linenumber" name="953" href="#953">953</a> <em class="jxr_javadoccomment">         * was used to explicitly set a proxy server, the latter is preferred.</em>
+<a class="jxr_linenumber" name="954" href="#954">954</a> <em class="jxr_javadoccomment">         * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="955" href="#955">955</a> <em class="jxr_javadoccomment">         * See <a href="http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.html" target="alexandria_uri">http://docs.oracle.com/javase/7/docs/api/java/net/ProxySelector.html</a></em>
+<a class="jxr_linenumber" name="956" href="#956">956</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="957" href="#957">957</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setUseProxySelector(<strong class="jxr_keyword">boolean</strong> useProxySelector) {
+<a class="jxr_linenumber" name="958" href="#958">958</a>             <strong class="jxr_keyword">this</strong>.useProxySelector = useProxySelector;
+<a class="jxr_linenumber" name="959" href="#959">959</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="960" href="#960">960</a>         }
+<a class="jxr_linenumber" name="961" href="#961">961</a> 
+<a class="jxr_linenumber" name="962" href="#962">962</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="963" href="#963">963</a> <em class="jxr_javadoccomment">         * Sets whether AHC should use the default http.proxy* system properties</em>
+<a class="jxr_linenumber" name="964" href="#964">964</a> <em class="jxr_javadoccomment">         * to obtain proxy information.  This differs from {@link #setUseProxySelector(boolean)}</em>
+<a class="jxr_linenumber" name="965" href="#965">965</a> <em class="jxr_javadoccomment">         * in that AsyncHttpClient will use its own logic to handle the system properties,</em>
+<a class="jxr_linenumber" name="966" href="#966">966</a> <em class="jxr_javadoccomment">         * potentially supporting other protocols that the the JDK ProxySelector doesn't.</em>
+<a class="jxr_linenumber" name="967" href="#967">967</a> <em class="jxr_javadoccomment">         * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="968" href="#968">968</a> <em class="jxr_javadoccomment">         * If useProxyProperties is set to &lt;code&gt;true&lt;/code&gt; but {@link #setUseProxySelector(boolean)}</em>
+<a class="jxr_linenumber" name="969" href="#969">969</a> <em class="jxr_javadoccomment">         * was also set to true, the latter is preferred.</em>
+<a class="jxr_linenumber" name="970" href="#970">970</a> <em class="jxr_javadoccomment">         * &lt;p/&gt;</em>
+<a class="jxr_linenumber" name="971" href="#971">971</a> <em class="jxr_javadoccomment">         * See <a href="http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html" target="alexandria_uri">http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html</a></em>
+<a class="jxr_linenumber" name="972" href="#972">972</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="973" href="#973">973</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setUseProxyProperties(<strong class="jxr_keyword">boolean</strong> useProxyProperties) {
+<a class="jxr_linenumber" name="974" href="#974">974</a>             <strong class="jxr_keyword">this</strong>.useProxyProperties = useProxyProperties;
+<a class="jxr_linenumber" name="975" href="#975">975</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="976" href="#976">976</a>         }
+<a class="jxr_linenumber" name="977" href="#977">977</a> 
+<a class="jxr_linenumber" name="978" href="#978">978</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setIOThreadMultiplier(<strong class="jxr_keyword">int</strong> multiplier) {
+<a class="jxr_linenumber" name="979" href="#979">979</a>             <strong class="jxr_keyword">this</strong>.ioThreadMultiplier = multiplier;
+<a class="jxr_linenumber" name="980" href="#980">980</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="981" href="#981">981</a>         }
+<a class="jxr_linenumber" name="982" href="#982">982</a> 
+<a class="jxr_linenumber" name="983" href="#983">983</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="984" href="#984">984</a> <em class="jxr_javadoccomment">         * Set the {@link HostnameVerifier}</em>
+<a class="jxr_linenumber" name="985" href="#985">985</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="986" href="#986">986</a> <em class="jxr_javadoccomment">         * @param hostnameVerifier {@link HostnameVerifier}</em>
+<a class="jxr_linenumber" name="987" href="#987">987</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="988" href="#988">988</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="989" href="#989">989</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+<a class="jxr_linenumber" name="990" href="#990">990</a>             <strong class="jxr_keyword">this</strong>.hostnameVerifier = hostnameVerifier;
+<a class="jxr_linenumber" name="991" href="#991">991</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="992" href="#992">992</a>         }
+<a class="jxr_linenumber" name="993" href="#993">993</a> 
+<a class="jxr_linenumber" name="994" href="#994">994</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="995" href="#995">995</a> <em class="jxr_javadoccomment">         * Configures this AHC instance to be strict in it's handling of 302 redirects</em>
+<a class="jxr_linenumber" name="996" href="#996">996</a> <em class="jxr_javadoccomment">         * in a POST/Redirect/GET situation.</em>
+<a class="jxr_linenumber" name="997" href="#997">997</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="998" href="#998">998</a> <em class="jxr_javadoccomment">         * @param strict302Handling strict handling</em>
+<a class="jxr_linenumber" name="999" href="#999">999</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1000" href="#1000">1000</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="1001" href="#1001">1001</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1002" href="#1002">1002</a> <em class="jxr_javadoccomment">         * @since 1.7.2</em>
+<a class="jxr_linenumber" name="1003" href="#1003">1003</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1004" href="#1004">1004</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setStrict302Handling(<strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> strict302Handling) {
+<a class="jxr_linenumber" name="1005" href="#1005">1005</a>             <strong class="jxr_keyword">this</strong>.strict302Handling = strict302Handling;
+<a class="jxr_linenumber" name="1006" href="#1006">1006</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="1007" href="#1007">1007</a>         }
+<a class="jxr_linenumber" name="1008" href="#1008">1008</a>       
+<a class="jxr_linenumber" name="1009" href="#1009">1009</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1010" href="#1010">1010</a> <em class="jxr_javadoccomment">         * Configures this AHC instance to use relative URIs instead of absolute ones when talking with a SSL proxy.</em>
+<a class="jxr_linenumber" name="1011" href="#1011">1011</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1012" href="#1012">1012</a> <em class="jxr_javadoccomment">         * @param useRelativeURIsWithSSLProxies</em>
+<a class="jxr_linenumber" name="1013" href="#1013">1013</a> <em class="jxr_javadoccomment">         * @return this</em>
+<a class="jxr_linenumber" name="1014" href="#1014">1014</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1015" href="#1015">1015</a> <em class="jxr_javadoccomment">         * @since 1.7.2</em>
+<a class="jxr_linenumber" name="1016" href="#1016">1016</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1017" href="#1017">1017</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setUseRelativeURIsWithSSLProxies(<strong class="jxr_keyword">boolean</strong> useRelativeURIsWithSSLProxies) {
+<a class="jxr_linenumber" name="1018" href="#1018">1018</a>             <strong class="jxr_keyword">this</strong>.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
+<a class="jxr_linenumber" name="1019" href="#1019">1019</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="1020" href="#1020">1020</a>         }
+<a class="jxr_linenumber" name="1021" href="#1021">1021</a> 
+<a class="jxr_linenumber" name="1022" href="#1022">1022</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1023" href="#1023">1023</a> <em class="jxr_javadoccomment">         * Set the maximum time in millisecond connection can be added to the pool for further reuse</em>
+<a class="jxr_linenumber" name="1024" href="#1024">1024</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1025" href="#1025">1025</a> <em class="jxr_javadoccomment">         * @param maxConnectionLifeTimeInMs the maximum time in millisecond connection can be added to the pool for further reuse</em>
+<a class="jxr_linenumber" name="1026" href="#1026">1026</a> <em class="jxr_javadoccomment">         * @return a {@link Builder}</em>
+<a class="jxr_linenumber" name="1027" href="#1027">1027</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1028" href="#1028">1028</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setMaxConnectionLifeTimeInMs(<strong class="jxr_keyword">int</strong> maxConnectionLifeTimeInMs) {
+<a class="jxr_linenumber" name="1029" href="#1029">1029</a>            <strong class="jxr_keyword">this</strong>.defaultMaxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
+<a class="jxr_linenumber" name="1030" href="#1030">1030</a>            <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="1031" href="#1031">1031</a>         }
+<a class="jxr_linenumber" name="1032" href="#1032">1032</a> 
+<a class="jxr_linenumber" name="1033" href="#1033">1033</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a> setTimeConverter(<a href="../../../../com/ning/http/client/date/TimeConverter.html">TimeConverter</a> timeConverter) {
+<a class="jxr_linenumber" name="1034" href="#1034">1034</a>             <strong class="jxr_keyword">this</strong>.timeConverter = timeConverter;
+<a class="jxr_linenumber" name="1035" href="#1035">1035</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="1036" href="#1036">1036</a>         }
+<a class="jxr_linenumber" name="1037" href="#1037">1037</a> 
+<a class="jxr_linenumber" name="1038" href="#1038">1038</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1039" href="#1039">1039</a> <em class="jxr_javadoccomment">         * Create a config builder with values taken from the given prototype configuration.</em>
+<a class="jxr_linenumber" name="1040" href="#1040">1040</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1041" href="#1041">1041</a> <em class="jxr_javadoccomment">         * @param prototype the configuration to use as a prototype.</em>
+<a class="jxr_linenumber" name="1042" href="#1042">1042</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1043" href="#1043">1043</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/date/RFC2616Date.html">Builder</a>(<a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> prototype) {
+<a class="jxr_linenumber" name="1044" href="#1044">1044</a>             allowPoolingConnection = prototype.getAllowPoolingConnection();
+<a class="jxr_linenumber" name="1045" href="#1045">1045</a>             providerConfig = prototype.getAsyncHttpProviderConfig();
+<a class="jxr_linenumber" name="1046" href="#1046">1046</a>             connectionsPool = prototype.getConnectionsPool();
+<a class="jxr_linenumber" name="1047" href="#1047">1047</a>             defaultConnectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
+<a class="jxr_linenumber" name="1048" href="#1048">1048</a>             defaultIdleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
+<a class="jxr_linenumber" name="1049" href="#1049">1049</a>             defaultIdleConnectionTimeoutInMs = prototype.getIdleConnectionTimeoutInMs();
+<a class="jxr_linenumber" name="1050" href="#1050">1050</a>             defaultMaxConnectionPerHost = prototype.getMaxConnectionPerHost();
+<a class="jxr_linenumber" name="1051" href="#1051">1051</a>             defaultMaxConnectionLifeTimeInMs = prototype.getMaxConnectionLifeTimeInMs();
+<a class="jxr_linenumber" name="1052" href="#1052">1052</a>             maxDefaultRedirects = prototype.getMaxRedirects();
+<a class="jxr_linenumber" name="1053" href="#1053">1053</a>             defaultMaxTotalConnections = prototype.getMaxTotalConnections();
+<a class="jxr_linenumber" name="1054" href="#1054">1054</a>             proxyServerSelector = prototype.getProxyServerSelector();
+<a class="jxr_linenumber" name="1055" href="#1055">1055</a>             realm = prototype.getRealm();
+<a class="jxr_linenumber" name="1056" href="#1056">1056</a>             defaultRequestTimeoutInMs = prototype.getRequestTimeoutInMs();
+<a class="jxr_linenumber" name="1057" href="#1057">1057</a>             sslContext = prototype.getSSLContext();
+<a class="jxr_linenumber" name="1058" href="#1058">1058</a>             sslEngineFactory = prototype.getSSLEngineFactory();
+<a class="jxr_linenumber" name="1059" href="#1059">1059</a>             userAgent = prototype.getUserAgent();
+<a class="jxr_linenumber" name="1060" href="#1060">1060</a>             redirectEnabled = prototype.isRedirectEnabled();
+<a class="jxr_linenumber" name="1061" href="#1061">1061</a>             compressionEnabled = prototype.isCompressionEnabled();
+<a class="jxr_linenumber" name="1062" href="#1062">1062</a>             applicationThreadPool = prototype.executorService();
+<a class="jxr_linenumber" name="1063" href="#1063">1063</a> 
+<a class="jxr_linenumber" name="1064" href="#1064">1064</a>             requestFilters.clear();
+<a class="jxr_linenumber" name="1065" href="#1065">1065</a>             responseFilters.clear();
+<a class="jxr_linenumber" name="1066" href="#1066">1066</a>             ioExceptionFilters.clear();
+<a class="jxr_linenumber" name="1067" href="#1067">1067</a> 
+<a class="jxr_linenumber" name="1068" href="#1068">1068</a>             requestFilters.addAll(prototype.getRequestFilters());
+<a class="jxr_linenumber" name="1069" href="#1069">1069</a>             responseFilters.addAll(prototype.getResponseFilters());
+<a class="jxr_linenumber" name="1070" href="#1070">1070</a>             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
+<a class="jxr_linenumber" name="1071" href="#1071">1071</a> 
+<a class="jxr_linenumber" name="1072" href="#1072">1072</a>             requestCompressionLevel = prototype.getRequestCompressionLevel();
+<a class="jxr_linenumber" name="1073" href="#1073">1073</a>             useRawUrl = prototype.isUseRawUrl();
+<a class="jxr_linenumber" name="1074" href="#1074">1074</a>             ioThreadMultiplier = prototype.getIoThreadMultiplier();
+<a class="jxr_linenumber" name="1075" href="#1075">1075</a>             maxRequestRetry = prototype.getMaxRequestRetry();
+<a class="jxr_linenumber" name="1076" href="#1076">1076</a>             allowSslConnectionPool = prototype.getAllowPoolingConnection();
+<a class="jxr_linenumber" name="1077" href="#1077">1077</a>             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
+<a class="jxr_linenumber" name="1078" href="#1078">1078</a>             hostnameVerifier = prototype.getHostnameVerifier();
+<a class="jxr_linenumber" name="1079" href="#1079">1079</a>             strict302Handling = prototype.isStrict302Handling();
+<a class="jxr_linenumber" name="1080" href="#1080">1080</a>             timeConverter = prototype.timeConverter;
+<a class="jxr_linenumber" name="1081" href="#1081">1081</a>         }
+<a class="jxr_linenumber" name="1082" href="#1082">1082</a> 
+<a class="jxr_linenumber" name="1083" href="#1083">1083</a>         <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="1084" href="#1084">1084</a> <em class="jxr_javadoccomment">         * Build an {@link AsyncHttpClientConfig}</em>
+<a class="jxr_linenumber" name="1085" href="#1085">1085</a> <em class="jxr_javadoccomment">         *</em>
+<a class="jxr_linenumber" name="1086" href="#1086">1086</a> <em class="jxr_javadoccomment">         * @return an {@link AsyncHttpClientConfig}</em>
+<a class="jxr_linenumber" name="1087" href="#1087">1087</a> <em class="jxr_javadoccomment">         */</em>
+<a class="jxr_linenumber" name="1088" href="#1088">1088</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> build() {
+<a class="jxr_linenumber" name="1089" href="#1089">1089</a>             <strong class="jxr_keyword">if</strong> (applicationThreadPool == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="1090" href="#1090">1090</a>                 applicationThreadPool = Executors
+<a class="jxr_linenumber" name="1091" href="#1091">1091</a>                         .newCachedThreadPool(<strong class="jxr_keyword">new</strong> ThreadFactory() {
+<a class="jxr_linenumber" name="1092" href="#1092">1092</a>                             <strong class="jxr_keyword">public</strong> Thread newThread(Runnable r) {
+<a class="jxr_linenumber" name="1093" href="#1093">1093</a>                                 Thread t = <strong class="jxr_keyword">new</strong> Thread(r,
+<a class="jxr_linenumber" name="1094" href="#1094">1094</a>                                         <span class="jxr_string">"AsyncHttpClient-Callback"</span>);
+<a class="jxr_linenumber" name="1095" href="#1095">1095</a>                                 t.setDaemon(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="1096" href="#1096">1096</a>                                 <strong class="jxr_keyword">return</strong> t;
+<a class="jxr_linenumber" name="1097" href="#1097">1097</a>                             }
+<a class="jxr_linenumber" name="1098" href="#1098">1098</a>                         });
+<a class="jxr_linenumber" name="1099" href="#1099">1099</a>             }
+<a class="jxr_linenumber" name="1100" href="#1100">1100</a> 
+<a class="jxr_linenumber" name="1101" href="#1101">1101</a>             <strong class="jxr_keyword">if</strong> (proxyServerSelector == <strong class="jxr_keyword">null</strong> &amp;&amp; useProxySelector) {
+<a class="jxr_linenumber" name="1102" href="#1102">1102</a>                 proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
+<a class="jxr_linenumber" name="1103" href="#1103">1103</a>             }
+<a class="jxr_linenumber" name="1104" href="#1104">1104</a> 
+<a class="jxr_linenumber" name="1105" href="#1105">1105</a>             <strong class="jxr_keyword">if</strong> (proxyServerSelector == <strong class="jxr_keyword">null</strong> &amp;&amp; useProxyProperties) {
+<a class="jxr_linenumber" name="1106" href="#1106">1106</a>                 proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
+<a class="jxr_linenumber" name="1107" href="#1107">1107</a>             }
+<a class="jxr_linenumber" name="1108" href="#1108">1108</a> 
+<a class="jxr_linenumber" name="1109" href="#1109">1109</a>             <strong class="jxr_keyword">if</strong> (proxyServerSelector == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="1110" href="#1110">1110</a>                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
+<a class="jxr_linenumber" name="1111" href="#1111">1111</a>             }
+<a class="jxr_linenumber" name="1112" href="#1112">1112</a> 
+<a class="jxr_linenumber" name="1113" href="#1113">1113</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a>(defaultMaxTotalConnections,
+<a class="jxr_linenumber" name="1114" href="#1114">1114</a>                     defaultMaxConnectionPerHost,
+<a class="jxr_linenumber" name="1115" href="#1115">1115</a>                     defaultConnectionTimeOutInMs,
+<a class="jxr_linenumber" name="1116" href="#1116">1116</a>                     defaultWebsocketIdleTimeoutInMs,
+<a class="jxr_linenumber" name="1117" href="#1117">1117</a>                     defaultIdleConnectionInPoolTimeoutInMs,
+<a class="jxr_linenumber" name="1118" href="#1118">1118</a>                     defaultIdleConnectionTimeoutInMs,
+<a class="jxr_linenumber" name="1119" href="#1119">1119</a>                     defaultRequestTimeoutInMs,
+<a class="jxr_linenumber" name="1120" href="#1120">1120</a>                     defaultMaxConnectionLifeTimeInMs,
+<a class="jxr_linenumber" name="1121" href="#1121">1121</a>                     redirectEnabled,
+<a class="jxr_linenumber" name="1122" href="#1122">1122</a>                     maxDefaultRedirects,
+<a class="jxr_linenumber" name="1123" href="#1123">1123</a>                     compressionEnabled,
+<a class="jxr_linenumber" name="1124" href="#1124">1124</a>                     userAgent,
+<a class="jxr_linenumber" name="1125" href="#1125">1125</a>                     allowPoolingConnection,
+<a class="jxr_linenumber" name="1126" href="#1126">1126</a>                     applicationThreadPool,
+<a class="jxr_linenumber" name="1127" href="#1127">1127</a>                     proxyServerSelector,
+<a class="jxr_linenumber" name="1128" href="#1128">1128</a>                     sslContext,
+<a class="jxr_linenumber" name="1129" href="#1129">1129</a>                     sslEngineFactory,
+<a class="jxr_linenumber" name="1130" href="#1130">1130</a>                     providerConfig,
+<a class="jxr_linenumber" name="1131" href="#1131">1131</a>                     connectionsPool,
+<a class="jxr_linenumber" name="1132" href="#1132">1132</a>                     realm,
+<a class="jxr_linenumber" name="1133" href="#1133">1133</a>                     requestFilters,
+<a class="jxr_linenumber" name="1134" href="#1134">1134</a>                     responseFilters,
+<a class="jxr_linenumber" name="1135" href="#1135">1135</a>                     ioExceptionFilters,
+<a class="jxr_linenumber" name="1136" href="#1136">1136</a>                     requestCompressionLevel,
+<a class="jxr_linenumber" name="1137" href="#1137">1137</a>                     maxRequestRetry,
+<a class="jxr_linenumber" name="1138" href="#1138">1138</a>                     allowSslConnectionPool,
+<a class="jxr_linenumber" name="1139" href="#1139">1139</a>                     useRawUrl,
+<a class="jxr_linenumber" name="1140" href="#1140">1140</a>                     removeQueryParamOnRedirect,
+<a class="jxr_linenumber" name="1141" href="#1141">1141</a>                     hostnameVerifier,
+<a class="jxr_linenumber" name="1142" href="#1142">1142</a>                     ioThreadMultiplier,
+<a class="jxr_linenumber" name="1143" href="#1143">1143</a>                     strict302Handling,
+<a class="jxr_linenumber" name="1144" href="#1144">1144</a>                     useRelativeURIsWithSSLProxies,
+<a class="jxr_linenumber" name="1145" href="#1145">1145</a>                     timeConverter);
+<a class="jxr_linenumber" name="1146" href="#1146">1146</a>         }
+<a class="jxr_linenumber" name="1147" href="#1147">1147</a>     }
+<a class="jxr_linenumber" name="1148" href="#1148">1148</a> }
+<a class="jxr_linenumber" name="1149" href="#1149">1149</a> 
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

@@ -1,0 +1,758 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en_US" lang="en_US">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>JDKAsyncHttpProvider xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../apidocs/com/ning/http/client/providers/jdk/JDKAsyncHttpProvider.html">View Javadoc</a></div><pre>
+
+<a class="jxr_linenumber" name="1" href="#1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="2" href="#2">2</a>   <em class="jxr_comment"> * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.</em>
+<a class="jxr_linenumber" name="3" href="#3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="4" href="#4">4</a>   <em class="jxr_comment"> * This program is licensed to you under the Apache License Version 2.0,</em>
+<a class="jxr_linenumber" name="5" href="#5">5</a>   <em class="jxr_comment"> * and you may not use this file except in compliance with the Apache License Version 2.0.</em>
+<a class="jxr_linenumber" name="6" href="#6">6</a>   <em class="jxr_comment"> * You may obtain a copy of the Apache License Version 2.0 at <a href="http://www.apache.org/licenses/LICENSE-2.0." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.0.</a></em>
+<a class="jxr_linenumber" name="7" href="#7">7</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="8" href="#8">8</a>   <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="9" href="#9">9</a>   <em class="jxr_comment"> * software distributed under the Apache License Version 2.0 is distributed on an</em>
+<a class="jxr_linenumber" name="10" href="#10">10</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a class="jxr_linenumber" name="11" href="#11">11</a>  <em class="jxr_comment"> * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.</em>
+<a class="jxr_linenumber" name="12" href="#12">12</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="13" href="#13">13</a>  <strong class="jxr_keyword">package</strong> com.ning.http.client.providers.jdk;
+<a class="jxr_linenumber" name="14" href="#14">14</a>  
+<a class="jxr_linenumber" name="15" href="#15">15</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+<a class="jxr_linenumber" name="16" href="#16">16</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.ning.http.util.MiscUtil.isNonEmpty;
+<a class="jxr_linenumber" name="17" href="#17">17</a>  
+<a class="jxr_linenumber" name="18" href="#18">18</a>  <strong class="jxr_keyword">import</strong> java.io.ByteArrayInputStream;
+<a class="jxr_linenumber" name="19" href="#19">19</a>  <strong class="jxr_keyword">import</strong> java.io.File;
+<a class="jxr_linenumber" name="20" href="#20">20</a>  <strong class="jxr_keyword">import</strong> java.io.FileInputStream;
+<a class="jxr_linenumber" name="21" href="#21">21</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="22" href="#22">22</a>  <strong class="jxr_keyword">import</strong> java.io.InputStream;
+<a class="jxr_linenumber" name="23" href="#23">23</a>  <strong class="jxr_keyword">import</strong> java.io.OutputStream;
+<a class="jxr_linenumber" name="24" href="#24">24</a>  <strong class="jxr_keyword">import</strong> java.lang.reflect.Field;
+<a class="jxr_linenumber" name="25" href="#25">25</a>  <strong class="jxr_keyword">import</strong> java.net.Authenticator;
+<a class="jxr_linenumber" name="26" href="#26">26</a>  <strong class="jxr_keyword">import</strong> java.net.ConnectException;
+<a class="jxr_linenumber" name="27" href="#27">27</a>  <strong class="jxr_keyword">import</strong> java.net.HttpURLConnection;
+<a class="jxr_linenumber" name="28" href="#28">28</a>  <strong class="jxr_keyword">import</strong> java.net.InetSocketAddress;
+<a class="jxr_linenumber" name="29" href="#29">29</a>  <strong class="jxr_keyword">import</strong> java.net.PasswordAuthentication;
+<a class="jxr_linenumber" name="30" href="#30">30</a>  <strong class="jxr_keyword">import</strong> java.net.Proxy;
+<a class="jxr_linenumber" name="31" href="#31">31</a>  <strong class="jxr_keyword">import</strong> java.net.SocketAddress;
+<a class="jxr_linenumber" name="32" href="#32">32</a>  <strong class="jxr_keyword">import</strong> java.net.SocketTimeoutException;
+<a class="jxr_linenumber" name="33" href="#33">33</a>  <strong class="jxr_keyword">import</strong> java.net.URI;
+<a class="jxr_linenumber" name="34" href="#34">34</a>  <strong class="jxr_keyword">import</strong> java.net.UnknownHostException;
+<a class="jxr_linenumber" name="35" href="#35">35</a>  <strong class="jxr_keyword">import</strong> java.nio.ByteBuffer;
+<a class="jxr_linenumber" name="36" href="#36">36</a>  <strong class="jxr_keyword">import</strong> java.security.GeneralSecurityException;
+<a class="jxr_linenumber" name="37" href="#37">37</a>  <strong class="jxr_keyword">import</strong> java.security.NoSuchAlgorithmException;
+<a class="jxr_linenumber" name="38" href="#38">38</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="39" href="#39">39</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="40" href="#40">40</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.Callable;
+<a class="jxr_linenumber" name="41" href="#41">41</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.TimeoutException;
+<a class="jxr_linenumber" name="42" href="#42">42</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.atomic.AtomicBoolean;
+<a class="jxr_linenumber" name="43" href="#43">43</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.atomic.AtomicInteger;
+<a class="jxr_linenumber" name="44" href="#44">44</a>  <strong class="jxr_keyword">import</strong> java.util.zip.GZIPInputStream;
+<a class="jxr_linenumber" name="45" href="#45">45</a>  
+<a class="jxr_linenumber" name="46" href="#46">46</a>  <strong class="jxr_keyword">import</strong> javax.naming.AuthenticationException;
+<a class="jxr_linenumber" name="47" href="#47">47</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.HttpsURLConnection;
+<a class="jxr_linenumber" name="48" href="#48">48</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.SSLContext;
+<a class="jxr_linenumber" name="49" href="#49">49</a>  <strong class="jxr_keyword">import</strong> javax.net.ssl.SSLHandshakeException;
+<a class="jxr_linenumber" name="50" href="#50">50</a>  
+<a class="jxr_linenumber" name="51" href="#51">51</a>  <strong class="jxr_keyword">import</strong> org.slf4j.Logger;
+<a class="jxr_linenumber" name="52" href="#52">52</a>  <strong class="jxr_keyword">import</strong> org.slf4j.LoggerFactory;
+<a class="jxr_linenumber" name="53" href="#53">53</a>  
+<a class="jxr_linenumber" name="54" href="#54">54</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.AsyncHandler;
+<a class="jxr_linenumber" name="55" href="#55">55</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.AsyncHttpClientConfig;
+<a class="jxr_linenumber" name="56" href="#56">56</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.AsyncHttpProvider;
+<a class="jxr_linenumber" name="57" href="#57">57</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.AsyncHttpProviderConfig;
+<a class="jxr_linenumber" name="58" href="#58">58</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.Body;
+<a class="jxr_linenumber" name="59" href="#59">59</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.FluentCaseInsensitiveStringsMap;
+<a class="jxr_linenumber" name="60" href="#60">60</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.HttpResponseBodyPart;
+<a class="jxr_linenumber" name="61" href="#61">61</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.HttpResponseHeaders;
+<a class="jxr_linenumber" name="62" href="#62">62</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.HttpResponseStatus;
+<a class="jxr_linenumber" name="63" href="#63">63</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.ListenableFuture;
+<a class="jxr_linenumber" name="64" href="#64">64</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.MaxRedirectException;
+<a class="jxr_linenumber" name="65" href="#65">65</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.PerRequestConfig;
+<a class="jxr_linenumber" name="66" href="#66">66</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.ProgressAsyncHandler;
+<a class="jxr_linenumber" name="67" href="#67">67</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.ProxyServer;
+<a class="jxr_linenumber" name="68" href="#68">68</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.Realm;
+<a class="jxr_linenumber" name="69" href="#69">69</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.Request;
+<a class="jxr_linenumber" name="70" href="#70">70</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.RequestBuilder;
+<a class="jxr_linenumber" name="71" href="#71">71</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.Response;
+<a class="jxr_linenumber" name="72" href="#72">72</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.cookie.CookieEncoder;
+<a class="jxr_linenumber" name="73" href="#73">73</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.FilterContext;
+<a class="jxr_linenumber" name="74" href="#74">74</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.FilterException;
+<a class="jxr_linenumber" name="75" href="#75">75</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.IOExceptionFilter;
+<a class="jxr_linenumber" name="76" href="#76">76</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.filter.ResponseFilter;
+<a class="jxr_linenumber" name="77" href="#77">77</a>  <strong class="jxr_keyword">import</strong> com.ning.http.client.listener.TransferCompletionHandler;
+<a class="jxr_linenumber" name="78" href="#78">78</a>  <strong class="jxr_keyword">import</strong> com.ning.http.multipart.MultipartRequestEntity;
+<a class="jxr_linenumber" name="79" href="#79">79</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.AsyncHttpProviderUtils;
+<a class="jxr_linenumber" name="80" href="#80">80</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.AuthenticatorUtils;
+<a class="jxr_linenumber" name="81" href="#81">81</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.ProxyUtils;
+<a class="jxr_linenumber" name="82" href="#82">82</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.SslUtils;
+<a class="jxr_linenumber" name="83" href="#83">83</a>  <strong class="jxr_keyword">import</strong> com.ning.http.util.UTF8UrlEncoder;
+<a class="jxr_linenumber" name="84" href="#84">84</a>  
+<a class="jxr_linenumber" name="85" href="#85">85</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/JDKAsyncHttpProvider.html">JDKAsyncHttpProvider</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../../../com/ning/http/client/AsyncHttpProvider.html">AsyncHttpProvider</a> {
+<a class="jxr_linenumber" name="86" href="#86">86</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="87" href="#87">87</a>  
+<a class="jxr_linenumber" name="88" href="#88">88</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> String NTLM_DOMAIN = <span class="jxr_string">"http.auth.ntlm.domain"</span>;
+<a class="jxr_linenumber" name="89" href="#89">89</a>  
+<a class="jxr_linenumber" name="90" href="#90">90</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> config;
+<a class="jxr_linenumber" name="91" href="#91">91</a>  
+<a class="jxr_linenumber" name="92" href="#92">92</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AtomicBoolean isClose = <strong class="jxr_keyword">new</strong> AtomicBoolean(false);
+<a class="jxr_linenumber" name="93" href="#93">93</a>  
+<a class="jxr_linenumber" name="94" href="#94">94</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> MAX_BUFFERED_BYTES = 8192;
+<a class="jxr_linenumber" name="95" href="#95">95</a>  
+<a class="jxr_linenumber" name="96" href="#96">96</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AtomicInteger maxConnections = <strong class="jxr_keyword">new</strong> AtomicInteger();
+<a class="jxr_linenumber" name="97" href="#97">97</a>  
+<a class="jxr_linenumber" name="98" href="#98">98</a>      <strong class="jxr_keyword">private</strong> String jdkNtlmDomain;
+<a class="jxr_linenumber" name="99" href="#99">99</a>  
+<a class="jxr_linenumber" name="100" href="#100">100</a>     <strong class="jxr_keyword">private</strong> Authenticator jdkAuthenticator;
+<a class="jxr_linenumber" name="101" href="#101">101</a> 
+<a class="jxr_linenumber" name="102" href="#102">102</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> bufferResponseInMemory = false;
+<a class="jxr_linenumber" name="103" href="#103">103</a> 
+<a class="jxr_linenumber" name="104" href="#104">104</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/JDKAsyncHttpProvider.html">JDKAsyncHttpProvider</a>(<a href="../../../../../../com/ning/http/client/AsyncHttpClientConfig.html">AsyncHttpClientConfig</a> config) {
+<a class="jxr_linenumber" name="105" href="#105">105</a> 
+<a class="jxr_linenumber" name="106" href="#106">106</a>         <strong class="jxr_keyword">this</strong>.config = config;
+<a class="jxr_linenumber" name="107" href="#107">107</a>         AsyncHttpProviderConfig&lt;?, ?&gt; providerConfig = config.getAsyncHttpProviderConfig();
+<a class="jxr_linenumber" name="108" href="#108">108</a>         <strong class="jxr_keyword">if</strong> (providerConfig instanceof JDKAsyncHttpProviderConfig) {
+<a class="jxr_linenumber" name="109" href="#109">109</a>             configure(JDKAsyncHttpProviderConfig.<strong class="jxr_keyword">class</strong>.<strong class="jxr_keyword">cast</strong>(providerConfig));
+<a class="jxr_linenumber" name="110" href="#110">110</a>         }
+<a class="jxr_linenumber" name="111" href="#111">111</a>     }
+<a class="jxr_linenumber" name="112" href="#112">112</a> 
+<a class="jxr_linenumber" name="113" href="#113">113</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> configure(<a href="../../../../../../com/ning/http/client/providers/jdk/JDKAsyncHttpProviderConfig.html">JDKAsyncHttpProviderConfig</a> config) {
+<a class="jxr_linenumber" name="114" href="#114">114</a>         <strong class="jxr_keyword">for</strong> (Map.Entry&lt;String, String&gt; e : config.propertiesSet()) {
+<a class="jxr_linenumber" name="115" href="#115">115</a>             System.setProperty(e.getKey(), e.getValue());
+<a class="jxr_linenumber" name="116" href="#116">116</a>         }
+<a class="jxr_linenumber" name="117" href="#117">117</a> 
+<a class="jxr_linenumber" name="118" href="#118">118</a>         <strong class="jxr_keyword">if</strong> (config.getProperty(JDKAsyncHttpProviderConfig.FORCE_RESPONSE_BUFFERING) != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="119" href="#119">119</a>             bufferResponseInMemory = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="120" href="#120">120</a>         }
+<a class="jxr_linenumber" name="121" href="#121">121</a>     }
+<a class="jxr_linenumber" name="122" href="#122">122</a> 
+<a class="jxr_linenumber" name="123" href="#123">123</a>     <strong class="jxr_keyword">public</strong> &lt;T&gt; ListenableFuture&lt;T&gt; execute(<a href="../../../../../../com/ning/http/client/Request.html">Request</a> request, AsyncHandler&lt;T&gt; handler) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="124" href="#124">124</a>         <strong class="jxr_keyword">return</strong> execute(request, handler, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="125" href="#125">125</a>     }
+<a class="jxr_linenumber" name="126" href="#126">126</a> 
+<a class="jxr_linenumber" name="127" href="#127">127</a>     <strong class="jxr_keyword">public</strong> &lt;T&gt; ListenableFuture&lt;T&gt; execute(<a href="../../../../../../com/ning/http/client/Request.html">Request</a> request, AsyncHandler&lt;T&gt; handler, ListenableFuture&lt;?&gt; future) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="128" href="#128">128</a>         <strong class="jxr_keyword">if</strong> (isClose.get()) {
+<a class="jxr_linenumber" name="129" href="#129">129</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(<span class="jxr_string">"Closed"</span>);
+<a class="jxr_linenumber" name="130" href="#130">130</a>         }
+<a class="jxr_linenumber" name="131" href="#131">131</a> 
+<a class="jxr_linenumber" name="132" href="#132">132</a>         <strong class="jxr_keyword">if</strong> (config.getMaxTotalConnections() &gt; -1 &amp;&amp; (maxConnections.get() + 1) &gt; config.getMaxTotalConnections()) {
+<a class="jxr_linenumber" name="133" href="#133">133</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(String.format(<span class="jxr_string">"Too many connections %s"</span>, config.getMaxTotalConnections()));
+<a class="jxr_linenumber" name="134" href="#134">134</a>         }
+<a class="jxr_linenumber" name="135" href="#135">135</a> 
+<a class="jxr_linenumber" name="136" href="#136">136</a>         <a href="../../../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer = ProxyUtils.getProxyServer(config, request);
+<a class="jxr_linenumber" name="137" href="#137">137</a>         <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> realm = request.getRealm() != <strong class="jxr_keyword">null</strong> ? request.getRealm() : config.getRealm();
+<a class="jxr_linenumber" name="138" href="#138">138</a>         Proxy proxy = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="139" href="#139">139</a>         <strong class="jxr_keyword">if</strong> (proxyServer != <strong class="jxr_keyword">null</strong> || realm != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="140" href="#140">140</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="141" href="#141">141</a>                 proxy = configureProxyAndAuth(proxyServer, realm);
+<a class="jxr_linenumber" name="142" href="#142">142</a>             } <strong class="jxr_keyword">catch</strong> (AuthenticationException e) {
+<a class="jxr_linenumber" name="143" href="#143">143</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(e.getMessage());
+<a class="jxr_linenumber" name="144" href="#144">144</a>             }
+<a class="jxr_linenumber" name="145" href="#145">145</a>         }
+<a class="jxr_linenumber" name="146" href="#146">146</a> 
+<a class="jxr_linenumber" name="147" href="#147">147</a>         HttpURLConnection urlConnection = createUrlConnection(request);
+<a class="jxr_linenumber" name="148" href="#148">148</a> 
+<a class="jxr_linenumber" name="149" href="#149">149</a>         <a href="../../../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a> conf = request.getPerRequestConfig();
+<a class="jxr_linenumber" name="150" href="#150">150</a>         <strong class="jxr_keyword">int</strong> requestTimeout = (conf != <strong class="jxr_keyword">null</strong> &amp;&amp; conf.getRequestTimeoutInMs() != 0) ?
+<a class="jxr_linenumber" name="151" href="#151">151</a>                 conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+<a class="jxr_linenumber" name="152" href="#152">152</a> 
+<a class="jxr_linenumber" name="153" href="#153">153</a>         <a href="../../../../../../com/ning/http/client/providers/jdk/JDKDelegateFuture.html">JDKDelegateFuture</a> delegate = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="154" href="#154">154</a>         <strong class="jxr_keyword">if</strong> (future != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="155" href="#155">155</a>             delegate = <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/JDKDelegateFuture.html">JDKDelegateFuture</a>(handler, requestTimeout, future, urlConnection);
+<a class="jxr_linenumber" name="156" href="#156">156</a>         }
+<a class="jxr_linenumber" name="157" href="#157">157</a> 
+<a class="jxr_linenumber" name="158" href="#158">158</a>         <a href="../../../../../../com/ning/http/client/providers/jdk/JDKFuture.html">JDKFuture</a> f = delegate == <strong class="jxr_keyword">null</strong> ? <strong class="jxr_keyword">new</strong> JDKFuture&lt;T&gt;(handler, requestTimeout, urlConnection) : delegate;
+<a class="jxr_linenumber" name="159" href="#159">159</a>         f.touch();
+<a class="jxr_linenumber" name="160" href="#160">160</a> 
+<a class="jxr_linenumber" name="161" href="#161">161</a>         f.setInnerFuture(config.executorService().submit(<strong class="jxr_keyword">new</strong> AsyncHttpUrlConnection(urlConnection, request, handler, f)));
+<a class="jxr_linenumber" name="162" href="#162">162</a>         maxConnections.incrementAndGet();
+<a class="jxr_linenumber" name="163" href="#163">163</a> 
+<a class="jxr_linenumber" name="164" href="#164">164</a>         <strong class="jxr_keyword">return</strong> f;
+<a class="jxr_linenumber" name="165" href="#165">165</a>     }
+<a class="jxr_linenumber" name="166" href="#166">166</a> 
+<a class="jxr_linenumber" name="167" href="#167">167</a>     <strong class="jxr_keyword">private</strong> HttpURLConnection createUrlConnection(<a href="../../../../../../com/ning/http/client/Request.html">Request</a> request) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="168" href="#168">168</a>         <a href="../../../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer = ProxyUtils.getProxyServer(config, request);
+<a class="jxr_linenumber" name="169" href="#169">169</a>         <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> realm = request.getRealm() != <strong class="jxr_keyword">null</strong> ? request.getRealm() : config.getRealm();
+<a class="jxr_linenumber" name="170" href="#170">170</a>         Proxy proxy = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="171" href="#171">171</a>         <strong class="jxr_keyword">if</strong> (proxyServer != <strong class="jxr_keyword">null</strong> || realm != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="172" href="#172">172</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="173" href="#173">173</a>                 proxy = configureProxyAndAuth(proxyServer, realm);
+<a class="jxr_linenumber" name="174" href="#174">174</a>             } <strong class="jxr_keyword">catch</strong> (AuthenticationException e) {
+<a class="jxr_linenumber" name="175" href="#175">175</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(e.getMessage());
+<a class="jxr_linenumber" name="176" href="#176">176</a>             }
+<a class="jxr_linenumber" name="177" href="#177">177</a>         }
+<a class="jxr_linenumber" name="178" href="#178">178</a> 
+<a class="jxr_linenumber" name="179" href="#179">179</a>         HttpURLConnection urlConnection = (HttpURLConnection)
+<a class="jxr_linenumber" name="180" href="#180">180</a>             request.getURI().toURL().openConnection(proxy == <strong class="jxr_keyword">null</strong> ? Proxy.NO_PROXY : proxy);
+<a class="jxr_linenumber" name="181" href="#181">181</a> 
+<a class="jxr_linenumber" name="182" href="#182">182</a>         <strong class="jxr_keyword">if</strong> (request.getUrl().startsWith(<span class="jxr_string">"https"</span>)) {
+<a class="jxr_linenumber" name="183" href="#183">183</a>             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
+<a class="jxr_linenumber" name="184" href="#184">184</a>             SSLContext sslContext = config.getSSLContext();
+<a class="jxr_linenumber" name="185" href="#185">185</a>             <strong class="jxr_keyword">if</strong> (sslContext == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="186" href="#186">186</a>                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="187" href="#187">187</a>                     sslContext = SslUtils.getSSLContext();
+<a class="jxr_linenumber" name="188" href="#188">188</a>                 } <strong class="jxr_keyword">catch</strong> (NoSuchAlgorithmException e) {
+<a class="jxr_linenumber" name="189" href="#189">189</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(e.getMessage());
+<a class="jxr_linenumber" name="190" href="#190">190</a>                 } <strong class="jxr_keyword">catch</strong> (GeneralSecurityException e) {
+<a class="jxr_linenumber" name="191" href="#191">191</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(e.getMessage());
+<a class="jxr_linenumber" name="192" href="#192">192</a>                 }
+<a class="jxr_linenumber" name="193" href="#193">193</a>             }
+<a class="jxr_linenumber" name="194" href="#194">194</a>             secure.setSSLSocketFactory(sslContext.getSocketFactory());
+<a class="jxr_linenumber" name="195" href="#195">195</a>             secure.setHostnameVerifier(config.getHostnameVerifier());
+<a class="jxr_linenumber" name="196" href="#196">196</a>         }
+<a class="jxr_linenumber" name="197" href="#197">197</a>         <strong class="jxr_keyword">return</strong> urlConnection;
+<a class="jxr_linenumber" name="198" href="#198">198</a>     }
+<a class="jxr_linenumber" name="199" href="#199">199</a> 
+<a class="jxr_linenumber" name="200" href="#200">200</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> close() {
+<a class="jxr_linenumber" name="201" href="#201">201</a>         isClose.set(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="202" href="#202">202</a>     }
+<a class="jxr_linenumber" name="203" href="#203">203</a> 
+<a class="jxr_linenumber" name="204" href="#204">204</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../../../com/ning/http/client/Response.html">Response</a> prepareResponse(<a href="../../../../../../com/ning/http/client/HttpResponseStatus.html">HttpResponseStatus</a> status, <a href="../../../../../../com/ning/http/client/HttpResponseHeaders.html">HttpResponseHeaders</a> headers, List&lt;HttpResponseBodyPart&gt; bodyParts) {
+<a class="jxr_linenumber" name="205" href="#205">205</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/JDKResponse.html">JDKResponse</a>(status, headers, bodyParts);
+<a class="jxr_linenumber" name="206" href="#206">206</a>     }
+<a class="jxr_linenumber" name="207" href="#207">207</a> 
+<a class="jxr_linenumber" name="208" href="#208">208</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> AsyncHttpUrlConnection&lt;T&gt; <strong class="jxr_keyword">implements</strong> Callable&lt;T&gt; {
+<a class="jxr_linenumber" name="209" href="#209">209</a> 
+<a class="jxr_linenumber" name="210" href="#210">210</a>         <strong class="jxr_keyword">private</strong> HttpURLConnection urlConnection;
+<a class="jxr_linenumber" name="211" href="#211">211</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../../../com/ning/http/client/Request.html">Request</a> request;
+<a class="jxr_linenumber" name="212" href="#212">212</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AsyncHandler&lt;T&gt; asyncHandler;
+<a class="jxr_linenumber" name="213" href="#213">213</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> ListenableFuture&lt;T&gt; future;
+<a class="jxr_linenumber" name="214" href="#214">214</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> currentRedirectCount;
+<a class="jxr_linenumber" name="215" href="#215">215</a>         <strong class="jxr_keyword">private</strong> AtomicBoolean isAuth = <strong class="jxr_keyword">new</strong> AtomicBoolean(false);
+<a class="jxr_linenumber" name="216" href="#216">216</a>         <strong class="jxr_keyword">private</strong> byte[] cachedBytes;
+<a class="jxr_linenumber" name="217" href="#217">217</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> cachedBytesLenght;
+<a class="jxr_linenumber" name="218" href="#218">218</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> terminate = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="219" href="#219">219</a> 
+<a class="jxr_linenumber" name="220" href="#220">220</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/JDKAsyncHttpProvider.html">AsyncHttpUrlConnection</a>(HttpURLConnection urlConnection, <a href="../../../../../../com/ning/http/client/Request.html">Request</a> request, AsyncHandler&lt;T&gt; asyncHandler, ListenableFuture&lt;T&gt; future) {
+<a class="jxr_linenumber" name="221" href="#221">221</a>             <strong class="jxr_keyword">this</strong>.urlConnection = urlConnection;
+<a class="jxr_linenumber" name="222" href="#222">222</a>             <strong class="jxr_keyword">this</strong>.request = request;
+<a class="jxr_linenumber" name="223" href="#223">223</a>             <strong class="jxr_keyword">this</strong>.asyncHandler = asyncHandler;
+<a class="jxr_linenumber" name="224" href="#224">224</a>             <strong class="jxr_keyword">this</strong>.future = future;
+<a class="jxr_linenumber" name="225" href="#225">225</a>             <strong class="jxr_keyword">this</strong>.request = request;
+<a class="jxr_linenumber" name="226" href="#226">226</a>         }
+<a class="jxr_linenumber" name="227" href="#227">227</a> 
+<a class="jxr_linenumber" name="228" href="#228">228</a>         <strong class="jxr_keyword">public</strong> T call() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="229" href="#229">229</a>             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
+<a class="jxr_linenumber" name="230" href="#230">230</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="231" href="#231">231</a>                 URI uri = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="232" href="#232">232</a>                 <em class="jxr_comment">// Encoding with URLConnection is a bit bogus so we need to try both way before setting it</em>
+<a class="jxr_linenumber" name="233" href="#233">233</a>                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="234" href="#234">234</a>                     uri = AsyncHttpProviderUtils.createUri(request.getRawUrl());
+<a class="jxr_linenumber" name="235" href="#235">235</a>                 } <strong class="jxr_keyword">catch</strong> (IllegalArgumentException u) {
+<a class="jxr_linenumber" name="236" href="#236">236</a>                     uri = AsyncHttpProviderUtils.createUri(request.getUrl());
+<a class="jxr_linenumber" name="237" href="#237">237</a>                 }
+<a class="jxr_linenumber" name="238" href="#238">238</a> 
+<a class="jxr_linenumber" name="239" href="#239">239</a>                 configure(uri, urlConnection, request);
+<a class="jxr_linenumber" name="240" href="#240">240</a>                 urlConnection.connect();
+<a class="jxr_linenumber" name="241" href="#241">241</a> 
+<a class="jxr_linenumber" name="242" href="#242">242</a>                 <strong class="jxr_keyword">if</strong> (asyncHandler instanceof TransferCompletionHandler) {
+<a class="jxr_linenumber" name="243" href="#243">243</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IllegalStateException(TransferCompletionHandler.<strong class="jxr_keyword">class</strong>.getName() + <span class="jxr_string">"not supported by this provider"</span>);
+<a class="jxr_linenumber" name="244" href="#244">244</a>                 }
+<a class="jxr_linenumber" name="245" href="#245">245</a> 
+<a class="jxr_linenumber" name="246" href="#246">246</a>                 <strong class="jxr_keyword">int</strong> statusCode = urlConnection.getResponseCode();
+<a class="jxr_linenumber" name="247" href="#247">247</a> 
+<a class="jxr_linenumber" name="248" href="#248">248</a>                 logger.debug(<span class="jxr_string">"\n\nRequest {}\n\nResponse {}\n"</span>, request, statusCode);
+<a class="jxr_linenumber" name="249" href="#249">249</a> 
+<a class="jxr_linenumber" name="250" href="#250">250</a>                 <a href="../../../../../../com/ning/http/client/providers/jdk/ResponseStatus.html">ResponseStatus</a> status = <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/ResponseStatus.html">ResponseStatus</a>(uri, urlConnection, JDKAsyncHttpProvider.<strong class="jxr_keyword">this</strong>);
+<a class="jxr_linenumber" name="251" href="#251">251</a>                 <a href="../../../../../../com/ning/http/client/filter/FilterContext.html">FilterContext</a> fc = <strong class="jxr_keyword">new</strong> FilterContext.FilterContextBuilder().asyncHandler(asyncHandler).request(request).responseStatus(status).build();
+<a class="jxr_linenumber" name="252" href="#252">252</a>                 <strong class="jxr_keyword">for</strong> (ResponseFilter asyncFilter : config.getResponseFilters()) {
+<a class="jxr_linenumber" name="253" href="#253">253</a>                     fc = asyncFilter.filter(fc);
+<a class="jxr_linenumber" name="254" href="#254">254</a>                     <strong class="jxr_keyword">if</strong> (fc == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="255" href="#255">255</a>                         <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> NullPointerException(<span class="jxr_string">"FilterContext is null"</span>);
+<a class="jxr_linenumber" name="256" href="#256">256</a>                     }
+<a class="jxr_linenumber" name="257" href="#257">257</a>                 }
+<a class="jxr_linenumber" name="258" href="#258">258</a> 
+<a class="jxr_linenumber" name="259" href="#259">259</a>                 <em class="jxr_comment">// The request has changed</em>
+<a class="jxr_linenumber" name="260" href="#260">260</a>                 <strong class="jxr_keyword">if</strong> (fc.replayRequest()) {
+<a class="jxr_linenumber" name="261" href="#261">261</a>                     request = fc.getRequest();
+<a class="jxr_linenumber" name="262" href="#262">262</a>                     urlConnection = createUrlConnection(request);
+<a class="jxr_linenumber" name="263" href="#263">263</a>                     terminate = false;
+<a class="jxr_linenumber" name="264" href="#264">264</a>                     <strong class="jxr_keyword">return</strong> call();
+<a class="jxr_linenumber" name="265" href="#265">265</a>                 }
+<a class="jxr_linenumber" name="266" href="#266">266</a> 
+<a class="jxr_linenumber" name="267" href="#267">267</a>                 <strong class="jxr_keyword">boolean</strong> redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
+<a class="jxr_linenumber" name="268" href="#268">268</a>                 <strong class="jxr_keyword">if</strong> (redirectEnabled &amp;&amp; (statusCode == 302 || statusCode == 301)) {
+<a class="jxr_linenumber" name="269" href="#269">269</a> 
+<a class="jxr_linenumber" name="270" href="#270">270</a>                     <strong class="jxr_keyword">if</strong> (currentRedirectCount++ &lt; config.getMaxRedirects()) {
+<a class="jxr_linenumber" name="271" href="#271">271</a>                         String location = urlConnection.getHeaderField(<span class="jxr_string">"Location"</span>);
+<a class="jxr_linenumber" name="272" href="#272">272</a>                         URI redirUri = AsyncHttpProviderUtils.getRedirectUri(uri, location);
+<a class="jxr_linenumber" name="273" href="#273">273</a>                         String newUrl = redirUri.toString();
+<a class="jxr_linenumber" name="274" href="#274">274</a> 
+<a class="jxr_linenumber" name="275" href="#275">275</a>                         <strong class="jxr_keyword">if</strong> (!newUrl.equals(uri.toString())) {
+<a class="jxr_linenumber" name="276" href="#276">276</a>                             <a href="../../../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a> builder = <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>(request);
+<a class="jxr_linenumber" name="277" href="#277">277</a> 
+<a class="jxr_linenumber" name="278" href="#278">278</a>                             logger.debug(<span class="jxr_string">"Redirecting to {}"</span>, newUrl);
+<a class="jxr_linenumber" name="279" href="#279">279</a> 
+<a class="jxr_linenumber" name="280" href="#280">280</a>                             request = builder.setUrl(newUrl).build();
+<a class="jxr_linenumber" name="281" href="#281">281</a>                             urlConnection = createUrlConnection(request);
+<a class="jxr_linenumber" name="282" href="#282">282</a>                             terminate = false;
+<a class="jxr_linenumber" name="283" href="#283">283</a>                             <strong class="jxr_keyword">return</strong> call();
+<a class="jxr_linenumber" name="284" href="#284">284</a>                         }
+<a class="jxr_linenumber" name="285" href="#285">285</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="286" href="#286">286</a>                         <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/MaxRedirectException.html">MaxRedirectException</a>(<span class="jxr_string">"Maximum redirect reached: "</span> + config.getMaxRedirects());
+<a class="jxr_linenumber" name="287" href="#287">287</a>                     }
+<a class="jxr_linenumber" name="288" href="#288">288</a>                 }
+<a class="jxr_linenumber" name="289" href="#289">289</a> 
+<a class="jxr_linenumber" name="290" href="#290">290</a>                 <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> realm = request.getRealm() != <strong class="jxr_keyword">null</strong> ? request.getRealm() : config.getRealm();
+<a class="jxr_linenumber" name="291" href="#291">291</a>                 <strong class="jxr_keyword">if</strong> (statusCode == 401 &amp;&amp; !isAuth.getAndSet(<strong class="jxr_keyword">true</strong>) &amp;&amp; realm != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="292" href="#292">292</a>                     String wwwAuth = urlConnection.getHeaderField(<span class="jxr_string">"WWW-Authenticate"</span>);
+<a class="jxr_linenumber" name="293" href="#293">293</a> 
+<a class="jxr_linenumber" name="294" href="#294">294</a>                     logger.debug(<span class="jxr_string">"Sending authentication to {}"</span>, request.getUrl());
+<a class="jxr_linenumber" name="295" href="#295">295</a> 
+<a class="jxr_linenumber" name="296" href="#296">296</a>                     <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> nr = <strong class="jxr_keyword">new</strong> Realm.RealmBuilder().clone(realm)
+<a class="jxr_linenumber" name="297" href="#297">297</a>                             .parseWWWAuthenticateHeader(wwwAuth)
+<a class="jxr_linenumber" name="298" href="#298">298</a>                             .setUri(URI.create(request.getUrl()).getPath())
+<a class="jxr_linenumber" name="299" href="#299">299</a>                             .setMethodName(request.getMethod())
+<a class="jxr_linenumber" name="300" href="#300">300</a>                             .setUsePreemptiveAuth(<strong class="jxr_keyword">true</strong>)
+<a class="jxr_linenumber" name="301" href="#301">301</a>                             .build();
+<a class="jxr_linenumber" name="302" href="#302">302</a>                     <a href="../../../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a> builder = <strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/RequestBuilder.html">RequestBuilder</a>(request);
+<a class="jxr_linenumber" name="303" href="#303">303</a>                     request = builder.setRealm(nr).build();
+<a class="jxr_linenumber" name="304" href="#304">304</a>                     urlConnection = createUrlConnection(request);
+<a class="jxr_linenumber" name="305" href="#305">305</a>                     terminate = false;
+<a class="jxr_linenumber" name="306" href="#306">306</a>                     <strong class="jxr_keyword">return</strong> call();
+<a class="jxr_linenumber" name="307" href="#307">307</a>                 }
+<a class="jxr_linenumber" name="308" href="#308">308</a> 
+<a class="jxr_linenumber" name="309" href="#309">309</a>                 state = asyncHandler.onStatusReceived(status);
+<a class="jxr_linenumber" name="310" href="#310">310</a>                 <strong class="jxr_keyword">if</strong> (state == AsyncHandler.STATE.CONTINUE) {
+<a class="jxr_linenumber" name="311" href="#311">311</a>                     state = asyncHandler.onHeadersReceived(<strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/ResponseHeaders.html">ResponseHeaders</a>(uri, urlConnection, JDKAsyncHttpProvider.<strong class="jxr_keyword">this</strong>));
+<a class="jxr_linenumber" name="312" href="#312">312</a>                 }
+<a class="jxr_linenumber" name="313" href="#313">313</a> 
+<a class="jxr_linenumber" name="314" href="#314">314</a>                 <strong class="jxr_keyword">if</strong> (state == AsyncHandler.STATE.CONTINUE) {
+<a class="jxr_linenumber" name="315" href="#315">315</a>                     InputStream is = getInputStream(urlConnection);
+<a class="jxr_linenumber" name="316" href="#316">316</a>                     String contentEncoding = urlConnection.getHeaderField(<span class="jxr_string">"Content-Encoding"</span>);
+<a class="jxr_linenumber" name="317" href="#317">317</a>                     <strong class="jxr_keyword">boolean</strong> isGZipped = contentEncoding == <strong class="jxr_keyword">null</strong> ? false : <span class="jxr_string">"gzip"</span>.equalsIgnoreCase(contentEncoding);
+<a class="jxr_linenumber" name="318" href="#318">318</a>                     <strong class="jxr_keyword">if</strong> (isGZipped) {
+<a class="jxr_linenumber" name="319" href="#319">319</a>                         is = <strong class="jxr_keyword">new</strong> GZIPInputStream(is);
+<a class="jxr_linenumber" name="320" href="#320">320</a>                     }
+<a class="jxr_linenumber" name="321" href="#321">321</a> 
+<a class="jxr_linenumber" name="322" href="#322">322</a>                     <strong class="jxr_keyword">int</strong> byteToRead = urlConnection.getContentLength();
+<a class="jxr_linenumber" name="323" href="#323">323</a>                     InputStream stream = is;
+<a class="jxr_linenumber" name="324" href="#324">324</a>                     <strong class="jxr_keyword">if</strong> (bufferResponseInMemory || byteToRead &lt;= 0) {
+<a class="jxr_linenumber" name="325" href="#325">325</a>                         <strong class="jxr_keyword">int</strong>[] lengthWrapper = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">int</strong>[1];
+<a class="jxr_linenumber" name="326" href="#326">326</a>                         byte[] bytes = AsyncHttpProviderUtils.readFully(is, lengthWrapper);
+<a class="jxr_linenumber" name="327" href="#327">327</a>                         stream = <strong class="jxr_keyword">new</strong> ByteArrayInputStream(bytes, 0, lengthWrapper[0]);
+<a class="jxr_linenumber" name="328" href="#328">328</a>                         byteToRead = lengthWrapper[0];
+<a class="jxr_linenumber" name="329" href="#329">329</a>                     }
+<a class="jxr_linenumber" name="330" href="#330">330</a> 
+<a class="jxr_linenumber" name="331" href="#331">331</a>                     <strong class="jxr_keyword">if</strong> (byteToRead &gt; 0) {
+<a class="jxr_linenumber" name="332" href="#332">332</a>                         <strong class="jxr_keyword">int</strong> minBytes = Math.min(8192, byteToRead);
+<a class="jxr_linenumber" name="333" href="#333">333</a>                         byte[] bytes = <strong class="jxr_keyword">new</strong> byte[minBytes];
+<a class="jxr_linenumber" name="334" href="#334">334</a>                         <strong class="jxr_keyword">int</strong> leftBytes = minBytes &lt; 8192 ? minBytes : byteToRead;
+<a class="jxr_linenumber" name="335" href="#335">335</a>                         <strong class="jxr_keyword">int</strong> read = 0;
+<a class="jxr_linenumber" name="336" href="#336">336</a>                         <strong class="jxr_keyword">while</strong> (leftBytes &gt; -1) {
+<a class="jxr_linenumber" name="337" href="#337">337</a> 
+<a class="jxr_linenumber" name="338" href="#338">338</a>                             read = stream.read(bytes);
+<a class="jxr_linenumber" name="339" href="#339">339</a>                             <strong class="jxr_keyword">if</strong> (read == -1) {
+<a class="jxr_linenumber" name="340" href="#340">340</a>                                 <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="341" href="#341">341</a>                             }
+<a class="jxr_linenumber" name="342" href="#342">342</a> 
+<a class="jxr_linenumber" name="343" href="#343">343</a>                             future.touch();
+<a class="jxr_linenumber" name="344" href="#344">344</a> 
+<a class="jxr_linenumber" name="345" href="#345">345</a>                             byte[] b = <strong class="jxr_keyword">new</strong> byte[read];
+<a class="jxr_linenumber" name="346" href="#346">346</a>                             System.arraycopy(bytes, 0, b, 0, read);
+<a class="jxr_linenumber" name="347" href="#347">347</a>                             leftBytes -= read;
+<a class="jxr_linenumber" name="348" href="#348">348</a>                             asyncHandler.onBodyPartReceived(<strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/ResponseBodyPart.html">ResponseBodyPart</a>(uri, b, JDKAsyncHttpProvider.<strong class="jxr_keyword">this</strong>, leftBytes &gt; -1));
+<a class="jxr_linenumber" name="349" href="#349">349</a>                         }
+<a class="jxr_linenumber" name="350" href="#350">350</a>                     }
+<a class="jxr_linenumber" name="351" href="#351">351</a> 
+<a class="jxr_linenumber" name="352" href="#352">352</a>                     <strong class="jxr_keyword">if</strong> (request.getMethod().equalsIgnoreCase(<span class="jxr_string">"HEAD"</span>)) {
+<a class="jxr_linenumber" name="353" href="#353">353</a>                         asyncHandler.onBodyPartReceived(<strong class="jxr_keyword">new</strong> <a href="../../../../../../com/ning/http/client/providers/jdk/ResponseBodyPart.html">ResponseBodyPart</a>(uri, <span class="jxr_string">""</span>.getBytes(), JDKAsyncHttpProvider.<strong class="jxr_keyword">this</strong>, <strong class="jxr_keyword">true</strong>));
+<a class="jxr_linenumber" name="354" href="#354">354</a>                     }
+<a class="jxr_linenumber" name="355" href="#355">355</a>                 }
+<a class="jxr_linenumber" name="356" href="#356">356</a> 
+<a class="jxr_linenumber" name="357" href="#357">357</a>                 <strong class="jxr_keyword">if</strong> (asyncHandler instanceof ProgressAsyncHandler) {
+<a class="jxr_linenumber" name="358" href="#358">358</a>                 	ProgressAsyncHandler progressAsyncHandler = (ProgressAsyncHandler) asyncHandler;
+<a class="jxr_linenumber" name="359" href="#359">359</a>                 	progressAsyncHandler.onHeaderWriteCompleted();
+<a class="jxr_linenumber" name="360" href="#360">360</a>                 	progressAsyncHandler.onContentWriteCompleted();
+<a class="jxr_linenumber" name="361" href="#361">361</a>                 }
+<a class="jxr_linenumber" name="362" href="#362">362</a>                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="363" href="#363">363</a>                     T t = asyncHandler.onCompleted();
+<a class="jxr_linenumber" name="364" href="#364">364</a>                     future.content(t);
+<a class="jxr_linenumber" name="365" href="#365">365</a>                     future.done();
+<a class="jxr_linenumber" name="366" href="#366">366</a>                     <strong class="jxr_keyword">return</strong> t;
+<a class="jxr_linenumber" name="367" href="#367">367</a>                 } <strong class="jxr_keyword">catch</strong> (Throwable t) {
+<a class="jxr_linenumber" name="368" href="#368">368</a>                     RuntimeException ex = <strong class="jxr_keyword">new</strong> RuntimeException();
+<a class="jxr_linenumber" name="369" href="#369">369</a>                     ex.initCause(t);
+<a class="jxr_linenumber" name="370" href="#370">370</a>                     <strong class="jxr_keyword">throw</strong> ex;
+<a class="jxr_linenumber" name="371" href="#371">371</a>                 }
+<a class="jxr_linenumber" name="372" href="#372">372</a>             } <strong class="jxr_keyword">catch</strong> (Throwable t) {
+<a class="jxr_linenumber" name="373" href="#373">373</a>                 logger.debug(t.getMessage(), t);
+<a class="jxr_linenumber" name="374" href="#374">374</a> 
+<a class="jxr_linenumber" name="375" href="#375">375</a>                 <strong class="jxr_keyword">if</strong> (t instanceof IOException &amp;&amp; !config.getIOExceptionFilters().isEmpty()) {
+<a class="jxr_linenumber" name="376" href="#376">376</a>                     <a href="../../../../../../com/ning/http/client/filter/FilterContext.html">FilterContext</a> fc = <strong class="jxr_keyword">new</strong> FilterContext.FilterContextBuilder().asyncHandler(asyncHandler)
+<a class="jxr_linenumber" name="377" href="#377">377</a>                             .request(request).ioException(IOException.<strong class="jxr_keyword">class</strong>.<strong class="jxr_keyword">cast</strong>(t)).build();
+<a class="jxr_linenumber" name="378" href="#378">378</a> 
+<a class="jxr_linenumber" name="379" href="#379">379</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="380" href="#380">380</a>                         fc = handleIoException(fc);
+<a class="jxr_linenumber" name="381" href="#381">381</a>                     } <strong class="jxr_keyword">catch</strong> (FilterException e) {
+<a class="jxr_linenumber" name="382" href="#382">382</a>                         <strong class="jxr_keyword">if</strong> (config.getMaxTotalConnections() != -1) {
+<a class="jxr_linenumber" name="383" href="#383">383</a>                             maxConnections.decrementAndGet();
+<a class="jxr_linenumber" name="384" href="#384">384</a>                         }
+<a class="jxr_linenumber" name="385" href="#385">385</a>                         future.done();
+<a class="jxr_linenumber" name="386" href="#386">386</a>                     }
+<a class="jxr_linenumber" name="387" href="#387">387</a> 
+<a class="jxr_linenumber" name="388" href="#388">388</a>                     <strong class="jxr_keyword">if</strong> (fc.replayRequest()) {
+<a class="jxr_linenumber" name="389" href="#389">389</a>                         request = fc.getRequest();
+<a class="jxr_linenumber" name="390" href="#390">390</a>                         urlConnection = createUrlConnection(request);
+<a class="jxr_linenumber" name="391" href="#391">391</a>                         <strong class="jxr_keyword">return</strong> call();
+<a class="jxr_linenumber" name="392" href="#392">392</a>                     }
+<a class="jxr_linenumber" name="393" href="#393">393</a>                 }
+<a class="jxr_linenumber" name="394" href="#394">394</a> 
+<a class="jxr_linenumber" name="395" href="#395">395</a>                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="396" href="#396">396</a>                     future.abort(filterException(t));
+<a class="jxr_linenumber" name="397" href="#397">397</a>                 } <strong class="jxr_keyword">catch</strong> (Throwable t2) {
+<a class="jxr_linenumber" name="398" href="#398">398</a>                     logger.error(t2.getMessage(), t2);
+<a class="jxr_linenumber" name="399" href="#399">399</a>                 }
+<a class="jxr_linenumber" name="400" href="#400">400</a>             } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="401" href="#401">401</a>                 <strong class="jxr_keyword">if</strong> (terminate) {
+<a class="jxr_linenumber" name="402" href="#402">402</a>                     <strong class="jxr_keyword">if</strong> (config.getMaxTotalConnections() != -1) {
+<a class="jxr_linenumber" name="403" href="#403">403</a>                         maxConnections.decrementAndGet();
+<a class="jxr_linenumber" name="404" href="#404">404</a>                     }
+<a class="jxr_linenumber" name="405" href="#405">405</a>                     urlConnection.disconnect();
+<a class="jxr_linenumber" name="406" href="#406">406</a>                     <strong class="jxr_keyword">if</strong> (jdkNtlmDomain != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="407" href="#407">407</a>                         System.setProperty(NTLM_DOMAIN, jdkNtlmDomain);
+<a class="jxr_linenumber" name="408" href="#408">408</a>                     }
+<a class="jxr_linenumber" name="409" href="#409">409</a>                     Authenticator.setDefault(jdkAuthenticator);
+<a class="jxr_linenumber" name="410" href="#410">410</a>                 }
+<a class="jxr_linenumber" name="411" href="#411">411</a>             }
+<a class="jxr_linenumber" name="412" href="#412">412</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="413" href="#413">413</a>         }
+<a class="jxr_linenumber" name="414" href="#414">414</a> 
+<a class="jxr_linenumber" name="415" href="#415">415</a>         <strong class="jxr_keyword">private</strong> <a href="../../../../../../com/ning/http/client/filter/FilterContext.html">FilterContext</a> handleIoException(<a href="../../../../../../com/ning/http/client/filter/FilterContext.html">FilterContext</a> fc) <strong class="jxr_keyword">throws</strong> FilterException {
+<a class="jxr_linenumber" name="416" href="#416">416</a>             <strong class="jxr_keyword">for</strong> (IOExceptionFilter asyncFilter : config.getIOExceptionFilters()) {
+<a class="jxr_linenumber" name="417" href="#417">417</a>                 fc = asyncFilter.filter(fc);
+<a class="jxr_linenumber" name="418" href="#418">418</a>                 <strong class="jxr_keyword">if</strong> (fc == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="419" href="#419">419</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> NullPointerException(<span class="jxr_string">"FilterContext is null"</span>);
+<a class="jxr_linenumber" name="420" href="#420">420</a>                 }
+<a class="jxr_linenumber" name="421" href="#421">421</a>             }
+<a class="jxr_linenumber" name="422" href="#422">422</a>             <strong class="jxr_keyword">return</strong> fc;
+<a class="jxr_linenumber" name="423" href="#423">423</a>         }
+<a class="jxr_linenumber" name="424" href="#424">424</a> 
+<a class="jxr_linenumber" name="425" href="#425">425</a>         <strong class="jxr_keyword">private</strong> Throwable filterException(Throwable t) {
+<a class="jxr_linenumber" name="426" href="#426">426</a>             <strong class="jxr_keyword">if</strong> (t instanceof UnknownHostException) {
+<a class="jxr_linenumber" name="427" href="#427">427</a>                 t = <strong class="jxr_keyword">new</strong> ConnectException(t.getMessage());
+<a class="jxr_linenumber" name="428" href="#428">428</a> 
+<a class="jxr_linenumber" name="429" href="#429">429</a>             } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (t instanceof SocketTimeoutException) {
+<a class="jxr_linenumber" name="430" href="#430">430</a>                 <strong class="jxr_keyword">int</strong> responseTimeoutInMs = config.getRequestTimeoutInMs();
+<a class="jxr_linenumber" name="431" href="#431">431</a> 
+<a class="jxr_linenumber" name="432" href="#432">432</a>                 <strong class="jxr_keyword">if</strong> (request.getPerRequestConfig() != <strong class="jxr_keyword">null</strong> &amp;&amp; request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
+<a class="jxr_linenumber" name="433" href="#433">433</a>                     responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
+<a class="jxr_linenumber" name="434" href="#434">434</a>                 }
+<a class="jxr_linenumber" name="435" href="#435">435</a>                 t = <strong class="jxr_keyword">new</strong> TimeoutException(String.format(<span class="jxr_string">"No response received after %s"</span>, responseTimeoutInMs));
+<a class="jxr_linenumber" name="436" href="#436">436</a> 
+<a class="jxr_linenumber" name="437" href="#437">437</a>             } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (t instanceof SSLHandshakeException) {
+<a class="jxr_linenumber" name="438" href="#438">438</a>                 Throwable t2 = <strong class="jxr_keyword">new</strong> ConnectException();
+<a class="jxr_linenumber" name="439" href="#439">439</a>                 t2.initCause(t);
+<a class="jxr_linenumber" name="440" href="#440">440</a>                 t = t2;
+<a class="jxr_linenumber" name="441" href="#441">441</a>             }
+<a class="jxr_linenumber" name="442" href="#442">442</a> 
+<a class="jxr_linenumber" name="443" href="#443">443</a>             <strong class="jxr_keyword">return</strong> t;
+<a class="jxr_linenumber" name="444" href="#444">444</a>         }
+<a class="jxr_linenumber" name="445" href="#445">445</a> 
+<a class="jxr_linenumber" name="446" href="#446">446</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> configure(URI uri, HttpURLConnection urlConnection, <a href="../../../../../../com/ning/http/client/Request.html">Request</a> request) <strong class="jxr_keyword">throws</strong> IOException, AuthenticationException {
+<a class="jxr_linenumber" name="447" href="#447">447</a> 
+<a class="jxr_linenumber" name="448" href="#448">448</a>             <a href="../../../../../../com/ning/http/client/PerRequestConfig.html">PerRequestConfig</a> conf = request.getPerRequestConfig();
+<a class="jxr_linenumber" name="449" href="#449">449</a>             <strong class="jxr_keyword">int</strong> requestTimeout = (conf != <strong class="jxr_keyword">null</strong> &amp;&amp; conf.getRequestTimeoutInMs() != 0) ?
+<a class="jxr_linenumber" name="450" href="#450">450</a>                     conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+<a class="jxr_linenumber" name="451" href="#451">451</a> 
+<a class="jxr_linenumber" name="452" href="#452">452</a>             urlConnection.setConnectTimeout(config.getConnectionTimeoutInMs());
+<a class="jxr_linenumber" name="453" href="#453">453</a> 
+<a class="jxr_linenumber" name="454" href="#454">454</a>             <strong class="jxr_keyword">if</strong> (requestTimeout != -1)
+<a class="jxr_linenumber" name="455" href="#455">455</a>                 urlConnection.setReadTimeout(requestTimeout);
+<a class="jxr_linenumber" name="456" href="#456">456</a> 
+<a class="jxr_linenumber" name="457" href="#457">457</a>             urlConnection.setInstanceFollowRedirects(false);
+<a class="jxr_linenumber" name="458" href="#458">458</a>             String host = uri.getHost();
+<a class="jxr_linenumber" name="459" href="#459">459</a>             String method = request.getMethod();
+<a class="jxr_linenumber" name="460" href="#460">460</a> 
+<a class="jxr_linenumber" name="461" href="#461">461</a>             <strong class="jxr_keyword">if</strong> (request.getVirtualHost() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="462" href="#462">462</a>                 host = request.getVirtualHost();
+<a class="jxr_linenumber" name="463" href="#463">463</a>             }
+<a class="jxr_linenumber" name="464" href="#464">464</a> 
+<a class="jxr_linenumber" name="465" href="#465">465</a>             <strong class="jxr_keyword">if</strong> (uri.getPort() == -1 || request.getVirtualHost() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="466" href="#466">466</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Host"</span>, host);
+<a class="jxr_linenumber" name="467" href="#467">467</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="468" href="#468">468</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Host"</span>, host + <span class="jxr_string">":"</span> + uri.getPort());
+<a class="jxr_linenumber" name="469" href="#469">469</a>             }
+<a class="jxr_linenumber" name="470" href="#470">470</a> 
+<a class="jxr_linenumber" name="471" href="#471">471</a> 
+<a class="jxr_linenumber" name="472" href="#472">472</a>             <strong class="jxr_keyword">if</strong> (config.isCompressionEnabled()) {
+<a class="jxr_linenumber" name="473" href="#473">473</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Accept-Encoding"</span>, <span class="jxr_string">"gzip"</span>);
+<a class="jxr_linenumber" name="474" href="#474">474</a>             }
+<a class="jxr_linenumber" name="475" href="#475">475</a> 
+<a class="jxr_linenumber" name="476" href="#476">476</a>             <strong class="jxr_keyword">if</strong> (!method.equalsIgnoreCase(<span class="jxr_string">"CONNECT"</span>)) {
+<a class="jxr_linenumber" name="477" href="#477">477</a>                 <a href="../../../../../../com/ning/http/client/FluentCaseInsensitiveStringsMap.html">FluentCaseInsensitiveStringsMap</a> h = request.getHeaders();
+<a class="jxr_linenumber" name="478" href="#478">478</a>                 <strong class="jxr_keyword">if</strong> (h != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="479" href="#479">479</a>                     <strong class="jxr_keyword">for</strong> (String name : h.keySet()) {
+<a class="jxr_linenumber" name="480" href="#480">480</a>                         <strong class="jxr_keyword">if</strong> (!<span class="jxr_string">"host"</span>.equalsIgnoreCase(name)) {
+<a class="jxr_linenumber" name="481" href="#481">481</a>                             <strong class="jxr_keyword">for</strong> (String value : h.get(name)) {
+<a class="jxr_linenumber" name="482" href="#482">482</a>                                 urlConnection.setRequestProperty(name, value);
+<a class="jxr_linenumber" name="483" href="#483">483</a>                                 <strong class="jxr_keyword">if</strong> (name.equalsIgnoreCase(<span class="jxr_string">"Expect"</span>)) {
+<a class="jxr_linenumber" name="484" href="#484">484</a>                                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IllegalStateException(<span class="jxr_string">"Expect: 100-Continue not supported"</span>);
+<a class="jxr_linenumber" name="485" href="#485">485</a>                                 }
+<a class="jxr_linenumber" name="486" href="#486">486</a>                             }
+<a class="jxr_linenumber" name="487" href="#487">487</a>                         }
+<a class="jxr_linenumber" name="488" href="#488">488</a>                     }
+<a class="jxr_linenumber" name="489" href="#489">489</a>                 }
+<a class="jxr_linenumber" name="490" href="#490">490</a>             }
+<a class="jxr_linenumber" name="491" href="#491">491</a> 
+<a class="jxr_linenumber" name="492" href="#492">492</a>             String ka = AsyncHttpProviderUtils.keepAliveHeaderValue(config);
+<a class="jxr_linenumber" name="493" href="#493">493</a>             urlConnection.setRequestProperty(<span class="jxr_string">"Connection"</span>, ka);
+<a class="jxr_linenumber" name="494" href="#494">494</a>             <a href="../../../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer = ProxyUtils.getProxyServer(config, request);
+<a class="jxr_linenumber" name="495" href="#495">495</a>             <strong class="jxr_keyword">boolean</strong> avoidProxy = ProxyUtils.avoidProxy(proxyServer, uri.getHost());
+<a class="jxr_linenumber" name="496" href="#496">496</a>             <strong class="jxr_keyword">if</strong> (!avoidProxy) {
+<a class="jxr_linenumber" name="497" href="#497">497</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Proxy-Connection"</span>, ka);
+<a class="jxr_linenumber" name="498" href="#498">498</a>                 <strong class="jxr_keyword">if</strong> (proxyServer.getPrincipal() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="499" href="#499">499</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Proxy-Authorization"</span>, AuthenticatorUtils.computeBasicAuthentication(proxyServer));
+<a class="jxr_linenumber" name="500" href="#500">500</a>                 }
+<a class="jxr_linenumber" name="501" href="#501">501</a> 
+<a class="jxr_linenumber" name="502" href="#502">502</a>                 <strong class="jxr_keyword">if</strong> (proxyServer.getProtocol().equals(ProxyServer.Protocol.NTLM)) {
+<a class="jxr_linenumber" name="503" href="#503">503</a>                     jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+<a class="jxr_linenumber" name="504" href="#504">504</a>                     System.setProperty(NTLM_DOMAIN, proxyServer.getNtlmDomain());
+<a class="jxr_linenumber" name="505" href="#505">505</a>                 }
+<a class="jxr_linenumber" name="506" href="#506">506</a>             }
+<a class="jxr_linenumber" name="507" href="#507">507</a> 
+<a class="jxr_linenumber" name="508" href="#508">508</a>             <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> realm = request.getRealm() != <strong class="jxr_keyword">null</strong> ? request.getRealm() : config.getRealm();
+<a class="jxr_linenumber" name="509" href="#509">509</a>             <strong class="jxr_keyword">if</strong> (realm != <strong class="jxr_keyword">null</strong> &amp;&amp; realm.getUsePreemptiveAuth()) {
+<a class="jxr_linenumber" name="510" href="#510">510</a>                 <strong class="jxr_keyword">switch</strong> (realm.getAuthScheme()) {
+<a class="jxr_linenumber" name="511" href="#511">511</a>                     <strong class="jxr_keyword">case</strong> BASIC:
+<a class="jxr_linenumber" name="512" href="#512">512</a>                         urlConnection.setRequestProperty(<span class="jxr_string">"Authorization"</span>,
+<a class="jxr_linenumber" name="513" href="#513">513</a>                                 AuthenticatorUtils.computeBasicAuthentication(realm));
+<a class="jxr_linenumber" name="514" href="#514">514</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="515" href="#515">515</a>                     <strong class="jxr_keyword">case</strong> DIGEST:
+<a class="jxr_linenumber" name="516" href="#516">516</a>                         <strong class="jxr_keyword">if</strong> (isNonEmpty(realm.getNonce())) {
+<a class="jxr_linenumber" name="517" href="#517">517</a>                             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="518" href="#518">518</a>                                 urlConnection.setRequestProperty(<span class="jxr_string">"Authorization"</span>,
+<a class="jxr_linenumber" name="519" href="#519">519</a>                                         AuthenticatorUtils.computeDigestAuthentication(realm));
+<a class="jxr_linenumber" name="520" href="#520">520</a>                             } <strong class="jxr_keyword">catch</strong> (NoSuchAlgorithmException e) {
+<a class="jxr_linenumber" name="521" href="#521">521</a>                                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> SecurityException(e);
+<a class="jxr_linenumber" name="522" href="#522">522</a>                             }
+<a class="jxr_linenumber" name="523" href="#523">523</a>                         }
+<a class="jxr_linenumber" name="524" href="#524">524</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="525" href="#525">525</a>                     <strong class="jxr_keyword">case</strong> NTLM:
+<a class="jxr_linenumber" name="526" href="#526">526</a>                         jdkNtlmDomain = System.getProperty(NTLM_DOMAIN);
+<a class="jxr_linenumber" name="527" href="#527">527</a>                         System.setProperty(NTLM_DOMAIN, realm.getDomain());
+<a class="jxr_linenumber" name="528" href="#528">528</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="529" href="#529">529</a>                     <strong class="jxr_keyword">case</strong> NONE:
+<a class="jxr_linenumber" name="530" href="#530">530</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="531" href="#531">531</a>                     <strong class="jxr_keyword">default</strong>:
+<a class="jxr_linenumber" name="532" href="#532">532</a>                         <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IllegalStateException(String.format(<span class="jxr_string">"Invalid Authentication %s"</span>, realm.toString()));
+<a class="jxr_linenumber" name="533" href="#533">533</a>                 }
+<a class="jxr_linenumber" name="534" href="#534">534</a> 
+<a class="jxr_linenumber" name="535" href="#535">535</a>             }
+<a class="jxr_linenumber" name="536" href="#536">536</a> 
+<a class="jxr_linenumber" name="537" href="#537">537</a>             <em class="jxr_comment">// Add default accept headers.</em>
+<a class="jxr_linenumber" name="538" href="#538">538</a>             <strong class="jxr_keyword">if</strong> (request.getHeaders().getFirstValue(<span class="jxr_string">"Accept"</span>) == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="539" href="#539">539</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Accept"</span>, <span class="jxr_string">"*/*"</span>);
+<a class="jxr_linenumber" name="540" href="#540">540</a>             }
+<a class="jxr_linenumber" name="541" href="#541">541</a> 
+<a class="jxr_linenumber" name="542" href="#542">542</a>             <strong class="jxr_keyword">if</strong> (request.getHeaders().getFirstValue(<span class="jxr_string">"User-Agent"</span>) != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="543" href="#543">543</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"User-Agent"</span>, request.getHeaders().getFirstValue(<span class="jxr_string">"User-Agent"</span>));
+<a class="jxr_linenumber" name="544" href="#544">544</a>             } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (config.getUserAgent() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="545" href="#545">545</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"User-Agent"</span>, config.getUserAgent());
+<a class="jxr_linenumber" name="546" href="#546">546</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="547" href="#547">547</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"User-Agent"</span>, AsyncHttpProviderUtils.constructUserAgent(JDKAsyncHttpProvider.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="548" href="#548">548</a>             }
+<a class="jxr_linenumber" name="549" href="#549">549</a> 
+<a class="jxr_linenumber" name="550" href="#550">550</a>             <strong class="jxr_keyword">if</strong> (isNonEmpty(request.getCookies())) {
+<a class="jxr_linenumber" name="551" href="#551">551</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Cookie"</span>, CookieEncoder.encode(request.getCookies()));
+<a class="jxr_linenumber" name="552" href="#552">552</a>             }
+<a class="jxr_linenumber" name="553" href="#553">553</a> 
+<a class="jxr_linenumber" name="554" href="#554">554</a>             String reqType = request.getMethod();
+<a class="jxr_linenumber" name="555" href="#555">555</a>             urlConnection.setRequestMethod(reqType);
+<a class="jxr_linenumber" name="556" href="#556">556</a> 
+<a class="jxr_linenumber" name="557" href="#557">557</a>             <strong class="jxr_keyword">if</strong> (<span class="jxr_string">"POST"</span>.equals(reqType) || <span class="jxr_string">"PUT"</span>.equals(reqType)) {
+<a class="jxr_linenumber" name="558" href="#558">558</a>                 urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, <span class="jxr_string">"0"</span>);
+<a class="jxr_linenumber" name="559" href="#559">559</a>                 urlConnection.setDoOutput(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="560" href="#560">560</a>                 String bodyCharset = request.getBodyEncoding() == <strong class="jxr_keyword">null</strong> ? DEFAULT_CHARSET : request.getBodyEncoding();
+<a class="jxr_linenumber" name="561" href="#561">561</a> 
+<a class="jxr_linenumber" name="562" href="#562">562</a>                 <strong class="jxr_keyword">if</strong> (cachedBytes != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="563" href="#563">563</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(cachedBytesLenght));
+<a class="jxr_linenumber" name="564" href="#564">564</a>                     urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
+<a class="jxr_linenumber" name="565" href="#565">565</a>                     urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
+<a class="jxr_linenumber" name="566" href="#566">566</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getByteData() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="567" href="#567">567</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(request.getByteData().length));
+<a class="jxr_linenumber" name="568" href="#568">568</a>                     urlConnection.setFixedLengthStreamingMode(request.getByteData().length);
+<a class="jxr_linenumber" name="569" href="#569">569</a> 
+<a class="jxr_linenumber" name="570" href="#570">570</a>                     urlConnection.getOutputStream().write(request.getByteData());
+<a class="jxr_linenumber" name="571" href="#571">571</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getStringData() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="572" href="#572">572</a>                     <strong class="jxr_keyword">if</strong> (!request.getHeaders().containsKey(<span class="jxr_string">"Content-Type"</span>)) {
+<a class="jxr_linenumber" name="573" href="#573">573</a>                         urlConnection.setRequestProperty(<span class="jxr_string">"Content-Type"</span>, <span class="jxr_string">"text/html;"</span> + bodyCharset);
+<a class="jxr_linenumber" name="574" href="#574">574</a>                     }
+<a class="jxr_linenumber" name="575" href="#575">575</a>                     byte[] b = request.getStringData().getBytes(bodyCharset);
+<a class="jxr_linenumber" name="576" href="#576">576</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(b.length));
+<a class="jxr_linenumber" name="577" href="#577">577</a>                     urlConnection.getOutputStream().write(b);
+<a class="jxr_linenumber" name="578" href="#578">578</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getStreamData() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="579" href="#579">579</a>                     <strong class="jxr_keyword">int</strong>[] lengthWrapper = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">int</strong>[1];
+<a class="jxr_linenumber" name="580" href="#580">580</a>                     cachedBytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
+<a class="jxr_linenumber" name="581" href="#581">581</a>                     cachedBytesLenght = lengthWrapper[0];
+<a class="jxr_linenumber" name="582" href="#582">582</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(cachedBytesLenght));
+<a class="jxr_linenumber" name="583" href="#583">583</a>                     urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
+<a class="jxr_linenumber" name="584" href="#584">584</a> 
+<a class="jxr_linenumber" name="585" href="#585">585</a>                     urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
+<a class="jxr_linenumber" name="586" href="#586">586</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getParams() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="587" href="#587">587</a>                     StringBuilder sb = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="588" href="#588">588</a>                     <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">final</strong> Map.Entry&lt;String, List&lt;String&gt;&gt; paramEntry : request.getParams()) {
+<a class="jxr_linenumber" name="589" href="#589">589</a>                         <strong class="jxr_keyword">final</strong> String key = paramEntry.getKey();
+<a class="jxr_linenumber" name="590" href="#590">590</a>                         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">final</strong> String value : paramEntry.getValue()) {
+<a class="jxr_linenumber" name="591" href="#591">591</a>                             <strong class="jxr_keyword">if</strong> (sb.length() &gt; 0) {
+<a class="jxr_linenumber" name="592" href="#592">592</a>                                 sb.append(<span class="jxr_string">"&amp;"</span>);
+<a class="jxr_linenumber" name="593" href="#593">593</a>                             }
+<a class="jxr_linenumber" name="594" href="#594">594</a>                             UTF8UrlEncoder.appendEncoded(sb, key);
+<a class="jxr_linenumber" name="595" href="#595">595</a>                             sb.append(<span class="jxr_string">"="</span>);
+<a class="jxr_linenumber" name="596" href="#596">596</a>                             UTF8UrlEncoder.appendEncoded(sb, value);
+<a class="jxr_linenumber" name="597" href="#597">597</a>                         }
+<a class="jxr_linenumber" name="598" href="#598">598</a>                     }
+<a class="jxr_linenumber" name="599" href="#599">599</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(sb.length()));
+<a class="jxr_linenumber" name="600" href="#600">600</a>                     urlConnection.setFixedLengthStreamingMode(sb.length());
+<a class="jxr_linenumber" name="601" href="#601">601</a> 
+<a class="jxr_linenumber" name="602" href="#602">602</a>                     <strong class="jxr_keyword">if</strong> (!request.getHeaders().containsKey(<span class="jxr_string">"Content-Type"</span>)) {
+<a class="jxr_linenumber" name="603" href="#603">603</a>                         urlConnection.setRequestProperty(<span class="jxr_string">"Content-Type"</span>, <span class="jxr_string">"application/x-www-form-urlencoded"</span>);
+<a class="jxr_linenumber" name="604" href="#604">604</a>                     }
+<a class="jxr_linenumber" name="605" href="#605">605</a>                     urlConnection.getOutputStream().write(sb.toString().getBytes(bodyCharset));
+<a class="jxr_linenumber" name="606" href="#606">606</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getParts() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="607" href="#607">607</a>                     <strong class="jxr_keyword">int</strong> lenght = (<strong class="jxr_keyword">int</strong>) request.getContentLength();
+<a class="jxr_linenumber" name="608" href="#608">608</a>                     <strong class="jxr_keyword">if</strong> (lenght != -1) {
+<a class="jxr_linenumber" name="609" href="#609">609</a>                         urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(lenght));
+<a class="jxr_linenumber" name="610" href="#610">610</a>                         urlConnection.setFixedLengthStreamingMode(lenght);
+<a class="jxr_linenumber" name="611" href="#611">611</a>                     }
+<a class="jxr_linenumber" name="612" href="#612">612</a> 
+<a class="jxr_linenumber" name="613" href="#613">613</a>                     <strong class="jxr_keyword">if</strong> (lenght == -1) {
+<a class="jxr_linenumber" name="614" href="#614">614</a>                         lenght = MAX_BUFFERED_BYTES;
+<a class="jxr_linenumber" name="615" href="#615">615</a>                     }
+<a class="jxr_linenumber" name="616" href="#616">616</a> 
+<a class="jxr_linenumber" name="617" href="#617">617</a>                     <a href="../../../../../../com/ning/http/multipart/MultipartRequestEntity.html">MultipartRequestEntity</a> mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
+<a class="jxr_linenumber" name="618" href="#618">618</a> 
+<a class="jxr_linenumber" name="619" href="#619">619</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Type"</span>, mre.getContentType());
+<a class="jxr_linenumber" name="620" href="#620">620</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(mre.getContentLength()));
+<a class="jxr_linenumber" name="621" href="#621">621</a> 
+<a class="jxr_linenumber" name="622" href="#622">622</a>                     mre.writeRequest(urlConnection.getOutputStream());
+<a class="jxr_linenumber" name="623" href="#623">623</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getEntityWriter() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="624" href="#624">624</a>                     <strong class="jxr_keyword">int</strong> lenght = (<strong class="jxr_keyword">int</strong>) request.getContentLength();
+<a class="jxr_linenumber" name="625" href="#625">625</a>                     <strong class="jxr_keyword">if</strong> (lenght != -1) {
+<a class="jxr_linenumber" name="626" href="#626">626</a>                         urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(lenght));
+<a class="jxr_linenumber" name="627" href="#627">627</a>                         urlConnection.setFixedLengthStreamingMode(lenght);
+<a class="jxr_linenumber" name="628" href="#628">628</a>                     }
+<a class="jxr_linenumber" name="629" href="#629">629</a>                     request.getEntityWriter().writeEntity(urlConnection.getOutputStream());
+<a class="jxr_linenumber" name="630" href="#630">630</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getFile() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="631" href="#631">631</a>                     File file = request.getFile();
+<a class="jxr_linenumber" name="632" href="#632">632</a>                     <strong class="jxr_keyword">if</strong> (!file.isFile()) {
+<a class="jxr_linenumber" name="633" href="#633">633</a>                         <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(String.format(Thread.currentThread()
+<a class="jxr_linenumber" name="634" href="#634">634</a>                                 + <span class="jxr_string">"File %s is not a file or doesn't exist"</span>, file.getAbsolutePath()));
+<a class="jxr_linenumber" name="635" href="#635">635</a>                     }
+<a class="jxr_linenumber" name="636" href="#636">636</a>                     urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(file.length()));
+<a class="jxr_linenumber" name="637" href="#637">637</a>                     urlConnection.setFixedLengthStreamingMode((<strong class="jxr_keyword">int</strong>) file.length());
+<a class="jxr_linenumber" name="638" href="#638">638</a> 
+<a class="jxr_linenumber" name="639" href="#639">639</a>                     FileInputStream fis = <strong class="jxr_keyword">new</strong> FileInputStream(file);
+<a class="jxr_linenumber" name="640" href="#640">640</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="641" href="#641">641</a>                         OutputStream os = urlConnection.getOutputStream();
+<a class="jxr_linenumber" name="642" href="#642">642</a>                         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">final</strong> byte[] buffer = <strong class="jxr_keyword">new</strong> byte[1024 * 16]; ; ) {
+<a class="jxr_linenumber" name="643" href="#643">643</a>                             <strong class="jxr_keyword">int</strong> read = fis.read(buffer);
+<a class="jxr_linenumber" name="644" href="#644">644</a>                             <strong class="jxr_keyword">if</strong> (read &lt; 0) {
+<a class="jxr_linenumber" name="645" href="#645">645</a>                                 <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="646" href="#646">646</a>                             }
+<a class="jxr_linenumber" name="647" href="#647">647</a>                             os.write(buffer, 0, read);
+<a class="jxr_linenumber" name="648" href="#648">648</a>                         }
+<a class="jxr_linenumber" name="649" href="#649">649</a>                     } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="650" href="#650">650</a>                         fis.close();
+<a class="jxr_linenumber" name="651" href="#651">651</a>                     }
+<a class="jxr_linenumber" name="652" href="#652">652</a>                 } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request.getBodyGenerator() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="653" href="#653">653</a>                     <a href="../../../../../../com/ning/http/client/Body.html">Body</a> body = request.getBodyGenerator().createBody();
+<a class="jxr_linenumber" name="654" href="#654">654</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="655" href="#655">655</a>                         <strong class="jxr_keyword">int</strong> length = (<strong class="jxr_keyword">int</strong>) body.getContentLength();
+<a class="jxr_linenumber" name="656" href="#656">656</a>                         <strong class="jxr_keyword">if</strong> (length &lt; 0) {
+<a class="jxr_linenumber" name="657" href="#657">657</a>                             length = (<strong class="jxr_keyword">int</strong>) request.getContentLength();
+<a class="jxr_linenumber" name="658" href="#658">658</a>                         }
+<a class="jxr_linenumber" name="659" href="#659">659</a>                         <strong class="jxr_keyword">if</strong> (length &gt;= 0) {
+<a class="jxr_linenumber" name="660" href="#660">660</a>                             urlConnection.setRequestProperty(<span class="jxr_string">"Content-Length"</span>, String.valueOf(length));
+<a class="jxr_linenumber" name="661" href="#661">661</a>                             urlConnection.setFixedLengthStreamingMode(length);
+<a class="jxr_linenumber" name="662" href="#662">662</a>                         }
+<a class="jxr_linenumber" name="663" href="#663">663</a>                         OutputStream os = urlConnection.getOutputStream();
+<a class="jxr_linenumber" name="664" href="#664">664</a>                         <strong class="jxr_keyword">for</strong> (ByteBuffer buffer = ByteBuffer.allocate(1024 * 8); ; ) {
+<a class="jxr_linenumber" name="665" href="#665">665</a>                             buffer.clear();
+<a class="jxr_linenumber" name="666" href="#666">666</a>                             <strong class="jxr_keyword">if</strong> (body.read(buffer) &lt; 0) {
+<a class="jxr_linenumber" name="667" href="#667">667</a>                                 <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="668" href="#668">668</a>                             }
+<a class="jxr_linenumber" name="669" href="#669">669</a>                             os.write(buffer.array(), buffer.arrayOffset(), buffer.position());
+<a class="jxr_linenumber" name="670" href="#670">670</a>                         }
+<a class="jxr_linenumber" name="671" href="#671">671</a>                     } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="672" href="#672">672</a>                         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="673" href="#673">673</a>                             body.close();
+<a class="jxr_linenumber" name="674" href="#674">674</a>                         } <strong class="jxr_keyword">catch</strong> (IOException e) {
+<a class="jxr_linenumber" name="675" href="#675">675</a>                             logger.warn(<span class="jxr_string">"Failed to close request body: {}"</span>, e.getMessage(), e);
+<a class="jxr_linenumber" name="676" href="#676">676</a>                         }
+<a class="jxr_linenumber" name="677" href="#677">677</a>                     }
+<a class="jxr_linenumber" name="678" href="#678">678</a>                 }
+<a class="jxr_linenumber" name="679" href="#679">679</a>             }
+<a class="jxr_linenumber" name="680" href="#680">680</a>         }
+<a class="jxr_linenumber" name="681" href="#681">681</a>     }
+<a class="jxr_linenumber" name="682" href="#682">682</a> 
+<a class="jxr_linenumber" name="683" href="#683">683</a>     <strong class="jxr_keyword">private</strong> Proxy configureProxyAndAuth(<strong class="jxr_keyword">final</strong> <a href="../../../../../../com/ning/http/client/ProxyServer.html">ProxyServer</a> proxyServer, <strong class="jxr_keyword">final</strong> <a href="../../../../../../com/ning/http/client/Realm.html">Realm</a> realm) <strong class="jxr_keyword">throws</strong> AuthenticationException {
+<a class="jxr_linenumber" name="684" href="#684">684</a> 
+<a class="jxr_linenumber" name="685" href="#685">685</a>         Proxy proxy = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="686" href="#686">686</a>         <strong class="jxr_keyword">if</strong> (proxyServer != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="687" href="#687">687</a> 
+<a class="jxr_linenumber" name="688" href="#688">688</a>             String proxyHost = proxyServer.getHost().startsWith(<span class="jxr_string">"http://"</span>)
+<a class="jxr_linenumber" name="689" href="#689">689</a>                     ? proxyServer.getHost().substring(<span class="jxr_string">"http://"</span>.length()) : proxyServer.getHost();
+<a class="jxr_linenumber" name="690" href="#690">690</a> 
+<a class="jxr_linenumber" name="691" href="#691">691</a>             SocketAddress addr = <strong class="jxr_keyword">new</strong> InetSocketAddress(proxyHost, proxyServer.getPort());
+<a class="jxr_linenumber" name="692" href="#692">692</a>             proxy = <strong class="jxr_keyword">new</strong> Proxy(Proxy.Type.HTTP, addr);
+<a class="jxr_linenumber" name="693" href="#693">693</a>         }
+<a class="jxr_linenumber" name="694" href="#694">694</a> 
+<a class="jxr_linenumber" name="695" href="#695">695</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> hasProxy = (proxyServer != <strong class="jxr_keyword">null</strong> &amp;&amp; proxyServer.getPrincipal() != <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="696" href="#696">696</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> hasAuthentication = (realm != <strong class="jxr_keyword">null</strong> &amp;&amp; realm.getPrincipal() != <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="697" href="#697">697</a>         <strong class="jxr_keyword">if</strong> (hasProxy || hasAuthentication) {
+<a class="jxr_linenumber" name="698" href="#698">698</a> 
+<a class="jxr_linenumber" name="699" href="#699">699</a>             Field f = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="700" href="#700">700</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="701" href="#701">701</a>                 f = Authenticator.<strong class="jxr_keyword">class</strong>.getDeclaredField(<span class="jxr_string">"theAuthenticator"</span>);
+<a class="jxr_linenumber" name="702" href="#702">702</a> 
+<a class="jxr_linenumber" name="703" href="#703">703</a>                 f.setAccessible(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="704" href="#704">704</a>                 jdkAuthenticator = (Authenticator) f.get(Authenticator.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="705" href="#705">705</a>             } <strong class="jxr_keyword">catch</strong> (NoSuchFieldException e) {
+<a class="jxr_linenumber" name="706" href="#706">706</a>             } <strong class="jxr_keyword">catch</strong> (IllegalAccessException e) {
+<a class="jxr_linenumber" name="707" href="#707">707</a>             }
+<a class="jxr_linenumber" name="708" href="#708">708</a> 
+<a class="jxr_linenumber" name="709" href="#709">709</a> 
+<a class="jxr_linenumber" name="710" href="#710">710</a>             Authenticator.setDefault(<strong class="jxr_keyword">new</strong> Authenticator() {
+<a class="jxr_linenumber" name="711" href="#711">711</a>                 <strong class="jxr_keyword">protected</strong> PasswordAuthentication getPasswordAuthentication() {
+<a class="jxr_linenumber" name="712" href="#712">712</a>                     <strong class="jxr_keyword">if</strong> (hasProxy &amp;&amp; getRequestingHost().equals(proxyServer.getHost())
+<a class="jxr_linenumber" name="713" href="#713">713</a>                             &amp;&amp; getRequestingPort() == proxyServer.getPort()) {
+<a class="jxr_linenumber" name="714" href="#714">714</a>                         String password = <span class="jxr_string">""</span>;
+<a class="jxr_linenumber" name="715" href="#715">715</a>                         <strong class="jxr_keyword">if</strong> (proxyServer.getPassword() != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="716" href="#716">716</a>                             password = proxyServer.getPassword();
+<a class="jxr_linenumber" name="717" href="#717">717</a>                         }
+<a class="jxr_linenumber" name="718" href="#718">718</a>                         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> PasswordAuthentication(proxyServer.getPrincipal(), password.toCharArray());
+<a class="jxr_linenumber" name="719" href="#719">719</a>                     }
+<a class="jxr_linenumber" name="720" href="#720">720</a> 
+<a class="jxr_linenumber" name="721" href="#721">721</a>                     <strong class="jxr_keyword">if</strong> (hasAuthentication) {
+<a class="jxr_linenumber" name="722" href="#722">722</a>                         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> PasswordAuthentication(realm.getPrincipal(), realm.getPassword().toCharArray());
+<a class="jxr_linenumber" name="723" href="#723">723</a>                     }
+<a class="jxr_linenumber" name="724" href="#724">724</a> 
+<a class="jxr_linenumber" name="725" href="#725">725</a>                     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">super</strong>.getPasswordAuthentication();
+<a class="jxr_linenumber" name="726" href="#726">726</a>                 }
+<a class="jxr_linenumber" name="727" href="#727">727</a>             });
+<a class="jxr_linenumber" name="728" href="#728">728</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="729" href="#729">729</a>             Authenticator.setDefault(<strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="730" href="#730">730</a>         }
+<a class="jxr_linenumber" name="731" href="#731">731</a>         <strong class="jxr_keyword">return</strong> proxy;
+<a class="jxr_linenumber" name="732" href="#732">732</a>     }
+<a class="jxr_linenumber" name="733" href="#733">733</a> 
+<a class="jxr_linenumber" name="734" href="#734">734</a>     <strong class="jxr_keyword">private</strong> InputStream getInputStream(HttpURLConnection urlConnection) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="735" href="#735">735</a>         <strong class="jxr_keyword">if</strong> (urlConnection.getResponseCode() &lt; 400) {
+<a class="jxr_linenumber" name="736" href="#736">736</a>             <strong class="jxr_keyword">return</strong> urlConnection.getInputStream();
+<a class="jxr_linenumber" name="737" href="#737">737</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="738" href="#738">738</a>             InputStream ein = urlConnection.getErrorStream();
+<a class="jxr_linenumber" name="739" href="#739">739</a>             <strong class="jxr_keyword">return</strong> (ein != <strong class="jxr_keyword">null</strong>)
+<a class="jxr_linenumber" name="740" href="#740">740</a>                     ? ein : <strong class="jxr_keyword">new</strong> ByteArrayInputStream(<strong class="jxr_keyword">new</strong> byte[0]);
+<a class="jxr_linenumber" name="741" href="#741">741</a>         }
+<a class="jxr_linenumber" name="742" href="#742">742</a>     }
+<a class="jxr_linenumber" name="743" href="#743">743</a> 
+<a class="jxr_linenumber" name="744" href="#744">744</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+
