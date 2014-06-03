@@ -1255,21 +1255,17 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
+    private String authorizationHeaderName(boolean proxyInd) {
+        return proxyInd? HttpHeaders.Names.PROXY_AUTHORIZATION: HttpHeaders.Names.AUTHORIZATION;
+    }
+    
     private void addNTLMAuthorization(FluentCaseInsensitiveStringsMap headers, String challengeHeader, boolean proxyInd) {
-        if ( proxyInd ) {
-            headers.add(HttpHeaders.Names.PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
-        } else {
-            headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
-        }
+        headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
     }
 
     private void addType3NTLMAuthorizationHeader(List<String> auth, FluentCaseInsensitiveStringsMap headers, String username, String password, String domain, String workstation, boolean proxyInd)
             throws NTLMEngineException {
-        if ( proxyInd ) {
-            headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
-        } else {
-            headers.remove(HttpHeaders.Names.AUTHORIZATION);
-        }
+        headers.remove(authorizationHeaderName(proxyInd));
 
         // Beware of space!, see #462
         if (isNonEmpty(auth) && auth.get(0).startsWith("NTLM ")) {
