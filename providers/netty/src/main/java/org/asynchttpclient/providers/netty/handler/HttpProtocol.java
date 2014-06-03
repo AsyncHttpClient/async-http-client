@@ -78,7 +78,7 @@ final class HttpProtocol extends Protocol {
     }
 
     private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer,
-            FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future) throws NTLMEngineException {
+            FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
         URI uri = request.getURI();
         String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
@@ -96,19 +96,23 @@ final class HttpProtocol extends Protocol {
 
         } catch (Throwable throwable) {
             if (isNTLM(proxyAuth)) {
-                return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future);
+                return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future, proxyInd);
             }
             channels.abort(future, throwable);
             return null;
         }
     }
 
-    private void addNTLMAuthorizationHeader(FluentCaseInsensitiveStringsMap headers, String challengeHeader) {
-        headers.add(HttpHeaders.Names.AUTHORIZATION, "NTLM " + challengeHeader);
+    private String authorizationHeaderName(boolean proxyInd) {
+        return proxyInd? HttpHeaders.Names.PROXY_AUTHORIZATION: HttpHeaders.Names.AUTHORIZATION;
+    }
+    
+    private void addNTLMAuthorizationHeader(FluentCaseInsensitiveStringsMap headers, String challengeHeader, boolean proxyInd) {
+        headers.add(authorizationHeaderName(proxyInd), "NTLM " + challengeHeader);
     }
 
     private Realm ntlmChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers,
-            Realm realm, NettyResponseFuture<?> future) throws NTLMEngineException {
+            Realm realm, NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
         boolean useRealm = proxyServer == null && realm != null;
 
@@ -121,7 +125,7 @@ final class HttpProtocol extends Protocol {
             String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
 
             URI uri = request.getURI();
-            addNTLMAuthorizationHeader(headers, challengeHeader);
+            addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
@@ -131,7 +135,7 @@ final class HttpProtocol extends Protocol {
                     .build();
 
         } else {
-            addType3NTLMAuthorizationHeader(wwwAuth, headers, principal, password, ntlmDomain, ntlmHost);
+            addType3NTLMAuthorizationHeader(wwwAuth, headers, principal, password, ntlmDomain, ntlmHost, proxyInd);
             Realm.AuthScheme authScheme = realm != null ? realm.getAuthScheme() : Realm.AuthScheme.NTLM;
             return newRealmBuilder(realm)//
                     .setScheme(authScheme)//
@@ -142,12 +146,12 @@ final class HttpProtocol extends Protocol {
     }
 
     private Realm ntlmProxyChallenge(List<String> wwwAuth, Request request, ProxyServer proxyServer,
-            FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future) throws NTLMEngineException {
+            FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
         future.getAndSetAuth(false);
         headers.remove(HttpHeaders.Names.PROXY_AUTHORIZATION);
 
         addType3NTLMAuthorizationHeader(wwwAuth, headers, proxyServer.getPrincipal(), proxyServer.getPassword(),
-                proxyServer.getNtlmDomain(), proxyServer.getHost());
+                proxyServer.getNtlmDomain(), proxyServer.getHost(), proxyInd);
 
         return newRealmBuilder(realm)//
                 // .setScheme(realm.getAuthScheme())
@@ -156,13 +160,13 @@ final class HttpProtocol extends Protocol {
     }
 
     private void addType3NTLMAuthorizationHeader(List<String> auth, FluentCaseInsensitiveStringsMap headers, String username,
-            String password, String domain, String workstation) throws NTLMEngineException {
-        headers.remove(HttpHeaders.Names.AUTHORIZATION);
+            String password, String domain, String workstation, boolean proxyInd) throws NTLMEngineException {
+        headers.remove(authorizationHeaderName(proxyInd));
 
         if (isNonEmpty(auth) && auth.get(0).startsWith("NTLM ")) {
             String serverChallenge = auth.get(0).trim().substring("NTLM ".length());
             String challengeHeader = NTLMEngine.INSTANCE.generateType3Msg(username, password, domain, workstation, serverChallenge);
-            addNTLMAuthorizationHeader(headers, challengeHeader);
+            addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
         }
     }
 
@@ -236,10 +240,10 @@ final class HttpProtocol extends Protocol {
                 // NTLM
                 boolean negociate = authenticateHeaders.contains("Negotiate");
                 if (!authenticateHeaders.contains("Kerberos") && (isNTLM(authenticateHeaders) || negociate)) {
-                    newRealm = ntlmChallenge(authenticateHeaders, request, proxyServer, request.getHeaders(), realm, future);
+                    newRealm = ntlmChallenge(authenticateHeaders, request, proxyServer, request.getHeaders(), realm, future, false);
                     // SPNEGO KERBEROS
                 } else if (negociate) {
-                    newRealm = kerberosChallenge(authenticateHeaders, request, proxyServer, request.getHeaders(), realm, future);
+                    newRealm = kerberosChallenge(authenticateHeaders, request, proxyServer, request.getHeaders(), realm, future, false);
                     if (newRealm == null) {
                         return true;
                     }
@@ -305,10 +309,10 @@ final class HttpProtocol extends Protocol {
 
                 boolean negociate = proxyAuthenticateHeaders.contains("Negotiate");
                 if (!proxyAuthenticateHeaders.contains("Kerberos") && (isNTLM(proxyAuthenticateHeaders) || negociate)) {
-                    newRealm = ntlmProxyChallenge(proxyAuthenticateHeaders, request, proxyServer, request.getHeaders(), realm, future);
+                    newRealm = ntlmProxyChallenge(proxyAuthenticateHeaders, request, proxyServer, request.getHeaders(), realm, future, true);
                     // SPNEGO KERBEROS
                 } else if (negociate) {
-                    newRealm = kerberosChallenge(proxyAuthenticateHeaders, request, proxyServer, request.getHeaders(), realm, future);
+                    newRealm = kerberosChallenge(proxyAuthenticateHeaders, request, proxyServer, request.getHeaders(), realm, future, true);
                     if (newRealm == null)
                         return true;
                 } else {
@@ -459,10 +463,12 @@ final class HttpProtocol extends Protocol {
 
             try {
                 channels.abort(future, t);
+            } catch (Exception abortException) {
+                LOGGER.debug("Abort failed", abortException);
             } finally {
                 finishUpdate(future, channel, false);
-                throw t;
             }
+            throw t;
         }
     }
 
