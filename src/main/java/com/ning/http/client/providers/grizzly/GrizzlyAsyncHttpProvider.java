@@ -544,23 +544,20 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     @SuppressWarnings({"unchecked"})
     boolean sendRequest(final FilterChainContext ctx,
                      final Request request,
-                     final HttpRequestPacket requestPacket)
+                     final HttpRequestPacket requestPacket,
+                     final BodyHandler bodyHandler)
     throws IOException {
 
         boolean isWriteComplete = true;
         
-        if (requestHasEntityBody(request)) {
+        if (bodyHandler != null) { // Check if the HTTP request has body
             final HttpTransactionContext context = HttpTransactionContext.get(ctx.getConnection());
-            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
-            if (requestPacket.getHeaders().contains(Header.Expect)
-                    && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
-                handler = new ExpectHandler(handler);
-            }
-            context.bodyHandler = handler;
+            
+            context.bodyHandler = bodyHandler;
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("REQUEST: " + requestPacket.toString());
             }
-            isWriteComplete = handler.doHandle(ctx, request, requestPacket);
+            isWriteComplete = bodyHandler.doHandle(ctx, request, requestPacket);
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("REQUEST: " + requestPacket.toString());
@@ -571,18 +568,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         
         return isWriteComplete;
     }
-
-
-    private static boolean requestHasEntityBody(final Request request) {
-
-        final String method = request.getMethod();
-        return (Method.POST.matchesMethod(method)
-                || Method.PUT.matchesMethod(method)
-                || Method.PATCH.matchesMethod(method)
-                || Method.DELETE.matchesMethod(method));
-
-    }
-
 
     // ----------------------------------------------------------- Inner Classes
 
@@ -864,9 +849,10 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
             final Request req = httpCtx.request;
             final URI uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
+            final Method method = Method.valueOf(request.getMethod());
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             boolean secure = "https".equals(uri.getScheme());
-            builder.method(request.getMethod());
+            builder.method(method);
             builder.protocol(Protocol.HTTP_1_1);
             String host = request.getVirtualHost();
             if (host != null) {
@@ -894,7 +880,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             } else {
                 builder.uri(uri.getPath());
             }
-            if (requestHasEntityBody(request)) {
+            
+            final BodyHandler bodyHandler = isPayloadAllowed(method) ?
+                    bodyHandlerFactory.getBodyHandler(request) :
+                    null;
+            
+            if (bodyHandler != null) {
                 final long contentLength = request.getContentLength();
                 if (contentLength >= 0) {
                     builder.contentLength(contentLength);
@@ -903,7 +894,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.chunked(true);
                 }
             }
-
+            
             HttpRequestPacket requestPacket;
             if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
                 try {
@@ -947,11 +938,38 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                         new FluentCaseInsensitiveStringsMap(request.getHeaders());
                 TransferCompletionHandler.class.cast(h).transferAdapter(new GrizzlyTransferAdapter(map));
             }
+            
             requestPacket.setConnection(connection);
-            return sendRequest(ctx, request, requestPacket);
+            return sendRequest(ctx, request, requestPacket,
+                    wrapWithExpectHandlerIfNeeded(bodyHandler, requestPacket));
 
         }
 
+        /**
+         * check if we need to wrap the BodyHandler with ExpectHandler
+         */
+        private BodyHandler wrapWithExpectHandlerIfNeeded(
+                final BodyHandler bodyHandler,
+                final HttpRequestPacket requestPacket) {
+            
+            if (bodyHandler == null) {
+                return null;
+            }
+            
+            // check if we need to wrap the BodyHandler with ExpectHandler
+            final MimeHeaders headers = requestPacket.getHeaders();
+            final int expectHeaderIdx = headers.indexOf(Header.Expect, 0);
+
+            return expectHeaderIdx != -1
+                    && headers.getValue(expectHeaderIdx).equalsIgnoreCase("100-Continue")
+                    ? new ExpectHandler(bodyHandler)
+                    : bodyHandler;
+        }
+
+        private boolean isPayloadAllowed(final Method method) {
+            return method.getPayloadExpectation() != Method.PayloadExpectation.NOT_ALLOWED;
+        }
+        
         private void addAuthorizationHeader(final Request request, final HttpRequestPacket requestPacket) {
             Realm realm = request.getRealm();
             if (realm == null) {
@@ -1873,7 +1891,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     return h;
                 }
             }
-            return new NoBodyHandler();
+            
+            return null;
         }
 
     } // END BodyHandlerFactory
@@ -1985,29 +2004,29 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
     } // END StringBodyHandler
 
 
-    private static final class NoBodyHandler implements BodyHandler {
-
-
-        // -------------------------------------------- Methods from BodyHandler
-
-
-        public boolean handlesBodyType(final Request request) {
-            return false;
-        }
-
-        @SuppressWarnings({"unchecked"})
-        public boolean doHandle(final FilterChainContext ctx,
-                             final Request request,
-                             final HttpRequestPacket requestPacket)
-        throws IOException {
-
-            final HttpContent content = requestPacket.httpContentBuilder().content(Buffers.EMPTY_BUFFER).build();
-            content.setLast(true);
-            ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
-            return true;
-        }
-
-    } // END NoBodyHandler
+//    private static final class NoBodyHandler implements BodyHandler {
+//
+//
+//        // -------------------------------------------- Methods from BodyHandler
+//
+//
+//        public boolean handlesBodyType(final Request request) {
+//            return false;
+//        }
+//
+//        @SuppressWarnings({"unchecked"})
+//        public boolean doHandle(final FilterChainContext ctx,
+//                             final Request request,
+//                             final HttpRequestPacket requestPacket)
+//        throws IOException {
+//
+//            final HttpContent content = requestPacket.httpContentBuilder().content(Buffers.EMPTY_BUFFER).build();
+//            content.setLast(true);
+//            ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
+//            return true;
+//        }
+//
+//    } // END NoBodyHandler
 
 
     private final class ParamsBodyHandler implements BodyHandler {
