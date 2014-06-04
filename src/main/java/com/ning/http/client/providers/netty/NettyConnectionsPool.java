@@ -76,16 +76,16 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
     }
 
     private static final class IdleChannel {
-        final String uri;
+        final String key;
         final Channel channel;
         final long start;
 
-        IdleChannel(String uri, Channel channel) {
-            if (uri == null)
-                throw new NullPointerException("uri");
+        IdleChannel(String key, Channel channel) {
+            if (key == null)
+                throw new NullPointerException("key");
             if (channel == null)
                 throw new NullPointerException("channel");
-            this.uri = uri;
+            this.key = key;
             this.channel = channel;
             this.start = millisTime();
         }
@@ -218,13 +218,13 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         }
 
         IdleChannel idleChannel = null;
-        ConcurrentLinkedQueue<IdleChannel> idleConnectionForHost = connectionsPool.get(uri);
-        if (idleConnectionForHost != null) {
+        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(uri);
+        if (pooledConnectionForKey != null) {
             boolean poolEmpty = false;
             while (!poolEmpty && idleChannel == null) {
-                if (!idleConnectionForHost.isEmpty()) {
-                    synchronized (idleConnectionForHost) {
-                        idleChannel = idleConnectionForHost.poll();
+                if (!pooledConnectionForKey.isEmpty()) {
+                    synchronized (pooledConnectionForKey) {
+                        idleChannel = pooledConnectionForKey.poll();
                         if (idleChannel != null) {
                             channel2IdleChannel.remove(idleChannel.channel);
                         }
@@ -247,12 +247,11 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
             return false;
 
         boolean isRemoved = false;
-        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForHost = connectionsPool.get(pooledChannel.uri);
-        if (pooledConnectionForHost != null) {
-            isRemoved = pooledConnectionForHost.remove(pooledChannel);
+        ConcurrentLinkedQueue<IdleChannel> pooledConnectionForKey = connectionsPool.get(pooledChannel.key);
+        if (pooledConnectionForKey != null) {
+            isRemoved = pooledConnectionForKey.remove(pooledChannel);
         }
-        isRemoved |= channel2IdleChannel.remove(pooledChannel.channel) != null;
-        return isRemoved;
+        return isRemoved |= channel2IdleChannel.remove(pooledChannel.channel) != null;
     }
 
     /**
@@ -267,11 +266,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        if (!isClosed.get() && maxTotalConnections != -1 && channel2IdleChannel.size() >= maxTotalConnections) {
-            return false;
-        } else {
-            return true;
-        }
+        return !isClosed.get() && (maxTotalConnections != -1 || channel2IdleChannel.size() < maxTotalConnections);
     }
 
     /**
