@@ -36,7 +36,8 @@ import com.ning.http.client.ConnectionsPool;
  */
 public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
-    private final static Logger log = LoggerFactory.getLogger(NettyConnectionsPool.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectionsPool.class);
+
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
     private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
     private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
@@ -57,8 +58,8 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 hashedWheelTimer);
     }
 
-    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, int maxConnectionLifeTimeInMs, boolean sslConnectionPoolEnabled,
-            Timer nettyTimer) {
+    public NettyConnectionsPool(int maxTotalConnections, int maxConnectionPerHost, long maxIdleTime, int maxConnectionLifeTimeInMs,
+            boolean sslConnectionPoolEnabled, Timer nettyTimer) {
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
         this.sslConnectionPoolEnabled = sslConnectionPoolEnabled;
@@ -74,12 +75,16 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         this.nettyTimer.newTimeout(task, maxIdleTime, TimeUnit.MILLISECONDS);
     }
 
-    private static class IdleChannel {
+    private static final class IdleChannel {
         final String uri;
         final Channel channel;
         final long start;
 
         IdleChannel(String uri, Channel channel) {
+            if (uri == null)
+                throw new NullPointerException("uri");
+            if (channel == null)
+                throw new NullPointerException("channel");
             this.uri = uri;
             this.channel = channel;
             this.start = millisTime();
@@ -87,17 +92,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof IdleChannel))
-                return false;
-
-            IdleChannel that = (IdleChannel) o;
-
-            if (channel != null ? !channel.equals(that.channel) : that.channel != null)
-                return false;
-
-            return true;
+            return this == o || (o instanceof IdleChannel && channel.equals(IdleChannel.class.cast(o).channel));
         }
 
         @Override
@@ -113,11 +108,11 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 if (isClosed.get())
                     return;
 
-                if (log.isDebugEnabled()) {
+                if (LOGGER.isDebugEnabled()) {
                     Set<String> keys = connectionsPool.keySet();
 
                     for (String s : keys) {
-                        log.debug("Entry count for : {} : {}", s, connectionsPool.get(s).size());
+                        LOGGER.debug("Entry count for : {} : {}", s, connectionsPool.get(s).size());
                     }
                 }
 
@@ -128,7 +123,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     long age = currentTime - idleChannel.start;
                     if (age > maxIdleTime) {
 
-                        log.debug("Adding Candidate Idle Channel {}", idleChannel.channel);
+                        LOGGER.debug("Adding Candidate Idle Channel {}", idleChannel.channel);
 
                         // store in an unsynchronized list to minimize the impact on the ConcurrentHashMap.
                         channelsInTimeout.add(idleChannel);
@@ -140,30 +135,29 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     Object attachment = idleChannel.channel.getPipeline().getContext(NettyAsyncHttpProvider.class).getAttachment();
                     if (attachment instanceof NettyResponseFuture) {
                         NettyResponseFuture<?> future = (NettyResponseFuture<?>) attachment;
-
                         if (!future.isDone() && !future.isCancelled()) {
-                            log.debug("Future not in appropriate state %s\n", future);
+                            LOGGER.debug("Future not in appropriate state %s\n", future);
                             continue;
                         }
                     }
 
                     if (remove(idleChannel)) {
-                        log.debug("Closing Idle Channel {}", idleChannel.channel);
+                        LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
                         close(idleChannel.channel);
                     }
                 }
 
-                if (log.isTraceEnabled()) {
+                if (LOGGER.isTraceEnabled()) {
                     int openChannels = 0;
                     for (ConcurrentLinkedQueue<IdleChannel> hostChannels : connectionsPool.values()) {
                         openChannels += hostChannels.size();
                     }
-                    log.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels, channelsInTimeout.size(),
-                            endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
+                    LOGGER.trace(String.format("%d channel open, %d idle channels closed (times: 1st-loop=%d, 2nd-loop=%d).\n", openChannels,
+                            channelsInTimeout.size(), endConcurrentLoop - currentTime, millisTime() - endConcurrentLoop));
                 }
 
             } catch (Throwable t) {
-                log.error("uncaught exception!", t);
+                LOGGER.error("uncaught exception!", t);
             }
 
             scheduleNewIdleChannelDetector(timeout.getTask());
@@ -174,22 +168,19 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean offer(String uri, Channel channel) {
-        if (isClosed.get())
+        if (isClosed.get() || (!sslConnectionPoolEnabled && uri.startsWith("https")))
             return false;
-
-        if (!sslConnectionPoolEnabled && uri.startsWith("https")) {
-            return false;
-        }
 
         Long createTime = channel2CreationDate.get(channel);
         if (createTime == null) {
             channel2CreationDate.putIfAbsent(channel, millisTime());
+
         } else if (maxConnectionLifeTimeInMs != -1 && (createTime + maxConnectionLifeTimeInMs) < millisTime()) {
-            log.debug("Channel {} expired", channel);
+            LOGGER.debug("Channel {} expired", channel);
             return false;
         }
 
-        log.debug("Adding uri: {} for channel {}", uri, channel);
+        LOGGER.debug("Adding uri: {} for channel {}", uri, channel);
         channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(new NettyAsyncHttpProvider.DiscardEvent());
 
         ConcurrentLinkedQueue<IdleChannel> idleConnectionForHost = connectionsPool.get(uri);
@@ -208,11 +199,11 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                 added = idleConnectionForHost.add(idleChannel);
 
                 if (channel2IdleChannel.put(channel, idleChannel) != null) {
-                    log.error("Channel {} already exists in the connections pool!", channel);
+                    LOGGER.error("Channel {} already exists in the connections pool!", channel);
                 }
             }
         } else {
-            log.debug("Maximum number of requests per host reached {} for {}", maxConnectionPerHost, uri);
+            LOGGER.debug("Maximum number of requests per host reached {} for {}", maxConnectionPerHost, uri);
             added = false;
         }
         return added;
@@ -244,7 +235,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
                     poolEmpty = true;
                 } else if (!idleChannel.channel.isConnected() || !idleChannel.channel.isOpen()) {
                     idleChannel = null;
-                    log.trace("Channel not connected or not opened!");
+                    LOGGER.trace("Channel not connected or not opened!");
                 }
             }
         }
