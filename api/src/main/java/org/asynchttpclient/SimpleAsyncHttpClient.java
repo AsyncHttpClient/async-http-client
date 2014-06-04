@@ -493,13 +493,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setMaximumConnectionsTotal(int defaultMaxTotalConnections) {
-            configBuilder.setMaximumConnectionsTotal(defaultMaxTotalConnections);
+        public Builder setMaxConnectionsTotal(int defaultMaxTotalConnections) {
+            configBuilder.setMaxConnectionsTotal(defaultMaxTotalConnections);
             return this;
         }
 
-        public Builder setMaximumConnectionsPerHost(int defaultMaxConnectionPerHost) {
-            configBuilder.setMaximumConnectionsPerHost(defaultMaxConnectionPerHost);
+        public Builder setMaxConnectionsPerHost(int defaultMaxConnectionPerHost) {
+            configBuilder.setMaxConnectionsPerHost(defaultMaxConnectionPerHost);
             return this;
         }
 
@@ -518,8 +518,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setMaximumNumberOfRedirects(int maxDefaultRedirects) {
-            configBuilder.setMaximumNumberOfRedirects(maxDefaultRedirects);
+        public Builder setMaxRedirects(int maxRedirects) {
+            configBuilder.setMaxRedirects(maxRedirects);
             return this;
         }
 
