@@ -65,7 +65,9 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
         this.maxIdleTime = maxIdleTime;
         this.maxConnectionLifeTimeInMs = maxConnectionLifeTimeInMs;
         this.nettyTimer = nettyTimer;
-        scheduleNewIdleChannelDetector(new IdleChannelDetector());
+        if (maxIdleTime > 0L) {
+            scheduleNewIdleChannelDetector(new IdleChannelDetector());
+        }
     }
 
     private void scheduleNewIdleChannelDetector(TimerTask task) {
