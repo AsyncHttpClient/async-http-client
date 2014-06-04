@@ -24,11 +24,11 @@ import io.netty.channel.Channel;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
+import io.netty.util.internal.chmv8.ConcurrentHashMapV8;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,9 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DefaultChannelPool implements ChannelPool {
 
     private final static Logger log = LoggerFactory.getLogger(DefaultChannelPool.class);
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMap<String, ConcurrentLinkedQueue<IdleChannel>>();
-    private final ConcurrentHashMap<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMap<Channel, IdleChannel>();
-    private final ConcurrentHashMap<Channel, Long> channel2CreationDate = new ConcurrentHashMap<Channel, Long>();
+    private final ConcurrentHashMapV8<String, ConcurrentLinkedQueue<IdleChannel>> connectionsPool = new ConcurrentHashMapV8<String, ConcurrentLinkedQueue<IdleChannel>>();
+    private final ConcurrentHashMapV8<Channel, IdleChannel> channel2IdleChannel = new ConcurrentHashMapV8<Channel, IdleChannel>();
+    private final ConcurrentHashMapV8<Channel, Long> channel2CreationDate = new ConcurrentHashMapV8<Channel, Long>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final boolean sslConnectionPoolEnabled;
