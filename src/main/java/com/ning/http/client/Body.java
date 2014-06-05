@@ -43,5 +43,4 @@ public interface Body {
      * @throws IOException
      */
     void close() throws IOException;
-
 }

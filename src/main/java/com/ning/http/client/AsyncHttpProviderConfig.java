@@ -29,7 +29,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      * @param value the value of the property
      * @return this instance of AsyncHttpProviderConfig
      */
-    public AsyncHttpProviderConfig addProperty(U name, V value);
+    AsyncHttpProviderConfig addProperty(U name, V value);
 
     /**
      * Return the value associated with the property's name
@@ -37,7 +37,7 @@ public interface AsyncHttpProviderConfig<U, V> {
      * @param name
      * @return this instance of AsyncHttpProviderConfig
      */
-    public V getProperty(U name);
+    V getProperty(U name);
 
     /**
      * Remove the value associated with the property's name
@@ -45,12 +45,12 @@ public interface AsyncHttpProviderConfig<U, V> {
      * @param name
      * @return true if removed
      */
-    public V removeProperty(U name);
+    V removeProperty(U name);
 
     /**
      * Return the curent entry set.
      *
      * @return a the curent entry set.
      */
-    public Set<Map.Entry<U, V>> propertiesSet();
+    Set<Map.Entry<U, V>> propertiesSet();
 }

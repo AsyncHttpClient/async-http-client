@@ -44,5 +44,5 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
      * @return a {@link com.ning.http.client.AsyncHandler.STATE} telling to CONTINUE or ABORT the current processing.
      */
     STATE onContentWriteProgress(long amount, long current, long total);
-
 }
+

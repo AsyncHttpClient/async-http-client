@@ -35,5 +35,4 @@ public interface BodyConsumer {
      * @throws IOException
      */
     void close() throws IOException;
-
 }

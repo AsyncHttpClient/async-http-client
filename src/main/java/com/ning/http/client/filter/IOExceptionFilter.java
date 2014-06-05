@@ -25,5 +25,5 @@ public interface IOExceptionFilter {
      * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
      * @throws FilterException to interrupt the filter processing.
      */
-    public FilterContext filter(FilterContext ctx) throws FilterException;
+    FilterContext filter(FilterContext ctx) throws FilterException;
 }

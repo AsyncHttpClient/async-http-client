@@ -22,5 +22,4 @@ public interface WebSocketPongListener extends WebSocketListener {
      * @param message a byte array
      */
     void onPong(byte[] message);
-
 }

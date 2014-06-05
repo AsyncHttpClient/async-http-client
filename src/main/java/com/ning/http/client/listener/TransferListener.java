@@ -25,36 +25,36 @@ public interface TransferListener {
     /**
      * Invoked when the request bytes are starting to get send.
      */
-    public void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers);
+    void onRequestHeadersSent(FluentCaseInsensitiveStringsMap headers);
 
     /**
      * Invoked when the response bytes are starting to get received.
      */
-    public void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers);
+    void onResponseHeadersReceived(FluentCaseInsensitiveStringsMap headers);
 
     /**
      * Invoked every time response's chunk are received.
      *
      * @param buffer a {@link ByteBuffer}
      */
-    public void onBytesReceived(ByteBuffer buffer) throws IOException;
+    void onBytesReceived(ByteBuffer buffer) throws IOException;
 
     /**
      * Invoked every time request's chunk are sent.
      *
      * @param buffer a {@link ByteBuffer}
      */
-    public void onBytesSent(ByteBuffer buffer);
+    void onBytesSent(ByteBuffer buffer);
 
     /**
      * Invoked when the response bytes are been fully received.
      */
-    public void onRequestResponseCompleted();
+    void onRequestResponseCompleted();
 
     /**
      * Invoked when there is an unexpected issue.
      *
      * @param t a {@link Throwable}
      */
-    public void onThrowable(Throwable t);
+    void onThrowable(Throwable t);
 }

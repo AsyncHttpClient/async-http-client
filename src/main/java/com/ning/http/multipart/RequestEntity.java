@@ -51,5 +51,5 @@ public interface RequestEntity {
      * @return the entity's content type
      */
     String getContentType();
-
 }
+
