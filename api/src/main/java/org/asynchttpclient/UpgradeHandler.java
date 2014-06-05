@@ -33,5 +33,4 @@ public interface UpgradeHandler<T> {
      * @param t a {@link Throwable}
      */
     void onFailure(Throwable t);
-
 }

@@ -75,5 +75,5 @@ public interface SimpleAHCTransferListener {
      * @param statusText the received status text.
      */
     void onCompleted(String url, int statusCode, String statusText);
-
 }
+

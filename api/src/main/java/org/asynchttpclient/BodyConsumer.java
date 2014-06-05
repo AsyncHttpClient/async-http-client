@@ -36,5 +36,4 @@ public interface BodyConsumer extends Closeable {
      * @throws IOException
      */
     void close() throws IOException;
-
 }

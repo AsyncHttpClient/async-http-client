@@ -21,7 +21,7 @@ import java.security.cert.X509Certificate;
  */
 public interface HostnameChecker {
 
-    public void match(String hostname, X509Certificate peerCertificate) throws CertificateException;
+    void match(String hostname, X509Certificate peerCertificate) throws CertificateException;
 
-    public boolean match(String hostname, Principal principal);
+    boolean match(String hostname, Principal principal);
 }

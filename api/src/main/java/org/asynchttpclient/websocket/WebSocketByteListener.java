@@ -30,5 +30,4 @@ public interface WebSocketByteListener extends WebSocketListener {
      * @param last if this fragment is the last in the series.
      */
     void onFragment(byte[] fragment, boolean last);
-
 }

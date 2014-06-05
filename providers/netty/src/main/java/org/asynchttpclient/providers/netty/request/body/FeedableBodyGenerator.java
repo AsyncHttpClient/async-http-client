@@ -47,7 +47,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
     }
 
     public static interface FeedListener {
-        public void onContentAdded();
+        void onContentAdded();
     }
 
     public void setListener(FeedListener listener) {
