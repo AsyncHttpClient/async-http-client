@@ -266,7 +266,7 @@ public class NettyConnectionsPool implements ConnectionsPool<String, Channel> {
      * {@inheritDoc}
      */
     public boolean canCacheConnection() {
-        return !isClosed.get() && (maxTotalConnections != -1 || channel2IdleChannel.size() < maxTotalConnections);
+        return !isClosed.get() && (maxTotalConnections == -1 || channel2IdleChannel.size() < maxTotalConnections);
     }
 
     /**
