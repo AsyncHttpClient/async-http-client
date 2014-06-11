@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012 Sonatype, Inc. All rights reserved.
+ * Copyright (c) Will Sargent. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,24 +10,18 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.websocket;
+package org.asynchttpclient.util;
+
+import java.security.Principal;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
- * A {@link WebSocketListener} for bytes
+ * Hostname checker interface.
  */
-public interface WebSocketByteListener extends WebSocketListener {
+public interface HostnameChecker {
 
-    /**
-     * Invoked when bytes are available.
-     * @param message a byte array.
-     */
-    void onMessage(byte[] message);
+    void match(String hostname, X509Certificate peerCertificate) throws CertificateException;
 
-    /**
-     * Invoked when bytes of a fragmented message are available.
-     *
-     * @param fragment byte[] fragment.
-     * @param last if this fragment is the last in the series.
-     */
-    void onFragment(byte[] fragment, boolean last);
+    boolean match(String hostname, Principal principal);
 }

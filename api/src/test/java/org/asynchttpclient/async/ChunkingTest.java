@@ -46,8 +46,8 @@ abstract public class ChunkingTest extends AbstractBasicTest {
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
         bc.setAllowPoolingConnection(true);
-        bc.setMaximumConnectionsPerHost(1);
-        bc.setMaximumConnectionsTotal(1);
+        bc.setMaxConnectionsPerHost(1);
+        bc.setMaxConnectionsTotal(1);
         bc.setConnectionTimeoutInMs(1000);
         bc.setRequestTimeoutInMs(1000);
         bc.setFollowRedirects(true);

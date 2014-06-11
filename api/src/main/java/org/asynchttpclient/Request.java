@@ -44,43 +44,43 @@ public interface Request {
      *
      * @return the request's method name (GET, POST, etc.)
      */
-    public String getMethod();
+    String getMethod();
 
     /**
      * Return the decoded url
      *
      * @return the decoded url
      */
-    public String getUrl();
+    String getUrl();
 
-    public URI getOriginalURI();
+    URI getOriginalURI();
 
-    public URI getURI();
+    URI getURI();
 
-    public URI getRawURI();
+    URI getRawURI();
 
     /**
      * Return the InetAddress to override
      *
      * @return the InetAddress
      */
-    public InetAddress getInetAddress();
+    InetAddress getInetAddress();
 
-    public InetAddress getLocalAddress();
+    InetAddress getLocalAddress();
 
     /**
      * Return the undecoded url
      *
      * @return the undecoded url
      */
-    public String getRawUrl();
+    String getRawUrl();
 
     /**
      * Return the current set of Headers.
      *
      * @return a {@link FluentCaseInsensitiveStringsMap} contains headers.
      */
-    public FluentCaseInsensitiveStringsMap getHeaders();
+    FluentCaseInsensitiveStringsMap getHeaders();
 
     /**
      * @return return <code>true</code> if request headers have been added,
@@ -95,128 +95,129 @@ public interface Request {
      *
      * @return an unmodifiable Collection of Cookies
      */
-    public Collection<Cookie> getCookies();
+    Collection<Cookie> getCookies();
 
     /**
      * Return the current request's body as a byte array
      *
      * @return a byte array of the current request's body.
      */
-    public byte[] getByteData();
+    byte[] getByteData();
 
     /**
      * Return the current request's body as a string
      *
      * @return an String representation of the current request's body.
      */
-    public String getStringData();
+    String getStringData();
 
     /**
      * Return the current request's body as an InputStream
      *
      * @return an InputStream representation of the current request's body.
      */
-    public InputStream getStreamData();
+    InputStream getStreamData();
 
     /**
      * Return the current request's body generator.
      *
      * @return A generator for the request body.
      */
-    public BodyGenerator getBodyGenerator();
+    BodyGenerator getBodyGenerator();
 
     /**
      * Return the current size of the content-lenght header based on the body's size.
      *
      * @return the current size of the content-lenght header based on the body's size.
      */
-    public long getContentLength();
+    long getContentLength();
 
     /**
      * Return the current parameters.
      *
      * @return a {@link FluentStringsMap} of parameters.
      */
-    public FluentStringsMap getParams();
+    FluentStringsMap getParams();
 
     /**
      * Return the current {@link Part}
      *
      * @return the current {@link Part}
      */
-    public List<Part> getParts();
+    List<Part> getParts();
 
     /**
      * Return the virtual host value.
      *
      * @return the virtual host value.
      */
-    public String getVirtualHost();
+    String getVirtualHost();
 
     /**
      * Return the query params.
      *
      * @return {@link FluentStringsMap} of query string
      */
-    public FluentStringsMap getQueryParams();
+    FluentStringsMap getQueryParams();
 
     /**
      * Return the {@link ProxyServer}
      *
      * @return the {@link ProxyServer}
      */
-    public ProxyServer getProxyServer();
+    ProxyServer getProxyServer();
 
     /**
      * Return the {@link Realm}
      *
      * @return the {@link Realm}
      */
-    public Realm getRealm();
+    Realm getRealm();
 
     /**
      * Return the {@link File} to upload.
      *
      * @return the {@link File} to upload.
      */
-    public File getFile();
+    File getFile();
 
     /**
      * Return the <tt>true></tt> to follow redirect
      *
      * @return the <tt>true></tt> to follow redirect
      */
-    public boolean isRedirectEnabled();
+    boolean isRedirectEnabled();
 
     /**
      *
      * @return <tt>true></tt> if request's redirectEnabled setting
      *          should be used in place of client's
      */
-    public boolean isRedirectOverrideSet();
+    boolean isRedirectOverrideSet();
 
     /**
      * Return the request time out in milliseconds.
      *
      * @return requestTimeoutInMs.
      */
-    public int getRequestTimeoutInMs();
+    int getRequestTimeoutInMs();
 
     /**
      * Return the HTTP Range header value, or
      *
      * @return the range header value, or 0 is not set.
      */
-    public long getRangeOffset();
+    long getRangeOffset();
 
     /**
      * Return the encoding value used when encoding the request's body.
      *
      * @return the encoding value used when encoding the request's body.
      */
-    public String getBodyEncoding();
+    String getBodyEncoding();
 
-    public boolean isUseRawUrl();
+    boolean isUseRawUrl();
 
     ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
 }
+

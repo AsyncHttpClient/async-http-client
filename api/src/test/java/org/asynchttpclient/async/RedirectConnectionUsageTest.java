@@ -75,8 +75,8 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
                 .setAllowPoolingConnection(true)//
-                .setMaximumConnectionsPerHost(1)//
-                .setMaximumConnectionsTotal(1)//
+                .setMaxConnectionsPerHost(1)//
+                .setMaxConnectionsTotal(1)//
                 .setConnectionTimeoutInMs(1000)//
                 .setRequestTimeoutInMs(1000)//
                 .setFollowRedirects(true)//

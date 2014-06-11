@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -26,7 +26,7 @@ import org.glassfish.grizzly.memory.MemoryManager;
 
 import java.io.IOException;
 
-public final class BodyGeneratorBodyHandler implements BodyHandler {
+public final class BodyGeneratorBodyHandler extends BodyHandler {
 
     // -------------------------------------------- Methods from BodyHandler
 

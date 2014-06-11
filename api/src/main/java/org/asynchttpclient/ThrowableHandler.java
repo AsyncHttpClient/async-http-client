@@ -19,5 +19,4 @@ package org.asynchttpclient;
 public interface ThrowableHandler {
 
     void onThrowable(Throwable t);
-
 }

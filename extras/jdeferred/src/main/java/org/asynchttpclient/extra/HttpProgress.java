@@ -16,5 +16,4 @@
 package org.asynchttpclient.extra;
 
 public interface HttpProgress {
-
 }

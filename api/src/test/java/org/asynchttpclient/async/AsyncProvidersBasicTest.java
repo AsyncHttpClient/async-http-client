@@ -1343,7 +1343,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider", "async" })
     public void asyncDoGetMaxRedirectTest() throws Exception {
-        AsyncHttpClient client = getAsyncHttpClient(new Builder().setMaximumNumberOfRedirects(0).setFollowRedirects(true).build());
+        AsyncHttpClient client = getAsyncHttpClient(new Builder().setMaxRedirects(0).setFollowRedirects(true).build());
         try {
             // Use a l in case the assert fail
             final CountDownLatch l = new CountDownLatch(1);

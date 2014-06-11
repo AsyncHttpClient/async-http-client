@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -71,6 +71,12 @@ public final class AsyncSpdyClientEventFilter extends SpdyHandlerFilter implemen
     protected void onHttpHeaderError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
         eventHandler.onHttpHeaderError(httpHeader, ctx, t);
     }
+
+    @Override
+    protected void onHttpContentError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
+        eventHandler.onHttpContentError(httpHeader, ctx, t);
+    }
+
 
     @Override
     protected void onHttpHeadersParsed(HttpHeader httpHeader, FilterChainContext ctx) {

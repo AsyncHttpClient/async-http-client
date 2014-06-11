@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -33,6 +33,10 @@ import org.glassfish.grizzly.websockets.ProtocolHandler;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.asynchttpclient.providers.grizzly.filters.events.GracefulCloseEvent;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.filterchain.FilterChain;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 public final class HttpTxContext {
 
@@ -62,10 +66,22 @@ public final class HttpTxContext {
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
     private WebSocket webSocket;
-    private CloseListener listener = new CloseListener<Closeable, CloseType>() {
+    private final CloseListener listener = new CloseListener<Closeable, CloseType>() {
         @Override
         public void onClosed(Closeable closeable, CloseType type) throws IOException {
-            if (CloseType.REMOTELY.equals(type)) {
+            if (responseStatus != null && // responseStatus==null if request wasn't even sent
+                    isGracefullyFinishResponseOnClose()) {
+                // Connection was closed.
+                // This event is fired only for responses, which don't have
+                // associated transfer-encoding or content-length.
+                // We have to complete such a request-response processing gracefully.
+                final Connection c = responseStatus.getResponse()
+                        .getRequest().getConnection();
+                final FilterChain fc = (FilterChain) c.getProcessor();
+                
+                fc.fireEventUpstream(c,
+                        new GracefulCloseEvent(HttpTxContext.this), null);
+            } else if (CloseType.REMOTELY.equals(type)) {
                 abort(AsyncHttpProviderUtils.REMOTELY_CLOSED_EXCEPTION);
             }
         }
@@ -92,10 +108,14 @@ public final class HttpTxContext {
         REQUEST_STATE_ATTR.set(httpContext, httpTxContext);
     }
 
-    public static void remove(final FilterChainContext ctx, final HttpTxContext httpTxContext) {
-        HttpContext httpContext = HttpContext.get(ctx);
-        httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
-        REQUEST_STATE_ATTR.remove(ctx);
+    public static HttpTxContext remove(final FilterChainContext ctx) {
+        final HttpContext httpContext = HttpContext.get(ctx);
+        final HttpTxContext httpTxContext = REQUEST_STATE_ATTR.remove(httpContext);
+        if (httpTxContext != null) {
+            httpContext.getCloseable().removeCloseListener(httpTxContext.listener);
+        }
+        
+        return httpTxContext;
     }
 
     public static HttpTxContext get(FilterChainContext ctx) {
@@ -252,6 +272,12 @@ public final class HttpTxContext {
         this.webSocket = webSocket;
     }
 
+    private boolean isGracefullyFinishResponseOnClose() {
+        final HttpResponsePacket response = responseStatus.getResponse();
+        return !response.getProcessingState().isKeepAlive() &&
+                !response.isChunked() && response.getContentLength() == -1;
+    }
+    
     // ------------------------------------------------- Package Private Methods
 
     public HttpTxContext copy() {

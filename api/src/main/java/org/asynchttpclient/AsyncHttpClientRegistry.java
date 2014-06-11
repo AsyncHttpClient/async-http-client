@@ -79,3 +79,4 @@ public interface AsyncHttpClientRegistry {
 
     void clearAllInstances();
 }
+

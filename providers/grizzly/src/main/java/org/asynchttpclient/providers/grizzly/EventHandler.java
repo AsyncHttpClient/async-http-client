@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -163,8 +163,9 @@ public final class EventHandler {
                 }
             }
         }
-        final GrizzlyResponseStatus responseStatus = new GrizzlyResponseStatus((HttpResponsePacket) httpHeader, context.getRequest()
-                .getURI(), config);
+        final GrizzlyResponseStatus responseStatus =
+                new GrizzlyResponseStatus((HttpResponsePacket) httpHeader,
+                        context.getRequest().getURI(), config);
         context.setResponseStatus(responseStatus);
         if (context.getStatusHandler() != null) {
             return;
@@ -195,10 +196,14 @@ public final class EventHandler {
 
     public void onHttpHeaderError(final HttpHeader httpHeader, final FilterChainContext ctx, final Throwable t) {
 
-        t.printStackTrace();
         httpHeader.setSkipRemainder(true);
-        final HttpTxContext context = HttpTxContext.get(ctx);
-        context.abort(t);
+        HttpTxContext.get(ctx).abort(t);
+    }
+
+    public void onHttpContentError(final HttpHeader httpHeader, final FilterChainContext ctx, final Throwable t) {
+
+        httpHeader.setSkipRemainder(true);
+        HttpTxContext.get(ctx).abort(t);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -374,8 +379,7 @@ public final class EventHandler {
     private static HttpTxContext cleanup(final FilterChainContext ctx) {
 
         final Connection c = ctx.getConnection();
-        final HttpTxContext context = HttpTxContext.get(ctx);
-        HttpTxContext.remove(ctx, context);
+        final HttpTxContext context = HttpTxContext.remove(ctx);
         if (!Utils.isSpdyConnection(c) && !Utils.isIgnored(c)) {
             final ConnectionManager manager = context.getProvider().getConnectionManager();
             //if (!manager.canReturnConnection(c)) {

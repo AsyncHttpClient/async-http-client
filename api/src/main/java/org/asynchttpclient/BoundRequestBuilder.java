@@ -24,18 +24,6 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
 
     private final AsyncHttpClient client;
 
-    /**
-     * Calculator used for calculating request signature for the request being
-     * built, if any.
-     */
-    protected SignatureCalculator signatureCalculator;
-
-    /**
-     * URL used as the base, not including possibly query parameters. Needed for
-     * signature calculation
-     */
-    protected String baseURL;
-
     public BoundRequestBuilder(AsyncHttpClient client, String reqType, boolean useRawUrl) {
         super(BoundRequestBuilder.class, reqType, useRawUrl);
         this.client = client;
@@ -85,18 +73,6 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
 
     @Override
     public Request build() {
-        /* Let's first calculate and inject signature, before finalizing actual build
-         * (order does not matter with current implementation but may in future)
-         */
-        if (signatureCalculator != null) {
-            String url = baseURL;
-            // Should not include query parameters, ensure:
-            int i = url.indexOf('?');
-            if (i >= 0) {
-                url = url.substring(0, i);
-            }
-            signatureCalculator.calculateAndAddSignature(url, request, this);
-        }
         return super.build();
     }
 
@@ -142,7 +118,6 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
 
     @Override
     public BoundRequestBuilder setUrl(String url) {
-        baseURL = url;
         return super.setUrl(url);
     }
 
@@ -151,8 +126,8 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
         return super.setVirtualHost(virtualHost);
     }
 
+    @Override
     public BoundRequestBuilder setSignatureCalculator(SignatureCalculator signatureCalculator) {
-        this.signatureCalculator = signatureCalculator;
-        return this;
+        return super.setSignatureCalculator(signatureCalculator);
     }
 }

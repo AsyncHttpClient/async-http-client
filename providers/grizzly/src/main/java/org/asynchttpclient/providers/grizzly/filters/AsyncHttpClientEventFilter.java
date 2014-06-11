@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -21,6 +21,10 @@ import org.glassfish.grizzly.http.HttpContent;
 import org.glassfish.grizzly.http.HttpHeader;
 
 import java.io.IOException;
+import org.asynchttpclient.providers.grizzly.filters.events.GracefulCloseEvent;
+import org.glassfish.grizzly.filterchain.FilterChainEvent;
+import org.glassfish.grizzly.filterchain.NextAction;
+import org.glassfish.grizzly.http.HttpResponsePacket;
 
 /**
  * Extension of the {@link HttpClientFilter} that is responsible for handling
@@ -45,6 +49,28 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter implement
         this.eventHandler = eventHandler;
     }
 
+    @Override
+    public NextAction handleEvent(final FilterChainContext ctx,
+            final FilterChainEvent event) throws IOException {
+        if (event.type() == GracefulCloseEvent.class) {
+            // Connection was closed.
+            // This event is fired only for responses, which don't have
+            // associated transfer-encoding or content-length.
+            // We have to complete such a request-response processing gracefully.
+            final GracefulCloseEvent closeEvent = (GracefulCloseEvent) event;
+            final HttpResponsePacket response = closeEvent.getHttpTxContext()
+                    .getResponseStatus().getResponse();
+            response.getProcessingState().getHttpContext().attach(ctx);
+            
+            onHttpPacketParsed(response, ctx);
+            
+            return ctx.getStopAction();
+        }
+        
+        return ctx.getInvokeAction();
+    }
+
+    
     @Override
     public void exceptionOccurred(FilterChainContext ctx, Throwable error) {
         eventHandler.exceptionOccurred(ctx, error);
@@ -73,6 +99,11 @@ public final class AsyncHttpClientEventFilter extends HttpClientFilter implement
     @Override
     protected void onHttpHeaderError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
         eventHandler.onHttpHeaderError(httpHeader, ctx, t);
+    }
+
+    @Override
+    protected void onHttpContentError(HttpHeader httpHeader, FilterChainContext ctx, Throwable t) throws IOException {
+        eventHandler.onHttpContentError(httpHeader, ctx, t);
     }
 
     @Override

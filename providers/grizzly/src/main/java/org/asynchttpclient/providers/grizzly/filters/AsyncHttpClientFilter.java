@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -73,7 +73,6 @@ import org.glassfish.grizzly.ssl.SSLUtils;
 import org.glassfish.grizzly.websockets.Version;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -198,7 +197,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
     }
 
-    private boolean sendAsGrizzlyRequest(final RequestInfoHolder requestInfoHolder, final FilterChainContext ctx) throws IOException {
+    private boolean sendAsGrizzlyRequest(
+            final RequestInfoHolder requestInfoHolder,
+            final FilterChainContext ctx) throws IOException {
 
         HttpTxContext httpTxContext = requestInfoHolder.getHttpTxContext();
         if (httpTxContext == null) {
@@ -230,18 +231,25 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         if (requestPacket == null) {
             requestPacket = new HttpRequestPacketImpl();
         }
-        requestPacket.setMethod(request.getMethod());
+        
+        final Method method = Method.valueOf(request.getMethod());
+        
+        requestPacket.setMethod(method);
         requestPacket.setProtocol(Protocol.HTTP_1_1);
 
         // Special handling for CONNECT.
-        if (Method.CONNECT.matchesMethod(request.getMethod())) {
+        if (method == Method.CONNECT) {
             final int port = uri.getPort();
             requestPacket.setRequestURI(uri.getHost() + ':' + (port == -1 ? 443 : port));
         } else {
             requestPacket.setRequestURI(uri.getPath());
         }
 
-        if (Utils.requestHasEntityBody(request)) {
+        final BodyHandler bodyHandler = isPayloadAllowed(method) ?
+                bodyHandlerFactory.getBodyHandler(request) :
+                null;
+        
+        if (bodyHandler != null) {
             final long contentLength = request.getContentLength();
             if (contentLength >= 0) {
                 requestPacket.setContentLengthLong(contentLength);
@@ -281,8 +289,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             sendingCtx = checkAndHandleFilterChainUpdate(ctx, sendingCtx);
         }
         final Connection c = ctx.getConnection();
+        final HttpContext httpCtx;
         if (!Utils.isSpdyConnection(c)) {
-            HttpContext.newInstance(ctx, c, c, c);
+            httpCtx = HttpContext.newInstance(c, c, c, requestPacketLocal);
         } else {
             SpdySession session = SpdySession.get(c);
             final Lock lock = session.getNewClientStreamLock();
@@ -290,41 +299,35 @@ public final class AsyncHttpClientFilter extends BaseFilter {
                 lock.lock();
                 SpdyStream stream = session.openStream(requestPacketLocal, session.getNextLocalStreamId(), 0, 0, 0, false,
                         !requestPacketLocal.isExpectContent());
-                HttpContext.newInstance(ctx, stream, stream, stream);
+                httpCtx = HttpContext.newInstance(stream, stream, stream, requestPacketLocal);
             } finally {
                 lock.unlock();
             }
         }
+        httpCtx.attach(ctx);
         HttpTxContext.set(ctx, httpTxContext);
-        return sendRequest(sendingCtx, request, requestPacketLocal);
+        requestPacketLocal.getProcessingState().setHttpContext(httpCtx);
+        requestPacketLocal.setConnection(c);
+        
+        return sendRequest(sendingCtx, request, requestPacketLocal,
+                wrapWithExpectHandlerIfNeeded(bodyHandler, requestPacket));
     }
 
     @SuppressWarnings("unchecked")
-    public boolean sendRequest(final FilterChainContext ctx, final Request request, final HttpRequestPacket requestPacket)
+    public boolean sendRequest(final FilterChainContext ctx,
+            final Request request, final HttpRequestPacket requestPacket,
+            final BodyHandler bodyHandler)
             throws IOException {
 
         boolean isWriteComplete = true;
 
-        if (Utils.requestHasEntityBody(request)) {
+        if (bodyHandler != null) {
             final HttpTxContext context = HttpTxContext.get(ctx);
-            BodyHandler handler = bodyHandlerFactory.getBodyHandler(request);
-            if (requestPacket.getHeaders().contains(Header.Expect)
-                    && requestPacket.getHeaders().getValue(1).equalsIgnoreCase("100-Continue")) {
-                // We have to set the content-length now as the headers will be flushed
-                // before the FileBodyHandler is invoked. If we don't do it here, and
-                // the user didn't explicitly set the length, then the transfer-encoding
-                // will be chunked and zero-copy file transfer will not occur.
-                final File f = request.getFile();
-                if (f != null) {
-                    requestPacket.setContentLengthLong(f.length());
-                }
-                handler = new ExpectHandler(handler);
-            }
-            context.setBodyHandler(handler);
+            context.setBodyHandler(bodyHandler);
             if (logger.isDebugEnabled()) {
                 logger.debug("REQUEST: {}", requestPacket);
             }
-            isWriteComplete = handler.doHandle(ctx, request, requestPacket);
+            isWriteComplete = bodyHandler.doHandle(ctx, request, requestPacket);
         } else {
             HttpContent content = HttpContent.builder(requestPacket).last(true).build();
             if (logger.isDebugEnabled()) {
@@ -354,6 +357,31 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return ctxLocal;
     }
 
+    /**
+     * check if we need to wrap the BodyHandler with ExpectHandler
+     */
+    private static BodyHandler wrapWithExpectHandlerIfNeeded(
+            final BodyHandler bodyHandler,
+            final HttpRequestPacket requestPacket) {
+
+        if (bodyHandler == null) {
+            return null;
+        }
+
+        // check if we need to wrap the BodyHandler with ExpectHandler
+        final MimeHeaders headers = requestPacket.getHeaders();
+        final int expectHeaderIdx = headers.indexOf(Header.Expect, 0);
+
+        return expectHeaderIdx != -1
+                && headers.getValue(expectHeaderIdx).equalsIgnoreCase("100-Continue")
+                ? new ExpectHandler(bodyHandler)
+                : bodyHandler;
+    }
+        
+    private static boolean isPayloadAllowed(final Method method) {
+        return method.getPayloadExpectation() != Method.PayloadExpectation.NOT_ALLOWED;
+    }
+    
     private static void initTransferCompletionHandler(final Request request, final AsyncHandler h) throws IOException {
         if (h instanceof TransferCompletionHandler) {
             final FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap(request.getHeaders());

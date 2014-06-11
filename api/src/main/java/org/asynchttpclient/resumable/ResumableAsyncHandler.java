@@ -254,14 +254,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
          * @param key              a key. The recommended way is to use an url.
          * @param transferredBytes The number of bytes successfully transferred.
          */
-        public void put(String key, long transferredBytes);
+        void put(String key, long transferredBytes);
 
         /**
          * Remove the key associate value.
          *
          * @param key key from which the value will be discarded
          */
-        public void remove(String key);
+        void remove(String key);
 
         /**
          * Save the current {@link Map} instance which contains information about the current transfer state.
@@ -269,14 +269,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
          *
          * @param map
          */
-        public void save(Map<String, Long> map);
+        void save(Map<String, Long> map);
 
         /**
          * Load the {@link Map} in memory, contains information about the transferred bytes.
          *
          * @return {@link Map}
          */
-        public Map<String, Long> load();
+        Map<String, Long> load();
 
     }
 

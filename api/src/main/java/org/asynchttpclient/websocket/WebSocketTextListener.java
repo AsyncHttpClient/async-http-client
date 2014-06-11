@@ -30,5 +30,4 @@ public interface WebSocketTextListener extends WebSocketListener {
      * @param last if this fragment is the last of the series.
      */
     void onFragment(String fragment, boolean last);
-
 }

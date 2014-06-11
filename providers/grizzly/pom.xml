@@ -14,7 +14,7 @@
     </description>
 
     <properties>
-        <grizzly.version>2.3.11</grizzly.version>
+        <grizzly.version>2.3.13</grizzly.version>
         <grizzly.npn.version>1.1</grizzly.npn.version>
     </properties>
 
@@ -38,6 +38,12 @@
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-npn-api</artifactId>
             <version>${grizzly.npn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http-server</artifactId>
+            <version>${grizzly.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

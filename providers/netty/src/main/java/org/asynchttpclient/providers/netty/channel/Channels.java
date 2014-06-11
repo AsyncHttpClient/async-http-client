@@ -55,6 +55,7 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
+import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
 import javax.net.ssl.SSLEngine;
@@ -110,8 +111,8 @@ public class Channels {
         }
     };
 
-    private final boolean allowStopHashedWheelTimer;
-    private final HashedWheelTimer hashedWheelTimer;
+    private final boolean allowStopNettyTimer;
+    private final Timer nettyTimer;
     private final long handshakeTimeoutInMillis;
 
     private Processor wsProcessor;
@@ -131,9 +132,8 @@ public class Channels {
         eventLoopGroup = allowReleaseEventLoopGroup ? new NioEventLoopGroup() : nettyProviderConfig.getEventLoopGroup();
 
         // check if external HashedWheelTimer is defined
-        allowStopHashedWheelTimer = nettyProviderConfig.getHashedWheelTimer() == null;
-        hashedWheelTimer = allowStopHashedWheelTimer ? new HashedWheelTimer() : nettyProviderConfig.getHashedWheelTimer();
-        hashedWheelTimer.start();
+        allowStopNettyTimer = nettyProviderConfig.getNettyTimer() == null;
+        nettyTimer = allowStopNettyTimer ? newNettyTimer() : nettyProviderConfig.getNettyTimer();
         handshakeTimeoutInMillis = nettyProviderConfig.getHandshakeTimeoutInMillis();
 
         if (!(eventLoopGroup instanceof NioEventLoopGroup))
@@ -147,7 +147,7 @@ public class Channels {
         ChannelPool cp = nettyProviderConfig.getChannelPool();
         if (cp == null) {
             if (config.getAllowPoolingConnection()) {
-                cp = new DefaultChannelPool(config, hashedWheelTimer);
+                cp = new DefaultChannelPool(config, nettyTimer);
             } else {
                 cp = new NonChannelPool();
             }
@@ -193,6 +193,12 @@ public class Channels {
         webSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
         secureWebSocketBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeOut);
+    }
+
+    private Timer newNettyTimer() {
+        HashedWheelTimer nettyTimer = new HashedWheelTimer();
+        nettyTimer.start();
+        return nettyTimer;
     }
 
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
@@ -299,8 +305,8 @@ public class Channels {
         if (allowReleaseEventLoopGroup)
             eventLoopGroup.shutdownGracefully();
 
-        if (allowStopHashedWheelTimer)
-            hashedWheelTimer.stop();
+        if (allowStopNettyTimer)
+            nettyTimer.stop();
     }
 
     /**
@@ -475,7 +481,7 @@ public class Channels {
     }
 
     public Timeout newTimeoutInMs(TimerTask task, long delayInMs) {
-        return hashedWheelTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
+        return nettyTimer.newTimeout(task, delayInMs, TimeUnit.MILLISECONDS);
     }
 
     public static SslHandler getSslHandler(Channel channel) {

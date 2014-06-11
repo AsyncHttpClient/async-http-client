@@ -119,7 +119,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
         try {
             Response response = c.prepareGet("http://google.com/").execute().get(10, TimeUnit.SECONDS);
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 301);
+            assertEquals(response.getStatusCode(), 302);
         } finally {
             c.close();
         }
@@ -155,7 +155,7 @@ public abstract class RemoteSiteTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" }, enabled = false)
     public void invalidStreamTest2() throws Exception {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(10000).setFollowRedirects(true)
-                .setAllowPoolingConnection(false).setMaximumNumberOfRedirects(6).build();
+                .setAllowPoolingConnection(false).setMaxRedirects(6).build();
 
         AsyncHttpClient c = getAsyncHttpClient(config);
         try {

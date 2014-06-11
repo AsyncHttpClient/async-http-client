@@ -170,7 +170,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
             StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getAuthority());
+            builder.append(originalUri.getScheme()).append("://").append(originalUri.getRawAuthority());
             if (isNonEmpty(originalUri.getRawPath())) {
                 builder.append(originalUri.getRawPath());
             } else {
@@ -357,6 +357,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     protected final RequestImpl request;
     protected boolean useRawUrl = false;
+    /**
+     * Calculator used for calculating request signature for the request being
+     * built, if any.
+     */
+    protected SignatureCalculator signatureCalculator;
+
+    /**
+     * URL used as the base, not including possibly query parameters. Needed for
+     * signature calculation
+     */
+    protected String baseURL;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean rawUrls) {
         this.derived = derived;
@@ -372,6 +383,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setUrl(String url) {
+        baseURL = url;
         return setURI(URI.create(url));
     }
 
@@ -421,6 +433,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setVirtualHost(String virtualHost) {
         request.virtualHost = virtualHost;
+        return derived.cast(this);
+    }
+
+    public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
+        this.signatureCalculator = signatureCalculator;
         return derived.cast(this);
     }
 
@@ -615,6 +632,20 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
+        
+        /* Let's first calculate and inject signature, before finalizing actual build
+         * (order does not matter with current implementation but may in future)
+         */
+        if (signatureCalculator != null) {
+            String url = baseURL != null? baseURL : request.originalUri.toString();
+            // Should not include query parameters, ensure:
+            int i = url.indexOf('?');
+            if (i >= 0) {
+                url = url.substring(0, i);
+            }
+            signatureCalculator.calculateAndAddSignature(url, request, this);
+        }
+        
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
             String contentLength = null;

@@ -10,7 +10,7 @@ Async Http Client library purpose is to allow Java applications to easily execut
 <dependency>
   <groupId>com.ning</groupId>
   <artifactId>async-http-client</artifactId>
-  <version>1.8.4</version>
+  <version>1.8.10</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@ You can also download the artifact
 
 [Maven Search](http://search.maven.org)
 
-Then in your code you can simply do ([Javadoc](http://sonatype.github.com/async-http-client/apidocs/index.html))
+Then in your code you can simply do [Javadoc](http://asynchttpclient.github.io/async-http-client/apidocs/reference/packages.html)
 
 ```java
 import com.ning.http.client.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Sonatype, Inc. All rights reserved.
+ * Copyright (c) 2013-2014 Sonatype, Inc. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -31,14 +31,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 
-public final class FileBodyHandler implements BodyHandler {
+public final class FileBodyHandler extends BodyHandler {
 
     private static final boolean SEND_FILE_SUPPORT;
     static {
         SEND_FILE_SUPPORT = configSendFileSupport();
     }
 
+    private final boolean compressionEnabled;
+
+    public FileBodyHandler(
+            final GrizzlyAsyncHttpProvider grizzlyAsyncHttpProvider) {
+        compressionEnabled = grizzlyAsyncHttpProvider.getClientConfig().isCompressionEnabled();
+    }
+    
     // ------------------------------------------------ Methods from BodyHandler
 
     public boolean handlesBodyType(final Request request) {
@@ -51,7 +59,7 @@ public final class FileBodyHandler implements BodyHandler {
         final File f = request.getFile();
         requestPacket.setContentLengthLong(f.length());
         final HttpTxContext context = HttpTxContext.get(ctx);
-        if (!SEND_FILE_SUPPORT || requestPacket.isSecure()) {
+        if (compressionEnabled || !SEND_FILE_SUPPORT || requestPacket.isSecure()) {
             final FileInputStream fis = new FileInputStream(request.getFile());
             final MemoryManager mm = ctx.getMemoryManager();
             AtomicInteger written = new AtomicInteger();
@@ -98,6 +106,15 @@ public final class FileBodyHandler implements BodyHandler {
         return true;
     }
 
+    @Override
+    protected long getContentLength(final Request request) {
+        if (request.getContentLength() >= 0) {
+            return request.getContentLength();
+        }
+        
+        return compressionEnabled ? -1 : request.getFile().length();
+    }
+    
     // --------------------------------------------------------- Private Methods
 
     private static void notifyHandlerIfNeeded(final HttpTxContext context, final HttpRequestPacket requestPacket,
