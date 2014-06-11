@@ -44,5 +44,11 @@ public class ProxyUtilsTest {
         proxyServer = new ProxyServer("foo", 1234);
         proxyServer.addNonProxyHost("*.somewhere.org");
         assertFalse(ProxyUtils.avoidProxy(proxyServer, req));
+
+        // shouldn't crash
+        req = new RequestBuilder("GET").setUrl("http:///badhost/foo").build();
+        proxyServer = new ProxyServer("foo", 1234);
+        proxyServer.addNonProxyHost("*.somewhere.org");
+        assertFalse(ProxyUtils.avoidProxy(proxyServer, req));
     }
 }

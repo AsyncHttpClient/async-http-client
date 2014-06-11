@@ -61,6 +61,10 @@ public class AsyncHttpProviderUtils {
             return URI.create(u + "/");
         }
 
+        if (uri.getHost() == null) {
+            throw new IllegalArgumentException("The URI host, of the URI " + uri + ", must be non-null.");
+        }
+
         return uri;
     }
 

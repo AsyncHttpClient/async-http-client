@@ -113,7 +113,8 @@ public class ProxyUtils {
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
         if (proxyServer != null) {
-            final String targetHost = target.toLowerCase(Locale.ENGLISH);
+            final String targetHost = (target != null) ?
+                target.toLowerCase(Locale.ENGLISH) : "";
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
