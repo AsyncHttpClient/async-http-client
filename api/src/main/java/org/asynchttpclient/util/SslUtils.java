@@ -16,14 +16,47 @@
 package org.asynchttpclient.util;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 /**
  * This class is a copy of http://github.com/sonatype/wagon-ning/raw/master/src/main/java/org/apache/maven/wagon/providers/http/SslUtils.java
  */
 public class SslUtils {
+    
+    static class LooseTrustManager implements X509TrustManager {
 
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return new java.security.cert.X509Certificate[0];
+        }
+
+        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+        }
+
+        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+        }
+    }
+
+    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext(); 
+    
+    private SSLContext looseTrustManagerSSLContext() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[] { new LooseTrustManager() }, new SecureRandom());
+            return sslContext;
+        } catch (NoSuchAlgorithmException e) {
+           throw new ExceptionInInitializerError(e);
+        } catch (KeyManagementException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+    
     private static class SingletonHolder {
         public static final SslUtils instance = new SslUtils();
     }
@@ -32,7 +65,7 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLContext getSSLContext() throws GeneralSecurityException, IOException {
-        return SSLContext.getDefault();
+    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
+        return acceptAnyCertificate? looseTrustManagerSSLContext: SSLContext.getDefault();
     }
 }

@@ -209,10 +209,9 @@ public class Channels {
         
         } else {
             SSLContext sslContext = config.getSSLContext();
-            if (sslContext == null) {
-                sslContext = SslUtils.getInstance().getSSLContext();
-            }
-            
+            if (sslContext == null)
+                sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
+
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(true);
             return sslEngine;

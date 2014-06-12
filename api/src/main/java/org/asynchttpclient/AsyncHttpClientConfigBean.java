@@ -70,6 +70,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         spdyEnabled = defaultSpdyEnabled();
         spdyInitialWindowSize = defaultSpdyInitialWindowSize();
         spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
+        acceptAnyCertificate = defaultAcceptAnyCertificate();
         if (defaultUseProxySelector()) {
             proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
         } else if (defaultUseProxyProperties()) {
@@ -232,6 +233,11 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setIoThreadMultiplier(int ioThreadMultiplier) {
         this.ioThreadMultiplier = ioThreadMultiplier;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+        this.acceptAnyCertificate = acceptAnyCertificate;
         return this;
     }
 }

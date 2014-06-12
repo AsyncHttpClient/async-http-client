@@ -78,7 +78,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     public void echoText() throws Exception {
 
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
-        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).build();
+        AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder().setProxyServer(ps).setAcceptAnyCertificate(true).build();
         AsyncHttpClient asyncHttpClient = getAsyncHttpClient(config);
         try {
             final CountDownLatch latch = new CountDownLatch(1);

@@ -112,6 +112,7 @@ public class AsyncHttpClientConfig {
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
     protected TimeConverter timeConverter;
+    protected boolean acceptAnyCertificate;
 
     protected AsyncHttpClientConfig() {
     }
@@ -151,7 +152,8 @@ public class AsyncHttpClientConfig {
             boolean spdyEnabled, //
             int spdyInitialWindowSize, //
             int spdyMaxConcurrentStreams, //
-            TimeConverter timeConverter) {
+            TimeConverter timeConverter, //
+            boolean acceptAnyCertificate) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -187,6 +189,7 @@ public class AsyncHttpClientConfig {
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
         this.timeConverter = timeConverter;
+        this.acceptAnyCertificate = acceptAnyCertificate;
         
     }
 
@@ -533,6 +536,10 @@ public class AsyncHttpClientConfig {
         return timeConverter;
     }
 
+    public boolean isAcceptAnyCertificate() {
+        return acceptAnyCertificate;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -564,6 +571,7 @@ public class AsyncHttpClientConfig {
         private boolean spdyEnabled = defaultSpdyEnabled();
         private int spdyInitialWindowSize = defaultSpdyInitialWindowSize();
         private int spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
+        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
 
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
@@ -1078,6 +1086,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            this.acceptAnyCertificate = acceptAnyCertificate;
+            return this;
+        }
+        
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -1186,7 +1199,8 @@ public class AsyncHttpClientConfig {
                     spdyEnabled, //
                     spdyInitialWindowSize, //
                     spdyMaxConcurrentStreams, //
-                    timeConverter);
+                    timeConverter, //
+                    acceptAnyCertificate);
         }
     }
 }
