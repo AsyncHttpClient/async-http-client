@@ -19,8 +19,7 @@ import java.nio.channels.WritableByteChannel;
 /**
  * A request body which supports random access to its contents.
  */
-public interface RandomAccessBody
-        extends Body {
+public interface RandomAccessBody extends Body {
 
     /**
      * Transfers the specified chunk of bytes from this body to the specified channel.
@@ -33,5 +32,4 @@ public interface RandomAccessBody
      */
     long transferTo(long position, long count, WritableByteChannel target)
             throws IOException;
-
 }

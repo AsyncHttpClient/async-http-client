@@ -12,6 +12,8 @@
  */
 package com.ning.http.client;
 
+import static com.ning.http.client.AsyncHttpClientConfigDefaults.*;
+
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.filter.ResponseFilter;
@@ -19,7 +21,7 @@ import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
+
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,39 +45,34 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
     }
 
     void configureDefaults() {
-        maxTotalConnections = Integer.getInteger(ASYNC_CLIENT + "defaultMaxTotalConnections", -1);
-        maxConnectionPerHost = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionsPerHost", -1);
-        connectionTimeOutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultConnectionTimeoutInMS", 60 * 1000);
-        idleConnectionInPoolTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionInPoolTimeoutInMS", 60 * 1000);
-        idleConnectionTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultIdleConnectionTimeoutInMS", 60 * 1000);
-        requestTimeoutInMs = Integer.getInteger(ASYNC_CLIENT + "defaultRequestTimeoutInMS", 60 * 1000);
-        maxConnectionLifeTimeInMs = Integer.getInteger(ASYNC_CLIENT + "defaultMaxConnectionLifeTimeInMs", -1);
-        redirectEnabled = Boolean.getBoolean(ASYNC_CLIENT + "defaultRedirectsEnabled");
-        maxDefaultRedirects = Integer.getInteger(ASYNC_CLIENT + "defaultMaxRedirects", 5);
-        compressionEnabled = Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
-        userAgent = System.getProperty(ASYNC_CLIENT + "userAgent", "NING/1.0");
-        ioThreadMultiplier = Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
+        maxTotalConnections = defaultMaxTotalConnections();
+        maxConnectionPerHost = defaultMaxConnectionPerHost();
+        connectionTimeOutInMs = defaultConnectionTimeOutInMs();
+        webSocketIdleTimeoutInMs = defaultWebSocketIdleTimeoutInMs();
+        idleConnectionInPoolTimeoutInMs = defaultIdleConnectionInPoolTimeoutInMs();
+        idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
+        requestTimeoutInMs = defaultRequestTimeoutInMs();
+        maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
+        redirectEnabled = defaultRedirectEnabled();
+        maxRedirects = defaultMaxRedirects();
+        compressionEnabled = defaultCompressionEnabled();
+        userAgent = defaultUserAgent();
+        allowPoolingConnection = defaultAllowPoolingConnection();
+        useRelativeURIsWithSSLProxies = defaultUseRelativeURIsWithSSLProxies();
+        requestCompressionLevel = defaultRequestCompressionLevel();
+        maxRequestRetry = defaultMaxRequestRetry();
+        ioThreadMultiplier = defaultIoThreadMultiplier();
+        allowSslConnectionPool = defaultAllowSslConnectionPool();
+        useRawUrl = defaultUseRawUrl();
+        removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
+        strict302Handling = defaultStrict302Handling();
+        hostnameVerifier = defaultHostnameVerifier();
 
-        boolean useProxySelector = Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
-        boolean useProxyProperties = Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
-        if (useProxySelector) {
+        if (defaultUseProxySelector()) {
             proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
-        } else if (useProxyProperties) {
+        } else if (defaultUseProxyProperties()) {
             proxyServerSelector = ProxyUtils.createProxyServerSelector(System.getProperties());
         }
-
-        allowPoolingConnection = true;
-        requestCompressionLevel = -1;
-        maxRequestRetry = 5;
-        allowSslConnectionPool = true;
-        useRawUrl = false;
-        removeQueryParamOnRedirect = true;
-        hostnameVerifier = new HostnameVerifier() {
-
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
     }
 
     void configureExecutors() {
@@ -133,8 +130,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setMaxDefaultRedirects(int maxDefaultRedirects) {
-        this.maxDefaultRedirects = maxDefaultRedirects;
+    public AsyncHttpClientConfigBean setMaxRedirects(int maxRedirects) {
+        this.maxRedirects = maxRedirects;
         return this;
     }
 

@@ -20,5 +20,5 @@ package com.ning.http.client;
  * Interface for the parts in a multipart request.
  */
 public interface Part {
-    public String getName();
+    String getName();
 }

@@ -48,5 +48,5 @@ public interface PartSource {
      * @throws java.io.IOException if an error occurs when creating the InputStream
      */
     InputStream createInputStream() throws IOException;
-
 }
+

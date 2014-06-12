@@ -22,5 +22,4 @@ public interface WebSocketPingListener extends WebSocketListener {
      * @param message a byte array
      */
     void onPing(byte[] message);
-
 }

@@ -26,18 +26,17 @@ public interface ResumableListener {
      * @param byteBuffer the current bytes
      * @throws IOException
      */
-    public void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
+    void onBytesReceived(ByteBuffer byteBuffer) throws IOException;
 
     /**
      * Invoked when all the bytes has been sucessfully transferred.
      */
-    public void onAllBytesReceived();
+    void onAllBytesReceived();
 
     /**
      * Return the length of previously downloaded bytes.
      *
      * @return the length of previously downloaded bytes
      */
-    public long length();
-
+    long length();
 }

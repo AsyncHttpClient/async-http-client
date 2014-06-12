@@ -35,6 +35,7 @@ public interface SignatureCalculator {
      * @param request        Request that is being built; needed to access content to
      *                       be signed
      */
-    public void calculateAndAddSignature(String url, Request request,
-                                         RequestBuilderBase<?> requestBuilder);
+    void calculateAndAddSignature(String url,
+                                  Request request,
+                                  RequestBuilderBase<?> requestBuilder);
 }

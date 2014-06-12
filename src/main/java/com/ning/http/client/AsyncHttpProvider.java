@@ -31,12 +31,12 @@ public interface AsyncHttpProvider {
      * @return a {@link ListenableFuture} of Type T.
      * @throws IOException
      */
-    public <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
+    <T> ListenableFuture<T> execute(Request request, AsyncHandler<T> handler) throws IOException;
 
     /**
      * Close the current underlying TCP/HTTP connection.
      */
-    public void close();
+    void close();
 
     /**
      * Prepare a {@link Response}
@@ -46,8 +46,7 @@ public interface AsyncHttpProvider {
      * @param bodyParts list of {@link HttpResponseBodyPart}
      * @return a {@link Response}
      */
-    public Response prepareResponse(HttpResponseStatus status,
-                                    HttpResponseHeaders headers,
-                                    List<HttpResponseBodyPart> bodyParts);
-
+    Response prepareResponse(HttpResponseStatus status,
+                             HttpResponseHeaders headers,
+                             List<HttpResponseBodyPart> bodyParts);
 }

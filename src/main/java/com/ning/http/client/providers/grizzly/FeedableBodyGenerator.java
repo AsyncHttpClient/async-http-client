@@ -14,6 +14,7 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
+import com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.HttpTransactionContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -34,7 +35,6 @@ import org.glassfish.grizzly.ssl.SSLFilter;
 import org.glassfish.grizzly.threadpool.Threads;
 import org.glassfish.grizzly.utils.Futures;
 
-import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProvider.getHttpTransactionContext;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.glassfish.grizzly.ssl.SSLUtils.getSSLEngine;
@@ -181,10 +181,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                         feeder.flush();
                     }
                 } catch (IOException ioe) {
-                    GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
-                            GrizzlyAsyncHttpProvider.getHttpTransactionContext(
-                                    c);
-                    ctx.abort(ioe);
+                    HttpTransactionContext.get(c).abort(ioe);
                 }
             }
         };
@@ -224,9 +221,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     try {
                         feeder.flush();
                     } catch (IOException ioe) {
-                        GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
-                                GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
-                        ctx.abort(ioe);
+                        HttpTransactionContext.get(c).abort(ioe);
                     }
                 }
             }
@@ -385,13 +380,9 @@ public class FeedableBodyGenerator implements BodyGenerator {
                     future.get();
                 }
             } catch (ExecutionException e) {
-                GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
-                        getHttpTransactionContext(c);
-                httpCtx.abort(e.getCause());
+                HttpTransactionContext.get(c).abort(e.getCause());
             } catch (Exception e) {
-                GrizzlyAsyncHttpProvider.HttpTransactionContext httpCtx =
-                        getHttpTransactionContext(c);
-                httpCtx.abort(e);
+                HttpTransactionContext.get(c).abort(e);
             }
         }
 
@@ -600,9 +591,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
             @Override
             public void onError(Throwable t) {
                 c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
-                        GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
-                ctx.abort(t);
+                HttpTransactionContext.get(c).abort(t);
             }
 
         } // END WriteHandlerImpl
@@ -622,9 +611,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
                 } catch (IOException e) {
                     final Connection c = feedableBodyGenerator.context.getConnection();
                     c.setMaxAsyncWriteQueueSize(feedableBodyGenerator.origMaxPendingBytes);
-                    GrizzlyAsyncHttpProvider.HttpTransactionContext ctx =
-                            GrizzlyAsyncHttpProvider.getHttpTransactionContext(c);
-                    ctx.abort(e);
+                    HttpTransactionContext.get(c).abort(e);
                 }
             }
 
