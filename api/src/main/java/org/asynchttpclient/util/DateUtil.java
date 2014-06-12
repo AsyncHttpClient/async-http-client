@@ -131,7 +131,7 @@ public class DateUtil {
     public static Date parseDate(String dateValue, Collection<String> dateFormats, Date startDate) throws DateParseException {
 
         if (dateValue == null) {
-            throw new IllegalArgumentException("dateValue is null");
+            throw new NullPointerException("dateValue");
         }
         if (dateFormats == null) {
             dateFormats = DEFAULT_PATTERNS;
@@ -187,14 +187,14 @@ public class DateUtil {
      * @param date    The date to format.
      * @param pattern The pattern to use for formatting the date.
      * @return A formatted date string.
-     * @throws IllegalArgumentException If the given date pattern is invalid.
+     * @throws NullPointerException If the given date pattern is invalid.
      * @see java.text.SimpleDateFormat
      */
     public static String formatDate(Date date, String pattern) {
         if (date == null)
-            throw new IllegalArgumentException("date is null");
+            throw new NullPointerException("date");
         if (pattern == null)
-            throw new IllegalArgumentException("pattern is null");
+            throw new NullPointerException("pattern");
 
         SimpleDateFormat formatter = new SimpleDateFormat(pattern, Locale.US);
         formatter.setTimeZone(GMT);

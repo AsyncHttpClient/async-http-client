@@ -61,7 +61,7 @@ public class MultipartUtils {
      */
     public static MultipartBody newMultipartBody(List<Part> parts, FluentCaseInsensitiveStringsMap requestHeaders) {
         if (parts == null) {
-            throw new IllegalArgumentException("parts cannot be null");
+            throw new NullPointerException("parts");
         }
 
         byte[] multipartBoundary;
@@ -162,9 +162,8 @@ public class MultipartUtils {
 
     public static byte[] getMessageEnd(byte[] partBoundary) throws IOException {
 
-        if (partBoundary == null || partBoundary.length == 0) {
+        if (!isNonEmpty(partBoundary))
             throw new IllegalArgumentException("partBoundary may not be empty");
-        }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         OutputStreamPartVisitor visitor = new OutputStreamPartVisitor(out);
@@ -180,7 +179,7 @@ public class MultipartUtils {
 
         try {
             if (parts == null) {
-                throw new IllegalArgumentException("Parts may not be null");
+                throw new NullPointerException("parts");
             }
             long total = 0;
             for (Part part : parts) {

@@ -309,7 +309,7 @@ public class FeedableBodyGenerator implements BodyGenerator {
         @SuppressWarnings("UnusedDeclaration")
         public final synchronized void feed(final Buffer buffer, final boolean last) throws IOException {
             if (buffer == null) {
-                throw new IllegalArgumentException("Buffer argument cannot be null.");
+                throw new NullPointerException("buffer");
             }
             if (!feedableBodyGenerator.asyncTransferInitiated) {
                 throw new IllegalStateException("Asynchronous transfer has not been initiated.");

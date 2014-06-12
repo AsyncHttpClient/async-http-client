@@ -60,7 +60,7 @@ public class StringPart extends PartBase {
 
         super(name, DEFAULT_CONTENT_TYPE, charset == null ? DEFAULT_CHARSET : charset, DEFAULT_TRANSFER_ENCODING, contentId);
         if (value == null) {
-            throw new IllegalArgumentException("Value may not be null");
+            throw new NullPointerException("value");
         }
         if (value.indexOf(0) != -1) {
             // See RFC 2048, 2.8. "8bit Data"

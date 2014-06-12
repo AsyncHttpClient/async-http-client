@@ -50,7 +50,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     //       access these methods - see Clojure tickets 126 and 259
 
     @Override
-    public RequestBuilder addBodyPart(Part part) throws IllegalArgumentException {
+    public RequestBuilder addBodyPart(Part part) {
         return super.addBodyPart(part);
     }
 
@@ -65,7 +65,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder addParameter(String key, String value) throws IllegalArgumentException {
+    public RequestBuilder addParameter(String key, String value) {
         return super.addParameter(key, value);
     }
 
@@ -85,7 +85,7 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setBody(byte[] data) throws IllegalArgumentException {
+    public RequestBuilder setBody(byte[] data) {
         return super.setBody(data);
     }
 
@@ -93,15 +93,14 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
      * Set a Stream for chunking
      * @param stream - An {@link InputStream}
      * @return a {@link RequestBuilder}
-     * @throws IllegalArgumentException
      */
     @Override
-    public RequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
+    public RequestBuilder setBody(InputStream stream) {
         return super.setBody(stream);
     }
 
     @Override
-    public RequestBuilder setBody(String data) throws IllegalArgumentException {
+    public RequestBuilder setBody(String data) {
         return super.setBody(data);
     }
 
@@ -121,12 +120,12 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+    public RequestBuilder setParameters(Map<String, Collection<String>> parameters) {
         return super.setParameters(parameters);
     }
 
     @Override
-    public RequestBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
+    public RequestBuilder setParameters(FluentStringsMap parameters) {
         return super.setParameters(parameters);
     }
 

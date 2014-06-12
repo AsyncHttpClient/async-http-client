@@ -373,9 +373,9 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setUrl(String url);
 
-        DerivedBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException;
+        DerivedBuilder setParameters(FluentStringsMap parameters);
 
-        DerivedBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException;
+        DerivedBuilder setParameters(Map<String, Collection<String>> parameters);
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
@@ -385,13 +385,13 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder addQueryParameter(String name, String value);
 
-        DerivedBuilder addParameter(String key, String value) throws IllegalArgumentException;
+        DerivedBuilder addParameter(String key, String value);
 
         DerivedBuilder addHeader(String name, String value);
 
         DerivedBuilder addCookie(Cookie cookie);
 
-        DerivedBuilder addBodyPart(Part part) throws IllegalArgumentException;
+        DerivedBuilder addBodyPart(Part part);
 
         DerivedBuilder setResumableDownload(boolean resume);
 
@@ -428,7 +428,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             this.listener = client.listener;
         }
 
-        public Builder addBodyPart(Part part) throws IllegalArgumentException {
+        public Builder addBodyPart(Part part) {
             requestBuilder.addBodyPart(part);
             return this;
         }
@@ -443,7 +443,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder addParameter(String key, String value) throws IllegalArgumentException {
+        public Builder addParameter(String key, String value) {
             requestBuilder.addParameter(key, value);
             return this;
         }
@@ -468,12 +468,12 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+        public Builder setParameters(Map<String, Collection<String>> parameters) {
             requestBuilder.setParameters(parameters);
             return this;
         }
 
-        public Builder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
+        public Builder setParameters(FluentStringsMap parameters) {
             requestBuilder.setParameters(parameters);
             return this;
         }

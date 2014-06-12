@@ -29,9 +29,8 @@ public class BodyFileRegion extends AbstractReferenceCounted implements FileRegi
     private long transfered;
 
     public BodyFileRegion(RandomAccessBody body) {
-        if (body == null) {
-            throw new IllegalArgumentException("no body specified");
-        }
+        if (body == null)
+            throw new NullPointerException("body");
         this.body = body;
     }
 
