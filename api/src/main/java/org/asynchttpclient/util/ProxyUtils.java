@@ -35,7 +35,7 @@ import java.util.Properties;
  *
  * @author cstamas
  */
-public class ProxyUtils {
+public final class ProxyUtils {
 
     private final static Logger log = LoggerFactory.getLogger(ProxyUtils.class);
 
@@ -71,6 +71,9 @@ public class ProxyUtils {
      */
     public static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
 
+    private ProxyUtils() {
+    }
+    
     /**
      * @param config the global config
      * @param request the request
@@ -88,19 +91,25 @@ public class ProxyUtils {
     }
 
     /**
-     * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
-     * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
-     * should avoid to use it. Simple hostname pattern matching using "*" are supported, but only as prefixes.
-     * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
-     *
-     * @param proxyServer
-     * @param request
-     * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
+     * @see #avoidProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
         return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(request.getOriginalURI()));
     }
 
+    private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
+
+        if (nonProxyHost.length() > 1) {
+            if (nonProxyHost.charAt(0) == '*')
+                return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
+                        nonProxyHost.length() - 1);
+            else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
+                return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
+        }
+
+        return nonProxyHost.equalsIgnoreCase(targetHost);
+    }
+    
     /**
      * Checks whether proxy should be used according to nonProxyHosts settings of it, or we want to go directly to
      * target host. If <code>null</code> proxy is passed in, this method returns true -- since there is NO proxy, we
@@ -116,22 +125,12 @@ public class ProxyUtils {
             if (hostname == null)
                 throw new NullPointerException("hostname");
 
-            final String targetHost = hostname.toLowerCase(Locale.ENGLISH);
-
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
             if (isNonEmpty(nonProxyHosts)) {
                 for (String nonProxyHost : nonProxyHosts) {
-                    // FIXME use regionMatches instead
-                    if (nonProxyHost.startsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.endsWith(nonProxyHost.substring(1).toLowerCase(Locale.ENGLISH))) {
+                    if (matchNonProxyHost(hostname, nonProxyHost))
                         return true;
-                    } else if (nonProxyHost.endsWith("*") && nonProxyHost.length() > 1
-                            && targetHost.startsWith(nonProxyHost.substring(0, nonProxyHost.length() - 1).toLowerCase(Locale.ENGLISH))) {
-                        return true;
-                    } else if (nonProxyHost.equalsIgnoreCase(targetHost)) {
-                        return true;
-                    }
                 }
             }
 
