@@ -234,7 +234,7 @@ public class AsyncHttpClient implements Closeable {
         //       access these methods - see Clojure tickets 126 and 259
 
         @Override
-        public BoundRequestBuilder addBodyPart(Part part) throws IllegalArgumentException {
+        public BoundRequestBuilder addBodyPart(Part part) {
             return super.addBodyPart(part);
         }
 
@@ -249,7 +249,7 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder addParameter(String key, String value) throws IllegalArgumentException {
+        public BoundRequestBuilder addParameter(String key, String value) {
             return super.addParameter(key, value);
         }
 
@@ -264,12 +264,12 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setBody(byte[] data) throws IllegalArgumentException {
+        public BoundRequestBuilder setBody(byte[] data) {
             return super.setBody(data);
         }
 
         @Override
-        public BoundRequestBuilder setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
+        public BoundRequestBuilder setBody(EntityWriter dataWriter, long length) {
             return super.setBody(dataWriter, length);
         }
 
@@ -279,12 +279,12 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setBody(InputStream stream) throws IllegalArgumentException {
+        public BoundRequestBuilder setBody(InputStream stream) {
             return super.setBody(stream);
         }
 
         @Override
-        public BoundRequestBuilder setBody(String data) throws IllegalArgumentException {
+        public BoundRequestBuilder setBody(String data) {
             return super.setBody(data);
         }
 
@@ -304,12 +304,12 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+        public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) {
             return super.setParameters(parameters);
         }
 
         @Override
-        public BoundRequestBuilder setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
+        public BoundRequestBuilder setParameters(FluentStringsMap parameters) {
             return super.setParameters(parameters);
         }
 

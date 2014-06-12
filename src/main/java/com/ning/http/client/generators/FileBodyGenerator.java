@@ -33,18 +33,16 @@ public class FileBodyGenerator
     private final long regionLength;
 
     public FileBodyGenerator(File file) {
-        if (file == null) {
-            throw new IllegalArgumentException("no file specified");
-        }
+        if (file == null)
+            throw new NullPointerException("file");
         this.file = file;
         this.regionLength = file.length();
         this.regionSeek = 0;
     }
 
     public FileBodyGenerator(File file, long regionSeek, long regionLength) {
-        if (file == null) {
-            throw new IllegalArgumentException("no file specified");
-        }
+        if (file == null)
+            throw new NullPointerException("file");
         this.file = file;
         this.regionLength = regionLength;
         this.regionSeek = regionSeek;

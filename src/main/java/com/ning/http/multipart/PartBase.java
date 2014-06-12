@@ -120,9 +120,8 @@ public abstract class PartBase extends Part {
      * @param name
      */
     public void setName(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Name must not be null");
-        }
+        if (name == null)
+            throw new NullPointerException("name");
         this.name = name;
     }
 

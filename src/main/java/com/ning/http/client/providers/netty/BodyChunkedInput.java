@@ -32,9 +32,8 @@ class BodyChunkedInput implements ChunkedInput {
     private boolean endOfInput;
 
     public BodyChunkedInput(Body body) {
-        if (body == null) {
-            throw new IllegalArgumentException("no body specified");
-        }
+        if (body == null)
+            throw new NullPointerException("body");
         this.body = body;
         contentLength = (int) body.getContentLength();
         if (contentLength <= 0)

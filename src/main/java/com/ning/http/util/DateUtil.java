@@ -135,9 +135,8 @@ public class DateUtil {
             Date startDate
     ) throws DateParseException {
 
-        if (dateValue == null) {
-            throw new IllegalArgumentException("dateValue is null");
-        }
+        if (dateValue == null)
+            throw new NullPointerException("dateValue");
         if (dateFormats == null) {
             dateFormats = DEFAULT_PATTERNS;
         }
@@ -199,8 +198,8 @@ public class DateUtil {
      * @see java.text.SimpleDateFormat
      */
     public static String formatDate(Date date, String pattern) {
-        if (date == null) throw new IllegalArgumentException("date is null");
-        if (pattern == null) throw new IllegalArgumentException("pattern is null");
+        if (date == null) throw new NullPointerException("date");
+        if (pattern == null) throw new NullPointerException("pattern");
 
         SimpleDateFormat formatter = new SimpleDateFormat(pattern, Locale.US);
         formatter.setTimeZone(GMT);

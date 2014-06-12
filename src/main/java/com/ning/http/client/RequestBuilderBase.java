@@ -490,7 +490,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setBody(byte[] data) throws IllegalArgumentException {
+    public T setBody(byte[] data) {
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -498,7 +498,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setBody(String data) throws IllegalArgumentException {
+    public T setBody(String data) {
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -506,7 +506,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setBody(InputStream stream) throws IllegalArgumentException {
+    public T setBody(InputStream stream) {
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -518,7 +518,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return setBody(dataWriter, -1);
     }
 
-    public T setBody(EntityWriter dataWriter, long length) throws IllegalArgumentException {
+    public T setBody(EntityWriter dataWriter, long length) {
         resetParameters();
         resetNonMultipartData();
         resetMultipartData();
@@ -549,7 +549,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T addParameter(String key, String value) throws IllegalArgumentException {
+    public T addParameter(String key, String value) {
         resetNonMultipartData();
         resetMultipartData();
         if (request.params == null) {
@@ -559,21 +559,21 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setParameters(FluentStringsMap parameters) throws IllegalArgumentException {
+    public T setParameters(FluentStringsMap parameters) {
         resetNonMultipartData();
         resetMultipartData();
         request.params = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
-    public T setParameters(Map<String, Collection<String>> parameters) throws IllegalArgumentException {
+    public T setParameters(Map<String, Collection<String>> parameters) {
         resetNonMultipartData();
         resetMultipartData();
         request.params = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
-    public T addBodyPart(Part part) throws IllegalArgumentException {
+    public T addBodyPart(Part part) {
         resetParameters();
         resetNonMultipartData();
         if (request.parts == null) {

@@ -64,9 +64,8 @@ public class FilePart extends PartBase {
     public FilePart(String name, PartSource partSource, String contentType, String charset, String contentId) {
 
         super(name, contentType == null ? DEFAULT_CONTENT_TYPE : contentType, charset, DEFAULT_TRANSFER_ENCODING, contentId);
-        if (partSource == null) {
-            throw new IllegalArgumentException("Source may not be null");
-        }
+        if (partSource == null)
+            throw new NullPointerException("parSource");
         this.source = partSource;
     }
 

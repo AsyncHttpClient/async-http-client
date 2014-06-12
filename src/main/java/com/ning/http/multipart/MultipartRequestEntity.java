@@ -70,9 +70,8 @@ public class MultipartRequestEntity implements RequestEntity {
      * @param parts The parts to include.
      */
     public MultipartRequestEntity(Part[] parts, FluentCaseInsensitiveStringsMap requestHeaders) {
-        if (parts == null) {
-            throw new IllegalArgumentException("parts cannot be null");
-        }
+        if (parts == null)
+            throw new NullPointerException("parts");
         this.parts = parts;
         String contentTypeHeader = requestHeaders.getFirstValue("Content-Type");
         if (isNonEmpty(contentTypeHeader)) {

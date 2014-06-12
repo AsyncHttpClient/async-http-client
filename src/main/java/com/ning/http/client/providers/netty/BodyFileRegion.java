@@ -27,9 +27,8 @@ class BodyFileRegion
     private final RandomAccessBody body;
 
     public BodyFileRegion(RandomAccessBody body) {
-        if (body == null) {
-            throw new IllegalArgumentException("no body specified");
-        }
+        if (body == null)
+            throw new NullPointerException("body");
         this.body = body;
     }
 

@@ -33,9 +33,8 @@ public class MultipartEncodingUtil {
     }
 
     public static String getAsciiString(final byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Parameter may not be null");
-        }
+        if (data == null)
+            throw new NullPointerException("data");
 
         try {
             return new String(data, "US-ASCII");
@@ -46,9 +45,8 @@ public class MultipartEncodingUtil {
 
     public static byte[] getBytes(final String data, String charset) {
 
-        if (data == null) {
-            throw new IllegalArgumentException("data may not be null");
-        }
+        if (data == null)
+            throw new NullPointerException("data");
 
         if (charset == null || charset.length() == 0) {
             throw new IllegalArgumentException("charset may not be null or empty");

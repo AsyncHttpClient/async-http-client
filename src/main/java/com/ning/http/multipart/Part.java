@@ -439,12 +439,10 @@ public abstract class Part implements com.ning.http.client.Part {
      */
     public static void sendParts(OutputStream out, Part[] parts, byte[] partBoundary) throws IOException {
 
-        if (parts == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
-        if (partBoundary == null || partBoundary.length == 0) {
+        if (parts == null)
+            throw new NullPointerException("partsl");
+        if (partBoundary == null || partBoundary.length == 0)
             throw new IllegalArgumentException("partBoundary may not be empty");
-        }
         for (Part part : parts) {
             part.send(out, partBoundary);
         }
@@ -475,10 +473,8 @@ public abstract class Part implements com.ning.http.client.Part {
      * @since N/A
      */
     public static void sendPart(OutputStream out, Part part, byte[] partBoundary) throws IOException {
-
-        if (part == null) {
-            throw new IllegalArgumentException("Parts may not be null");
-        }
+        if (part == null)
+            throw new NullPointerException("parts");
 
         part.send(out, partBoundary);
     }
@@ -495,9 +491,8 @@ public abstract class Part implements com.ning.http.client.Part {
     public static long getLengthOfParts(Part[] parts, byte[] partBoundary) {
 
         try {
-            if (parts == null) {
-                throw new IllegalArgumentException("Parts may not be null");
-            }
+            if (parts == null)
+                throw new NullPointerException("parts");
             long total = 0;
             for (Part part : parts) {
                 long l = part.length(partBoundary);
