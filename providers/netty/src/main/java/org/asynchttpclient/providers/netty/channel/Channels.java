@@ -204,7 +204,7 @@ public class Channels {
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
         SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine();
         if (sslEngine == null) {
-            sslEngine = SslUtils.getSSLEngine();
+            sslEngine = SslUtils.getInstance().getSSLEngine();
         }
         return sslEngine;
     }
