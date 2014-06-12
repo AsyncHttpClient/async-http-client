@@ -386,15 +386,12 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "online", "default_provider", "async" })
+    @Test(groups = { "online", "default_provider", "async" }, expectedExceptions = { NullPointerException.class })
     public void asyncNullSchemeTest() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
 
         try {
             client.prepareGet("www.sun.com").execute();
-            fail();
-        } catch (IllegalArgumentException ex) {
-            assertTrue(true);
         } finally {
             client.close();
         }
@@ -1555,7 +1552,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         }
     }
 
-    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { IllegalArgumentException.class })
+    @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { NullPointerException.class })
     public void invalidUri() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
