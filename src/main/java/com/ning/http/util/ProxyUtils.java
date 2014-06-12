@@ -108,12 +108,15 @@ public class ProxyUtils {
      * See http://download.oracle.com/javase/1.4.2/docs/guide/net/properties.html
      *
      * @param proxyServer
-     * @param target      the hostname
+     * @param hostname      the hostname
      * @return true if we have to avoid proxy use (obeying non-proxy hosts settings), false otherwise.
      */
-    public static boolean avoidProxy(final ProxyServer proxyServer, final String target) {
+    public static boolean avoidProxy(final ProxyServer proxyServer, final String hostname) {
         if (proxyServer != null) {
-            final String targetHost = target.toLowerCase(Locale.ENGLISH);
+            if (hostname == null)
+                throw new NullPointerException("hostname");
+            
+            final String targetHost = hostname.toLowerCase(Locale.ENGLISH);
 
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
