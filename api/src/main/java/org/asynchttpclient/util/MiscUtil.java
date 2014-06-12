@@ -12,13 +12,17 @@
  */
 package org.asynchttpclient.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
-import org.asynchttpclient.AsyncHttpClientConfigDefaults;
+
 
 public class MiscUtil {
+	
+	public final static Logger logger = LoggerFactory.getLogger(MiscUtil.class);
 
     private MiscUtil() {
     }
@@ -62,7 +66,7 @@ public class MiscUtil {
 					return Integer.parseInt(valueString);
 			}catch(NumberFormatException e){
 				//If property couldn't be parsed log the error message and return default value.
-				AsyncHttpClientConfigDefaults.logger.error("Property : " + property + " has value = " + valueString + 
+				logger.error("Property : " + property + " has value = " + valueString + 
 						" which couldn't be parsed to an int value. Returning default value: " + defaultValue,e); 
 			}        		
 		}
@@ -82,7 +86,7 @@ public class MiscUtil {
 		//If a value has been specified but can't be parsed into a boolean log a message
 		//stating that value is unparseable and default values are being used.
 	    if(value != null)
-	        AsyncHttpClientConfigDefaults.logger.error("Property : " + property + " has value = " + value + 
+	        logger.error("Property : " + property + " has value = " + value + 
 	                " which couldn't be parsed to an boolean value. Returning default value: " + defaultValue);
 	    return defaultValue;            
 	}

@@ -14,6 +14,9 @@ package org.asynchttpclient;
 
 
 
+import static org.asynchttpclient.util.MiscUtil.getBooleanValue;
+import static org.asynchttpclient.util.MiscUtil.getIntValue;
+import org.asynchttpclient.util.DefaultHostnameVerifier;
 import javax.net.ssl.HostnameVerifier;
 
 import org.asynchttpclient.util.DefaultHostnameVerifier;
@@ -22,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class AsyncHttpClientConfigDefaults {
-	public final static Logger logger = LoggerFactory.getLogger(AsyncHttpClientConfigDefaults.class);
+	
 
     private AsyncHttpClientConfigDefaults() {
     }

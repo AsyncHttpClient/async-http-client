@@ -2,11 +2,7 @@ package org.asynchttpclient.util;
 
 import java.util.Properties;
 
-import mockit.Deencapsulation;
-
-import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncImplHelperMock;
-import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -105,7 +101,8 @@ public class MiscUtilTest {
 	                MY_SPECIAL_INT_DEFAULT_VALUE);
 	        // Set a corrupt system property
 	        System.setProperty(MY_SPECIAL_INT_PROPERTY, "corrupt property");
-	        // Assert that even though values set in asynchttpclient.properties and system property is corrupt the default value is returned
+	        // Assert that even though values set in asynchttpclient.properties and system property is corrupt the default value is 
+	        //returned
 	        Assert.assertEquals(MiscUtil.getIntValue(MY_SPECIAL_INT_PROPERTY, MY_SPECIAL_INT_DEFAULT_VALUE),
 	                MY_SPECIAL_INT_DEFAULT_VALUE);
 	        System.clearProperty(MY_SPECIAL_INT_PROPERTY);
@@ -133,7 +130,8 @@ public class MiscUtilTest {
 	        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, true));
 	        // Set a corrupt system property
 	        System.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "corrupt property");
-	        // Assert that even though values set in asynchttpclient.properties and system property is corrupt the default value is returned
+	        // Assert that even though values set in asynchttpclient.properties and system property is corrupt the default value is 
+	        //returned
 	        Assert.assertTrue(!MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
 	        System.clearProperty(MY_SPECIAL_INT_PROPERTY);
 	    }
