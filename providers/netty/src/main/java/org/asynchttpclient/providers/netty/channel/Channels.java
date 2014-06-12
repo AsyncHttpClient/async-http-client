@@ -58,6 +58,7 @@ import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import java.io.IOException;
@@ -202,11 +203,20 @@ public class Channels {
     }
 
     private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
-        SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine();
-        if (sslEngine == null) {
-            sslEngine = SslUtils.getInstance().getSSLEngine();
+        
+        if (nettyProviderConfig.getSslEngineFactory() != null) {
+            return nettyProviderConfig.getSslEngineFactory().newSSLEngine();
+        
+        } else {
+            SSLContext sslContext = config.getSSLContext();
+            if (sslContext == null) {
+                sslContext = SslUtils.getInstance().getSSLContext();
+            }
+            
+            SSLEngine sslEngine = sslContext.createSSLEngine();
+            sslEngine.setUseClientMode(true);
+            return sslEngine;
         }
-        return sslEngine;
     }
 
     public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {

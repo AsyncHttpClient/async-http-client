@@ -16,7 +16,6 @@
 package org.asynchttpclient.util;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
@@ -33,20 +32,7 @@ public class SslUtils {
         return SingletonHolder.instance;
     }
 
-    public SSLEngine getSSLEngine() throws GeneralSecurityException, IOException {
-        SSLEngine engine = null;
-
-        SSLContext context = getSSLContext();
-        if (context != null) {
-            engine = context.createSSLEngine();
-            engine.setUseClientMode(true);
-        }
-
-        return engine;
-    }
-
     public SSLContext getSSLContext() throws GeneralSecurityException, IOException {
         return SSLContext.getDefault();
     }
-
 }

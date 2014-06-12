@@ -175,11 +175,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
-        this.sslEngineFactory = sslEngineFactory;
-        return this;
-    }
-
     public AsyncHttpClientConfigBean setProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
         this.providerConfig = providerConfig;
         return this;
