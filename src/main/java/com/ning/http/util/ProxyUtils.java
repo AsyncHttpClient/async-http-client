@@ -24,7 +24,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.util.List;
-import java.util.Locale;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -125,13 +124,11 @@ public final class ProxyUtils {
             if (hostname == null)
                 throw new NullPointerException("hostname");
             
-            final String targetHost = hostname.toLowerCase(Locale.ENGLISH);
-
             List<String> nonProxyHosts = proxyServer.getNonProxyHosts();
 
             if (nonProxyHosts != null) {
                 for (String nonProxyHost : nonProxyHosts) {
-                    if (matchNonProxyHost(targetHost, nonProxyHost))
+                    if (matchNonProxyHost(hostname, nonProxyHost))
                         return true;
                 }
             }
