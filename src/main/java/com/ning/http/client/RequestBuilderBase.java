@@ -379,8 +379,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setURI(URI uri) {
+        if (uri.getHost() == null)
+            throw new NullPointerException("uri.host");
         if (uri.getPath() == null)
-            throw new IllegalArgumentException("Unsupported uri format: " + uri);
+            throw new NullPointerException("uri.path");
         request.originalUri = uri;
         addQueryParameters(request.originalUri);
         request.uri = null;
