@@ -15,93 +15,22 @@
  */
 package org.asynchttpclient.util;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.Security;
 
 /**
  * This class is a copy of http://github.com/sonatype/wagon-ning/raw/master/src/main/java/org/apache/maven/wagon/providers/http/SslUtils.java
  */
 public class SslUtils {
-
-    private static SSLContext context = null;
-
-    public static SSLEngine getSSLEngine() throws GeneralSecurityException, IOException {
-        SSLEngine engine = null;
-
-        SSLContext context = getSSLContext();
-        if (context != null) {
-            engine = context.createSSLEngine();
-            engine.setUseClientMode(true);
-        }
-
-        return engine;
-    }
-
-    public static SSLContext getSSLContext() throws GeneralSecurityException, IOException {
-        if (context == null) {
-            SSLConfig config = new SSLConfig();
-            if (config.keyStoreLocation == null || config.trustStoreLocation == null) {
-                context = getLooseSSLContext();
-            } else {
-                context = getStrictSSLContext(config);
-            }
-        }
-        return context;
-    }
-
-    static SSLContext getStrictSSLContext(SSLConfig config) throws GeneralSecurityException, IOException {
-        KeyStore keyStore = KeyStore.getInstance(config.keyStoreType);
-        InputStream keystoreInputStream = new FileInputStream(config.keyStoreLocation);
-        try {
-            keyStore.load(keystoreInputStream, (config.keyStorePassword == null) ? null : config.keyStorePassword.toCharArray());
-        } finally {
-            keystoreInputStream.close();
-        }
-
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(config.keyManagerAlgorithm);
-        keyManagerFactory.init(keyStore, (config.keyManagerPassword == null) ? null : config.keyManagerPassword.toCharArray());
-        KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
-
-        KeyStore trustStore = KeyStore.getInstance(config.trustStoreType);
-        InputStream truststoreInputStream = new FileInputStream(config.trustStoreLocation);
-        try {
-            trustStore.load(truststoreInputStream, (config.trustStorePassword == null) ? null : config.trustStorePassword.toCharArray());
-        } finally {
-            truststoreInputStream.close();
-        }
-
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(config.trustManagerAlgorithm);
-        trustManagerFactory.init(trustStore);
-        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(keyManagers, trustManagers, null);
-
-        return context;
-    }
-
-    static SSLContext getLooseSSLContext() throws GeneralSecurityException {
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, new TrustManager[] { LooseTrustManager.INSTANCE }, new SecureRandom());
-        return sslContext;
-    }
-
+    
     static class LooseTrustManager implements X509TrustManager {
-
-        public static final LooseTrustManager INSTANCE = new LooseTrustManager();
 
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
             return new java.security.cert.X509Certificate[0];
@@ -114,53 +43,29 @@ public class SslUtils {
         }
     }
 
-    private final static class SSLConfig {
-
-        public String keyStoreLocation;
-
-        public String keyStoreType = "JKS";
-
-        public String keyStorePassword = "changeit";
-
-        public String keyManagerAlgorithm = "SunX509";
-
-        public String keyManagerPassword = "changeit";
-
-        public String trustStoreLocation;
-
-        public String trustStoreType = "JKS";
-
-        public String trustStorePassword = "changeit";
-
-        public String trustManagerAlgorithm = "SunX509";
-
-        public SSLConfig() {
-            keyStoreLocation = System.getProperty("javax.net.ssl.keyStore");
-            keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "changeit");
-            keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
-            keyManagerAlgorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
-
-            if (keyManagerAlgorithm == null) {
-                keyManagerAlgorithm = "SunX509";
-            }
-
-            keyManagerPassword = System.getProperty("javax.net.ssl.keyStorePassword", "changeit");
-
-            trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
-            if (trustStoreLocation == null) {
-                trustStoreLocation = keyStoreLocation;
-                trustStorePassword = keyStorePassword;
-                trustStoreType = keyStoreType;
-            } else {
-                trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword", "changeit");
-                trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", KeyStore.getDefaultType());
-            }
-            trustManagerAlgorithm = Security.getProperty("ssl.TrustManagerFactory.algorithm");
-
-            if (trustManagerAlgorithm == null) {
-                trustManagerAlgorithm = "SunX509";
-            }
+    private SSLContext looseTrustManagerSSLContext = looseTrustManagerSSLContext(); 
+    
+    private SSLContext looseTrustManagerSSLContext() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[] { new LooseTrustManager() }, new SecureRandom());
+            return sslContext;
+        } catch (NoSuchAlgorithmException e) {
+           throw new ExceptionInInitializerError(e);
+        } catch (KeyManagementException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
+    
+    private static class SingletonHolder {
+        public static final SslUtils instance = new SslUtils();
+    }
 
+    public static SslUtils getInstance() {
+        return SingletonHolder.instance;
+    }
+
+    public SSLContext getSSLContext(boolean acceptAnyCertificate) throws GeneralSecurityException, IOException {
+        return acceptAnyCertificate? looseTrustManagerSSLContext: SSLContext.getDefault();
+    }
 }

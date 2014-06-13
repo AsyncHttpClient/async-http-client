@@ -25,7 +25,6 @@ import org.asynchttpclient.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,7 +93,6 @@ public class AsyncHttpClientConfig {
     protected ExecutorService applicationThreadPool;
     protected ProxyServerSelector proxyServerSelector;
     protected SSLContext sslContext;
-    protected SSLEngineFactory sslEngineFactory;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
     protected Realm realm;
     protected List<RequestFilter> requestFilters;
@@ -114,6 +112,7 @@ public class AsyncHttpClientConfig {
     protected int spdyInitialWindowSize;
     protected int spdyMaxConcurrentStreams;
     protected TimeConverter timeConverter;
+    protected boolean acceptAnyCertificate;
 
     protected AsyncHttpClientConfig() {
     }
@@ -153,7 +152,8 @@ public class AsyncHttpClientConfig {
             boolean spdyEnabled, //
             int spdyInitialWindowSize, //
             int spdyMaxConcurrentStreams, //
-            TimeConverter timeConverter) {
+            TimeConverter timeConverter, //
+            boolean acceptAnyCertificate) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -169,7 +169,6 @@ public class AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.allowPoolingConnection = keepAlive;
         this.sslContext = sslContext;
-        this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
         this.realm = realm;
         this.requestFilters = requestFilters;
@@ -190,6 +189,7 @@ public class AsyncHttpClientConfig {
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
         this.timeConverter = timeConverter;
+        this.acceptAnyCertificate = acceptAnyCertificate;
         
     }
 
@@ -330,28 +330,6 @@ public class AsyncHttpClientConfig {
      */
     public SSLContext getSSLContext() {
         return sslContext;
-    }
-
-    /**
-     * Return an instance of {@link SSLEngineFactory} used for SSL connection.
-     *
-     * @return an instance of {@link SSLEngineFactory} used for SSL connection.
-     */
-    public SSLEngineFactory getSSLEngineFactory() {
-        if (sslEngineFactory == null) {
-            return new SSLEngineFactory() {
-                public SSLEngine newSSLEngine() {
-                    if (sslContext != null) {
-                        SSLEngine sslEngine = sslContext.createSSLEngine();
-                        sslEngine.setUseClientMode(true);
-                        return sslEngine;
-                    } else {
-                        return null;
-                    }
-                }
-            };
-        }
-        return sslEngineFactory;
     }
 
     /**
@@ -558,6 +536,10 @@ public class AsyncHttpClientConfig {
         return timeConverter;
     }
 
+    public boolean isAcceptAnyCertificate() {
+        return acceptAnyCertificate;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -589,6 +571,7 @@ public class AsyncHttpClientConfig {
         private boolean spdyEnabled = defaultSpdyEnabled();
         private int spdyInitialWindowSize = defaultSpdyInitialWindowSize();
         private int spdyMaxConcurrentStreams = defaultSpdyMaxConcurrentStreams();
+        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
 
         private ScheduledExecutorService reaper;
         private ExecutorService applicationThreadPool;
@@ -1103,6 +1086,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            this.acceptAnyCertificate = acceptAnyCertificate;
+            return this;
+        }
+        
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -1122,7 +1110,6 @@ public class AsyncHttpClientConfig {
             realm = prototype.getRealm();
             requestTimeoutInMs = prototype.getRequestTimeoutInMs();
             sslContext = prototype.getSSLContext();
-            sslEngineFactory = prototype.getSSLEngineFactory();
             userAgent = prototype.getUserAgent();
             redirectEnabled = prototype.isRedirectEnabled();
             compressionEnabled = prototype.isCompressionEnabled();
@@ -1212,7 +1199,8 @@ public class AsyncHttpClientConfig {
                     spdyEnabled, //
                     spdyInitialWindowSize, //
                     spdyMaxConcurrentStreams, //
-                    timeConverter);
+                    timeConverter, //
+                    acceptAnyCertificate);
         }
     }
 }

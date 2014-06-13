@@ -678,6 +678,11 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            configBuilder.setAcceptAnyCertificate(acceptAnyCertificate);
+            return this;
+        }
+
         public SimpleAsyncHttpClient build() {
 
             if (realmBuilder != null) {

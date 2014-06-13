@@ -133,4 +133,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static int defaultSpdyMaxConcurrentStreams() {
         return Integer.getInteger(ASYNC_CLIENT + "spdyMaxConcurrentStreams", 100);
     }
+    
+    public static boolean defaultAcceptAnyCertificate() {
+        return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
+    }
 }
