@@ -34,7 +34,6 @@ public class SslInitializer extends ChannelOutboundHandlerAdapter {
 
     public SslInitializer(Channels channels) {
         this.channels = channels;
-        new Exception().printStackTrace();
     }
 
     @Override
