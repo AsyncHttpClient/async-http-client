@@ -15,11 +15,11 @@
  */
 package org.asynchttpclient.providers.netty.channel;
 
+import static org.asynchttpclient.providers.netty.handler.Processor.newHttpProcessor;
+import static org.asynchttpclient.providers.netty.handler.Processor.newWsProcessor;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.WEBSOCKET;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
-import static org.asynchttpclient.providers.netty.handler.Processor.newHttpProcessor;
-import static org.asynchttpclient.providers.netty.handler.Processor.newWsProcessor;
 
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -202,20 +202,26 @@ public class Channels {
         return nettyTimer;
     }
 
-    private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
+    public SslHandler createSslHandler(String peerHost, int peerPort) throws IOException, GeneralSecurityException {
         
+        SSLEngine sslEngine = null;
         if (nettyProviderConfig.getSslEngineFactory() != null) {
-            return nettyProviderConfig.getSslEngineFactory().newSSLEngine();
+            sslEngine = nettyProviderConfig.getSslEngineFactory().newSSLEngine();
         
         } else {
             SSLContext sslContext = config.getSSLContext();
             if (sslContext == null)
                 sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
 
-            SSLEngine sslEngine = sslContext.createSSLEngine();
+            sslEngine = sslContext.createSSLEngine(peerHost, peerPort);
             sslEngine.setUseClientMode(true);
-            return sslEngine;
         }
+        
+        SslHandler sslHandler = new SslHandler(sslEngine);
+        if (handshakeTimeoutInMillis > 0)
+            sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
+        
+        return sslHandler;
     }
 
     public void configureProcessor(NettyRequestSender requestSender, AtomicBoolean closed) {
@@ -258,13 +264,8 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
 
-                SSLEngine sslEngine = createSSLEngine();
-                SslHandler sslHandler = new SslHandler(sslEngine);
-                if (handshakeTimeoutInMillis > 0)
-                    sslHandler.setHandshakeTimeoutMillis(handshakeTimeoutInMillis);
-
                 ChannelPipeline pipeline = ch.pipeline()//
-                        .addLast(SSL_HANDLER, sslHandler)//
+                        .addLast(SSL_HANDLER, new SslInitializer(Channels.this))
                         .addLast(HTTP_HANDLER, newHttpClientCodec());
 
                 if (config.isCompressionEnabled()) {
@@ -284,7 +285,7 @@ public class Channels {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline()//
-                        .addLast(SSL_HANDLER, new SslHandler(createSSLEngine()))//
+                        .addLast(SSL_HANDLER, new SslInitializer(Channels.this))//
                         .addLast(HTTP_HANDLER, newHttpClientCodec())//
                         .addLast(WS_PROCESSOR, wsProcessor);
 
@@ -330,7 +331,7 @@ public class Channels {
                 pipeline.remove(SSL_HANDLER);
 
         } else if (isSecure)
-            pipeline.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+            pipeline.addFirst(SSL_HANDLER, new SslInitializer(Channels.this));
     }
 
     protected HttpClientCodec newHttpClientCodec() {
@@ -346,7 +347,7 @@ public class Channels {
         }
     }
 
-    public void upgradeProtocol(ChannelPipeline p, String scheme) throws IOException, GeneralSecurityException {
+    public void upgradeProtocol(ChannelPipeline p, String scheme, String host, int port) throws IOException, GeneralSecurityException {
         if (p.get(HTTP_HANDLER) != null) {
             p.remove(HTTP_HANDLER);
         }
@@ -354,7 +355,7 @@ public class Channels {
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, newHttpClientCodec());
-                p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                p.addFirst(SSL_HANDLER, createSslHandler(host, port));
             } else {
                 p.addAfter(SSL_HANDLER, HTTP_HANDLER, newHttpClientCodec());
             }
