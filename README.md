@@ -201,7 +201,7 @@ Here a the few rules we'd like you to respect if you do so:
   * Use a 140 chars line max length
   * Don't use * imports
   * Stick to the org, com, javax, java imports order
-* Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash the them into a single once
+* Your PR can contain multiple commits when submitting, but once it's been reviewed, we'll ask you to squash them into a single one
 * Regarding licensing:
   * You must be the original author of the code you suggest.
   * If not, you have to prove that the original code was published under Apache License 2 and properly mention original copyrights.
