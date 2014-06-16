@@ -1536,7 +1536,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             log.debug(t.getMessage(), t);
         }
 
-        // FIXME why isReadable and not isConnected
         if (!future.getKeepAlive() || !ctx.getChannel().isReadable()) {
             closeChannel(ctx);
         }
