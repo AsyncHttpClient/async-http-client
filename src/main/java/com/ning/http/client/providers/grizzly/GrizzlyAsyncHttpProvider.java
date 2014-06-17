@@ -1127,7 +1127,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     private static final class AsyncHttpClientEventFilter extends HttpClientFilter {
 
-        private final Map<Integer,StatusHandler> HANDLER_MAP = new HashMap<Integer,StatusHandler>();
+        private final Map<Integer, StatusHandler> HANDLER_MAP =
+                new HashMap<Integer, StatusHandler>();
 
 
         private final GrizzlyAsyncHttpProvider provider;
@@ -1145,7 +1146,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     RedirectHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(),
                     RedirectHandler.INSTANCE);
+            HANDLER_MAP.put(HttpStatus.SEE_OTHER_303.getStatusCode(),
+                    RedirectHandler.INSTANCE);
             HANDLER_MAP.put(HttpStatus.TEMPORARY_REDIRECT_307.getStatusCode(),
+                    RedirectHandler.INSTANCE);
+            HANDLER_MAP.put(HttpStatus.PERMANENT_REDIRECT_308.getStatusCode(),
                     RedirectHandler.INSTANCE);
 
         }
@@ -1557,7 +1562,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             return HttpStatus.MOVED_PERMANENTLY_301.statusMatches(status)
                     || HttpStatus.FOUND_302.statusMatches(status)
                     || HttpStatus.SEE_OTHER_303.statusMatches(status)
-                    || HttpStatus.TEMPORARY_REDIRECT_307.statusMatches(status);
+                    || HttpStatus.TEMPORARY_REDIRECT_307.statusMatches(status)
+                    || HttpStatus.PERMANENT_REDIRECT_308.statusMatches(status);
 
         }
 
