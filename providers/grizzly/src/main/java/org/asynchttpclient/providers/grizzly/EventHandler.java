@@ -65,7 +65,9 @@ public final class EventHandler {
         HANDLER_MAP.put(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407.getStatusCode(), ProxyAuthorizationHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.MOVED_PERMANENTLY_301.getStatusCode(), RedirectHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.FOUND_302.getStatusCode(), RedirectHandler.INSTANCE);
+        HANDLER_MAP.put(HttpStatus.SEE_OTHER_303.getStatusCode(), RedirectHandler.INSTANCE);
         HANDLER_MAP.put(HttpStatus.TEMPORARY_REDIRECT_307.getStatusCode(), RedirectHandler.INSTANCE);
+        HANDLER_MAP.put(HttpStatus.PERMANENT_REDIRECT_308.getStatusCode(), RedirectHandler.INSTANCE);
     }
 
     private final AsyncHttpClientConfig config;
@@ -405,7 +407,8 @@ public final class EventHandler {
         return HttpStatus.MOVED_PERMANENTLY_301.statusMatches(status)//
                 || HttpStatus.FOUND_302.statusMatches(status)//
                 || HttpStatus.SEE_OTHER_303.statusMatches(status)//
-                || HttpStatus.TEMPORARY_REDIRECT_307.statusMatches(status);
+                || HttpStatus.TEMPORARY_REDIRECT_307.statusMatches(status)
+                || HttpStatus.PERMANENT_REDIRECT_308.statusMatches(status);
     }
 
     // ----------------------------------------------------- Private Methods
