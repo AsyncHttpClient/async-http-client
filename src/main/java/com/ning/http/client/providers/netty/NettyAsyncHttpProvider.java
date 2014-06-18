@@ -487,6 +487,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             Body body = null;
             if (!nettyRequest.getMethod().equals(HttpMethod.CONNECT)) {
                 BodyGenerator bg = future.getRequest().getBodyGenerator();
+
+                if (bg == null && future.getRequest().getStreamData() != null) {
+                    bg = new InputStreamBodyGenerator(future.getRequest().getStreamData());
+                }
+
                 if (bg != null) {
                     // Netty issue with chunking.
                     if (bg instanceof InputStreamBodyGenerator) {
@@ -834,12 +839,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 byte[] bytes = request.getStringData().getBytes(bodyCharset);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            } else if (request.getStreamData() != null) {
-                int[] lengthWrapper = new int[1];
-                byte[] bytes = AsyncHttpProviderUtils.readFully(request.getStreamData(), lengthWrapper);
-                int length = lengthWrapper[0];
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(length));
-                nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes, 0, length));
             } else if (isNonEmpty(request.getParams())) {
                 StringBuilder sb = new StringBuilder();
                 for (final Entry<String, List<String>> paramEntry : request.getParams()) {
