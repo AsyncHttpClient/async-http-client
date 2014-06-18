@@ -44,35 +44,35 @@ public class MiscUtilTest {
         System.clearProperty(MY_SPECIAL_INT_PROPERTY);
     }
 	
-	 @Test
-	    public void testGetBooleanValue() {
-	        // Setup a AsyncImplHelperMock that returns a mock
-	        // asynchttpclient.properties with a value
-	        // set for 'my.special.int.property' property
-	        Properties properties = new Properties();
-	        properties.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "true");
-	        AsyncImplHelperMock asyncImplHelperMock = new AsyncImplHelperMock(properties);
+	@Test
+    public void testGetBooleanValue() {
+        // Setup a AsyncImplHelperMock that returns a mock
+        // asynchttpclient.properties with a value
+        // set for 'my.special.int.property' property
+        Properties properties = new Properties();
+        properties.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "true");
+        AsyncImplHelperMock asyncImplHelperMock = new AsyncImplHelperMock(properties);
 
-	        
-	        // Assert that the getBooleanValue() method returns TRUE
-	        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
-	        // Set a system property that overrides the value in the
-	        // asynchttpclient.properties
-	        System.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "false");
-	        // Assert false is returned, i.e. system property takes precedence over
-	        // property in asynchttpclient.properties
-	        Assert.assertFalse(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, true));
-	        // Clear the system property
-	        System.clearProperty(MY_SPECIAL_BOOLEAN_PROPERTY);
-	        // Assert that the value set in asynchttpclient.properties is returned
-	        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
-	        // Set a corrupt system property
-	        System.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "corrupt property");
-	        // Assert that the value set in asynchttpclient.properties is returned
-	        // even though corrupt system property is set.
-	        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
-	        System.clearProperty(MY_SPECIAL_BOOLEAN_PROPERTY);
-	    }
+        
+        // Assert that the getBooleanValue() method returns TRUE
+        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
+        // Set a system property that overrides the value in the
+        // asynchttpclient.properties
+        System.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "false");
+        // Assert false is returned, i.e. system property takes precedence over
+        // property in asynchttpclient.properties
+        Assert.assertFalse(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, true));
+        // Clear the system property
+        System.clearProperty(MY_SPECIAL_BOOLEAN_PROPERTY);
+        // Assert that the value set in asynchttpclient.properties is returned
+        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
+        // Set a corrupt system property
+        System.setProperty(MY_SPECIAL_BOOLEAN_PROPERTY, "corrupt property");
+        // Assert that the value set in asynchttpclient.properties is returned
+        // even though corrupt system property is set.
+        Assert.assertTrue(MiscUtil.getBooleanValue(MY_SPECIAL_BOOLEAN_PROPERTY, false));
+        System.clearProperty(MY_SPECIAL_BOOLEAN_PROPERTY);
+    }
 	 
 	 @Test
 	    public void testGetDefaultIntegerValue() {

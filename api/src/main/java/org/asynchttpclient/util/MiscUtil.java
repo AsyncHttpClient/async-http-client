@@ -21,8 +21,8 @@ import java.util.Properties;
 
 
 public class MiscUtil {
-	
-	public final static Logger logger = LoggerFactory.getLogger(MiscUtil.class);
+
+    public final static Logger logger = LoggerFactory.getLogger(MiscUtil.class);
 
     private MiscUtil() {
     }
@@ -47,51 +47,59 @@ public class MiscUtil {
         return map != null && !map.isEmpty();
     }
 
+    //The getBooleanValue() method replaces this and reads the property from properties file
+    //too. Plus has a better check for invalid boolean values.
    /* public static boolean getBoolean(String systemPropName, boolean defaultValue) {
         String systemPropValue = System.getProperty(systemPropName);
         return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
     }*/
 
-	public static Integer getIntValue(String property,int defaultValue){
-		//Read system property and if not null return that.
-		Integer value = Integer.getInteger(property);
-		if(value != null)
-			return value;
-		Properties asyncHttpClientConfigProperties = AsyncImplHelper.getAsyncImplProperties();
-		if(asyncHttpClientConfigProperties!=null){
-			String valueString=asyncHttpClientConfigProperties.getProperty(property);
-			try{
-				//If property is present and is non null parse it.
-				if(valueString != null)
-					return Integer.parseInt(valueString);
-			}catch(NumberFormatException e){
-				//If property couldn't be parsed log the error message and return default value.
-				logger.error("Property : " + property + " has value = " + valueString + 
-						" which couldn't be parsed to an int value. Returning default value: " + defaultValue,e); 
-			}        		
-		}
-		return defaultValue;
-	}
+    public static Integer getIntValue(String property,int defaultValue){
+        //Read system property and if not null return that.
+        Integer value = Integer.getInteger(property);
+        if(value != null)
+            return value;
+        Properties asyncHttpClientConfigProperties = AsyncImplHelper.getAsyncImplProperties();
+        if(asyncHttpClientConfigProperties!=null){
+            String valueString=asyncHttpClientConfigProperties.getProperty(property);
+            try{
+                //If property is present and is non null parse it.
+                if(valueString != null)
+                    return Integer.parseInt(valueString);
+            }catch(NumberFormatException e){
+                //If property couldn't be parsed log the error message and return default value.
+                logger.error("Property : " + property + " has value = " + valueString +
+                        " which couldn't be parsed to an int value. Returning default value: " + defaultValue,e);
+            }
+        }
+        return defaultValue;
+    }
 
-	public static Boolean getBooleanValue(String property,boolean defaultValue){
-		String value = System.getProperty(property);
-		Properties asyncHttpClientConfigProperties = AsyncImplHelper.getAsyncImplProperties();
-		//If system property is invalid and property file is present then read value
-		//from property file
-		if(!MiscUtil.isValidBooleanValue(value) && asyncHttpClientConfigProperties!=null)
-			value=asyncHttpClientConfigProperties.getProperty(property);
-		//If valid value has been found return that value
-		if(MiscUtil.isValidBooleanValue(value))
-	        return Boolean.parseBoolean(value); 
-		//If a value has been specified but can't be parsed into a boolean log a message
-		//stating that value is unparseable and default values are being used.
-	    if(value != null)
-	        logger.error("Property : " + property + " has value = " + value + 
-	                " which couldn't be parsed to an boolean value. Returning default value: " + defaultValue);
-	    return defaultValue;            
-	}
+    private static boolean isValidBooleanValue(String value){
+        return value != null && ("true".equalsIgnoreCase(value)||"false".equalsIgnoreCase(value));
+    }
 
-	private static boolean isValidBooleanValue(String value){
-	    return value != null && ("true".equalsIgnoreCase(value)||"false".equalsIgnoreCase(value));
-	}
+    public static Boolean getBooleanValue(String property,boolean defaultValue){
+
+        // get from System property first
+        String value = System.getProperty(property);
+        if(isValidBooleanValue(value))
+               return Boolean.parseBoolean(value);
+
+        // get from property file
+        Properties asyncHttpClientConfigProperties = AsyncImplHelper.getAsyncImplProperties();
+        if(asyncHttpClientConfigProperties!=null){
+               value=asyncHttpClientConfigProperties.getProperty(property);
+               if(isValidBooleanValue(value))
+                     return Boolean.parseBoolean(value);
+        }
+
+        //have to use the default value now
+        if(value != null)
+            logger.error("Property : " + property + " has value = " + value +
+                     " which couldn't be parsed to an boolean value. Returning default value: " + defaultValue);
+
+        return defaultValue;
+ }
+
 }
