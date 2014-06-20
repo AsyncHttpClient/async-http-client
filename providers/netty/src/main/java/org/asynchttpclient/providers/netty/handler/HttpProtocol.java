@@ -220,7 +220,7 @@ final class HttpProtocol extends Protocol {
                 return requestURI.toString();
             }
         } else {
-            if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
+            if (realm.isOmitQuery() || !isNonEmpty(requestURI.getQuery())) {
                 return requestURI.getPath();
             } else {
                 return requestURI.getPath() + "?" + requestURI.getQuery();
