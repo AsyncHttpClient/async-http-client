@@ -2035,7 +2035,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 return requestURI.toString();
             }
         } else {
-            if (realm.isOmitQuery() && MiscUtil.isNonEmpty(requestURI.getQuery())) {
+            if (realm.isOmitQuery() || !MiscUtil.isNonEmpty(requestURI.getQuery())) {
                 return requestURI.getPath();
             } else {
                 return requestURI.getPath() + "?" + requestURI.getQuery();
