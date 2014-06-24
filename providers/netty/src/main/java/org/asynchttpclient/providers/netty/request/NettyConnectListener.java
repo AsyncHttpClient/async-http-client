@@ -33,7 +33,6 @@ import io.netty.handler.ssl.SslHandler;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;

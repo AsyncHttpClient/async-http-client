@@ -81,6 +81,7 @@ public class MiscUtil {
         return value != null && ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value));
     }
 
+
     public static Boolean getBooleanValue(String property, boolean defaultValue) {
 
         // get from System property first
@@ -102,6 +103,11 @@ public class MiscUtil {
                             + " which couldn't be parsed to an boolean value. Returning default value: " + defaultValue);
 
         return defaultValue;
+    }
+
+
+    public static <T> T withDefault(T value, T defaults) {
+        return value != null? value : value;
     }
 
 }

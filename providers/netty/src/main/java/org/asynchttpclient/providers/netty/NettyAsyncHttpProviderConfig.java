@@ -17,6 +17,7 @@
 package org.asynchttpclient.providers.netty;
 
 import org.asynchttpclient.AsyncHttpProviderConfig;
+import org.asynchttpclient.SSLEngineFactory;
 import org.asynchttpclient.providers.netty.channel.ChannelPool;
 import org.asynchttpclient.providers.netty.response.EagerResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.LazyResponseBodyPart;
@@ -92,6 +93,8 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
     private Timer nettyTimer;
 
     private long handshakeTimeoutInMillis;
+
+    private SSLEngineFactory sslEngineFactory;
 
     public NettyAsyncHttpProviderConfig() {
         properties.put(REUSE_ADDRESS, Boolean.FALSE);
@@ -249,6 +252,14 @@ public class NettyAsyncHttpProviderConfig implements AsyncHttpProviderConfig<Str
 
     public void setHandshakeTimeoutInMillis(long handshakeTimeoutInMillis) {
         this.handshakeTimeoutInMillis = handshakeTimeoutInMillis;
+    }
+    
+    public SSLEngineFactory getSslEngineFactory() {
+        return sslEngineFactory;
+    }
+
+    public void setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
+        this.sslEngineFactory = sslEngineFactory;
     }
 
     public static interface AdditionalChannelInitializer {
