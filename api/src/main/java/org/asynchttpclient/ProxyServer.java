@@ -66,7 +66,7 @@ public class ProxyServer {
         this.port = port;
         this.principal = principal;
         this.password = password;
-        this.uri = AsyncHttpProviderUtils.createUri(toString());
+        this.uri = AsyncHttpProviderUtils.createNonEmptyPathURI(toString());
     }
 
     public ProxyServer(final String host, final int port, String principal, String password) {

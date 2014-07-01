@@ -48,7 +48,7 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    public final static URI createUri(String u) {
+    public final static URI createNonEmptyPathURI(String u) {
         URI uri = URI.create(u);
         validateSupportedScheme(uri);
 
@@ -62,10 +62,6 @@ public class AsyncHttpProviderUtils {
         }
 
         return uri;
-    }
-
-    public static String getBaseUrl(String url) {
-        return getBaseUrl(createUri(url));
     }
 
     public final static String getBaseUrl(URI uri) {
@@ -202,19 +198,13 @@ public class AsyncHttpProviderUtils {
                     // Quite a lot of sites have charset="CHARSET",
                     // e.g. charset="utf-8". Note the quotes. This is
                     // not correct, but client should be able to handle
-                    // it (all browsers do, Apache HTTP Client and Grizzly
-                    // strip it by default)
+                    // it (all browsers do, Grizzly strips it by default)
                     // This is a poor man's trim("\"").trim("'")
                     return charset.replaceAll("\"", "").replaceAll("'", "");
                 }
             }
         }
         return null;
-    }
-
-    public static int secondsFromNow(long timeMillis) {
-        long maxAgeMillis = timeMillis - System.currentTimeMillis();
-        return (int) (maxAgeMillis / 1000) + (maxAgeMillis % 1000 != 0 ? 1 : 0);
     }
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
