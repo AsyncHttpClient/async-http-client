@@ -60,6 +60,26 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
         }
     }
 
+    public FluentCaseInsensitiveStringsMap add(String key, String value) {
+        if (key != null) {
+            String lcKey = key.toLowerCase(Locale.ENGLISH);
+            String realKey = keyLookup.get(lcKey);
+            
+            List<String> curValues = null;
+            if (realKey == null) {
+                keyLookup.put(lcKey, key);
+                curValues = new ArrayList<String>();
+                values.put(key, curValues);
+            } else {
+                curValues = values.get(realKey);
+            }
+
+            String nonNullValue = value != null? value : "";
+            curValues.add(nonNullValue);
+        }
+        return this;
+    }
+
     /**
      * Adds the specified values and returns this object.
      *
