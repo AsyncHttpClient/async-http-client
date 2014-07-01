@@ -126,9 +126,9 @@ public interface Request {
     BodyGenerator getBodyGenerator();
 
     /**
-     * Return the current size of the content-lenght header based on the body's size.
+     * Return the current size of the content-length header based on the body's size.
      *
-     * @return the current size of the content-lenght header based on the body's size.
+     * @return the current size of the content-length header based on the body's size.
      */
     long getContentLength();
 
