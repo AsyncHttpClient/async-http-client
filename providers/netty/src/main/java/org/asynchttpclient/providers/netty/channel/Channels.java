@@ -296,8 +296,8 @@ public class Channels {
         });
     }
 
-    public Bootstrap getBootstrap(String url, boolean useSSl, boolean useProxy) {
-        return (url.startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap)
+    public Bootstrap getBootstrap(URI uri, boolean useSSl, boolean useProxy) {
+        return (uri.getScheme().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap)
                 : (useSSl ? secureBootstrap : plainBootstrap);
     }
 

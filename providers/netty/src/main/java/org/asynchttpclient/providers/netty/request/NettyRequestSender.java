@@ -219,7 +219,7 @@ public class NettyRequestSender {
         // Do not throw an exception when we need an extra connection for a redirect
         // FIXME why? This violate the max connection per host handling, right?
         boolean acquiredConnection = !reclaimCache && channels.acquireConnection(asyncHandler);
-        Bootstrap bootstrap = channels.getBootstrap(request.getUrl(), useSSl, useProxy);
+        Bootstrap bootstrap = channels.getBootstrap(request.getURI(), useSSl, useProxy);
 
         NettyConnectListener<T> connectListener = new NettyConnectListener<T>(config, this, future);
 
@@ -349,7 +349,7 @@ public class NettyRequestSender {
         }
 
         // FIXME really useful? Why not do this check when building the request?
-        if (request.getUrl().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
+        if (request.getURI().getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
             throw new IOException("WebSocket method must be a GET");
         }
 

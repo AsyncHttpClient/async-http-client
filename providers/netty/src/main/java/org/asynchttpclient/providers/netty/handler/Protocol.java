@@ -117,7 +117,7 @@ public abstract class Protocol {
 
                     future.setURI(uri);
                     String newUrl = uri.toString();
-                    if (request.getUrl().startsWith(WEBSOCKET)) {
+                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replaceFirst(HTTP, WEBSOCKET);
                     }
 

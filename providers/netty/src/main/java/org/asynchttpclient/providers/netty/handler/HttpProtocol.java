@@ -257,7 +257,7 @@ final class HttpProtocol extends Protocol {
                 Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(realmURI).build();
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
 
-                LOGGER.debug("Sending authentication to {}", request.getUrl());
+                LOGGER.debug("Sending authentication to {}", request.getURI());
                 Callback callback = new Callback(future) {
                     public void call() throws Exception {
                         channels.drainChannel(channel, future);
@@ -302,7 +302,7 @@ final class HttpProtocol extends Protocol {
         if (statusCode == PROXY_AUTHENTICATION_REQUIRED.code() && realm != null) {
             List<String> proxyAuthenticateHeaders = response.headers().getAll(HttpHeaders.Names.PROXY_AUTHENTICATE);
             if (!proxyAuthenticateHeaders.isEmpty() && !future.getAndSetAuth(true)) {
-                LOGGER.debug("Sending proxy authentication to {}", request.getUrl());
+                LOGGER.debug("Sending proxy authentication to {}", request.getURI());
 
                 future.setState(NettyResponseFuture.STATE.NEW);
                 Realm newRealm = null;
@@ -346,10 +346,9 @@ final class HttpProtocol extends Protocol {
             }
 
             try {
-                LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                
                 URI requestURI = request.getURI();
                 String scheme = requestURI.getScheme();
+                LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
                 String host = AsyncHttpProviderUtils.getHost(requestURI);
                 int port = AsyncHttpProviderUtils.getPort(requestURI);
                 

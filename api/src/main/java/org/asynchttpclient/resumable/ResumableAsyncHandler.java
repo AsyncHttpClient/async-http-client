@@ -197,8 +197,9 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      */
     public Request adjustRequestRange(Request request) {
 
-        if (resumableIndex.get(request.getUrl()) != null) {
-            byteTransferred.set(resumableIndex.get(request.getUrl()));
+        Long ri = resumableIndex.get(request.getUrl());
+        if (ri != null) {
+            byteTransferred.set(ri);
         }
 
         // The Resumbale
