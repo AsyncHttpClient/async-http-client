@@ -174,8 +174,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
-            StringBuilder builder = new StringBuilder();
-            builder.append(originalUri.getScheme()).append("://").append(originalUri.getRawAuthority());
+            StringBuilder builder = new StringBuilder()//
+                    .append(originalUri.getScheme())//
+                    .append("://")//
+                    .append(originalUri.getRawAuthority());
             if (isNonEmpty(originalUri.getRawPath())) {
                 builder.append(originalUri.getRawPath());
             } else {
@@ -630,8 +632,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public Request build() {
-
+    private void executeSignatureCalculator() {
         /* Let's first calculate and inject signature, before finalizing actual build
          * (order does not matter with current implementation but may in future)
          */
@@ -644,7 +645,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
             signatureCalculator.calculateAndAddSignature(url, request, this);
         }
-
+    }
+    
+    private void computeRequestCharset() {
         try {
             final String contentType = request.headers.getFirstValue("Content-Type");
             if (contentType != null) {
@@ -658,6 +661,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         } catch (Throwable e) {
             // NoOp -- we can't fix the Content-Type or charset from here
         }
+    }
+    
+    private void computeRequestLength() {
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
             final String contentLength = request.headers.getFirstValue("Content-Length");
@@ -670,6 +676,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
         }
+    }
+    
+    public Request build() {
+        executeSignatureCalculator();
+        computeRequestCharset();
+        computeRequestLength();
         return request;
     }
 
