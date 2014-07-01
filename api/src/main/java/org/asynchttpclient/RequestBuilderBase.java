@@ -634,8 +634,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public Request build() {
-        
+    private void executeSignatureCalculator() {
         /* Let's first calculate and inject signature, before finalizing actual build
          * (order does not matter with current implementation but may in future)
          */
@@ -647,8 +646,28 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 url = url.substring(0, i);
             }
             signatureCalculator.calculateAndAddSignature(url, request, this);
+        } 
+    }
+
+    private void computeRequestCharset() {
+        if (request.charset != null) {
+            try {
+                final String contentType = request.headers.getFirstValue("Content-Type");
+                if (contentType != null) {
+                    final String charset = AsyncHttpProviderUtils.parseCharset(contentType);
+                    if (charset != null) {
+                        // ensure that if charset is provided with the Content-Type header,
+                        // we propagate that down to the charset of the Request object
+                        request.charset = charset;
+                    }
+                }
+            } catch (Throwable e) {
+                // NoOp -- we can't fix the Content-Type or charset from here
+            }
         }
-        
+    }
+
+    private void computeRequestContentLength() {
         if (request.length < 0 && request.streamData == null) {
             // can't concatenate content-length
             String contentLength = null;
@@ -664,6 +683,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 }
             }
         }
+    }
+
+    public Request build() {
+        
+        executeSignatureCalculator();
+        computeRequestCharset();
+        computeRequestContentLength();
+
         if (request.cookies != null) {
             request.cookies = Collections.unmodifiableCollection(request.cookies);
         }
