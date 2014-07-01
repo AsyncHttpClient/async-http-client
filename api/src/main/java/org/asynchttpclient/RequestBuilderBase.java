@@ -57,7 +57,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private InetAddress address;
         private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers;
-        private Collection<Cookie> cookies;
+        private ArrayList<Cookie> cookies;
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
@@ -227,10 +227,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         @Override
         public Collection<Cookie> getCookies() {
-            if (cookies == null) {
-                cookies = Collections.unmodifiableCollection(Collections.<Cookie> emptyList());
-            }
-            return cookies;
+            return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
         }
 
         @Override
@@ -460,16 +457,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setHeaders(FluentCaseInsensitiveStringsMap headers) {
-        if (headers != null) {
+        if (headers != null)
             request.headers = new FluentCaseInsensitiveStringsMap(headers);
-        }
         return derived.cast(this);
     }
 
     public T setHeaders(Map<String, Collection<String>> headers) {
-        if (headers != null) {
+        if (headers != null)
             request.headers = new FluentCaseInsensitiveStringsMap(headers);
-        }
         return derived.cast(this);
     }
 
@@ -478,20 +473,45 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    private void lazyInitCookies() {
+        if (request.cookies == null)
+            request.cookies = new ArrayList<Cookie>(3);
+    }
+    
     public T addCookie(Cookie cookie) {
-        if (request.cookies == null) {
-            request.cookies = new ArrayList<Cookie>();
-        }
+        lazyInitCookies();
         request.cookies.add(cookie);
         return derived.cast(this);
     }
 
-    public void resetQueryParameters() {
-        request.queryParams = null;
+    public void resetCookies() {
+        if (request.cookies != null)
+            request.cookies.clear();
     }
 
-    public void resetCookies() {
-        request.cookies.clear();
+    public T addOrReplaceCookie(Cookie cookie) {
+        String cookieKey = cookie.getName();
+        boolean replace = false;
+        int index = 0;
+        lazyInitCookies();
+        for (Cookie c : request.cookies) {
+            if (c.getName().equals(cookieKey)) {
+                replace = true;
+                break;
+            }
+
+            index++;
+        }
+        if (replace)
+            request.cookies.set(index, cookie);
+        else
+            request.cookies.add(cookie);
+        return derived.cast(this);
+    }
+    
+    
+    public void resetQueryParameters() {
+        request.queryParams = null;
     }
 
     public void resetParameters() {
@@ -544,28 +564,22 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addQueryParameter(String name, String value) {
-        if (request.queryParams == null) {
+        if (request.queryParams == null)
             request.queryParams = new FluentStringsMap();
-        }
         request.queryParams.add(name, value);
         return derived.cast(this);
     }
 
     public T setQueryParameters(FluentStringsMap parameters) {
-        if (parameters == null) {
-            request.queryParams = null;
-        } else {
-            request.queryParams = new FluentStringsMap(parameters);
-        }
+        request.queryParams = parameters != null? new FluentStringsMap(parameters) : null;
         return derived.cast(this);
     }
 
     public T addParameter(String key, String value) {
         resetNonMultipartData();
         resetMultipartData();
-        if (request.params == null) {
+        if (request.params == null)
             request.params = new FluentStringsMap();
-        }
         request.params.add(key, value);
         return derived.cast(this);
     }
@@ -587,9 +601,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T addBodyPart(Part part) {
         resetParameters();
         resetNonMultipartData();
-        if (request.parts == null) {
+        if (request.parts == null)
             request.parts = new ArrayList<Part>();
-        }
         request.parts.add(part);
         return derived.cast(this);
     }
@@ -686,39 +699,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public Request build() {
-        
         executeSignatureCalculator();
         computeRequestCharset();
         computeRequestContentLength();
-
-        if (request.cookies != null) {
-            request.cookies = Collections.unmodifiableCollection(request.cookies);
-        }
         return request;
-    }
-
-    public T addOrReplaceCookie(Cookie cookie) {
-        String cookieKey = cookie.getName();
-        boolean replace = false;
-        int index = 0;
-        if (request.cookies == null) {
-            request.cookies = new ArrayList<Cookie>();
-            request.cookies.add(cookie);
-            return derived.cast(this);
-        }
-        for (Cookie c : request.cookies) {
-            if (c.getName().equals(cookieKey)) {
-                replace = true;
-                break;
-            }
-
-            index++;
-        }
-        if (replace) {
-            ((ArrayList<Cookie>) request.cookies).set(index, cookie);
-        } else {
-            request.cookies.add(cookie);
-        }
-        return derived.cast(this);
     }
 }
