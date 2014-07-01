@@ -986,7 +986,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throw new IOException("Closed");
         }
 
-        if (request.getUrl().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
+        URI uri = useRawUrl ? request.getRawURI() : request.getURI();
+        
+        if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
             throw new IOException("WebSocket method must be a GET");
         }
 
@@ -994,8 +996,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         boolean resultOfAConnect = f != null && f.getNettyRequest() != null && f.getNettyRequest().getMethod().equals(HttpMethod.CONNECT);
         boolean useProxy = proxyServer != null && !resultOfAConnect;
-
-        URI uri = useRawUrl ? request.getRawURI() : request.getURI();
 
         ChannelBuffer bufferedBytes = null;
         if (f != null && f.getRequest().getFile() == null && !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
@@ -1069,7 +1069,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
 
         ChannelFuture channelFuture;
-        ClientBootstrap bootstrap = (request.getUrl().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap
+        ClientBootstrap bootstrap = (request.getURI().getScheme().startsWith(WEBSOCKET) && !useProxy) ? (useSSl ? secureWebSocketBootstrap : webSocketBootstrap) : (useSSl ? secureBootstrap
                 : plainBootstrap);
         bootstrap.setOption("connectTimeoutMillis", config.getConnectionTimeoutInMs());
 
@@ -1977,7 +1977,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final String initialPoolKey = getPoolKey(future);
                     future.setURI(uri);
                     String newUrl = uri.toString();
-                    if (request.getUrl().startsWith(WEBSOCKET)) {
+                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
                         newUrl = newUrl.replace(HTTP, WEBSOCKET);
                     }
 
@@ -2128,7 +2128,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         String realmURI = computeRealmURI(newRealm, request.getURI());
                         final Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(realmURI).build();
 
-                        log.debug("Sending authentication to {}", request.getUrl());
+                        log.debug("Sending authentication to {}", request.getURI());
                         AsyncCallable ac = new AsyncCallable(future) {
                             public Object call() throws Exception {
                                 drainChannel(ctx, future);
@@ -2156,7 +2156,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     List<String> proxyAuth = getAuthorizationToken(response.getHeaders(), HttpHeaders.Names.PROXY_AUTHENTICATE);
                     if (statusCode == 407 && realm != null && !proxyAuth.isEmpty() && !future.getAndSetAuth(true)) {
 
-                        log.debug("Sending proxy authentication to {}", request.getUrl());
+                        log.debug("Sending proxy authentication to {}", request.getURI());
 
                         future.setState(NettyResponseFuture.STATE.NEW);
                         Realm newRealm = null;
@@ -2188,8 +2188,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         }
 
                         try {
-                            log.debug("Connecting to proxy {} for scheme {}", proxyServer, request.getUrl());
-                            upgradeProtocol(ctx.getChannel().getPipeline(), request.getURI().getScheme());
+                            String scheme = request.getURI().getScheme();
+                            log.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
+                            upgradeProtocol(ctx.getChannel().getPipeline(), scheme);
                         } catch (Throwable ex) {
                             abort(future, ex);
                         }
