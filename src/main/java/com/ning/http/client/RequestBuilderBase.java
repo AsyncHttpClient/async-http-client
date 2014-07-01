@@ -57,7 +57,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private InetAddress address;
         private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-        private Collection<Cookie> cookies = new ArrayList<Cookie>();
+        private ArrayList<Cookie> cookies;
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
@@ -226,7 +226,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         /* @Override */
         public Collection<Cookie> getCookies() {
-            return Collections.unmodifiableCollection(cookies);
+            return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
         }
 
         /* @Override */
@@ -460,17 +460,49 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    private void lazyInitCookies() {
+        if (request.cookies == null)
+            request.cookies = new ArrayList<Cookie>(3);
+    }
+
+    public T setCookies(Collection<Cookie> cookies) {
+        request.cookies = new ArrayList<Cookie>(cookies);
+        return derived.cast(this);
+    }
+
     public T addCookie(Cookie cookie) {
+        lazyInitCookies();
         request.cookies.add(cookie);
         return derived.cast(this);
     }
 
-    public void resetQueryParameters() {
-        request.queryParams = null;
+    public T addOrReplaceCookie(Cookie cookie) {
+        String cookieKey = cookie.getName();
+        boolean replace = false;
+        int index = 0;
+        lazyInitCookies();
+        for (Cookie c : request.cookies) {
+            if (c.getName().equals(cookieKey)) {
+                replace = true;
+                break;
+            }
+
+            index++;
+        }
+        if (replace)
+            request.cookies.set(index, cookie);
+        else
+            request.cookies.add(cookie);
+        return derived.cast(this);
     }
     
     public void resetCookies() {
-        request.cookies.clear();;
+        if (request.cookies != null)
+            request.cookies.clear();
+    }
+    
+    public void resetQueryParameters() {
+        request.queryParams = null;
     }
     
     public void resetParameters() {
@@ -685,25 +717,5 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         computeRequestCharset();
         computeRequestLength();
         return request;
-    }
-
-    public T addOrReplaceCookie(Cookie cookie) {
-        String cookieKey = cookie.getName();
-        boolean replace = false;
-        int index = 0;
-        for (Cookie c : request.cookies) {
-            if (c.getName().equals(cookieKey)) {
-                replace = true;
-                break;
-            }
-
-            index++;
-        }
-        if (replace) {
-            ((ArrayList<Cookie>) request.cookies).set(index, cookie);
-        } else {
-            request.cookies.add(cookie);
-        }
-        return derived.cast(this);
     }
 }
