@@ -650,7 +650,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private void computeRequestCharset() {
-        if (request.charset != null) {
+        if (request.charset == null) {
             try {
                 final String contentType = request.headers.getFirstValue("Content-Type");
                 if (contentType != null) {
