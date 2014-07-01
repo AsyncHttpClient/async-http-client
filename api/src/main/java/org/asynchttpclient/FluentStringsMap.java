@@ -58,8 +58,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * Adds the specified values and returns this object.
      *
      * @param key    The key
-     * @param values The value(s); if null then this method has no effect. Use the empty string to
-     *               generate an empty value
+     * @param values The value(s); if the array is null then this method has no effect
      * @return This object
      */
     public FluentStringsMap add(String key, String... values) {
@@ -73,8 +72,7 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
      * Adds the specified values and returns this object.
      *
      * @param key    The key
-     * @param values The value(s); if null then this method has no effect. Use an empty collection
-     *               to generate an empty value
+     * @param values The value(s); if the array is null then this method has no effect
      * @return This object
      */
     public FluentStringsMap add(String key, Collection<String> values) {

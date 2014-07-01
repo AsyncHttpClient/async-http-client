@@ -64,8 +64,7 @@ public class FluentCaseInsensitiveStringsMap implements Map<String, List<String>
      * Adds the specified values and returns this object.
      *
      * @param key    The key
-     * @param values The value(s); if null then this method has no effect. Use the empty string to
-     *               generate an empty value
+     * @param values The value(s); if the array is null then this method has no effect. Individual null values are turned into empty strings
      * @return This object
      */
     public FluentCaseInsensitiveStringsMap add(String key, String... values) {
