@@ -298,7 +298,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         public boolean isRedirectEnabled() {
-            return (followRedirects != null && followRedirects);
+            return followRedirects != null && followRedirects;
         }
 
         public boolean isRedirectOverrideSet() {

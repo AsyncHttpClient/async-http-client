@@ -995,12 +995,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         boolean resultOfAConnect = f != null && f.getNettyRequest() != null && f.getNettyRequest().getMethod().equals(HttpMethod.CONNECT);
         boolean useProxy = proxyServer != null && !resultOfAConnect;
 
-        URI uri;
-        if (useRawUrl) {
-            uri = request.getRawURI();
-        } else {
-            uri = request.getURI();
-        }
+        URI uri = useRawUrl ? request.getRawURI() : request.getURI();
+
         ChannelBuffer bufferedBytes = null;
         if (f != null && f.getRequest().getFile() == null && !f.getNettyRequest().getMethod().getName().equals(HttpMethod.CONNECT.getName())) {
             bufferedBytes = f.getNettyRequest().getContent();

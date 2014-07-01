@@ -57,26 +57,20 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    public final static URI createUri(String u) {
+    public final static URI createNonEmptyPathURI(String u) {
         URI uri = URI.create(u);
         validateSupportedScheme(uri);
 
         String path = uri.getPath();
         if (path == null) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ", must be non-null");
+            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ", must be non-null");
         } else if (isNonEmpty(path) && path.charAt(0) != '/') {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri
-                    + ". must start with a '/'");
+            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ". must start with a '/'");
         } else if (!isNonEmpty(path)) {
             return URI.create(u + "/");
         }
 
         return uri;
-    }
-
-    public static String getBaseUrl(String url) {
-        return getBaseUrl(createUri(url));
     }
 
     public final static String getBaseUrl(URI uri) {

@@ -465,9 +465,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             try {
                 URI uri = null;
                 try {
-                    uri = AsyncHttpProviderUtils.createUri(request.getRawUrl());
+                    uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getRawUrl());
                 } catch (IllegalArgumentException u) {
-                    uri = AsyncHttpProviderUtils.createUri(request.getUrl());
+                    uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getUrl());
                 }
 
                 int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
