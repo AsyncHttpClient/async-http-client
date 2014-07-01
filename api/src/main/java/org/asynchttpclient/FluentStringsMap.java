@@ -54,6 +54,19 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         }
     }
 
+    public FluentStringsMap add(String key, String value) {
+        if (key != null) {
+            List<String> curValues = values.get(key);
+
+            if (curValues == null) {
+                curValues = new ArrayList<String>(1);
+                values.put(key, curValues);
+            }
+            curValues.add(value);
+        }
+        return this;
+    }
+
     /**
      * Adds the specified values and returns this object.
      *
