@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
-public class UrlComponentsTest {
+public class UriComponentsTest {
 
     @Test
     public void testSimpleParsing() {
