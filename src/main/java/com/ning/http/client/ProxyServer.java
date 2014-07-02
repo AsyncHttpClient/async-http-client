@@ -16,12 +16,9 @@
  */
 package com.ning.http.client;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.ning.http.util.AsyncHttpProviderUtils;
 
 /**
  * Represents a proxy server.
@@ -53,7 +50,7 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private final int port;
-    private final URI uri;
+    private final String url;
     private String encoding = "UTF-8";
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
 
@@ -63,7 +60,7 @@ public class ProxyServer {
         this.port = port;
         this.principal = principal;
         this.password = password;
-        uri = AsyncHttpProviderUtils.createNonEmptyPathURI(toString());
+        this.url = protocol + "://" + host + ":" + port;
     }
 
     public ProxyServer(final String host, final int port, String principal, String password) {
@@ -102,10 +99,6 @@ public class ProxyServer {
         return password;
     }
 
-    public URI getURI() {
-        return uri;
-    }
-
     public ProxyServer setEncoding(String encoding) {
         this.encoding = encoding;
         return this;
@@ -138,9 +131,13 @@ public class ProxyServer {
         return ntlmDomain;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     @Override
     public String toString() {
-        return protocol + "://" + host + ":" + port;
+        return url;
     }
 }
 

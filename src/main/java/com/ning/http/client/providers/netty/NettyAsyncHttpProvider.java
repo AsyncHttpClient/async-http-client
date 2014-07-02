@@ -1329,7 +1329,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     
     private String getPoolKey(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
         String serverPart = strategy.getKey(uri);
-        return proxy != null ? AsyncHttpProviderUtils.getBaseUrl(proxy.getURI()) + serverPart : serverPart;
+        return proxy != null ? proxy.getUrl() + serverPart : serverPart;
     }
 
     private void drainChannel(final ChannelHandlerContext ctx, final NettyResponseFuture<?> future) {
