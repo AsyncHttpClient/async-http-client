@@ -514,17 +514,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>com.e-movimento.tinytools</groupId>
-          <artifactId>privilegedaccessor</artifactId>
-          <version>${privilegedaccessor.version}</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>com.googlecode.jmockit</groupId>
-          <artifactId>jmockit</artifactId>
-          <version>${jmockit.version}</version>
-          <scope>test</scope>
-        </dependency>
+		  <groupId>com.e-movimento.tinytools</groupId>
+		  <artifactId>privilegedaccessor</artifactId>
+		  <version>${privilegedaccessor.version}</version>
+		  <scope>test</scope>
+		</dependency>
     </dependencies>
     <properties>
         <distMgmtSnapshotsUrl>http://oss.sonatype.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
@@ -539,7 +533,6 @@
         <tomcat.version>6.0.29</tomcat.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-fileupload.version>1.3</commons-fileupload.version>
-        <jmockit.version>1.5</jmockit.version>
         <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
     </properties>
 </project>
