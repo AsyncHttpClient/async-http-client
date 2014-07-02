@@ -12,13 +12,18 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtil.getBoolean;
 
+
+import static org.asynchttpclient.util.MiscUtil.getBooleanValue;
+import static org.asynchttpclient.util.MiscUtil.getIntValue;
 import org.asynchttpclient.util.DefaultHostnameVerifier;
 
 import javax.net.ssl.HostnameVerifier;
 
+
+
 public final class AsyncHttpClientConfigDefaults {
+
 
     private AsyncHttpClientConfigDefaults() {
     }
@@ -26,47 +31,47 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String ASYNC_CLIENT = AsyncHttpClientConfig.class.getName() + ".";
 
     public static int defaultMaxTotalConnections() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxTotalConnections", -1);
+        return getIntValue(ASYNC_CLIENT + "maxTotalConnections", -1);
     }
 
     public static int defaultMaxConnectionPerHost() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxConnectionsPerHost", -1);
+        return getIntValue(ASYNC_CLIENT + "maxConnectionsPerHost", -1);
     }
 
     public static int defaultConnectionTimeOutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "connectionTimeoutInMs", 60 * 1000);
+        return getIntValue(ASYNC_CLIENT + "connectionTimeoutInMs", 60 * 1000);
     }
 
     public static int defaultIdleConnectionInPoolTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "idleConnectionInPoolTimeoutInMs", 60 * 1000);
+        return getIntValue(ASYNC_CLIENT + "idleConnectionInPoolTimeoutInMs", 60 * 1000);
     }
 
     public static int defaultIdleConnectionTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "idleConnectionTimeoutInMs", 60 * 1000);
+        return getIntValue(ASYNC_CLIENT + "idleConnectionTimeoutInMs", 60 * 1000);
     }
 
     public static int defaultRequestTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "requestTimeoutInMs", 60 * 1000);
+        return getIntValue(ASYNC_CLIENT + "requestTimeoutInMs", 60 * 1000);
     }
 
     public static int defaultWebSocketIdleTimeoutInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "webSocketTimoutInMS", 15 * 60 * 1000);
+        return getIntValue(ASYNC_CLIENT + "webSocketTimoutInMS", 15 * 60 * 1000);
     }
 
     public static int defaultMaxConnectionLifeTimeInMs() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxConnectionLifeTimeInMs", -1);
+        return getIntValue(ASYNC_CLIENT + "maxConnectionLifeTimeInMs", -1);
     }
 
     public static boolean defaultRedirectEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "redirectsEnabled");
+        return getBooleanValue(ASYNC_CLIENT + "redirectsEnabled",false);
     }
 
     public static int defaultMaxRedirects() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxRedirects", 5);
+        return getIntValue(ASYNC_CLIENT + "maxRedirects", 5);
     }
 
     public static boolean defaultCompressionEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "compressionEnabled");
+        return getBooleanValue(ASYNC_CLIENT + "compressionEnabled",false);
     }
 
     public static String defaultUserAgent() {
@@ -74,48 +79,48 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static int defaultIoThreadMultiplier() {
-        return Integer.getInteger(ASYNC_CLIENT + "ioThreadMultiplier", 2);
+        return getIntValue(ASYNC_CLIENT + "ioThreadMultiplier", 2);
     }
 
     public static boolean defaultUseProxySelector() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useProxySelector");
+        return getBooleanValue(ASYNC_CLIENT + "useProxySelector",false);
     }
 
     public static boolean defaultUseProxyProperties() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useProxyProperties");
+        return getBooleanValue(ASYNC_CLIENT + "useProxyProperties",false);
     }
 
     public static boolean defaultStrict302Handling() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "strict302Handling");
+        return getBooleanValue(ASYNC_CLIENT + "strict302Handling",false);
     }
 
     public static boolean defaultAllowPoolingConnection() {
-        return getBoolean(ASYNC_CLIENT + "allowPoolingConnection", true);
+        return getBooleanValue(ASYNC_CLIENT + "allowPoolingConnection", true);
     }
 
     public static boolean defaultUseRelativeURIsWithSSLProxies() {
-        return getBoolean(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
+        return getBooleanValue(ASYNC_CLIENT + "useRelativeURIsWithSSLProxies", true);
     }
 
     // unused/broken, left there for compatibility, fixed in Netty 4
     public static int defaultRequestCompressionLevel() {
-        return Integer.getInteger(ASYNC_CLIENT + "requestCompressionLevel", -1);
+        return getIntValue(ASYNC_CLIENT + "requestCompressionLevel", -1);
     }
 
     public static int defaultMaxRequestRetry() {
-        return Integer.getInteger(ASYNC_CLIENT + "maxRequestRetry", 5);
+        return getIntValue(ASYNC_CLIENT + "maxRequestRetry", 5);
     }
 
     public static boolean defaultAllowSslConnectionPool() {
-        return getBoolean(ASYNC_CLIENT + "allowSslConnectionPool", true);
+        return getBooleanValue(ASYNC_CLIENT + "allowSslConnectionPool", true);
     }
 
     public static boolean defaultUseRawUrl() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useRawUrl");
+        return getBooleanValue(ASYNC_CLIENT + "useRawUrl",false);
     }
 
     public static boolean defaultRemoveQueryParamOnRedirect() {
-        return getBoolean(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
+        return getBooleanValue(ASYNC_CLIENT + "removeQueryParamOnRedirect", true);
     }
 
     public static HostnameVerifier defaultHostnameVerifier() {
@@ -123,15 +128,15 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static boolean defaultSpdyEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "spdyEnabled");
+        return getBooleanValue(ASYNC_CLIENT + "spdyEnabled",false);
     }
 
     public static int defaultSpdyInitialWindowSize() {
-        return Integer.getInteger(ASYNC_CLIENT + "spdyInitialWindowSize", 10 * 1024 * 1024);
+        return getIntValue(ASYNC_CLIENT + "spdyInitialWindowSize", 10 * 1024 * 1024);
     }
 
     public static int defaultSpdyMaxConcurrentStreams() {
-        return Integer.getInteger(ASYNC_CLIENT + "spdyMaxConcurrentStreams", 100);
+        return getIntValue(ASYNC_CLIENT + "spdyMaxConcurrentStreams", 100);
     }
     
     public static boolean defaultAcceptAnyCertificate() {

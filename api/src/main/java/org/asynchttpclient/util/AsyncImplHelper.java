@@ -59,7 +59,7 @@ public class AsyncImplHelper {
         return asyncHttpClientImplClass;
     }
 
-    private static Properties getAsyncImplProperties() {
+    public static Properties getAsyncImplProperties() {
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<Properties>() {
                 public Properties run() throws IOException {
