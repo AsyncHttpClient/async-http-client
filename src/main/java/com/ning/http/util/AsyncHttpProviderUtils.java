@@ -74,13 +74,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public final static String getBaseUrl(URI uri) {
-        String url = uri.getScheme() + "://" + uri.getAuthority();
-        int port = uri.getPort();
-        if (port == -1) {
-            port = getPort(uri);
-            url += ":" + port;
-        }
-        return url;
+        return uri.getScheme() + "://" + getAuthority(uri);
     }
 
     public final static String getAuthority(URI uri) {
