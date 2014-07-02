@@ -135,6 +135,6 @@ public final class AsyncHttpClientConfigDefaults {
     }
     
     public static boolean defaultAcceptAnyCertificate() {
-        return getBooleanValue(ASYNC_CLIENT + "acceptAnyCertificate", false);
+        return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
     }
 }
