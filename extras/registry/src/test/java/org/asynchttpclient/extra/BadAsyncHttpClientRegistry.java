@@ -10,12 +10,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient;
+package org.asynchttpclient.extra;
 
-@SuppressWarnings("serial")
-public class BadAsyncHttpClientException extends AsyncHttpClientImplException {
+import org.asynchttpclient.extra.AsyncHttpClientRegistryImpl;
 
-    public BadAsyncHttpClientException(String msg) {
-        super(msg);
+public class BadAsyncHttpClientRegistry extends AsyncHttpClientRegistryImpl {
+
+    private BadAsyncHttpClientRegistry() {
+        throw new RuntimeException("I am bad");
     }
 }

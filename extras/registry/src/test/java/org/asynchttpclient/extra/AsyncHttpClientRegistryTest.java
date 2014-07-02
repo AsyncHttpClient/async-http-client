@@ -10,9 +10,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient;
+package org.asynchttpclient.extra;
 
-import org.asynchttpclient.util.AsyncImplHelper;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.extra.AsyncHttpClientFactory;
+import org.asynchttpclient.extra.AsyncHttpClientImplException;
+import org.asynchttpclient.extra.AsyncHttpClientRegistryImpl;
+import org.asynchttpclient.extra.AsyncImplHelper;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

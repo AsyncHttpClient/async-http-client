@@ -10,11 +10,9 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.util;
+package org.asynchttpclient.extra;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientFactory;
-import org.asynchttpclient.AsyncHttpClientImplException;
 
 import java.io.IOException;
 import java.io.InputStream;

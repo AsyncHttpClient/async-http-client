@@ -46,6 +46,7 @@
     <modules>
         <module>guava</module>
         <module>jdeferred</module>
+        <module>registry</module>
     </modules>
 
     <dependencies>

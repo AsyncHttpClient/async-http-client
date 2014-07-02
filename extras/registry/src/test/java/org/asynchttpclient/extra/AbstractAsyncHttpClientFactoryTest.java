@@ -10,11 +10,20 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient;
+package org.asynchttpclient.extra;
 
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.TestAsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.async.util.EchoHandler;
 import org.asynchttpclient.async.util.TestUtils;
-import org.asynchttpclient.util.AsyncImplHelper;
+import org.asynchttpclient.extra.AsyncHttpClientFactory;
+import org.asynchttpclient.extra.AsyncHttpClientImplException;
+import org.asynchttpclient.extra.AsyncImplHelper;
 import org.eclipse.jetty.server.Server;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -23,6 +32,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.InvocationTargetException;
+
 import junit.extensions.PA;
 
 public abstract class AbstractAsyncHttpClientFactoryTest {

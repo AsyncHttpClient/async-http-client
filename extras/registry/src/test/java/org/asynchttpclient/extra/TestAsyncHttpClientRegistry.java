@@ -10,21 +10,10 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.providers.netty;
+package org.asynchttpclient.extra;
 
-import org.asynchttpclient.AbstractAsyncHttpClientFactoryTest;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.AsyncHttpProvider;
-import org.testng.annotations.Test;
+import org.asynchttpclient.extra.AsyncHttpClientRegistryImpl;
 
-@Test
-public class NettyAsyncHttpClientFactoryTest extends AbstractAsyncHttpClientFactoryTest {
+public class TestAsyncHttpClientRegistry extends AsyncHttpClientRegistryImpl {
 
-    @Override
-    public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
-        if (config == null) {
-            config = new AsyncHttpClientConfig.Builder().build();
-        }
-        return new NettyAsyncHttpProvider(config);
-    }
 }
