@@ -16,10 +16,8 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.StandardCharsets;
 
-import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +53,7 @@ public class ProxyServer {
     private final String principal;
     private final String password;
     private final int port;
-    private final URI uri;
+    private final String url;
     private String encoding = StandardCharsets.UTF_8.name();
     private Charset charset = StandardCharsets.UTF_8;
     private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
@@ -66,7 +64,7 @@ public class ProxyServer {
         this.port = port;
         this.principal = principal;
         this.password = password;
-        this.uri = AsyncHttpProviderUtils.createNonEmptyPathURI(toString());
+        url = protocol + "://" + host + ":" + port;
     }
 
     public ProxyServer(final String host, final int port, String principal, String password) {
@@ -119,8 +117,8 @@ public class ProxyServer {
         return charset;
     }
 
-    public URI getURI() {
-        return uri;
+    public String getUrl() {
+        return url;
     }
 
     public ProxyServer addNonProxyHost(String uri) {
@@ -148,6 +146,6 @@ public class ProxyServer {
 
     @Override
     public String toString() {
-        return protocol + "://" + host + ":" + port;
+        return url;
     }
 }
