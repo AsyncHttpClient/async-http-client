@@ -113,10 +113,11 @@ public class RequestBuilderTest {
         assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
     }
 
+    @Test(groups = {"standalone", "default_provider"})
     public void testContentTypeCharsetToBodyEncoding() {
-        final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=utf-8").build();
-        assertEquals(req.getBodyEncoding(), "utf-8");
-        final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"utf-8\"").build();
-        assertEquals(req2.getBodyEncoding(), "utf-8");
+        final Request req = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=XXXX").build();
+        assertEquals(req.getBodyEncoding(), "XXXX");
+        final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"XXXX\"").build();
+        assertEquals(req2.getBodyEncoding(), "XXXX");
     }
 }
