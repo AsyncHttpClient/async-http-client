@@ -120,4 +120,14 @@ public class RequestBuilderTest {
         final Request req2 = new RequestBuilder("GET").setHeader("Content-Type", "application/json; charset=\"XXXX\"").build();
         assertEquals(req2.getBodyEncoding(), "XXXX");
     }
+
+    @Test(groups = {"standalone", "default_provider"})
+    public void testAddQueryParameterReadRawUrl() throws UnsupportedEncodingException {
+        RequestBuilder rb = new RequestBuilder("GET", true).setUrl("http://example.com/path")
+                .addQueryParameter("a", "1?&")
+                .addQueryParameter("b", "+ =");
+        Request request = rb.build();
+        assertEquals(request.getUrl(), "http://example.com/path?a=1%3F%26&b=%2B%20%3D");
+        assertEquals(request.getRawUrl(), "http://example.com/path?a=1?&&b=+ =");
+    }
 }
