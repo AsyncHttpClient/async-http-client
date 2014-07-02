@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.extra;
+package org.asynchttpclient.extras.registry;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -18,12 +18,11 @@ import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.TestAsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.async.util.EchoHandler;
 import org.asynchttpclient.async.util.TestUtils;
-import org.asynchttpclient.extra.AsyncHttpClientFactory;
-import org.asynchttpclient.extra.AsyncHttpClientImplException;
-import org.asynchttpclient.extra.AsyncImplHelper;
+import org.asynchttpclient.extras.registry.AsyncHttpClientFactory;
+import org.asynchttpclient.extras.registry.AsyncHttpClientImplException;
+import org.asynchttpclient.extras.registry.AsyncImplHelper;
 import org.eclipse.jetty.server.Server;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;

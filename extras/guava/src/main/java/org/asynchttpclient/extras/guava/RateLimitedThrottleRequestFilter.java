@@ -1,5 +1,7 @@
-package org.asynchttpclient.extra;
+package org.asynchttpclient.extras.guava;
 
+import org.asynchttpclient.extra.AsyncHandlerWrapper;
+import org.asynchttpclient.extra.ThrottleRequestFilter;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;

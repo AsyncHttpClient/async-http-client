@@ -10,14 +10,22 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.asynchttpclient.extra;
+package org.asynchttpclient.extras.registry;
 
-import org.asynchttpclient.extra.AsyncHttpClientImplException;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpProvider;
+import org.asynchttpclient.extras.registry.AbstractAsyncHttpClientFactoryTest;
+import org.asynchttpclient.providers.netty.NettyAsyncHttpProvider;
+import org.testng.annotations.Test;
 
-@SuppressWarnings("serial")
-public class BadAsyncHttpClientException extends AsyncHttpClientImplException {
+@Test
+public class NettyAsyncHttpClientFactoryTest extends AbstractAsyncHttpClientFactoryTest {
 
-    public BadAsyncHttpClientException(String msg) {
-        super(msg);
+    @Override
+    public AsyncHttpProvider getAsyncHttpProvider(AsyncHttpClientConfig config) {
+        if (config == null) {
+            config = new AsyncHttpClientConfig.Builder().build();
+        }
+        return new NettyAsyncHttpProvider(config);
     }
 }
