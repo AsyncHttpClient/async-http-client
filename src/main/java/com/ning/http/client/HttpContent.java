@@ -15,18 +15,18 @@
  */
 package com.ning.http.client;
 
-import java.net.URI;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * Base class for callback class used by {@link com.ning.http.client.AsyncHandler}
  */
 public class HttpContent {
     protected final AsyncHttpProvider provider;
-    protected final URI uri;
+    protected final UriComponents uri;
 
-    protected HttpContent(URI url, AsyncHttpProvider provider) {
+    protected HttpContent(UriComponents uri, AsyncHttpProvider provider) {
         this.provider = provider;
-        this.uri = url;
+        this.uri = uri;
     }
 
     /**
@@ -39,11 +39,11 @@ public class HttpContent {
     }
 
     /**
-     * Return the request {@link URI}
+     * Return the request {@link UriComponents}
      *
-     * @return the request {@link URI}
+     * @return the request {@link UriComponents}
      */
-    public final URI getUrl() {
+    public final UriComponents getUri() {
         return uri;
     }
 }

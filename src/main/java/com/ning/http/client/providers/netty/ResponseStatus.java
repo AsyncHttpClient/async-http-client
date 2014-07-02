@@ -18,9 +18,9 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpResponse;
+import com.ning.http.client.uri.UriComponents;
 
-import java.net.URI;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
@@ -29,7 +29,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public ResponseStatus(URI uri, HttpResponse response, AsyncHttpProvider provider) {
+    public ResponseStatus(UriComponents uri, HttpResponse response, AsyncHttpProvider provider) {
         super(uri, provider);
         this.response = response;
     }

@@ -18,7 +18,6 @@ package com.ning.http.client.providers.netty;
 import static com.ning.http.util.DateUtil.millisTime;
 
 import java.net.SocketAddress;
-import java.net.URI;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +41,7 @@ import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.listenable.AbstractListenableFuture;
 import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * A {@link Future} that can be used to track when an asynchronous HTTP request has been fully processed.
@@ -66,7 +66,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private Request request;
     private HttpRequest nettyRequest;
     private final AtomicReference<V> content = new AtomicReference<V>();
-    private URI uri;
+    private UriComponents uri;
     private boolean keepAlive = true;
     private HttpResponse httpResponse;
     private final AtomicReference<ExecutionException> exEx = new AtomicReference<ExecutionException>();
@@ -92,7 +92,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private final ConnectionPoolKeyStrategy connectionPoolKeyStrategy;
     private final ProxyServer proxyServer;
 
-    public NettyResponseFuture(URI uri,//
+    public NettyResponseFuture(UriComponents uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
             HttpRequest nettyRequest,//
@@ -121,11 +121,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         writeBody = true;
     }
 
-    protected URI getURI() {
+    protected UriComponents getURI() {
         return uri;
     }
 
-    protected void setURI(URI uri) {
+    protected void setURI(UriComponents uri) {
         this.uri = uri;
     }
 

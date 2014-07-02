@@ -39,8 +39,6 @@ import java.io.RandomAccessFile;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
@@ -147,6 +145,7 @@ import com.ning.http.client.providers.netty.spnego.SpnegoEngine;
 import com.ning.http.client.providers.netty.timeout.IdleConnectionTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.RequestTimeoutTimerTask;
 import com.ning.http.client.providers.netty.timeout.TimeoutsHolder;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.client.websocket.WebSocketUpgradeHandler;
 import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
@@ -425,7 +424,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    private Channel lookupInCache(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+    private Channel lookupInCache(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
         final Channel channel = connectionsPool.poll(getPoolKey(uri, proxy, strategy));
 
         if (channel != null) {
@@ -645,7 +644,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         }
     }
 
-    protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, URI uri, boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer)
+    protected final static HttpRequest buildRequest(AsyncHttpClientConfig config, Request request, UriComponents uri, boolean allowConnect, ChannelBuffer buffer, ProxyServer proxyServer)
             throws IOException {
 
         String method = request.getMethod();
@@ -661,15 +660,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return spnegoEngine;
     }
 
-    private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, URI uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
+    private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, UriComponents uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
 
-        String host = null;
-
-        if (request.getVirtualHost() != null) {
-            host = request.getVirtualHost();
-        } else {
-            host = AsyncHttpProviderUtils.getHost(uri);
-        }
+        String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
 
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
@@ -678,10 +671,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             String path = null;
             if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
                 path = uri.toString();
-            else if (uri.getRawQuery() != null)
-                path = uri.getRawPath() + "?" + uri.getRawQuery();
+            else if (uri.getQuery() != null)
+                path = uri.getPath() + "?" + uri.getQuery();
             else
-                path = uri.getRawPath();
+                path = uri.getPath();
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path);
         }
         boolean webSocket = isWebSocket(uri.getScheme());
@@ -939,7 +932,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     }
 
     private <T> NettyResponseFuture<T> buildNettyResponseFutureWithCachedChannel(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> f, ProxyServer proxyServer,
-            URI uri, ChannelBuffer bufferedBytes, int maxTry) throws IOException {
+            UriComponents uri, ChannelBuffer bufferedBytes, int maxTry) throws IOException {
 
         for (int i = 0; i < maxTry; i++) {
             if (maxTry == 0)
@@ -986,7 +979,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throw new IOException("Closed");
         }
 
-        URI uri = useRawUrl ? request.getRawURI() : request.getURI();
+        UriComponents uri = useRawUrl ? request.getRawURI() : request.getURI();
         
         if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
             throw new IOException("WebSocket method must be a GET");
@@ -1081,9 +1074,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         try {
             InetSocketAddress remoteAddress;
             if (request.getInetAddress() != null) {
-                remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getPort(uri));
+                remoteAddress = new InetSocketAddress(request.getInetAddress(), AsyncHttpProviderUtils.getDefaultPort(uri));
             } else if (!useProxy) {
-                remoteAddress = new InetSocketAddress(AsyncHttpProviderUtils.getHost(uri), AsyncHttpProviderUtils.getPort(uri));
+                remoteAddress = new InetSocketAddress(uri.getHost(), AsyncHttpProviderUtils.getDefaultPort(uri));
             } else {
                 remoteAddress = new InetSocketAddress(proxyServer.getHost(), proxyServer.getPort());
             }
@@ -1226,8 +1219,8 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer, FluentCaseInsensitiveStringsMap headers, Realm realm,
             NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
-        URI uri = request.getURI();
-        String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
+        UriComponents uri = request.getURI();
+        String host = request.getVirtualHost() != null ? request.getVirtualHost(): uri.getHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
             String challengeHeader = getSpnegoEngine().generateToken(server);
@@ -1240,7 +1233,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             } else {
                 realmBuilder = new Realm.RealmBuilder();
             }
-            return realmBuilder.setUri(uri.getRawPath()).setMethodName(request.getMethod()).setScheme(Realm.AuthScheme.KERBEROS).build();
+            return realmBuilder.setUri(uri.getPath()).setMethodName(request.getMethod()).setScheme(Realm.AuthScheme.KERBEROS).build();
         } catch (Throwable throwable) {
             if (isNTLM(proxyAuth)) {
                 return ntlmChallenge(proxyAuth, request, proxyServer, headers, realm, future, proxyInd);
@@ -1284,9 +1277,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = ntlmEngine.generateType1Msg(ntlmDomain, ntlmHost);
 
-            URI uri = request.getURI();
+            UriComponents uri = request.getURI();
             addNTLMAuthorization(headers, challengeHeader, proxyInd);
-            newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(uri.getRawPath()).setMethodName(request.getMethod())
+            newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(uri.getPath()).setMethodName(request.getMethod())
                     .setNtlmMessageType2Received(true).build();
             future.getAndSetAuth(false);
         } else {
@@ -1327,7 +1320,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return getPoolKey(future.getURI(), future.getProxyServer(), future.getConnectionPoolKeyStrategy());
     }
     
-    private String getPoolKey(URI uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
+    private String getPoolKey(UriComponents uri, ProxyServer proxy, ConnectionPoolKeyStrategy strategy) {
         String serverPart = strategy.getKey(uri);
         return proxy != null ? proxy.getUrl() + serverPart : serverPart;
     }
@@ -1711,7 +1704,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    public static <T> NettyResponseFuture<T> newFuture(URI uri, Request request, AsyncHandler<T> asyncHandler, HttpRequest nettyRequest, AsyncHttpClientConfig config,
+    public static <T> NettyResponseFuture<T> newFuture(UriComponents uri, Request request, AsyncHandler<T> asyncHandler, HttpRequest nettyRequest, AsyncHttpClientConfig config,
             NettyAsyncHttpProvider provider, ProxyServer proxyServer) {
 
         NettyResponseFuture<T> f = new NettyResponseFuture<T>(uri,//
@@ -1965,23 +1958,28 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 future.getAndSetAuth(false);
 
                 String location = response.getHeader(HttpHeaders.Names.LOCATION);
-                URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
-                boolean stripQueryString = config.isRemoveQueryParamOnRedirect();
-                if (!uri.toString().equals(future.getURI().toString())) {
-                    final RequestBuilder nBuilder = stripQueryString ? new RequestBuilder(future.getRequest()).setQueryParameters(null) : new RequestBuilder(future.getRequest());
+                UriComponents uri = UriComponents.create(future.getURI(), location);
+                if (!uri.equals(future.getURI())) {
+                    final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
 
+                    if (config.isRemoveQueryParamOnRedirect())
+                        nBuilder.setQueryParameters(null);
+                    
                     if (!(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");
                     }
                     final boolean initialConnectionKeepAlive = future.getKeepAlive();
                     final String initialPoolKey = getPoolKey(future);
                     future.setURI(uri);
-                    String newUrl = uri.toString();
-                    if (request.getURI().getScheme().startsWith(WEBSOCKET)) {
-                        newUrl = newUrl.replace(HTTP, WEBSOCKET);
+                    UriComponents newURI = uri;
+                    String targetScheme = request.getURI().getScheme();
+                    if (targetScheme.equals(WEBSOCKET)) {
+                        newURI = newURI.withNewScheme(WEBSOCKET);
+                    }if (targetScheme.equals(WEBSOCKET_SSL)) {
+                        newURI = newURI.withNewScheme(WEBSOCKET_SSL);
                     }
 
-                    log.debug("Redirecting to {}", newUrl);
+                    log.debug("Redirecting to {}", newURI);
                     List<String> setCookieHeaders = future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE2);
                     if (!isNonEmpty(setCookieHeaders)) {
                         setCookieHeaders = future.getHttpResponse().getHeaders(HttpHeaders.Names.SET_COOKIE);
@@ -2007,7 +2005,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     } else {
                         ac.call();
                     }
-                    nextRequest(nBuilder.setUrl(newUrl).build(), future);
+                    nextRequest(nBuilder.setURI(newURI).build(), future);
                     return true;
                 }
             } else {
@@ -2017,16 +2015,11 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return false;
     }
 
-    private final String computeRealmURI(Realm realm, URI requestURI) throws URISyntaxException {
+    private final String computeRealmURI(Realm realm, UriComponents requestURI) {
         if (realm.isUseAbsoluteURI()) {
             
             if (realm.isOmitQuery() && MiscUtil.isNonEmpty(requestURI.getQuery())) {
-                return new URI(
-                        requestURI.getScheme(),
-                        requestURI.getAuthority(),
-                        requestURI.getPath(),
-                        null,
-                        null).toString();
+                return requestURI.withNewQuery(null).toString();
             } else {
                 return requestURI.toString();
             }
@@ -2486,7 +2479,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
     }
 
-    private static boolean isSecure(URI uri) {
+    private static boolean isSecure(UriComponents uri) {
         return isSecure(uri.getScheme());
     }
 }

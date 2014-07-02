@@ -16,6 +16,7 @@ package com.ning.http.util;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.ProxyServer.Protocol;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.client.ProxyServerSelector;
 import com.ning.http.client.Request;
 
@@ -23,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
 
@@ -93,7 +95,7 @@ public final class ProxyUtils {
      * @see #avoidProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, AsyncHttpProviderUtils.getHost(request.getOriginalURI()));
+        return avoidProxy(proxyServer, request.getOriginalURI().getHost());
     }
 
     private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
@@ -198,12 +200,15 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
         return new ProxyServerSelector() {
-            public ProxyServer select(URI uri) {
-                List<Proxy> proxies = proxySelector.select(uri);
-                if (proxies != null) {
-                    // Loop through them until we find one that we know how to use
-                    for (Proxy proxy : proxies) {
-                        switch (proxy.type()) {
+            public ProxyServer select(UriComponents uri) {
+                try {
+                    URI javaUri = uri.toURI();
+
+                    List<Proxy> proxies = proxySelector.select(javaUri);
+                    if (proxies != null) {
+                        // Loop through them until we find one that we know how to use
+                        for (Proxy proxy : proxies) {
+                            switch (proxy.type()) {
                             case HTTP:
                                 if (!(proxy.address() instanceof InetSocketAddress)) {
                                     log.warn("Don't know how to connect to address " + proxy.address());
@@ -217,10 +222,14 @@ public final class ProxyUtils {
                             default:
                                 log.warn("ProxySelector returned proxy type that we don't know how to use: " + proxy.type());
                                 break;
+                            }
                         }
                     }
+                    return null;
+                } catch (URISyntaxException e) {
+                    log.warn(uri + " couldn't be turned into a java.net.URI", e);
+                    return null;
                 }
-                return null;
             }
         };
     }
@@ -233,7 +242,7 @@ public final class ProxyUtils {
      */
     public static ProxyServerSelector createProxyServerSelector(final ProxyServer proxyServer) {
         return new ProxyServerSelector() {
-            public ProxyServer select(URI uri) {
+            public ProxyServer select(UriComponents uri) {
                 return proxyServer;
             }
         };

@@ -16,12 +16,10 @@ package com.ning.http.client.providers.grizzly;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.uri.UriComponents;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.MimeHeaders;
-
-import java.net.URI;
-
 
 /**
  * {@link HttpResponseHeaders} implementation using the Grizzly 2.0 HTTP client
@@ -41,7 +39,7 @@ public class GrizzlyResponseHeaders extends HttpResponseHeaders {
 
 
     public GrizzlyResponseHeaders(final HttpResponsePacket response,
-                                  final URI uri,
+                                  final UriComponents uri,
                                   final AsyncHttpProvider provider) {
 
         super(uri, provider);

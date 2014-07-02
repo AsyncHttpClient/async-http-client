@@ -18,14 +18,13 @@ package com.ning.http.client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * Represents the asynchronous HTTP response callback for an {@link com.ning.http.client.AsyncCompletionHandler}
@@ -111,13 +110,12 @@ public interface Response {
     String getResponseBody() throws IOException;
 
     /**
-     * Return the request {@link URI}. Note that if the request got redirected, the value of the {@link URI} will be
+     * Return the request {@link UriComponents}. Note that if the request got redirected, the value of the {@link UriComponents} will be
      * the last valid redirect url.
      *
-     * @return the request {@link URI}.
-     * @throws MalformedURLException
+     * @return the request {@link UriComponents}.
      */
-    URI getUri() throws MalformedURLException;
+    UriComponents getUri();
 
     /**
      * Return the content-type header value.

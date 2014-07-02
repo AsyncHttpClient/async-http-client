@@ -15,9 +15,9 @@
  */
 package com.ning.http.client;
 
-import java.net.URI;
+import com.ning.http.client.uri.UriComponents;
 
 public interface ConnectionPoolKeyStrategy {
 
-	String getKey(URI uri);
+	String getKey(UriComponents uri);
 }

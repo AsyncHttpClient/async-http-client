@@ -15,10 +15,9 @@ package com.ning.http.client.providers.grizzly;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.uri.UriComponents;
 
 import org.glassfish.grizzly.http.HttpResponsePacket;
-
-import java.net.URI;
 
 /**
  * {@link HttpResponseStatus} implementation using the Grizzly 2.0 HTTP client
@@ -36,7 +35,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
 
 
     public GrizzlyResponseStatus(final HttpResponsePacket response,
-                                 final URI uri,
+                                 final UriComponents uri,
                                  final AsyncHttpProvider provider) {
 
         super(uri, provider);

@@ -15,15 +15,14 @@
  */
 package com.ning.http.client;
 
-import java.net.URI;
-
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 
 	INSTANCE;
 	
-	public String getKey(URI uri) {
+	public String getKey(UriComponents uri) {
 		return AsyncHttpProviderUtils.getBaseUrl(uri);
 	}
 }

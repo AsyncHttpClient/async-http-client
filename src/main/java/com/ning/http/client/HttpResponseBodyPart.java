@@ -15,9 +15,10 @@
  */
 package com.ning.http.client;
 
+import com.ning.http.client.uri.UriComponents;
+
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 
 /**
@@ -25,7 +26,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class HttpResponseBodyPart extends HttpContent {
 
-    public HttpResponseBodyPart(URI uri, AsyncHttpProvider provider) {
+    public HttpResponseBodyPart(UriComponents uri, AsyncHttpProvider provider) {
         super(uri, provider);
     }
 

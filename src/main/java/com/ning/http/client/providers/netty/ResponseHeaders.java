@@ -18,10 +18,11 @@ package com.ning.http.client.providers.netty;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseHeaders;
+import com.ning.http.client.uri.UriComponents;
+
 import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
-import java.net.URI;
 import java.util.Map;
 
 /**
@@ -33,14 +34,14 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final HttpResponse response;
     private final FluentCaseInsensitiveStringsMap headers;
 
-    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider) {
+    public ResponseHeaders(UriComponents uri, HttpResponse response, AsyncHttpProvider provider) {
         super(uri, provider, false);
         this.trailingHeaders = null;
         this.response = response;
         headers = computerHeaders();
     }
 
-    public ResponseHeaders(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunkTrailer traillingHeaders) {
+    public ResponseHeaders(UriComponents uri, HttpResponse response, AsyncHttpProvider provider, HttpChunkTrailer traillingHeaders) {
         super(uri, provider, true);
         this.trailingHeaders = traillingHeaders;
         this.response = response;

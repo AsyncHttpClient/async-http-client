@@ -14,8 +14,6 @@ package com.ning.http.client.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -24,6 +22,7 @@ import org.w3c.dom.Document;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * Customized {@link Response} which add support for getting the response's body as an XML document (@link WebDavResponse#getBodyAsXML}
@@ -75,7 +74,7 @@ public class WebDavResponse implements Response {
         return response.getResponseBody(charset);
     }
 
-    public URI getUri() throws MalformedURLException {
+    public UriComponents getUri() {
         return response.getUri();
     }
 

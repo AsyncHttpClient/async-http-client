@@ -19,8 +19,6 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -39,6 +37,7 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 
 /**
@@ -138,8 +137,8 @@ public class NettyResponse implements Response {
 
     /* @Override */
 
-    public URI getUri() throws MalformedURLException {
-        return status.getUrl();
+    public UriComponents getUri() {
+        return status.getUri();
     }
 
     /* @Override */

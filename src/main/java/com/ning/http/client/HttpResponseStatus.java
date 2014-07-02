@@ -16,14 +16,14 @@
  */
 package com.ning.http.client;
 
-import java.net.URI;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
 public abstract class HttpResponseStatus extends HttpContent {
 
-    public HttpResponseStatus(URI uri, AsyncHttpProvider provider) {
+    public HttpResponseStatus(UriComponents uri, AsyncHttpProvider provider) {
         super(uri, provider);
     }
 
