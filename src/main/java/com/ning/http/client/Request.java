@@ -48,14 +48,6 @@ public interface Request {
     }
 
     /**
-     * Return the request's type (GET, POST, etc.)
-     *
-     * @return the request's type (GET, POST, etc.)
-     * @deprecated - use getMethod
-     */
-    String getReqType();
-
-    /**
      * Return the request's method name (GET, POST, etc.)
      *
      * @return the request's method name (GET, POST, etc.)
@@ -137,14 +129,6 @@ public interface Request {
      * @return A generator for the request body.
      */
     BodyGenerator getBodyGenerator();
-
-    /**
-     * Return the current size of the content-lenght header based on the body's size.
-     *
-     * @return the current size of the content-lenght header based on the body's size.
-     * @deprecated
-     */
-    long getLength();
 
     /**
      * Return the current size of the content-lenght header based on the body's size.

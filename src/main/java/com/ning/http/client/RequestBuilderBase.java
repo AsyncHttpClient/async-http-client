@@ -113,11 +113,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
-
-        public String getReqType() {
-            return getMethod();
-        }
-
         public String getMethod() {
             return method;
         }
@@ -253,15 +248,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
-
-        /**
-         * @return
-         * @deprecated
-         */
-        public long getLength() {
-            return length;
-        }
-
         public long getContentLength() {
             return length;
         }
