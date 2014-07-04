@@ -54,7 +54,7 @@ public class RequestBuilderTest {
         for (String value : values) {
             RequestBuilder builder = new RequestBuilder("GET").
                     setUrl("http://example.com/").
-                    addQueryParameter("name", value);
+                    addQueryParam("name", value);
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0, len = value.length(); i < len; ++i) {
@@ -77,7 +77,7 @@ public class RequestBuilderTest {
     public void testChaining() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com")
-                .addQueryParameter("x", "value")
+                .addQueryParam("x", "value")
                 .build();
 
         Request request2 = new RequestBuilder(request).build();
@@ -89,7 +89,7 @@ public class RequestBuilderTest {
     public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
-                .addQueryParameter("param2", "value2")
+                .addQueryParam("param2", "value2")
                 .build();
 
         assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
@@ -124,8 +124,8 @@ public class RequestBuilderTest {
     @Test(groups = {"standalone", "default_provider"})
     public void testAddQueryParameterReadRawUrl() throws UnsupportedEncodingException {
         RequestBuilder rb = new RequestBuilder("GET", true).setUrl("http://example.com/path")
-                .addQueryParameter("a", "1?&")
-                .addQueryParameter("b", "+ =");
+                .addQueryParam("a", "1?&")
+                .addQueryParam("b", "+ =");
         Request request = rb.build();
         assertEquals(request.getUrl(), "http://example.com/path?a=1%3F%26&b=%2B%20%3D");
         assertEquals(request.getRawUrl(), "http://example.com/path?a=1?&&b=+ =");

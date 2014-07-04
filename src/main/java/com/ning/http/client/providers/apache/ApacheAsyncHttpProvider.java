@@ -266,9 +266,9 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 post.setRequestEntity(r);
                 post.setRequestHeader("Content-Length", String.valueOf(r.getContentLength()));
 
-            } else if (request.getParams() != null) {
+            } else if (request.getFormParams() != null) {
                 StringBuilder sb = new StringBuilder();
-                for (final Map.Entry<String, List<String>> paramEntry : request.getParams()) {
+                for (final Map.Entry<String, List<String>> paramEntry : request.getFormParams()) {
                     final String key = paramEntry.getKey();
                     for (final String value : paramEntry.getValue()) {
                         if (sb.length() > 0) {

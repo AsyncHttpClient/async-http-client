@@ -1792,7 +1792,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             builder.setUrl(uri.toString());
 
             if (ctx.provider.clientConfig.isRemoveQueryParamOnRedirect()) {
-                builder.setQueryParameters(null);
+                builder.setQueryParam(null);
             }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
                 builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
@@ -2041,7 +2041,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
 
         public boolean handlesBodyType(final Request request) {
-            return isNonEmpty(request.getParams());
+            return isNonEmpty(request.getFormParams());
         }
 
         @SuppressWarnings({"unchecked"})
@@ -2058,7 +2058,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (charset == null) {
                 charset = Charsets.ASCII_CHARSET.name();
             }
-            final FluentStringsMap params = request.getParams();
+            final FluentStringsMap params = request.getFormParams();
             if (!params.isEmpty()) {
                 for (Map.Entry<String, List<String>> entry : params.entrySet()) {
                     String name = entry.getKey();

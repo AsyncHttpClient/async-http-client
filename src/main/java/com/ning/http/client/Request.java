@@ -138,11 +138,11 @@ public interface Request {
     long getContentLength();
 
     /**
-     * Return the current parameters.
+     * Return the current form parameters.
      *
      * @return a {@link FluentStringsMap} of parameters.
      */
-    FluentStringsMap getParams();
+    FluentStringsMap getFormParams();
 
     /**
      * Return the current {@link Part}

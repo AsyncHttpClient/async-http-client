@@ -581,9 +581,9 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
 
                     urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
-                } else if (request.getParams() != null) {
+                } else if (request.getFormParams() != null) {
                     StringBuilder sb = new StringBuilder();
-                    for (final Map.Entry<String, List<String>> paramEntry : request.getParams()) {
+                    for (final Map.Entry<String, List<String>> paramEntry : request.getFormParams()) {
                         final String key = paramEntry.getKey();
                         for (final String value : paramEntry.getValue()) {
                             if (sb.length() > 0) {

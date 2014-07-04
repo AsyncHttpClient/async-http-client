@@ -63,7 +63,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private InputStream streamData;
         private EntityWriter entityWriter;
         private BodyGenerator bodyGenerator;
-        private FluentStringsMap params;
+        private FluentStringsMap formParams;
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
@@ -95,7 +95,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
-                this.params = prototype.getParams() == null ? null : new FluentStringsMap(prototype.getParams());
+                this.formParams = prototype.getFormParams() == null ? null : new FluentStringsMap(prototype.getFormParams());
                 this.queryParams = prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams());
                 this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
@@ -253,8 +253,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         /* @Override */
-        public FluentStringsMap getParams() {
-            return params;
+        public FluentStringsMap getFormParams() {
+            return formParams;
         }
 
         /* @Override */
@@ -322,13 +322,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     sb.append(headers.getJoinedValue(name, ", "));
                 }
             }
-            if (isNonEmpty(params)) {
-                sb.append("\tparams:");
-                for (String name : params.keySet()) {
+            if (isNonEmpty(formParams)) {
+                sb.append("\tformParams:");
+                for (String name : formParams.keySet()) {
                     sb.append("\t");
                     sb.append(name);
                     sb.append(":");
-                    sb.append(params.getJoinedValue(name, ", "));
+                    sb.append(formParams.getJoinedValue(name, ", "));
                 }
             }
 
@@ -368,7 +368,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if (uri.getPath() == null)
             throw new NullPointerException("uri.path");
         request.originalUri = uri;
-        addQueryParameters(request.originalUri);
+        addQueryParams(request.originalUri);
         request.uri = null;
         request.rawUri = null;
         return derived.cast(this);
@@ -384,20 +384,20 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private void addQueryParameters(UriComponents uri) {
+    private void addQueryParams(UriComponents uri) {
         if (isNonEmpty(uri.getQuery())) {
             String[] queries = uri.getQuery().split("&");
             int pos;
             for (String query : queries) {
                 pos = query.indexOf("=");
                 if (pos <= 0) {
-                    addQueryParameter(query, null);
+                    addQueryParam(query, null);
                 } else {
                     try {
                         if (useRawUrl) {
-                            addQueryParameter(query.substring(0, pos), query.substring(pos + 1));
+                            addQueryParam(query.substring(0, pos), query.substring(pos + 1));
                         } else {
-                            addQueryParameter(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
+                            addQueryParam(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
                         }
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);
@@ -483,12 +483,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             request.cookies.clear();
     }
     
-    public void resetQueryParameters() {
+    public void resetQueryParams() {
         request.queryParams = null;
     }
     
-    public void resetParameters() {
-        request.params = null;
+    public void resetFormParams() {
+        request.formParams = null;
     }
 
     public void resetNonMultipartData() {
@@ -509,7 +509,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(byte[] data) {
-        resetParameters();
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.byteData = data;
@@ -517,7 +517,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(String data) {
-        resetParameters();
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.stringData = data;
@@ -525,7 +525,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(InputStream stream) {
-        resetParameters();
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.streamData = stream;
@@ -537,7 +537,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setBody(EntityWriter dataWriter, long length) {
-        resetParameters();
+        resetFormParams();
         resetNonMultipartData();
         resetMultipartData();
         request.entityWriter = dataWriter;
@@ -550,7 +550,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T addQueryParameter(String name, String value) {
+    public T addQueryParam(String name, String value) {
         if (request.queryParams == null) {
             request.queryParams = new FluentStringsMap();
         }
@@ -558,7 +558,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setQueryParameters(FluentStringsMap parameters) {
+    public T setQueryParam(FluentStringsMap parameters) {
         if (parameters == null) {
             request.queryParams = null;
         } else {
@@ -567,36 +567,34 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T addParameter(String key, String value) {
+    public T addFormParam(String key, String value) {
         resetNonMultipartData();
         resetMultipartData();
-        if (request.params == null) {
-            request.params = new FluentStringsMap();
-        }
-        request.params.add(key, value);
+        if (request.formParams == null)
+            request.formParams = new FluentStringsMap();
+        request.formParams.add(key, value);
         return derived.cast(this);
     }
 
-    public T setParameters(FluentStringsMap parameters) {
+    public T setFormParams(FluentStringsMap parameters) {
         resetNonMultipartData();
         resetMultipartData();
-        request.params = new FluentStringsMap(parameters);
+        request.formParams = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
-    public T setParameters(Map<String, Collection<String>> parameters) {
+    public T setFormParams(Map<String, Collection<String>> parameters) {
         resetNonMultipartData();
         resetMultipartData();
-        request.params = new FluentStringsMap(parameters);
+        request.formParams = new FluentStringsMap(parameters);
         return derived.cast(this);
     }
 
     public T addBodyPart(Part part) {
-        resetParameters();
+        resetFormParams();
         resetNonMultipartData();
-        if (request.parts == null) {
+        if (request.parts == null)
             request.parts = new ArrayList<Part>();
-        }
         request.parts.add(part);
         return derived.cast(this);
     }

@@ -107,10 +107,10 @@ public class RetryNonBlockingIssue {
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient
             fetcher, int requests, String action, String id) throws IOException {
         RequestBuilder builder = new RequestBuilder("GET");
-        builder.addQueryParameter(action, "1");
+        builder.addQueryParam(action, "1");
 
-        builder.addQueryParameter("maxRequests", "" + requests);
-        builder.addQueryParameter("id", id);
+        builder.addQueryParam("maxRequests", "" + requests);
+        builder.addQueryParam("id", id);
         builder.setUrl(servletEndpointUri.toString());
         com.ning.http.client.Request r = builder.build();
         return fetcher.executeRequest(r);

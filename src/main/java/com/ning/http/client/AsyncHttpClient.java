@@ -249,13 +249,13 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder addParameter(String key, String value) {
-            return super.addParameter(key, value);
+        public BoundRequestBuilder addFormParam(String key, String value) {
+            return super.addFormParam(key, value);
         }
 
         @Override
-        public BoundRequestBuilder addQueryParameter(String name, String value) {
-            return super.addQueryParameter(name, value);
+        public BoundRequestBuilder addQueryParam(String name, String value) {
+            return super.addQueryParam(name, value);
         }
 
         @Override
@@ -304,13 +304,13 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) {
-            return super.setParameters(parameters);
+        public BoundRequestBuilder setFormParams(Map<String, Collection<String>> parameters) {
+            return super.setFormParams(parameters);
         }
 
         @Override
-        public BoundRequestBuilder setParameters(FluentStringsMap parameters) {
-            return super.setParameters(parameters);
+        public BoundRequestBuilder setFormParams(FluentStringsMap parameters) {
+            return super.setFormParams(parameters);
         }
 
         @Override

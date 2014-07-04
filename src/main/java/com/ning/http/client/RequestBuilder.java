@@ -65,18 +65,18 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder addParameter(String key, String value) {
-        return super.addParameter(key, value);
+    public RequestBuilder addFormParam(String key, String value) {
+        return super.addFormParam(key, value);
     }
 
     @Override
-    public RequestBuilder addQueryParameter(String name, String value) {
-        return super.addQueryParameter(name, value);
+    public RequestBuilder addQueryParam(String name, String value) {
+        return super.addQueryParam(name, value);
     }
 
     @Override
-    public RequestBuilder setQueryParameters(FluentStringsMap parameters) {
-        return super.setQueryParameters(parameters);
+    public RequestBuilder setQueryParam(FluentStringsMap parameters) {
+        return super.setQueryParam(parameters);
     }
 
     @Override
@@ -136,13 +136,13 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setParameters(Map<String, Collection<String>> parameters) {
-        return super.setParameters(parameters);
+    public RequestBuilder setFormParams(Map<String, Collection<String>> parameters) {
+        return super.setFormParams(parameters);
     }
 
     @Override
-    public RequestBuilder setParameters(FluentStringsMap parameters) {
-        return super.setParameters(parameters);
+    public RequestBuilder setFormParams(FluentStringsMap parameters) {
+        return super.setFormParams(parameters);
     }
 
     @Override

@@ -367,9 +367,9 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder setUrl(String url);
 
-        DerivedBuilder setParameters(FluentStringsMap parameters);
+        DerivedBuilder setFormParams(FluentStringsMap parameters);
 
-        DerivedBuilder setParameters(Map<String, Collection<String>> parameters);
+        DerivedBuilder setFormParams(Map<String, Collection<String>> parameters);
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
@@ -377,9 +377,9 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder setHeader(String name, String value);
 
-        DerivedBuilder addQueryParameter(String name, String value);
+        DerivedBuilder addQueryParam(String name, String value);
 
-        DerivedBuilder addParameter(String key, String value);
+        DerivedBuilder addFormParam(String key, String value);
 
         DerivedBuilder addHeader(String name, String value);
 
@@ -437,13 +437,13 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder addParameter(String key, String value) {
-            requestBuilder.addParameter(key, value);
+        public Builder addFormParam(String key, String value) {
+            requestBuilder.addFormParam(key, value);
             return this;
         }
 
-        public Builder addQueryParameter(String name, String value) {
-            requestBuilder.addQueryParameter(name, value);
+        public Builder addQueryParam(String name, String value) {
+            requestBuilder.addQueryParam(name, value);
             return this;
         }
 
@@ -462,13 +462,13 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setParameters(Map<String, Collection<String>> parameters) {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(Map<String, Collection<String>> parameters) {
+            requestBuilder.setFormParams(parameters);
             return this;
         }
 
-        public Builder setParameters(FluentStringsMap parameters) {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(FluentStringsMap parameters) {
+            requestBuilder.setFormParams(parameters);
             return this;
         }
 

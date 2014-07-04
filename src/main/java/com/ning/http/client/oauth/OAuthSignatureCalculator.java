@@ -86,7 +86,7 @@ public class OAuthSignatureCalculator
         String method = request.getMethod(); // POST etc
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
-        String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
+        String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }

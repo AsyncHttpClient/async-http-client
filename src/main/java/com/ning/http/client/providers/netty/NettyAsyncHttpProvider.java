@@ -831,9 +831,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 byte[] bytes = request.getStringData().getBytes(bodyCharset);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            } else if (isNonEmpty(request.getParams())) {
+            } else if (isNonEmpty(request.getFormParams())) {
                 StringBuilder sb = new StringBuilder();
-                for (final Entry<String, List<String>> paramEntry : request.getParams()) {
+                for (final Entry<String, List<String>> paramEntry : request.getFormParams()) {
                     final String key = paramEntry.getKey();
                     for (final String value : paramEntry.getValue()) {
                         if (sb.length() > 0) {
@@ -1951,7 +1951,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
 
                     if (config.isRemoveQueryParamOnRedirect())
-                        nBuilder.setQueryParameters(null);
+                        nBuilder.setQueryParam(null);
                     
                     if (!(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");
