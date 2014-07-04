@@ -552,8 +552,8 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setRealmDomain(String domain) {
-            realm().setDomain(domain);
+        public Builder setRealmNtlmDomain(String ntlmDomain) {
+            realm().setNtlmDomain(ntlmDomain);
             return this;
         }
 

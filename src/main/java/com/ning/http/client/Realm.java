@@ -49,7 +49,7 @@ public class Realm {
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
 
-    private final String domain;
+    private final String ntlmDomain;
 
     public enum AuthScheme {
         DIGEST,
@@ -73,7 +73,7 @@ public class Realm {
                   String uri,
                   String method,
                   boolean usePreemptiveAuth,
-                  String domain,
+                  String ntlmDomain,
                   String enc,
                   String host,
                   boolean messageType2Received,
@@ -95,7 +95,7 @@ public class Realm {
         this.uri = uri;
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
-        this.domain = domain;
+        this.ntlmDomain = ntlmDomain;
         this.enc = enc;
         this.host = host;
         this.messageType2Received = messageType2Received;
@@ -177,19 +177,9 @@ public class Realm {
      * Return the NTLM domain to use. This value should map the JDK
      *
      * @return the NTLM domain
-     * @deprecated - use getNtlmDomain()
-     */
-    public String getDomain() {
-        return domain;
-    }
-
-    /**
-     * Return the NTLM domain to use. This value should map the JDK
-     *
-     * @return the NTLM domain
      */
     public String getNtlmDomain() {
-        return domain;
+        return ntlmDomain;
     }
 
     /**
@@ -297,30 +287,19 @@ public class Realm {
         private String uri = "";
         private String methodName = "GET";
         private boolean usePreemptive = false;
-        private String domain = System.getProperty("http.auth.ntlm.domain", "");
+        private String ntlmDomain = System.getProperty("http.auth.ntlm.domain", "");
         private String enc = "UTF-8";
         private String host = "localhost";
         private boolean messageType2Received = false;
         private boolean useAbsoluteURI = true;
         private boolean omitQuery = false;
 
-        @Deprecated
-        public String getDomain() {
-            return domain;
-        }
-
-        @Deprecated
-        public RealmBuilder setDomain(String domain) {
-            this.domain = domain;
-            return this;
-        }
-
         public String getNtlmDomain() {
-            return domain;
+            return ntlmDomain;
         }
 
-        public RealmBuilder setNtlmDomain(String domain) {
-            this.domain = domain;
+        public RealmBuilder setNtlmDomain(String ntlmDomain) {
+            this.ntlmDomain = ntlmDomain;
             return this;
         }
 
@@ -657,7 +636,7 @@ public class Realm {
                     uri,
                     methodName,
                     usePreemptive,
-                    domain,
+                    ntlmDomain,
                     enc,
                     host,
                     messageType2Received,
