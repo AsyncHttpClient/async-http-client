@@ -103,7 +103,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
-                this.followRedirects = prototype.isRedirectOverrideSet() ? prototype.isRedirectEnabled() : null;
+                this.followRedirects = prototype.getFollowRedirect();
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
@@ -283,12 +283,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return file;
         }
 
-        public boolean isRedirectEnabled() {
-            return followRedirects != null && followRedirects;
-        }
-
-        public boolean isRedirectOverrideSet() {
-            return followRedirects != null;
+        public Boolean getFollowRedirect() {
+            return followRedirects;
         }
 
         public int getRequestTimeoutInMs() {

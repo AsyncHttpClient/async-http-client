@@ -268,7 +268,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     return call();
                 }
 
-                boolean redirectEnabled = (request.isRedirectEnabled() || config.isRedirectEnabled());
+                boolean redirectEnabled = AsyncHttpProviderUtils.redirectEnabled(config, request);
                 if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {

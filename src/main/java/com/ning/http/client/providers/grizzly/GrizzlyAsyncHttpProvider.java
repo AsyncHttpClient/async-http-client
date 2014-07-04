@@ -1518,14 +1518,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         private static boolean isRedirectAllowed(final HttpTransactionContext ctx) {
-            boolean allowed = ctx.request.isRedirectEnabled();
-            if (ctx.request.isRedirectOverrideSet()) {
-                return allowed;
-            }
-            if (!allowed) {
-                allowed = ctx.redirectsAllowed;
-            }
-            return allowed;
+            return ctx.request.getFollowRedirect() != null? ctx.request.getFollowRedirect().booleanValue() : ctx.redirectsAllowed;
         }
 
         private static HttpTransactionContext cleanup(final FilterChainContext ctx,

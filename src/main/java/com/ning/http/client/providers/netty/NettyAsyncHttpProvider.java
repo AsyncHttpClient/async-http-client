@@ -1938,8 +1938,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private boolean redirect(Request request, NettyResponseFuture<?> future, HttpResponse response, final ChannelHandlerContext ctx) throws Exception {
 
         int statusCode = response.getStatus().getCode();
-        boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-        if (redirectEnabled && (statusCode == 302 || statusCode == 301 || statusCode == 303 || statusCode == 307)) {
+        if (AsyncHttpProviderUtils.redirectEnabled(config, request) && (statusCode == 302 || statusCode == 301 || statusCode == 303 || statusCode == 307)) {
 
             if (future.incrementAndGetCurrentRedirectCount() < config.getMaxRedirects()) {
                 // We must allow 401 handling again.

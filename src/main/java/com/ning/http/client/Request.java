@@ -187,18 +187,12 @@ public interface Request {
     File getFile();
 
     /**
-     * Return the <tt>true></tt> to follow redirect
+     * Return follow redirect
      *
-     * @return the <tt>true></tt> to follow redirect
+     * @return the <tt>TRUE></tt> to follow redirect, FALSE, if NOT to follow, whatever the client config.
+     * Return null if not set.
      */
-    boolean isRedirectEnabled();
-
-    /**
-     *
-     * @return <tt>true></tt> if request's redirectEnabled setting
-     *          should be used in place of client's
-     */
-    boolean isRedirectOverrideSet();
+    Boolean getFollowRedirect();
 
     /**
      * Overrides the config default value

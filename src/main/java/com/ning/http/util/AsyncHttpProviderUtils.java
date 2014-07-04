@@ -228,4 +228,8 @@ public class AsyncHttpProviderUtils {
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
         return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
     }
+
+    public static boolean redirectEnabled(AsyncHttpClientConfig config, Request request) {
+        return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isRedirectEnabled();
+    }
 }
