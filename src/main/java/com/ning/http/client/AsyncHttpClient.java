@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -304,13 +305,13 @@ public class AsyncHttpClient implements Closeable {
         }
 
         @Override
-        public BoundRequestBuilder setFormParams(Map<String, Collection<String>> parameters) {
-            return super.setFormParams(parameters);
+        public BoundRequestBuilder setFormParams(Map<String, List<String>> params) {
+            return super.setFormParams(params);
         }
 
         @Override
-        public BoundRequestBuilder setFormParams(FluentStringsMap parameters) {
-            return super.setFormParams(parameters);
+        public BoundRequestBuilder setFormParams(List<Param> params) {
+            return super.setFormParams(params);
         }
 
         @Override

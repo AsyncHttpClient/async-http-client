@@ -14,13 +14,6 @@ package com.ning.http.util;
 
 import static com.ning.http.util.MiscUtil.isNonEmpty;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.ByteArrayPart;
@@ -28,6 +21,7 @@ import com.ning.http.client.FilePart;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseBodyPartsInputStream;
+import com.ning.http.client.Param;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
 import com.ning.http.client.StringPart;
@@ -35,6 +29,13 @@ import com.ning.http.client.uri.UriComponents;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
+
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 /**
  * {@link com.ning.http.client.AsyncHttpProvider} common utilities.
@@ -231,5 +232,17 @@ public class AsyncHttpProviderUtils {
 
     public static boolean redirectEnabled(AsyncHttpClientConfig config, Request request) {
         return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isRedirectEnabled();
+    }
+    
+    public static String formParams2UTF8String(List<Param> params) {
+        StringBuilder sb = new StringBuilder(params.size() * 15);
+        for (Param param : params) {
+            UTF8UrlEncoder.appendEncoded(sb, param.getName());
+            sb.append("=");
+            UTF8UrlEncoder.appendEncoded(sb, param.getValue());
+            sb.append("&");
+        }
+        sb.setLength(sb.length() - 1);
+        return sb.toString();
     }
 }

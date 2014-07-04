@@ -17,6 +17,7 @@ package com.ning.http.client;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.ning.http.client.Request.EntityWriter;
@@ -75,8 +76,13 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setQueryParam(FluentStringsMap parameters) {
-        return super.setQueryParam(parameters);
+    public RequestBuilder setQueryParams(List<Param> params) {
+        return super.setQueryParams(params);
+    }
+
+    @Override
+    public RequestBuilder setQueryParams(Map<String, List<String>> params) {
+        return super.setQueryParams(params);
     }
 
     @Override
@@ -136,13 +142,13 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setFormParams(Map<String, Collection<String>> parameters) {
-        return super.setFormParams(parameters);
+    public RequestBuilder setFormParams(List<Param> params) {
+        return super.setFormParams(params);
     }
 
     @Override
-    public RequestBuilder setFormParams(FluentStringsMap parameters) {
-        return super.setFormParams(parameters);
+    public RequestBuilder setFormParams(Map<String, List<String>> params) {
+        return super.setFormParams(params);
     }
 
     @Override

@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,11 +62,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private InputStream streamData;
         private EntityWriter entityWriter;
         private BodyGenerator bodyGenerator;
-        private FluentStringsMap formParams;
+        private List<Param> formParams;
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
-        public FluentStringsMap queryParams;
+        public List<Param> queryParams;
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
@@ -95,8 +94,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.streamData = prototype.getStreamData();
                 this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
-                this.formParams = prototype.getFormParams() == null ? null : new FluentStringsMap(prototype.getFormParams());
-                this.queryParams = prototype.getQueryParams() == null ? null : new FluentStringsMap(prototype.getQueryParams());
+                this.formParams = prototype.getFormParams() == null ? null : new ArrayList<Param>(prototype.getFormParams());
+                this.queryParams = prototype.getQueryParams() == null ? null : new ArrayList<Param>(prototype.getQueryParams());
                 this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getContentLength();
@@ -112,7 +111,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        /* @Override */
         public String getMethod() {
             return method;
         }
@@ -134,12 +132,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
 
-        /* @Override */
         public String getUrl() {
             return removeTrailingSlash(getURI());
         }
 
-        /* @Override */
         public String getRawUrl() {
             return removeTrailingSlash(getRawURI());
         }
@@ -173,31 +169,23 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             String newQuery = null;
             if (isNonEmpty(queryParams)) {
                 StringBuilder sb = new StringBuilder();
-                for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
-                    Map.Entry<String, List<String>> param = i.next();
-                    String name = param.getKey();
-                    for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
-                        String value = j.next();
-                        if (encode) {
-                            UTF8UrlEncoder.appendEncoded(sb, name);
-                        } else {
-                            sb.append(name);
-                        }
-                        if (value != null) {
-                            sb.append('=');
-                            if (encode) {
-                                UTF8UrlEncoder.appendEncoded(sb, value);
-                            } else {
-                                sb.append(value);
-                            }
-                        }
-                        if (j.hasNext()) {
-                            sb.append('&');
-                        }
+                for (Iterator<Param> i = queryParams.iterator(); i.hasNext();) {
+                    Param param = i.next();
+                    String name = param.getName();
+                    String value = param.getValue();
+                    if (encode)
+                        UTF8UrlEncoder.appendEncoded(sb, name);
+                    else
+                        sb.append(name);
+                    if (value != null) {
+                        sb.append('=');
+                        if (encode)
+                            UTF8UrlEncoder.appendEncoded(sb, value);
+                        else
+                            sb.append(value);
                     }
-                    if (i.hasNext()) {
+                    if (i.hasNext())
                         sb.append('&');
-                    }
                 }
 
                 newQuery = sb.toString();
@@ -212,63 +200,52 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     newQuery);
         }
 
-        /* @Override */
         public FluentCaseInsensitiveStringsMap getHeaders() {
             return headers;
         }
 
-        /* @Override */
         public Collection<Cookie> getCookies() {
             return cookies != null ? Collections.unmodifiableCollection(cookies) : Collections.<Cookie> emptyList();
         }
 
-        /* @Override */
         public byte[] getByteData() {
             return byteData;
         }
 
-        /* @Override */
         public String getStringData() {
             return stringData;
         }
 
-        /* @Override */
         public InputStream getStreamData() {
             return streamData;
         }
 
-        /* @Override */
         public EntityWriter getEntityWriter() {
             return entityWriter;
         }
 
-        /* @Override */
         public BodyGenerator getBodyGenerator() {
             return bodyGenerator;
         }
 
-        /* @Override */
         public long getContentLength() {
             return length;
         }
 
-        /* @Override */
-        public FluentStringsMap getFormParams() {
-            return formParams;
+        public List<Param> getFormParams() {
+            return formParams != null ? formParams : Collections.<Param> emptyList();
         }
 
-        /* @Override */
         public List<Part> getParts() {
-            return parts;
+            return parts != null ? parts : Collections.<Part> emptyList();
         }
 
-        /* @Override */
         public String getVirtualHost() {
             return virtualHost;
         }
 
-        public FluentStringsMap getQueryParams() {
-            return queryParams;
+        public List<Param> getQueryParams() {
+            return queryParams != null ? queryParams : Collections.<Param> emptyList();
         }
 
         public ProxyServer getProxyServer() {
@@ -320,11 +297,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
             if (isNonEmpty(formParams)) {
                 sb.append("\tformParams:");
-                for (String name : formParams.keySet()) {
+                for (Param param : formParams) {
                     sb.append("\t");
-                    sb.append(name);
+                    sb.append(param.getName());
                     sb.append(":");
-                    sb.append(formParams.getJoinedValue(name, ", "));
+                    sb.append(param.getValue());
                 }
             }
 
@@ -548,41 +525,50 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T addQueryParam(String name, String value) {
         if (request.queryParams == null) {
-            request.queryParams = new FluentStringsMap();
+            request.queryParams = new ArrayList<Param>(1);
         }
-        request.queryParams.add(name, value);
+        request.queryParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
-    public T setQueryParam(FluentStringsMap parameters) {
-        if (parameters == null) {
-            request.queryParams = null;
-        } else {
-            request.queryParams = new FluentStringsMap(parameters);
+    private List<Param> map2ParamList(Map<String, List<String>> map) {
+        if (map == null)
+            return null;
+
+        List<Param> params = new ArrayList<Param>(map.size());
+        for (Map.Entry<String, List<String>> entries : map.entrySet()) {
+            String name = entries.getKey();
+            for (String value : entries.getValue())
+                params.add(new Param(name, value));
         }
-        return derived.cast(this);
+        return params;
+    }
+    
+    public T setQueryParams(Map<String, List<String>> map) {
+        return setQueryParams(map2ParamList(map));
     }
 
-    public T addFormParam(String key, String value) {
+    public T setQueryParams(List<Param> params) {
+        request.queryParams = params;
+        return derived.cast(this);
+    }
+    
+    public T addFormParam(String name, String value) {
         resetNonMultipartData();
         resetMultipartData();
         if (request.formParams == null)
-            request.formParams = new FluentStringsMap();
-        request.formParams.add(key, value);
+            request.formParams = new ArrayList<Param>(1);
+        request.formParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
-    public T setFormParams(FluentStringsMap parameters) {
-        resetNonMultipartData();
-        resetMultipartData();
-        request.formParams = new FluentStringsMap(parameters);
-        return derived.cast(this);
+    public T setFormParams(Map<String, List<String>> map) {
+        return setFormParams(map2ParamList(map));
     }
-
-    public T setFormParams(Map<String, Collection<String>> parameters) {
+    public T setFormParams(List<Param> params) {
         resetNonMultipartData();
         resetMultipartData();
-        request.formParams = new FluentStringsMap(parameters);
+        request.formParams = params;
         return derived.cast(this);
     }
 

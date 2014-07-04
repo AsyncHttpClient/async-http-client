@@ -30,7 +30,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -293,7 +292,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+            Map<String, List<String>> m = new HashMap<String, List<String>>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
@@ -833,7 +832,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+            Map<String, List<String>> m = new HashMap<String, List<String>>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }

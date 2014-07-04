@@ -400,6 +400,20 @@ public class FluentStringsMap implements Map<String, List<String>>, Iterable<Map
         return values.values();
     }
 
+    public List<Param> toParams() {
+        if (values.isEmpty())
+            return Collections.emptyList();
+        else {
+            List<Param> params = new ArrayList<Param>(values.size());
+            for (Map.Entry<String, List<String>> entry : values.entrySet()) {
+                String name = entry.getKey();
+                for (String value: entry.getValue())
+                    params.add(new Param(name, value));
+            }
+            return params;
+        }
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

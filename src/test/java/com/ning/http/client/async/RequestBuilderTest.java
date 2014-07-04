@@ -15,16 +15,18 @@
  */
 package com.ning.http.client.async;
 
-import com.ning.http.client.FluentStringsMap;
+import static org.testng.Assert.assertEquals;
+
+import org.testng.annotations.Test;
+
+import com.ning.http.client.Param;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
-
-import static org.testng.Assert.assertEquals;
 
 public class RequestBuilderTest {
 
@@ -93,10 +95,10 @@ public class RequestBuilderTest {
                 .build();
 
         assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
-        FluentStringsMap params = request.getQueryParams();
+        List<Param> params = request.getQueryParams();
         assertEquals(params.size(), 2);
-        assertEquals(params.get("param1").get(0), "value1");
-        assertEquals(params.get("param2").get(0), "value2");
+        assertEquals(params.get(0), new Param("param1", "value1"));
+        assertEquals(params.get(1), new Param("param2", "value2"));
     }
 
     @Test(groups = {"standalone", "default_provider"})

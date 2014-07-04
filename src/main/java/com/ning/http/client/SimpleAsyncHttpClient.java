@@ -14,6 +14,7 @@ package com.ning.http.client;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -367,9 +368,9 @@ public class SimpleAsyncHttpClient {
 
         DerivedBuilder setUrl(String url);
 
-        DerivedBuilder setFormParams(FluentStringsMap parameters);
+        DerivedBuilder setFormParams(List<Param> params);
 
-        DerivedBuilder setFormParams(Map<String, Collection<String>> parameters);
+        DerivedBuilder setFormParams(Map<String, List<String>> params);
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
@@ -461,14 +462,14 @@ public class SimpleAsyncHttpClient {
             requestBuilder.setHeaders(headers);
             return this;
         }
-
-        public Builder setFormParams(Map<String, Collection<String>> parameters) {
-            requestBuilder.setFormParams(parameters);
+        
+        public Builder setFormParams(List<Param> params) {
+            requestBuilder.setFormParams(params);
             return this;
         }
 
-        public Builder setFormParams(FluentStringsMap parameters) {
-            requestBuilder.setFormParams(parameters);
+        public Builder setFormParams(Map<String, List<String>> params) {
+            requestBuilder.setFormParams(params);
             return this;
         }
 

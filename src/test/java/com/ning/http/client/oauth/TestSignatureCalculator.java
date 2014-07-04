@@ -18,7 +18,10 @@ package com.ning.http.client.oauth;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.ning.http.client.FluentStringsMap;
+import com.ning.http.client.Param;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestSignatureCalculator
 {
@@ -42,9 +45,9 @@ public class TestSignatureCalculator
         ConsumerKey consumer = new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET);
         RequestToken user = new RequestToken(TOKEN_KEY, TOKEN_SECRET);
         OAuthSignatureCalculator calc = new OAuthSignatureCalculator(consumer, user);
-        FluentStringsMap queryParams = new FluentStringsMap();
-        queryParams.add("file", "vacation.jpg");
-        queryParams.add("size", "original");
+        List<Param> queryParams = new ArrayList<Param>();
+        queryParams.add(new Param("file", "vacation.jpg"));
+        queryParams.add(new Param("size", "original"));
         String url = "http://photos.example.net/photos";
         String sig = calc.calculateSignature("GET", url, TIMESTAMP, NONCE, null, queryParams);
 

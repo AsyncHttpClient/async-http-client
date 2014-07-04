@@ -12,11 +12,14 @@
  */
 package com.ning.http.client.async.netty;
 
+import org.testng.annotations.Test;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.async.ProviderUtil;
 import com.ning.http.client.async.ProxyTunnellingTest;
 
+@Test
 public class NettyProxyTunnellingTest extends ProxyTunnellingTest {
     @Override
     public AsyncHttpClient getAsyncHttpClient(AsyncHttpClientConfig config) {

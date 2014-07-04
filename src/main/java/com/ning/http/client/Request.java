@@ -142,7 +142,7 @@ public interface Request {
      *
      * @return a {@link FluentStringsMap} of parameters.
      */
-    FluentStringsMap getFormParams();
+    List<Param> getFormParams();
 
     /**
      * Return the current {@link Part}
@@ -163,7 +163,7 @@ public interface Request {
      *
      * @return {@link FluentStringsMap} of query string
      */
-    FluentStringsMap getQueryParams();
+    List<Param> getQueryParams();
 
     /**
      * Return the {@link ProxyServer}

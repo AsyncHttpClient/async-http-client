@@ -154,7 +154,6 @@ import com.ning.http.util.CleanupChannelGroup;
 import com.ning.http.util.MiscUtil;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
-import com.ning.http.util.UTF8UrlEncoder;
 
 public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler implements AsyncHttpProvider {
 
@@ -508,7 +507,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         nettyRequest.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
                     }
 
-                } else if (future.getRequest().getParts() != null) {
+                } else if (isNonEmpty(future.getRequest().getParts())) {
                     String contentType = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
                     String contentLength = nettyRequest.getHeader(HttpHeaders.Names.CONTENT_LENGTH);
 
@@ -824,34 +823,26 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             if (buffer != null && buffer.writerIndex() != 0) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, buffer.writerIndex());
                 nettyRequest.setContent(buffer);
+
             } else if (request.getByteData() != null) {
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(request.getByteData().length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(request.getByteData()));
+
             } else if (request.getStringData() != null) {
                 byte[] bytes = request.getStringData().getBytes(bodyCharset);
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(bytes.length));
                 nettyRequest.setContent(ChannelBuffers.wrappedBuffer(bytes));
+
             } else if (isNonEmpty(request.getFormParams())) {
-                StringBuilder sb = new StringBuilder();
-                for (final Entry<String, List<String>> paramEntry : request.getFormParams()) {
-                    final String key = paramEntry.getKey();
-                    for (final String value : paramEntry.getValue()) {
-                        if (sb.length() > 0) {
-                            sb.append("&");
-                        }
-                        UTF8UrlEncoder.appendEncoded(sb, key);
-                        sb.append("=");
-                        UTF8UrlEncoder.appendEncoded(sb, value);
-                    }
-                }
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(sb.length()));
-                nettyRequest.setContent(ChannelBuffers.wrappedBuffer(sb.toString().getBytes(bodyCharset)));
+                String formBody = AsyncHttpProviderUtils.formParams2UTF8String(request.getFormParams());
+                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(formBody.length()));
+                nettyRequest.setContent(ChannelBuffers.wrappedBuffer(formBody.getBytes(bodyCharset)));
 
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
                 }
 
-            } else if (request.getParts() != null) {
+            } else if (isNonEmpty(request.getParts())) {
                 MultipartRequestEntity mre = AsyncHttpProviderUtils.createMultipartRequestEntity(request.getParts(), request.getHeaders());
 
                 nettyRequest.setHeader(HttpHeaders.Names.CONTENT_TYPE, mre.getContentType());
@@ -1950,7 +1941,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
 
                     if (config.isRemoveQueryParamOnRedirect())
-                        nBuilder.setQueryParam(null);
+                        nBuilder.resetQueryParams();
                     
                     if (!(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");

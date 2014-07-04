@@ -113,12 +113,12 @@ import com.ning.http.client.Body;
 import com.ning.http.client.BodyGenerator;
 import com.ning.http.client.ConnectionsPool;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.FluentStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Param;
 import com.ning.http.client.Part;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -1084,39 +1084,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
         }
-
-
-        private void addQueryString(final Request request,
-                                    final HttpRequestPacket requestPacket) {
-
-            final FluentStringsMap map = request.getQueryParams();
-            if (isNonEmpty(map)) {
-                StringBuilder sb = new StringBuilder(128);
-                for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
-                    final String name = entry.getKey();
-                    final List<String> values = entry.getValue();
-                    if (isNonEmpty(values)) {
-                        try {
-                            for (int i = 0, len = values.size(); i < len; i++) {
-                                final String value = values.get(i);
-                                if (isNonEmpty(value)) {
-                                    sb.append(URLEncoder.encode(name, "UTF-8")).append('=')
-                                        .append(URLEncoder.encode(values.get(i), "UTF-8")).append('&');
-                                } else {
-                                    sb.append(URLEncoder.encode(name, "UTF-8")).append('&');
-                                }
-                            }
-                        } catch (UnsupportedEncodingException ignored) {
-                        }
-                    }
-                }
-                sb.setLength(sb.length() - 1);
-                String queryString = sb.toString();
-
-                requestPacket.setQueryString(queryString);
-            }
-        }
-
     } // END AsyncHttpClientFiler
 
 
@@ -1785,7 +1752,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             builder.setUrl(uri.toString());
 
             if (ctx.provider.clientConfig.isRemoveQueryParamOnRedirect()) {
-                builder.setQueryParam(null);
+                builder.resetQueryParams();;
             }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
                 builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));
@@ -2046,43 +2013,30 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             if (requestPacket.getContentType() == null) {
                 requestPacket.setContentType("application/x-www-form-urlencoded");
             }
-            StringBuilder sb = null;
             String charset = request.getBodyEncoding();
             if (charset == null) {
                 charset = Charsets.ASCII_CHARSET.name();
             }
-            final FluentStringsMap params = request.getFormParams();
-            if (!params.isEmpty()) {
-                for (Map.Entry<String, List<String>> entry : params.entrySet()) {
-                    String name = entry.getKey();
-                    List<String> values = entry.getValue();
-                    if (isNonEmpty(values)) {
-                        if (sb == null) {
-                            sb = new StringBuilder(128);
-                        }
-                        for (String value : values) {
-                            if (sb.length() > 0) {
-                                sb.append('&');
-                            }
-                            sb.append(URLEncoder.encode(name, charset))
-                                    .append('=').append(URLEncoder.encode(value, charset));
-                        }
-                    }
+            
+            if (isNonEmpty(request.getFormParams())) {
+                StringBuilder sb = new StringBuilder(128);
+                for (Param param : request.getFormParams()) {
+                    String name = URLEncoder.encode(param.getName(), charset);
+                    String value = URLEncoder.encode(param.getValue(), charset);
+                    sb.append(name).append('=').append(value).append('&');
                 }
-            }
-            if (sb != null) {
+                sb.setLength(sb.length() - 1);
                 final byte[] data = sb.toString().getBytes(charset);
                 final MemoryManager mm = ctx.getMemoryManager();
                 final Buffer gBuffer = Buffers.wrap(mm, data);
                 final HttpContent content = requestPacket.httpContentBuilder().content(gBuffer).build();
-                if (requestPacket.getContentLength() == -1) {
-                    if (!clientConfig.isCompressionEnabled()) {
-                        requestPacket.setContentLengthLong(data.length);
-                    }
+                if (requestPacket.getContentLength() == -1 && !clientConfig.isCompressionEnabled()) {
+                    requestPacket.setContentLengthLong(data.length);
                 }
                 content.setLast(true);
                 ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
             }
+            
             return true;
         }
 

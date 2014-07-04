@@ -81,7 +81,6 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
-import com.ning.http.util.UTF8UrlEncoder;
 
 public class JDKAsyncHttpProvider implements AsyncHttpProvider {
     private final static Logger logger = LoggerFactory.getLogger(JDKAsyncHttpProvider.class);
@@ -581,27 +580,16 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     urlConnection.setFixedLengthStreamingMode(cachedBytesLenght);
 
                     urlConnection.getOutputStream().write(cachedBytes, 0, cachedBytesLenght);
-                } else if (request.getFormParams() != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (final Map.Entry<String, List<String>> paramEntry : request.getFormParams()) {
-                        final String key = paramEntry.getKey();
-                        for (final String value : paramEntry.getValue()) {
-                            if (sb.length() > 0) {
-                                sb.append("&");
-                            }
-                            UTF8UrlEncoder.appendEncoded(sb, key);
-                            sb.append("=");
-                            UTF8UrlEncoder.appendEncoded(sb, value);
-                        }
-                    }
-                    urlConnection.setRequestProperty("Content-Length", String.valueOf(sb.length()));
-                    urlConnection.setFixedLengthStreamingMode(sb.length());
+                } else if (isNonEmpty(request.getFormParams())) {
+                    String formBody = AsyncHttpProviderUtils.formParams2UTF8String(request.getFormParams());
+                    urlConnection.setRequestProperty("Content-Length", String.valueOf(formBody.length()));
+                    urlConnection.setFixedLengthStreamingMode(formBody.length());
 
                     if (!request.getHeaders().containsKey("Content-Type")) {
                         urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     }
-                    urlConnection.getOutputStream().write(sb.toString().getBytes(bodyCharset));
-                } else if (request.getParts() != null) {
+                    urlConnection.getOutputStream().write(formBody.getBytes(bodyCharset));
+                } else if (isNonEmpty(request.getParts() )) {
                     int lenght = (int) request.getContentLength();
                     if (lenght != -1) {
                         urlConnection.setRequestProperty("Content-Length", String.valueOf(lenght));

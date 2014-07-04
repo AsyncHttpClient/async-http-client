@@ -26,6 +26,7 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
+import com.ning.http.client.Param;
 import com.ning.http.client.Part;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
@@ -105,7 +106,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -266,18 +266,17 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 post.setRequestEntity(r);
                 post.setRequestHeader("Content-Length", String.valueOf(r.getContentLength()));
 
-            } else if (request.getFormParams() != null) {
+            } else if (isNonEmpty(request.getFormParams())) {
                 StringBuilder sb = new StringBuilder();
-                for (final Map.Entry<String, List<String>> paramEntry : request.getFormParams()) {
-                    final String key = paramEntry.getKey();
-                    for (final String value : paramEntry.getValue()) {
-                        if (sb.length() > 0) {
-                            sb.append("&");
-                        }
-                        UTF8UrlEncoder.appendEncoded(sb, key);
-                        sb.append("=");
-                        UTF8UrlEncoder.appendEncoded(sb, value);
+                for (final Param param : request.getFormParams()) {
+                    final String name = param.getName();
+                    final String value = param.getValue();
+                    if (sb.length() > 0) {
+                        sb.append("&");
                     }
+                    UTF8UrlEncoder.appendEncoded(sb, name);
+                    sb.append("=");
+                    UTF8UrlEncoder.appendEncoded(sb, value);
                 }
 
                 post.setRequestHeader("Content-Length", String.valueOf(sb.length()));
@@ -286,7 +285,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 if (!request.getHeaders().containsKey("Content-Type")) {
                     post.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 }
-            } else if (request.getParts() != null) {
+            } else if (isNonEmpty(request.getParts())) {
                 MultipartRequestEntity mre = createMultipartRequestEntity(bodyCharset, request.getParts(), post.getParams());
                 post.setRequestEntity(mre);
                 post.setRequestHeader("Content-Type", mre.getContentType());

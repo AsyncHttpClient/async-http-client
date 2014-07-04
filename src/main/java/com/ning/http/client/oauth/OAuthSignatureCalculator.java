@@ -16,7 +16,7 @@
  */
 package com.ning.http.client.oauth;
 
-import com.ning.http.client.FluentStringsMap;
+import com.ning.http.client.Param;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.SignatureCalculator;
@@ -27,7 +27,6 @@ import com.ning.http.util.UTF8UrlEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -95,7 +94,7 @@ public class OAuthSignatureCalculator
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
     public String calculateSignature(String method, String baseURL, long oauthTimestamp, String nonce,
-                                     FluentStringsMap formParams, FluentStringsMap queryParams) {
+                                     List<Param> formParams, List<Param> queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
@@ -133,19 +132,13 @@ public class OAuthSignatureCalculator
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
-            for (Map.Entry<String, List<String>> entry : formParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : formParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         if (queryParams != null) {
-            for (Map.Entry<String, List<String>> entry : queryParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : queryParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         String encodedParams = allParameters.sortAndConcat();
