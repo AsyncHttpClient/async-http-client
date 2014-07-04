@@ -86,12 +86,10 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                 public void run() {
                     try {
                         requestThrottle.acquire();
-                        PerRequestConfig requestConfig = new PerRequestConfig();
-                        requestConfig.setRequestTimeoutInMs(SLEEPTIME_MS/2);
                         Future<Response> responseFuture = null;
                         try {
                              responseFuture =
-                                    client.prepareGet(getTargetUrl()).setPerRequestConfig(requestConfig).execute(new AsyncCompletionHandler<Response>() {
+                                    client.prepareGet(getTargetUrl()).setRequestTimeoutInMs(SLEEPTIME_MS/2).execute(new AsyncCompletionHandler<Response>() {
 
                                         @Override
                                         public Response onCompleted(Response response) throws Exception {

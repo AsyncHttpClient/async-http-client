@@ -72,7 +72,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private Realm realm;
         private File file;
         private Boolean followRedirects;
-        private PerRequestConfig perRequestConfig;
+        private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
         private boolean useRawUrl;
@@ -104,7 +104,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
                 this.followRedirects = prototype.isRedirectOverrideSet() ? prototype.isRedirectEnabled() : null;
-                this.perRequestConfig = prototype.getPerRequestConfig();
+                this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
                 this.useRawUrl = prototype.isUseRawUrl();
@@ -291,8 +291,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return followRedirects != null;
         }
 
-        public PerRequestConfig getPerRequestConfig() {
-            return perRequestConfig;
+        public int getRequestTimeoutInMs() {
+            return requestTimeoutInMs;
         }
 
         public long getRangeOffset() {
@@ -616,8 +616,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setPerRequestConfig(PerRequestConfig perRequestConfig) {
-        request.perRequestConfig = perRequestConfig;
+    public T setRequestTimeoutInMs(int requestTimeoutInMs) {
+        request.requestTimeoutInMs = requestTimeoutInMs;
         return derived.cast(this);
     }
 

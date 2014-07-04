@@ -120,7 +120,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
 import com.ning.http.client.Request;
@@ -360,12 +359,9 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                 if (context.isWSRequest) {
                                     return clientConfig.getWebSocketIdleTimeoutInMs();
                                 }
-                                final PerRequestConfig config = context.request.getPerRequestConfig();
-                                if (config != null) {
-                                    final long timeout = config.getRequestTimeoutInMs();
-                                    if (timeout > 0) {
-                                        return timeout;
-                                    }
+                                final long timeout = context.request.getRequestTimeoutInMs();
+                                if (timeout > 0) {
+                                    return timeout;
                                 }
                             }
                             return timeout;
@@ -441,14 +437,11 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     void touchConnection(final Connection c, final Request request) {
 
-        final PerRequestConfig config = request.getPerRequestConfig();
-        if (config != null) {
-            final long timeout = config.getRequestTimeoutInMs();
-            if (timeout > 0) {
-                final long newTimeout = System.currentTimeMillis() + timeout;
-                if (resolver != null) {
-                    resolver.setTimeoutMillis(c, newTimeout);
-                }
+        final long perRequestTimeout = request.getRequestTimeoutInMs();
+        if (perRequestTimeout > 0) {
+            final long newTimeout = System.currentTimeMillis() + perRequestTimeout;
+            if (resolver != null) {
+                resolver.setTimeoutMillis(c, newTimeout);
             }
         } else {
             final long timeout = clientConfig.getRequestTimeoutInMs();

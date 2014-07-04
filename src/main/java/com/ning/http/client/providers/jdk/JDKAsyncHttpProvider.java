@@ -63,7 +63,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -153,9 +152,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             throw new IOException(e.getMessage());
         }
 
-        PerRequestConfig conf = request.getPerRequestConfig();
-        int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
-                conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
         JDKDelegateFuture delegate = null;
         if (future != null) {
@@ -434,11 +431,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 t = new ConnectException(t.getMessage());
 
             } else if (t instanceof SocketTimeoutException) {
-                int responseTimeoutInMs = config.getRequestTimeoutInMs();
-
-                if (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
-                    responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
-                }
+                int responseTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, request);
                 t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
 
             } else if (t instanceof SSLHandshakeException) {
@@ -452,9 +445,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
         private void configure(UriComponents uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
 
-            PerRequestConfig conf = request.getPerRequestConfig();
-            int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
-                    conf.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+            int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
 
             urlConnection.setConnectTimeout(config.getConnectionTimeoutInMs());
 

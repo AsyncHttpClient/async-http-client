@@ -27,7 +27,6 @@ import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
 import com.ning.http.client.Part;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
@@ -202,7 +201,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             idleConnectionTimeoutThread = null;
         }
 
-        int requestTimeout = requestTimeout(config, request.getPerRequestConfig());
+        int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, request);
         if (config.getIdleConnectionTimeoutInMs() > 0 && requestTimeout != -1 && requestTimeout < config.getIdleConnectionTimeoutInMs()) {
             idleConnectionTimeoutThread = new IdleConnectionTimeoutThread();
             idleConnectionTimeoutThread.setConnectionTimeout(config.getIdleConnectionTimeoutInMs());
@@ -469,7 +468,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getUrl());
                 }
 
-                int delay = requestTimeout(config, future.getRequest().getPerRequestConfig());
+                int delay = AsyncHttpProviderUtils.requestTimeout(config, future.getRequest());
                 if (delay != -1) {
                     ReaperFuture reaperFuture = new ReaperFuture(future);
                     Future scheduledFuture = reaper.scheduleAtFixedRate(reaperFuture, delay, 500, TimeUnit.MILLISECONDS);
@@ -665,11 +664,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 t = new ConnectException(t.getMessage());
 
             } else if (t instanceof NoHttpResponseException) {
-                int responseTimeoutInMs = config.getRequestTimeoutInMs();
-
-                if (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != -1) {
-                    responseTimeoutInMs = request.getPerRequestConfig().getRequestTimeoutInMs();
-                }
+                int responseTimeoutInMs = AsyncHttpProviderUtils.requestTimeout(config, request);
                 t = new TimeoutException(String.format("No response received after %s", responseTimeoutInMs));
 
             } else if (t instanceof SSLHandshakeException) {
@@ -876,26 +871,11 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             if (this.apacheResponseFuture != null && this.apacheResponseFuture.hasExpired()) {
                 logger.debug("Request Timeout expired for " + this.apacheResponseFuture);
 
-                int requestTimeout = config.getRequestTimeoutInMs();
-                PerRequestConfig p = this.apacheResponseFuture.getRequest().getPerRequestConfig();
-                if (p != null && p.getRequestTimeoutInMs() != -1) {
-                    requestTimeout = p.getRequestTimeoutInMs();
-                }
+                int requestTimeout = AsyncHttpProviderUtils.requestTimeout(config, this.apacheResponseFuture.getRequest());
                 apacheResponseFuture.abort(new TimeoutException(String.format("No response received after %s", requestTimeout)));
 
                 this.apacheResponseFuture = null;
             }
         }
-    }
-
-    protected static int requestTimeout(AsyncHttpClientConfig config, PerRequestConfig perRequestConfig) {
-        int result;
-        if (perRequestConfig != null) {
-            int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-            result = (prRequestTimeout != 0 ? prRequestTimeout : config.getRequestTimeoutInMs());
-        } else {
-            result = config.getRequestTimeoutInMs();
-        }
-        return result;
     }
 }

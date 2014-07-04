@@ -226,6 +226,6 @@ public class AsyncHttpProviderUtils {
     }
     
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {
-        return (request.getPerRequestConfig() != null && request.getPerRequestConfig().getRequestTimeoutInMs() != 0) ? request.getPerRequestConfig().getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
+        return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
     }
 }

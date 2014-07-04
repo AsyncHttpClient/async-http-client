@@ -123,7 +123,6 @@ import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.MaxRedirectException;
-import com.ning.http.client.PerRequestConfig;
 import com.ning.http.client.ProgressAsyncHandler;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.RandomAccessBody;
@@ -1139,17 +1138,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return c.future();
     }
 
-    protected static int requestTimeoutInMs(AsyncHttpClientConfig config, PerRequestConfig perRequestConfig) {
-        int result;
-        if (perRequestConfig != null) {
-            int prRequestTimeout = perRequestConfig.getRequestTimeoutInMs();
-            result = (prRequestTimeout != 0 ? prRequestTimeout : config.getRequestTimeoutInMs());
-        } else {
-            result = config.getRequestTimeoutInMs();
-        }
-        return result;
-    }
-
     private void closeChannel(final ChannelHandlerContext ctx) {
         connectionsPool.removeAll(ctx.getChannel());
         finishChannel(ctx);
@@ -1711,7 +1699,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 request,//
                 asyncHandler,//
                 nettyRequest,//
-                requestTimeoutInMs(config, request.getPerRequestConfig()),//
+                AsyncHttpProviderUtils.requestTimeout(config, request),//
                 config.getIdleConnectionTimeoutInMs(),//
                 provider,//
                 request.getConnectionPoolKeyStrategy(),//

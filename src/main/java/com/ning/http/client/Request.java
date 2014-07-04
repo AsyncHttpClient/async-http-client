@@ -201,11 +201,10 @@ public interface Request {
     boolean isRedirectOverrideSet();
 
     /**
-     * Return Per request configuration.
-     *
-     * @return Per request configuration.
+     * Overrides the config default value
+     * @return the request timeout
      */
-    PerRequestConfig getPerRequestConfig();
+    int getRequestTimeoutInMs();
 
     /**
      * Return the HTTP Range header value, or
