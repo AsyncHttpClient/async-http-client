@@ -133,6 +133,7 @@ import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.ntlm.NTLMEngine;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.client.websocket.WebSocket;
 import com.ning.http.client.websocket.WebSocketByteListener;
 import com.ning.http.client.websocket.WebSocketCloseCodeReasonListener;
@@ -147,6 +148,7 @@ import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
+
 import org.glassfish.grizzly.CloseListener;
 import org.glassfish.grizzly.CloseType;
 import org.glassfish.grizzly.Closeable;
@@ -525,7 +527,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
     }
 
-    static int getPort(final URI uri, final int p) {
+    static int getPort(final UriComponents uri, final int p) {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
@@ -848,7 +850,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 convertToUpgradeRequest(httpCtx);
             }
             final Request req = httpCtx.request;
-            final URI uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
+            final UriComponents uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
             final Method method = Method.valueOf(request.getMethod());
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             boolean secure = "https".equals(uri.getScheme());
@@ -915,7 +917,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(secure, connection));
 
             if (!useProxy && !httpCtx.isWSRequest) {
-                requestPacket.setQueryString(uri.getRawQuery());
+                requestPacket.setQueryString(uri.getQuery());
                 //addQueryString(request, requestPacket);
             }
             addHeaders(request, requestPacket);
@@ -1693,16 +1695,16 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     throw new IllegalStateException("redirect received, but no location header was present");
                 }
 
-                URI orig;
+                UriComponents orig;
                 if (httpTransactionContext.lastRedirectURI == null) {
                     orig = httpTransactionContext.request.getURI();
                 } else {
-                    orig = AsyncHttpProviderUtils.getRedirectUri(httpTransactionContext.request.getURI(),
-                                                                 httpTransactionContext.lastRedirectURI);
+                    orig = UriComponents.create(httpTransactionContext.request.getURI(),
+                                                httpTransactionContext.lastRedirectURI);
                 }
                 httpTransactionContext.lastRedirectURI = redirectURL;
                 Request requestToSend;
-                URI uri = AsyncHttpProviderUtils.getRedirectUri(orig, redirectURL);
+                UriComponents uri = UriComponents.create(orig, redirectURL);
                 if (!uri.toString().equalsIgnoreCase(orig.toString())) {
                     requestToSend = newRequest(uri,
                                                responsePacket,
@@ -1764,8 +1766,8 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             }
 
 
-            private boolean switchingSchemes(final URI oldUri,
-                                             final URI newUri) {
+            private boolean switchingSchemes(final UriComponents oldUri,
+                                             final UriComponents newUri) {
 
                 return !oldUri.getScheme().equals(newUri.getScheme());
 
@@ -1773,7 +1775,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
 
             private void notifySchemeSwitch(final FilterChainContext ctx,
                                             final Connection c,
-                                            final URI uri) throws IOException {
+                                            final UriComponents uri) throws IOException {
 
                 ctx.notifyDownstream(new SwitchingSSLFilter.SSLSwitchingEvent(
                                                "https".equals(uri.getScheme()), c));
@@ -1785,7 +1787,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         // ----------------------------------------------------- Private Methods
 
 
-        private static Request newRequest(final URI uri,
+        private static Request newRequest(final UriComponents uri,
                                           final HttpResponsePacket response,
                                           final HttpTransactionContext ctx,
                                           boolean asGet) {
@@ -2488,7 +2490,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         throws IOException, ExecutionException, InterruptedException {
 
             ProxyServer proxy = requestFuture.getProxy();
-            final URI uri = request.getURI();
+            final UriComponents uri = request.getURI();
             String host = ((proxy != null) ? proxy.getHost() : uri.getHost());
             int port = ((proxy != null) ? proxy.getPort() : uri.getPort());
             if(request.getLocalAddress()!=null) {
@@ -2505,7 +2507,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                                              final GrizzlyResponseFuture requestFuture)
         throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
-            final URI uri = request.getURI();
+            final UriComponents uri = request.getURI();
             final ProxyServer proxy = requestFuture.getProxy();
             String host = (proxy != null) ? proxy.getHost() : uri.getHost();
             int port = (proxy != null) ? proxy.getPort() : uri.getPort();

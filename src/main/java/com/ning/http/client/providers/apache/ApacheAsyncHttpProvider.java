@@ -42,6 +42,7 @@ import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
 import com.ning.http.client.resumable.ResumableAsyncHandler;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.UTF8UrlEncoder;
@@ -97,7 +98,6 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.KeyManagementException;
@@ -120,7 +120,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-
 
 /**
  * An {@link com.ning.http.client.AsyncHttpProvider} for Apache Http Client 3.1
@@ -463,7 +462,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             terminate = true;
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                URI uri = null;
+                UriComponents uri = null;
                 try {
                     uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getRawUrl());
                 } catch (IllegalArgumentException u) {
@@ -517,7 +516,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = method.getResponseHeader("Location").getValue();
-                        URI rediUri = AsyncHttpProviderUtils.getRedirectUri(uri, location);
+                        UriComponents rediUri = UriComponents.create(uri, location);
                         String newUrl = rediUri.toString();
 
                         if (!newUrl.equals(uri.toString())) {

@@ -14,10 +14,10 @@ package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.uri.UriComponents;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 
 /**
@@ -29,7 +29,7 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final boolean isLast;
     private boolean closeConnection;
 
-    public ResponseBodyPart(URI uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
+    public ResponseBodyPart(UriComponents uri, byte[] chunk, AsyncHttpProvider provider, boolean last) {
         super(uri, provider);
         this.chunk = chunk;
         isLast = last;

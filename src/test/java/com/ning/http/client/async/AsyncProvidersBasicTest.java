@@ -1652,7 +1652,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     protected String getBrokenTargetUrl() {
         return String.format("http:127.0.0.1:%d/foo/test", port1);
     }
-
+    
     @Test(groups = { "standalone", "default_provider" }, expectedExceptions = { NullPointerException.class })
     public void invalidUri() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);

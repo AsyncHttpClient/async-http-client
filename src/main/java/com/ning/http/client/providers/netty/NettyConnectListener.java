@@ -20,6 +20,7 @@ import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AllowAllHostnameVerifier;
 import com.ning.http.util.ProxyUtils;
 
@@ -37,7 +38,6 @@ import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -139,7 +139,7 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
             this.buffer = buffer;
         }
 
-        public NettyConnectListener<T> build(final URI uri) throws IOException {
+        public NettyConnectListener<T> build(final UriComponents uri) throws IOException {
             ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
             HttpRequest nettyRequest = NettyAsyncHttpProvider.buildRequest(config, request, uri, true, buffer, proxyServer);
             if (future == null) {

@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.UTF8UrlEncoder;
 
@@ -47,13 +47,13 @@ import com.ning.http.util.UTF8UrlEncoder;
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final static Logger logger = LoggerFactory.getLogger(RequestBuilderBase.class);
 
-    private static final URI DEFAULT_REQUEST_URL = URI.create("http://localhost");
+    private static final UriComponents DEFAULT_REQUEST_URL = UriComponents.create("http://localhost");
 
     private static final class RequestImpl implements Request {
         private String method;
-        private URI originalUri;
-        private URI uri;
-        private URI rawUri;
+        private UriComponents originalUri;
+        private UriComponents uri;
+        private UriComponents rawUri;
         private InetAddress address;
         private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
@@ -130,7 +130,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return localAddress;
         }
 
-        private String removeTrailingSlash(URI uri) {
+        private String removeTrailingSlash(UriComponents uri) {
             String uriString = uri.toString();
             if (uriString.endsWith("/")) {
                 return uriString.substring(0, uriString.length() - 1);
@@ -149,23 +149,23 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return removeTrailingSlash(getRawURI());
         }
 
-        public URI getOriginalURI() {
+        public UriComponents getOriginalURI() {
             return originalUri;
         }
 
-        public URI getURI() {
+        public UriComponents getURI() {
             if (uri == null)
-                uri = toURI(true);
+                uri = toUriComponents(true);
             return uri;
         }
 
-        public URI getRawURI() {
+        public UriComponents getRawURI() {
             if (rawUri == null)
-                rawUri = toURI(false);
+                rawUri = toUriComponents(false);
             return rawUri;
         }
 
-        private URI toURI(boolean encode) {
+        private UriComponents toUriComponents(boolean encode) {
 
             if (originalUri == null) {
                 logger.debug("setUrl hasn't been invoked. Using http://localhost");
@@ -174,49 +174,47 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
-            StringBuilder builder = new StringBuilder()//
-                    .append(originalUri.getScheme())//
-                    .append("://")//
-                    .append(originalUri.getRawAuthority());
-            if (isNonEmpty(originalUri.getRawPath())) {
-                builder.append(originalUri.getRawPath());
-            } else {
-                builder.append("/");
-            }
-
+            String newPath = isNonEmpty(originalUri.getPath())? originalUri.getPath() : "/";
+            String newQuery = null;
             if (isNonEmpty(queryParams)) {
-
-                builder.append("?");
-
+                StringBuilder sb = new StringBuilder();
                 for (Iterator<Entry<String, List<String>>> i = queryParams.iterator(); i.hasNext();) {
                     Map.Entry<String, List<String>> param = i.next();
                     String name = param.getKey();
                     for (Iterator<String> j = param.getValue().iterator(); j.hasNext();) {
                         String value = j.next();
                         if (encode) {
-                            UTF8UrlEncoder.appendEncoded(builder, name);
+                            UTF8UrlEncoder.appendEncoded(sb, name);
                         } else {
-                            builder.append(name);
+                            sb.append(name);
                         }
                         if (value != null) {
-                            builder.append('=');
+                            sb.append('=');
                             if (encode) {
-                                UTF8UrlEncoder.appendEncoded(builder, value);
+                                UTF8UrlEncoder.appendEncoded(sb, value);
                             } else {
-                                builder.append(value);
+                                sb.append(value);
                             }
                         }
                         if (j.hasNext()) {
-                            builder.append('&');
+                            sb.append('&');
                         }
                     }
                     if (i.hasNext()) {
-                        builder.append('&');
+                        sb.append('&');
                     }
                 }
+
+                newQuery = sb.toString();
             }
 
-            return URI.create(builder.toString());
+            return new UriComponents(//
+                    originalUri.getScheme(),//
+                    originalUri.getUserInfo(),//
+                    originalUri.getHost(),//
+                    originalUri.getPort(),//
+                    newPath,//
+                    newQuery);
         }
 
         /* @Override */
@@ -377,12 +375,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setUrl(String url) {
         this.baseURL = url;
-        return setURI(URI.create(url));
+        return setURI(UriComponents.create(url));
     }
 
-    public T setURI(URI uri) {
-        if (uri.getHost() == null)
-            throw new NullPointerException("uri.host");
+    public T setURI(UriComponents uri) {
         if (uri.getPath() == null)
             throw new NullPointerException("uri.path");
         request.originalUri = uri;
@@ -402,9 +398,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    private void addQueryParameters(URI uri) {
-        if (isNonEmpty(uri.getRawQuery())) {
-            String[] queries = uri.getRawQuery().split("&");
+    private void addQueryParameters(UriComponents uri) {
+        if (isNonEmpty(uri.getQuery())) {
+            String[] queries = uri.getQuery().split("&");
             int pos;
             for (String query : queries) {
                 pos = query.indexOf("=");

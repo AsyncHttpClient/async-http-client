@@ -17,13 +17,14 @@ package com.ning.http.client.providers.netty;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseBodyPart;
+import com.ning.http.client.uri.UriComponents;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,11 +39,11 @@ public class ResponseBodyPart extends HttpResponseBodyPart {
     private final int length;
     private boolean closeConnection = false;
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
+    public ResponseBodyPart(UriComponents uri, HttpResponse response, AsyncHttpProvider provider, boolean last) {
         this(uri, response, provider, null, last);
     }
 
-    public ResponseBodyPart(URI uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
+    public ResponseBodyPart(UriComponents uri, HttpResponse response, AsyncHttpProvider provider, HttpChunk chunk, boolean last) {
         super(uri, provider);
         content = chunk != null ? chunk.getContent() : response.getContent();
         length = content.readableBytes();

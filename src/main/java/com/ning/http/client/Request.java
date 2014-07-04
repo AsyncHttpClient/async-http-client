@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * The Request class can be used to construct HTTP request:
@@ -69,9 +69,9 @@ public interface Request {
      */
     String getUrl();
 
-    URI getOriginalURI();
-    URI getURI();
-    URI getRawURI();
+    UriComponents getOriginalURI();
+    UriComponents getURI();
+    UriComponents getRawURI();
 
     /**
      * Return the InetAddress to override

@@ -14,10 +14,10 @@ package com.ning.http.client.providers.jdk;
 
 import com.ning.http.client.AsyncHttpProvider;
 import com.ning.http.client.HttpResponseStatus;
+import com.ning.http.client.uri.UriComponents;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URI;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
@@ -26,7 +26,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpURLConnection urlConnection;
 
-    public ResponseStatus(URI uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
+    public ResponseStatus(UriComponents uri, HttpURLConnection urlConnection, AsyncHttpProvider provider) {
         super(uri, provider);
         this.urlConnection = urlConnection;
     }

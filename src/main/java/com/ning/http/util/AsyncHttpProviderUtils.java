@@ -19,8 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -33,6 +31,7 @@ import com.ning.http.client.HttpResponseBodyPartsInputStream;
 import com.ning.http.client.Part;
 import com.ning.http.client.Request;
 import com.ning.http.client.StringPart;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.multipart.ByteArrayPartSource;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.multipart.PartSource;
@@ -48,7 +47,7 @@ public class AsyncHttpProviderUtils {
 
     static final byte[] EMPTY_BYTE_ARRAY = "".getBytes();
     
-    public static final void validateSupportedScheme(URI uri) {
+    public static final void validateSupportedScheme(UriComponents uri) {
         final String scheme = uri.getScheme();
         if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https") && !scheme.equalsIgnoreCase("ws")
                 && !scheme.equalsIgnoreCase("wss")) {
@@ -57,8 +56,8 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    public final static URI createNonEmptyPathURI(String u) {
-        URI uri = URI.create(u);
+    public final static UriComponents createNonEmptyPathURI(String u) {
+        UriComponents uri = UriComponents.create(u);
         validateSupportedScheme(uri);
 
         String path = uri.getPath();
@@ -67,24 +66,19 @@ public class AsyncHttpProviderUtils {
         } else if (isNonEmpty(path) && path.charAt(0) != '/') {
             throw new IllegalArgumentException("The URI path, of the URI " + uri  + ". must start with a '/'");
         } else if (!isNonEmpty(path)) {
-            return URI.create(u + "/");
+            return UriComponents.create(u + "/");
         }
 
         return uri;
     }
 
-    public final static String getBaseUrl(URI uri) {
+    public final static String getBaseUrl(UriComponents uri) {
         return uri.getScheme() + "://" + getAuthority(uri);
     }
 
-    public final static String getAuthority(URI uri) {
-        String url = uri.getAuthority();
-        int port = uri.getPort();
-        if (port == -1) {
-            port = getPort(uri);
-            url += ":" + port;
-        }
-        return url;
+    public final static String getAuthority(UriComponents uri) {
+        int port = uri.getPort() != -1? uri.getPort() : getDefaultPort(uri);
+        return uri.getHost() + ":" + port;
     }
 
     public final static String contentToString(List<HttpResponseBodyPart> bodyParts, String charset) throws UnsupportedEncodingException {
@@ -116,62 +110,7 @@ public class AsyncHttpProviderUtils {
         return bodyParts.isEmpty()? new ByteArrayInputStream(EMPTY_BYTE_ARRAY) : new HttpResponseBodyPartsInputStream(bodyParts);
     }
 
-    public final static String getHost(URI uri) {
-        String host = uri.getHost();
-        if (host == null) {
-            host = uri.getAuthority();
-        }
-        return host;
-    }
-
-    public final static URI getRedirectUri(URI uri, String location) {
-            if(location == null)
-                throw new IllegalArgumentException("URI " + uri + " was redirected to null location");
-            
-            URI locationURI = null;
-            try {
-                locationURI = new URI(location);
-            } catch (URISyntaxException e) {
-                // rich, we have a badly encoded location, let's try to encode the query params
-                String[] parts = location.split("\\?");
-                if (parts.length != 2) {
-                    throw new IllegalArgumentException("Don't know how to turn this location into a proper URI:" + location, e);
-                } else {
-                    StringBuilder properUrl = new StringBuilder(location.length()).append(parts[0]).append("?");
-                    
-                    String[] queryParams = parts[1].split("&");
-                    for (int i = 0; i < queryParams.length; i++) {
-                        String queryParam = queryParams[i];
-                        if (i != 0)
-                            properUrl.append("&");
-                        String[] nameValue = queryParam.split("=", 2);
-                        UTF8UrlEncoder.appendEncoded(properUrl, nameValue[0]);
-                        if (nameValue.length == 2) {
-                            properUrl.append("=");
-                            UTF8UrlEncoder.appendEncoded(properUrl, nameValue[1]);
-                        }
-                    }
-                    
-                    locationURI = URI.create(properUrl.toString());
-                }
-            }
-            
-            URI redirectUri = uri.resolve(locationURI);
-
-            String scheme = redirectUri.getScheme();
-
-            if (scheme == null || !scheme.equalsIgnoreCase("http")
-                    && !scheme.equalsIgnoreCase("https")
-                    && !scheme.equals("ws")
-                    && !scheme.equals("wss")) {
-                throw new IllegalArgumentException("The URI scheme, of the URI " + redirectUri
-                        + ", must be equal (ignoring case) to 'ws, 'wss', 'http', or 'https'");
-            }
-
-            return redirectUri.normalize();
-        }
-
-    public final static int getPort(URI uri) {
+    public final static int getDefaultPort(UriComponents uri) {
         int port = uri.getPort();
         if (port == -1)
             port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;

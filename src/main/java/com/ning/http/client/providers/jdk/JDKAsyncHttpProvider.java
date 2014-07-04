@@ -31,6 +31,7 @@ import java.net.Proxy;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -75,6 +76,7 @@ import com.ning.http.client.filter.FilterException;
 import com.ning.http.client.filter.IOExceptionFilter;
 import com.ning.http.client.filter.ResponseFilter;
 import com.ning.http.client.listener.TransferCompletionHandler;
+import com.ning.http.client.uri.UriComponents;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
@@ -144,7 +146,12 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             }
         }
 
-        HttpURLConnection urlConnection = createUrlConnection(request);
+        HttpURLConnection urlConnection;
+        try {
+            urlConnection = createUrlConnection(request);
+        } catch (URISyntaxException e) {
+            throw new IOException(e.getMessage());
+        }
 
         PerRequestConfig conf = request.getPerRequestConfig();
         int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
@@ -164,7 +171,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         return f;
     }
 
-    private HttpURLConnection createUrlConnection(Request request) throws IOException {
+    private HttpURLConnection createUrlConnection(Request request) throws IOException, URISyntaxException {
         ProxyServer proxyServer = ProxyUtils.getProxyServer(config, request);
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
         Proxy proxy = null;
@@ -177,7 +184,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         }
 
         HttpURLConnection urlConnection = (HttpURLConnection)
-            request.getURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
+            request.getURI().toURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
 
         if (request.getUrl().startsWith("https")) {
             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
@@ -228,7 +235,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         public T call() throws Exception {
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                URI uri = null;
+                UriComponents uri = null;
                 // Encoding with URLConnection is a bit bogus so we need to try both way before setting it
                 try {
                     uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getRawUrl());
@@ -269,7 +276,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = urlConnection.getHeaderField("Location");
-                        URI redirUri = AsyncHttpProviderUtils.getRedirectUri(uri, location);
+                        UriComponents redirUri = UriComponents.create(uri, location);
                         String newUrl = redirUri.toString();
 
                         if (!newUrl.equals(uri.toString())) {
@@ -443,7 +450,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             return t;
         }
 
-        private void configure(URI uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
+        private void configure(UriComponents uri, HttpURLConnection urlConnection, Request request) throws IOException, AuthenticationException {
 
             PerRequestConfig conf = request.getPerRequestConfig();
             int requestTimeout = (conf != null && conf.getRequestTimeoutInMs() != 0) ?
