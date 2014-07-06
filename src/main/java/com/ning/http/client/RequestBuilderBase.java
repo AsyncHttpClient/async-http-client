@@ -141,7 +141,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         /* @Override */
         public String getUrl() {
-            return removeTrailingSlash(getURI());
+            if (isUseRawUrl()) {
+                return getRawUrl();
+            } else {
+                return getEscapedUrl();
+            }
+        }
+
+
+        /* @Override */
+        public String getEscapedUrl() {
+            return removeTrailingSlash(getEscapedURI());
         }
 
         /* @Override */
@@ -154,6 +164,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         public URI getURI() {
+            if (isUseRawUrl()) {
+                return getRawURI();
+            } else {
+                return getEscapedURI();
+            }
+        }
+
+        public URI getEscapedURI() {
             if (uri == null)
                 uri = toURI(true);
             return uri;

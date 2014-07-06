@@ -69,9 +69,12 @@ public interface Request {
      */
     String getUrl();
 
-    URI getOriginalURI();
-    URI getURI();
-    URI getRawURI();
+    public String getEscapedUrl();
+
+    public URI getOriginalURI();
+    public URI getURI();
+    public URI getEscapedURI();
+    public URI getRawURI();
 
     /**
      * Return the InetAddress to override
