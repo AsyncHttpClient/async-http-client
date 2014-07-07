@@ -18,7 +18,7 @@ package com.ning.http.util;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class TestUTF8UrlCodec
+public class UTF8UrlCodecTest
 {
     @Test(groups="fast")
     public void testBasics()
@@ -60,7 +60,7 @@ public class TestUTF8UrlCodec
             UTF8UrlDecoder.decode("%2");
             Assert.assertTrue(false, "No exception thrown on illegal encoding length");
         } catch (IllegalArgumentException ex) {
-            Assert.assertEquals("UTF8UrlDecoder: Incomplete trailing escape (%) pattern", ex.getMessage());
+            Assert.assertEquals(ex.getMessage(), "UTF8UrlDecoder: Incomplete trailing escape (%) pattern");
         } catch (StringIndexOutOfBoundsException ex) {
             Assert.assertTrue(false, "String Index Out of Bound thrown, but should be IllegalArgument");
         }
