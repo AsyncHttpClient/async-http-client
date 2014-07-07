@@ -76,6 +76,11 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
+    public RequestBuilder addQueryParams(List<Param> queryParams) {
+        return super.addQueryParams(queryParams);
+    }
+
+    @Override
     public RequestBuilder setQueryParams(List<Param> params) {
         return super.setQueryParams(params);
     }

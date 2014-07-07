@@ -447,6 +447,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
+    public T addQueryParams(List<Param> queryParams) {
+        for (Param queryParam: queryParams)
+            addQueryParam(queryParam.getName(), queryParam.getValue());
+        return derived.cast(this);
+    }
+
     private List<Param> map2ParamList(Map<String, List<String>> map) {
         if (map == null)
             return null;
