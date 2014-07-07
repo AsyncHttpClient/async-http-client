@@ -78,7 +78,7 @@ public class AsyncHttpClientConfig {
     protected int requestCompressionLevel;
     protected int maxRequestRetry;
     protected boolean allowSslConnectionPool;
-    protected boolean useRawUrlForBoundedRequests;
+    protected boolean disableUrlEncodingForBoundedRequests;
     protected boolean removeQueryParamOnRedirect;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
@@ -115,7 +115,7 @@ public class AsyncHttpClientConfig {
                                   int requestCompressionLevel,
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
-                                  boolean useRawUrlForBoundedRequests,
+                                  boolean disableUrlEncodingForBoundedRequests,
                                   boolean removeQueryParamOnRedirect,
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
@@ -159,7 +159,7 @@ public class AsyncHttpClientConfig {
             this.applicationThreadPool = applicationThreadPool;
         }
         this.proxyServerSelector = proxyServerSelector;
-        this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
+        this.disableUrlEncodingForBoundedRequests = disableUrlEncodingForBoundedRequests;
         this.timeConverter = timeConverter;
     }
 
@@ -416,10 +416,10 @@ public class AsyncHttpClientConfig {
 
 
     /**
-     * @return the useRawUrlForBoundedRequests
+     * @return the disableUrlEncodingForBoundedRequests
      */
-    public boolean isUseRawUrlForBoundedRequests() {
-        return useRawUrlForBoundedRequests;
+    public boolean isDisableUrlEncodingForBoundedRequests() {
+        return disableUrlEncodingForBoundedRequests;
     }
 
     /**
@@ -543,7 +543,7 @@ public class AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private boolean allowSslConnectionPool = defaultAllowSslConnectionPool();
-        private boolean useRawUrlForBoundedRequests = defaultUseRawUrlForBoundedRequests();
+        private boolean disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundedRequests();
         private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
         private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
@@ -922,14 +922,13 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Allows use unescaped URLs in requests
-         * useful for retrieving data from broken sites
+         * Disable automatic url escaping
          *
-         * @param useRawUrlForBoundedRequests
+         * @param disableUrlEncodingForBoundedRequests
          * @return this
          */
-        public Builder setUseRawUrl(boolean useRawUrlForBoundedRequests) {
-            this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
+        public Builder setDisableUrlEncodingForBoundedRequests(boolean disableUrlEncodingForBoundedRequests) {
+            this.disableUrlEncodingForBoundedRequests = disableUrlEncodingForBoundedRequests;
             return this;
         }
 
@@ -1068,7 +1067,7 @@ public class AsyncHttpClientConfig {
             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
 
             requestCompressionLevel = prototype.getRequestCompressionLevel();
-            useRawUrlForBoundedRequests = prototype.isUseRawUrlForBoundedRequests();
+            disableUrlEncodingForBoundedRequests = prototype.isDisableUrlEncodingForBoundedRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowSslConnectionPool = prototype.getAllowPoolingConnection();
@@ -1134,7 +1133,7 @@ public class AsyncHttpClientConfig {
                     requestCompressionLevel,
                     maxRequestRetry,
                     allowSslConnectionPool,
-                    useRawUrlForBoundedRequests,
+                    disableUrlEncodingForBoundedRequests,
                     removeQueryParamOnRedirect,
                     hostnameVerifier,
                     ioThreadMultiplier,

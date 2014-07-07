@@ -109,8 +109,8 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowSslConnectionPool", true);
     }
 
-    public static boolean defaultUseRawUrlForBoundedRequests() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useRawUrlForBoundedRequests");
+    public static boolean defaultDisableUrlEncodingForBoundedRequests() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundedRequests");
     }
 
     public static boolean defaultRemoveQueryParamOnRedirect() {

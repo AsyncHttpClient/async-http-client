@@ -214,8 +214,8 @@ public class AsyncHttpClient implements Closeable {
 
     public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
 
-        private BoundRequestBuilder(String method, boolean useRawUrl) {
-            super(BoundRequestBuilder.class, method, useRawUrl);
+        private BoundRequestBuilder(String method, boolean isDisableUrlEncoding) {
+            super(BoundRequestBuilder.class, method, isDisableUrlEncoding);
         }
 
         private BoundRequestBuilder(Request prototype) {
@@ -584,7 +584,7 @@ public class AsyncHttpClient implements Closeable {
     }
 
     protected BoundRequestBuilder requestBuilder(String method, String url) {
-        return new BoundRequestBuilder(method, config.isUseRawUrlForBoundedRequests()).setUrl(url).setSignatureCalculator(signatureCalculator);
+        return new BoundRequestBuilder(method, config.isDisableUrlEncodingForBoundedRequests()).setUrl(url).setSignatureCalculator(signatureCalculator);
     }
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {

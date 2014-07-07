@@ -245,14 +245,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private final Class<T> derived;
     protected final RequestImpl request;
-    protected boolean useRawUrl;
+    protected boolean disableUrlEncoding;
     protected SignatureCalculator signatureCalculator;
 
-    protected RequestBuilderBase(Class<T> derived, String method, boolean useRawUrl) {
+    protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
         this.derived = derived;
         request = new RequestImpl();
         request.method = method;
-        this.useRawUrl = useRawUrl;
+        this.disableUrlEncoding = disableUrlEncoding;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
@@ -292,7 +292,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                     addQueryParam(query, null);
                 } else {
                     try {
-                        if (useRawUrl) {
+                        if (disableUrlEncoding) {
                             addQueryParam(query.substring(0, pos), query.substring(pos + 1));
                         } else {
                             addQueryParam(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
@@ -612,13 +612,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             for (Param param : request.queryParams) {
                 String name = param.getName();
                 String value = param.getValue();
-                if (!useRawUrl)
+                if (!disableUrlEncoding)
                     UTF8UrlEncoder.appendEncoded(sb, name);
                 else
                     sb.append(name);
                 if (value != null) {
                     sb.append('=');
-                    if (!useRawUrl)
+                    if (!disableUrlEncoding)
                         UTF8UrlEncoder.appendEncoded(sb, value);
                     else
                         sb.append(value);

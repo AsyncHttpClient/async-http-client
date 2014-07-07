@@ -90,7 +90,7 @@ public class GrizzlyNoTransferEncodingTest {
             .setConnectionTimeoutInMs(15000)
             .setRequestTimeoutInMs(15000)
             .setAllowPoolingConnection(false)
-            .setUseRawUrl(true)
+            .setDisableUrlEncodingForBoundedRequests(true)
             .setIOThreadMultiplier(2) // 2 is default
             .build();
 

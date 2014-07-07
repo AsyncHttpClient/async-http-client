@@ -63,7 +63,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         maxRequestRetry = defaultMaxRequestRetry();
         ioThreadMultiplier = defaultIoThreadMultiplier();
         allowSslConnectionPool = defaultAllowSslConnectionPool();
-        useRawUrlForBoundedRequests = defaultUseRawUrlForBoundedRequests();
+        disableUrlEncodingForBoundedRequests = defaultDisableUrlEncodingForBoundedRequests();
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
         hostnameVerifier = defaultHostnameVerifier();
@@ -223,8 +223,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setUseRawUrlForBoundedRequests(boolean useRawUrlForBoundedRequests) {
-        this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
+    public AsyncHttpClientConfigBean setDisableUrlEncodingForBoundedRequests(boolean disableUrlEncodingForBoundedRequests) {
+        this.disableUrlEncodingForBoundedRequests = disableUrlEncodingForBoundedRequests;
         return this;
     }
 
