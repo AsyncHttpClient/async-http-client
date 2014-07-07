@@ -113,7 +113,7 @@ public class OAuthSignatureCalculator
                 baseURL = baseURL.substring(0, i) + baseURL.substring(i + 4);
             }
         }
-        signedText.append(UTF8UrlEncoder.encode(baseURL));
+        UTF8UrlEncoder.appendEncoded(signedText, baseURL);
 
         /**
          * List of all query and form parameters added to this request; needed

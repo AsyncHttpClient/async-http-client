@@ -37,7 +37,11 @@ public class ThreadSafeHMAC {
     private final Mac mac;
 
     public ThreadSafeHMAC(ConsumerKey consumerAuth, RequestToken userAuth) {
-        byte[] keyBytes = UTF8Codec.toUTF8(UTF8UrlEncoder.encode(consumerAuth.getSecret()) + "&" + UTF8UrlEncoder.encode(userAuth.getSecret()));
+        StringBuilder sb = new StringBuilder(consumerAuth.getSecret().length() + userAuth.getSecret().length() + 16);
+        UTF8UrlEncoder.appendEncoded(sb, consumerAuth.getSecret());
+        sb.append('&');
+        UTF8UrlEncoder.appendEncoded(sb, userAuth.getSecret());
+        byte[] keyBytes = UTF8Codec.toUTF8(sb.toString());
         SecretKeySpec signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
 
         // Get an hmac_sha1 instance and initialize with the signing key
