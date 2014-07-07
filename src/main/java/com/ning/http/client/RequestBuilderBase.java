@@ -165,6 +165,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
 
+            // FIXME is that right?
             String newPath = isNonEmpty(originalUri.getPath())? originalUri.getPath() : "/";
             String newQuery = null;
             if (isNonEmpty(queryParams)) {

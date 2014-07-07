@@ -658,25 +658,27 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return spnegoEngine;
     }
 
+    private static String computeNonConnectRequestPath(AsyncHttpClientConfig config, UriComponents uri, ProxyServer proxyServer) {
+        if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
+            return uri.toString();
+        else if (uri.getQuery() != null)
+            return uri.getPath() + "?" + uri.getQuery();
+        else
+            return uri.getPath();
+    }
+    
     private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, UriComponents uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {
 
-        String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
 
         HttpRequest nettyRequest;
         if (m.equals(HttpMethod.CONNECT)) {
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, m, AsyncHttpProviderUtils.getAuthority(uri));
         } else {
-            String path = null;
-            if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
-                path = uri.toString();
-            else if (uri.getQuery() != null)
-                path = uri.getPath() + "?" + uri.getQuery();
-            else
-                path = uri.getPath();
+            String path = computeNonConnectRequestPath(config, uri, proxyServer);
             nettyRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_1, m, path);
         }
         boolean webSocket = isWebSocket(uri.getScheme());
-        if (!m.equals(HttpMethod.CONNECT) && webSocket) {
+        if (webSocket && !m.equals(HttpMethod.CONNECT)) {
             nettyRequest.addHeader(HttpHeaders.Names.UPGRADE, HttpHeaders.Values.WEBSOCKET);
             nettyRequest.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.UPGRADE);
             nettyRequest.addHeader(HttpHeaders.Names.ORIGIN, "http://" + uri.getHost() + ":" + uri.getPort());
@@ -684,7 +686,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             nettyRequest.addHeader(HttpHeaders.Names.SEC_WEBSOCKET_VERSION, "13");
         }
 
+        String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
         if (host != null) {
+            // FIXME why write port when regular host?
             if (request.getVirtualHost() != null || uri.getPort() == -1) {
                 nettyRequest.setHeader(HttpHeaders.Names.HOST, host);
             } else {
@@ -2091,9 +2095,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                             if (newRealm == null)
                                 return;
                         } else {
-                            Realm.RealmBuilder realmBuilder = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme());
-                            newRealm = realmBuilder.setUri(request.getURI().getPath()).setMethodName(request.getMethod()).setUsePreemptiveAuth(true)
-                                    .parseWWWAuthenticateHeader(wwwAuth.get(0)).build();
+                            newRealm = new Realm.RealmBuilder().clone(realm) //
+                                    .setScheme(realm.getAuthScheme()) //
+                                    .setUri(request.getURI().getPath()) //
+                                    .setMethodName(request.getMethod()) //
+                                    .setUsePreemptiveAuth(true) //
+                                    .parseWWWAuthenticateHeader(wwwAuth.get(0)) //
+                                    .build();
                         }
                         
                         String realmURI = computeRealmURI(newRealm, request.getURI());
