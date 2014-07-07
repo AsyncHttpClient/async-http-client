@@ -19,7 +19,7 @@ package com.ning.http.util;
  * Convenience class that encapsulates details of "percent encoding"
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
-public class UTF8UrlEncoder {
+public final class UTF8UrlEncoder {
 
     private static final boolean encodeSpaceUsingPlus = MiscUtil.getBoolean("com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus", false);
 
@@ -45,7 +45,7 @@ public class UTF8UrlEncoder {
         SAFE_ASCII['~'] = true;
     }
 
-    private final static char[] HEX = "0123456789ABCDEF".toCharArray();
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
     private UTF8UrlEncoder() {
     }

@@ -19,9 +19,7 @@ import static com.ning.http.util.MiscUtil.isNonEmpty;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,6 +33,7 @@ import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
+import com.ning.http.util.UTF8UrlDecoder;
 import com.ning.http.util.UTF8UrlEncoder;
 
 /**
@@ -604,14 +603,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         sb.append('&');
     }
 
-    private String decodeUTF8(String s) {
-        try {
-            return URLDecoder.decode(s, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void encodeAndAppendQueryParam(StringBuilder sb, String name, String value) {
         UTF8UrlEncoder.appendEncoded(sb, name);
         if (value != null) {
@@ -626,13 +617,13 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         for (String queryParamString : query.split("&")) {
             pos = queryParamString.indexOf('=');
             if (pos <= 0) {
-                String decodedName = decode ? decodeUTF8(queryParamString) : queryParamString;
+                String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString) : queryParamString;
                 encodeAndAppendQueryParam(sb, decodedName, null);
             } else {
                 String name = queryParamString.substring(0, pos);
-                String decodedName = decode ? decodeUTF8(name) : name;
+                String decodedName = decode ? UTF8UrlDecoder.decode(name) : name;
                 String value = queryParamString.substring(pos + 1);
-                String decodedValue = decode ? decodeUTF8(value) : value;
+                String decodedValue = decode ? UTF8UrlDecoder.decode(value) : value;
                 encodeAndAppendQueryParam(sb, decodedName, decodedValue);
             }
         }
