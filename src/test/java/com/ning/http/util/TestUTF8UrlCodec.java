@@ -38,4 +38,31 @@ public class TestUTF8UrlCodec
         // Plane 15
         Assert.assertEquals(UTF8UrlEncoder.encode("\udb80\udc01"), "%F3%B0%80%81");
     }
+
+    @Test(groups="fast")
+    public void testDecodeBasics()
+    {
+        Assert.assertEquals(UTF8UrlDecoder.decode("foobar"), "foobar");
+        Assert.assertEquals(UTF8UrlDecoder.decode("a&b"), "a&b");
+        Assert.assertEquals(UTF8UrlDecoder.decode("a+b"), "a b");
+
+        Assert.assertEquals(UTF8UrlDecoder.decode("+"), " ");
+        Assert.assertEquals(UTF8UrlDecoder.decode("%20"), " ");
+        Assert.assertEquals(UTF8UrlDecoder.decode("%25"), "%");
+
+        Assert.assertEquals(UTF8UrlDecoder.decode("+%20x"), "  x");
+    }
+
+    @Test(groups="fast")
+    public void testDecodeTooShort()
+    {
+        try {
+            UTF8UrlDecoder.decode("%2");
+            Assert.assertTrue(false, "No exception thrown on illegal encoding length");
+        } catch (IllegalArgumentException ex) {
+            Assert.assertEquals("UTF8UrlDecoder: Incomplete trailing escape (%) pattern", ex.getMessage());
+        } catch (StringIndexOutOfBoundsException ex) {
+            Assert.assertTrue(false, "String Index Out of Bound thrown, but should be IllegalArgument");
+        }
+    }
 }

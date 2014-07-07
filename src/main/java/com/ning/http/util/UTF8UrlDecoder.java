@@ -40,15 +40,18 @@ public final class UTF8UrlDecoder {
                 i++;
 
             } else if (c == '%') {
-                if (numChars - i < 2)
+                if (numChars - i < 3) // We expect 3 chars. 0 based i vs. 1 based length!
                     throw new IllegalArgumentException("UTF8UrlDecoder: Incomplete trailing escape (%) pattern");
 
                 int x, y;
-                if ((x = hexaDigit(s.charAt(++i))) == -1 || (y = hexaDigit(s.charAt(++i))) == -1)
+                if ((x = hexaDigit(s.charAt(i+1))) == -1 || (y = hexaDigit(s.charAt(i+2))) == -1)
                     throw new IllegalArgumentException("UTF8UrlDecoder: Malformed");
 
                 sb = initSb(sb, initialSbLength, s, i);
-                sb.append((byte) ((x << 4) + y));
+                byte b = (byte)((x << 4) + y);
+                char cc = (char)(b);
+                sb.append(cc);
+                i+=3;
             } else {
                 if (sb != null)
                     sb.append(c);
