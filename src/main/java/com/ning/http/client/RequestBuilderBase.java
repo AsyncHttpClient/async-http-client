@@ -591,19 +591,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
     }
-    
+
     private void appendRawQueryParams(StringBuilder sb, List<Param> queryParams) {
         for (Param param : queryParams)
             appendRawQueryParam(sb, param.getName(), param.getValue());
     }
-    
+
     private void appendRawQueryParam(StringBuilder sb, String name, String value) {
         sb.append(name);
         if (value != null)
             sb.append('=').append(value);
         sb.append('&');
     }
-    
+
     private String decodeUTF8(String s) {
         try {
             return URLDecoder.decode(s, "UTF-8");
@@ -611,9 +611,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             throw new RuntimeException(e);
         }
     }
-    
-    // FIXME super inefficient!!!
-    private void appendEscapedQueryParam(StringBuilder sb, String name, String value) {
+
+    private void encodeAndAppendQueryParam(StringBuilder sb, String name, String value) {
         UTF8UrlEncoder.appendEncoded(sb, name);
         if (value != null) {
             sb.append('=');
@@ -622,31 +621,41 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         sb.append('&');
     }
 
-    private void appendEscapeQuery(StringBuilder sb, String query) {
+    private void encodeAndAppendQuery(StringBuilder sb, String query, boolean decode) {
         int pos;
         for (String queryParamString : query.split("&")) {
             pos = queryParamString.indexOf('=');
             if (pos <= 0) {
-                String decodedName = decodeUTF8(queryParamString);
-                appendEscapedQueryParam(sb, decodedName, null);
+                String decodedName = decode ? decodeUTF8(queryParamString) : queryParamString;
+                encodeAndAppendQueryParam(sb, decodedName, null);
             } else {
-                String decodedName = decodeUTF8(queryParamString.substring(0, pos));
-                String decodedValue = decodeUTF8(queryParamString.substring(pos + 1));
-                appendEscapedQueryParam(sb, decodedName, decodedValue);
+                String name = queryParamString.substring(0, pos);
+                String decodedName = decode ? decodeUTF8(name) : name;
+                String value = queryParamString.substring(pos + 1);
+                String decodedValue = decode ? decodeUTF8(value) : value;
+                encodeAndAppendQueryParam(sb, decodedName, decodedValue);
             }
         }
     }
-    
-    private void appendEscapeQueryParams(StringBuilder sb, List<Param> queryParams) {
-        for (Param param: queryParams)
-            appendEscapedQueryParam(sb, param.getName(), param.getValue());
+
+    private boolean decodeRequired(String query) {
+        return query.indexOf('%') != -1 || query.indexOf('+') != -1;
     }
-    
+
+    private void encodeAndAppendQuery(StringBuilder sb, String query) {
+        encodeAndAppendQuery(sb, query, decodeRequired(query));
+    }
+
+    private void encodeAndAppendQueryParams(StringBuilder sb, List<Param> queryParams) {
+        for (Param param : queryParams)
+            encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
+    }
+
     private String computeFinalQueryString(String query, List<Param> queryParams) {
-        
+
         boolean hasQuery = isNonEmpty(query);
         boolean hasQueryParams = isNonEmpty(queryParams);
-        
+
         if (hasQuery) {
             if (hasQueryParams) {
                 if (disableUrlEncoding) {
@@ -658,10 +667,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 } else {
                     // concatenate encoded query + encoded query params
                     StringBuilder sb = new StringBuilder(query.length() + 16);
-                    appendEscapeQuery(sb, query);
-                    appendEscapeQueryParams(sb, queryParams);
+                    encodeAndAppendQuery(sb, query);
+                    encodeAndAppendQueryParams(sb, queryParams);
                     sb.setLength(sb.length() - 1);
-                   return sb.toString();
+                    return sb.toString();
                 }
             } else {
                 if (disableUrlEncoding) {
@@ -670,7 +679,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 } else {
                     // encode query
                     StringBuilder sb = new StringBuilder(query.length() + 16);
-                    appendEscapeQuery(sb, query);
+                    encodeAndAppendQuery(sb, query);
                     sb.setLength(sb.length() - 1);
                     return sb.toString();
                 }
@@ -686,7 +695,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 } else {
                     // concatenate encoded query params
                     StringBuilder sb = new StringBuilder(queryParams.size() * 16);
-                    appendEscapeQueryParams(sb, queryParams);
+                    encodeAndAppendQueryParams(sb, queryParams);
                     sb.setLength(sb.length() - 1);
                     return sb.toString();
                 }
@@ -696,7 +705,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             }
         }
     }
-    
+
     private void computeFinalUri() {
 
         if (request.uri == null) {
@@ -707,7 +716,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
 
         // FIXME is that right?
-        String newPath = isNonEmpty(request.uri.getPath())? request.uri.getPath() : "/";
+        String newPath = isNonEmpty(request.uri.getPath()) ? request.uri.getPath() : "/";
         String newQuery = computeFinalQueryString(request.uri.getQuery(), queryParams);
 
         request.uri = new UriComponents(//
@@ -718,7 +727,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 newPath,//
                 newQuery);
     }
-    
+
     public Request build() {
         computeFinalUri();
         executeSignatureCalculator();
