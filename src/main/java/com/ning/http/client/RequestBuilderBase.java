@@ -116,7 +116,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         private String removeTrailingSlash(UriComponents uri) {
-            String uriString = uri.toString();
+            String uriString = uri.toUrl();
             if (uriString.endsWith("/")) {
                 return uriString.substring(0, uriString.length() - 1);
             } else {
@@ -228,7 +228,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(getURI().toString());
+            StringBuilder sb = new StringBuilder(getURI().toUrl());
 
             sb.append("\t");
             sb.append(method);

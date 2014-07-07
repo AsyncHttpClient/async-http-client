@@ -870,7 +870,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 } else if (secure && config.isUseRelativeURIsWithSSLProxies()){
                     builder.uri(uri.getPath());
                 } else {
-                    builder.uri(uri.toString());
+                    builder.uri(uri.toUrl());
                 }
             } else {
                 builder.uri(uri.getPath());
@@ -1658,7 +1658,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 httpTransactionContext.lastRedirectURI = redirectURL;
                 Request requestToSend;
                 UriComponents uri = UriComponents.create(orig, redirectURL);
-                if (!uri.toString().equalsIgnoreCase(orig.toString())) {
+                if (!uri.toUrl().equalsIgnoreCase(orig.toUrl())) {
                     requestToSend = newRequest(uri,
                                                responsePacket,
                                                httpTransactionContext,

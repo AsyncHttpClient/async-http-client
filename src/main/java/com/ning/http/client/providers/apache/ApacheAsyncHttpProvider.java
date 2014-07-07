@@ -510,14 +510,13 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = method.getResponseHeader("Location").getValue();
                         UriComponents rediUri = UriComponents.create(uri, location);
-                        String newUrl = rediUri.toString();
 
-                        if (!newUrl.equals(uri.toString())) {
+                        if (!rediUri.equals(uri)) {
                             RequestBuilder builder = new RequestBuilder(request);
 
-                            logger.debug("Redirecting to {}", newUrl);
+                            logger.debug("Redirecting to {}", rediUri);
 
-                            request = builder.setUrl(newUrl).build();
+                            request = builder.setURI(rediUri).build();
                             method = createMethod(httpClient, request);
                             terminate = false;
                             return call();

@@ -25,8 +25,7 @@ public class UriComponents {
         UriComponentsParser parser = new UriComponentsParser();
         parser.parse(context, originalUrl);
 
-        return new UriComponents(
-                parser.scheme,//
+        return new UriComponents(parser.scheme,//
                 parser.userInfo,//
                 parser.host,//
                 parser.port,//
@@ -41,8 +40,7 @@ public class UriComponents {
     private final String query;
     private final String path;
 
-    public UriComponents(
-            String scheme,//
+    public UriComponents(String scheme,//
             String userInfo,//
             String host,//
             int port,//
@@ -87,12 +85,10 @@ public class UriComponents {
     }
 
     public URI toURI() throws URISyntaxException {
-        return new URI(scheme, userInfo, host, port, path, query, null);
+        return new URI(toUrl());
     }
-    
-    @Override
-    public String toString() {
-        
+
+    public String toUrl() {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme).append("://");
         if (userInfo != null)
@@ -104,13 +100,18 @@ public class UriComponents {
             sb.append(path);
         if (query != null)
             sb.append('?').append(query);
-        
+
         return sb.toString();
     }
-    
+
+    @Override
+    public String toString() {
+        // for now, but might change
+        return toUrl();
+    }
+
     public UriComponents withNewScheme(String newScheme) {
-        return new UriComponents(
-                newScheme,//
+        return new UriComponents(newScheme,//
                 userInfo,//
                 host,//
                 port,//
@@ -119,15 +120,14 @@ public class UriComponents {
     }
 
     public UriComponents withNewQuery(String newQuery) {
-        return new UriComponents(
-                scheme,//
+        return new UriComponents(scheme,//
                 userInfo,//
                 host,//
                 port,//
                 path,//
                 newQuery);
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;

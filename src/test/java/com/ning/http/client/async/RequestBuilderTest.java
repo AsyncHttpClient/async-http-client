@@ -25,6 +25,7 @@ import com.ning.http.client.RequestBuilder;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -133,10 +134,12 @@ public class RequestBuilderTest {
     }
     
     @Test(groups = {"standalone", "default_provider"})
-    public void testRawUrlQuery() throws UnsupportedEncodingException {
+    public void testRawUrlQuery() throws UnsupportedEncodingException, URISyntaxException {
         String preEncodedUrl = "http://example.com/space%20mirror.php?%3Bteile";
         RequestBuilder rb = new RequestBuilder("GET", true).setUrl(preEncodedUrl);
         Request request = rb.build();
         assertEquals(request.getUrl(), preEncodedUrl);
+        assertEquals(request.getURI().toUrl(), preEncodedUrl);
+        assertEquals(request.getURI().toURI().toString(), preEncodedUrl);
     }
 }
