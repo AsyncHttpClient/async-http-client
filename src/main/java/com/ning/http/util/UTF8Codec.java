@@ -36,14 +36,6 @@ public class UTF8Codec {
     public static byte[] toUTF8(String input) {
         return input.getBytes(utf8);
     }
-
-    public static String fromUTF8(byte[] input) {
-        return fromUTF8(input, 0, input.length);
-    }
-    
-    public static String fromUTF8(byte[] input, int offset, int len) {
-        return new String(input, offset, len, utf8);
-    }
     */
 
     // But until then (with 1.5)
@@ -51,18 +43,6 @@ public class UTF8Codec {
         try {
             return input.getBytes(ENCODING_UTF8);
         } catch (UnsupportedEncodingException e) { // never happens, but since it's declared...
-            throw new IllegalStateException();
-        }
-    }
-
-    public static String fromUTF8(byte[] input) {
-        return fromUTF8(input, 0, input.length);
-    }
-
-    public static String fromUTF8(byte[] input, int offset, int len) {
-        try {
-            return new String(input, offset, len, ENCODING_UTF8);
-        } catch (UnsupportedEncodingException e) { // never happens
             throw new IllegalStateException();
         }
     }
