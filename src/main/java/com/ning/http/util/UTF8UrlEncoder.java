@@ -20,28 +20,29 @@ package com.ning.http.util;
  * (as per RFC-3986, see [http://www.ietf.org/rfc/rfc3986.txt]).
  */
 public class UTF8UrlEncoder {
-    private static final boolean encodeSpaceUsingPlus = System.getProperty("com.com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus") == null ? false : true;
+
+    private static final boolean encodeSpaceUsingPlus = MiscUtil.getBoolean("com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus", false);
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped
      * (all non-Ascii characters need to be encoded anyway)
      */
-    private final static int[] SAFE_ASCII = new int[128];
+    private final static boolean[] SAFE_ASCII = new boolean[128];
 
     static {
         for (int i = 'a'; i <= 'z'; ++i) {
-            SAFE_ASCII[i] = 1;
+            SAFE_ASCII[i] = true;
         }
         for (int i = 'A'; i <= 'Z'; ++i) {
-            SAFE_ASCII[i] = 1;
+            SAFE_ASCII[i] = true;
         }
         for (int i = '0'; i <= '9'; ++i) {
-            SAFE_ASCII[i] = 1;
+            SAFE_ASCII[i] = true;
         }
-        SAFE_ASCII['-'] = 1;
-        SAFE_ASCII['.'] = 1;
-        SAFE_ASCII['_'] = 1;
-        SAFE_ASCII['~'] = 1;
+        SAFE_ASCII['-'] = true;
+        SAFE_ASCII['.'] = true;
+        SAFE_ASCII['_'] = true;
+        SAFE_ASCII['~'] = true;
     }
 
     private final static char[] HEX = "0123456789ABCDEF".toCharArray();
@@ -56,12 +57,11 @@ public class UTF8UrlEncoder {
     }
 
     public static StringBuilder appendEncoded(StringBuilder sb, String input) {
-        final int[] safe = SAFE_ASCII;
 
         for (int c, i = 0, len = input.length(); i < len; i+= Character.charCount(c)) {
             c = input.codePointAt(i);
             if (c <= 127) {
-                if (safe[c] != 0) {
+                if (SAFE_ASCII[c]) {
                     sb.append((char) c);
                 } else {
                     appendSingleByteEncoded(sb, c);
@@ -100,5 +100,4 @@ public class UTF8UrlEncoder {
             appendSingleByteEncoded(sb, (0x80 | (value & 0x3f)));
         }
     }
-
 }
