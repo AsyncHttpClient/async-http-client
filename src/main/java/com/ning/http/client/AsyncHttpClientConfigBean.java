@@ -63,7 +63,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         maxRequestRetry = defaultMaxRequestRetry();
         ioThreadMultiplier = defaultIoThreadMultiplier();
         allowSslConnectionPool = defaultAllowSslConnectionPool();
-        useRawUrl = defaultUseRawUrl();
+        useRawUrlForBoundedRequests = defaultUseRawUrlForBoundedRequests();
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
         hostnameVerifier = defaultHostnameVerifier();
@@ -223,8 +223,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setUseRawUrl(boolean useRawUrl) {
-        this.useRawUrl = useRawUrl;
+    public AsyncHttpClientConfigBean setUseRawUrlForBoundedRequests(boolean useRawUrlForBoundedRequests) {
+        this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
         return this;
     }
 

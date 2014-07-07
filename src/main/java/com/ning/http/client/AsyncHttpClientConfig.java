@@ -78,7 +78,7 @@ public class AsyncHttpClientConfig {
     protected int requestCompressionLevel;
     protected int maxRequestRetry;
     protected boolean allowSslConnectionPool;
-    protected boolean useRawUrl;
+    protected boolean useRawUrlForBoundedRequests;
     protected boolean removeQueryParamOnRedirect;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
@@ -115,7 +115,7 @@ public class AsyncHttpClientConfig {
                                   int requestCompressionLevel,
                                   int maxRequestRetry,
                                   boolean allowSslConnectionCaching,
-                                  boolean useRawUrl,
+                                  boolean useRawUrlForBoundedRequests,
                                   boolean removeQueryParamOnRedirect,
                                   HostnameVerifier hostnameVerifier,
                                   int ioThreadMultiplier,
@@ -159,7 +159,7 @@ public class AsyncHttpClientConfig {
             this.applicationThreadPool = applicationThreadPool;
         }
         this.proxyServerSelector = proxyServerSelector;
-        this.useRawUrl = useRawUrl;
+        this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
         this.timeConverter = timeConverter;
     }
 
@@ -416,10 +416,10 @@ public class AsyncHttpClientConfig {
 
 
     /**
-     * @return the useRawUrl
+     * @return the useRawUrlForBoundedRequests
      */
-    public boolean isUseRawUrl() {
-        return useRawUrl;
+    public boolean isUseRawUrlForBoundedRequests() {
+        return useRawUrlForBoundedRequests;
     }
 
     /**
@@ -543,7 +543,7 @@ public class AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private boolean allowSslConnectionPool = defaultAllowSslConnectionPool();
-        private boolean useRawUrl = defaultUseRawUrl();
+        private boolean useRawUrlForBoundedRequests = defaultUseRawUrlForBoundedRequests();
         private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
         private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
@@ -925,11 +925,11 @@ public class AsyncHttpClientConfig {
          * Allows use unescaped URLs in requests
          * useful for retrieving data from broken sites
          *
-         * @param useRawUrl
+         * @param useRawUrlForBoundedRequests
          * @return this
          */
-        public Builder setUseRawUrl(boolean useRawUrl) {
-            this.useRawUrl = useRawUrl;
+        public Builder setUseRawUrl(boolean useRawUrlForBoundedRequests) {
+            this.useRawUrlForBoundedRequests = useRawUrlForBoundedRequests;
             return this;
         }
 
@@ -1068,7 +1068,7 @@ public class AsyncHttpClientConfig {
             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
 
             requestCompressionLevel = prototype.getRequestCompressionLevel();
-            useRawUrl = prototype.isUseRawUrl();
+            useRawUrlForBoundedRequests = prototype.isUseRawUrlForBoundedRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowSslConnectionPool = prototype.getAllowPoolingConnection();
@@ -1134,7 +1134,7 @@ public class AsyncHttpClientConfig {
                     requestCompressionLevel,
                     maxRequestRetry,
                     allowSslConnectionPool,
-                    useRawUrl,
+                    useRawUrlForBoundedRequests,
                     removeQueryParamOnRedirect,
                     hostnameVerifier,
                     ioThreadMultiplier,

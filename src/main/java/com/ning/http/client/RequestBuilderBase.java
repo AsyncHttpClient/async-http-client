@@ -25,7 +25,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -50,9 +49,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final class RequestImpl implements Request {
         private String method;
-        private UriComponents originalUri;
         private UriComponents uri;
-        private UriComponents rawUri;
         private InetAddress address;
         private InetAddress localAddress;
         private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
@@ -74,17 +71,15 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
-        private boolean useRawUrl;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
 
-        public RequestImpl(boolean useRawUrl) {
-            this.useRawUrl = useRawUrl;
+        public RequestImpl() {
         }
 
         public RequestImpl(Request prototype) {
             if (prototype != null) {
                 this.method = prototype.getMethod();
-                this.originalUri = prototype.getOriginalURI();
+                this.uri = prototype.getURI();
                 this.address = prototype.getInetAddress();
                 this.localAddress = prototype.getLocalAddress();
                 this.headers = new FluentCaseInsensitiveStringsMap(prototype.getHeaders());
@@ -106,7 +101,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
-                this.useRawUrl = prototype.isUseRawUrl();
                 this.connectionPoolKeyStrategy = prototype.getConnectionPoolKeyStrategy();
             }
         }
@@ -136,69 +130,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return removeTrailingSlash(getURI());
         }
 
-        public String getRawUrl() {
-            return removeTrailingSlash(getRawURI());
-        }
-
-        public UriComponents getOriginalURI() {
-            return originalUri;
-        }
-
         public UriComponents getURI() {
-            if (uri == null)
-                uri = toUriComponents(true);
             return uri;
-        }
-
-        public UriComponents getRawURI() {
-            if (rawUri == null)
-                rawUri = toUriComponents(false);
-            return rawUri;
-        }
-
-        private UriComponents toUriComponents(boolean encode) {
-
-            if (originalUri == null) {
-                logger.debug("setUrl hasn't been invoked. Using http://localhost");
-                originalUri = DEFAULT_REQUEST_URL;
-            }
-
-            AsyncHttpProviderUtils.validateSupportedScheme(originalUri);
-
-            // FIXME is that right?
-            String newPath = isNonEmpty(originalUri.getPath())? originalUri.getPath() : "/";
-            String newQuery = null;
-            if (isNonEmpty(queryParams)) {
-                StringBuilder sb = new StringBuilder();
-                for (Iterator<Param> i = queryParams.iterator(); i.hasNext();) {
-                    Param param = i.next();
-                    String name = param.getName();
-                    String value = param.getValue();
-                    if (encode)
-                        UTF8UrlEncoder.appendEncoded(sb, name);
-                    else
-                        sb.append(name);
-                    if (value != null) {
-                        sb.append('=');
-                        if (encode)
-                            UTF8UrlEncoder.appendEncoded(sb, value);
-                        else
-                            sb.append(value);
-                    }
-                    if (i.hasNext())
-                        sb.append('&');
-                }
-
-                newQuery = sb.toString();
-            }
-
-            return new UriComponents(//
-                    originalUri.getScheme(),//
-                    originalUri.getUserInfo(),//
-                    originalUri.getHost(),//
-                    originalUri.getPort(),//
-                    newPath,//
-                    newQuery);
         }
 
         public FluentCaseInsensitiveStringsMap getHeaders() {
@@ -308,43 +241,34 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             return sb.toString();
         }
-
-        public boolean isUseRawUrl() {
-            return useRawUrl;
-        }
     }
 
     private final Class<T> derived;
     protected final RequestImpl request;
-    protected boolean useRawUrl = false;
-    protected String baseURL;
+    protected boolean useRawUrl;
     protected SignatureCalculator signatureCalculator;
 
-    protected RequestBuilderBase(Class<T> derived, String method, boolean rawUrls) {
+    protected RequestBuilderBase(Class<T> derived, String method, boolean useRawUrl) {
         this.derived = derived;
-        request = new RequestImpl(rawUrls);
+        request = new RequestImpl();
         request.method = method;
-        this.useRawUrl = rawUrls;
+        this.useRawUrl = useRawUrl;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
         this.derived = derived;
         request = new RequestImpl(prototype);
-        this.useRawUrl = prototype.isUseRawUrl();
     }
 
     public T setUrl(String url) {
-        this.baseURL = url;
         return setURI(UriComponents.create(url));
     }
 
     public T setURI(UriComponents uri) {
         if (uri.getPath() == null)
             throw new NullPointerException("uri.path");
-        request.originalUri = uri;
-        addQueryParams(request.originalUri);
-        request.uri = null;
-        request.rawUri = null;
+        request.uri = uri;
+        addQueryParams(uri);
         return derived.cast(this);
     }
 
@@ -632,12 +556,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
          * (order does not matter with current implementation but may in future)
          */
         if (signatureCalculator != null) {
-            String url = baseURL != null ? baseURL : request.originalUri.toString();
             // Should not include query parameters, ensure:
-            int i = url.indexOf('?');
-            if (i != -1) {
-                url = url.substring(0, i);
-            }
+            String url = new UriComponents(request.uri.getScheme(), null, request.uri.getHost(), request.uri.getPort(), request.uri.getPath(), null).toString();
             signatureCalculator.calculateAndAddSignature(url, request, this);
         }
     }
@@ -675,7 +595,52 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
     }
     
+    private void computeFinalUri() {
+
+        if (request.uri == null) {
+            logger.debug("setUrl hasn't been invoked. Using http://localhost");
+            request.uri = DEFAULT_REQUEST_URL;
+        }
+
+        AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
+
+        // FIXME is that right?
+        String newPath = isNonEmpty(request.uri.getPath())? request.uri.getPath() : "/";
+        String newQuery = null;
+        if (isNonEmpty(request.queryParams)) {
+            StringBuilder sb = new StringBuilder();
+            for (Param param : request.queryParams) {
+                String name = param.getName();
+                String value = param.getValue();
+                if (!useRawUrl)
+                    UTF8UrlEncoder.appendEncoded(sb, name);
+                else
+                    sb.append(name);
+                if (value != null) {
+                    sb.append('=');
+                    if (!useRawUrl)
+                        UTF8UrlEncoder.appendEncoded(sb, value);
+                    else
+                        sb.append(value);
+                }
+                sb.append('&');
+            }
+
+            sb.setLength(sb.length() - 1);
+            newQuery = sb.toString();
+        }
+
+        request.uri = new UriComponents(//
+                request.uri.getScheme(),//
+                request.uri.getUserInfo(),//
+                request.uri.getHost(),//
+                request.uri.getPort(),//
+                newPath,//
+                newQuery);
+    }
+    
     public Request build() {
+        computeFinalUri();
         executeSignatureCalculator();
         computeRequestCharset();
         computeRequestLength();

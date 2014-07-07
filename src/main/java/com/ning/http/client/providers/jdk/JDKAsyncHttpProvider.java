@@ -231,13 +231,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         public T call() throws Exception {
             AsyncHandler.STATE state = AsyncHandler.STATE.ABORT;
             try {
-                UriComponents uri = null;
-                // Encoding with URLConnection is a bit bogus so we need to try both way before setting it
-                try {
-                    uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getRawUrl());
-                } catch (IllegalArgumentException u) {
-                    uri = AsyncHttpProviderUtils.createNonEmptyPathURI(request.getUrl());
-                }
+                UriComponents uri = request.getURI();
 
                 configure(uri, urlConnection, request);
                 urlConnection.connect();

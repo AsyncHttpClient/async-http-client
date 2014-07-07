@@ -124,12 +124,19 @@ public class RequestBuilderTest {
     }
 
     @Test(groups = {"standalone", "default_provider"})
-    public void testAddQueryParameterReadRawUrl() throws UnsupportedEncodingException {
-        RequestBuilder rb = new RequestBuilder("GET", true).setUrl("http://example.com/path")
+    public void testAddQueryParameter() throws UnsupportedEncodingException {
+        RequestBuilder rb = new RequestBuilder("GET", false).setUrl("http://example.com/path")
                 .addQueryParam("a", "1?&")
                 .addQueryParam("b", "+ =");
         Request request = rb.build();
         assertEquals(request.getUrl(), "http://example.com/path?a=1%3F%26&b=%2B%20%3D");
-        assertEquals(request.getRawUrl(), "http://example.com/path?a=1?&&b=+ =");
+    }
+    
+    @Test(groups = {"standalone", "default_provider"})
+    public void testRawUrlQuery() throws UnsupportedEncodingException {
+        String preEncodedUrl = "http://example.com/space%20mirror.php?%3Bteile";
+        RequestBuilder rb = new RequestBuilder("GET", true).setUrl(preEncodedUrl);
+        Request request = rb.build();
+        assertEquals(request.getUrl(), preEncodedUrl);
     }
 }

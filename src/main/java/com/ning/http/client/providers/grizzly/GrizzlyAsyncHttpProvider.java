@@ -843,7 +843,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 convertToUpgradeRequest(httpCtx);
             }
             final Request req = httpCtx.request;
-            final UriComponents uri = req.isUseRawUrl() ? req.getRawURI() : req.getURI();
+            final UriComponents uri = req.getURI();
             final Method method = Method.valueOf(request.getMethod());
             final HttpRequestPacket.Builder builder = HttpRequestPacket.builder();
             boolean secure = "https".equals(uri.getScheme());

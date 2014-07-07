@@ -208,7 +208,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private boolean executeConnectAsync = true;
     public static final ThreadLocal<Boolean> IN_IO_THREAD = new ThreadLocalBoolean();
     private final boolean trackConnections;
-    private final boolean useRawUrl;
     private final boolean disableZeroCopy;
     private final static NTLMEngine ntlmEngine = new NTLMEngine();
     private static SpnegoEngine spnegoEngine = null;
@@ -289,7 +288,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             trackConnections = false;
         }
 
-        useRawUrl = config.isUseRawUrl();
         disableZeroCopy = providerConfig.isDisableZeroCopy();
     }
 
@@ -973,7 +971,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
             throw new IOException("Closed");
         }
 
-        UriComponents uri = useRawUrl ? request.getRawURI() : request.getURI();
+        UriComponents uri = request.getURI();
         
         if (uri.getScheme().startsWith(WEBSOCKET) && !validateWebSocketRequest(request, asyncHandler)) {
             throw new IOException("WebSocket method must be a GET");

@@ -61,9 +61,7 @@ public interface Request {
      */
     String getUrl();
 
-    UriComponents getOriginalURI();
     UriComponents getURI();
-    UriComponents getRawURI();
 
     /**
      * Return the InetAddress to override
@@ -73,13 +71,6 @@ public interface Request {
     InetAddress getInetAddress();
 
     InetAddress getLocalAddress();
-
-    /**
-     * Return the undecoded url
-     *
-     * @return the undecoded url
-     */
-    String getRawUrl();
 
     /**
      * Return the current set of Headers.
@@ -213,8 +204,6 @@ public interface Request {
      * @return the encoding value used when encoding the request's body.
      */
     String getBodyEncoding();
-
-    boolean isUseRawUrl();
 
     ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
 }

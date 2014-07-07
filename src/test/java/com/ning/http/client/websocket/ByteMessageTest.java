@@ -13,7 +13,6 @@
 package com.ning.http.client.websocket;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;

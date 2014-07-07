@@ -85,7 +85,7 @@ public final class ProxyUtils {
         if (proxyServer == null) {
             ProxyServerSelector selector = config.getProxyServerSelector();
             if (selector != null) {
-                proxyServer = selector.select(request.getOriginalURI());
+                proxyServer = selector.select(request.getURI());
             }
         }
         return ProxyUtils.avoidProxy(proxyServer, request) ? null : proxyServer;
@@ -95,7 +95,7 @@ public final class ProxyUtils {
      * @see #avoidProxy(ProxyServer, String)
      */
     public static boolean avoidProxy(final ProxyServer proxyServer, final Request request) {
-        return avoidProxy(proxyServer, request.getOriginalURI().getHost());
+        return avoidProxy(proxyServer, request.getURI().getHost());
     }
 
     private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
