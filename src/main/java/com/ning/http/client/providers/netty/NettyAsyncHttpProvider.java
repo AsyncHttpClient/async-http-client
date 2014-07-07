@@ -1943,7 +1943,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     final RequestBuilder nBuilder = new RequestBuilder(future.getRequest());
 
                     if (config.isRemoveQueryParamOnRedirect())
-                        nBuilder.resetQueryParams();
+                        nBuilder.resetQuery();
                     
                     if (!(statusCode < 302 || statusCode > 303) && !(statusCode == 302 && config.isStrict302Handling())) {
                         nBuilder.setMethod("GET");

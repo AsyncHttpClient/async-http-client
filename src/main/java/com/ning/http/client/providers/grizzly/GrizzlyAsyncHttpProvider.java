@@ -1752,7 +1752,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             builder.setUrl(uri.toString());
 
             if (ctx.provider.clientConfig.isRemoveQueryParamOnRedirect()) {
-                builder.resetQueryParams();;
+                builder.resetQuery();
             }
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
                 builder.addOrReplaceCookie(CookieDecoder.decode(cookieStr));

@@ -63,7 +63,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private List<Part> parts;
         private String virtualHost;
         private long length = -1;
-        public List<Param> queryParams;
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
@@ -72,6 +71,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private long rangeOffset;
         public String charset;
         private ConnectionPoolKeyStrategy connectionPoolKeyStrategy = DefaultConnectionPoolStrategy.INSTANCE;
+        private List<Param> queryParams;
 
         public RequestImpl() {
         }
@@ -90,7 +90,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
                 this.formParams = prototype.getFormParams() == null ? null : new ArrayList<Param>(prototype.getFormParams());
-                this.queryParams = prototype.getQueryParams() == null ? null : new ArrayList<Param>(prototype.getQueryParams());
                 this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
                 this.virtualHost = prototype.getVirtualHost();
                 this.length = prototype.getContentLength();
@@ -178,10 +177,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return virtualHost;
         }
 
-        public List<Param> getQueryParams() {
-            return queryParams != null ? queryParams : Collections.<Param> emptyList();
-        }
-
         public ProxyServer getProxyServer() {
             return proxyServer;
         }
@@ -212,6 +207,24 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy() {
             return connectionPoolKeyStrategy;
+        }
+
+        @Override
+        public List<Param> getQueryParams() {
+            if (queryParams == null)
+                // lazy load
+                if (isNonEmpty(uri.getQuery())) {
+                    queryParams = new ArrayList<Param>(1);
+                    for (String queryStringParam : uri.getQuery().split("&")) {
+                        int pos = queryStringParam.indexOf('=');
+                        if (pos <= 0)
+                            queryParams.add(new Param(queryStringParam, null));
+                        else
+                            queryParams.add(new Param(queryStringParam.substring(0, pos), queryStringParam.substring(pos + 1)));
+                    }
+                } else
+                    queryParams = Collections.emptyList();
+            return queryParams;
         }
 
         @Override
@@ -246,6 +259,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private final Class<T> derived;
     protected final RequestImpl request;
     protected boolean disableUrlEncoding;
+    protected List<Param> queryParams;
     protected SignatureCalculator signatureCalculator;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
@@ -268,7 +282,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         if (uri.getPath() == null)
             throw new NullPointerException("uri.path");
         request.uri = uri;
-        addQueryParams(uri);
         return derived.cast(this);
     }
 
@@ -280,29 +293,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setLocalInetAddress(InetAddress address) {
         request.localAddress = address;
         return derived.cast(this);
-    }
-
-    private void addQueryParams(UriComponents uri) {
-        if (isNonEmpty(uri.getQuery())) {
-            String[] queries = uri.getQuery().split("&");
-            int pos;
-            for (String query : queries) {
-                pos = query.indexOf("=");
-                if (pos <= 0) {
-                    addQueryParam(query, null);
-                } else {
-                    try {
-                        if (disableUrlEncoding) {
-                            addQueryParam(query.substring(0, pos), query.substring(pos + 1));
-                        } else {
-                            addQueryParam(URLDecoder.decode(query.substring(0, pos), "UTF-8"), URLDecoder.decode(query.substring(pos + 1), "UTF-8"));
-                        }
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
     }
 
     public T setVirtualHost(String virtualHost) {
@@ -381,8 +371,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             request.cookies.clear();
     }
     
-    public void resetQueryParams() {
-        request.queryParams = null;
+    public void resetQuery() {
+        queryParams = null;
+        request.uri = request.uri.withNewQuery(null);
     }
     
     public void resetFormParams() {
@@ -449,10 +440,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addQueryParam(String name, String value) {
-        if (request.queryParams == null) {
-            request.queryParams = new ArrayList<Param>(1);
+        if (queryParams == null) {
+            queryParams = new ArrayList<Param>(1);
         }
-        request.queryParams.add(new Param(name, value));
+        queryParams.add(new Param(name, value));
         return derived.cast(this);
     }
 
@@ -474,7 +465,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setQueryParams(List<Param> params) {
-        request.queryParams = params;
+        queryParams = params;
         return derived.cast(this);
     }
     
@@ -595,6 +586,111 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
     }
     
+    private void appendRawQueryParams(StringBuilder sb, List<Param> queryParams) {
+        for (Param param : queryParams)
+            appendRawQueryParam(sb, param.getName(), param.getValue());
+    }
+    
+    private void appendRawQueryParam(StringBuilder sb, String name, String value) {
+        sb.append(name);
+        if (value != null)
+            sb.append('=').append(value);
+        sb.append('&');
+    }
+    
+    private String decodeUTF8(String s) {
+        try {
+            return URLDecoder.decode(s, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    // FIXME super inefficient!!!
+    private void appendEscapedQueryParam(StringBuilder sb, String name, String value) {
+        UTF8UrlEncoder.appendEncoded(sb, name);
+        if (value != null) {
+            sb.append('=');
+            UTF8UrlEncoder.appendEncoded(sb, value);
+        }
+        sb.append('&');
+    }
+
+    private void appendEscapeQuery(StringBuilder sb, String query) {
+        int pos;
+        for (String queryParamString : query.split("&")) {
+            pos = queryParamString.indexOf('=');
+            if (pos <= 0) {
+                String decodedName = decodeUTF8(queryParamString);
+                appendEscapedQueryParam(sb, decodedName, null);
+            } else {
+                String decodedName = decodeUTF8(queryParamString.substring(0, pos));
+                String decodedValue = decodeUTF8(queryParamString.substring(pos + 1));
+                appendEscapedQueryParam(sb, decodedName, decodedValue);
+            }
+        }
+    }
+    
+    private void appendEscapeQueryParams(StringBuilder sb, List<Param> queryParams) {
+        for (Param param: queryParams)
+            appendEscapedQueryParam(sb, param.getName(), param.getValue());
+    }
+    
+    private String computeFinalQueryString(String query, List<Param> queryParams) {
+        
+        boolean hasQuery = isNonEmpty(query);
+        boolean hasQueryParams = isNonEmpty(queryParams);
+        
+        if (hasQuery) {
+            if (hasQueryParams) {
+                if (disableUrlEncoding) {
+                    // concatenate raw query + raw query params
+                    StringBuilder sb = new StringBuilder(query);
+                    appendRawQueryParams(sb, queryParams);
+                    sb.setLength(sb.length() - 1);
+                    return sb.toString();
+                } else {
+                    // concatenate encoded query + encoded query params
+                    StringBuilder sb = new StringBuilder(query.length() + 16);
+                    appendEscapeQuery(sb, query);
+                    appendEscapeQueryParams(sb, queryParams);
+                    sb.setLength(sb.length() - 1);
+                   return sb.toString();
+                }
+            } else {
+                if (disableUrlEncoding) {
+                    // return raw query as is
+                    return query;
+                } else {
+                    // encode query
+                    StringBuilder sb = new StringBuilder(query.length() + 16);
+                    appendEscapeQuery(sb, query);
+                    sb.setLength(sb.length() - 1);
+                    return sb.toString();
+                }
+            }
+        } else {
+            if (hasQueryParams) {
+                if (disableUrlEncoding) {
+                    // concatenate raw queryParams
+                    StringBuilder sb = new StringBuilder(queryParams.size() * 16);
+                    appendRawQueryParams(sb, queryParams);
+                    sb.setLength(sb.length() - 1);
+                    return sb.toString();
+                } else {
+                    // concatenate encoded query params
+                    StringBuilder sb = new StringBuilder(queryParams.size() * 16);
+                    appendEscapeQueryParams(sb, queryParams);
+                    sb.setLength(sb.length() - 1);
+                    return sb.toString();
+                }
+            } else {
+                // neither query nor query param
+                return null;
+            }
+        }
+    }
+    
     private void computeFinalUri() {
 
         if (request.uri == null) {
@@ -606,29 +702,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         // FIXME is that right?
         String newPath = isNonEmpty(request.uri.getPath())? request.uri.getPath() : "/";
-        String newQuery = null;
-        if (isNonEmpty(request.queryParams)) {
-            StringBuilder sb = new StringBuilder();
-            for (Param param : request.queryParams) {
-                String name = param.getName();
-                String value = param.getValue();
-                if (!disableUrlEncoding)
-                    UTF8UrlEncoder.appendEncoded(sb, name);
-                else
-                    sb.append(name);
-                if (value != null) {
-                    sb.append('=');
-                    if (!disableUrlEncoding)
-                        UTF8UrlEncoder.appendEncoded(sb, value);
-                    else
-                        sb.append(value);
-                }
-                sb.append('&');
-            }
-
-            sb.setLength(sb.length() - 1);
-            newQuery = sb.toString();
-        }
+        String newQuery = computeFinalQueryString(request.uri.getQuery(), queryParams);
 
         request.uri = new UriComponents(//
                 request.uri.getScheme(),//
