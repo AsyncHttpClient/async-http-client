@@ -22,7 +22,7 @@ public final class UTF8UrlDecoder {
     }
 
     private static int hexaDigit(char c) {
-        return Character.digit(c, 0x10);
+        return Character.digit(c, 16);
     }
 
     public static String decode(String s) {
@@ -44,14 +44,12 @@ public final class UTF8UrlDecoder {
                     throw new IllegalArgumentException("UTF8UrlDecoder: Incomplete trailing escape (%) pattern");
 
                 int x, y;
-                if ((x = hexaDigit(s.charAt(i+1))) == -1 || (y = hexaDigit(s.charAt(i+2))) == -1)
+                if ((x = hexaDigit(s.charAt(i + 1))) == -1 || (y = hexaDigit(s.charAt(i + 2))) == -1)
                     throw new IllegalArgumentException("UTF8UrlDecoder: Malformed");
 
                 sb = initSb(sb, initialSbLength, s, i);
-                byte b = (byte)((x << 4) + y);
-                char cc = (char)(b);
-                sb.append(cc);
-                i+=3;
+                sb.append((char) (x * 16 + y));
+                i += 3;
             } else {
                 if (sb != null)
                     sb.append(c);
