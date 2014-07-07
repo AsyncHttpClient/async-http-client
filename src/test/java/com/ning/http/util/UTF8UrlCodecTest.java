@@ -18,19 +18,17 @@ package com.ning.http.util;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class UTF8UrlCodecTest
-{
-    @Test(groups="fast")
-    public void testBasics()
-    {
+public class UTF8UrlCodecTest {
+
+    @Test(groups = "fast")
+    public void testBasics() {
         Assert.assertEquals(UTF8UrlEncoder.encode("foobar"), "foobar");
         Assert.assertEquals(UTF8UrlEncoder.encode("a&b"), "a%26b");
         Assert.assertEquals(UTF8UrlEncoder.encode("a+b"), "a%2Bb");
     }
 
-    @Test(groups="fast")
-    public void testNonBmp()
-    {
+    @Test(groups = "fast")
+    public void testNonBmp() {
         // Plane 1
         Assert.assertEquals(UTF8UrlEncoder.encode("\uD83D\uDCA9"), "%F0%9F%92%A9");
         // Plane 2
@@ -39,9 +37,8 @@ public class UTF8UrlCodecTest
         Assert.assertEquals(UTF8UrlEncoder.encode("\udb80\udc01"), "%F3%B0%80%81");
     }
 
-    @Test(groups="fast")
-    public void testDecodeBasics()
-    {
+    @Test(groups = "fast")
+    public void testDecodeBasics() {
         Assert.assertEquals(UTF8UrlDecoder.decode("foobar"), "foobar");
         Assert.assertEquals(UTF8UrlDecoder.decode("a&b"), "a&b");
         Assert.assertEquals(UTF8UrlDecoder.decode("a+b"), "a b");
@@ -53,9 +50,8 @@ public class UTF8UrlCodecTest
         Assert.assertEquals(UTF8UrlDecoder.decode("+%20x"), "  x");
     }
 
-    @Test(groups="fast")
-    public void testDecodeTooShort()
-    {
+    @Test(groups = "fast")
+    public void testDecodeTooShort() {
         try {
             UTF8UrlDecoder.decode("%2");
             Assert.assertTrue(false, "No exception thrown on illegal encoding length");
