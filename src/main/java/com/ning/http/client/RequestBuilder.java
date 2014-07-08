@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
+import com.ning.http.util.QueryComputer;
 
 /**
  * Builder for a {@link Request}.
@@ -42,10 +43,18 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(RequestBuilder.class, method, useRawUrl);
     }
 
+    public RequestBuilder(String method, QueryComputer queryComputer) {
+        super(RequestBuilder.class, method, queryComputer);
+    }
+
     public RequestBuilder(Request prototype) {
         super(RequestBuilder.class, prototype);
     }
 
+    public RequestBuilder(Request prototype, QueryComputer queryComputer) {
+        super(RequestBuilder.class, prototype, queryComputer);
+    }
+    
     // Note: For now we keep the delegates in place even though they are not needed
     //       since otherwise Clojure (and maybe other languages) won't be able to
     //       access these methods - see Clojure tickets 126 and 259

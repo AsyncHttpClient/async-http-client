@@ -33,8 +33,7 @@ import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
-import com.ning.http.util.UTF8UrlDecoder;
-import com.ning.http.util.UTF8UrlEncoder;
+import com.ning.http.util.QueryComputer;
 
 /**
  * Builder for {@link Request}
@@ -257,22 +256,31 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private final Class<T> derived;
     protected final RequestImpl request;
-    protected boolean disableUrlEncoding;
+    protected QueryComputer queryComputer;
     protected List<Param> queryParams;
     protected SignatureCalculator signatureCalculator;
 
     protected RequestBuilderBase(Class<T> derived, String method, boolean disableUrlEncoding) {
+        this(derived, method, QueryComputer.queryComputer(disableUrlEncoding));
+    }
+
+    protected RequestBuilderBase(Class<T> derived, String method, QueryComputer queryComputer) {
         this.derived = derived;
         request = new RequestImpl();
         request.method = method;
-        this.disableUrlEncoding = disableUrlEncoding;
+        this.queryComputer = queryComputer;
     }
 
     protected RequestBuilderBase(Class<T> derived, Request prototype) {
-        this.derived = derived;
-        request = new RequestImpl(prototype);
+        this(derived, prototype, QueryComputer.URL_ENCODING_ENABLED_QUERY_COMPUTER);
     }
 
+    protected RequestBuilderBase(Class<T> derived, Request prototype, QueryComputer queryComputer) {
+        this.derived = derived;
+        request = new RequestImpl(prototype);
+        this.queryComputer = queryComputer;
+    }
+    
     public T setUrl(String url) {
         return setURI(UriComponents.create(url));
     }
@@ -591,112 +599,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
     }
 
-    private void appendRawQueryParams(StringBuilder sb, List<Param> queryParams) {
-        for (Param param : queryParams)
-            appendRawQueryParam(sb, param.getName(), param.getValue());
-    }
-
-    private void appendRawQueryParam(StringBuilder sb, String name, String value) {
-        sb.append(name);
-        if (value != null)
-            sb.append('=').append(value);
-        sb.append('&');
-    }
-
-    private void encodeAndAppendQueryParam(StringBuilder sb, String name, String value) {
-        UTF8UrlEncoder.appendEncoded(sb, name);
-        if (value != null) {
-            sb.append('=');
-            UTF8UrlEncoder.appendEncoded(sb, value);
-        }
-        sb.append('&');
-    }
-
-    private void encodeAndAppendQuery(StringBuilder sb, String query, boolean decode) {
-        int pos;
-        for (String queryParamString : query.split("&")) {
-            pos = queryParamString.indexOf('=');
-            if (pos <= 0) {
-                String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString) : queryParamString;
-                encodeAndAppendQueryParam(sb, decodedName, null);
-            } else {
-                String name = queryParamString.substring(0, pos);
-                String decodedName = decode ? UTF8UrlDecoder.decode(name) : name;
-                String value = queryParamString.substring(pos + 1);
-                String decodedValue = decode ? UTF8UrlDecoder.decode(value) : value;
-                encodeAndAppendQueryParam(sb, decodedName, decodedValue);
-            }
-        }
-    }
-
-    private boolean decodeRequired(String query) {
-        return query.indexOf('%') != -1 || query.indexOf('+') != -1;
-    }
-
-    private void encodeAndAppendQuery(StringBuilder sb, String query) {
-        encodeAndAppendQuery(sb, query, decodeRequired(query));
-    }
-
-    private void encodeAndAppendQueryParams(StringBuilder sb, List<Param> queryParams) {
-        for (Param param : queryParams)
-            encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
-    }
-
-    private String computeFinalQueryString(String query, List<Param> queryParams) {
-
-        boolean hasQuery = isNonEmpty(query);
-        boolean hasQueryParams = isNonEmpty(queryParams);
-
-        if (hasQuery) {
-            if (hasQueryParams) {
-                if (disableUrlEncoding) {
-                    // concatenate raw query + raw query params
-                    StringBuilder sb = new StringBuilder(query);
-                    appendRawQueryParams(sb, queryParams);
-                    sb.setLength(sb.length() - 1);
-                    return sb.toString();
-                } else {
-                    // concatenate encoded query + encoded query params
-                    StringBuilder sb = new StringBuilder(query.length() + 16);
-                    encodeAndAppendQuery(sb, query);
-                    encodeAndAppendQueryParams(sb, queryParams);
-                    sb.setLength(sb.length() - 1);
-                    return sb.toString();
-                }
-            } else {
-                if (disableUrlEncoding) {
-                    // return raw query as is
-                    return query;
-                } else {
-                    // encode query
-                    StringBuilder sb = new StringBuilder(query.length() + 16);
-                    encodeAndAppendQuery(sb, query);
-                    sb.setLength(sb.length() - 1);
-                    return sb.toString();
-                }
-            }
-        } else {
-            if (hasQueryParams) {
-                if (disableUrlEncoding) {
-                    // concatenate raw queryParams
-                    StringBuilder sb = new StringBuilder(queryParams.size() * 16);
-                    appendRawQueryParams(sb, queryParams);
-                    sb.setLength(sb.length() - 1);
-                    return sb.toString();
-                } else {
-                    // concatenate encoded query params
-                    StringBuilder sb = new StringBuilder(queryParams.size() * 16);
-                    encodeAndAppendQueryParams(sb, queryParams);
-                    sb.setLength(sb.length() - 1);
-                    return sb.toString();
-                }
-            } else {
-                // neither query nor query param
-                return null;
-            }
-        }
-    }
-
     private void computeFinalUri() {
 
         if (request.uri == null) {
@@ -708,7 +610,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         // FIXME is that right?
         String newPath = isNonEmpty(request.uri.getPath()) ? request.uri.getPath() : "/";
-        String newQuery = computeFinalQueryString(request.uri.getQuery(), queryParams);
+        String newQuery = queryComputer.computeFullQueryString(request.uri.getQuery(), queryParams);
 
         request.uri = new UriComponents(//
                 request.uri.getScheme(),//
