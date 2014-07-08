@@ -22,7 +22,7 @@ public enum QueryComputer {
 
     URL_ENCODING_ENABLED_QUERY_COMPUTER {
 
-        private final void encodeAndAppendQueryParam(final StringBuilder sb, final String name, final String value) {
+        private final void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
             UTF8UrlEncoder.appendEncoded(sb, name);
             if (value != null) {
                 sb.append('=');
@@ -36,23 +36,18 @@ public enum QueryComputer {
                 encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
         }
         
-        private final boolean decodeRequired(final String query) {
-            return query.indexOf('%') != -1 || query.indexOf('+') != -1;
-        }
-
-        // FIXME it's probably possible to have only one pass instead of decoding then re-encoding
+        // FIXME this could be improved: remove split
         private final void encodeAndAppendQuery(final StringBuilder sb, final String query) {
-            boolean decode = decodeRequired(query);
             int pos;
             for (String queryParamString : query.split("&")) {
                 pos = queryParamString.indexOf('=');
                 if (pos <= 0) {
-                    String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString) : queryParamString;
+                    CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString);
                     encodeAndAppendQueryParam(sb, decodedName, null);
                 } else {
-                    String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString, 0, pos) : queryParamString.substring(0, pos);
+                    CharSequence decodedName = UTF8UrlDecoder.decode(queryParamString, 0, pos);
                     int valueStart = pos + 1;
-                    String decodedValue = decode ? UTF8UrlDecoder.decode(queryParamString, valueStart, queryParamString.length() - valueStart) : queryParamString.substring(valueStart);
+                    CharSequence decodedValue = UTF8UrlDecoder.decode(queryParamString, valueStart, queryParamString.length() - valueStart);
                     encodeAndAppendQueryParam(sb, decodedName, decodedValue);
                 }
             }

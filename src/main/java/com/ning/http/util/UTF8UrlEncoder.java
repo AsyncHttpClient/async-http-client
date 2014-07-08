@@ -56,19 +56,17 @@ public final class UTF8UrlEncoder {
         return sb.toString();
     }
 
-    public static StringBuilder appendEncoded(StringBuilder sb, String input) {
-
-        for (int c, i = 0, len = input.length(); i < len; i+= Character.charCount(c)) {
-            c = input.codePointAt(i);
-            if (c <= 127) {
-                if (SAFE_ASCII[c]) {
+    public static StringBuilder appendEncoded(StringBuilder sb, CharSequence input) {
+        int c;
+        for (int i = 0; i < input.length(); i+= Character.charCount(c)) {
+            c = Character.codePointAt(input, i);
+            if (c <= 127)
+                if (SAFE_ASCII[c])
                     sb.append((char) c);
-                } else {
+                else
                     appendSingleByteEncoded(sb, c);
-                }
-            } else {
+            else
                 appendMultiByteEncoded(sb, c);
-            }
         }
         return sb;
     }
