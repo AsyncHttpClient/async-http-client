@@ -17,8 +17,13 @@ public final class UTF8UrlDecoder {
     private UTF8UrlDecoder() {
     }
 
-    private static StringBuilder initSb(StringBuilder sb, int initialSbLength, String s, int i) {
-        return sb != null ? sb : new StringBuilder(initialSbLength).append(s, 0, i);
+    private static StringBuilder initSb(StringBuilder sb, String s, int i, int length) {
+        if (sb != null) {
+            return sb;
+        } else {
+            int initialSbLength = length > 500 ? length / 2 : length;
+            return new StringBuilder(initialSbLength).append(s, 0, i);
+        }
     }
 
     private static int hexaDigit(char c) {
@@ -26,28 +31,30 @@ public final class UTF8UrlDecoder {
     }
 
     public static String decode(String s) {
+        return decode(s, 0, s.length());
+    }
+    
+    public static String decode(String s, int offset, int length) {
 
-        final int numChars = s.length();
-        final int initialSbLength = numChars > 500 ? numChars / 2 : numChars;
         StringBuilder sb = null;
-        int i = 0;
+        int i = offset;
 
-        while (i < numChars) {
+        while (i < length) {
             char c = s.charAt(i);
             if (c == '+') {
-                sb = initSb(sb, initialSbLength, s, i);
+                sb = initSb(sb, s, i, length);
                 sb.append(' ');
                 i++;
 
             } else if (c == '%') {
-                if (numChars - i < 3) // We expect 3 chars. 0 based i vs. 1 based length!
+                if (length - i < 3) // We expect 3 chars. 0 based i vs. 1 based length!
                     throw new IllegalArgumentException("UTF8UrlDecoder: Incomplete trailing escape (%) pattern");
 
                 int x, y;
                 if ((x = hexaDigit(s.charAt(i + 1))) == -1 || (y = hexaDigit(s.charAt(i + 2))) == -1)
                     throw new IllegalArgumentException("UTF8UrlDecoder: Malformed");
 
-                sb = initSb(sb, initialSbLength, s, i);
+                sb = initSb(sb, s, i, length);
                 sb.append((char) (x * 16 + y));
                 i += 3;
             } else {
