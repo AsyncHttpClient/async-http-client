@@ -560,9 +560,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
          * (order does not matter with current implementation but may in future)
          */
         if (signatureCalculator != null) {
-            // Should not include query parameters, ensure:
-            String url = new UriComponents(request.uri.getScheme(), null, request.uri.getHost(), request.uri.getPort(), request.uri.getPath(), null).toString();
-            signatureCalculator.calculateAndAddSignature(url, request, this);
+            signatureCalculator.calculateAndAddSignature(request, this);
         }
     }
     

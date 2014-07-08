@@ -29,13 +29,12 @@ public interface SignatureCalculator {
      * (using passed {@link RequestBuilder}) to add signature (usually as
      * an HTTP header).
      *
+     * @param request        Request that is being built; needed to access content to
+     *                       be signed
      * @param requestBuilder builder that can be used to modify request, usually
      *                       by adding header that includes calculated signature. Be sure NOT to
      *                       call {@link RequestBuilder#build} since this will cause infinite recursion
-     * @param request        Request that is being built; needed to access content to
-     *                       be signed
      */
-    void calculateAndAddSignature(String url,
-                                  Request request,
+    void calculateAndAddSignature(Request request,
                                   RequestBuilderBase<?> requestBuilder);
 }
