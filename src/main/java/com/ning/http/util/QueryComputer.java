@@ -22,24 +22,60 @@ public enum QueryComputer {
 
     URL_ENCODING_ENABLED_QUERY_COMPUTER {
 
-        protected String withQueryWithParams(final String query, final List<Param> queryParams) {
+        private final void encodeAndAppendQueryParam(final StringBuilder sb, final String name, final String value) {
+            UTF8UrlEncoder.appendEncoded(sb, name);
+            if (value != null) {
+                sb.append('=');
+                UTF8UrlEncoder.appendEncoded(sb, value);
+            }
+            sb.append('&');
+        }
+
+        private final void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
+            for (Param param : queryParams)
+                encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
+        }
+        
+        private final boolean decodeRequired(final String query) {
+            return query.indexOf('%') != -1 || query.indexOf('+') != -1;
+        }
+
+        // FIXME it's probably possible to have only one pass instead of decoding then re-encoding
+        private final void encodeAndAppendQuery(final StringBuilder sb, final String query) {
+            boolean decode = decodeRequired(query);
+            int pos;
+            for (String queryParamString : query.split("&")) {
+                pos = queryParamString.indexOf('=');
+                if (pos <= 0) {
+                    String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString) : queryParamString;
+                    encodeAndAppendQueryParam(sb, decodedName, null);
+                } else {
+                    String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString, 0, pos) : queryParamString.substring(0, pos);
+                    int valueStart = pos + 1;
+                    String decodedValue = decode ? UTF8UrlDecoder.decode(queryParamString, valueStart, queryParamString.length() - valueStart) : queryParamString.substring(valueStart);
+                    encodeAndAppendQueryParam(sb, decodedName, decodedValue);
+                }
+            }
+        }
+        
+        protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
-            StringBuilder sb = new StringBuilder(query.length() + 16);
+            StringBuilder sb = new StringBuilder(query.length() + queryParams.size() * 16);
             encodeAndAppendQuery(sb, query);
             encodeAndAppendQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
         }
 
-        protected String withQueryWithoutParams(final String query) {
+        protected final String withQueryWithoutParams(final String query) {
             // encode query
-            StringBuilder sb = new StringBuilder(query.length() + 16);
+            StringBuilder sb = new StringBuilder(query.length() + 6);
             encodeAndAppendQuery(sb, query);
             sb.setLength(sb.length() - 1);
             return sb.toString();
         }
 
-        protected String withoutQueryWithParams(final List<Param> queryParams) {
+        protected final String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate encoded query params
             StringBuilder sb = new StringBuilder(queryParams.size() * 16);
             encodeAndAppendQueryParams(sb, queryParams);
@@ -50,20 +86,33 @@ public enum QueryComputer {
 
     URL_ENCODING_DISABLED_QUERY_COMPUTER {
 
-        protected String withQueryWithParams(final String query, final List<Param> queryParams) {
+        private final void appendRawQueryParam(StringBuilder sb, String name, String value) {
+            sb.append(name);
+            if (value != null)
+                sb.append('=').append(value);
+            sb.append('&');
+        }
+        
+        private final void appendRawQueryParams(final StringBuilder sb, final List<Param> queryParams) {
+            for (Param param : queryParams)
+                appendRawQueryParam(sb, param.getName(), param.getValue());
+        }
+        
+        protected final String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
-            StringBuilder sb = new StringBuilder(query);
+            StringBuilder sb = new StringBuilder(query.length() + queryParams.size() * 16);
+            sb.append(query);
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
         }
 
-        protected String withQueryWithoutParams(final String query) {
+        protected final String withQueryWithoutParams(final String query) {
             // return raw query as is
             return query;
         }
 
-        protected String withoutQueryWithParams(final List<Param> queryParams) {
+        protected final String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate raw queryParams
             StringBuilder sb = new StringBuilder(queryParams.size() * 16);
             appendRawQueryParams(sb, queryParams);
@@ -74,58 +123,6 @@ public enum QueryComputer {
 
     public static QueryComputer queryComputer(boolean disableUrlEncoding) {
         return disableUrlEncoding ? URL_ENCODING_DISABLED_QUERY_COMPUTER : URL_ENCODING_ENABLED_QUERY_COMPUTER;
-    }
-
-    protected final void appendRawQueryParams(final StringBuilder sb, final List<Param> queryParams) {
-        for (Param param : queryParams)
-            appendRawQueryParam(sb, param.getName(), param.getValue());
-    }
-
-    private final void appendRawQueryParam(StringBuilder sb, String name, String value) {
-        sb.append(name);
-        if (value != null)
-            sb.append('=').append(value);
-        sb.append('&');
-    }
-
-    private void encodeAndAppendQueryParam(final StringBuilder sb, final String name, final String value) {
-        UTF8UrlEncoder.appendEncoded(sb, name);
-        if (value != null) {
-            sb.append('=');
-            UTF8UrlEncoder.appendEncoded(sb, value);
-        }
-        sb.append('&');
-    }
-
-    // FIXME it's probably possible to have only one pass instead of decoding then re-encoding
-    private final void encodeAndAppendQuery(final StringBuilder sb, final String query, final boolean decode) {
-        int pos;
-        for (String queryParamString : query.split("&")) {
-            pos = queryParamString.indexOf('=');
-            if (pos <= 0) {
-                String decodedName = decode ? UTF8UrlDecoder.decode(queryParamString) : queryParamString;
-                encodeAndAppendQueryParam(sb, decodedName, null);
-            } else {
-                String name = queryParamString.substring(0, pos);
-                String decodedName = decode ? UTF8UrlDecoder.decode(name) : name;
-                String value = queryParamString.substring(pos + 1);
-                String decodedValue = decode ? UTF8UrlDecoder.decode(value) : value;
-                encodeAndAppendQueryParam(sb, decodedName, decodedValue);
-            }
-        }
-    }
-
-    private final boolean decodeRequired(final String query) {
-        return query.indexOf('%') != -1 || query.indexOf('+') != -1;
-    }
-
-    protected final void encodeAndAppendQuery(final StringBuilder sb, final String query) {
-        encodeAndAppendQuery(sb, query, decodeRequired(query));
-    }
-
-    protected final void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
-        for (Param param : queryParams)
-            encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
     }
 
     protected abstract String withQueryWithParams(final String query, final List<Param> queryParams);
