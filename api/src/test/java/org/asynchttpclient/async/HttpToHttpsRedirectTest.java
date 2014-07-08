@@ -98,7 +98,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
                 .setMaxRedirects(5)//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
@@ -118,7 +118,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
                 .setMaxRedirects(5)//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
@@ -144,7 +144,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder()//
                 .setMaxRedirects(5)//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .setAcceptAnyCertificate(true)//
                 .build();
         AsyncHttpClient c = getAsyncHttpClient(cg);

@@ -76,7 +76,7 @@ public abstract class RedirectTest extends AbstractBasicTest {
 
     @Test(timeOut = 60000)
     public void testRedirectToWSResource() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<String>("");

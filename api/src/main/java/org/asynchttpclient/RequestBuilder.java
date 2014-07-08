@@ -165,8 +165,8 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setFollowRedirects(boolean followRedirects) {
-        return super.setFollowRedirects(followRedirects);
+    public RequestBuilder setFollowRedirect(boolean followRedirect) {
+        return super.setFollowRedirect(followRedirect);
     }
 
     @Override

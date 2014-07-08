@@ -56,7 +56,7 @@ public abstract class NoNullResponseTest extends AbstractBasicTest {
     }
 
     private AsyncHttpClient create() throws GeneralSecurityException {
-        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirects(true).setSSLContext(getSSLContext()).setAllowPoolingConnection(true).setConnectionTimeoutInMs(10000)
+        final AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder().setCompressionEnabled(true).setFollowRedirect(true).setSSLContext(getSSLContext()).setAllowPoolingConnection(true).setConnectionTimeoutInMs(10000)
                 .setIdleConnectionInPoolTimeoutInMs(60000).setRequestTimeoutInMs(10000).setMaxConnectionsPerHost(-1).setMaxConnectionsTotal(-1);
         return getAsyncHttpClient(configBuilder.build());
     }

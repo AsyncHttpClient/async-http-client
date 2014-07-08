@@ -86,7 +86,7 @@ public class GrizzlyNoTransferEncodingTest {
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
             .setCompressionEnabled(true)
-            .setFollowRedirects(false)
+            .setFollowRedirect(false)
             .setConnectionTimeoutInMs(15000)
             .setRequestTimeoutInMs(15000)
             .setAllowPoolingConnection(false)

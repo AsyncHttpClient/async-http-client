@@ -79,7 +79,7 @@ public abstract class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .setMaxConnectionsTotal(1)//
                 .setConnectionTimeoutInMs(1000)//
                 .setRequestTimeoutInMs(1000)//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .build();
 
         AsyncHttpClient c = getAsyncHttpClient(config);

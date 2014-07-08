@@ -197,7 +197,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void redirectAndBasicAuthTest() throws Exception, ExecutionException, TimeoutException, InterruptedException {
-        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaxRedirects(10).build());
+        AsyncHttpClient client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaxRedirects(10).build());
         try {
             Future<Response> f = client.prepareGet(getTargetUrl2())//
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(USER).setPassword(ADMIN).build())//

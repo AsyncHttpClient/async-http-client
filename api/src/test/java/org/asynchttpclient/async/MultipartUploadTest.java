@@ -166,7 +166,7 @@ public abstract class MultipartUploadTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig.Builder bc = new AsyncHttpClientConfig.Builder();
 
-        bc.setFollowRedirects(true);
+        bc.setFollowRedirect(true);
 
         AsyncHttpClient c = getAsyncHttpClient(bc.build());
 

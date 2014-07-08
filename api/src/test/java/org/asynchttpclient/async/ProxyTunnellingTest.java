@@ -78,7 +78,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
         ProxyServer ps = new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1);
 
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-        .setFollowRedirects(true)//
+        .setFollowRedirect(true)//
         .setAcceptAnyCertificate(true)//
         .build();
 
@@ -108,7 +108,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void testConfigProxy() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .setProxyServer(new ProxyServer(ProxyServer.Protocol.HTTPS, "127.0.0.1", port1))//
                 .setAcceptAnyCertificate(true)//
                 .build();
@@ -142,7 +142,7 @@ public abstract class ProxyTunnellingTest extends AbstractBasicTest {
                 .setProxyProtocol(ProxyServer.Protocol.HTTPS)//
                 .setProxyHost("127.0.0.1")//
                 .setProxyPort(port1)//
-                .setFollowRedirects(true)//
+                .setFollowRedirect(true)//
                 .setUrl(getTargetUrl2())//
                 .setAcceptAnyCertificate(true)//
                 .setHeader("Content-Type", "text/html")//

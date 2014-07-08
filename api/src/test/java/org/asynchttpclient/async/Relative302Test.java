@@ -90,7 +90,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "online", "default_provider" })
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
         try {
@@ -110,7 +110,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
     // @Test(groups = { "standalone", "default_provider" })
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
         // If the test hit a proxy, no ConnectException will be thrown and instead of 404 will be returned.
@@ -130,7 +130,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String redirectTarget = "/bar/test";
@@ -151,7 +151,7 @@ public abstract class Relative302Test extends AbstractBasicTest {
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             String redirectTarget = "bar/test1";

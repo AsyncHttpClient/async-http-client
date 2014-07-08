@@ -676,7 +676,7 @@ public class AsyncHttpClientConfig {
          * @param redirectEnabled true if enabled.
          * @return a {@link Builder}
          */
-        public Builder setFollowRedirects(boolean followRedirect) {
+        public Builder setFollowRedirect(boolean followRedirect) {
             this.followRedirect = followRedirect;
             return this;
         }

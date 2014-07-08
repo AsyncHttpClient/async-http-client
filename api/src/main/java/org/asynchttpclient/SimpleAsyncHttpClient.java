@@ -373,7 +373,7 @@ public class SimpleAsyncHttpClient implements Closeable {
      */
     public interface DerivedBuilder {
 
-        DerivedBuilder setFollowRedirects(boolean followRedirects);
+        DerivedBuilder setFollowRedirect(boolean followRedirect);
 
         DerivedBuilder setVirtualHost(String virtualHost);
 
@@ -494,8 +494,8 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setFollowRedirects(boolean followRedirects) {
-            requestBuilder.setFollowRedirects(followRedirects);
+        public Builder setFollowRedirect(boolean followRedirect) {
+            requestBuilder.setFollowRedirect(followRedirect);
             return this;
         }
 

@@ -62,7 +62,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         public ProxyServer proxyServer;
         private Realm realm;
         private File file;
-        private Boolean followRedirects;
+        private Boolean followRedirect;
         private int requestTimeoutInMs;
         private long rangeOffset;
         public String charset;
@@ -91,7 +91,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.proxyServer = prototype.getProxyServer();
                 this.realm = prototype.getRealm();
                 this.file = prototype.getFile();
-                this.followRedirects = prototype.getFollowRedirect();
+                this.followRedirect = prototype.getFollowRedirect();
                 this.requestTimeoutInMs = prototype.getRequestTimeoutInMs();
                 this.rangeOffset = prototype.getRangeOffset();
                 this.charset = prototype.getBodyEncoding();
@@ -200,7 +200,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         @Override
         public Boolean getFollowRedirect() {
-            return followRedirects;
+            return followRedirect;
         }
 
         @Override
@@ -527,8 +527,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return derived.cast(this);
     }
 
-    public T setFollowRedirects(boolean followRedirects) {
-        request.followRedirects = followRedirects;
+    public T setFollowRedirect(boolean followRedirect) {
+        request.followRedirect = followRedirect;
         return derived.cast(this);
     }
 
