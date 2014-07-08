@@ -38,8 +38,9 @@ public final class UTF8UrlDecoder {
 
         StringBuilder sb = null;
         int i = offset;
+        int end = length + offset;
 
-        while (i < length) {
+        while (i < end) {
             char c = s.charAt(i);
             if (c == '+') {
                 sb = initSb(sb, s, i, offset, length);
@@ -47,7 +48,7 @@ public final class UTF8UrlDecoder {
                 i++;
 
             } else if (c == '%') {
-                if (length - i < 3) // We expect 3 chars. 0 based i vs. 1 based length!
+                if (end - i < 3) // We expect 3 chars. 0 based i vs. 1 based length!
                     throw new IllegalArgumentException("UTF8UrlDecoder: Incomplete trailing escape (%) pattern");
 
                 int x, y;
