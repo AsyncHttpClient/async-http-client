@@ -13,10 +13,9 @@
 package org.asynchttpclient.providers.grizzly.filters.events;
 
 import org.asynchttpclient.ProxyServer;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
-
-import java.net.URI;
 
 /**
  * {@link FilterChainEvent} to initiate CONNECT tunnelling with a proxy server.
@@ -28,11 +27,11 @@ public final class TunnelRequestEvent implements FilterChainEvent {
 
     private final FilterChainContext suspendedContext;
     private final ProxyServer proxyServer;
-    private final URI uri;
+    private final UriComponents uri;
 
     // ------------------------------------------------------------ Constructors
 
-    public TunnelRequestEvent(final FilterChainContext suspendedContext, final ProxyServer proxyServer, final URI uri) {
+    public TunnelRequestEvent(final FilterChainContext suspendedContext, final ProxyServer proxyServer, final UriComponents uri) {
         this.suspendedContext = suspendedContext;
         this.proxyServer = proxyServer;
         this.uri = uri;
@@ -55,7 +54,7 @@ public final class TunnelRequestEvent implements FilterChainEvent {
         return proxyServer;
     }
 
-    public URI getUri() {
+    public UriComponents getUri() {
         return uri;
     }
 }

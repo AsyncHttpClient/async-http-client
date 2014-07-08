@@ -18,14 +18,15 @@ import org.asynchttpclient.multipart.Part;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder> {
 
     private final AsyncHttpClient client;
 
-    public BoundRequestBuilder(AsyncHttpClient client, String reqType, boolean useRawUrl) {
-        super(BoundRequestBuilder.class, reqType, useRawUrl);
+    public BoundRequestBuilder(AsyncHttpClient client, String method, boolean isDisableUrlEncoding) {
+        super(BoundRequestBuilder.class, method, isDisableUrlEncoding);
         this.client = client;
     }
 
@@ -42,9 +43,10 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
         return client.executeRequest(build(), new AsyncCompletionHandlerBase());
     }
 
-    // Note: For now we keep the delegates in place even though they are not needed
-    //       since otherwise Clojure (and maybe other languages) won't be able to
-    //       access these methods - see Clojure tickets 126 and 259
+    // Note: For now we keep the delegates in place even though they are not
+    // needed
+    // since otherwise Clojure (and maybe other languages) won't be able to
+    // access these methods - see Clojure tickets 126 and 259
 
     @Override
     public BoundRequestBuilder addBodyPart(Part part) {
@@ -62,13 +64,13 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
     }
 
     @Override
-    public BoundRequestBuilder addParameter(String key, String value) {
-        return super.addParameter(key, value);
+    public BoundRequestBuilder addFormParam(String key, String value) {
+        return super.addFormParam(key, value);
     }
 
     @Override
-    public BoundRequestBuilder addQueryParameter(String name, String value) {
-        return super.addQueryParameter(name, value);
+    public BoundRequestBuilder addQueryParam(String name, String value) {
+        return super.addQueryParam(name, value);
     }
 
     @Override
@@ -107,13 +109,13 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
     }
 
     @Override
-    public BoundRequestBuilder setParameters(Map<String, Collection<String>> parameters) {
-        return super.setParameters(parameters);
+    public BoundRequestBuilder setFormParams(Map<String, List<String>> params) {
+        return super.setFormParams(params);
     }
 
     @Override
-    public BoundRequestBuilder setParameters(FluentStringsMap parameters) {
-        return super.setParameters(parameters);
+    public BoundRequestBuilder setFormParams(List<Param> params) {
+        return super.setFormParams(params);
     }
 
     @Override
@@ -126,7 +128,6 @@ public class BoundRequestBuilder extends RequestBuilderBase<BoundRequestBuilder>
         return super.setVirtualHost(virtualHost);
     }
 
-    @Override
     public BoundRequestBuilder setSignatureCalculator(SignatureCalculator signatureCalculator) {
         return super.setSignatureCalculator(signatureCalculator);
     }

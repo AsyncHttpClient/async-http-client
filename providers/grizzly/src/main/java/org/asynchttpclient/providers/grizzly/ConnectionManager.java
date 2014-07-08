@@ -20,6 +20,7 @@ import org.asynchttpclient.AsyncHttpProviderConfig;
 import org.asynchttpclient.ConnectionPoolKeyStrategy;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.Base64;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.Connection;
@@ -45,7 +46,6 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -134,7 +134,7 @@ public class ConnectionManager {
     }
 
     public Connection obtainConnection(final Request request, final GrizzlyResponseFuture requestFuture) throws ExecutionException,
-            InterruptedException, TimeoutException {
+            InterruptedException, TimeoutException, IOException {
 
         final Connection c = obtainConnection0(request, requestFuture);
         markConnectionAsDoNotCache(c);
@@ -146,7 +146,7 @@ public class ConnectionManager {
 
     static CompletionHandler<Connection> wrapHandler(final Request request, final HostnameVerifier verifier,
             final CompletionHandler<Connection> delegate, final SSLFilter sslFilter) {
-        final URI uri = request.getURI();
+        final UriComponents uri = request.getURI();
         if (Utils.isSecure(uri) && verifier != null) {
             SSLBaseFilter.HandshakeListener handshakeListener = new SSLBaseFilter.HandshakeListener() {
                 @Override
@@ -190,7 +190,7 @@ public class ConnectionManager {
         return provider.getClientConfig().getHostnameVerifier();
     }
 
-    private EndpointKey<SocketAddress> getEndPointKey(final Request request, final ProxyServer proxyServer) {
+    private EndpointKey<SocketAddress> getEndPointKey(final Request request, final ProxyServer proxyServer) throws IOException {
         final String stringKey = getPoolKey(request, proxyServer);
         EndpointKey<SocketAddress> key = endpointKeyMap.get(stringKey);
         if (key == null) {
@@ -203,6 +203,7 @@ public class ConnectionManager {
                     if (localAddress != null) {
                         localSocketAddress = new InetSocketAddress(localAddress.getHostName(), 0);
                     }
+                    
                     ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler.builder(provider.clientTransport)
                             .nonSecureFilterChainTemplate(nonSecureBuilder).secureFilterChainTemplate(secureBuilder)
                             .asyncHttpClientConfig(provider.getClientConfig()).uri(request.getURI()).proxyServer(proxyServer).build();
@@ -216,13 +217,13 @@ public class ConnectionManager {
     }
 
     private SocketAddress getRemoteAddress(final Request request, final ProxyServer proxyServer) {
-        final URI requestUri = request.getURI();
+        final UriComponents requestUri = request.getURI();
         final String host = ((proxyServer != null) ? proxyServer.getHost() : requestUri.getHost());
         final int port = ((proxyServer != null) ? proxyServer.getPort() : requestUri.getPort());
         return new InetSocketAddress(host, getPort(request.getURI(), port));
     }
 
-    private static int getPort(final URI uri, final int p) {
+    private static int getPort(final UriComponents uri, final int p) {
         int port = p;
         if (port == -1) {
             final String protocol = uri.getScheme().toLowerCase(Locale.ENGLISH);
@@ -238,7 +239,7 @@ public class ConnectionManager {
     }
 
     private Connection obtainConnection0(final Request request, final GrizzlyResponseFuture requestFuture) throws ExecutionException,
-            InterruptedException, TimeoutException {
+            InterruptedException, TimeoutException, IOException {
 
         final int cTimeout = provider.getClientConfig().getConnectionTimeoutInMs();
         final FutureImpl<Connection> future = Futures.createSafeFuture();
@@ -246,6 +247,7 @@ public class ConnectionManager {
                 createConnectionCompletionHandler(request, requestFuture, null));
         final ProxyServer proxyServer = requestFuture.getProxyServer();
         final SocketAddress address = getRemoteAddress(request, proxyServer);
+
         ProxyAwareConnectorHandler handler = ProxyAwareConnectorHandler.builder(provider.clientTransport)
                 .nonSecureFilterChainTemplate(nonSecureBuilder)//
                 .secureFilterChainTemplate(secureBuilder)//

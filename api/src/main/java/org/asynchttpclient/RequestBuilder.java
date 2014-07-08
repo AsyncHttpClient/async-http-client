@@ -15,12 +15,14 @@
  */
 package org.asynchttpclient;
 
-import org.asynchttpclient.cookie.Cookie;
-import org.asynchttpclient.multipart.Part;
-
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.multipart.Part;
+import org.asynchttpclient.util.QueryComputer;
 
 /**
  * Builder for a {@link Request}.
@@ -41,10 +43,18 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         super(RequestBuilder.class, method, useRawUrl);
     }
 
+    public RequestBuilder(String method, QueryComputer queryComputer) {
+        super(RequestBuilder.class, method, queryComputer);
+    }
+
     public RequestBuilder(Request prototype) {
         super(RequestBuilder.class, prototype);
     }
 
+    public RequestBuilder(Request prototype, QueryComputer queryComputer) {
+        super(RequestBuilder.class, prototype, queryComputer);
+    }
+    
     // Note: For now we keep the delegates in place even though they are not needed
     //       since otherwise Clojure (and maybe other languages) won't be able to
     //       access these methods - see Clojure tickets 126 and 259
@@ -65,18 +75,28 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder addParameter(String key, String value) {
-        return super.addParameter(key, value);
+    public RequestBuilder addFormParam(String key, String value) {
+        return super.addFormParam(key, value);
     }
 
     @Override
-    public RequestBuilder addQueryParameter(String name, String value) {
-        return super.addQueryParameter(name, value);
+    public RequestBuilder addQueryParam(String name, String value) {
+        return super.addQueryParam(name, value);
     }
 
     @Override
-    public RequestBuilder setQueryParameters(FluentStringsMap parameters) {
-        return super.setQueryParameters(parameters);
+    public RequestBuilder addQueryParams(List<Param> queryParams) {
+        return super.addQueryParams(queryParams);
+    }
+
+    @Override
+    public RequestBuilder setQueryParams(List<Param> params) {
+        return super.setQueryParams(params);
+    }
+
+    @Override
+    public RequestBuilder setQueryParams(Map<String, List<String>> params) {
+        return super.setQueryParams(params);
     }
 
     @Override
@@ -89,11 +109,6 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
         return super.setBody(data);
     }
 
-    /**
-     * Set a Stream for chunking
-     * @param stream - An {@link InputStream}
-     * @return a {@link RequestBuilder}
-     */
     @Override
     public RequestBuilder setBody(InputStream stream) {
         return super.setBody(stream);
@@ -120,13 +135,13 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     }
 
     @Override
-    public RequestBuilder setParameters(Map<String, Collection<String>> parameters) {
-        return super.setParameters(parameters);
+    public RequestBuilder setFormParams(List<Param> params) {
+        return super.setFormParams(params);
     }
 
     @Override
-    public RequestBuilder setParameters(FluentStringsMap parameters) {
-        return super.setParameters(parameters);
+    public RequestBuilder setFormParams(Map<String, List<String>> params) {
+        return super.setFormParams(params);
     }
 
     @Override

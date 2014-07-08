@@ -85,7 +85,7 @@ public class AsyncHttpClientConfig {
     protected int idleConnectionInPoolTimeoutInMs;
     protected int idleConnectionTimeoutInMs;
     protected int requestTimeoutInMs;
-    protected boolean redirectEnabled;
+    protected boolean followRedirect;
     protected int maxRedirects;
     protected boolean compressionEnabled;
     protected String userAgent;
@@ -101,7 +101,7 @@ public class AsyncHttpClientConfig {
     protected int requestCompressionLevel;
     protected int maxRequestRetry;
     protected boolean allowSslConnectionPool;
-    protected boolean useRawUrl;
+    protected boolean disableUrlEncodingForBoundRequests;
     protected boolean removeQueryParamOnRedirect;
     protected HostnameVerifier hostnameVerifier;
     protected int ioThreadMultiplier;
@@ -125,7 +125,7 @@ public class AsyncHttpClientConfig {
             int idleConnectionTimeoutInMs, //
             int requestTimeoutInMs, //
             int connectionMaxLifeTimeInMs, //
-            boolean redirectEnabled, //
+            boolean followRedirect, //
             int maxRedirects, //
             boolean compressionEnabled, //
             String userAgent, //
@@ -143,7 +143,7 @@ public class AsyncHttpClientConfig {
             int requestCompressionLevel, //
             int maxRequestRetry, //
             boolean allowSslConnectionCaching, //
-            boolean useRawUrl, //
+            boolean disableUrlEncodingForBoundRequests, //
             boolean removeQueryParamOnRedirect, //
             HostnameVerifier hostnameVerifier, //
             int ioThreadMultiplier, //
@@ -163,7 +163,7 @@ public class AsyncHttpClientConfig {
         this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
         this.maxConnectionLifeTimeInMs = connectionMaxLifeTimeInMs;
-        this.redirectEnabled = redirectEnabled;
+        this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
@@ -184,7 +184,7 @@ public class AsyncHttpClientConfig {
         this.useRelativeURIsWithSSLProxies = useRelativeURIsWithSSLProxies;
         this.applicationThreadPool = applicationThreadPool;
         this.proxyServerSelector = proxyServerSelector;
-        this.useRawUrl = useRawUrl;
+        this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.spdyEnabled = spdyEnabled;
         this.spdyInitialWindowSize = spdyInitialWindowSize;
         this.spdyMaxConcurrentStreams = spdyMaxConcurrentStreams;
@@ -262,8 +262,8 @@ public class AsyncHttpClientConfig {
      *
      * @return true if enabled.
      */
-    public boolean isRedirectEnabled() {
-        return redirectEnabled;
+    public boolean isFollowRedirect() {
+        return followRedirect;
     }
 
     /**
@@ -422,10 +422,10 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return the useRawUrl
+     * @return the disableUrlEncodingForBoundRequests
      */
-    public boolean isUseRawUrl() {
-        return useRawUrl;
+    public boolean isDisableUrlEncodingForBoundRequests() {
+        return disableUrlEncodingForBoundRequests;
     }
 
     /**
@@ -552,7 +552,7 @@ public class AsyncHttpClientConfig {
         private int idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
         private int requestTimeoutInMs = defaultRequestTimeoutInMs();
         private int maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
-        private boolean redirectEnabled = defaultRedirectEnabled();
+        private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
         private boolean compressionEnabled = defaultCompressionEnabled();
         private String userAgent = defaultUserAgent();
@@ -564,7 +564,7 @@ public class AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private int ioThreadMultiplier = defaultIoThreadMultiplier();
         private boolean allowSslConnectionPool = defaultAllowSslConnectionPool();
-        private boolean useRawUrl = defaultUseRawUrl();
+        private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
         private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
@@ -676,8 +676,8 @@ public class AsyncHttpClientConfig {
          * @param redirectEnabled true if enabled.
          * @return a {@link Builder}
          */
-        public Builder setFollowRedirects(boolean redirectEnabled) {
-            this.redirectEnabled = redirectEnabled;
+        public Builder setFollowRedirects(boolean followRedirect) {
+            this.followRedirect = followRedirect;
             return this;
         }
 
@@ -933,11 +933,11 @@ public class AsyncHttpClientConfig {
          * Allows use unescaped URLs in requests
          * useful for retrieving data from broken sites
          *
-         * @param useRawUrl
+         * @param disableUrlEncodingForBoundRequests
          * @return this
          */
-        public Builder setUseRawUrl(boolean useRawUrl) {
-            this.useRawUrl = useRawUrl;
+        public Builder setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
+            this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
             return this;
         }
 
@@ -1111,7 +1111,7 @@ public class AsyncHttpClientConfig {
             requestTimeoutInMs = prototype.getRequestTimeoutInMs();
             sslContext = prototype.getSSLContext();
             userAgent = prototype.getUserAgent();
-            redirectEnabled = prototype.isRedirectEnabled();
+            followRedirect = prototype.isFollowRedirect();
             compressionEnabled = prototype.isCompressionEnabled();
             applicationThreadPool = prototype.executorService();
 
@@ -1124,7 +1124,7 @@ public class AsyncHttpClientConfig {
             ioExceptionFilters.addAll(prototype.getIOExceptionFilters());
 
             requestCompressionLevel = prototype.getRequestCompressionLevel();
-            useRawUrl = prototype.isUseRawUrl();
+            disableUrlEncodingForBoundRequests = prototype.isDisableUrlEncodingForBoundRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
             allowSslConnectionPool = prototype.getAllowPoolingConnection();
@@ -1172,7 +1172,7 @@ public class AsyncHttpClientConfig {
                     idleConnectionTimeoutInMs, //
                     requestTimeoutInMs, //
                     maxConnectionLifeTimeInMs, //
-                    redirectEnabled, //
+                    followRedirect, //
                     maxRedirects, //
                     compressionEnabled, //
                     userAgent, //
@@ -1190,7 +1190,7 @@ public class AsyncHttpClientConfig {
                     requestCompressionLevel, //
                     maxRequestRetry, //
                     allowSslConnectionPool, //
-                    useRawUrl, //
+                    disableUrlEncodingForBoundRequests, //
                     removeQueryParamOnRedirect, //
                     hostnameVerifier, //
                     ioThreadMultiplier, //

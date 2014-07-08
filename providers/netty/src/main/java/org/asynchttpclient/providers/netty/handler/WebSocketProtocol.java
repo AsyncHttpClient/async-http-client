@@ -80,7 +80,7 @@ final class WebSocketProtocol extends Protocol {
         if (e instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e;
             HttpResponseStatus status = new ResponseStatus(future.getURI(), response, config);
-            HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
+            HttpResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
 
             if (handleResponseFiltersReplayRequestAndExit(channel, future, status, responseHeaders)) {
                 return;

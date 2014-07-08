@@ -14,8 +14,9 @@ package org.asynchttpclient.providers.netty.util;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import java.net.URI;
 import java.util.List;
+
+import org.asynchttpclient.uri.UriComponents;
 
 public final class HttpUtil {
 
@@ -39,7 +40,7 @@ public final class HttpUtil {
         return HTTPS.equalsIgnoreCase(scheme) || WEBSOCKET_SSL.equalsIgnoreCase(scheme);
     }
 
-    public static boolean isSecure(URI uri) {
+    public static boolean isSecure(UriComponents uri) {
         return isSecure(uri.getScheme());
     }
 }

@@ -87,7 +87,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build());
         try {
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addParameter("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
                 @Override
@@ -122,7 +122,7 @@ public abstract class PostRedirectGetTest extends AbstractBasicTest {
             }
         }).build());
         try {
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addParameter("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
 
                 @Override

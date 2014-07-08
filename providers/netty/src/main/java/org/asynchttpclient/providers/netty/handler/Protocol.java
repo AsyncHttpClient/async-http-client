@@ -37,6 +37,7 @@ import org.asynchttpclient.providers.netty.NettyAsyncHttpProviderConfig;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.future.NettyResponseFuture;
 import org.asynchttpclient.providers.netty.request.NettyRequestSender;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,8 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
-import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class Protocol {
 
@@ -61,6 +63,15 @@ public abstract class Protocol {
     private final boolean hasResponseFilters;
     protected final boolean hasIOExceptionFilters;
     private final TimeConverter timeConverter;
+
+    public static final Set<io.netty.handler.codec.http.HttpResponseStatus> REDIRECT_STATUSES = new HashSet<io.netty.handler.codec.http.HttpResponseStatus>();
+
+    static {
+        REDIRECT_STATUSES.add(MOVED_PERMANENTLY);
+        REDIRECT_STATUSES.add(FOUND);
+        REDIRECT_STATUSES.add(SEE_OTHER);
+        REDIRECT_STATUSES.add(TEMPORARY_REDIRECT);
+    }
 
     public Protocol(Channels channels, AsyncHttpClientConfig config, NettyAsyncHttpProviderConfig nettyConfig,
             NettyRequestSender requestSender) {
@@ -84,11 +95,8 @@ public abstract class Protocol {
             throws Exception {
 
         io.netty.handler.codec.http.HttpResponseStatus status = response.getStatus();
-        boolean redirectEnabled = request.isRedirectOverrideSet() ? request.isRedirectEnabled() : config.isRedirectEnabled();
-        boolean isRedirectStatus = status.equals(MOVED_PERMANENTLY) || status.equals(FOUND) || status.equals(SEE_OTHER)
-                || status.equals(TEMPORARY_REDIRECT);
 
-        if (redirectEnabled && isRedirectStatus) {
+        if (AsyncHttpProviderUtils.followRedirect(config, request) && REDIRECT_STATUSES.contains(status)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
                 throw new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects());
 
@@ -97,13 +105,13 @@ public abstract class Protocol {
                 future.getAndSetAuth(false);
 
                 String location = response.headers().get(HttpHeaders.Names.LOCATION);
-                URI uri = AsyncHttpProviderUtils.getRedirectUri(future.getURI(), location);
+                UriComponents uri = UriComponents.create(future.getURI(), location);
 
-                if (!uri.toString().equals(future.getURI().toString())) {
+                if (!uri.equals(future.getURI())) {
                     final RequestBuilder requestBuilder = new RequestBuilder(future.getRequest());
-                    if (config.isRemoveQueryParamOnRedirect()) {
-                        requestBuilder.setQueryParameters(null);
-                    }
+
+                    if (!config.isRemoveQueryParamOnRedirect())
+                        requestBuilder.addQueryParams(future.getRequest().getQueryParams());
 
                     // FIXME why not do that for 301 and 307 too?
                     // FIXME I think condition is wrong

@@ -27,6 +27,7 @@ import org.asynchttpclient.providers.netty.DiscardEvent;
 import org.asynchttpclient.providers.netty.channel.Channels;
 import org.asynchttpclient.providers.netty.request.NettyRequest;
 import org.asynchttpclient.providers.netty.request.timeout.TimeoutsHolder;
+import org.asynchttpclient.uri.UriComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.net.SocketAddress;
-import java.net.URI;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -88,7 +88,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
 
     // state mutated only inside the event loop
     private Channel channel;
-    private URI uri;
+    private UriComponents uri;
     private boolean keepAlive = true;
     private Request request;
     private NettyRequest nettyRequest;
@@ -101,7 +101,7 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
     private boolean dontWriteBodyBecauseExpectContinue;
     private boolean allowConnect;
 
-    public NettyResponseFuture(URI uri,//
+    public NettyResponseFuture(UriComponents uri,//
             Request request,//
             AsyncHandler<V> asyncHandler,//
             NettyRequest nettyRequest,//
@@ -121,11 +121,11 @@ public final class NettyResponseFuture<V> extends AbstractListenableFuture<V> {
         maxRetry = Integer.getInteger(MAX_RETRY, config.getMaxRequestRetry());
     }
 
-    public URI getURI() {
+    public UriComponents getURI() {
         return uri;
     }
 
-    public void setURI(URI uri) {
+    public void setURI(UriComponents uri) {
         this.uri = uri;
     }
 

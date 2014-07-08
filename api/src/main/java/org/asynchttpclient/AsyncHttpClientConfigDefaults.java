@@ -57,8 +57,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "maxConnectionLifeTimeInMs", -1);
     }
 
-    public static boolean defaultRedirectEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "redirectsEnabled");
+    public static boolean defaultFollowRedirect() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "followRedirect");
     }
 
     public static int defaultMaxRedirects() {
@@ -110,8 +110,8 @@ public final class AsyncHttpClientConfigDefaults {
         return getBoolean(ASYNC_CLIENT + "allowSslConnectionPool", true);
     }
 
-    public static boolean defaultUseRawUrl() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "useRawUrl");
+    public static boolean defaultDisableUrlEncodingForBoundRequests() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "disableUrlEncodingForBoundRequests");
     }
 
     public static boolean defaultRemoveQueryParamOnRedirect() {

@@ -311,8 +311,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         throw new IllegalStateException("No providers found on the classpath");
     }
 
-    protected BoundRequestBuilder requestBuilder(String reqType, String url) {
-        return new BoundRequestBuilder(this, reqType, config.isUseRawUrl()).setUrl(url).setSignatureCalculator(signatureCalculator);
+    protected BoundRequestBuilder requestBuilder(String method, String url) {
+        return new BoundRequestBuilder(this, method, config.isDisableUrlEncodingForBoundRequests()).setUrl(url).setSignatureCalculator(signatureCalculator);
     }
 
     protected BoundRequestBuilder requestBuilder(Request prototype) {

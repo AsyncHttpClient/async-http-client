@@ -16,10 +16,13 @@
  */
 package org.asynchttpclient.oauth;
 
-import org.asynchttpclient.FluentStringsMap;
+import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.SignatureCalculator;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.Base64;
 import org.asynchttpclient.util.StandardCharsets;
 import org.asynchttpclient.util.UTF8UrlEncoder;
@@ -27,7 +30,6 @@ import org.asynchttpclient.util.UTF8UrlEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -81,11 +83,10 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
     //@Override // silly 1.5; doesn't allow this for interfaces
 
-    public void calculateAndAddSignature(String baseURL, Request request, RequestBuilderBase<?> requestBuilder) {
-        String method = request.getMethod(); // POST etc
+    public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
         String nonce = generateNonce();
         long timestamp = System.currentTimeMillis() / 1000L;
-        String signature = calculateSignature(method, baseURL, timestamp, nonce, request.getParams(), request.getQueryParams());
+        String signature = calculateSignature(request.getMethod(), request.getURI(), timestamp, nonce, request.getFormParams(), request.getQueryParams());
         String headerValue = constructAuthHeader(signature, nonce, timestamp);
         requestBuilder.setHeader(HEADER_AUTHORIZATION, headerValue);
     }
@@ -93,8 +94,8 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
     /**
      * Method for calculating OAuth signature using HMAC/SHA-1 method.
      */
-    public String calculateSignature(String method, String baseURL, long oauthTimestamp, String nonce, FluentStringsMap formParams,
-            FluentStringsMap queryParams) {
+    public String calculateSignature(String method, UriComponents uri, long oauthTimestamp, String nonce,
+                                     List<Param> formParams, List<Param> queryParams) {
         StringBuilder signedText = new StringBuilder(100);
         signedText.append(method); // POST / GET etc (nothing to URL encode)
         signedText.append('&');
@@ -102,18 +103,23 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         /* 07-Oct-2010, tatu: URL may contain default port number; if so, need to extract
          *   from base URL.
          */
-        if (baseURL.startsWith("http:")) {
-            int i = baseURL.indexOf(":80/", 4);
-            if (i > 0) {
-                baseURL = baseURL.substring(0, i) + baseURL.substring(i + 3);
-            }
-        } else if (baseURL.startsWith("https:")) {
-            int i = baseURL.indexOf(":443/", 5);
-            if (i > 0) {
-                baseURL = baseURL.substring(0, i) + baseURL.substring(i + 4);
-            }
-        }
-        signedText.append(UTF8UrlEncoder.encode(baseURL));
+        String scheme = uri.getScheme();
+        int port = uri.getPort();
+        if (scheme.equals("http"))
+            if (port == 80)
+                port = -1;
+        else if (scheme.equals("https"))
+            if (port == 443)
+                port = -1;
+        
+        StringBuilder sb = new StringBuilder().append(scheme).append("://").append(uri.getHost());
+        if (port != -1)
+            sb.append(':').append(port);
+        if (isNonEmpty(uri.getPath()))
+            sb.append(uri.getPath());
+        
+        String baseURL = sb.toString();
+        UTF8UrlEncoder.appendEncoded(signedText, baseURL);
 
         /**
          * List of all query and form parameters added to this request; needed
@@ -132,19 +138,13 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         allParameters.add(KEY_OAUTH_VERSION, OAUTH_VERSION_1_0);
 
         if (formParams != null) {
-            for (Map.Entry<String, List<String>> entry : formParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : formParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         if (queryParams != null) {
-            for (Map.Entry<String, List<String>> entry : queryParams) {
-                String key = entry.getKey();
-                for (String value : entry.getValue()) {
-                    allParameters.add(key, value);
-                }
+            for (Param param : queryParams) {
+                allParameters.add(param.getName(), param.getValue());
             }
         }
         String encodedParams = allParameters.sortAndConcat();
@@ -189,7 +189,7 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
         random.nextBytes(nonceBuffer);
         // let's use base64 encoding over hex, slightly more compact than hex or decimals
         return Base64.encode(nonceBuffer);
-        //      return String.valueOf(Math.abs(random.nextLong()));
+//      return String.valueOf(Math.abs(random.nextLong()));
     }
 
     /**
@@ -265,17 +265,13 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
 
             Parameter parameter = (Parameter) o;
 
-            if (!key.equals(parameter.key))
-                return false;
-            if (!value.equals(parameter.value))
-                return false;
+            if (!key.equals(parameter.key)) return false;
+            if (!value.equals(parameter.value)) return false;
 
             return true;
         }

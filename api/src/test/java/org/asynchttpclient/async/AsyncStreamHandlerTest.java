@@ -97,7 +97,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         try {
             Future<String> f = c.preparePost(getTargetUrl())//
                     .setHeader("Content-Type", "application/x-www-form-urlencoded")//
-                    .addParameter("param_1", "value_1")//
+                    .addFormParam("param_1", "value_1")//
                     .execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
 
@@ -142,7 +142,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         try {
             c.preparePost(getTargetUrl())//
             .setHeader("Content-Type", "application/x-www-form-urlencoded")//
-            .addParameter("param_1", "value_1")//
+            .addFormParam("param_1", "value_1")//
             .execute(new AsyncHandlerAdapter() {
 
                 @Override
@@ -182,7 +182,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         try {
-            Future<String> f = c.preparePost(getTargetUrl()).addParameter("param_1", "value_1").execute(new AsyncHandlerAdapter() {
+            Future<String> f = c.preparePost(getTargetUrl()).addFormParam("param_1", "value_1").execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();
 
                 @Override
@@ -262,7 +262,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
         try {
             BoundRequestBuilder rb = c.preparePost(getTargetUrl())//
                     .setHeader("Content-Type", "application/x-www-form-urlencoded")
-                    .addParameter("param_1", "value_1");
+                    .addFormParam("param_1", "value_1");
             
             Future<String> f = rb.execute(new AsyncHandlerAdapter() {
                 private StringBuilder builder = new StringBuilder();

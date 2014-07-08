@@ -17,14 +17,15 @@ package org.asynchttpclient.async;
 
 import static org.testng.Assert.assertEquals;
 
-import org.asynchttpclient.FluentStringsMap;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.concurrent.ExecutionException;
 
 public class RequestBuilderTest {
 
@@ -54,7 +55,7 @@ public class RequestBuilderTest {
         for (String value : values) {
             RequestBuilder builder = new RequestBuilder("GET").
                     setUrl("http://example.com/").
-                    addQueryParameter("name", value);
+                    addQueryParam("name", value);
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0, len = value.length(); i < len; ++i) {
@@ -77,7 +78,7 @@ public class RequestBuilderTest {
     public void testChaining() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com")
-                .addQueryParameter("x", "value")
+                .addQueryParam("x", "value")
                 .build();
 
         Request request2 = new RequestBuilder(request).build();
@@ -89,14 +90,14 @@ public class RequestBuilderTest {
     public void testParsesQueryParams() throws IOException, ExecutionException, InterruptedException {
         Request request = new RequestBuilder("GET")
                 .setUrl("http://foo.com/?param1=value1")
-                .addQueryParameter("param2", "value2")
+                .addQueryParam("param2", "value2")
                 .build();
 
         assertEquals(request.getUrl(), "http://foo.com/?param1=value1&param2=value2");
-        FluentStringsMap params = request.getQueryParams();
+        List<Param> params = request.getQueryParams();
         assertEquals(params.size(), 2);
-        assertEquals(params.get("param1").get(0), "value1");
-        assertEquals(params.get("param2").get(0), "value2");
+        assertEquals(params.get(0), new Param("param1", "value1"));
+        assertEquals(params.get(1), new Param("param2", "value2"));
     }
 
     @Test(groups = {"standalone", "default_provider"})

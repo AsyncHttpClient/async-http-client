@@ -21,10 +21,10 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.uri.UriComponents;
 
 import io.netty.handler.codec.http.HttpResponse;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -34,7 +34,7 @@ public class ResponseStatus extends HttpResponseStatus {
 
     private final HttpResponse response;
 
-    public ResponseStatus(URI uri, HttpResponse response, AsyncHttpClientConfig config) {
+    public ResponseStatus(UriComponents uri, HttpResponse response, AsyncHttpClientConfig config) {
         super(uri, config);
         this.response = response;
     }

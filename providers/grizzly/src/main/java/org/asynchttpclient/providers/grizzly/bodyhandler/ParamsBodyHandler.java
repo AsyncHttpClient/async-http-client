@@ -15,7 +15,7 @@ package org.asynchttpclient.providers.grizzly.bodyhandler;
 
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-import org.asynchttpclient.FluentStringsMap;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider;
 import org.glassfish.grizzly.Buffer;
@@ -29,7 +29,6 @@ import org.glassfish.grizzly.utils.Charsets;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
-import java.util.Map;
 
 public final class ParamsBodyHandler extends BodyHandler {
 
@@ -42,7 +41,7 @@ public final class ParamsBodyHandler extends BodyHandler {
     // -------------------------------------------- Methods from BodyHandler
 
     public boolean handlesBodyType(final Request request) {
-        final FluentStringsMap params = request.getParams();
+        final List<Param> params = request.getFormParams();
         return isNonEmpty(params);
     }
 
@@ -57,24 +56,16 @@ public final class ParamsBodyHandler extends BodyHandler {
         if (charset == null) {
             charset = Charsets.ASCII_CHARSET.name();
         }
-        final FluentStringsMap params = request.getParams();
+        final List<Param> params = request.getFormParams();
         if (!params.isEmpty()) {
-            for (Map.Entry<String, List<String>> entry : params.entrySet()) {
-                String name = entry.getKey();
-                List<String> values = entry.getValue();
-                if (isNonEmpty(values)) {
-                    if (sb == null) {
-                        sb = new StringBuilder(128);
-                    }
-                    for (int i = 0, len = values.size(); i < len; i++) {
-                        final String value = values.get(i);
-                        if (sb.length() > 0) {
-                            sb.append('&');
-                        }
-                        sb.append(URLEncoder.encode(name, charset)).append('=').append(URLEncoder.encode(value, charset));
-                    }
-                }
+            if (sb == null) {
+                sb = new StringBuilder(128);
             }
+            for (Param param : params) {
+                sb.append(URLEncoder.encode(param.getName(), charset)).append('=').append(URLEncoder.encode(param.getValue(), charset));
+                sb.append('&');
+            }
+            sb.setLength(sb.length() - 1);
         }
         if (sb != null) {
             final byte[] data = sb.toString().getBytes(charset);

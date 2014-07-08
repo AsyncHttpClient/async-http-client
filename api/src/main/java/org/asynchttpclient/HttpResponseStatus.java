@@ -16,28 +16,29 @@
  */
 package org.asynchttpclient;
 
-import java.net.URI;
 import java.util.List;
+
+import org.asynchttpclient.uri.UriComponents;
 
 /**
  * A class that represent the HTTP response' status line (code + text)
  */
 public abstract class HttpResponseStatus {
 
-    private final URI uri;
+    private final UriComponents uri;
     protected final AsyncHttpClientConfig config;
 
-    public HttpResponseStatus(URI uri, AsyncHttpClientConfig config) {
+    public HttpResponseStatus(UriComponents uri, AsyncHttpClientConfig config) {
         this.uri = uri;
         this.config = config;
     }
 
     /**
-     * Return the request {@link URI}
+     * Return the request {@link UriComponents}
      * 
-     * @return the request {@link URI}
+     * @return the request {@link UriComponents}
      */
-    public final URI getUri() {
+    public final UriComponents getUri() {
         return uri;
     }
 

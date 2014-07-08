@@ -20,12 +20,10 @@ import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentica
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
 
-
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.FluentStringsMap;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -45,7 +43,7 @@ import org.asynchttpclient.providers.grizzly.bodyhandler.ExpectHandler;
 import org.asynchttpclient.providers.grizzly.filters.events.ContinueEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.SSLSwitchingEvent;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
-import org.asynchttpclient.util.StandardCharsets;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
@@ -74,10 +72,8 @@ import org.glassfish.grizzly.websockets.Version;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -158,7 +154,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             ctx.suspend();
             TunnelRequestEvent tunnelRequestEvent = (TunnelRequestEvent) event;
             final ProxyServer proxyServer = tunnelRequestEvent.getProxyServer();
-            final URI requestUri = tunnelRequestEvent.getUri();
+            final UriComponents requestUri = tunnelRequestEvent.getUri();
 
             RequestBuilder builder = new RequestBuilder();
             builder.setMethod(Method.CONNECT.getMethodString());
@@ -211,7 +207,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         }
 
         final Request request = httpTxContext.getRequest();
-        final URI uri = request.isUseRawUrl() ? request.getRawURI() : request.getURI();
+        final UriComponents uri = request.getURI();
         boolean secure = Utils.isSecure(uri);
 
         // If the request is secure, check to see if an error occurred during
@@ -419,7 +415,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return newFilterChainContext;
     }
 
-    private static void addHostHeader(final Request request, final URI uri, final HttpRequestPacket requestPacket) {
+    private static void addHostHeader(final Request request, final UriComponents uri, final HttpRequestPacket requestPacket) {
         String host = request.getVirtualHost();
         if (host != null) {
             requestPacket.addHeader(Header.Host, host);
@@ -542,31 +538,9 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private static void addQueryString(final Request request, final HttpRequestPacket requestPacket) {
 
-        final FluentStringsMap map = request.getQueryParams();
-        if (isNonEmpty(map)) {
-            StringBuilder sb = new StringBuilder(128);
-            for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
-                final String name = entry.getKey();
-                final List<String> values = entry.getValue();
-                if (isNonEmpty(values)) {
-                    try {
-                        for (int i = 0, len = values.size(); i < len; i++) {
-                            final String value = values.get(i);
-                            if (isNonEmpty(value)) {
-                                sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name())).append('=')
-                                        .append(URLEncoder.encode(values.get(i), StandardCharsets.UTF_8.name())).append('&');
-                            } else {
-                                sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name())).append('&');
-                            }
-                        }
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
-            sb.setLength(sb.length() - 1);
-            String queryString = sb.toString();
-
-            requestPacket.setQueryString(queryString);
+        String query = request.getURI().getQuery();
+        if (isNonEmpty(query)) {
+            requestPacket.setQueryString(query);
         }
     }
 

@@ -13,12 +13,12 @@
 
 package org.asynchttpclient.providers.grizzly;
 
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.attributes.AttributeStorage;
 
-import java.net.URI;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Utils {
@@ -36,7 +36,7 @@ public final class Utils {
 
     // ---------------------------------------------------------- Public Methods
 
-    public static boolean isSecure(final URI uri) {
+    public static boolean isSecure(final UriComponents uri) {
         final String scheme = uri.getScheme();
         return ("https".equals(scheme) || "wss".equals(scheme));
     }

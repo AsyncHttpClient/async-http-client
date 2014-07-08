@@ -49,7 +49,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +94,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
     public void asyncProviderEncodingTest2() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "").addQueryParameter("q", "a b").build();
+            Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "").addQueryParam("q", "a b").build();
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -288,11 +287,11 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+            Map<String, List<String>> m = new HashMap<String, List<String>>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setParameters(m).build();
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m).build();
             client.executeRequest(request, new AsyncCompletionHandlerAdapter() {
 
                 @Override
@@ -501,7 +500,7 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             final CountDownLatch l = new CountDownLatch(1);
-            client.preparePost(getTargetUrl()).addParameter("foo", "bar").execute(new AsyncCompletionHandlerAdapter() {
+            client.preparePost(getTargetUrl()).addFormParam("foo", "bar").execute(new AsyncCompletionHandlerAdapter() {
 
                 @Override
                 public Response onCompleted(Response response) throws Exception {
@@ -756,11 +755,11 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
             h.add("Content-Type", "application/x-www-form-urlencoded");
 
-            Map<String, Collection<String>> m = new HashMap<String, Collection<String>>();
+            Map<String, List<String>> m = new HashMap<String, List<String>>();
             for (int i = 0; i < 5; i++) {
                 m.put("param_" + i, Arrays.asList("value_" + i));
             }
-            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setParameters(m).setVirtualHost("localhost:" + port1).build();
+            Request request = new RequestBuilder("POST").setUrl(getTargetUrl()).setHeaders(h).setFormParams(m).setVirtualHost("localhost:" + port1).build();
 
             Response response = client.executeRequest(request, new AsyncCompletionHandlerAdapter()).get();
 

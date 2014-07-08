@@ -26,6 +26,7 @@ import javax.net.ssl.SSLContext;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -365,6 +366,11 @@ public class SimpleAsyncHttpClient implements Closeable {
      *
      * @see SimpleAsyncHttpClient#derive()
      */
+    /**
+     * This interface contains possible configuration changes for a derived SimpleAsyncHttpClient.
+     *
+     * @see SimpleAsyncHttpClient#derive()
+     */
     public interface DerivedBuilder {
 
         DerivedBuilder setFollowRedirects(boolean followRedirects);
@@ -373,9 +379,9 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setUrl(String url);
 
-        DerivedBuilder setParameters(FluentStringsMap parameters);
+        DerivedBuilder setFormParams(List<Param> params);
 
-        DerivedBuilder setParameters(Map<String, Collection<String>> parameters);
+        DerivedBuilder setFormParams(Map<String, List<String>> params);
 
         DerivedBuilder setHeaders(Map<String, Collection<String>> headers);
 
@@ -383,9 +389,9 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         DerivedBuilder setHeader(String name, String value);
 
-        DerivedBuilder addQueryParameter(String name, String value);
+        DerivedBuilder addQueryParam(String name, String value);
 
-        DerivedBuilder addParameter(String key, String value);
+        DerivedBuilder addFormParam(String key, String value);
 
         DerivedBuilder addHeader(String name, String value);
 
@@ -443,13 +449,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder addParameter(String key, String value) {
-            requestBuilder.addParameter(key, value);
+        public Builder addFormParam(String key, String value) {
+            requestBuilder.addFormParam(key, value);
             return this;
         }
 
-        public Builder addQueryParameter(String name, String value) {
-            requestBuilder.addQueryParameter(name, value);
+        public Builder addQueryParam(String name, String value) {
+            requestBuilder.addQueryParam(name, value);
             return this;
         }
 
@@ -468,13 +474,13 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
-        public Builder setParameters(Map<String, Collection<String>> parameters) {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(Map<String, List<String>> parameters) {
+            requestBuilder.setFormParams(parameters);
             return this;
         }
 
-        public Builder setParameters(FluentStringsMap parameters) {
-            requestBuilder.setParameters(parameters);
+        public Builder setFormParams(List<Param> params) {
+            requestBuilder.setFormParams(params);
             return this;
         }
 

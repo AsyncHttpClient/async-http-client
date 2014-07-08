@@ -61,7 +61,7 @@ public abstract class ParamEncodingTest extends AbstractBasicTest {
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
-            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addParameter("test", value).execute();
+            Future<Response> f = client.preparePost("http://127.0.0.1:" + port1).addFormParam("test", value).execute();
             Response resp = f.get(10, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);

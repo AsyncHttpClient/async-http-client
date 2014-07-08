@@ -15,13 +15,12 @@
  */
 package org.asynchttpclient.providers.netty.response;
 
-import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
-import org.asynchttpclient.HttpResponseHeaders;
-
 import io.netty.handler.codec.http.HttpHeaders;
 
-import java.net.URI;
 import java.util.Map;
+
+import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
+import org.asynchttpclient.HttpResponseHeaders;
 
 /**
  * A class that represent the HTTP headers.
@@ -33,11 +32,11 @@ public class ResponseHeaders extends HttpResponseHeaders {
     private final FluentCaseInsensitiveStringsMap headers;
 
     // FIXME unused AsyncHttpProvider provider
-    public ResponseHeaders(URI uri, HttpHeaders responseHeaders) {
-        this(uri, responseHeaders, null);
+    public ResponseHeaders(HttpHeaders responseHeaders) {
+        this(responseHeaders, null);
     }
 
-    public ResponseHeaders(URI uri, HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
+    public ResponseHeaders(HttpHeaders responseHeaders, HttpHeaders traillingHeaders) {
         super(traillingHeaders != null);
         this.responseHeaders = responseHeaders;
         this.trailingHeaders = traillingHeaders;

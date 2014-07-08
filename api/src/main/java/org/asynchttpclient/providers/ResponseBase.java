@@ -8,9 +8,9 @@ import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.cookie.Cookie;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,7 +51,7 @@ public abstract class ResponseBase implements Response {
     }
 
     @Override
-    public final URI getUri() {
+    public final UriComponents getUri() {
         return status.getUri();
     }
 

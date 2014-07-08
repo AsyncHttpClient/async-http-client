@@ -18,9 +18,9 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseHeaders;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -42,7 +42,7 @@ public class GrizzlyResponseStatus extends HttpResponseStatus {
     
     // ------------------------------------------------------------ Constructors
 
-    public GrizzlyResponseStatus(final HttpResponsePacket response, final URI uri, AsyncHttpClientConfig config) {
+    public GrizzlyResponseStatus(final HttpResponsePacket response, final UriComponents uri, AsyncHttpClientConfig config) {
 
         super(uri, config);
         statusCode = response.getStatus();

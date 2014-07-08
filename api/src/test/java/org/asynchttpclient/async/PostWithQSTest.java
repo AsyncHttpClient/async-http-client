@@ -92,8 +92,8 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
                 @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=")) {
-                        throw new IOException(status.getUri().toURL().toString());
+                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=")) {
+                        throw new IOException(status.getUri().toUrl());
                     }
                     return super.onStatusReceived(status);
                 }
@@ -115,7 +115,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
                 @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
+                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c&d=e")) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);
@@ -138,7 +138,7 @@ public abstract class PostWithQSTest extends AbstractBasicTest {
 
                 @Override
                 public STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
-                    if (!status.getUri().toURL().toString().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
+                    if (!status.getUri().toUrl().equals("http://127.0.0.1:" + port1 + "/?a=b&c=&d=e")) {
                         throw new IOException("failed to parse the query properly");
                     }
                     return super.onStatusReceived(status);

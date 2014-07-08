@@ -95,7 +95,7 @@ public final class HttpTxContext {
         this.future = future;
         this.request = request;
         this.handler = handler;
-        redirectsAllowed = this.provider.getClientConfig().isRedirectEnabled();
+        redirectsAllowed = this.provider.getClientConfig().isFollowRedirect();
         maxRedirectCount = this.provider.getClientConfig().getMaxRedirects();
         this.requestUrl = request.getUrl();
     }

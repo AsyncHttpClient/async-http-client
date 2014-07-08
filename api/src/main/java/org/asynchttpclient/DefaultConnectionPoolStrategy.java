@@ -15,16 +15,15 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-
-import java.net.URI;
 
 public enum DefaultConnectionPoolStrategy implements ConnectionPoolKeyStrategy {
 
     INSTANCE;
 
     @Override
-    public String getKey(URI uri, ProxyServer proxyServer) {
+    public String getKey(UriComponents uri, ProxyServer proxyServer) {
         String serverPart = AsyncHttpProviderUtils.getBaseUrl(uri);
         return proxyServer != null ? proxyServer.getUrl() + serverPart : serverPart;
     }

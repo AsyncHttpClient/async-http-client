@@ -19,13 +19,11 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.ConnectionManager;
 import org.asynchttpclient.providers.grizzly.EventHandler;
 import org.asynchttpclient.providers.grizzly.HttpTxContext;
-import org.asynchttpclient.util.AsyncHttpProviderUtils;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Header;
-
-import java.net.URI;
 
 public final class RedirectHandler implements StatusHandler {
 
@@ -46,17 +44,17 @@ public final class RedirectHandler implements StatusHandler {
             throw new IllegalStateException("redirect received, but no location header was present");
         }
 
-        URI orig;
+        UriComponents orig;
         if (httpTransactionContext.getLastRedirectURI() == null) {
             orig = httpTransactionContext.getRequest().getURI();
         } else {
-            orig = AsyncHttpProviderUtils.getRedirectUri(httpTransactionContext.getRequest().getURI(),
+            orig = UriComponents.create(httpTransactionContext.getRequest().getURI(),
                     httpTransactionContext.getLastRedirectURI());
         }
         httpTransactionContext.setLastRedirectURI(redirectURL);
         Request requestToSend;
-        URI uri = AsyncHttpProviderUtils.getRedirectUri(orig, redirectURL);
-        if (!uri.toString().equalsIgnoreCase(orig.toString())) {
+        UriComponents uri = UriComponents.create(orig, redirectURL);
+        if (!uri.toUrl().equalsIgnoreCase(orig.toUrl())) {
             requestToSend = EventHandler.newRequest(uri, responsePacket, httpTransactionContext,
                     sendAsGet(responsePacket, httpTransactionContext));
         } else {

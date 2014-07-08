@@ -20,9 +20,22 @@ import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
 import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map.Entry;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.FluentStringsMap;
+import org.asynchttpclient.Param;
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -41,24 +54,10 @@ import org.asynchttpclient.providers.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.providers.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.providers.netty.ws.WebSocketUtil;
 import org.asynchttpclient.spnego.SpnegoEngine;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.UTF8UrlEncoder;
-
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map.Entry;
 
 public final class NettyRequestFactory {
 
@@ -72,25 +71,25 @@ public final class NettyRequestFactory {
         this.nettyConfig = nettyConfig;
     }
 
-    private String requestUri(URI uri, ProxyServer proxyServer, HttpMethod method) {
+    private String requestUri(UriComponents uri, ProxyServer proxyServer, HttpMethod method) {
         if (method == HttpMethod.CONNECT)
             return AsyncHttpProviderUtils.getAuthority(uri);
 
         else if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
             return uri.toString();
 
-        else if (uri.getRawQuery() != null)
-            return uri.getRawPath() + "?" + uri.getRawQuery();
+        else if (uri.getQuery() != null)
+            return uri.getPath() + "?" + uri.getQuery();
 
         else
-            return uri.getRawPath();
+            return uri.getPath();
     }
 
-    private String hostHeader(Request request, URI uri, Realm realm) {
+    private String hostHeader(Request request, UriComponents uri, Realm realm) {
 
         String hostHeader = null;
 
-        String host = request.getVirtualHost() != null ? request.getVirtualHost() : AsyncHttpProviderUtils.getHost(uri);
+        String host = request.getVirtualHost() != null ? request.getVirtualHost() : uri.getHost();
 
         if (host != null) {
             if (request.getVirtualHost() != null || uri.getPort() == -1)
@@ -102,7 +101,7 @@ public final class NettyRequestFactory {
         return hostHeader;
     }
 
-    private String authorizationHeader(Request request, URI uri, ProxyServer proxyServer, Realm realm) throws IOException {
+    private String authorizationHeader(Request request, UriComponents uri, ProxyServer proxyServer, Realm realm) throws IOException {
 
         String authorizationHeader = null;
 
@@ -144,7 +143,7 @@ public final class NettyRequestFactory {
                 else if (request.getVirtualHost() != null)
                     host = request.getVirtualHost();
                 else
-                    host = AsyncHttpProviderUtils.getHost(uri);
+                    host = uri.getHost();
 
                 if (host == null)
                     host = "127.0.0.1";
@@ -196,17 +195,14 @@ public final class NettyRequestFactory {
         return proxyAuthorization;
     }
 
-    private byte[] computeBodyFromParams(FluentStringsMap params, Charset bodyCharset) {
+    private byte[] computeBodyFromParams(List<Param> params, Charset bodyCharset) {
 
         StringBuilder sb = new StringBuilder();
-        for (Entry<String, List<String>> paramEntry : params) {
-            String key = paramEntry.getKey();
-            for (String value : paramEntry.getValue()) {
-                UTF8UrlEncoder.appendEncoded(sb, key);
-                sb.append("=");
-                UTF8UrlEncoder.appendEncoded(sb, value);
-                sb.append("&");
-            }
+        for (Param param : params) {
+            UTF8UrlEncoder.appendEncoded(sb, param.getName());
+            sb.append("=");
+            UTF8UrlEncoder.appendEncoded(sb, param.getValue());
+            sb.append("&");
         }
         sb.setLength(sb.length() - 1);
         return sb.toString().getBytes(bodyCharset);
@@ -227,15 +223,15 @@ public final class NettyRequestFactory {
             } else if (request.getStreamData() != null) {
                 nettyBody = new NettyInputStreamBody(request.getStreamData());
 
-            } else if (isNonEmpty(request.getParams())) {
+            } else if (isNonEmpty(request.getFormParams())) {
 
                 String contentType = null;
                 if (!request.getHeaders().containsKey(HttpHeaders.Names.CONTENT_TYPE))
                     contentType = HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 
-                nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getParams(), bodyCharset), contentType);
+                nettyBody = new NettyByteArrayBody(computeBodyFromParams(request.getFormParams(), bodyCharset), contentType);
 
-            } else if (request.getParts() != null) {
+            } else if (isNonEmpty(request.getParts())) {
                 nettyBody = new NettyMultipartBody(request.getParts(), request.getHeaders(), nettyConfig);
 
             } else if (request.getFile() != null) {
@@ -257,7 +253,7 @@ public final class NettyRequestFactory {
         return nettyBody;
     }
 
-    public NettyRequest newNettyRequest(Request request, URI uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
+    public NettyRequest newNettyRequest(Request request, UriComponents uri, boolean forceConnect, ProxyServer proxyServer) throws IOException {
 
         HttpMethod method = forceConnect ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         HttpVersion httpVersion = method == HttpMethod.CONNECT ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;

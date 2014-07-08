@@ -70,9 +70,9 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) throws IOException {
         Request r = new RequestBuilder("GET")//
                 .setUrl(getTargetUrl())//
-                .addQueryParameter(action, "1")//
-                .addQueryParameter("maxRequests", "" + requests)//
-                .addQueryParameter("id", id)//
+                .addQueryParam(action, "1")//
+                .addQueryParam("maxRequests", "" + requests)//
+                .addQueryParam("id", id)//
                 .build();
         return client.executeRequest(r);
     }

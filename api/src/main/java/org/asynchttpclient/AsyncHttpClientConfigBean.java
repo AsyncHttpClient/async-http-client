@@ -53,7 +53,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
         requestTimeoutInMs = defaultRequestTimeoutInMs();
         maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
-        redirectEnabled = defaultRedirectEnabled();
+        followRedirect = defaultFollowRedirect();
         maxRedirects = defaultMaxRedirects();
         compressionEnabled = defaultCompressionEnabled();
         userAgent = defaultUserAgent();
@@ -63,7 +63,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         maxRequestRetry = defaultMaxRequestRetry();
         ioThreadMultiplier = defaultIoThreadMultiplier();
         allowSslConnectionPool = defaultAllowSslConnectionPool();
-        useRawUrl = defaultUseRawUrl();
+        disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
         hostnameVerifier = defaultHostnameVerifier();
@@ -123,8 +123,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRedirectEnabled(boolean redirectEnabled) {
-        this.redirectEnabled = redirectEnabled;
+    public AsyncHttpClientConfigBean setFollowRedirect(boolean followRedirect) {
+        this.followRedirect = followRedirect;
         return this;
     }
 
@@ -216,8 +216,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setUseRawUrl(boolean useRawUrl) {
-        this.useRawUrl = useRawUrl;
+    public AsyncHttpClientConfigBean setDisableUrlEncodingForBoundRequests(boolean disableUrlEncodingForBoundRequests) {
+        this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         return this;
     }
 

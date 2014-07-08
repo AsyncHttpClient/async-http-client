@@ -45,6 +45,7 @@ import org.asynchttpclient.providers.netty.response.NettyResponseBodyPart;
 import org.asynchttpclient.providers.netty.response.ResponseHeaders;
 import org.asynchttpclient.providers.netty.response.ResponseStatus;
 import org.asynchttpclient.spnego.SpnegoEngine;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,9 +60,6 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 final class HttpProtocol extends Protocol {
@@ -80,8 +78,8 @@ final class HttpProtocol extends Protocol {
     private Realm kerberosChallenge(List<String> proxyAuth, Request request, ProxyServer proxyServer,
             FluentCaseInsensitiveStringsMap headers, Realm realm, NettyResponseFuture<?> future, boolean proxyInd) throws NTLMEngineException {
 
-        URI uri = request.getURI();
-        String host = request.getVirtualHost() == null ? AsyncHttpProviderUtils.getHost(uri) : request.getVirtualHost();
+        UriComponents uri = request.getURI();
+        String host = request.getVirtualHost() == null ? uri.getHost() : request.getVirtualHost();
         String server = proxyServer == null ? host : proxyServer.getHost();
         try {
             String challengeHeader = SpnegoEngine.instance().generateToken(server);
@@ -89,7 +87,7 @@ final class HttpProtocol extends Protocol {
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
             return newRealmBuilder(realm)//
-                    .setUri(uri.getRawPath())//
+                    .setUri(uri.getPath())//
                     .setMethodName(request.getMethod())//
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
@@ -124,12 +122,12 @@ final class HttpProtocol extends Protocol {
         if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
 
-            URI uri = request.getURI();
+            UriComponents uri = request.getURI();
             addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
-                    .setUri(uri.getRawPath())//
+                    .setUri(uri.getPath())//
                     .setMethodName(request.getMethod())//
                     .setNtlmMessageType2Received(true)//
                     .build();
@@ -192,7 +190,7 @@ final class HttpProtocol extends Protocol {
         return state;
     }
 
-    private void markAsDone(NettyResponseFuture<?> future, final Channel channel) throws MalformedURLException {
+    private void markAsDone(NettyResponseFuture<?> future, final Channel channel) {
         // We need to make sure everything is OK before adding the
         // connection back to the pool.
         try {
@@ -207,15 +205,10 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private final String computeRealmURI(Realm realm, URI requestURI) throws URISyntaxException {
+    private final String computeRealmURI(Realm realm, UriComponents requestURI) {
         if (realm.isUseAbsoluteURI()) {
             if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
-                return new URI(
-                        requestURI.getScheme(),
-                        requestURI.getAuthority(),
-                        requestURI.getPath(),
-                        null,
-                        null).toString();
+                return requestURI.withNewQuery(null).toString();
             } else {
                 return requestURI.toString();
             }
@@ -346,11 +339,11 @@ final class HttpProtocol extends Protocol {
             }
 
             try {
-                URI requestURI = request.getURI();
+                UriComponents requestURI = request.getURI();
                 String scheme = requestURI.getScheme();
                 LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, scheme);
-                String host = AsyncHttpProviderUtils.getHost(requestURI);
-                int port = AsyncHttpProviderUtils.getPort(requestURI);
+                String host = requestURI.getHost();
+                int port = AsyncHttpProviderUtils.getDefaultPort(requestURI);
                 
                 channels.upgradeProtocol(channel.pipeline(), scheme, host, port);
             } catch (Throwable ex) {
@@ -388,7 +381,7 @@ final class HttpProtocol extends Protocol {
         int statusCode = response.getStatus().code();
         Request request = future.getRequest();
         Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
-        HttpResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), response.headers());
+        HttpResponseHeaders responseHeaders = new ResponseHeaders(response.headers());
 
         return handleResponseFiltersReplayRequestAndExit(channel, future, status, responseHeaders)//
                 || handleUnauthorizedAndExit(statusCode, realm, request, response, future, proxyServer, channel)//
@@ -438,7 +431,7 @@ final class HttpProtocol extends Protocol {
                         LastHttpContent lastChunk = (LastHttpContent) chunk;
                         HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
                         if (!trailingHeaders.isEmpty()) {
-                            ResponseHeaders responseHeaders = new ResponseHeaders(future.getURI(), future.getHttpHeaders(), trailingHeaders);
+                            ResponseHeaders responseHeaders = new ResponseHeaders(future.getHttpHeaders(), trailingHeaders);
                             interrupt = handler.onHeadersReceived(responseHeaders) != STATE.CONTINUE;
                         }
                     }

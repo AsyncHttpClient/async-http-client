@@ -13,17 +13,17 @@
 
 package org.asynchttpclient.providers.grizzly.filters;
 
+import java.io.IOException;
+
 import org.asynchttpclient.ProxyServer;
 import org.asynchttpclient.providers.grizzly.Utils;
 import org.asynchttpclient.providers.grizzly.filters.events.TunnelRequestEvent;
+import org.asynchttpclient.uri.UriComponents;
 import org.glassfish.grizzly.IOEvent;
 import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.FilterChainEvent;
 import org.glassfish.grizzly.filterchain.NextAction;
-
-import java.io.IOException;
-import java.net.URI;
 
 /**
  * This <code>Filter</code> is responsible for HTTP CONNECT
@@ -36,11 +36,11 @@ import java.net.URI;
 public final class TunnelFilter extends BaseFilter {
 
     private final ProxyServer proxyServer;
-    private final URI uri;
+    private final UriComponents uri;
 
     // ------------------------------------------------------------ Constructors
 
-    public TunnelFilter(final ProxyServer proxyServer, final URI uri) {
+    public TunnelFilter(final ProxyServer proxyServer, final UriComponents uri) {
         this.proxyServer = proxyServer;
         this.uri = uri;
     }

@@ -34,6 +34,7 @@ import org.asynchttpclient.providers.grizzly.statushandler.ProxyAuthorizationHan
 import org.asynchttpclient.providers.grizzly.statushandler.RedirectHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.websocket.WebSocketUpgradeHandler;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
@@ -49,7 +50,6 @@ import org.glassfish.grizzly.utils.IdleTimeoutFilter;
 import org.glassfish.grizzly.websockets.SimpleWebSocket;
 import org.glassfish.grizzly.websockets.WebSocketHolder;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -367,14 +367,7 @@ public final class EventHandler {
     }
 
     private static boolean isRedirectAllowed(final HttpTxContext ctx) {
-        boolean allowed = ctx.getRequest().isRedirectEnabled();
-        if (ctx.getRequest().isRedirectOverrideSet()) {
-            return allowed;
-        }
-        if (!allowed) {
-            allowed = ctx.isRedirectsAllowed();
-        }
-        return allowed;
+        return ctx.getRequest().getFollowRedirect() != null? ctx.getRequest().getFollowRedirect().booleanValue() : ctx.isRedirectsAllowed();
     }
 
     @SuppressWarnings("rawtypes")
@@ -413,7 +406,7 @@ public final class EventHandler {
 
     // ----------------------------------------------------- Private Methods
 
-    public static Request newRequest(final URI uri, final HttpResponsePacket response, final HttpTxContext ctx, boolean asGet) {
+    public static Request newRequest(final UriComponents uri, final HttpResponsePacket response, final HttpTxContext ctx, boolean asGet) {
 
         final RequestBuilder builder = new RequestBuilder(ctx.getRequest());
         if (asGet) {
@@ -421,9 +414,9 @@ public final class EventHandler {
         }
         builder.setUrl(uri.toString());
 
-        if (ctx.getProvider().getClientConfig().isRemoveQueryParamOnRedirect()) {
-            builder.setQueryParameters(null);
-        }
+        if (!ctx.getProvider().getClientConfig().isRemoveQueryParamOnRedirect())
+            builder.addQueryParams(ctx.getRequest().getQueryParams());
+        
         if (response.getHeader(Header.Cookie) != null) {
             for (String cookieStr : response.getHeaders().values(Header.Cookie)) {
                 Cookie c = CookieDecoder.decode(cookieStr);
