@@ -48,7 +48,7 @@ public class Realm {
     private final String enc;
     private final String host;
     private final boolean messageType2Received;
-    private final String domain;
+    private final String ntlmDomain;
     private final Charset charset;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
@@ -58,7 +58,7 @@ public class Realm {
     }
 
     private Realm(AuthScheme scheme, String principal, String password, String realmName, String nonce, String algorithm, String response,
-            String qop, String nc, String cnonce, String uri, String method, boolean usePreemptiveAuth, String domain, String enc,
+            String qop, String nc, String cnonce, String uri, String method, boolean usePreemptiveAuth, String ntlmDomain, String enc,
             String host, boolean messageType2Received, String opaque, boolean useAbsoluteURI, boolean omitQuery) {
 
         this.principal = principal;
@@ -75,7 +75,7 @@ public class Realm {
         this.uri = uri;
         this.methodName = method;
         this.usePreemptiveAuth = usePreemptiveAuth;
-        this.domain = domain;
+        this.ntlmDomain = ntlmDomain;
         this.enc = enc;
         this.host = host;
         this.messageType2Received = messageType2Received;
@@ -164,7 +164,7 @@ public class Realm {
      * @return the NTLM domain
      */
     public String getNtlmDomain() {
-        return domain;
+        return ntlmDomain;
     }
 
     /**
