@@ -261,8 +261,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                     return call();
                 }
 
-                boolean redirectEnabled = AsyncHttpProviderUtils.redirectEnabled(config, request);
-                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
+                if (AsyncHttpProviderUtils.followRedirect(config, request) && (statusCode == 302 || statusCode == 301)) {
 
                     if (currentRedirectCount++ < config.getMaxRedirects()) {
                         String location = urlConnection.getHeaderField("Location");

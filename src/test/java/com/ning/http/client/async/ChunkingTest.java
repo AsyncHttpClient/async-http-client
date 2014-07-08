@@ -83,7 +83,7 @@ abstract public class ChunkingTest extends AbstractBasicTest {
             bc.setMaximumConnectionsTotal(1);
             bc.setConnectionTimeoutInMs(1000);
             bc.setRequestTimeoutInMs(1000);
-            bc.setFollowRedirects(true);
+            bc.setFollowRedirect(true);
 
             c = getAsyncHttpClient(bc.build());
 

@@ -111,7 +111,7 @@ public abstract class PerRequestRelative302Test extends AbstractBasicTest {
     @Test(groups = { "online", "default_provider" })
     public void notRedirected302Test() throws Throwable {
         isSet.getAndSet(false);
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             // once

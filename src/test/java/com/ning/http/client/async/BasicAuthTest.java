@@ -301,7 +301,7 @@ public abstract class BasicAuthTest extends AbstractBasicTest {
         AsyncHttpClient client = null;
         try {
             setUpSecondServer();
-            client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).setMaximumNumberOfRedirects(10).build());
+            client = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).setMaximumNumberOfRedirects(10).build());
             AsyncHttpClient.BoundRequestBuilder r = client.prepareGet(getTargetUrl2())
             // .setHeader( "X-302", "/bla" )
                     .setRealm((new Realm.RealmBuilder()).setPrincipal(user).setPassword(admin).build());

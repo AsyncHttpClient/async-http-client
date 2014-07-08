@@ -60,7 +60,7 @@ public class AsyncHttpClientConfig {
     protected int idleConnectionInPoolTimeoutInMs;
     protected int idleConnectionTimeoutInMs;
     protected int requestTimeoutInMs;
-    protected boolean redirectEnabled;
+    protected boolean followRedirect;
     protected int maxRedirects;
     protected boolean compressionEnabled;
     protected String userAgent;
@@ -131,7 +131,7 @@ public class AsyncHttpClientConfig {
         this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         this.requestTimeoutInMs = requestTimeoutInMs;
         this.maxConnectionLifeTimeInMs = connectionMaxLifeTimeInMs;
-        this.redirectEnabled = redirectEnabled;
+        this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
         this.compressionEnabled = compressionEnabled;
         this.userAgent = userAgent;
@@ -232,8 +232,8 @@ public class AsyncHttpClientConfig {
      *
      * @return true if enabled.
      */
-    public boolean isRedirectEnabled() {
-        return redirectEnabled;
+    public boolean isFollowRedirect() {
+        return followRedirect;
     }
 
     /**
@@ -531,7 +531,7 @@ public class AsyncHttpClientConfig {
         private int idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
         private int requestTimeoutInMs = defaultRequestTimeoutInMs();
         private int maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
-        private boolean redirectEnabled = defaultRedirectEnabled();
+        private boolean followRedirect = defaultFollowRedirect();
         private int maxDefaultRedirects = defaultMaxRedirects();
         private boolean compressionEnabled = defaultCompressionEnabled();
         private String userAgent = defaultUserAgent();
@@ -651,8 +651,8 @@ public class AsyncHttpClientConfig {
          * @param redirectEnabled true if enabled.
          * @return a {@link Builder}
          */
-        public Builder setFollowRedirects(boolean redirectEnabled) {
-            this.redirectEnabled = redirectEnabled;
+        public Builder setFollowRedirect(boolean followRedirect) {
+            this.followRedirect = followRedirect;
             return this;
         }
 
@@ -1054,7 +1054,7 @@ public class AsyncHttpClientConfig {
             sslContext = prototype.getSSLContext();
             sslEngineFactory = prototype.getSSLEngineFactory();
             userAgent = prototype.getUserAgent();
-            redirectEnabled = prototype.isRedirectEnabled();
+            followRedirect = prototype.isFollowRedirect();
             compressionEnabled = prototype.isCompressionEnabled();
             applicationThreadPool = prototype.executorService();
 
@@ -1115,7 +1115,7 @@ public class AsyncHttpClientConfig {
                     idleConnectionTimeoutInMs,
                     requestTimeoutInMs,
                     maxConnectionLifeTimeInMs,
-                    redirectEnabled,
+                    followRedirect,
                     maxDefaultRedirects,
                     compressionEnabled,
                     userAgent,

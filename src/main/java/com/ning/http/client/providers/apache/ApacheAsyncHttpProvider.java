@@ -502,8 +502,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
 
                 logger.debug("\n\nRequest {}\n\nResponse {}\n", request, method);
 
-                boolean redirectEnabled = AsyncHttpProviderUtils.redirectEnabled(config, request);
-                if (redirectEnabled && (statusCode == 302 || statusCode == 301)) {
+                if (AsyncHttpProviderUtils.followRedirect(config, request) && (statusCode == 302 || statusCode == 301)) {
 
                     isAuth.set(false);
 

@@ -661,7 +661,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             this.future = future;
             this.request = request;
             this.handler = handler;
-            redirectsAllowed = provider.clientConfig.isRedirectEnabled();
+            redirectsAllowed = provider.clientConfig.isFollowRedirect();
             maxRedirectCount = provider.clientConfig.getMaxRedirects();
             this.requestUrl = request.getUrl();
 

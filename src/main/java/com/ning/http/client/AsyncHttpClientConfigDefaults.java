@@ -56,8 +56,8 @@ public final class AsyncHttpClientConfigDefaults {
         return Integer.getInteger(ASYNC_CLIENT + "maxConnectionLifeTimeInMs", -1);
     }
 
-    public static boolean defaultRedirectEnabled() {
-        return Boolean.getBoolean(ASYNC_CLIENT + "redirectsEnabled");
+    public static boolean defaultFollowRedirect() {
+        return Boolean.getBoolean(ASYNC_CLIENT + "followRedirect");
     }
 
     public static int defaultMaxRedirects() {

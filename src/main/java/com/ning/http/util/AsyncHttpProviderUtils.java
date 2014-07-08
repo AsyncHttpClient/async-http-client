@@ -230,8 +230,8 @@ public class AsyncHttpProviderUtils {
         return request.getRequestTimeoutInMs() != 0 ? request.getRequestTimeoutInMs() : config.getRequestTimeoutInMs();
     }
 
-    public static boolean redirectEnabled(AsyncHttpClientConfig config, Request request) {
-        return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isRedirectEnabled();
+    public static boolean followRedirect(AsyncHttpClientConfig config, Request request) {
+        return request.getFollowRedirect() != null? request.getFollowRedirect().booleanValue() : config.isFollowRedirect();
     }
     
     public static String formParams2UTF8String(List<Param> params) {

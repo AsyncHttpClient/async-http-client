@@ -373,7 +373,7 @@ public abstract class AsyncStreamHandlerTest extends AbstractBasicTest {
 
     @Test(groups = { "online", "default_provider" })
     public void asyncStream302RedirectWithBody() throws Exception {
-        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirects(true).build());
+        AsyncHttpClient c = getAsyncHttpClient(new AsyncHttpClientConfig.Builder().setFollowRedirect(true).build());
         final AtomicReference<Integer> statusCode = new AtomicReference<Integer>(0);
         final AtomicReference<FluentCaseInsensitiveStringsMap> responseHeaders = new AtomicReference<FluentCaseInsensitiveStringsMap>();
         try {

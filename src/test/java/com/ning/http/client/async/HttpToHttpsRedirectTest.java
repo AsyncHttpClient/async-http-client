@@ -120,7 +120,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsRedirect() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
 
         Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2()).execute().get();
@@ -138,7 +138,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void httpToHttpsProperConfig() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", getTargetUrl2() + "/test2").execute().get();
@@ -160,7 +160,7 @@ public abstract class HttpToHttpsRedirectTest extends AbstractBasicTest {
     public void relativeLocationUrl() throws Throwable {
         isSet.getAndSet(false);
 
-        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirects(true).build();
+        AsyncHttpClientConfig cg = new AsyncHttpClientConfig.Builder().setMaximumNumberOfRedirects(5).setFollowRedirect(true).build();
         AsyncHttpClient c = getAsyncHttpClient(cg);
         try {
             Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "/foo/test").execute().get();

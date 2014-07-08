@@ -53,7 +53,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         idleConnectionTimeoutInMs = defaultIdleConnectionTimeoutInMs();
         requestTimeoutInMs = defaultRequestTimeoutInMs();
         maxConnectionLifeTimeInMs = defaultMaxConnectionLifeTimeInMs();
-        redirectEnabled = defaultRedirectEnabled();
+        followRedirect = defaultFollowRedirect();
         maxRedirects = defaultMaxRedirects();
         compressionEnabled = defaultCompressionEnabled();
         userAgent = defaultUserAgent();
@@ -125,8 +125,8 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setRedirectEnabled(boolean redirectEnabled) {
-        this.redirectEnabled = redirectEnabled;
+    public AsyncHttpClientConfigBean setFollowRedirect(boolean followRedirect) {
+        this.followRedirect = followRedirect;
         return this;
     }
 
