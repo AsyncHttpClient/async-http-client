@@ -98,7 +98,7 @@ public class AsyncHttpClientConfig {
                                   int idleConnectionTimeoutInMs,
                                   int requestTimeoutInMs,
                                   int connectionMaxLifeTimeInMs,
-                                  boolean redirectEnabled,
+                                  boolean followRedirect,
                                   int maxRedirects,
                                   boolean compressionEnabled,
                                   String userAgent,
