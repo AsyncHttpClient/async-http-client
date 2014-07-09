@@ -24,21 +24,7 @@ import java.io.UnsupportedEncodingException;
 public class UTF8Codec {
     private final static String ENCODING_UTF8 = "UTF-8";
 
-    // When we move to JDK 1.6+, we can do this:
-    /*
-    import java.nio.charset.Charset;
-
-    private final static Charset utf8;
-    static {
-        utf8 = Charset.forName("UTF-8");
-    }
-
-    public static byte[] toUTF8(String input) {
-        return input.getBytes(utf8);
-    }
-    */
-
-    // But until then (with 1.5)
+    // Until we target JDK6+
     public static byte[] toUTF8(String input) {
         try {
             return input.getBytes(ENCODING_UTF8);
