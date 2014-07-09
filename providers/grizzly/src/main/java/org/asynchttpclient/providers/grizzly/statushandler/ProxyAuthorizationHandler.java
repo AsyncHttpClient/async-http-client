@@ -60,7 +60,7 @@ public final class ProxyAuthorizationHandler implements StatusHandler {
                 .select(req.getURI());
         String principal = proxyServer.getPrincipal();
         String password = proxyServer.getPassword();
-        Realm realm = new Realm.RealmBuilder().setPrincipal(principal).setPassword(password).setUri("/")
+        Realm realm = new Realm.RealmBuilder().setPrincipal(principal).setPassword(password).setUri(req.getURI().withNewPath("/").withNewQuery(null))
                 .setMethodName(Method.CONNECT.getMethodString()).setUsePreemptiveAuth(true).parseProxyAuthenticateHeader(proxyAuth).build();
         String proxyAuthLowerCase = proxyAuth.toLowerCase(Locale.ENGLISH);
         if (proxyAuthLowerCase.startsWith("basic")) {

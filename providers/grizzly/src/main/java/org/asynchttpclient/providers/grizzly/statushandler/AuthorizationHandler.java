@@ -13,7 +13,6 @@
 
 package org.asynchttpclient.providers.grizzly.statushandler;
 
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus.STOP;
 
 import org.asynchttpclient.Realm;
@@ -68,7 +67,7 @@ public final class AuthorizationHandler implements StatusHandler {
         responsePacket.setSkipRemainder(true); // ignore the remainder of the response
 
         final Request req = httpTransactionContext.getRequest();
-        realm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(getNonEmptyPath(req.getURI()))
+        realm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(req.getURI())
                 .setMethodName(req.getMethod()).setUsePreemptiveAuth(true).parseWWWAuthenticateHeader(auth).build();
         String lowerCaseAuth = auth.toLowerCase(Locale.ENGLISH);
         if (lowerCaseAuth.startsWith("basic")) {

@@ -88,7 +88,7 @@ final class HttpProtocol extends Protocol {
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
             return newRealmBuilder(realm)//
-                    .setUri(getNonEmptyPath(uri))//
+                    .setUri(uri)//
                     .setMethodName(request.getMethod())//
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
@@ -119,16 +119,16 @@ final class HttpProtocol extends Protocol {
         String ntlmHost = useRealm ? realm.getNtlmHost() : proxyServer.getHost();
         String principal = useRealm ? realm.getPrincipal() : proxyServer.getPrincipal();
         String password = useRealm ? realm.getPassword() : proxyServer.getPassword();
+        UriComponents uri = request.getURI();
 
         if (realm != null && !realm.isNtlmMessageType2Received()) {
             String challengeHeader = NTLMEngine.INSTANCE.generateType1Msg(ntlmDomain, ntlmHost);
 
-            UriComponents uri = request.getURI();
             addNTLMAuthorizationHeader(headers, challengeHeader, proxyInd);
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
-                    .setUri(getNonEmptyPath(uri))//
+                    .setUri(uri)//
                     .setMethodName(request.getMethod())//
                     .setNtlmMessageType2Received(true)//
                     .build();
@@ -138,7 +138,7 @@ final class HttpProtocol extends Protocol {
             Realm.AuthScheme authScheme = realm != null ? realm.getAuthScheme() : Realm.AuthScheme.NTLM;
             return newRealmBuilder(realm)//
                     .setScheme(authScheme)//
-                    .setUri(getNonEmptyPath(request.getURI()))//
+                    .setUri(uri)//
                     .setMethodName(request.getMethod())//
                     .build();
         }
@@ -154,7 +154,7 @@ final class HttpProtocol extends Protocol {
 
         return newRealmBuilder(realm)//
                 // .setScheme(realm.getAuthScheme())
-                .setUri(getNonEmptyPath(request.getURI()))//
+                .setUri(request.getURI())//
                 .setMethodName(request.getMethod()).build();
     }
 
@@ -206,23 +206,6 @@ final class HttpProtocol extends Protocol {
         }
     }
 
-    private final String computeRealmURI(Realm realm, UriComponents requestURI) {
-        if (realm.isUseAbsoluteURI()) {
-            if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
-                return requestURI.withNewQuery(null).toUrl();
-            } else {
-                return requestURI.toUrl();
-            }
-        } else {
-            String path = getNonEmptyPath(requestURI);
-            if (realm.isOmitQuery() || !isNonEmpty(requestURI.getQuery())) {
-                return path;
-            } else {
-                return path + "?" + requestURI.getQuery();
-            }
-        }
-    }
-
     private boolean handleUnauthorizedAndExit(int statusCode, Realm realm, final Request request, HttpResponse response,
             final NettyResponseFuture<?> future, ProxyServer proxyServer, final Channel channel) throws Exception {
         if (statusCode == UNAUTHORIZED.code() && realm != null) {
@@ -246,15 +229,14 @@ final class HttpProtocol extends Protocol {
                     newRealm = new Realm.RealmBuilder()//
                             .clone(realm)//
                             .setScheme(realm.getAuthScheme())//
-                            .setUri(getNonEmptyPath(request.getURI()))//
+                            .setUri(request.getURI())//
                             .setMethodName(request.getMethod())//
                             .setUsePreemptiveAuth(true)//
                             .parseWWWAuthenticateHeader(authenticateHeaders.get(0))//
                             .build();
                 }
 
-                String realmURI = computeRealmURI(newRealm, request.getURI());
-                Realm nr = new Realm.RealmBuilder().clone(newRealm).setUri(realmURI).build();
+                Realm nr = newRealm;
                 final Request nextRequest = new RequestBuilder(future.getRequest()).setHeaders(request.getHeaders()).setRealm(nr).build();
 
                 LOGGER.debug("Sending authentication to {}", request.getURI());
@@ -318,7 +300,7 @@ final class HttpProtocol extends Protocol {
                 } else {
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
-                            .setUri("/")//
+                            .setUri(request.getURI().withNewPath("/").withNewQuery(null))//
                             .setMethodName(HttpMethod.CONNECT.name())//
                             .setUsePreemptiveAuth(true)//
                             .parseProxyAuthenticateHeader(proxyAuthenticateHeaders.get(0))//
