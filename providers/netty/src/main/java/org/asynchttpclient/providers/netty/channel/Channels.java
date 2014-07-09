@@ -147,7 +147,7 @@ public class Channels {
 
         ChannelPool cp = nettyProviderConfig.getChannelPool();
         if (cp == null) {
-            if (config.getAllowPoolingConnection()) {
+            if (config.isAllowPoolingConnection()) {
                 cp = new DefaultChannelPool(config, nettyTimer);
             } else {
                 cp = new NonChannelPool();

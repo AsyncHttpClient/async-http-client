@@ -145,7 +145,7 @@ public class AsyncHttpProviderUtils {
     }
 
     public static String keepAliveHeaderValue(AsyncHttpClientConfig config) {
-        return config.getAllowPoolingConnection() ? "keep-alive" : "close";
+        return config.isAllowPoolingConnection() ? "keep-alive" : "close";
     }
 
     public static int requestTimeout(AsyncHttpClientConfig config, Request request) {

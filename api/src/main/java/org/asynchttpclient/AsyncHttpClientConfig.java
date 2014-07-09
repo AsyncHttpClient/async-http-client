@@ -280,7 +280,7 @@ public class AsyncHttpClientConfig {
      *
      * @return true if keep-alive is enabled
      */
-    public boolean getAllowPoolingConnection() {
+    public boolean isAllowPoolingConnection() {
         return allowPoolingConnection;
     }
 
@@ -1097,7 +1097,7 @@ public class AsyncHttpClientConfig {
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
-            allowPoolingConnection = prototype.getAllowPoolingConnection();
+            allowPoolingConnection = prototype.isAllowPoolingConnection();
             providerConfig = prototype.getAsyncHttpProviderConfig();
             connectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
             idleConnectionInPoolTimeoutInMs = prototype.getIdleConnectionInPoolTimeoutInMs();
@@ -1127,7 +1127,7 @@ public class AsyncHttpClientConfig {
             disableUrlEncodingForBoundRequests = prototype.isDisableUrlEncodingForBoundRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
-            allowSslConnectionPool = prototype.getAllowPoolingConnection();
+            allowSslConnectionPool = prototype.isAllowPoolingConnection();
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
