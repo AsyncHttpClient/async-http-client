@@ -30,7 +30,6 @@ import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -290,7 +289,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
 
                     Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
-                            .setUri(URI.create(request.getUrl()).getPath())
+                            .setUri(UriComponents.create(request.getUrl()))
                             .setMethodName(request.getMethod())
                             .setUsePreemptiveAuth(true)
                             .build();

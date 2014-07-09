@@ -16,6 +16,7 @@ import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;
+import com.ning.http.client.uri.UriComponents;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -31,14 +32,25 @@ public final class AuthenticatorUtils {
         String s = proxyServer.getPrincipal() + ":" + proxyServer.getPassword();
         return "Basic " + Base64.encode(s.getBytes(proxyServer.getEncoding()));
     }
-
+    
+    private static String computeRealmURI(Realm realm) {
+        UriComponents uri = realm.getUri();
+        boolean omitQuery = realm.isOmitQuery() && MiscUtils.isNonEmpty(uri.getQuery());
+        if (realm.isUseAbsoluteURI()) {
+            return omitQuery ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+        } else {
+            String path = uri.getPath();
+            return omitQuery ? path : path + "?" + uri.getQuery();
+        }
+    }
+    
     public static String computeDigestAuthentication(Realm realm) throws NoSuchAlgorithmException, UnsupportedEncodingException {
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         construct(builder, "username", realm.getPrincipal());
         construct(builder, "realm", realm.getRealmName());
         construct(builder, "nonce", realm.getNonce());
-        construct(builder, "uri", realm.getUri());
+        construct(builder, "uri", computeRealmURI(realm));
         builder.append("algorithm").append('=').append(realm.getAlgorithm()).append(", ");
 
         construct(builder, "response", realm.getResponse());
@@ -48,7 +60,7 @@ public final class AuthenticatorUtils {
         builder.append("nc").append('=').append(realm.getNc()).append(", ");
         construct(builder, "cnonce", realm.getCnonce(), true);
 
-        return new String(builder.toString().getBytes("ISO_8859_1"));
+        return new String(builder.toString().getBytes("ISO-8859-1"));
     }
 
     private static StringBuilder construct(StringBuilder builder, String name, String value) {

@@ -1569,7 +1569,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                 final Request req = httpTransactionContext.request;
                 realm = new Realm.RealmBuilder().clone(realm)
                                 .setScheme(realm.getAuthScheme())
-                                .setUri(httpTransactionContext.request.getURI().getPath())
+                                .setUri(httpTransactionContext.request.getURI())
                                 .setMethodName(req.getMethod())
                                 .setUsePreemptiveAuth(true)
                                 .parseWWWAuthenticateHeader(auth)
