@@ -191,12 +191,4 @@ public interface Request {
     String getBodyEncoding();
 
     ConnectionPoolKeyStrategy getConnectionPoolKeyStrategy();
-	
-    /**
-     * @return return <code>true</code> if request headers have been added,
-     *  otherwise, returns <code>false</code>.
-     *
-     * @since 2.0
-     */
-    boolean hasHeaders();
 }

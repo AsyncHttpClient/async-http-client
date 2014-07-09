@@ -224,11 +224,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         @Override
-        public boolean hasHeaders() {
-            return headers != null && !headers.isEmpty();
-        }
-        
-        @Override
         public List<Param> getQueryParams() {
             if (queryParams == null)
                 // lazy load

@@ -481,7 +481,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
     private void addGeneralHeaders(final Request request, final HttpRequestPacket requestPacket) {
 
-        if (request.hasHeaders()) {
+        if (isNonEmpty(request.getHeaders())) {
             final FluentCaseInsensitiveStringsMap map = request.getHeaders();
             for (final Map.Entry<String, List<String>> entry : map.entrySet()) {
                 final String headerName = entry.getKey();
