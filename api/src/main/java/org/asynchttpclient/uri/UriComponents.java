@@ -66,15 +66,6 @@ public class UriComponents {
         return query;
     }
 
-    /**
-     * Convenient for HTTP layer when targeting server root
-     * 
-     * @return the raw path or "/" if it's null
-     */
-    public String getNonEmptyPath() {
-        return isNonEmpty(path) ? path : "/";
-    }
-
     public String getPath() {
         return path;
     }

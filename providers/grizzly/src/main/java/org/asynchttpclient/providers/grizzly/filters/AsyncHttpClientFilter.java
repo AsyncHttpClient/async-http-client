@@ -16,6 +16,7 @@ package org.asynchttpclient.providers.grizzly.filters;
 import static org.asynchttpclient.providers.grizzly.filters.SwitchingSSLFilter.getHandshakeError;
 import static org.asynchttpclient.providers.grizzly.GrizzlyAsyncHttpProvider.NTLM_ENGINE;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.getAuthority;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeBasicAuthentication;
 import static org.asynchttpclient.util.AuthenticatorUtils.computeDigestAuthentication;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -238,7 +239,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final int port = uri.getPort();
             requestPacket.setRequestURI(uri.getHost() + ':' + (port == -1 ? 443 : port));
         } else {
-            requestPacket.setRequestURI(uri.getNonEmptyPath());
+            requestPacket.setRequestURI(getNonEmptyPath(uri));
         }
 
         final BodyHandler bodyHandler = isPayloadAllowed(method) ?

@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.util;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -100,6 +102,15 @@ public class AsyncHttpProviderUtils {
         if (port == -1)
             port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
         return port;
+    }
+
+    /**
+     * Convenient for HTTP layer when targeting server root
+     * 
+     * @return the raw path or "/" if it's null
+     */
+    public final static String getNonEmptyPath(UriComponents uri) {
+        return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 
     public static String constructUserAgent(Class<? extends AsyncHttpProvider> httpProvider, AsyncHttpClientConfig config) {

@@ -19,6 +19,7 @@ import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isSecure;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isWebSocket;
 import static org.asynchttpclient.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -78,11 +79,13 @@ public final class NettyRequestFactory {
         else if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
             return uri.toString();
 
-        else if (uri.getQuery() != null)
-            return uri.getNonEmptyPath() + "?" + uri.getQuery();
-
-        else
-            return uri.getNonEmptyPath();
+        else {
+            String path = getNonEmptyPath(uri);
+            if (isNonEmpty(uri.getQuery()))
+                return path + "?" + uri.getQuery();
+            else
+                return path;
+        }
     }
 
     private String hostHeader(Request request, UriComponents uri, Realm realm) {

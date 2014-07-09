@@ -20,6 +20,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
+import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHandler;
@@ -87,7 +88,7 @@ final class HttpProtocol extends Protocol {
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
             return newRealmBuilder(realm)//
-                    .setUri(uri.getNonEmptyPath())//
+                    .setUri(getNonEmptyPath(uri))//
                     .setMethodName(request.getMethod())//
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
@@ -127,7 +128,7 @@ final class HttpProtocol extends Protocol {
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
-                    .setUri(uri.getNonEmptyPath())//
+                    .setUri(getNonEmptyPath(uri))//
                     .setMethodName(request.getMethod())//
                     .setNtlmMessageType2Received(true)//
                     .build();
@@ -137,7 +138,7 @@ final class HttpProtocol extends Protocol {
             Realm.AuthScheme authScheme = realm != null ? realm.getAuthScheme() : Realm.AuthScheme.NTLM;
             return newRealmBuilder(realm)//
                     .setScheme(authScheme)//
-                    .setUri(request.getURI().getNonEmptyPath())//
+                    .setUri(getNonEmptyPath(request.getURI()))//
                     .setMethodName(request.getMethod())//
                     .build();
         }
@@ -153,7 +154,7 @@ final class HttpProtocol extends Protocol {
 
         return newRealmBuilder(realm)//
                 // .setScheme(realm.getAuthScheme())
-                .setUri(request.getURI().getNonEmptyPath())//
+                .setUri(getNonEmptyPath(request.getURI()))//
                 .setMethodName(request.getMethod()).build();
     }
 
@@ -208,15 +209,16 @@ final class HttpProtocol extends Protocol {
     private final String computeRealmURI(Realm realm, UriComponents requestURI) {
         if (realm.isUseAbsoluteURI()) {
             if (realm.isOmitQuery() && isNonEmpty(requestURI.getQuery())) {
-                return requestURI.withNewQuery(null).toString();
+                return requestURI.withNewQuery(null).toUrl();
             } else {
-                return requestURI.toString();
+                return requestURI.toUrl();
             }
         } else {
+            String path = getNonEmptyPath(requestURI);
             if (realm.isOmitQuery() || !isNonEmpty(requestURI.getQuery())) {
-                return requestURI.getNonEmptyPath();
+                return path;
             } else {
-                return requestURI.getNonEmptyPath() + "?" + requestURI.getQuery();
+                return path + "?" + requestURI.getQuery();
             }
         }
     }
@@ -241,9 +243,14 @@ final class HttpProtocol extends Protocol {
                         return true;
                     }
                 } else {
-                    newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(request.getURI().getNonEmptyPath())
-                            .setMethodName(request.getMethod()).setUsePreemptiveAuth(true)
-                            .parseWWWAuthenticateHeader(authenticateHeaders.get(0)).build();
+                    newRealm = new Realm.RealmBuilder()//
+                            .clone(realm)//
+                            .setScheme(realm.getAuthScheme())//
+                            .setUri(getNonEmptyPath(request.getURI()))//
+                            .setMethodName(request.getMethod())//
+                            .setUsePreemptiveAuth(true)//
+                            .parseWWWAuthenticateHeader(authenticateHeaders.get(0))//
+                            .build();
                 }
 
                 String realmURI = computeRealmURI(newRealm, request.getURI());
