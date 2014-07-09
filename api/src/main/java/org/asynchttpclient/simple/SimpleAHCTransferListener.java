@@ -14,6 +14,7 @@ package org.asynchttpclient.simple;
  */
 
 import org.asynchttpclient.SimpleAsyncHttpClient;
+import org.asynchttpclient.uri.UriComponents;
 
 /**
  * A simple transfer listener for use with the {@link SimpleAsyncHttpClient}.
@@ -29,51 +30,51 @@ public interface SimpleAHCTransferListener {
     /**
      * This method is called after the connection status is received.
      *
-     * @param url        the url for the connection.
+     * @param uri        the uri
      * @param statusCode the received status code.
      * @param statusText the received status text.
      */
-    void onStatus(String url, int statusCode, String statusText);
+    void onStatus(UriComponents uri, int statusCode, String statusText);
 
     /**
      * This method is called after the response headers are received.
      *
-     * @param url     the url for the connection.
+     * @param uri     the uri
      * @param headers the received headers, never {@code null}.
      */
-    void onHeaders(String url, HeaderMap headers);
+    void onHeaders(UriComponents uri, HeaderMap headers);
 
     /**
      * This method is called when bytes of the responses body are received.
      *
-     * @param url     the url for the connection.
+     * @param uri     the uri
      * @param amount  the number of transferred bytes so far.
      * @param current the number of transferred bytes since the last call to this
      *                method.
      * @param total   the total number of bytes to be transferred. This is taken
      *                from the Content-Length-header and may be unspecified (-1).
      */
-    void onBytesReceived(String url, long amount, long current, long total);
+    void onBytesReceived(UriComponents uri, long amount, long current, long total);
 
     /**
      * This method is called when bytes are sent.
      *
-     * @param url     the url for the connection.
+     * @param uri     the uri
      * @param amount  the number of transferred bytes so far.
      * @param current the number of transferred bytes since the last call to this
      *                method.
      * @param total   the total number of bytes to be transferred. This is taken
      *                from the Content-Length-header and may be unspecified (-1).
      */
-    void onBytesSent(String url, long amount, long current, long total);
+    void onBytesSent(UriComponents uri, long amount, long current, long total);
 
     /**
      * This method is called when the request is completed.
      *
-     * @param url        the url for the connection.
+     * @param uri        the uri
      * @param statusCode the received status code.
      * @param statusText the received status text.
      */
-    void onCompleted(String url, int statusCode, String statusText);
+    void onCompleted(UriComponents uri, int statusCode, String statusText);
 }
 

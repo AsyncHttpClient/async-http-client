@@ -27,6 +27,7 @@ import org.asynchttpclient.generators.InputStreamBodyGenerator;
 import org.asynchttpclient.multipart.ByteArrayPart;
 import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.StandardCharsets;
 import org.testng.annotations.Test;
 
@@ -176,19 +177,19 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 
-            public void onStatus(String url, int statusCode, String statusText) {
+            public void onStatus(UriComponents uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
-                    assertEquals(url, getTargetUrl());
+                    assertEquals(uri.toUrl(), getTargetUrl());
                 } catch (Error e) {
                     errors.add(e);
                     throw e;
                 }
             }
 
-            public void onHeaders(String url, HeaderMap headers) {
+            public void onHeaders(UriComponents uri, HeaderMap headers) {
                 try {
-                    assertEquals(url, getTargetUrl());
+                    assertEquals(uri.toUrl(), getTargetUrl());
                     assertNotNull(headers);
                     assertTrue(!headers.isEmpty());
                     assertEquals(headers.getFirstValue("X-Custom"), "custom");
@@ -198,19 +199,19 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onCompleted(String url, int statusCode, String statusText) {
+            public void onCompleted(UriComponents uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
-                    assertEquals(url, getTargetUrl());
+                    assertEquals(uri.toUrl(), getTargetUrl());
                 } catch (Error e) {
                     errors.add(e);
                     throw e;
                 }
             }
 
-            public void onBytesSent(String url, long amount, long current, long total) {
+            public void onBytesSent(UriComponents uri, long amount, long current, long total) {
                 try {
-                    assertEquals(url, getTargetUrl());
+                    assertEquals(uri.toUrl(), getTargetUrl());
                     // FIXME Netty bug, see https://github.com/netty/netty/issues/1855
 //                    assertEquals(total, MY_MESSAGE.getBytes().length);
                 } catch (Error e) {
@@ -219,9 +220,9 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
-            public void onBytesReceived(String url, long amount, long current, long total) {
+            public void onBytesReceived(UriComponents uri, long amount, long current, long total) {
                 try {
-                    assertEquals(url, getTargetUrl());
+                    assertEquals(uri.toUrl(), getTargetUrl());
                     assertEquals(total, -1);
                 } catch (Error e) {
                     errors.add(e);

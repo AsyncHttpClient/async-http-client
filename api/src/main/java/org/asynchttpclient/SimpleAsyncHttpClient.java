@@ -18,6 +18,7 @@ import org.asynchttpclient.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.resumable.ResumableIOExceptionFilter;
 import org.asynchttpclient.simple.HeaderMap;
 import org.asynchttpclient.simple.SimpleAHCTransferListener;
+import org.asynchttpclient.uri.UriComponents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -283,7 +284,7 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         Request request = rb.build();
         ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
-                request.getUrl(), listener);
+                request.getURI(), listener);
 
         if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
@@ -735,7 +736,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
-        private final String url;
+        private final UriComponents uri;
         private final SimpleAHCTransferListener listener;
 
         private boolean accumulateBody = false;
@@ -744,11 +745,11 @@ public class SimpleAsyncHttpClient implements Closeable {
         private long total = -1;
 
         public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
-                ErrorDocumentBehaviour errorDocumentBehaviour, String url, SimpleAHCTransferListener listener) {
+                ErrorDocumentBehaviour errorDocumentBehaviour, UriComponents uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
-            this.url = url;
+            this.uri = uri;
             this.listener = listener;
         }
 
@@ -846,13 +847,13 @@ public class SimpleAsyncHttpClient implements Closeable {
 
         @Override
         public STATE onContentWriteProgress(long amount, long current, long total) {
-            fireSent(url, amount, current, total);
+            fireSent(uri, amount, current, total);
             return super.onContentWriteProgress(amount, current, total);
         }
 
         private void fireStatus(HttpResponseStatus status) {
             if (listener != null) {
-                listener.onStatus(url, status.getStatusCode(), status.getStatusText());
+                listener.onStatus(uri, status.getStatusCode(), status.getStatusText());
             }
         }
 
@@ -862,27 +863,26 @@ public class SimpleAsyncHttpClient implements Closeable {
             amount += remaining;
 
             if (listener != null) {
-                listener.onBytesReceived(url, amount, remaining, total);
+                listener.onBytesReceived(uri, amount, remaining, total);
             }
         }
 
         private void fireHeaders(HttpResponseHeaders headers) {
             if (listener != null) {
-                listener.onHeaders(url, new HeaderMap(headers.getHeaders()));
+                listener.onHeaders(uri, new HeaderMap(headers.getHeaders()));
             }
         }
 
-        private void fireSent(String url, long amount, long current, long total) {
+        private void fireSent(UriComponents uri, long amount, long current, long total) {
             if (listener != null) {
-                listener.onBytesSent(url, amount, current, total);
+                listener.onBytesSent(uri, amount, current, total);
             }
         }
 
         private void fireCompleted(Response response) {
             if (listener != null) {
-                listener.onCompleted(url, response.getStatusCode(), response.getStatusText());
+                listener.onCompleted(uri, response.getStatusCode(), response.getStatusText());
             }
         }
     }
-
 }
