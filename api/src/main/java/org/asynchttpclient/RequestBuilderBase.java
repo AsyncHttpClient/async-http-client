@@ -594,13 +594,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         String newQuery = queryComputer.computeFullQueryString(request.uri.getQuery(), queryParams);
 
-        request.uri = new UriComponents(//
-                request.uri.getScheme(),//
-                request.uri.getUserInfo(),//
-                request.uri.getHost(),//
-                request.uri.getPort(),//
-                request.uri.getPath(),//
-                newQuery);
+        request.uri = request.uri.withNewQuery(newQuery);
     }
 
     public Request build() {
