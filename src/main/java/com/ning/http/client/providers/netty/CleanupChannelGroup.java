@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-package com.ning.http.util;
+package com.ning.http.client.providers.netty;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;

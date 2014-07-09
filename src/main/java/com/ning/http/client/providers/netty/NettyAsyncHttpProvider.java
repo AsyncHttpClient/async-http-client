@@ -150,7 +150,6 @@ import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
-import com.ning.http.util.CleanupChannelGroup;
 import com.ning.http.util.MiscUtil;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
