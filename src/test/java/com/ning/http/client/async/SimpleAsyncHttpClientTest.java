@@ -21,6 +21,7 @@ import com.ning.http.client.generators.FileBodyGenerator;
 import com.ning.http.client.generators.InputStreamBodyGenerator;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
+import com.ning.http.client.uri.UriComponents;
 
 import org.testng.annotations.Test;
 
@@ -28,7 +29,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static junit.framework.Assert.assertTrue;
@@ -171,30 +171,30 @@ public abstract class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 
-            public void onStatus(String url, int statusCode, String statusText) {
+            public void onStatus(UriComponents uri, int statusCode, String statusText) {
                 assertEquals(statusCode, 200);
-                assertEquals(url, getTargetUrl());
+                assertEquals(uri.toUrl(), getTargetUrl());
             }
 
-            public void onHeaders(String url, HeaderMap headers) {
-                assertEquals(url, getTargetUrl());
+            public void onHeaders(UriComponents uri, HeaderMap headers) {
+                assertEquals(uri.toUrl(), getTargetUrl());
                 assertNotNull(headers);
                 assertTrue(!headers.isEmpty());
                 assertEquals(headers.getFirstValue("X-Custom"), "custom");
             }
 
-            public void onCompleted(String url, int statusCode, String statusText) {
+            public void onCompleted(UriComponents uri, int statusCode, String statusText) {
                 assertEquals(statusCode, 200);
-                assertEquals(url, getTargetUrl());
+                assertEquals(uri.toUrl(), getTargetUrl());
             }
 
-            public void onBytesSent(String url, long amount, long current, long total) {
-                assertEquals(url, getTargetUrl());
+            public void onBytesSent(UriComponents uri, long amount, long current, long total) {
+                assertEquals(uri.toUrl(), getTargetUrl());
                 assertEquals(total, MY_MESSAGE.getBytes().length);
             }
 
-            public void onBytesReceived(String url, long amount, long current, long total) {
-                assertEquals(url, getTargetUrl());
+            public void onBytesReceived(UriComponents uri, long amount, long current, long total) {
+                assertEquals(uri.toUrl(), getTargetUrl());
                 assertEquals(total, -1);
             }
         };

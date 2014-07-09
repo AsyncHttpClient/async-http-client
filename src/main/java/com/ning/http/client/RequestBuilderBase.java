@@ -114,19 +114,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             return localAddress;
         }
 
-        private String removeTrailingSlash(UriComponents uri) {
-            String uriString = uri.toUrl();
-            if (uriString.endsWith("/")) {
-                return uriString.substring(0, uriString.length() - 1);
-            } else {
-                return uriString;
-            }
-        }
-
-        public String getUrl() {
-            return removeTrailingSlash(getURI());
-        }
-
         public UriComponents getURI() {
             return uri;
         }
@@ -286,8 +273,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setURI(UriComponents uri) {
-        if (uri.getPath() == null)
-            throw new NullPointerException("uri.path");
         request.uri = uri;
         return derived.cast(this);
     }
@@ -600,23 +585,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     private void computeFinalUri() {
 
         if (request.uri == null) {
-            logger.debug("setUrl hasn't been invoked. Using http://localhost");
+            logger.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             request.uri = DEFAULT_REQUEST_URL;
         }
 
         AsyncHttpProviderUtils.validateSupportedScheme(request.uri);
 
-        // FIXME is that right?
-        String newPath = isNonEmpty(request.uri.getPath()) ? request.uri.getPath() : "/";
         String newQuery = queryComputer.computeFullQueryString(request.uri.getQuery(), queryParams);
-
-        request.uri = new UriComponents(//
-                request.uri.getScheme(),//
-                request.uri.getUserInfo(),//
-                request.uri.getHost(),//
-                request.uri.getPort(),//
-                newPath,//
-                newQuery);
+        request.uri = request.uri.withNewQuery(newQuery);
     }
 
     public Request build() {

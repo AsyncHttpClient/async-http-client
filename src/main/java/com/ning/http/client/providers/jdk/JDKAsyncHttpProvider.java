@@ -181,7 +181,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
         HttpURLConnection urlConnection = (HttpURLConnection)
             request.getURI().toURI().toURL().openConnection(proxy == null ? Proxy.NO_PROXY : proxy);
 
-        if (request.getUrl().startsWith("https")) {
+        if (request.getURI().getScheme().equals("https")) {
             HttpsURLConnection secure = (HttpsURLConnection) urlConnection;
             SSLContext sslContext = config.getSSLContext();
             if (sslContext == null) {
@@ -285,11 +285,11 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
                 if (statusCode == 401 && !isAuth.getAndSet(true) && realm != null) {
                     String wwwAuth = urlConnection.getHeaderField("WWW-Authenticate");
 
-                    logger.debug("Sending authentication to {}", request.getUrl());
+                    logger.debug("Sending authentication to {}", request.getURI());
 
                     Realm nr = new Realm.RealmBuilder().clone(realm)
                             .parseWWWAuthenticateHeader(wwwAuth)
-                            .setUri(UriComponents.create(request.getUrl()))
+                            .setUri(request.getURI())
                             .setMethodName(request.getMethod())
                             .setUsePreemptiveAuth(true)
                             .build();

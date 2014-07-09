@@ -57,22 +57,6 @@ public class AsyncHttpProviderUtils {
         }
     }
 
-    public final static UriComponents createNonEmptyPathURI(String u) {
-        UriComponents uri = UriComponents.create(u);
-        validateSupportedScheme(uri);
-
-        String path = uri.getPath();
-        if (path == null) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ", must be non-null");
-        } else if (isNonEmpty(path) && path.charAt(0) != '/') {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ". must start with a '/'");
-        } else if (!isNonEmpty(path)) {
-            return UriComponents.create(u + "/");
-        }
-
-        return uri;
-    }
-
     public final static String getBaseUrl(UriComponents uri) {
         return uri.getScheme() + "://" + getAuthority(uri);
     }
@@ -116,6 +100,15 @@ public class AsyncHttpProviderUtils {
         if (port == -1)
             port = uri.getScheme().equals("http") || uri.getScheme().equals("ws") ? 80 : 443;
         return port;
+    }
+
+    /**
+     * Convenient for HTTP layer when targeting server root
+     * 
+     * @return the raw path or "/" if it's null
+     */
+    public final static String getNonEmptyPath(UriComponents uri) {
+        return isNonEmpty(uri.getPath()) ? uri.getPath() : "/";
     }
 
     /**

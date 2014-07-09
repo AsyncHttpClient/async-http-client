@@ -29,6 +29,7 @@ import com.ning.http.client.resumable.ResumableAsyncHandler;
 import com.ning.http.client.resumable.ResumableIOExceptionFilter;
 import com.ning.http.client.simple.HeaderMap;
 import com.ning.http.client.simple.SimpleAHCTransferListener;
+import com.ning.http.client.uri.UriComponents;
 
 /**
  * Simple implementation of {@link AsyncHttpClient} and it's related builders ({@link com.ning.http.client.AsyncHttpClientConfig},
@@ -276,7 +277,7 @@ public class SimpleAsyncHttpClient {
         }
 
         Request request = rb.build();
-        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getUrl(), listener);
+        ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour, request.getURI(), listener);
 
         if (resumeEnabled && request.getMethod().equals("GET") &&
                 bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
@@ -715,7 +716,7 @@ public class SimpleAsyncHttpClient {
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
         private final ErrorDocumentBehaviour errorDocumentBehaviour;
-        private final String url;
+        private final UriComponents uri;
         private final SimpleAHCTransferListener listener;
 
         private boolean accumulateBody = false;
@@ -723,11 +724,11 @@ public class SimpleAsyncHttpClient {
         private int amount = 0;
         private long total = -1;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, String url, SimpleAHCTransferListener listener) {
+        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler, ErrorDocumentBehaviour errorDocumentBehaviour, UriComponents uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
-            this.url = url;
+            this.uri = uri;
             this.listener = listener;
         }
 
@@ -828,13 +829,13 @@ public class SimpleAsyncHttpClient {
 
         @Override
         public STATE onContentWriteProgress(long amount, long current, long total) {
-            fireSent(url, amount, current, total);
+            fireSent(uri, amount, current, total);
             return super.onContentWriteProgress(amount, current, total);
         }
 
         private void fireStatus(HttpResponseStatus status) {
             if (listener != null) {
-                listener.onStatus(url, status.getStatusCode(), status.getStatusText());
+                listener.onStatus(uri, status.getStatusCode(), status.getStatusText());
             }
         }
 
@@ -844,27 +845,26 @@ public class SimpleAsyncHttpClient {
             amount += remaining;
 
             if (listener != null) {
-                listener.onBytesReceived(url, amount, remaining, total);
+                listener.onBytesReceived(uri, amount, remaining, total);
             }
         }
 
         private void fireHeaders(HttpResponseHeaders headers) {
             if (listener != null) {
-                listener.onHeaders(url, new HeaderMap(headers.getHeaders()));
+                listener.onHeaders(uri, new HeaderMap(headers.getHeaders()));
             }
         }
 
-        private void fireSent(String url, long amount, long current, long total) {
+        private void fireSent(UriComponents uri, long amount, long current, long total) {
             if (listener != null) {
-                listener.onBytesSent(url, amount, current, total);
+                listener.onBytesSent(uri, amount, current, total);
             }
         }
 
         private void fireCompleted(Response response) {
             if (listener != null) {
-                listener.onCompleted(url, response.getStatusCode(), response.getStatusText());
+                listener.onCompleted(uri, response.getStatusCode(), response.getStatusText());
             }
         }
     }
-
 }

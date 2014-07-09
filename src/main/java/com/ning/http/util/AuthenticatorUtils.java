@@ -12,6 +12,7 @@
  */
 package com.ning.http.util;
 
+import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.ProxyServer;
@@ -39,7 +40,7 @@ public final class AuthenticatorUtils {
         if (realm.isUseAbsoluteURI()) {
             return omitQuery ? uri.withNewQuery(null).toUrl() : uri.toUrl();
         } else {
-            String path = uri.getPath();
+            String path = getNonEmptyPath(uri);
             return omitQuery ? path : path + "?" + uri.getQuery();
         }
     }

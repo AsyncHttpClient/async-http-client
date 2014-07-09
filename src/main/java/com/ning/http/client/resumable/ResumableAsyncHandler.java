@@ -104,7 +104,7 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
     public AsyncHandler.STATE onStatusReceived(final HttpResponseStatus status) throws Exception {
         responseBuilder.accumulate(status);
         if (status.getStatusCode() == 200 || status.getStatusCode() == 206) {
-            url = status.getUri().toString();
+            url = status.getUri().toUrl();
         } else {
             return AsyncHandler.STATE.ABORT;
         }
@@ -198,8 +198,8 @@ public class ResumableAsyncHandler<T> implements AsyncHandler<T> {
      */
     public Request adjustRequestRange(Request request) {
 
-        if (resumableIndex.get(request.getUrl()) != null) {
-            byteTransferred.set(resumableIndex.get(request.getUrl()));
+        if (resumableIndex.get(request.getURI().toUrl()) != null) {
+            byteTransferred.set(resumableIndex.get(request.getURI().toUrl()));
         }
 
         // The Resumbale

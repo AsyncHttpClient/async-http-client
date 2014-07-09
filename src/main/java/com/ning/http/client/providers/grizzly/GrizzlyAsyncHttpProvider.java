@@ -16,6 +16,7 @@ package com.ning.http.client.providers.grizzly;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.BUFFER_WEBSOCKET_FRAGMENTS;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.MAX_HTTP_PACKET_HEADER_SIZE;
 import static com.ning.http.client.providers.grizzly.GrizzlyAsyncHttpProviderConfig.Property.TRANSPORT_CUSTOMIZER;
+import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import java.io.ByteArrayOutputStream;
@@ -592,7 +593,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         final GrizzlyAsyncHttpProvider provider;
 
         Request request;
-        String requestUrl;
+        UriComponents requestUri;
         AsyncHandler handler;
         BodyHandler bodyHandler;
         StatusHandler statusHandler;
@@ -604,7 +605,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         AtomicLong totalBodyWritten = new AtomicLong();
         AsyncHandler.STATE currentState;
         
-        String wsRequestURI;
+        UriComponents wsRequestURI;
         boolean isWSRequest;
         HandShake handshake;
         ProtocolHandler protocolHandler;
@@ -663,7 +664,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             this.handler = handler;
             redirectsAllowed = provider.clientConfig.isFollowRedirect();
             maxRedirectCount = provider.clientConfig.getMaxRedirects();
-            this.requestUrl = request.getUrl();
+            this.requestUri = request.getURI();
 
         }
 
@@ -838,7 +839,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             final Connection connection = ctx.getConnection();
             
             final HttpTransactionContext httpCtx = HttpTransactionContext.get(connection);
-            if (isUpgradeRequest(httpCtx.handler) && isWSRequest(httpCtx.requestUrl)) {
+            if (isUpgradeRequest(httpCtx.handler) && isWSRequest(httpCtx.requestUri)) {
                 httpCtx.isWSRequest = true;
                 convertToUpgradeRequest(httpCtx);
             }
@@ -868,12 +869,12 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     builder.method(Method.CONNECT);
                     builder.uri(AsyncHttpProviderUtils.getAuthority(uri));
                 } else if (secure && config.isUseRelativeURIsWithSSLProxies()){
-                    builder.uri(uri.getPath());
+                    builder.uri(getNonEmptyPath(uri));
                 } else {
                     builder.uri(uri.toUrl());
                 }
             } else {
-                builder.uri(uri.getPath());
+                builder.uri(getNonEmptyPath(uri));
             }
             
             final BodyHandler bodyHandler = isPayloadAllowed(method) ?
@@ -893,7 +894,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             HttpRequestPacket requestPacket;
             if (httpCtx.isWSRequest && !httpCtx.establishingTunnel) {
                 try {
-                    final URI wsURI = new URI(httpCtx.wsRequestURI);
+                    final URI wsURI = httpCtx.wsRequestURI.toURI();
                     secure = "wss".equalsIgnoreCase(wsURI.getScheme());
                     httpCtx.protocolHandler = Version.RFC6455.createHandler(true);
                     httpCtx.handshake = httpCtx.protocolHandler.createHandShake(wsURI);
@@ -1001,22 +1002,17 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
 
-        private boolean isWSRequest(final String requestUri) {
-            return (requestUri.charAt(0) == 'w' && requestUri.charAt(1) == 's');
+        private boolean isWSRequest(final UriComponents requestUri) {
+            return requestUri.getScheme().startsWith("ws");
         }
 
         
         private void convertToUpgradeRequest(final HttpTransactionContext ctx) {
-            final int colonIdx = ctx.requestUrl.indexOf(':');
+            UriComponents originalUri = ctx.requestUri;
+            String newScheme = originalUri.getScheme().equalsIgnoreCase("https") ? "wss" : "ws";
 
-            if (colonIdx < 2 || colonIdx > 3) {
-                throw new IllegalArgumentException("Invalid websocket URL: " + ctx.requestUrl);
-            }
-
-            final StringBuilder sb = new StringBuilder(ctx.requestUrl);
-            sb.replace(0, colonIdx, ((colonIdx == 2) ? "http" : "https"));
-            ctx.wsRequestURI = ctx.requestUrl;
-            ctx.requestUrl = sb.toString();
+            ctx.wsRequestURI = originalUri;
+            ctx.requestUri = originalUri.withNewScheme(newScheme);
         }
 
         private void addHeaders(final Request request,
@@ -1690,7 +1686,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
                     httpTransactionContext.future = null;
                     newContext.invocationStatus = InvocationStatus.CONTINUE;
                     newContext.request = requestToSend;
-                    newContext.requestUrl = requestToSend.getUrl();
+                    newContext.requestUri = requestToSend.getURI();
                     HttpTransactionContext.set(c, newContext);
                     httpTransactionContext.provider.execute(c,
                                                             requestToSend,

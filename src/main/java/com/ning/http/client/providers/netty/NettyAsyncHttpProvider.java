@@ -28,6 +28,7 @@ import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.
 import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
 import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
+import static com.ning.http.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static com.ning.http.util.MiscUtils.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
@@ -657,10 +658,10 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private static String computeNonConnectRequestPath(AsyncHttpClientConfig config, UriComponents uri, ProxyServer proxyServer) {
         if (proxyServer != null && !(isSecure(uri) && config.isUseRelativeURIsWithSSLProxies()))
             return uri.toString();
-        else if (uri.getQuery() != null)
-            return uri.getPath() + "?" + uri.getQuery();
-        else
-            return uri.getPath();
+        else {
+            String path = getNonEmptyPath(uri);
+            return uri.getQuery() != null ? path + "?" + uri.getQuery() : path;
+        }
     }
     
     private static HttpRequest construct(AsyncHttpClientConfig config, Request request, HttpMethod m, UriComponents uri, ChannelBuffer buffer, ProxyServer proxyServer) throws IOException {

@@ -250,7 +250,7 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
         String methodName = request.getMethod();
         HttpMethodBase method = null;
         if (methodName.equalsIgnoreCase("POST") || methodName.equalsIgnoreCase("PUT")) {
-            EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getUrl()) : new PutMethod(request.getUrl());
+            EntityEnclosingMethod post = methodName.equalsIgnoreCase("POST") ? new PostMethod(request.getURI().toUrl()) : new PutMethod(request.getURI().toUrl());
 
             String bodyCharset = request.getBodyEncoding() == null ? DEFAULT_CHARSET : request.getBodyEncoding();
 
@@ -346,13 +346,13 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             }
             method = post;
         } else if (methodName.equalsIgnoreCase("DELETE")) {
-            method = new DeleteMethod(request.getUrl());
+            method = new DeleteMethod(request.getURI().toUrl());
         } else if (methodName.equalsIgnoreCase("HEAD")) {
-            method = new HeadMethod(request.getUrl());
+            method = new HeadMethod(request.getURI().toUrl());
         } else if (methodName.equalsIgnoreCase("GET")) {
-            method = new GetMethod(request.getUrl());
+            method = new GetMethod(request.getURI().toUrl());
         } else if (methodName.equalsIgnoreCase("OPTIONS")) {
-            method = new OptionsMethod(request.getUrl());
+            method = new OptionsMethod(request.getURI().toUrl());
         } else {
             throw new IllegalStateException(String.format("Invalid Method", methodName));
         }
