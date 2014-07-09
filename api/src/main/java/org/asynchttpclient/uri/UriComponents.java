@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.uri;
 
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -62,6 +64,15 @@ public class UriComponents {
 
     public String getQuery() {
         return query;
+    }
+
+    /**
+     * Convenient for HTTP layer when targeting server root
+     * 
+     * @return the raw path or "/" if it's null
+     */
+    public String getNonEmptyPath() {
+        return isNonEmpty(path) ? path : "/";
     }
 
     public String getPath() {

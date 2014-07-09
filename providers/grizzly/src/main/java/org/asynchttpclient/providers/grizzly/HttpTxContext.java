@@ -18,6 +18,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.providers.grizzly.bodyhandler.BodyHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler;
 import org.asynchttpclient.providers.grizzly.statushandler.StatusHandler.InvocationStatus;
+import org.asynchttpclient.uri.UriComponents;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
 import org.asynchttpclient.websocket.WebSocket;
 import org.glassfish.grizzly.CloseListener;
@@ -33,6 +34,7 @@ import org.glassfish.grizzly.websockets.ProtocolHandler;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.asynchttpclient.providers.grizzly.filters.events.GracefulCloseEvent;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChain;
@@ -50,7 +52,7 @@ public final class HttpTxContext {
     private final GrizzlyAsyncHttpProvider provider;
 
     private Request request;
-    private String requestUrl;
+    private UriComponents requestUri;
     private final AsyncHandler handler;
     private BodyHandler bodyHandler;
     private StatusHandler statusHandler;
@@ -61,7 +63,7 @@ public final class HttpTxContext {
     private final AtomicLong totalBodyWritten = new AtomicLong();
     private AsyncHandler.STATE currentState;
 
-    private String wsRequestURI;
+    private UriComponents wsRequestURI;
     private boolean isWSRequest;
     private HandShake handshake;
     private ProtocolHandler protocolHandler;
@@ -97,7 +99,7 @@ public final class HttpTxContext {
         this.handler = handler;
         redirectsAllowed = this.provider.getClientConfig().isFollowRedirect();
         maxRedirectCount = this.provider.getClientConfig().getMaxRedirects();
-        this.requestUrl = request.getUrl();
+        this.requestUri = request.getURI();
     }
 
     // ---------------------------------------------------------- Public Methods
@@ -160,12 +162,12 @@ public final class HttpTxContext {
         this.request = request;
     }
 
-    public String getRequestUrl() {
-        return requestUrl;
+    public UriComponents getRequestUri() {
+        return requestUri;
     }
 
-    public void setRequestUrl(String requestUrl) {
-        this.requestUrl = requestUrl;
+    public void setRequestUri(UriComponents requestUri) {
+        this.requestUri = requestUri;
     }
 
     public AsyncHandler getHandler() {
@@ -232,11 +234,11 @@ public final class HttpTxContext {
         this.currentState = currentState;
     }
 
-    public String getWsRequestURI() {
+    public UriComponents getWsRequestURI() {
         return wsRequestURI;
     }
 
-    public void setWsRequestURI(String wsRequestURI) {
+    public void setWsRequestURI(UriComponents wsRequestURI) {
         this.wsRequestURI = wsRequestURI;
     }
 

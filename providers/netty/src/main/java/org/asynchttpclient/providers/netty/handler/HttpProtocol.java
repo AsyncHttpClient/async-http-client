@@ -87,7 +87,7 @@ final class HttpProtocol extends Protocol {
             headers.add(HttpHeaders.Names.AUTHORIZATION, "Negotiate " + challengeHeader);
 
             return newRealmBuilder(realm)//
-                    .setUri(uri.getPath())//
+                    .setUri(uri.getNonEmptyPath())//
                     .setMethodName(request.getMethod())//
                     .setScheme(Realm.AuthScheme.KERBEROS)//
                     .build();
@@ -127,7 +127,7 @@ final class HttpProtocol extends Protocol {
             future.getAndSetAuth(false);
             return newRealmBuilder(realm)//
                     .setScheme(realm.getAuthScheme())//
-                    .setUri(uri.getPath())//
+                    .setUri(uri.getNonEmptyPath())//
                     .setMethodName(request.getMethod())//
                     .setNtlmMessageType2Received(true)//
                     .build();
@@ -137,7 +137,7 @@ final class HttpProtocol extends Protocol {
             Realm.AuthScheme authScheme = realm != null ? realm.getAuthScheme() : Realm.AuthScheme.NTLM;
             return newRealmBuilder(realm)//
                     .setScheme(authScheme)//
-                    .setUri(request.getURI().getPath())//
+                    .setUri(request.getURI().getNonEmptyPath())//
                     .setMethodName(request.getMethod())//
                     .build();
         }
@@ -153,7 +153,7 @@ final class HttpProtocol extends Protocol {
 
         return newRealmBuilder(realm)//
                 // .setScheme(realm.getAuthScheme())
-                .setUri(request.getURI().getPath())//
+                .setUri(request.getURI().getNonEmptyPath())//
                 .setMethodName(request.getMethod()).build();
     }
 
@@ -214,9 +214,9 @@ final class HttpProtocol extends Protocol {
             }
         } else {
             if (realm.isOmitQuery() || !isNonEmpty(requestURI.getQuery())) {
-                return requestURI.getPath();
+                return requestURI.getNonEmptyPath();
             } else {
-                return requestURI.getPath() + "?" + requestURI.getQuery();
+                return requestURI.getNonEmptyPath() + "?" + requestURI.getQuery();
             }
         }
     }
@@ -241,7 +241,7 @@ final class HttpProtocol extends Protocol {
                         return true;
                     }
                 } else {
-                    newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(request.getURI().getPath())
+                    newRealm = new Realm.RealmBuilder().clone(realm).setScheme(realm.getAuthScheme()).setUri(request.getURI().getNonEmptyPath())
                             .setMethodName(request.getMethod()).setUsePreemptiveAuth(true)
                             .parseWWWAuthenticateHeader(authenticateHeaders.get(0)).build();
                 }

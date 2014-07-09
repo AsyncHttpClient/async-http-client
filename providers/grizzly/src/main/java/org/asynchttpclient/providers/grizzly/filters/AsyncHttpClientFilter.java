@@ -218,7 +218,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             return true;
         }
 
-        if (isUpgradeRequest(httpTxContext.getHandler()) && isWSRequest(httpTxContext.getRequestUrl())) {
+        if (isUpgradeRequest(httpTxContext.getHandler()) && isWSRequest(httpTxContext.getRequestUri())) {
             httpTxContext.setWSRequest(true);
             convertToUpgradeRequest(httpTxContext);
         }
@@ -238,7 +238,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
             final int port = uri.getPort();
             requestPacket.setRequestURI(uri.getHost() + ':' + (port == -1 ? 443 : port));
         } else {
-            requestPacket.setRequestURI(uri.getPath());
+            requestPacket.setRequestURI(uri.getNonEmptyPath());
         }
 
         final BodyHandler bodyHandler = isPayloadAllowed(method) ?
@@ -257,7 +257,7 @@ public final class AsyncHttpClientFilter extends BaseFilter {
 
         if (httpTxContext.isWSRequest()) {
             try {
-                final URI wsURI = new URI(httpTxContext.getWsRequestURI());
+                final URI wsURI = httpTxContext.getWsRequestURI().toURI();
                 httpTxContext.setProtocolHandler(Version.RFC6455.createHandler(true));
                 httpTxContext.setHandshake(httpTxContext.getProtocolHandler().createHandShake(wsURI));
                 requestPacket = (HttpRequestPacket) httpTxContext.getHandshake().composeHeaders().getHttpHeader();
@@ -462,21 +462,18 @@ public final class AsyncHttpClientFilter extends BaseFilter {
         return (handler instanceof UpgradeHandler);
     }
 
-    private static boolean isWSRequest(final String requestUri) {
-        return (requestUri.charAt(0) == 'w' && requestUri.charAt(1) == 's');
+    private static boolean isWSRequest(final UriComponents requestUri) {
+        return requestUri.getScheme().startsWith("ws");
     }
 
     private static void convertToUpgradeRequest(final HttpTxContext ctx) {
-        final int colonIdx = ctx.getRequestUrl().indexOf(':');
-
-        if (colonIdx < 2 || colonIdx > 3) {
-            throw new IllegalArgumentException("Invalid websocket URL: " + ctx.getRequestUrl());
-        }
-
-        final StringBuilder sb = new StringBuilder(ctx.getRequestUrl());
-        sb.replace(0, colonIdx, ((colonIdx == 2) ? "http" : "https"));
-        ctx.setWsRequestURI(ctx.getRequestUrl());
-        ctx.setRequestUrl(sb.toString());
+        
+        UriComponents originalUri = ctx.getRequestUri();
+        String newScheme = originalUri.getScheme().equalsIgnoreCase("https")? "wss" : "ws";
+        ctx.setRequestUri(originalUri.withNewScheme(newScheme));
+        
+        ctx.setWsRequestURI(ctx.getRequestUri());
+        ctx.setRequestUri(originalUri.withNewScheme(newScheme));
     }
 
     private void addGeneralHeaders(final Request request, final HttpRequestPacket requestPacket) {

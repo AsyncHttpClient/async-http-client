@@ -79,10 +79,10 @@ public final class NettyRequestFactory {
             return uri.toString();
 
         else if (uri.getQuery() != null)
-            return uri.getPath() + "?" + uri.getQuery();
+            return uri.getNonEmptyPath() + "?" + uri.getQuery();
 
         else
-            return uri.getPath();
+            return uri.getNonEmptyPath();
     }
 
     private String hostHeader(Request request, UriComponents uri, Realm realm) {

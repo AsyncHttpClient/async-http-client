@@ -64,12 +64,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
 
+  protected abstract String acceptEncodingHeader();
+
+  protected abstract AsyncHttpProviderConfig<?, ?> getProviderConfig();
+
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncProviderEncodingTest() throws Exception {
         AsyncHttpClient client = getAsyncHttpClient(null);
         try {
             Request request = new RequestBuilder("GET").setUrl(getTargetUrl() + "?q=+%20x").build();
-            assertEquals(request.getUrl(), getTargetUrl() + "?q=%20%20x");
+            assertEquals(request.getURI().toUrl(), getTargetUrl() + "?q=%20%20x");
 
             String url = client.executeRequest(request, new AsyncCompletionHandler<String>() {
                 @Override
@@ -680,8 +684,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             client.close();
         }
     }
-
-    protected abstract String acceptEncodingHeader();
     
     @Test(groups = { "standalone", "default_provider", "async" })
     public void asyncDoPostBasicGZIPTest() throws Exception {
@@ -1595,6 +1597,4 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
             client.close();
         }
     }
-
-    protected abstract AsyncHttpProviderConfig<?, ?> getProviderConfig();
 }

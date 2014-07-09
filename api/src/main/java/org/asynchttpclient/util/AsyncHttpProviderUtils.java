@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.util;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpProvider;
 import org.asynchttpclient.HttpResponseBodyPart;
@@ -47,22 +45,6 @@ public class AsyncHttpProviderUtils {
             throw new IllegalArgumentException("The URI scheme, of the URI " + uri
                     + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
-    }
-
-    public final static UriComponents createNonEmptyPathURI(String u) {
-        UriComponents uri = UriComponents.create(u);
-        validateSupportedScheme(uri);
-
-        String path = uri.getPath();
-        if (path == null) {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ", must be non-null");
-        } else if (isNonEmpty(path) && path.charAt(0) != '/') {
-            throw new IllegalArgumentException("The URI path, of the URI " + uri  + ". must start with a '/'");
-        } else if (!isNonEmpty(path)) {
-            return UriComponents.create(u + "/");
-        }
-
-        return uri;
     }
 
     /**

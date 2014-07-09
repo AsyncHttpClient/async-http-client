@@ -31,13 +31,13 @@ public class ResumableAsyncHandlerTest {
         ResumableAsyncHandler h = new ResumableAsyncHandler(proc);
         Request request = new RequestBuilder("GET").setUrl("http://test/url").build();
         Request newRequest = h.adjustRequestRange(request);
-        assertEquals(newRequest.getUrl(), request.getUrl());
+        assertEquals(newRequest.getURI(), request.getURI());
         String rangeHeader = newRequest.getHeaders().getFirstValue("Range");
         assertNull(rangeHeader);
 
         proc.put("http://test/url", 5000);
         newRequest = h.adjustRequestRange(request);
-        assertEquals(newRequest.getUrl(), request.getUrl());
+        assertEquals(newRequest.getURI(), request.getURI());
         rangeHeader = newRequest.getHeaders().getFirstValue("Range");
         assertEquals(rangeHeader, "bytes=5000-");
     }

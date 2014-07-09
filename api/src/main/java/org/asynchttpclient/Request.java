@@ -46,13 +46,6 @@ public interface Request {
      */
     String getMethod();
 
-    /**
-     * Return the decoded url
-     *
-     * @return the decoded url
-     */
-    String getUrl();
-
     UriComponents getURI();
 
     /**
