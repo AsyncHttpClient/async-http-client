@@ -2369,7 +2369,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             ConnectionsPool<String,Connection> connectionPool;
             this.provider = provider;
             final AsyncHttpClientConfig config = provider.clientConfig;
-            if (config.getAllowPoolingConnection()) {
+            if (config.isAllowPoolingConnection()) {
                 ConnectionsPool pool = config.getConnectionsPool();
                 if (pool != null) {
                     //noinspection unchecked

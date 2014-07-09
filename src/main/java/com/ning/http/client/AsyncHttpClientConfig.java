@@ -250,17 +250,7 @@ public class AsyncHttpClientConfig {
      *
      * @return true if keep-alive is enabled
      */
-    public boolean getAllowPoolingConnection() {
-        return allowPoolingConnection;
-    }
-
-    /**
-     * Is the {@link ConnectionsPool} support enabled.
-     *
-     * @return true if keep-alive is enabled
-     * @deprecated - Use {@link AsyncHttpClientConfig#getAllowPoolingConnection()}
-     */
-    public boolean getKeepAlive() {
+    public boolean isAllowPoolingConnection() {
         return allowPoolingConnection;
     }
 
@@ -432,32 +422,20 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * Return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
-     *
-     * @return true if one of the {@link java.util.concurrent.ExecutorService} has been shutdown.
-     *
-     * @deprecated use #isValid
-     */
-    public boolean isClosed() {
-        return !isValid();
-    }
-
-    /**
      * @return <code>true</code> if both the application and reaper thread pools
      *  haven't yet been shutdown.
      *
      * @since 1.7.21
      */
     public boolean isValid() {
-        boolean atpRunning = true;
         try {
-            atpRunning = applicationThreadPool.isShutdown();
+            return applicationThreadPool.isShutdown();
         } catch (Exception ignore) {
             // isShutdown() will thrown an exception in an EE7 environment
             // when using a ManagedExecutorService.
             // When this is the case, we assume it's running.
         }
-        return atpRunning;
+        return true;
     }
 
     /**
@@ -696,18 +674,6 @@ public class AsyncHttpClientConfig {
          * @return a {@link Builder}
          */
         public Builder setAllowPoolingConnection(boolean allowPoolingConnection) {
-            this.allowPoolingConnection = allowPoolingConnection;
-            return this;
-        }
-
-        /**
-         * Set true if connection can be pooled by a {@link ConnectionsPool}. Default is true.
-         *
-         * @param allowPoolingConnection true if connection can be pooled by a {@link ConnectionsPool}
-         * @return a {@link Builder}
-         * @deprecated - Use {@link com.ning.http.client.AsyncHttpClientConfig.Builder#setAllowPoolingConnection(boolean)}
-         */
-        public Builder setKeepAlive(boolean allowPoolingConnection) {
             this.allowPoolingConnection = allowPoolingConnection;
             return this;
         }
@@ -1038,7 +1004,7 @@ public class AsyncHttpClientConfig {
          * @param prototype the configuration to use as a prototype.
          */
         public Builder(AsyncHttpClientConfig prototype) {
-            allowPoolingConnection = prototype.getAllowPoolingConnection();
+            allowPoolingConnection = prototype.isAllowPoolingConnection();
             providerConfig = prototype.getAsyncHttpProviderConfig();
             connectionsPool = prototype.getConnectionsPool();
             connectionTimeOutInMs = prototype.getConnectionTimeoutInMs();
@@ -1070,7 +1036,7 @@ public class AsyncHttpClientConfig {
             disableUrlEncodingForBoundedRequests = prototype.isDisableUrlEncodingForBoundedRequests();
             ioThreadMultiplier = prototype.getIoThreadMultiplier();
             maxRequestRetry = prototype.getMaxRequestRetry();
-            allowSslConnectionPool = prototype.getAllowPoolingConnection();
+            allowSslConnectionPool = prototype.isAllowPoolingConnection();
             removeQueryParamOnRedirect = prototype.isRemoveQueryParamOnRedirect();
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();

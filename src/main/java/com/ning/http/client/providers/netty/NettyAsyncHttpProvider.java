@@ -274,7 +274,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
 
         // This is dangerous as we can't catch a wrong typed ConnectionsPool
         ConnectionsPool<String, Channel> cp = (ConnectionsPool<String, Channel>) config.getConnectionsPool();
-        if (cp == null && config.getAllowPoolingConnection()) {
+        if (cp == null && config.isAllowPoolingConnection()) {
             cp = new NettyConnectionsPool(this, nettyTimer);
         } else if (cp == null) {
             cp = new NonConnectionsPool();
