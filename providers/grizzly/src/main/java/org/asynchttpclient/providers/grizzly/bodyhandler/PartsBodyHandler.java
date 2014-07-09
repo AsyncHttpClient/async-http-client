@@ -13,7 +13,7 @@
 
 package org.asynchttpclient.providers.grizzly.bodyhandler;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.Body;
 import org.asynchttpclient.Request;

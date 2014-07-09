@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.providers.netty.channel;
 
-import static org.asynchttpclient.util.DateUtil.millisTime;
+import static org.asynchttpclient.util.DateUtils.millisTime;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.providers.netty.DiscardEvent;

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import static org.asynchttpclient.util.MiscUtil.getBoolean;
+import static org.asynchttpclient.util.MiscUtils.getBoolean;
 
 import org.asynchttpclient.util.DefaultHostnameVerifier;
 

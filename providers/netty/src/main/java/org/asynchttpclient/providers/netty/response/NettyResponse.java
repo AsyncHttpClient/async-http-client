@@ -23,7 +23,7 @@ import org.asynchttpclient.cookie.CookieDecoder;
 import org.asynchttpclient.date.TimeConverter;
 import org.asynchttpclient.providers.ResponseBase;
 import org.asynchttpclient.util.AsyncHttpProviderUtils;
-import org.asynchttpclient.util.MiscUtil;
+import org.asynchttpclient.util.MiscUtils;
 
 import io.netty.handler.codec.http.HttpHeaders;
 
@@ -66,11 +66,11 @@ public class NettyResponse extends ResponseBase {
 
         List<String> setCookieHeaders = headers.getHeaders().get(HttpHeaders.Names.SET_COOKIE2);
 
-        if (!MiscUtil.isNonEmpty(setCookieHeaders)) {
+        if (!MiscUtils.isNonEmpty(setCookieHeaders)) {
             setCookieHeaders = headers.getHeaders().get(HttpHeaders.Names.SET_COOKIE);
         }
 
-        if (MiscUtil.isNonEmpty(setCookieHeaders)) {
+        if (MiscUtils.isNonEmpty(setCookieHeaders)) {
             List<Cookie> cookies = new ArrayList<Cookie>();
             for (String value : setCookieHeaders) {
                 Cookie c = CookieDecoder.decode(value, timeConverter);

@@ -17,7 +17,7 @@ package org.asynchttpclient.multipart;
 
 import static org.asynchttpclient.multipart.Part.CRLF_BYTES;
 import static org.asynchttpclient.multipart.Part.EXTRA_BYTES;
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.FluentCaseInsensitiveStringsMap;
 import org.asynchttpclient.util.StandardCharsets;

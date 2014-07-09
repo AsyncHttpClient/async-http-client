@@ -14,7 +14,7 @@ package org.asynchttpclient.util;
 
 import java.util.List;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.Param;
 

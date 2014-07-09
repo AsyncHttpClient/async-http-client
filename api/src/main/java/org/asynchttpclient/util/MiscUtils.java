@@ -15,9 +15,9 @@ package org.asynchttpclient.util;
 import java.util.Collection;
 import java.util.Map;
 
-public class MiscUtil {
+public class MiscUtils {
 
-    private MiscUtil() {
+    private MiscUtils() {
     }
 
     public static boolean isNonEmpty(String string) {

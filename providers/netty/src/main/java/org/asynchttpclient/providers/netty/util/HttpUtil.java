@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.providers.netty.util;
 
-import static org.asynchttpclient.util.MiscUtil.isNonEmpty;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import java.util.List;
 
