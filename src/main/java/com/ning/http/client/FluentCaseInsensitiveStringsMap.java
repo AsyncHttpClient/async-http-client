@@ -16,7 +16,7 @@
  */
 package com.ning.http.client;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;

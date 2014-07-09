@@ -28,7 +28,7 @@ import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.
 import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.SOCKET_CHANNEL_FACTORY;
 import static com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig.USE_BLOCKING_IO;
 import static com.ning.http.util.AsyncHttpProviderUtils.DEFAULT_CHARSET;
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.ssl.SslHandler.getDefaultBufferPool;
 
@@ -150,7 +150,7 @@ import com.ning.http.multipart.MultipartBody;
 import com.ning.http.multipart.MultipartRequestEntity;
 import com.ning.http.util.AsyncHttpProviderUtils;
 import com.ning.http.util.AuthenticatorUtils;
-import com.ning.http.util.MiscUtil;
+import com.ning.http.util.MiscUtils;
 import com.ning.http.util.ProxyUtils;
 import com.ning.http.util.SslUtils;
 
@@ -1999,13 +1999,13 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
     private final String computeRealmURI(Realm realm, UriComponents requestURI) {
         if (realm.isUseAbsoluteURI()) {
             
-            if (realm.isOmitQuery() && MiscUtil.isNonEmpty(requestURI.getQuery())) {
+            if (realm.isOmitQuery() && MiscUtils.isNonEmpty(requestURI.getQuery())) {
                 return requestURI.withNewQuery(null).toString();
             } else {
                 return requestURI.toString();
             }
         } else {
-            if (realm.isOmitQuery() || !MiscUtil.isNonEmpty(requestURI.getQuery())) {
+            if (realm.isOmitQuery() || !MiscUtils.isNonEmpty(requestURI.getQuery())) {
                 return requestURI.getPath();
             } else {
                 return requestURI.getPath() + "?" + requestURI.getQuery();

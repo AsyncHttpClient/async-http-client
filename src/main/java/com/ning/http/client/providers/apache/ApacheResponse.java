@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.apache;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import java.io.IOException;
 import java.io.InputStream;

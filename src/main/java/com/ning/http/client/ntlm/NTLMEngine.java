@@ -26,7 +26,7 @@
 
 package com.ning.http.client.ntlm;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import java.io.UnsupportedEncodingException;
 import java.security.Key;

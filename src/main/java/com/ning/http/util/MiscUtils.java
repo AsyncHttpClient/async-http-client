@@ -15,9 +15,9 @@ package com.ning.http.util;
 import java.util.Collection;
 import java.util.Map;
 
-public class MiscUtil {
+public final class MiscUtils {
 
-    private MiscUtil() {
+    private MiscUtils() {
     }
 
     public static boolean isNonEmpty(String string) {

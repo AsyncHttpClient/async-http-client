@@ -15,7 +15,7 @@
  */
 package com.ning.http.client.async;
 
-import static com.ning.http.util.DateUtil.millisTime;
+import static com.ning.http.util.DateUtils.millisTime;
 
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;

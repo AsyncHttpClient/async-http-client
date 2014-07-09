@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.apache;
 
-import static com.ning.http.util.DateUtil.millisTime;
+import static com.ning.http.util.DateUtils.millisTime;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.Request;

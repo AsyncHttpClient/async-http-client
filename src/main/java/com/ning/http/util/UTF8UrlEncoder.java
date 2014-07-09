@@ -21,7 +21,7 @@ package com.ning.http.util;
  */
 public final class UTF8UrlEncoder {
 
-    private static final boolean encodeSpaceUsingPlus = MiscUtil.getBoolean("com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus", false);
+    private static final boolean encodeSpaceUsingPlus = MiscUtils.getBoolean("com.ning.http.util.UTF8UrlEncoder.encodeSpaceUsingPlus", false);
 
     /**
      * Encoding table used for figuring out ascii characters that must be escaped

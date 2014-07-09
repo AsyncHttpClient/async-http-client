@@ -13,7 +13,7 @@
 package com.ning.http.client;
 
 import com.ning.http.util.AllowAllHostnameVerifier;
-import static com.ning.http.util.MiscUtil.getBoolean;
+import static com.ning.http.util.MiscUtils.getBoolean;
 
 import javax.net.ssl.HostnameVerifier;
 

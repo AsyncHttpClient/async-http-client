@@ -12,7 +12,7 @@
  */
 package com.ning.http.util;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Realm;

@@ -16,7 +16,7 @@
  */
 package com.ning.http.client;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

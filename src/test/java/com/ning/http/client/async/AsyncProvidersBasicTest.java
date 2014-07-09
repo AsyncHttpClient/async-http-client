@@ -15,8 +15,8 @@
  */
 package com.ning.http.client.async;
 
-import static com.ning.http.util.DateUtil.millisTime;
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.DateUtils.millisTime;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;

@@ -12,7 +12,7 @@
  */
 package com.ning.http.client.providers.netty.timeout;
 
-import static com.ning.http.util.DateUtil.millisTime;
+import static com.ning.http.util.DateUtils.millisTime;
 
 import org.jboss.netty.util.Timeout;
 

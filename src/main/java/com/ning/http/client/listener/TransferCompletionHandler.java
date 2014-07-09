@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 /**
  * A {@link com.ning.http.client.AsyncHandler} that can be used to notify a set of {@link com.ning.http.client.listener.TransferListener}

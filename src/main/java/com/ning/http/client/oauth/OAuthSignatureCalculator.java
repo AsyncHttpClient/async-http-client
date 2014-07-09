@@ -16,7 +16,7 @@
  */
 package com.ning.http.client.oauth;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.Param;
 import com.ning.http.client.Request;

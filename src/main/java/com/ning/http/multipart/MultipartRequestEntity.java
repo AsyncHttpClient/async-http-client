@@ -15,7 +15,7 @@
  */
 package com.ning.http.multipart;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 

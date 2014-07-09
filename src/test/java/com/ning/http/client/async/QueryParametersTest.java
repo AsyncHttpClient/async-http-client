@@ -15,7 +15,7 @@
  */
 package com.ning.http.client.async;
 
-import static com.ning.http.util.MiscUtil.isNonEmpty;
+import static com.ning.http.util.MiscUtils.isNonEmpty;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
