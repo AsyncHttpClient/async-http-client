@@ -50,6 +50,7 @@ public class Realm {
     private final boolean messageType2Received;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
+    private final boolean targetProxy;
 
     private final String ntlmDomain;
 
@@ -81,7 +82,8 @@ public class Realm {
                   boolean messageType2Received,
                   String opaque,
                   boolean useAbsoluteURI,
-                  boolean omitQuery) {
+                  boolean omitQuery,
+                  boolean targetProxy) {
 
         this.principal = principal;
         this.password = password;
@@ -103,6 +105,7 @@ public class Realm {
         this.messageType2Received = messageType2Received;
         this.useAbsoluteURI = useAbsoluteURI;
         this.omitQuery = omitQuery;
+        this.targetProxy = targetProxy;
     }
 
     public String getPrincipal() {
@@ -205,6 +208,10 @@ public class Realm {
         return omitQuery;
     }
 
+    public boolean isTargetProxy() {
+        return targetProxy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -295,6 +302,7 @@ public class Realm {
         private boolean messageType2Received = false;
         private boolean useAbsoluteURI = true;
         private boolean omitQuery = false;
+        private boolean targetProxy = false;
 
         public String getNtlmDomain() {
             return ntlmDomain;
@@ -449,6 +457,15 @@ public class Realm {
             this.omitQuery = omitQuery;
             return this;
         }
+  
+        public boolean isTargetProxy() {
+            return targetProxy;
+        }
+        
+        public RealmBuilder setTargetProxy(boolean targetProxy) {
+            this.targetProxy = targetProxy;
+            return this;
+        }
         
         public RealmBuilder parseWWWAuthenticateHeader(String headerLine) {
             setRealmName(match(headerLine, "realm"));
@@ -477,6 +494,7 @@ public class Realm {
             } else {
                 setScheme(AuthScheme.BASIC);
             }
+            setTargetProxy(true);
             return this;
         }
 
@@ -504,6 +522,7 @@ public class Realm {
             setNtlmMessageType2Received(clone.isNtlmMessageType2Received());
             setUseAbsoluteURI(clone.isUseAbsoluteURI());
             setOmitQuery(clone.isOmitQuery());
+            setTargetProxy(clone.isTargetProxy());
             return this;
         }
 
@@ -657,7 +676,8 @@ public class Realm {
                     messageType2Received,
                     opaque,
                     useAbsoluteURI,
-                    omitQuery);
+                    omitQuery,
+                    targetProxy);
         }
     }
 

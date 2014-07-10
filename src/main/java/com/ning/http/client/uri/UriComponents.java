@@ -119,15 +119,6 @@ public class UriComponents {
                 query);
     }
 
-    public UriComponents withNewPath(String newPath) {
-        return new UriComponents(scheme,//
-                userInfo,//
-                host,//
-                port,//
-                newPath,//
-                query);
-    }
-
     public UriComponents withNewQuery(String newQuery) {
         return new UriComponents(scheme,//
                 userInfo,//

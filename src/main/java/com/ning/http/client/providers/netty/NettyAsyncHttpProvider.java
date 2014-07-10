@@ -2120,9 +2120,9 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                         } else {
                             newRealm = new Realm.RealmBuilder().clone(realm)//
                                     .setScheme(realm.getAuthScheme())//
-                                    .setUri(request.getURI().withNewPath("/"))//
-                                    .setOmitQuery(true)//
+                                    .setUri(request.getURI())//
                                     .setMethodName("CONNECT")//
+                                    .setTargetProxy(true)//
                                     .setUsePreemptiveAuth(true)//
                                     .parseProxyAuthenticateHeader(proxyAuth.get(0))//
                                     .build();
