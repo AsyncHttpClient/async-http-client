@@ -20,7 +20,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
 import static org.asynchttpclient.providers.netty.util.HttpUtil.isNTLM;
-import static org.asynchttpclient.util.AsyncHttpProviderUtils.getNonEmptyPath;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 import org.asynchttpclient.AsyncHandler;
@@ -300,7 +299,7 @@ final class HttpProtocol extends Protocol {
                 } else {
                     newRealm = new Realm.RealmBuilder().clone(realm)//
                             .setScheme(realm.getAuthScheme())//
-                            .setUri(request.getURI().withNewPath("/"))//
+                            .setUri(request.getURI())//
                             .setOmitQuery(true)//
                             .setMethodName(HttpMethod.CONNECT.name())//
                             .setUsePreemptiveAuth(true)//

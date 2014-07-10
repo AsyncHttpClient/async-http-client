@@ -12,8 +12,6 @@
  */
 package org.asynchttpclient.uri;
 
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -118,15 +116,6 @@ public class UriComponents {
                 host,//
                 port,//
                 path,//
-                query);
-    }
-
-    public UriComponents withNewPath(String newPath) {
-        return new UriComponents(scheme,//
-                userInfo,//
-                host,//
-                port,//
-                newPath,//
                 query);
     }
 
