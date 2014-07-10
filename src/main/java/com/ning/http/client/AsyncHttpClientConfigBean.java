@@ -67,6 +67,7 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         strict302Handling = defaultStrict302Handling();
         hostnameVerifier = defaultHostnameVerifier();
+        acceptAnyCertificate = defaultAcceptAnyCertificate();
 
         if (defaultUseProxySelector()) {
             proxyServerSelector = ProxyUtils.getJdkDefaultProxyServerSelector();
@@ -173,11 +174,6 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
         return this;
     }
 
-    public AsyncHttpClientConfigBean setSslEngineFactory(SSLEngineFactory sslEngineFactory) {
-        this.sslEngineFactory = sslEngineFactory;
-        return this;
-    }
-
     public AsyncHttpClientConfigBean setProviderConfig(AsyncHttpProviderConfig<?, ?> providerConfig) {
         this.providerConfig = providerConfig;
         return this;
@@ -240,6 +236,11 @@ public class AsyncHttpClientConfigBean extends AsyncHttpClientConfig {
 
     public AsyncHttpClientConfigBean setIoThreadMultiplier(int ioThreadMultiplier) {
         this.ioThreadMultiplier = ioThreadMultiplier;
+        return this;
+    }
+
+    public AsyncHttpClientConfigBean setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+        this.acceptAnyCertificate = acceptAnyCertificate;
         return this;
     }
 }

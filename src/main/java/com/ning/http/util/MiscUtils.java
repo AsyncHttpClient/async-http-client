@@ -44,4 +44,8 @@ public final class MiscUtils {
         String systemPropValue = System.getProperty(systemPropName);
         return systemPropValue != null ? systemPropValue.equalsIgnoreCase("true") : defaultValue;
     }
+
+    public static <T> T withDefault(T value, T defaults) {
+        return value != null? value : value;
+    }
 }

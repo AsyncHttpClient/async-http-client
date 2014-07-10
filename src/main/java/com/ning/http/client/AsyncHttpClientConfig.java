@@ -25,9 +25,7 @@ import com.ning.http.util.ProxyUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 
-import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,7 +66,6 @@ public class AsyncHttpClientConfig {
     protected ExecutorService applicationThreadPool;
     protected ProxyServerSelector proxyServerSelector;
     protected SSLContext sslContext;
-    protected SSLEngineFactory sslEngineFactory;
     protected AsyncHttpProviderConfig<?, ?> providerConfig;
     protected ConnectionsPool<?, ?> connectionsPool;
     protected Realm realm;
@@ -86,6 +83,7 @@ public class AsyncHttpClientConfig {
     protected boolean useRelativeURIsWithSSLProxies;
     protected int maxConnectionLifeTimeInMs;
     protected TimeConverter timeConverter;
+    protected boolean acceptAnyCertificate;
 
     protected AsyncHttpClientConfig() {
     }
@@ -106,7 +104,6 @@ public class AsyncHttpClientConfig {
                                   ExecutorService applicationThreadPool,
                                   ProxyServerSelector proxyServerSelector,
                                   SSLContext sslContext,
-                                  SSLEngineFactory sslEngineFactory,
                                   AsyncHttpProviderConfig<?, ?> providerConfig,
                                   ConnectionsPool<?, ?> connectionsPool, Realm realm,
                                   List<RequestFilter> requestFilters,
@@ -121,7 +118,8 @@ public class AsyncHttpClientConfig {
                                   int ioThreadMultiplier,
                                   boolean strict302Handling,
                                   boolean useRelativeURIsWithSSLProxies,
-                                  TimeConverter timeConverter) {
+                                  TimeConverter timeConverter, //
+                                  boolean acceptAnyCertificate) {
 
         this.maxTotalConnections = maxTotalConnections;
         this.maxConnectionPerHost = maxConnectionPerHost;
@@ -137,7 +135,6 @@ public class AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.allowPoolingConnection = keepAlive;
         this.sslContext = sslContext;
-        this.sslEngineFactory = sslEngineFactory;
         this.providerConfig = providerConfig;
         this.connectionsPool = connectionsPool;
         this.realm = realm;
@@ -161,6 +158,7 @@ public class AsyncHttpClientConfig {
         this.proxyServerSelector = proxyServerSelector;
         this.disableUrlEncodingForBoundedRequests = disableUrlEncodingForBoundedRequests;
         this.timeConverter = timeConverter;
+        this.acceptAnyCertificate = acceptAnyCertificate;
     }
 
     /**
@@ -308,28 +306,6 @@ public class AsyncHttpClientConfig {
      */
     public ConnectionsPool<?, ?> getConnectionsPool() {
         return connectionsPool;
-    }
-
-    /**
-     * Return an instance of {@link SSLEngineFactory} used for SSL connection.
-     *
-     * @return an instance of {@link SSLEngineFactory} used for SSL connection.
-     */
-    public SSLEngineFactory getSSLEngineFactory() {
-        if (sslEngineFactory == null) {
-            return new SSLEngineFactory() {
-                public SSLEngine newSSLEngine() {
-                    if (sslContext != null) {
-                        SSLEngine sslEngine = sslContext.createSSLEngine();
-                        sslEngine.setUseClientMode(true);
-                        return sslEngine;
-                    } else {
-                        return null;
-                    }
-                }
-            };
-        }
-        return sslEngineFactory;
     }
 
     /**
@@ -491,10 +467,17 @@ public class AsyncHttpClientConfig {
     }
 
     /**
-     * @return 1.8.2
+     * since 1.8.2
      */
     public TimeConverter getTimeConverter() {
         return timeConverter;
+    }
+
+    /**
+     * since 1.9.0
+     */
+    public boolean isAcceptAnyCertificate() {
+        return acceptAnyCertificate;
     }
 
     /**
@@ -525,11 +508,11 @@ public class AsyncHttpClientConfig {
         private boolean removeQueryParamOnRedirect = defaultRemoveQueryParamOnRedirect();
         private boolean strict302Handling = defaultStrict302Handling();
         private HostnameVerifier hostnameVerifier = defaultHostnameVerifier();
+        private boolean acceptAnyCertificate = defaultAcceptAnyCertificate();
 
         private ExecutorService applicationThreadPool;
         private ProxyServerSelector proxyServerSelector = null;
         private SSLContext sslContext;
-        private SSLEngineFactory sslEngineFactory;
         private AsyncHttpProviderConfig<?, ?> providerConfig;
         private ConnectionsPool<?, ?> connectionsPool;
         private Realm realm;
@@ -714,30 +697,12 @@ public class AsyncHttpClientConfig {
         }
 
         /**
-         * Set the {@link SSLEngineFactory} for secure connection.
-         *
-         * @param sslEngineFactory the {@link SSLEngineFactory} for secure connection
-         * @return a {@link Builder}
-         */
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-            this.sslEngineFactory = sslEngineFactory;
-            return this;
-        }
-
-        /**
          * Set the {@link SSLContext} for secure connection.
          *
          * @param sslContext the {@link SSLContext} for secure connection
          * @return a {@link Builder}
          */
         public Builder setSSLContext(final SSLContext sslContext) {
-            this.sslEngineFactory = new SSLEngineFactory() {
-                public SSLEngine newSSLEngine() throws GeneralSecurityException {
-                    SSLEngine sslEngine = sslContext.createSSLEngine();
-                    sslEngine.setUseClientMode(true);
-                    return sslEngine;
-                }
-            };
             this.sslContext = sslContext;
             return this;
         }
@@ -998,6 +963,11 @@ public class AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            this.acceptAnyCertificate = acceptAnyCertificate;
+            return this;
+        }
+
         /**
          * Create a config builder with values taken from the given prototype configuration.
          *
@@ -1018,7 +988,6 @@ public class AsyncHttpClientConfig {
             realm = prototype.getRealm();
             requestTimeoutInMs = prototype.getRequestTimeoutInMs();
             sslContext = prototype.getSSLContext();
-            sslEngineFactory = prototype.getSSLEngineFactory();
             userAgent = prototype.getUserAgent();
             followRedirect = prototype.isFollowRedirect();
             compressionEnabled = prototype.isCompressionEnabled();
@@ -1041,6 +1010,7 @@ public class AsyncHttpClientConfig {
             hostnameVerifier = prototype.getHostnameVerifier();
             strict302Handling = prototype.isStrict302Handling();
             timeConverter = prototype.timeConverter;
+            acceptAnyCertificate = prototype.acceptAnyCertificate;
         }
 
         /**
@@ -1073,40 +1043,39 @@ public class AsyncHttpClientConfig {
                 proxyServerSelector = ProxyServerSelector.NO_PROXY_SELECTOR;
             }
 
-            return new AsyncHttpClientConfig(maxTotalConnections,
-                    maxConnectionPerHost,
-                    connectionTimeOutInMs,
-                    webSocketIdleTimeoutInMs,
-                    idleConnectionInPoolTimeoutInMs,
-                    idleConnectionTimeoutInMs,
-                    requestTimeoutInMs,
-                    maxConnectionLifeTimeInMs,
-                    followRedirect,
-                    maxDefaultRedirects,
-                    compressionEnabled,
-                    userAgent,
-                    allowPoolingConnection,
-                    applicationThreadPool,
-                    proxyServerSelector,
-                    sslContext,
-                    sslEngineFactory,
-                    providerConfig,
-                    connectionsPool,
-                    realm,
-                    requestFilters,
-                    responseFilters,
-                    ioExceptionFilters,
-                    requestCompressionLevel,
-                    maxRequestRetry,
-                    allowSslConnectionPool,
-                    disableUrlEncodingForBoundedRequests,
-                    removeQueryParamOnRedirect,
-                    hostnameVerifier,
-                    ioThreadMultiplier,
-                    strict302Handling,
-                    useRelativeURIsWithSSLProxies,
-                    timeConverter);
+            return new AsyncHttpClientConfig(maxTotalConnections, //
+                    maxConnectionPerHost, //
+                    connectionTimeOutInMs, //
+                    webSocketIdleTimeoutInMs, //
+                    idleConnectionInPoolTimeoutInMs, //
+                    idleConnectionTimeoutInMs, //
+                    requestTimeoutInMs, //
+                    maxConnectionLifeTimeInMs, //
+                    followRedirect, //
+                    maxDefaultRedirects, //
+                    compressionEnabled, //
+                    userAgent, //
+                    allowPoolingConnection, //
+                    applicationThreadPool, //
+                    proxyServerSelector, //
+                    sslContext, //
+                    providerConfig, //
+                    connectionsPool, //
+                    realm, //
+                    requestFilters, //
+                    responseFilters, //
+                    ioExceptionFilters, //
+                    requestCompressionLevel, //
+                    maxRequestRetry, //
+                    allowSslConnectionPool, //
+                    disableUrlEncodingForBoundedRequests, //
+                    removeQueryParamOnRedirect, //
+                    hostnameVerifier, //
+                    ioThreadMultiplier, //
+                    strict302Handling, //
+                    useRelativeURIsWithSSLProxies, //
+                    timeConverter, //
+                    acceptAnyCertificate);
         }
     }
 }
-

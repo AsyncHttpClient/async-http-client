@@ -383,7 +383,7 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         boolean defaultSecState = (context != null);
         if (context == null) {
             try {
-                context = SslUtils.getSSLContext();
+                context = SslUtils.getInstance().getSSLContext(clientConfig.isAcceptAnyCertificate());
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }

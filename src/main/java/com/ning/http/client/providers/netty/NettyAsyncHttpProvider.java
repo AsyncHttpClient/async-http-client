@@ -373,7 +373,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelPipeline pipeline = pipeline();
 
                 try {
-                    SSLEngine sslEngine = createSSLEngine();
+                    SSLEngine sslEngine = SslUtils.getInstance().createClientSSLEngine(config);
                     SslHandler sslHandler = handshakeTimeoutInMillis > 0 ? new SslHandler(sslEngine, getDefaultBufferPool(), false, ImmediateExecutor.INSTANCE, nettyTimer,
                             handshakeTimeoutInMillis) : new SslHandler(sslEngine);
                     pipeline.addLast(SSL_HANDLER, sslHandler);
@@ -399,7 +399,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                 ChannelPipeline pipeline = pipeline();
 
                 try {
-                    pipeline.addLast(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                    pipeline.addLast(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
                 } catch (Throwable ex) {
                     abort(cl.future(), ex);
                 }
@@ -437,14 +437,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         return null;
     }
 
-    private SSLEngine createSSLEngine() throws IOException, GeneralSecurityException {
-        SSLEngine sslEngine = config.getSSLEngineFactory().newSSLEngine();
-        if (sslEngine == null) {
-            sslEngine = SslUtils.getSSLEngine();
-        }
-        return sslEngine;
-    }
-
     private HttpClientCodec createHttpClientCodec() {
         return new HttpClientCodec(httpClientCodecMaxInitialLineLength, httpClientCodecMaxHeaderSize, httpClientCodecMaxChunkSize);
     }
@@ -460,7 +452,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         } else if (channel.getPipeline().get(HTTP_HANDLER) != null && HTTP.equalsIgnoreCase(scheme)) {
             return channel;
         } else if (channel.getPipeline().get(SSL_HANDLER) == null && isSecure(scheme)) {
-            channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+            channel.getPipeline().addFirst(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
         }
         return channel;
     }
@@ -1383,7 +1375,7 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
         if (isSecure(scheme)) {
             if (p.get(SSL_HANDLER) == null) {
                 p.addFirst(HTTP_HANDLER, createHttpClientCodec());
-                p.addFirst(SSL_HANDLER, new SslHandler(createSSLEngine()));
+                p.addFirst(SSL_HANDLER, new SslHandler(SslUtils.getInstance().createClientSSLEngine(config)));
             } else {
                 p.addAfter(SSL_HANDLER, HTTP_HANDLER, createHttpClientCodec());
             }

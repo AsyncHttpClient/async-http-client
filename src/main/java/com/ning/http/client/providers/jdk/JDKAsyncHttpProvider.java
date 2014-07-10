@@ -186,7 +186,7 @@ public class JDKAsyncHttpProvider implements AsyncHttpProvider {
             SSLContext sslContext = config.getSSLContext();
             if (sslContext == null) {
                 try {
-                    sslContext = SslUtils.getSSLContext();
+                    sslContext = SslUtils.getInstance().getSSLContext(config.isAcceptAnyCertificate());
                 } catch (NoSuchAlgorithmException e) {
                     throw new IOException(e.getMessage());
                 } catch (GeneralSecurityException e) {

@@ -539,11 +539,6 @@ public class SimpleAsyncHttpClient {
             return this;
         }
 
-        public Builder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-            configBuilder.setSSLEngineFactory(sslEngineFactory);
-            return this;
-        }
-
         public Builder setSSLContext(final SSLContext sslContext) {
             configBuilder.setSSLContext(sslContext);
             return this;
@@ -666,6 +661,11 @@ public class SimpleAsyncHttpClient {
 
         public Builder setProviderClass(String providerClass) {
             this.providerClass = providerClass;
+            return this;
+        }
+
+        public Builder setAcceptAnyCertificate(boolean acceptAnyCertificate) {
+            configBuilder.setAcceptAnyCertificate(acceptAnyCertificate);
             return this;
         }
 

@@ -121,4 +121,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static HostnameVerifier defaultHostnameVerifier() {
         return new DefaultHostnameVerifier();
     }
+    
+    public static boolean defaultAcceptAnyCertificate() {
+        return getBoolean(ASYNC_CLIENT + "acceptAnyCertificate", false);
+    }
 }
