@@ -1133,6 +1133,7 @@ public class AsyncHttpClientConfig {
             strict302Handling = prototype.isStrict302Handling();
             useRelativeURIsWithSSLProxies = prototype.isUseRelativeURIsWithSSLProxies();
             timeConverter = prototype.getTimeConverter();
+            acceptAnyCertificate = prototype.isAcceptAnyCertificate();
         }
 
         /**
