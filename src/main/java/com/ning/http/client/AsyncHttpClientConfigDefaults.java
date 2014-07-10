@@ -12,8 +12,9 @@
  */
 package com.ning.http.client;
 
-import com.ning.http.util.AllowAllHostnameVerifier;
 import static com.ning.http.util.MiscUtils.getBoolean;
+
+import com.ning.http.util.DefaultHostnameVerifier;
 
 import javax.net.ssl.HostnameVerifier;
 
@@ -118,6 +119,6 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static HostnameVerifier defaultHostnameVerifier() {
-        return new AllowAllHostnameVerifier();
+        return new DefaultHostnameVerifier();
     }
 }
