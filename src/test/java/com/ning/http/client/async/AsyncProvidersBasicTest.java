@@ -24,7 +24,6 @@ import static org.testng.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -654,56 +653,6 @@ public abstract class AsyncProvidersBasicTest extends AbstractBasicTest {
                             System.out.println(">>>>> " + response.getHeader("X-param_" + i));
                             assertEquals(response.getHeader("X-param_" + i), "value_" + i);
 
-                        }
-                    } finally {
-                        l.countDown();
-                    }
-                    return response;
-                }
-            }).get();
-            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                Assert.fail("Timeout out");
-            }
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test(groups = { "standalone", "default_provider", "async" })
-    public void asyncDoPostEntityWriterTest() throws Throwable {
-        AsyncHttpClient client = getAsyncHttpClient(null);
-        try {
-            final CountDownLatch l = new CountDownLatch(1);
-            FluentCaseInsensitiveStringsMap h = new FluentCaseInsensitiveStringsMap();
-            h.add("Content-Type", "application/x-www-form-urlencoded");
-
-            final StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 5; i++) {
-                sb.append("param_");
-                sb.append(i);
-                sb.append("=value_");
-                sb.append(i);
-                sb.append("&");
-            }
-            sb.setLength(sb.length() - 1);
-            byte[] bytes = sb.toString().getBytes();
-            h.add("Content-Length", String.valueOf(bytes.length));
-
-            client.preparePost(getTargetUrl()).setHeaders(h).setBody(new Request.EntityWriter() {
-
-                /* @Override */
-                public void writeEntity(OutputStream out) throws IOException {
-                    out.write(sb.toString().getBytes("UTF-8"));
-                }
-            }).execute(new AsyncCompletionHandlerAdapter() {
-
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-                    try {
-                        assertEquals(response.getStatusCode(), 200);
-                        for (int i = 1; i < 5; i++) {
-                            System.out.println(">>>>> " + response.getHeader("X-param_" + i));
-                            assertEquals(response.getHeader("X-param_" + i), "value_" + i);
                         }
                     } finally {
                         l.countDown();

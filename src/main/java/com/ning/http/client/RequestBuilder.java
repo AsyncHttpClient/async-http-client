@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.util.QueryComputer;
 
@@ -107,16 +106,6 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     @Override
     public RequestBuilder setBody(byte[] data) {
         return super.setBody(data);
-    }
-
-    @Override
-    public RequestBuilder setBody(EntityWriter dataWriter, long length) {
-        return super.setBody(dataWriter, length);
-    }
-
-    @Override
-    public RequestBuilder setBody(EntityWriter dataWriter) {
-        return super.setBody(dataWriter);
     }
 
     /**

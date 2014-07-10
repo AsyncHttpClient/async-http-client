@@ -1848,7 +1848,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
             new StringBodyHandler(),
             new ByteArrayBodyHandler(),
             new ParamsBodyHandler(),
-            new EntityWriterBodyHandler(),
             new StreamDataBodyHandler(),
             new PartsBodyHandler(),
             new FileBodyHandler(),
@@ -2039,41 +2038,6 @@ public class GrizzlyAsyncHttpProvider implements AsyncHttpProvider {
         }
 
     } // END ParamsBodyHandler
-
-
-    private static final class EntityWriterBodyHandler extends BodyHandler {
-
-        // -------------------------------------------- Methods from BodyHandler
-
-
-        public boolean handlesBodyType(final Request request) {
-            return (request.getEntityWriter() != null);
-        }
-
-        @SuppressWarnings({"unchecked"})
-        public boolean doHandle(final FilterChainContext ctx,
-                             final Request request,
-                             final HttpRequestPacket requestPacket)
-        throws IOException {
-
-            final MemoryManager mm = ctx.getMemoryManager();
-            Buffer b = mm.allocate(512);
-            BufferOutputStream o = new BufferOutputStream(mm, b, true);
-            final Request.EntityWriter writer = request.getEntityWriter();
-            writer.writeEntity(o);
-            b = o.getBuffer();
-            b.trim();
-            if (b.hasRemaining()) {
-                final HttpContent content = requestPacket.httpContentBuilder().content(b).build();
-                content.setLast(true);
-                ctx.write(content, ((!requestPacket.isCommitted()) ? ctx.getTransportContext().getCompletionHandler() : null));
-            }
-
-            return true;
-        }
-
-    } // END EntityWriterBodyHandler
-
 
     private static final class StreamDataBodyHandler extends BodyHandler {
 

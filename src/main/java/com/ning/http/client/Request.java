@@ -17,9 +17,7 @@
 package com.ning.http.client;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
@@ -39,13 +37,6 @@ import com.ning.http.client.uri.UriComponents;
  * </pre></blockquote>
  */
 public interface Request {
-
-    /**
-     * An entity that can be used to manipulate the Request's body output before it get sent.
-     */
-    public static interface EntityWriter {
-        void writeEntity(OutputStream out) throws IOException;
-    }
 
     /**
      * Return the request's method name (GET, POST, etc.)
@@ -99,13 +90,6 @@ public interface Request {
      * @return an InputStream representation of the current request's body.
      */
     InputStream getStreamData();
-
-    /**
-     * Return the current request's body as an EntityWriter
-     *
-     * @return an EntityWriter representation of the current request's body.
-     */
-    EntityWriter getEntityWriter();
 
     /**
      * Return the current request's body generator.

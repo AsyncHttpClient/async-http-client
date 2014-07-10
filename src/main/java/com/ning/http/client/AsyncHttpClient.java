@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;
@@ -267,16 +266,6 @@ public class AsyncHttpClient implements Closeable {
         @Override
         public BoundRequestBuilder setBody(byte[] data) {
             return super.setBody(data);
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(EntityWriter dataWriter, long length) {
-            return super.setBody(dataWriter, length);
-        }
-
-        @Override
-        public BoundRequestBuilder setBody(EntityWriter dataWriter) {
-            return super.setBody(dataWriter);
         }
 
         @Override

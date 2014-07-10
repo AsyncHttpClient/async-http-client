@@ -62,7 +62,6 @@ import javax.net.ssl.SSLEngine;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -835,17 +834,6 @@ public class NettyAsyncHttpProvider extends SimpleChannelUpstreamHandler impleme
                     nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
                 }
 
-            } else if (request.getEntityWriter() != null) {
-                int length = (int) request.getContentLength();
-
-                if (length == -1) {
-                    length = MAX_BUFFERED_BYTES;
-                }
-
-                ChannelBuffer b = ChannelBuffers.dynamicBuffer(length);
-                request.getEntityWriter().writeEntity(new ChannelBufferOutputStream(b));
-                nettyRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, b.writerIndex());
-                nettyRequest.setContent(b);
             } else if (request.getFile() != null) {
                 File file = request.getFile();
                 if (!file.isFile()) {

@@ -94,7 +94,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -290,8 +289,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
                 post.setRequestEntity(mre);
                 post.setRequestHeader("Content-Type", mre.getContentType());
                 post.setRequestHeader("Content-Length", String.valueOf(mre.getContentLength()));
-            } else if (request.getEntityWriter() != null) {
-                post.setRequestEntity(new EntityWriterRequestEntity(request.getEntityWriter(), computeAndSetContentLength(request, post)));
             } else if (request.getFile() != null) {
                 File file = request.getFile();
                 if (!file.isFile()) {
@@ -710,32 +707,6 @@ public class ApacheAsyncHttpProvider implements AsyncHttpProvider {
             ++i;
         }
         return new MultipartRequestEntity(parts, methodParams);
-    }
-
-    public class EntityWriterRequestEntity implements org.apache.commons.httpclient.methods.RequestEntity {
-        private Request.EntityWriter entityWriter;
-        private long contentLength;
-
-        public EntityWriterRequestEntity(Request.EntityWriter entityWriter, long contentLength) {
-            this.entityWriter = entityWriter;
-            this.contentLength = contentLength;
-        }
-
-        public long getContentLength() {
-            return contentLength;
-        }
-
-        public String getContentType() {
-            return null;
-        }
-
-        public boolean isRepeatable() {
-            return false;
-        }
-
-        public void writeRequest(OutputStream out) throws IOException {
-            entityWriter.writeEntity(out);
-        }
     }
 
     private static class TrustingSSLSocketFactory extends SSLSocketFactory {

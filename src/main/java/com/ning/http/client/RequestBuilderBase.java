@@ -29,7 +29,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ning.http.client.Request.EntityWriter;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.uri.UriComponents;
 import com.ning.http.util.AsyncHttpProviderUtils;
@@ -55,7 +54,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         private byte[] byteData;
         private String stringData;
         private InputStream streamData;
-        private EntityWriter entityWriter;
         private BodyGenerator bodyGenerator;
         private List<Param> formParams;
         private List<Part> parts;
@@ -85,7 +83,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 this.byteData = prototype.getByteData();
                 this.stringData = prototype.getStringData();
                 this.streamData = prototype.getStreamData();
-                this.entityWriter = prototype.getEntityWriter();
                 this.bodyGenerator = prototype.getBodyGenerator();
                 this.formParams = prototype.getFormParams() == null ? null : new ArrayList<Param>(prototype.getFormParams());
                 this.parts = prototype.getParts() == null ? null : new ArrayList<Part>(prototype.getParts());
@@ -136,10 +133,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         public InputStream getStreamData() {
             return streamData;
-        }
-
-        public EntityWriter getEntityWriter() {
-            return entityWriter;
         }
 
         public BodyGenerator getBodyGenerator() {
@@ -376,7 +369,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         request.byteData = null;
         request.stringData = null;
         request.streamData = null;
-        request.entityWriter = null;
         request.length = -1;
     }
 
@@ -410,19 +402,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetNonMultipartData();
         resetMultipartData();
         request.streamData = stream;
-        return derived.cast(this);
-    }
-
-    public T setBody(EntityWriter dataWriter) {
-        return setBody(dataWriter, -1);
-    }
-
-    public T setBody(EntityWriter dataWriter, long length) {
-        resetFormParams();
-        resetNonMultipartData();
-        resetMultipartData();
-        request.entityWriter = dataWriter;
-        request.length = length;
         return derived.cast(this);
     }
 
