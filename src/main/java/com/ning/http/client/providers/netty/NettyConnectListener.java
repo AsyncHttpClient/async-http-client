@@ -21,7 +21,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.ProxyServer;
 import com.ning.http.client.Request;
 import com.ning.http.client.uri.UriComponents;
-import com.ning.http.util.AllowAllHostnameVerifier;
+import com.ning.http.util.Base64;
 import com.ning.http.util.ProxyUtils;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -34,22 +34,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Non Blocking connect.
  */
 final class NettyConnectListener<T> implements ChannelFutureListener {
-    private final static Logger logger = LoggerFactory.getLogger(NettyConnectListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
     private final AsyncHttpClientConfig config;
     private final NettyResponseFuture<T> future;
     private final HttpRequest nettyRequest;
-    private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
 
     private NettyConnectListener(AsyncHttpClientConfig config,
                                  NettyResponseFuture<T> future) {
@@ -66,38 +65,51 @@ final class NettyConnectListener<T> implements ChannelFutureListener {
         if (f.isSuccess()) {
             Channel channel = f.getChannel();
             channel.getPipeline().getContext(NettyAsyncHttpProvider.class).setAttachment(future);
-            SslHandler sslHandler = (SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER);
-            if (!handshakeDone.getAndSet(true) && (sslHandler != null)) {
-                ((SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER)).handshake().addListener(this);
-                return;
+            final SslHandler sslHandler = (SslHandler) channel.getPipeline().get(NettyAsyncHttpProvider.SSL_HANDLER);
+            
+            final HostnameVerifier hostnameVerifier = config.getHostnameVerifier();
+            if (hostnameVerifier != null && sslHandler != null) {
+                final String host = future.getURI().getHost();
+                sslHandler.handshake().addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture handshakeFuture) throws Exception {
+                        if (handshakeFuture.isSuccess()) {
+                            Channel channel = (Channel) handshakeFuture.getChannel();
+                            SSLEngine engine = sslHandler.getEngine();
+                            SSLSession session = engine.getSession();
+
+                            LOGGER.debug("onFutureSuccess: session = {}, id = {}, isValid = {}, host = {}", session.toString(),
+                                    Base64.encode(session.getId()), session.isValid(), host);
+                            if (!hostnameVerifier.verify(host, session)) {
+                                ConnectException exception = new ConnectException("HostnameVerifier exception");
+                                future.abort(exception);
+                                throw exception;
+                            } else {
+                                future.provider().writeRequest(channel, config, future);
+                            }
+                        }
+                    }
+                });
+            } else {
+                future.provider().writeRequest(f.getChannel(), config, future);
             }
 
-            HostnameVerifier v = config.getHostnameVerifier();
-            if (sslHandler != null && !(v instanceof AllowAllHostnameVerifier)) {
-                // TODO: channel.getRemoteAddress()).getHostName() is very expensive. Should cache the result.
-                if (!v.verify(InetSocketAddress.class.cast(channel.getRemoteAddress()).getHostName(),
-                        sslHandler.getEngine().getSession())) {
-                    throw new ConnectException("HostnameVerifier exception.");
-                }
-            }
-
-            future.provider().writeRequest(f.getChannel(), config, future);
         } else {
             Throwable cause = f.getCause();
 
             boolean canRetry = future.canRetry();
-            logger.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), canRetry);
+            LOGGER.debug("Trying to recover a dead cached channel {} with a retry value of {} ", f.getChannel(), canRetry);
             if (canRetry && cause != null && (NettyAsyncHttpProvider.abortOnDisconnectException(cause)
                     || cause instanceof ClosedChannelException
                     || future.getState() != NettyResponseFuture.STATE.NEW)) {
 
-                logger.debug("Retrying {} ", nettyRequest);
+                LOGGER.debug("Retrying {} ", nettyRequest);
                 if (future.provider().remotelyClosed(f.getChannel(), future)) {
                     return;
                 }
             }
 
-            logger.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
+            LOGGER.debug("Failed to recover from exception: {} with channel {}", cause, f.getChannel());
 
             boolean printCause = f.getCause() != null && cause.getMessage() != null;
             ConnectException e = new ConnectException(printCause ? cause.getMessage() + " to " + future.getURI().toString() : future.getURI().toString());

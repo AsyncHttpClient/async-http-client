@@ -18,6 +18,7 @@ package com.ning.http.client.async;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig.Builder;
 import com.ning.http.client.Response;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -34,16 +35,19 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -207,7 +211,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void zeroCopyPostTest() throws Throwable {
-        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        final AsyncHttpClient client = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             ClassLoader cl = getClass().getClassLoader();
             // override system properties
@@ -226,7 +230,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLRequestsTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).build());
         try {
             String body = "hello there";
 
@@ -246,7 +250,7 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
 
     @Test(groups = { "standalone", "default_provider" })
     public void multipleSSLWithoutCacheTest() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).setAllowSslConnectionPool(false).build());
+        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(new AtomicBoolean(true))).setAllowSslConnectionPool(false).build());
         try {
             String body = "hello there";
             c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute();
@@ -262,55 +266,72 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
     }
 
     @Test(groups = { "standalone", "default_provider" })
-    public void reconnectsAfterFailedCertificationPath() throws Throwable {
-        final AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext()).build());
+    public void reconnectsAfterFailedCertificationPath() throws Exception {
+        
+        AtomicBoolean trust = new AtomicBoolean(false);
+        AsyncHttpClient c = getAsyncHttpClient(new Builder().setSSLContext(createSSLContext(trust)).build());
         try {
-            final String body = "hello there";
+            String body = "hello there";
 
-            TRUST_SERVER_CERT.set(false);
+            // first request fails because server certificate is rejected
+            Throwable cause = null;
             try {
-                // first request fails because server certificate is rejected
-                try {
-                    c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
-                } catch (final ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof ConnectException) {
-                        assertNotNull(cause.getCause());
-                        assertTrue(cause.getCause() instanceof SSLHandshakeException);
-                    } else {
-                        assertTrue(cause instanceof SSLHandshakeException);
-                    }
+                c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (final ExecutionException e) {
+                cause = e.getCause();
+                if (cause instanceof ConnectException) {
+                    //assertNotNull(cause.getCause());
+                    assertTrue(cause.getCause() instanceof SSLHandshakeException, "Expected an SSLHandshakeException, got a " + cause.getCause());
+                } else {
+                   assertTrue(cause instanceof IOException, "Expected an IOException, got a " + cause);
                 }
-
-                TRUST_SERVER_CERT.set(true);
-
-                // second request should succeed
-                final Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
-
-                assertEquals(response.getResponseBody(), body);
-            } finally {
-                TRUST_SERVER_CERT.set(true);
+            } catch (Exception e) {
+                System.err.println("WTF"+ e.getMessage());
             }
+            assertNotNull(cause);
+
+            // second request should succeed
+            trust.set(true);
+            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(response.getResponseBody(), body);
         } finally {
             c.close();
         }
     }
 
-    private static SSLContext createSSLContext() {
+    private static KeyManager[] createKeyManagers() throws GeneralSecurityException, IOException {
+        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-cacerts.jks");
+        char[] keyStorePassword = "changeit".toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(keyStoreStream, keyStorePassword);
+        assert(ks.size() > 0);
+
+        // Set up key manager factory to use our key store
+        char[] certificatePassword = "changeit".toCharArray();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, certificatePassword);
+
+        // Initialize the SSLContext to work with our key managers.
+        return kmf.getKeyManagers();
+    }
+
+    private static TrustManager[] createTrustManagers() throws GeneralSecurityException, IOException {
+        InputStream keyStoreStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("ssltest-keystore.jks");
+        char[] keyStorePassword = "changeit".toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(keyStoreStream, keyStorePassword);
+        assert(ks.size() > 0);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+        return tmf.getTrustManagers();
+    }
+
+    public static SSLContext createSSLContext(AtomicBoolean trust) {
         try {
-            InputStream keyStoreStream = BasicHttpsTest.class.getResourceAsStream("ssltest-cacerts.jks");
-            char[] keyStorePassword = "changeit".toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(keyStoreStream, keyStorePassword);
-
-            // Set up key manager factory to use our key store
-            char[] certificatePassword = "changeit".toCharArray();
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, certificatePassword);
-
-            // Initialize the SSLContext to work with our key managers.
-            KeyManager[] keyManagers = kmf.getKeyManagers();
-            TrustManager[] trustManagers = new TrustManager[] { DUMMY_TRUST_MANAGER };
+            KeyManager[] keyManagers = createKeyManagers();
+            TrustManager[] trustManagers = new TrustManager[] { dummyTrustManager(trust, (X509TrustManager) createTrustManagers()[0]) };
             SecureRandom secureRandom = new SecureRandom();
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -322,20 +343,39 @@ public abstract class BasicHttpsTest extends AbstractBasicTest {
         }
     }
 
-    private static final AtomicBoolean TRUST_SERVER_CERT = new AtomicBoolean(true);
-    private static final TrustManager DUMMY_TRUST_MANAGER = new X509TrustManager() {
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
+    public static class DummyTrustManager implements X509TrustManager {
+
+        private final X509TrustManager tm;
+        private final AtomicBoolean trust;
+
+        public DummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
+            this.trust = trust;
+            this.tm = tm;
         }
 
-        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
+                throws CertificateException {
+            tm.checkClientTrusted(chain, authType);
         }
 
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            if (!TRUST_SERVER_CERT.get()) {
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
+                throws CertificateException {
+            if (!trust.get()) {
                 throw new CertificateException("Server certificate not trusted.");
             }
+            tm.checkServerTrusted(chain, authType);
         }
-    };
 
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return tm.getAcceptedIssuers();
+        }
+    }
+
+    private static TrustManager dummyTrustManager(final AtomicBoolean trust, final X509TrustManager tm) {
+        return new DummyTrustManager(trust, tm);
+
+    }
 }
