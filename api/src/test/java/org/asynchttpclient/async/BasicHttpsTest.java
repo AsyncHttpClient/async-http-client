@@ -25,9 +25,12 @@ import static org.testng.Assert.assertTrue;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Response;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -123,6 +126,35 @@ public abstract class BasicHttpsTest extends AbstractBasicHttpsTest {
             assertEquals(response.getResponseBody(), body);
         } finally {
             c.close();
+        }
+    }
+
+    @Test(timeOut = 5000)
+    public void failInstantlyIfHostNamesDiffer() throws Exception {
+        AsyncHttpClient client = null;
+
+        try {
+            final Builder builder = new Builder().setHostnameVerifier(new HostnameVerifier() {
+
+                public boolean verify(String arg0, SSLSession arg1) {
+                    return false;
+                }
+            }).setRequestTimeoutInMs(20000);
+
+            client = getAsyncHttpClient(builder.build());
+
+            try {
+            client.prepareGet("https://github.com/AsyncHttpClient/async-http-client/issues/355").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            
+            Assert.assertTrue(false, "Shouldn't be here: should get an Exception");
+            } catch (ExecutionException e) {
+                Assert.assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
+            } catch (Exception e) {
+                Assert.assertTrue(false, "Shouldn't be here: should get a ConnectException wrapping a ConnectException");
+            }
+            
+        } finally {
+            client.close();
         }
     }
 }
